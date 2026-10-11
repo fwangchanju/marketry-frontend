@@ -176,14 +176,12 @@ export function TradingSessionIndicator({ session: sessionOverride }: { session?
 // 등락률 기준 토글 — 종가(그날 정규장 종가 지도) / 누적(전일 종가 대비) / 별도(당일 종가 대비). 애프터 마켓 시작부터 다음 프리 마켓 개장 전까지만 보인다.
 // 시간외 스냅샷이 아직 없으면 별도는 잠긴다. 시장 시간대 말머리는 버튼의 표시 여부와 무관하게 유지한다.
 // 버튼을 누르면 그 버튼 아래에 설명 팝업이 뜬다(새로고침 버튼의 설명창과 같은 모양). 잠긴 별도도 눌러서 설명을 볼 수 있다.
-export function ChangeRateModeToggle({ basis, visible, selectable, afterHoursStart, onChange }: {
+export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
   basis: ChangeRateChoice
   visible: boolean
   selectable: boolean
-  afterHoursStart?: string | null
   onChange: (basis: ChangeRateChoice) => void
 }) {
-  const closeNote = <>*당일 종가 15:30</>
   const red = (text: string) => <span className="text-red-600">{text}</span>
   const options = [
     {
@@ -194,9 +192,6 @@ export function ChangeRateModeToggle({ basis, visible, selectable, afterHoursSta
           <b>메인 마켓 종가</b>
           <br />
           ({red('전일 종가')} 대비 {red('당일 종가')})
-          <br />
-          <br />
-          {closeNote}
         </>
       ),
       locked: false,
@@ -209,9 +204,6 @@ export function ChangeRateModeToggle({ basis, visible, selectable, afterHoursSta
           <b>애프터 마켓 누적</b>
           <br />
           ({red('전일 종가')} 대비 {red('현재가')})
-          <br />
-          <br />
-          {closeNote}
         </>
       ),
       locked: false,
@@ -224,9 +216,6 @@ export function ChangeRateModeToggle({ basis, visible, selectable, afterHoursSta
           <b>애프터 마켓 별도</b>
           <br />
           ({red('당일 종가')} 대비 {red('현재가')})
-          <br />
-          <br />
-          {afterHoursStart?.slice(11, 16) ?? '15:40'} 부터
         </>
       ),
       locked: !selectable,

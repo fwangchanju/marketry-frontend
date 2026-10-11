@@ -40,6 +40,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   const [movedMonth, setMovedMonth] = useState<ShownMonth | null>(null)
   const anchorDate = (viewedSnapshotTime ?? liveSnapshotTime)?.slice(0, 10) ?? null
   const liveDate = liveSnapshotTime?.slice(0, 10) ?? null
+  const isLiveButtonVisible = liveDate !== null && liveDate !== anchorDate
 
   const shownMonth = movedMonth ?? (anchorDate ? toShownMonth(anchorDate) : toShownMonth(new Date().toISOString()))
   const monthKey = toMonthKey(shownMonth)
@@ -130,11 +131,11 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           </div>
           <div className="relative">
           {isLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#202020]/80">
-              <Spinner showElapsed className="h-44 w-44" />
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#202020]">
+              <Spinner showElapsed compact className="h-36 w-36" />
             </div>
           )}
-          <div className={`grid grid-cols-7 text-center font-roboto-latin tabular-nums ${isLoading ? 'opacity-30' : ''}`} aria-busy={isLoading}>
+          <div className="grid grid-cols-7 text-center font-roboto-latin tabular-nums" aria-busy={isLoading}>
             {cells.map((day, index) => {
               if (day === null) return <span key={`blank-${index}`} />
               const date = `${monthKey}-${String(day).padStart(2, '0')}`
@@ -163,30 +164,31 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
             })}
           </div>
           </div>
-          <div className="mt-1 flex items-center justify-between border-t border-[#555] pt-2 text-xs text-gray-400">
-            {isError ? (
-              <span className="flex items-center gap-1.5">
-                불러오지 못했습니다
-                <button type="button" onClick={() => void refetch()} className="border-0 bg-transparent p-0 text-[var(--accent)] hover:underline">
-                  다시 시도
+          {(isError || isLiveButtonVisible) && (
+            <div className="mt-1 flex items-center justify-between border-t border-[#555] pt-2 text-xs text-gray-400">
+              {/* 왼쪽: 실시간으로 돌아가는 배지. 오른쪽: 목록을 못 받았을 때의 안내. */}
+              {isLiveButtonVisible ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelectSnapshotTime(null)
+                    setIsOpen(false)
+                  }}
+                  className="shrink-0 rounded-sm border border-[var(--accent)] bg-transparent px-1 py-0.5 text-xs font-medium leading-none text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black"
+                >
+                  실시간
                 </button>
-              </span>
-            ) : (
-              <span>종가 지도</span>
-            )}
-            {liveDate !== null && liveDate !== anchorDate && (
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectSnapshotTime(null)
-                  setIsOpen(false)
-                }}
-                className="border-0 bg-transparent p-0 text-[var(--accent)] hover:underline"
-              >
-                실시간으로
-              </button>
-            )}
-          </div>
+              ) : <span />}
+              {isError && (
+                <span className="flex items-center gap-1.5">
+                  불러오지 못했습니다
+                  <button type="button" onClick={() => void refetch()} className="border-0 bg-transparent p-0 text-[var(--accent)] hover:underline">
+                    다시 시도
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </span>
