@@ -17,6 +17,7 @@ import Toolbar from '@/components/Toolbar'
 import { ClockIcon } from '@/components/icons/MarketMapIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import ClosingPriceLabel from '@/components/ClosingPriceLabel'
+import RangeCompareLabel from '@/components/RangeCompareLabel'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
 import ChangeRateBar from '@/components/ChangeRateBar'
@@ -189,6 +190,9 @@ export default function GroupPage() {
     data,
     liveSnapshotTime,
     onChangePinnedSnapshotTime,
+    onSelectRange,
+    rangeStartTime,
+    rangeExcludedStocks,
     pinnedSnapshotTime,
     isLoading,
     isError,
@@ -223,13 +227,15 @@ export default function GroupPage() {
     }
     navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
   }
-  const pairQuery = useSectorMarketMapPair(market, source, nxtOnly, beforeMinutes, data, changeRateMode)
+  // 기간 등락률을 보는 중이면 "N분 전 대비"(오른쪽 그래프)는 쓰지 않는다 — before를 받지 않고, 지금 값(data)이 곧 기간 등락률이다.
+  const isRangeView = rangeStartTime !== undefined
+  const pairQuery = useSectorMarketMapPair(market, source, nxtOnly, beforeMinutes, data, changeRateMode, !isRangeView)
   // 쌍 쿼리가 에러(재시도 1회 뒤)면 "before 없음"으로 보고 now 쿼리의 현재 data로 그린다. 그 외에는
   // 화면에 그리는 now가 항상 "쌍 안의 now"다 — placeholder 기간에도 그 쌍이 만들어질 때의 now·before가
   // 함께 유지되어, 상단 바 시각과 그래프가 서로 어긋나지 않는다.
-  const displayNow = pairQuery.data?.now ?? (pairQuery.isError ? data : undefined)
-  const displayBefore = pairQuery.data?.before ?? null
-  const isPairSettled = pairQuery.isSuccess || pairQuery.isError
+  const displayNow = isRangeView ? data : (pairQuery.data?.now ?? (pairQuery.isError ? data : undefined))
+  const displayBefore = isRangeView ? null : (pairQuery.data?.before ?? null)
+  const isPairSettled = isRangeView || pairQuery.isSuccess || pairQuery.isError
   // data-capture-ready(결정 4) — now가 성공했고 비어 있으면(그 시각 데이터가 아예 없음) 그대로
   // "데이터가 없습니다" 화면을 캡처한다. 그 외에는 쌍 쿼리까지 끝나 있고(성공 또는 에러), placeholder가
   // 아니고, 시가총액 구간 설정이 준비된 뒤에야 캡처를 허용한다 — now 에러는 항상 false다.
@@ -367,7 +373,8 @@ export default function GroupPage() {
     // marketOverview는 단일 마켓 조회에만 온다(ALL_STOCK이면 단일 지수값이 없어 null) — 지도 페이지와
     // 동일하게 ALL_STOCK이면 지수 막대를 아예 안 보여준다. 지수 참조 값은 누적 등락률이므로 별도에서는 표시하지 않는다.
     const nowOverview = displayNow.marketOverview
-    if (nowOverview && changeRateMode === 'daily') {
+    // 기간 등락률에는 하루치 지수 등락률을 섞지 않는다.
+    if (nowOverview && changeRateMode === 'daily' && !isRangeView) {
       currentEntries.push({
         key: MARKET_INDEX_KEY,
         sectorName: MARKET_INDEX_LABEL_KO[nowOverview.market],
@@ -386,7 +393,7 @@ export default function GroupPage() {
     }
 
     return { current: buildRankChart(currentEntries), delta: buildRankChart(deltaEntries) }
-  }, [displayNow, displayBefore, scopedExcludedSectorIds, scopedExcludedTiers, avgChangeRateUseSimple, changeRateMode])
+  }, [displayNow, displayBefore, scopedExcludedSectorIds, scopedExcludedTiers, avgChangeRateUseSimple, changeRateMode, isRangeView])
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
@@ -416,7 +423,7 @@ export default function GroupPage() {
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
               항상 같은 폭을 유지하게 한다(지도 페이지와 동일) — 내부 그래프가 넘치면 이 컬럼
               안에서만 처리된다. */}
-          <div ref={captureRef} data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white">
+          <div ref={captureRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white">
             <Toolbar>
               <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
                 <MarketDropdown
@@ -434,11 +441,16 @@ export default function GroupPage() {
                     viewedSnapshotTime={displayNow?.snapshotTime ?? null}
                     liveSnapshotTime={liveSnapshotTime}
                     onSelectSnapshotTime={onChangePinnedSnapshotTime}
+                    onSelectRange={onSelectRange}
+                    rangeStartTime={rangeStartTime}
                     isPast={isPastSnapshot}
                   >
-                    <span className={displayNow?.snapshotTime ? undefined : 'invisible'}>{toMarketMapSnapshotDateLabel(displayNow?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}</span>
+                    {/* 기간을 보는 중이면 시작일은 고른 날짜로 이미 정해져 있으므로, 지도를 기다리는 동안에도 숨기지 않는다. */}
+                    <span className={displayNow?.snapshotTime || rangeStartTime ? undefined : 'invisible'}>{toMarketMapSnapshotDateLabel(rangeStartTime ?? displayNow?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}</span>
                   </SnapshotDatePicker>
-                  {isPastSnapshot && <ClosingPriceLabel viewedSnapshotTime={displayNow?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />}
+                  {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
+                    ? <RangeCompareLabel endSnapshotTime={pinnedSnapshotTime} excludedStocks={rangeExcludedStocks} />
+                    : <ClosingPriceLabel viewedSnapshotTime={displayNow?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />)}
                   {isPastSnapshot === false && (
                     <>
                       <ClockIcon className="-mr-0.5 h-[15px] w-[15px] shrink-0" aria-hidden />
@@ -495,7 +507,8 @@ export default function GroupPage() {
                   <EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" />
                 </div>
               ) : (
-                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                // 스크롤 칸이 바깥의 아래 여백(19.5px)까지 내려오게(-mb) 하고, 그 여백은 칸 안쪽(pb)에 둔다 — 목록이 넘쳐서 스크롤될 때 잘리는 위치가 면책조항 바로 위가 되고, 끝까지 내리면 같은 여백이 생긴다.
+                <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-y-auto pb-[19.5px]">
                   {/* 현재 그래프(왼쪽)/변화율 그래프(오른쪽)를 나란히 배치. "시가총액 가중/동일 가중 등락률"·
                       "N분 전 대비" 캡션은 각각 RankBars의 header로 넘겨서, 그래프(막대 트랙) 시작 위치와
                       캡션 시작 위치가 라벨 폭과 무관하게 항상 맞도록 한다. 바깥을 flex-col + min-h-0로
@@ -510,22 +523,24 @@ export default function GroupPage() {
                     style={{ fontSize: 20, color: strongIndustryColor }}
                   >
                     <div className="flex flex-[3] items-center justify-center">
-                      {/* 헤더 상자는 각진 테두리 상자(테두리 2px·글자는 지도 설정창의 강조 색상, 배경은 검정, 그림자 없음)이고 글자는 20px 굵게(700)이다. */}
+                      {/* 헤더 배지는 끝이 완전히 둥근 알약 모양이고, 배경은 지도 설정창의 강조 색상, 글자는 그 반대인 검정이며 20px 굵게(700)이다. */}
                       <span
-                        className="rounded-lg border-2 bg-black px-[6px] py-[2px] text-[20px] leading-none font-bold"
-                        style={{ borderColor: strongIndustryColor, color: strongIndustryColor }}
+                        className="rounded-full border-2 px-[12px] py-[4px] text-[20px] leading-none font-bold"
+                        style={{ borderColor: strongIndustryColor, backgroundColor: strongIndustryColor, color: '#000000' }}
                       >
                         {avgChangeRateUseSimple ? '동일 가중 등락률' : '시총 가중 등락률'}
                       </span>
                     </div>
-                    <div className="flex flex-[1] items-center justify-center">
-                      <span
-                        className="rounded-lg border-2 bg-black px-[6px] py-[2px] text-[20px] leading-none font-bold"
-                        style={{ borderColor: strongIndustryColor, color: strongIndustryColor }}
-                      >
-                        {beforeMinutes}분 전 대비
-                      </span>
-                    </div>
+                    {!isRangeView && (
+                      <div className="flex flex-[1] items-center justify-center">
+                        <span
+                          className="rounded-full border-2 px-[12px] py-[4px] text-[20px] leading-none font-bold"
+                          style={{ borderColor: strongIndustryColor, backgroundColor: strongIndustryColor, color: '#000000' }}
+                        >
+                          {beforeMinutes}분 전 대비
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex min-h-0 flex-1 gap-x-8 px-[10%]">
                     {/* 좌(현재) 3 : 우(변화율) 1 비율 — 변화율 쪽은 막대가 항상 더 짧아서 면적을 덜 준다. */}
@@ -537,15 +552,17 @@ export default function GroupPage() {
                         onSelectSector={handleSelectSector}
                       />
                     </div>
-                    <div className="flex min-h-0 min-w-0 flex-[1]">
-                      <RankBars
-                        chart={charts.delta}
-                        highlightColor={strongIndustryColor}
-                        unit="%p"
-                        colorScale={colorScale}
-                        onSelectSector={handleSelectSector}
-                      />
-                    </div>
+                    {!isRangeView && (
+                      <div className="flex min-h-0 min-w-0 flex-[1]">
+                        <RankBars
+                          chart={charts.delta}
+                          highlightColor={strongIndustryColor}
+                          unit="%p"
+                          colorScale={colorScale}
+                          onSelectSector={handleSelectSector}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -553,7 +570,7 @@ export default function GroupPage() {
             </div>
             {/* 아래 줄 — 지도 페이지와 같은 높이(28px)로 왼쪽에 면책조항, 오른쪽 끝에 등락률 색상 범례를 둔다. 로딩 중에도 제자리에 둔다. */}
             <div className="flex h-7 shrink-0 items-end justify-between gap-3 px-[7px]">
-              <div className="flex h-7 min-w-0 items-center">
+              <div className="flex h-7 min-w-0 items-end">
                 <DisclaimerNotice />
               </div>
               <ChangeRateBar swatches={settingsModalProps.legendSwatches} />

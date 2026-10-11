@@ -149,15 +149,16 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
               </button>
             ) : <span className="h-7 w-7" />}
           </div>
-          <div className="min-h-[13.5rem]">
+          {/* 날짜 영역은 요일 줄을 뺀 나머지 높이를 모두 차지해서, 로딩 원이 그 영역 정중앙에 놓인다(날짜 줄이 5줄인 달도 마찬가지). */}
+          <div className="flex min-h-[13.5rem] flex-col">
         <div className="grid grid-cols-7 text-center text-xs text-gray-400">
           {WEEKDAY_LABELS.map(label => (
             <span key={label} className="py-1">{label}</span>
           ))}
         </div>
-        <div className="relative">
+        <div className="relative flex-1">
           {isLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639]">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639] pt-1">
               <Spinner showElapsed compact className="h-36 w-36" />
             </div>
           )}

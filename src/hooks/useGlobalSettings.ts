@@ -14,6 +14,7 @@ import { useRouteAwareMarket } from './useRouteAwareMarket'
 import { useIsLoggedIn, useSession } from './useSession'
 import { useLoginGate } from './useLoginGate'
 import { useMarketMap, useMarketMapSnapshotDays, usePreviousTradingDay } from './useMarketMap'
+import { useSnapshotSelection } from './useSnapshotSelection'
 import { useMarketMapColorScale } from './useMarketMapColorScale'
 import {
   useCreateCustomScaleThreshold as useCreateMarketMapScaleThreshold,
@@ -36,7 +37,7 @@ import {
   type ColorScaleThreshold,
 } from '@/utils/marketMapColorScale'
 import { withStableSectorIds } from '@/utils/guestSectorIds'
-import type { MarketMapResponse, MarketMapSectorNode, MarketQuery } from '@/types/api'
+import type { MarketMapResponse, MarketMapSectorNode } from '@/types/api'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
 
 // 조회 실패/로딩 중이거나 "색상 커스텀 사용"이 꺼져있을 때 쓰는 폴백 — thresholds가 비어있으면 어차피
@@ -244,17 +245,15 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   // 달력에서 지난 날짜를 골랐을 때의 종가 스냅샷 시각 — 없으면 실시간(최신). 시장(코스피·코스닥·전체)을 바꿔도 선택은 풀리지 않는다.
   // 고른 시장의 시각을 그대로 기억해 두고, 다른 시장으로 바뀌면 그 시장의 종가 지도 목록에서 같은 날짜의 시각을 다시 찾는다.
-  const [pinnedSelection, setPinnedSelection] = useState<{ market: MarketQuery; snapshotTime: string } | null>(null)
+  // 선택은 지도·그룹이 함께 쓰는 저장소에 둔다(그룹에서 업종을 눌러 지도로 가도 풀리지 않게).
+  const { pinned: pinnedSelection, range: rangeSelection, liveSnapshotTime, setSelection, setLiveSnapshotTime } = useSnapshotSelection()
   // 기간 등락률 — 달력에서 시작일~종료일을 골랐을 때의 시작일 종가 스냅샷 시각. 종료일은 위 pinnedSelection이 그대로 맡는다(종료일 종가 지도).
   // 날짜 하나를 고르거나 실시간으로 돌아가면 풀린다.
-  const [rangeSelection, setRangeSelection] = useState<{ market: MarketQuery; snapshotTime: string } | null>(null)
   const onChangePinnedSnapshotTime = (snapshotTime: string | null) => {
-    setPinnedSelection(snapshotTime === null ? null : { market, snapshotTime })
-    setRangeSelection(null)
+    setSelection(snapshotTime === null ? null : { market, snapshotTime }, null)
   }
   const onSelectRange = (startSnapshotTime: string, endSnapshotTime: string) => {
-    setPinnedSelection({ market, snapshotTime: endSnapshotTime })
-    setRangeSelection({ market, snapshotTime: startSnapshotTime })
+    setSelection({ market, snapshotTime: endSnapshotTime }, { market, snapshotTime: startSnapshotTime })
   }
   // 고른 시장이 아닌 시장을 보는 중이면 그 시장의 같은 날짜 시각을 목록에서 찾는다. 목록을 받기 전이거나 그 날짜가 없으면 고른 시각을 그대로 쓴다.
   const pinnedNeedsLookup = pinnedSelection !== null && pinnedSelection.market !== market
@@ -268,7 +267,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     ? undefined
     : (rangeNeedsLookup ? (rangeMonthDays?.find(day => day.date === rangeSelection.snapshotTime.slice(0, 10))?.snapshotTime ?? rangeSelection.snapshotTime) : rangeSelection.snapshotTime)
   // 달력이 "오늘(실시간)"을 알아보려면 지난 날짜를 보는 동안에도 최신 스냅샷 시각을 기억해야 한다.
-  const [liveSnapshotTime, setLiveSnapshotTime] = useState<string | null>(null)
 
   // 종가 선택 — 지금 보는 날짜(실시간 스냅샷의 날짜)의 정규장 종가 스냅샷 시각을 달력과 같은 목록에서 찾아 그 지도를 받는다.
   // 실시간 날짜는 한 번이라도 실시간 지도를 받아야 알 수 있어서, 처음 한 번은 실시간 지도를 받고 그 뒤에 종가로 옮겨 간다.
@@ -340,7 +338,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   }, [data])
   useEffect(() => {
     if (pinnedSnapshotTime === undefined && !isCloseActive && dataSnapshotTime) setLiveSnapshotTime(dataSnapshotTime)
-  }, [pinnedSnapshotTime, isCloseActive, dataSnapshotTime])
+  }, [pinnedSnapshotTime, isCloseActive, dataSnapshotTime, setLiveSnapshotTime])
   // 종가를 보는 동안에는 받은 지도가 정규장 종가라서, 별도가 열렸는지는 실시간 스냅샷으로 따진다.
   const isAfterHoursSelectable = isAfterHoursControlsVisible && isAfterHoursSelectableAt(isCloseActive ? liveSnapshotTime : data?.snapshotTime, data?.afterHoursStart)
   const changeRateMode: ChangeRateMode = isAfterHoursSelectable ? requestedBasis : 'daily'

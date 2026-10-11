@@ -45,7 +45,7 @@ function SourceHelpBubble() {
   }, [isOpen])
 
   return (
-    <span className="relative ml-1 inline-flex shrink-0 align-middle">
+    <span className="relative ml-1 inline-flex shrink-0 align-top">
       <button
         ref={buttonRef}
         type="button"
@@ -53,9 +53,9 @@ function SourceHelpBubble() {
         aria-expanded={isOpen}
         onClick={() => setIsOpen(open => !open)}
         onBlur={() => setIsOpen(false)}
-        className="inline-flex h-4 w-4 items-center justify-center border-0 bg-transparent p-0 text-white/50 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
+        className="inline-flex h-3 w-3 items-center justify-center border-0 bg-transparent p-0 text-white/70 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
       >
-        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round">
+        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-[11px] w-[11px]" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="8" cy="8" r="6.35" />
           <path d="M6.25 6.05a1.85 1.85 0 1 1 3.55.78c-.48.86-1.8 1.06-1.8 2.52" />
           <circle cx="8" cy="11.75" r="0.55" fill="currentColor" stroke="none" />
@@ -83,10 +83,11 @@ function SourceHelpBubble() {
 
 export default function DisclaimerNotice() {
   return (
-    <p className="min-w-0 text-left text-xs font-medium text-white/50">
-      <span className="min-w-0 leading-[14px]">
+    // 글자는 10px, 줄 간격은 12px이라 두 줄이 24px다 — 아래 줄의 등락률 바(24px)와 같은 높이로 맞춘다.
+    <p className="min-w-0 text-left text-[10px] font-bold text-white/70">
+      <span className="min-w-0 leading-[12px]">
         {DISCLAIMER_LINES.map((line, index) => (
-          <span key={line} className="block truncate">
+          <span key={line} className="block h-3 truncate">
             {line}
             {index === DISCLAIMER_LINES.length - 1 && <SourceHelpBubble />}
           </span>
