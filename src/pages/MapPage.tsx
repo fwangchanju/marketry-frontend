@@ -174,7 +174,6 @@ export default function MapPage() {
     onChangePinnedSnapshotTime,
     onSelectRange,
     rangeStartTime,
-    rangeBaseDate,
     rangeExcludedStockCount,
     pinnedSnapshotTime,
     refetchMarketMap,
@@ -495,11 +494,11 @@ export default function MapPage() {
                     isPast={isPastSnapshot}
                   >
                     <span className={data?.snapshotTime ? undefined : 'invisible'}>
-                      {toMarketMapSnapshotDateLabel((rangeStartTime && rangeBaseDate ? `${rangeBaseDate}T15:35:00` : rangeStartTime) ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
+                      {toMarketMapSnapshotDateLabel(rangeStartTime ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
                     </span>
                   </SnapshotDatePicker>
                   {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
-                    ? <RangeCompareLabel market={market} isBaseClose={rangeBaseDate !== null} startSnapshotTime={rangeStartTime} endSnapshotTime={pinnedSnapshotTime} excludedStockCount={rangeExcludedStockCount} />
+                    ? <RangeCompareLabel market={market} startSnapshotTime={rangeStartTime} endSnapshotTime={pinnedSnapshotTime} excludedStockCount={rangeExcludedStockCount} />
                     : <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />)}
                   {isPastSnapshot === false && (
                     <>

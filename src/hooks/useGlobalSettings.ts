@@ -293,7 +293,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const rangePreviousDay = usePreviousTradingDay(market, rangeStartTime?.slice(0, 10) ?? null, { enabled: isRangeActive })
   const rangeBaseSnapshotTime = rangePreviousDay === undefined ? undefined : (rangePreviousDay?.snapshotTime ?? rangeStartTime)
   const rangeBaseKind = rangePreviousDay ? 'close' : 'previousClose'
-  const rangeBaseDate = rangePreviousDay?.date ?? null
   const {
     data: rangeStartData,
     isLoading: isRangeStartLoading,
@@ -820,7 +819,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     onChangePinnedSnapshotTime,
     onSelectRange,
     rangeStartTime,
-    rangeBaseDate,
     rangeExcludedStockCount,
     refetchMarketMap,
     isRefetchingMarketMap,
