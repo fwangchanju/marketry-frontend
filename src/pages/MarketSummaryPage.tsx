@@ -44,7 +44,7 @@ export default function MarketSummaryPage() {
   // 고른 단계의 업종만 모아 지도 박스와 그래프 막대로 쓴다 — 지도 페이지와 같은 제외 기준을 따른다.
   const overview = useMemo(() => {
     const items: OverviewMapItem[] = []
-    for (const { node, pathKey } of collectAtDepth(data?.items ?? [], effectiveDepth, excludedSectorIds)) {
+    for (const { node, pathKey } of collectAtDepth(data?.items ?? [], effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
       const average = computeSectorAverage(node, excludedMarketValueTiers)
       if (average.weightedAvg === null) continue
       items.push({ key: pathKey, name: node.sectorName, marketValue: node.totalMarketValue, changeRate: average.weightedAvg })
@@ -132,7 +132,7 @@ export default function MarketSummaryPage() {
                 {/* 캡처 대상은 이 안쪽 칸이다 — 오른쪽 위 캡처 버튼은 칸 밖에 두어 이미지에 찍히지 않는다. */}
                 <div ref={element => { frameRefs.current[frame.title] = element }} className="flex min-h-0 flex-1 flex-col bg-black">
                   {/* 헤더 높이를 28px(캡처 버튼 높이)로 고정해서 버튼이 헤더 높이의 가운데에 오게 한다. 제목은 왼쪽에 붙이고, 강조색 바가 맨 앞에 온다. */}
-                  <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-medium text-white">
+                  <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-bold text-white">
                     <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
                     {frame.title}
                   </h2>
