@@ -174,7 +174,7 @@ export default function MapPage() {
     onChangePinnedSnapshotTime,
     onSelectRange,
     rangeStartTime,
-    rangeExcludedStockCount,
+    rangeExcludedStocks,
     pinnedSnapshotTime,
     refetchMarketMap,
     isRefetchingMarketMap,
@@ -492,12 +492,13 @@ export default function MapPage() {
                     rangeStartTime={rangeStartTime}
                     isPast={isPastSnapshot}
                   >
-                    <span className={data?.snapshotTime ? undefined : 'invisible'}>
+                    {/* 기간을 보는 중이면 시작일은 고른 날짜로 이미 정해져 있으므로, 지도를 기다리는 동안에도 숨기지 않는다. */}
+                    <span className={data?.snapshotTime || rangeStartTime ? undefined : 'invisible'}>
                       {toMarketMapSnapshotDateLabel(rangeStartTime ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
                     </span>
                   </SnapshotDatePicker>
                   {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
-                    ? <RangeCompareLabel startSnapshotTime={rangeStartTime} endSnapshotTime={pinnedSnapshotTime} excludedStockCount={rangeExcludedStockCount} />
+                    ? <RangeCompareLabel startSnapshotTime={rangeStartTime} endSnapshotTime={pinnedSnapshotTime} excludedStocks={rangeExcludedStocks} />
                     : <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />)}
                   {isPastSnapshot === false && (
                     <>

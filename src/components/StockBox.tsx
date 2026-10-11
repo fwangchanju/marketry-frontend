@@ -82,7 +82,7 @@ export default function StockBox({
       title: item.stockName,
       rows: [
         `등락률: ${toPctSigned(item.changeRate, decimalPlaces)}`,
-        // 기간 등락률에서는 시작일의 기준가와 끝일의 종가(장중이면 현재가)를 보여 준다.
+        // 기간 등락률에서는 시작일의 기준가와 종료일의 종가(장중이면 현재가)를 보여 준다.
         `${item.rangeLabels?.end ?? '현재가'}: ${toVolume(item.currentPrice)}원`,
         `${item.rangeLabels?.base ?? '전일종가'}: ${toVolume(item.lastPrice)}원`,
         `시가총액: ${toJoEok(item.totalMarketValue / 100_000_000)}`,
