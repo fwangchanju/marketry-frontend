@@ -498,7 +498,7 @@ export default function MapPage() {
                     </span>
                   </SnapshotDatePicker>
                   {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
-                    ? <RangeCompareLabel startSnapshotTime={rangeStartTime} endSnapshotTime={pinnedSnapshotTime} excludedStocks={rangeExcludedStocks} />
+                    ? <RangeCompareLabel endSnapshotTime={pinnedSnapshotTime} excludedStocks={rangeExcludedStocks} />
                     : <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />)}
                   {isPastSnapshot === false && (
                     <>
@@ -680,7 +680,7 @@ export default function MapPage() {
                     reset()
                   }}
                   maxSelectableDepth={Math.max(1, settingsModalProps.topPickMaxSelectableDepth)}
-                  noDataLimited={settingsModalProps.taxonomy !== 'MARKETRY'}
+                  noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
                 />
                 <SettingsStockChangeSection
                   value={stockChangeFilter}
@@ -712,7 +712,7 @@ export default function MapPage() {
                     reset()
                   }}
                   maxSelectableDepth={Math.max(1, settingsModalProps.topPickMaxSelectableDepth)}
-                  noDataLimited={settingsModalProps.taxonomy !== 'MARKETRY'}
+                  noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
                 />
                 <SettingsStockChangeSection
                   value={stockChangeFilter}

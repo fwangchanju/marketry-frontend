@@ -1274,8 +1274,9 @@ export function SettingsSectorLevelSection({
   // 설정에서 선택할 수 있는 최소 단계는 대/중/소분류까지 보장한다. 실제 데이터가 얕으면 해당 단계의
   // 화면 결과만 비어 있을 뿐, 사용자가 미리 설정해 둔 값을 UI가 임의로 막거나 지우지는 않는다.
   const depthLabelCount = Math.max(availableMaxDepth, DEPTH_LABELS.length)
-  // 분류 자체에 하위 단계가 없으면(KRX·NXT) 그 단계는 고를 수 없다. 저장된 값은 건드리지 않고 화면에서만 막는다.
-  const selectableDepth = taxonomy && taxonomy !== 'MARKETRY' ? 1 : depthLabelCount
+  // 분류 자체에 하위 단계가 없으면(거래소 분류 KRX·NXT) 그 단계는 고를 수 없다. MARKETRY와 내 분류(MINE)는 대·중·소분류 트리라 고를 수 있다.
+  // 저장된 값은 건드리지 않고 화면에서만 막는다.
+  const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : depthLabelCount
   const depthValue = Math.min(maxDepth ?? depthLabelCount, selectableDepth)
   const depthMetricMaxSelectableIndex = Math.max(0, Math.min(selectableDepth, maxDepth ?? selectableDepth) - 1)
   const isDepthMetricDisabled = !sectorLevelEnabled
