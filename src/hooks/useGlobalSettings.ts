@@ -242,21 +242,31 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 서버 반영 전에 재조회가 먼저 도착할 수 있음).
   const seededKeyRef = useRef<string | null>(null)
 
-  // 달력에서 지난 날짜를 골랐을 때의 종가 스냅샷 시각 — 없으면 실시간(최신). 마켓을 바꾸면 그 마켓에 같은 시각이 있다고 보장할 수 없어 풀린다.
-  const [pinnedSnapshot, setPinnedSnapshot] = useState<{ market: MarketQuery; snapshotTime: string } | null>(null)
-  const pinnedSnapshotTime = pinnedSnapshot?.market === market ? pinnedSnapshot.snapshotTime : undefined
-  // 기간 등락률 — 달력에서 시작일~끝일을 골랐을 때의 시작일 종가 스냅샷 시각. 끝일은 위 pinnedSnapshot이 그대로 맡는다(끝일 종가 지도).
+  // 달력에서 지난 날짜를 골랐을 때의 종가 스냅샷 시각 — 없으면 실시간(최신). 시장(코스피·코스닥·전체)을 바꿔도 선택은 풀리지 않는다.
+  // 고른 시장의 시각을 그대로 기억해 두고, 다른 시장으로 바뀌면 그 시장의 종가 지도 목록에서 같은 날짜의 시각을 다시 찾는다.
+  const [pinnedSelection, setPinnedSelection] = useState<{ market: MarketQuery; snapshotTime: string } | null>(null)
+  // 기간 등락률 — 달력에서 시작일~끝일을 골랐을 때의 시작일 종가 스냅샷 시각. 끝일은 위 pinnedSelection이 그대로 맡는다(끝일 종가 지도).
   // 날짜 하나를 고르거나 실시간으로 돌아가면 풀린다.
-  const [rangeStart, setRangeStart] = useState<{ market: MarketQuery; snapshotTime: string } | null>(null)
+  const [rangeSelection, setRangeSelection] = useState<{ market: MarketQuery; snapshotTime: string } | null>(null)
   const onChangePinnedSnapshotTime = (snapshotTime: string | null) => {
-    setPinnedSnapshot(snapshotTime === null ? null : { market, snapshotTime })
-    setRangeStart(null)
+    setPinnedSelection(snapshotTime === null ? null : { market, snapshotTime })
+    setRangeSelection(null)
   }
   const onSelectRange = (startSnapshotTime: string, endSnapshotTime: string) => {
-    setPinnedSnapshot({ market, snapshotTime: endSnapshotTime })
-    setRangeStart({ market, snapshotTime: startSnapshotTime })
+    setPinnedSelection({ market, snapshotTime: endSnapshotTime })
+    setRangeSelection({ market, snapshotTime: startSnapshotTime })
   }
-  const rangeStartTime = rangeStart?.market === market && pinnedSnapshotTime !== undefined ? rangeStart.snapshotTime : undefined
+  // 고른 시장이 아닌 시장을 보는 중이면 그 시장의 같은 날짜 시각을 목록에서 찾는다. 목록을 받기 전이거나 그 날짜가 없으면 고른 시각을 그대로 쓴다.
+  const pinnedNeedsLookup = pinnedSelection !== null && pinnedSelection.market !== market
+  const { data: pinnedMonthDays } = useMarketMapSnapshotDays(market, pinnedSelection?.snapshotTime.slice(0, 7) ?? '', { enabled: pinnedNeedsLookup, retry: 1 })
+  const pinnedSnapshotTime = pinnedSelection === null
+    ? undefined
+    : (pinnedNeedsLookup ? (pinnedMonthDays?.find(day => day.date === pinnedSelection.snapshotTime.slice(0, 10))?.snapshotTime ?? pinnedSelection.snapshotTime) : pinnedSelection.snapshotTime)
+  const rangeNeedsLookup = rangeSelection !== null && rangeSelection.market !== market
+  const { data: rangeMonthDays } = useMarketMapSnapshotDays(market, rangeSelection?.snapshotTime.slice(0, 7) ?? '', { enabled: rangeNeedsLookup, retry: 1 })
+  const rangeStartTime = rangeSelection === null || pinnedSnapshotTime === undefined
+    ? undefined
+    : (rangeNeedsLookup ? (rangeMonthDays?.find(day => day.date === rangeSelection.snapshotTime.slice(0, 10))?.snapshotTime ?? rangeSelection.snapshotTime) : rangeSelection.snapshotTime)
   // 달력이 "오늘(실시간)"을 알아보려면 지난 날짜를 보는 동안에도 최신 스냅샷 시각을 기억해야 한다.
   const [liveSnapshotTime, setLiveSnapshotTime] = useState<string | null>(null)
 
