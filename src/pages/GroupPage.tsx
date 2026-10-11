@@ -457,7 +457,7 @@ export default function GroupPage() {
                 </span>
                 {isPastSnapshot === false && (
                   <span className="flex shrink-0">
-                    <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} afterHoursStart={data?.afterHoursStart} onChange={onChangeChangeRateMode} />
+                    <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} onChange={onChangeChangeRateMode} />
                   </span>
                 )}
                   </>
