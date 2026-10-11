@@ -43,6 +43,8 @@ const toShownMonth = (isoDate: string): ShownMonth => ({
 
 const toMonthKey = ({ year, monthIndex }: ShownMonth) => `${year}-${String(monthIndex + 1).padStart(2, '0')}`
 
+const maxMonth = (a: ShownMonth, b: ShownMonth) => (toMonthKey(a) >= toMonthKey(b) ? a : b)
+
 const addMonths = (month: ShownMonth, delta: number): ShownMonth => {
   const moved = new Date(month.year, month.monthIndex + delta, 1)
   return { year: moved.getFullYear(), monthIndex: moved.getMonth() }
@@ -321,7 +323,12 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       setDraftStart(null)
       setDraftEnd(null)
     }
-    setRangeLeftMonth(addMonths(toShownMonth(anchorDate ?? new Date().toISOString()), -1))
+    // 시작이 있는 달을 왼쪽에 두고 그 다음 달을 오른쪽에 둔다(한 달 안의 기간이면 둘 다 보인다). 종료가 그보다 뒤면 종료가 오른쪽 달이 되게 하고,
+    // 오른쪽 달이 실시간 달을 넘지 않게 한다. 기간을 고르는 중이 아니면 오른쪽이 지금 보는 달이다.
+    const endMonth = toShownMonth(viewedSnapshotTime ?? anchorDate ?? new Date().toISOString())
+    const wantedLeft = isViewingRange && rangeStartTime ? maxMonth(toShownMonth(rangeStartTime), addMonths(endMonth, -1)) : addMonths(endMonth, -1)
+    const latestLeft = liveDate === null ? null : addMonths(toShownMonth(liveDate), -1)
+    setRangeLeftMonth(latestLeft !== null && toMonthKey(wantedLeft) > toMonthKey(latestLeft) ? latestLeft : wantedLeft)
   }
 
   const toggleOpen = () => {
