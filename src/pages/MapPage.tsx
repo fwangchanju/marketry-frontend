@@ -497,7 +497,7 @@ export default function MapPage() {
                     </span>
                   </SnapshotDatePicker>
                   {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
-                    ? <RangeCompareLabel market={market} startSnapshotTime={rangeStartTime} endSnapshotTime={pinnedSnapshotTime} excludedStockCount={rangeExcludedStockCount} />
+                    ? <RangeCompareLabel startSnapshotTime={rangeStartTime} endSnapshotTime={pinnedSnapshotTime} excludedStockCount={rangeExcludedStockCount} />
                     : <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />)}
                   {isPastSnapshot === false && (
                     <>
