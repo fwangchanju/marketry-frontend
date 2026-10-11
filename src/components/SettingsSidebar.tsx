@@ -858,7 +858,7 @@ export function SettingsSectorStockScopeSection({
               role="radio"
               aria-checked={selected}
               onClick={() => onChange(option.value)}
-              className={`relative z-10 min-h-9 rounded border-0 bg-transparent px-1 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+              className={`relative z-10 min-h-7 rounded border-0 bg-transparent px-1 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] ${
                 selected ? 'text-black' : 'text-gray-300 hover:text-white'
               }`}
             >
@@ -920,7 +920,7 @@ export function SettingsAverageModeSection({
                 aria-checked={selected}
                 onClick={() => onChange(option.value)}
                 disabled={!enabled}
-                className={`relative z-10 min-h-9 rounded border-0 bg-transparent px-1 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+                className={`relative z-10 min-h-7 rounded border-0 bg-transparent px-1 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] ${
                   selected ? 'text-black' : 'text-gray-300 hover:text-white'
                 }`}
               >
