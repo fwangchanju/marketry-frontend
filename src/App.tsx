@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react'
+import { useLayoutEffect, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import MarketSummaryPage from './pages/MarketSummaryPage'
 import MapPage from './pages/MapPage'
@@ -8,6 +8,8 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import ProfilePage from './pages/ProfilePage'
 import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
+import MobileNotice from './components/MobileNotice'
+import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 
 // 페이지 전체와 document.body로 포털 렌더링한 메뉴/팝업에 같은 숫자 폭 규칙을 적용한다.
 // 공통 스냅샷 날짜·시간도 FONT_BAR_TIME에서 동일한 숫자 폭을 명시한다.
@@ -30,10 +32,20 @@ function LegacyGroupRedirect() {
   return <Navigate to={`${groupPath}${search}${hash}`} replace />
 }
 
+// 모바일(폭 768px 미만)에서는 화면 대신 안내만 보여 준다. 세션·시세 요청도 보내지 않도록 앱 맨 바깥에서 가린다.
+// /privacy는 구글 로그인 동의 화면에 등록된 공개 페이지라 모바일에서도 열린다.
+function MobileGate({ children }: { children: ReactNode }) {
+  const isNarrow = useIsNarrowScreen()
+  const { pathname } = useLocation()
+  if (isNarrow && pathname !== '/privacy') return <MobileNotice />
+  return <>{children}</>
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <AppDialogHost />
+      <MobileGate>
       <LoginGateProvider>
         <PageNumberStyle />
         <Routes>
@@ -69,6 +81,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/map/allstock" replace />} />
         </Routes>
       </LoginGateProvider>
+      </MobileGate>
     </BrowserRouter>
   )
 }

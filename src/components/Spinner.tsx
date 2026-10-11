@@ -42,7 +42,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   }
 
   if (!showElapsed && !showLogo) {
-    return <div className={`animate-spin rounded-full border-2 border-gray-600 border-t-[var(--accent)] ${className ?? 'h-8 w-8'}`} />
+    return <div className={`animate-spin rounded-full border-2 border-gray-600 border-t-[var(--brand)] ${className ?? 'h-8 w-8'}`} />
   }
 
   // 시간을 보여주는 로딩은 화면 한가운데에서 오래 보게 되므로 원을 아주 크게(작은 화면에서는 화면 짧은 변의 60%까지) 그린다.
@@ -53,7 +53,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   const isThin = compact || !showElapsed
   return (
     <div role="status" aria-label={showElapsed ? '데이터를 불러오는 중입니다.' : '설정 처리 중'} className={`@container relative ${className ?? (showElapsed ? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]' : 'h-24 w-24')}`}>
-      <div aria-hidden="true" className={`absolute inset-0 animate-spin rounded-full border-gray-600 border-t-[var(--accent)] ${isThin ? 'border-[3px]' : 'border-[6px]'}`} />
+      <div aria-hidden="true" className={`absolute inset-0 animate-spin rounded-full border-gray-600 border-t-[var(--brand)] ${isThin ? 'border-[3px]' : 'border-[6px]'}`} />
       <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
         <div />
         <MarketryLogo className={`h-auto ${message ? 'w-[72%]' : 'w-[84%]'}`} />
