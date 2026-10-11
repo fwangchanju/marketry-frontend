@@ -43,7 +43,7 @@ export default function RankBars({
             {selectable ? (
               <button
                 type="button"
-                title={item.sectorName}
+                aria-label={item.sectorName}
                 onClick={() => onSelectSector(item.sectorName)}
                 className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 hover:bg-white/35`}
                 style={{ color: nameColor }}
@@ -51,7 +51,7 @@ export default function RankBars({
                 {item.sectorName}
               </button>
             ) : (
-              <span className={nameClassName} style={{ color: nameColor }} title={item.sectorName}>{item.sectorName}</span>
+              <span className={nameClassName} style={{ color: nameColor }}>{item.sectorName}</span>
             )}
             <div className="relative h-[60%] max-h-5 min-w-0 flex-1">
               {isEllipsis ? (
