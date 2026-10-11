@@ -1715,6 +1715,12 @@ export function SettingsSectorLevelSection({
   )
 }
 
+// 시가총액(원)을 "200조"·"5,000억"처럼 읽기 쉬운 단위로 적는다.
+function toWonLabel(won: number): string {
+  if (won >= 1e12) return `${(won / 1e12).toLocaleString('ko-KR')}조`
+  return `${(won / 1e8).toLocaleString('ko-KR')}억`
+}
+
 export function SettingsMarketValueSection({
   tiers,
   tierRangeMinIndex,
@@ -1742,13 +1748,29 @@ export function SettingsMarketValueSection({
   const itemClass = bookmarkItemClass(bookmark, 'marketValueRange')
   const tierSteps = Math.max(tiers.length - 1, 1)
   const tierDisplayLabels = [...tiers].reverse().map(tier => tier.label)
+  // 큰 등급부터 "등급: 이상 ~ 미만" 한 줄씩 — 구간 경계는 서버가 정한 등급별 하한값(thresholdValue)이고, 위 등급의 하한이 이 등급의 상한이다.
+  const tierRangeLines =
+    tiers.length === 0
+      ? null
+      : [...tiers]
+          .reverse()
+          .map((tier, index, descending) => {
+            const upper = index === 0 ? null : descending[index - 1].thresholdValue
+            const lower = tier.thresholdValue
+            const range = lower === 0 ? `${toWonLabel(upper ?? 0)} 미만` : upper === null ? `${toWonLabel(lower)} 이상` : `${toWonLabel(lower)} 이상 ~ ${toWonLabel(upper)} 미만`
+            return `${tier.label}: ${range}`
+          })
+          .join('\n')
   const tierDisplayMinIndex = tierSteps - tierRangeMaxIndex
   const tierDisplayMaxIndex = tierSteps - tierRangeMinIndex
 
   return (
     <div className={`settings-market-value text-white ${itemClass} ${bookmark.mode === 'bookmark' ? '' : showDivider ? 'mt-6 pt-8' : 'pt-5'}`}>
       <p className="flex items-center text-[15px]">
-        <SettingTitle bookmarkId="marketValueRange">시가총액 범위</SettingTitle>
+        {/* 순서는 제목 → 물음표 → 북마크 — SettingTitle이 북마크를 제목 바로 뒤에 붙이므로 help로 북마크를 빼고 맨 끝에 직접 둔다. */}
+        <SettingTitle bookmarkId="marketValueRange" help>시가총액 범위</SettingTitle>
+        {tierRangeLines && <SettingHelpBubble label="시가총액 구간" description={tierRangeLines} />}
+        <BookmarkButton id="marketValueRange" label="시가총액 범위" />
       </p>
       <SettingDescription>지도에 포함할 종목의 시총 구간</SettingDescription>
       <div className="settings-subsection-list mt-[18px] text-sm">
@@ -1888,7 +1910,8 @@ export function SettingsExcludeSection({
           forceLabelWhite
           labelClassName={`text-[15px] settings-section-num ${number ? 'settings-bookmark-num' : ''}`}
           labelDataNum={number}
-          labelSuffix={<BookmarkButton id="excludeSector" label="제외 업종" />}
+          // 라벨과 보조 콘텐츠 사이 gap-2(8px)를 -ml-2로 되돌려, 북마크가 다른 항목 제목처럼 글자 바로 옆(4px)에 붙게 한다.
+          labelSuffix={<span className="-ml-2 flex items-center"><BookmarkButton id="excludeSector" label="제외 업종" /></span>}
         />
         <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
         <div
