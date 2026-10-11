@@ -174,7 +174,6 @@ export default function MapPage() {
     pinnedSnapshotTime,
     refetchMarketMap,
     isRefetchingMarketMap,
-    isChangeRateLoading,
     isLoading,
     isError,
     rootNodes,
@@ -509,7 +508,7 @@ export default function MapPage() {
                 {/* 시장 시간대 말머리와 누적/별도 — 시간과 관련된 표시라 시계 옆에 붙인다. */}
                 {isPastSnapshot === false && (
                   <span className="flex shrink-0">
-                    <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} afterHoursStart={data?.afterHoursStart} loading={isChangeRateLoading} onChange={onChangeChangeRateMode} />
+                    <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} afterHoursStart={data?.afterHoursStart} onChange={onChangeChangeRateMode} />
                   </span>
                 )}
                 </>

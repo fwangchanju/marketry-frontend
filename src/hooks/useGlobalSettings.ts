@@ -269,7 +269,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     isError,
     isSuccess: isMarketMapSuccess,
     isRefetching: isRefetchingMarketMap,
-    isFetching: isMarketMapFetching,
     refetch: refetchMarketMap,
   } = useMarketMap(market, source, nxtOnly, {
     enabled: needsTree && !isWaitingForSession,
@@ -277,10 +276,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     snapshotTime: pinnedSnapshotTime ?? closeSnapshotTime,
   })
   const dataSnapshotTime = data?.snapshotTime
-  // 등락률 기준을 바꾼 뒤 새 지도를 기다리는 중 — 종가는 종가 시각 목록부터 받으므로 그 대기도 포함한다. 주기적 새로고침은 제외한다.
   // 종가 시각 목록을 기다리는 동안은 지도가 그대로라 아무 변화가 없어 보이므로, 이때부터 "불러오는 중" 화면을 띄운다.
   const isCloseWaiting = wantsClose && !isCloseActive && !isCloseUnavailable
-  const isChangeRateLoading = isCloseWaiting || (isMarketMapFetching && !isRefetchingMarketMap)
   useEffect(() => {
     if (data) setAfterHoursStart(data.afterHoursStart ?? null)
   }, [data])
@@ -774,7 +771,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     onChangePinnedSnapshotTime,
     refetchMarketMap,
     isRefetchingMarketMap,
-    isChangeRateLoading,
     isLoading: isMarketMapLoading || isWaitingForSession || isCloseWaiting,
     isError,
     isMarketMapSuccess,
