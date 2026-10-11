@@ -19,7 +19,7 @@ import SettingsSidebar, {
 import MarketMapShareModal from '@/components/MarketMapShareModal'
 import Toolbar from '@/components/Toolbar'
 import Treemap from '@/components/Treemap'
-import { ChangeRateModeToggle, MarketDropdown, PeriodDropdown } from '@/components/MarketMapControls'
+import { ChangeRateModeToggle, MarketDropdown } from '@/components/MarketMapControls'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
 import { HINT_BUBBLE_COLOR_CLASS } from '@/components/hintBubbleStyle'
@@ -479,7 +479,6 @@ export default function MapPage() {
                     else navigate(marketRoute('/map', selectedMarket))
                   }}
                 />
-                <PeriodDropdown />
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·누적/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
                     <span className={`${FONT_BAR_TIME} flex items-center gap-1.5 whitespace-nowrap ${isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}`}>
