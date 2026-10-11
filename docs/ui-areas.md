@@ -34,7 +34,6 @@
 | 페이지 | `MapPage` · `GroupPage` · `CustomPage` | Map · Group · Custom |
 | 상단 영역의 메뉴 줄 | `NavSubBar` | 메뉴 줄 |
 | 시장 선택 드롭다운 (Map·Group 공용) | `MarketDropdown` | 시장 드롭다운 |
-| 기간 선택 드롭다운 (Map·Group 공용) | `PeriodDropdown` | 기간 드롭다운 |
 | Custom 페이지의 업종·종목 전환 드롭다운 | `ModeDropdown` | 업종·종목 전환 드롭다운 |
 | 시계 옆 "● 메인 마켓" 표시 (프리 마켓 · 메인 마켓 · 애프터 마켓 · 마켓 종료) | `TradingSession`, `TradingSessionIndicator` | 거래 세션 |
 | 종가 / 일간(누적) / 시간외(별도) 등락률 전환 스위치 | `ChangeRateChoice`, `ChangeRateMode`, `ChangeRateModeToggle` | 애프터 버튼 · 애프터 토글 (종가/누적/별도 세 칸) |
