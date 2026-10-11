@@ -395,7 +395,7 @@ function CursorHintBubble({ hint, children }: { hint: CursorHint; children: Reac
   )
 }
 
-// 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 단계(2-1)보다 깊거나 분류에 없는 단계는 비활성이고,
+// 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 깊이(2-1)보다 깊거나 분류에 없는 단계는 비활성이고,
 // 올리거나 누르면 이유를 커서 옆 말풍선으로 알려준다.
 function DepthTextSelect({
   depth,
@@ -460,7 +460,7 @@ function DepthTextSelect({
           {noDataLimited ? (
             <>현재 {blockedLabel} 데이터가 없어<br />비활성화되어 있습니다.</>
           ) : (
-            <><span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 단계</span>에서<br />더 깊은 업종 단계를 선택하면<br />활성화됩니다.</>
+            <><span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span>에서<br />더 깊은 업종 단계를 선택하면<br />활성화됩니다.</>
           )}
         </CursorHintBubble>
       )}
@@ -878,6 +878,37 @@ export function SettingsSectorStockScopeSection({
             />
           </span>
         </span>
+      </div>
+    </div>
+  )
+}
+
+// 그룹 페이지 "업종 분류 단계" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다.
+// 분류 자체에 하위 단계가 없으면(거래소 분류 KRX·NXT) 대분류만 고를 수 있다. 저장된 값은 건드리지 않고 화면에서만 막는다.
+export function SettingsGroupDepthSection({
+  depth,
+  onChange,
+  selectableDepth,
+}: {
+  depth: number
+  onChange: (depth: number) => void
+  selectableDepth: number
+}) {
+  return (
+    <div className="settings-first-depth-level text-sm">
+      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-white">
+        <span className="settings-plain-title">업종 분류 단계</span>
+      </span>
+      <SettingDescription>그래프에 표시할 업종 분류의 단계</SettingDescription>
+      <div className="settings-slider-control mt-[18px]">
+        <SingleValueSlider
+          index={Math.min(depth, selectableDepth) - 1}
+          labels={DEPTH_LABELS}
+          ariaLabel="그래프 업종 분류 단계"
+          onChange={index => onChange(index + 1)}
+          maxSelectableIndex={selectableDepth - 1}
+          blockedReason={label => <>현재 {label} 데이터가 없어<br />비활성화되어 있습니다.</>}
+        />
       </div>
     </div>
   )
@@ -1328,7 +1359,7 @@ export function SettingsSectorLevelSection({
   ]
   if (inBookmarkTab && bookmarkableIds.every(hideItem)) return null
   const depthMetricRangeDisabledReason = !sectorLevelEnabled
-    ? <><span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 단계</span> 토글을 켜면<br />활성화됩니다.</>
+    ? <><span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.</>
     : !depthMetricEnabled
       ? <><span className="inline-block whitespace-nowrap font-bold">2-2) 표시 지표</span> 토글을 켜면<br />활성화됩니다.</>
       : null
@@ -1340,12 +1371,12 @@ export function SettingsSectorLevelSection({
           <div className={`settings-first-depth-level text-sm ${itemClass('depthLevel')}`}>
             <div className="flex max-w-[16rem] items-center justify-between">
               <span className="flex items-center text-left text-white">
-                <SettingTitle bookmarkId="depthLevel" className="text-[15px]">업종 분류 단계</SettingTitle>
+                <SettingTitle bookmarkId="depthLevel" className="text-[15px]">업종 분류 깊이</SettingTitle>
               </span>
               <ToggleSwitch
                 checked={sectorLevelEnabled}
                 onChange={onToggleSectorLevel}
-                label="업종 분류 단계 사용"
+                label="업종 분류 깊이 사용"
                 hideLabel
                 compact
               />
@@ -1355,7 +1386,7 @@ export function SettingsSectorLevelSection({
               <SingleValueSlider
                 index={depthValue - 1}
                 labels={depthMetricLabels}
-                ariaLabel="업종 분류 단계"
+                ariaLabel="업종 분류 깊이"
                 onChange={index => onChangeMaxDepth(index + 1)}
                 disabled={!sectorLevelEnabled}
                 maxSelectableIndex={selectableDepth - 1}
@@ -1418,7 +1449,7 @@ export function SettingsSectorLevelSection({
             )}
             {isDepthMetricDisabled && depthMetricSectionHint && (
               <CursorHintBubble hint={depthMetricSectionHint}>
-                <span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 단계</span> 토글을 켜면<br />활성화됩니다.
+                <span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.
               </CursorHintBubble>
             )}
           </div>
@@ -1441,7 +1472,7 @@ export function SettingsSectorLevelSection({
                 minAriaLabel="최소 표시 뎁스"
                 maxAriaLabel="최대 표시 뎁스"
                 maxSelectableIndex={depthMetricMaxSelectableIndex}
-                limitReason={<><span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 단계</span>에서<br />더 깊은 업종 단계를 선택하면<br />활성화됩니다.</>}
+                limitReason={<><span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span>에서<br />더 깊은 업종 단계를 선택하면<br />활성화됩니다.</>}
                 disabledReason={depthMetricRangeDisabledReason}
                 onChange={onChangeDepthMetricRange}
                 disabled={isDepthMetricRangeDisabled}
@@ -1499,7 +1530,7 @@ export function SettingsSectorLevelSection({
               )}
               {isTopPickDisabled && topPickSectionHint && (
                 <CursorHintBubble hint={topPickSectionHint}>
-                  <span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 단계</span> 토글을 켜면<br />활성화됩니다.
+                  <span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.
                 </CursorHintBubble>
               )}
             </div>

@@ -11,6 +11,8 @@ export interface RankColumnItem {
   sectorName: string
   value: number
   isReference?: boolean
+  // 추려서 보여줄 때 상위·하위 사이에 들어가는 "… 외 N개" 칸 — 막대와 숫자가 없고 누를 수 없다.
+  hiddenCount?: number
 }
 
 export interface RankColumnsChart {
@@ -101,6 +103,13 @@ export default function RankColumns({
         <div className="relative h-full w-full">
           <div className="absolute inset-0 grid" style={columnsStyle}>
             {items.map(item => {
+              if (item.hiddenCount !== undefined) {
+                return (
+                  <div key={item.key} className="relative h-full min-w-0">
+                    <span aria-hidden="true" className="absolute bottom-0 left-1/2 -translate-x-1/2 font-bold leading-none text-gray-400">⋯</span>
+                  </div>
+                )
+              }
               const heightPercent = (Math.abs(item.value) / axisMax) * 100
               return (
                 <div key={item.key} className="relative h-full min-w-0" style={{ containerType: 'inline-size' }}>
@@ -125,12 +134,12 @@ export default function RankColumns({
       <div className="relative shrink-0 border-t border-white/25" style={{ height: NAME_BAND_HEIGHT }}>
         <div className="absolute inset-0 grid" style={columnsStyle}>
           {items.map(item => {
-            const selectable = onSelectSector !== undefined && !item.isReference
+            const selectable = onSelectSector !== undefined && !item.isReference && item.hiddenCount === undefined
             const nameClassName = 'absolute left-1/2 top-1.5 w-max max-w-[145px] truncate whitespace-nowrap px-1 text-right font-medium'
             const nameStyle = {
               transform: 'translateX(-100%) rotate(-45deg)',
               transformOrigin: 'top right',
-              color: item.isReference ? highlightColor : '#ffffff',
+              color: item.isReference ? highlightColor : item.hiddenCount !== undefined ? '#9ca3af' : '#ffffff',
             }
             return (
               <div key={item.key} className="relative min-w-0">
@@ -145,7 +154,7 @@ export default function RankColumns({
                     {item.sectorName}
                   </button>
                 ) : (
-                  <span className={nameClassName} style={nameStyle} title={item.sectorName}>{item.sectorName}</span>
+                  <span className={nameClassName} style={nameStyle} title={item.sectorName}>{item.hiddenCount !== undefined ? `외 ${item.hiddenCount}개` : item.sectorName}</span>
                 )}
               </div>
             )
