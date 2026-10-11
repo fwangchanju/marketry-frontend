@@ -43,6 +43,7 @@ import { CAPTURE_ID } from '@/utils/captureIds'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/MarketMapIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import ClosingPriceLabel from '@/components/ClosingPriceLabel'
+import RangeCompareLabel from '@/components/RangeCompareLabel'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
@@ -171,6 +172,10 @@ export default function MapPage() {
     data,
     liveSnapshotTime,
     onChangePinnedSnapshotTime,
+    onSelectRange,
+    rangeStartTime,
+    rangeBaseDate,
+    rangeExcludedStockCount,
     pinnedSnapshotTime,
     refetchMarketMap,
     isRefetchingMarketMap,
@@ -485,11 +490,17 @@ export default function MapPage() {
                     viewedSnapshotTime={data?.snapshotTime ?? null}
                     liveSnapshotTime={liveSnapshotTime}
                     onSelectSnapshotTime={onChangePinnedSnapshotTime}
+                    onSelectRange={onSelectRange}
+                    rangeStartTime={rangeStartTime}
                     isPast={isPastSnapshot}
                   >
-                    <span className={data?.snapshotTime ? undefined : 'invisible'}>{toMarketMapSnapshotDateLabel(data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}</span>
+                    <span className={data?.snapshotTime ? undefined : 'invisible'}>
+                      {toMarketMapSnapshotDateLabel((rangeStartTime && rangeBaseDate ? `${rangeBaseDate}T15:35:00` : rangeStartTime) ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
+                    </span>
                   </SnapshotDatePicker>
-                  {isPastSnapshot && <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />}
+                  {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
+                    ? <RangeCompareLabel market={market} isBaseClose={rangeBaseDate !== null} startSnapshotTime={rangeStartTime} endSnapshotTime={pinnedSnapshotTime} excludedStockCount={rangeExcludedStockCount} />
+                    : <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />)}
                   {isPastSnapshot === false && (
                     <>
                       <ClockIcon className="-mr-0.5 h-[15px] w-[15px] shrink-0" aria-hidden />

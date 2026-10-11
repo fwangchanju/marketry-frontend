@@ -13,7 +13,7 @@ import { usePageSetting } from './usePageSetting'
 import { useRouteAwareMarket } from './useRouteAwareMarket'
 import { useIsLoggedIn, useSession } from './useSession'
 import { useLoginGate } from './useLoginGate'
-import { useMarketMap, useMarketMapSnapshotDays } from './useMarketMap'
+import { useMarketMap, useMarketMapSnapshotDays, usePreviousTradingDay } from './useMarketMap'
 import { useMarketMapColorScale } from './useMarketMapColorScale'
 import {
   useCreateCustomScaleThreshold as useCreateMarketMapScaleThreshold,
@@ -36,7 +36,8 @@ import {
   type ColorScaleThreshold,
 } from '@/utils/marketMapColorScale'
 import { withStableSectorIds } from '@/utils/guestSectorIds'
-import type { MarketMapSectorNode, MarketQuery } from '@/types/api'
+import type { MarketMapResponse, MarketMapSectorNode, MarketQuery } from '@/types/api'
+import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
 
 // 조회 실패/로딩 중이거나 "색상 커스텀 사용"이 꺼져있을 때 쓰는 폴백 — thresholds가 비어있으면 어차피
 // 기본 프리셋으로 귀결된다(resolveMarketMapColor/resolveLegendSwatches 참고).
@@ -244,8 +245,18 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 달력에서 지난 날짜를 골랐을 때의 종가 스냅샷 시각 — 없으면 실시간(최신). 마켓을 바꾸면 그 마켓에 같은 시각이 있다고 보장할 수 없어 풀린다.
   const [pinnedSnapshot, setPinnedSnapshot] = useState<{ market: MarketQuery; snapshotTime: string } | null>(null)
   const pinnedSnapshotTime = pinnedSnapshot?.market === market ? pinnedSnapshot.snapshotTime : undefined
-  const onChangePinnedSnapshotTime = (snapshotTime: string | null) =>
+  // 기간 등락률 — 달력에서 시작일~끝일을 골랐을 때의 시작일 종가 스냅샷 시각. 끝일은 위 pinnedSnapshot이 그대로 맡는다(끝일 종가 지도).
+  // 날짜 하나를 고르거나 실시간으로 돌아가면 풀린다.
+  const [rangeStart, setRangeStart] = useState<{ market: MarketQuery; snapshotTime: string } | null>(null)
+  const onChangePinnedSnapshotTime = (snapshotTime: string | null) => {
     setPinnedSnapshot(snapshotTime === null ? null : { market, snapshotTime })
+    setRangeStart(null)
+  }
+  const onSelectRange = (startSnapshotTime: string, endSnapshotTime: string) => {
+    setPinnedSnapshot({ market, snapshotTime: endSnapshotTime })
+    setRangeStart({ market, snapshotTime: startSnapshotTime })
+  }
+  const rangeStartTime = rangeStart?.market === market && pinnedSnapshotTime !== undefined ? rangeStart.snapshotTime : undefined
   // 달력이 "오늘(실시간)"을 알아보려면 지난 날짜를 보는 동안에도 최신 스냅샷 시각을 기억해야 한다.
   const [liveSnapshotTime, setLiveSnapshotTime] = useState<string | null>(null)
 
@@ -265,17 +276,50 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const isCloseUnavailable = wantsClose && (isCloseDaysSuccess || isCloseDaysError) && !isCloseActive
 
   const {
-    data,
-    isLoading: isMarketMapLoading,
-    isError,
-    isSuccess: isMarketMapSuccess,
+    data: snapshotData,
+    isLoading: isSnapshotLoading,
+    isError: isSnapshotError,
+    isSuccess: isSnapshotSuccess,
     isRefetching: isRefetchingMarketMap,
-    refetch: refetchMarketMap,
+    refetch: refetchSnapshot,
   } = useMarketMap(market, source, nxtOnly, {
     enabled: needsTree && !isWaitingForSession,
     basis: requestedBasis,
     snapshotTime: pinnedSnapshotTime ?? closeSnapshotTime,
   })
+  // 기간 등락률 — 시작일 종가 지도를 따로 받아, 끝일 지도(snapshotData)의 종목마다 시작일 하루 전 종가 대비 등락률로 바꾼다.
+  const isRangeActive = rangeStartTime !== undefined
+  // 기준은 시작일 1거래일 전의 종가다 — 그 거래일의 종가 지도에서 종가를 가져온다. 앞선 거래일을 못 찾으면(맨 처음 날짜) 시작일 지도의 전일종가로 대신한다.
+  const rangePreviousDay = usePreviousTradingDay(market, rangeStartTime?.slice(0, 10) ?? null, { enabled: isRangeActive })
+  const rangeBaseSnapshotTime = rangePreviousDay === undefined ? undefined : (rangePreviousDay?.snapshotTime ?? rangeStartTime)
+  const rangeBaseKind = rangePreviousDay ? 'close' : 'previousClose'
+  const rangeBaseDate = rangePreviousDay?.date ?? null
+  const {
+    data: rangeStartData,
+    isLoading: isRangeStartLoading,
+    isError: isRangeStartError,
+    refetch: refetchRangeStart,
+  } = useMarketMap(market, source, nxtOnly, {
+    enabled: needsTree && !isWaitingForSession && isRangeActive && rangeBaseSnapshotTime !== undefined,
+    snapshotTime: rangeBaseSnapshotTime,
+  })
+  const rangeResult = useMemo(
+    () => (snapshotData && rangeStartData ? buildRangeChangeRateTree(snapshotData.items, rangeStartData.items, rangeBaseKind) : null),
+    [snapshotData, rangeStartData, rangeBaseKind],
+  )
+  // 기간 등락률을 보는 동안 두 지도가 다 오기 전에는 값이 없다 — 끝일 지도 그대로의(하루치) 등락률을 기간 값처럼 보여 주지 않는다.
+  const data: MarketMapResponse | undefined = useMemo(
+    () => (isRangeActive ? (rangeResult && snapshotData ? { ...snapshotData, items: rangeResult.items } : undefined) : snapshotData),
+    [isRangeActive, rangeResult, snapshotData],
+  )
+  const rangeExcludedStockCount = rangeResult?.excludedStockCount ?? 0
+  const isMarketMapLoading = isSnapshotLoading || (isRangeActive && (rangePreviousDay === undefined || isRangeStartLoading))
+  const isError = isSnapshotError || (isRangeActive && isRangeStartError)
+  const isMarketMapSuccess = isSnapshotSuccess && (!isRangeActive || rangeResult !== null)
+  const refetchMarketMap = () => {
+    void refetchSnapshot()
+    if (isRangeActive) void refetchRangeStart()
+  }
   const dataSnapshotTime = data?.snapshotTime
   // 종가 시각 목록을 기다리는 동안은 지도가 그대로라 아무 변화가 없어 보이므로, 이때부터 "불러오는 중" 화면을 띄운다.
   const isCloseWaiting = wantsClose && !isCloseActive && !isCloseUnavailable
@@ -774,6 +818,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     pinnedSnapshotTime,
     liveSnapshotTime,
     onChangePinnedSnapshotTime,
+    onSelectRange,
+    rangeStartTime,
+    rangeBaseDate,
+    rangeExcludedStockCount,
     refetchMarketMap,
     isRefetchingMarketMap,
     isLoading: isMarketMapLoading || isWaitingForSession || isCloseWaiting,
