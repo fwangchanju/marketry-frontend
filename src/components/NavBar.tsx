@@ -78,8 +78,9 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   }, [isProfileMenuOpen])
 
   // 계정 메뉴가 열려 있는 동안만 헤더를 아래 줄(아이콘 줄, z-30)보다 위에 둔다 — 안 그러면 메뉴 위쪽이 그 줄에 가려진다.
+// 메뉴가 열려 있는 동안은 헤더 배경을 위쪽 53px만 칠한다 — 헤더(64px)가 아래 메뉴 줄의 글자 윗부분(53px부터 시작)을 덮어서 글자가 잘려 보이던 것을 막는다. 그 아래 구간은 메뉴 줄 자신의 배경(같은 색)이 칠한다.
   return (
-    <header className={`sticky top-0 ${isProfileMenuOpen ? 'z-40' : 'z-20'} flex h-16 items-center justify-between bg-zinc-900 px-4`}>
+    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40 bg-[linear-gradient(to_bottom,#18181b_53px,transparent_53px)]' : 'z-20 bg-zinc-900'}`}>
       <Link
         to="/"
         aria-label="홈으로 이동: 지도 전체 종목"
