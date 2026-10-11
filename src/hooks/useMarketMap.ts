@@ -24,11 +24,12 @@ export function useMarketMap(
 }
 
 // 달력에 표시할 날짜 목록(그 달에 종가 지도가 있는 날). 달력을 열 때만 조회한다.
-export function useMarketMapSnapshotDays(market: MarketQuery, month: string, options?: { enabled?: boolean }) {
+export function useMarketMapSnapshotDays(market: MarketQuery, month: string, options?: { enabled?: boolean; retry?: number | false }) {
   return useQuery({
     queryKey: marketMapKeys.snapshotDays(market, month),
     queryFn: () => getMarketMapSnapshotDays(market, month),
     enabled: options?.enabled ?? true,
+    ...(options?.retry === undefined ? {} : { retry: options.retry }),
     ...MARKET_DATA_CACHE,
   })
 }

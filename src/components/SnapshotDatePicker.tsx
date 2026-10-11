@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/MarketMapIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useMarketMapSnapshotDays } from '@/hooks/useMarketMap'
+import Spinner from '@/components/Spinner'
 import type { MarketQuery } from '@/types/api'
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -42,7 +43,8 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
 
   const shownMonth = movedMonth ?? (anchorDate ? toShownMonth(anchorDate) : toShownMonth(new Date().toISOString()))
   const monthKey = toMonthKey(shownMonth)
-  const { data: days, isLoading } = useMarketMapSnapshotDays(market, monthKey, { enabled: isOpen })
+  // 서버 오류가 계속되면 기본 재시도(3회)가 달력을 30초 넘게 기다리게 하므로 1번만 다시 시도하고, 그 뒤에는 "다시 시도"로 받는다.
+  const { data: days, isLoading, isError, refetch } = useMarketMapSnapshotDays(market, monthKey, { enabled: isOpen, retry: 1 })
   const closingTimeByDate = new Map((days ?? []).map(day => [day.date, day.snapshotTime]))
 
   useEffect(() => {
@@ -126,14 +128,20 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
               <span key={label} className="py-1">{label}</span>
             ))}
           </div>
-          <div className="grid grid-cols-7 text-center font-roboto-latin tabular-nums">
+          <div className="relative">
+          {isLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#202020]/80">
+              <Spinner showElapsed className="h-44 w-44" />
+            </div>
+          )}
+          <div className={`grid grid-cols-7 text-center font-roboto-latin tabular-nums ${isLoading ? 'opacity-30' : ''}`} aria-busy={isLoading}>
             {cells.map((day, index) => {
               if (day === null) return <span key={`blank-${index}`} />
               const date = `${monthKey}-${String(day).padStart(2, '0')}`
               const isSelectable = date === liveDate || closingTimeByDate.has(date)
               const isSelected = date === anchorDate
               // 이미 지나간 날인데 지도가 없는 날(주말·휴장일 등)은 빨간 숫자로 알린다. 불러오는 중이거나 아직 오지 않은 날은 회색 그대로.
-              const isMissing = isSelectable === false && isLoading === false && liveDate !== null && date <= liveDate
+              const isMissing = isSelectable === false && isLoading === false && isError === false && liveDate !== null && date <= liveDate
               return (
                 <button
                   key={date}
@@ -154,8 +162,18 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
               )
             })}
           </div>
+          </div>
           <div className="mt-1 flex items-center justify-between border-t border-[#555] pt-2 text-xs text-gray-400">
-            <span>{isLoading ? '불러오는 중…' : '종가 지도'}</span>
+            {isError ? (
+              <span className="flex items-center gap-1.5">
+                불러오지 못했습니다
+                <button type="button" onClick={() => void refetch()} className="border-0 bg-transparent p-0 text-[var(--accent)] hover:underline">
+                  다시 시도
+                </button>
+              </span>
+            ) : (
+              <span>종가 지도</span>
+            )}
             {liveDate !== null && liveDate !== anchorDate && (
               <button
                 type="button"

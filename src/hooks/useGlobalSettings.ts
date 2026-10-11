@@ -253,10 +253,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 실시간 날짜는 한 번이라도 실시간 지도를 받아야 알 수 있어서, 처음 한 번은 실시간 지도를 받고 그 뒤에 종가로 옮겨 간다.
   const wantsClose = requestedChoice === 'close' && pinnedSnapshotTime === undefined
   const liveDate = liveSnapshotTime?.slice(0, 10)
-  const { data: closeDays, isSuccess: isCloseDaysSuccess, isError: isCloseDaysError } = useMarketMapSnapshotDays(
+  const { data: closeDays, isSuccess: isCloseDaysSuccess, isError: isCloseDaysError, refetch: refetchCloseDays } = useMarketMapSnapshotDays(
     market,
     liveDate?.slice(0, 7) ?? '',
-    { enabled: wantsClose && liveDate !== undefined },
+    // 서버 오류가 계속되면 기본 재시도(3회, 30초 넘게)가 "불러오는 중"을 너무 오래 잡으므로 재시도하지 않고, 다시 시도는 종가 버튼으로 받는다.
+    { enabled: wantsClose && liveDate !== undefined, retry: false },
   )
   const closeSnapshotTime = wantsClose ? closeDays?.find(day => day.date === liveDate)?.snapshotTime : undefined
   const isCloseActive = closeSnapshotTime !== undefined
@@ -763,7 +764,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     changeRateChoice,
     isAfterHoursControlsVisible,
     isAfterHoursSelectable,
-    onChangeChangeRateMode: setStoredChangeRateChoice,
+    // 종가 시각 목록 조회가 실패해 누적으로 보이는 중에는 저장된 선택이 이미 종가라 값이 안 바뀌므로, 종가 버튼이 다시 조회한다.
+    onChangeChangeRateMode: (choice: ChangeRateChoice) => {
+      setStoredChangeRateChoice(choice)
+      if (choice === 'close' && isCloseDaysError) void refetchCloseDays()
+    },
     taxonomy,
     data,
     pinnedSnapshotTime,
