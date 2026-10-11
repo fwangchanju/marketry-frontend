@@ -3,12 +3,20 @@ import { getMarketMap, type ChangeRateMode } from '@/api/marketMap'
 import { marketMapKeys } from './queryKeys'
 import { subtractMinutesFromSnapshotTime } from '@/utils/snapshotTime'
 import { isAfterHoursSelectable } from '@/utils/tradingWindow'
-import type { MarketMapResponse, MarketQuery } from '@/types/api'
+import type { Market, MarketMapResponse, MarketQuery } from '@/types/api'
 import type { TaxonomySource } from '@/utils/taxonomyNames'
+
+type MarketOverview = NonNullable<MarketMapResponse['marketOverview']>
+
+export interface MarketIndexPair {
+  now: MarketOverview
+  before: MarketOverview | null
+}
 
 export interface SectorMarketMapPair {
   now: MarketMapResponse
   before: MarketMapResponse | null
+  marketIndexes: MarketIndexPair[]
 }
 
 // before로 인정하는 조건(marketry-backend 지시서 결정 4) — 아래 셋을 전부 만족해야 한다.
@@ -19,6 +27,29 @@ export interface SectorMarketMapPair {
 //   돌려주므로 여기서 걸러진다 — 그걸 before로 쓰면 now와 같아져 변화율이 전부 0으로 보인다.
 function isValidBefore(response: MarketMapResponse, requestedSnapshotTime: string): boolean {
   return response.snapshotTime !== null && response.snapshotTime === requestedSnapshotTime
+}
+
+// ALL STOCK에도 두 지수를 표시한다. 최신 지수가 아니라 업종과 같은 스냅샷을 요청한다.
+async function getMarketIndexPair(
+  market: Market,
+  nowSnapshotTime: string,
+  beforeSnapshotTime: string,
+): Promise<MarketIndexPair | null> {
+  const [nowResponse, beforeResponse] = await Promise.all([
+    getMarketMap(market, 'KRX', nowSnapshotTime),
+    getMarketMap(market, 'KRX', beforeSnapshotTime),
+  ])
+  const nowOverview = nowResponse.marketOverview
+  if (!isValidBefore(nowResponse, nowSnapshotTime) || nowOverview?.market !== market || nowOverview.snapshotTime !== nowSnapshotTime) {
+    return null
+  }
+  const beforeOverview = beforeResponse.marketOverview
+  return {
+    now: nowOverview,
+    before: isValidBefore(beforeResponse, beforeSnapshotTime) && beforeOverview?.market === market && beforeOverview.snapshotTime === beforeSnapshotTime
+      ? beforeOverview
+      : null,
+  }
 }
 
 /**
@@ -59,12 +90,21 @@ export function useSectorMarketMapPair(
       if (basis === 'afterHours' && (
         !isAfterHoursSelectable(beforeSnapshotTime, now.afterHoursStart) || beforeSnapshotTime.slice(0, 10) !== now.snapshotTime.slice(0, 10)
       )) {
-        return { now, before: null }
+        return { now, before: null, marketIndexes: [] }
       }
-      const beforeResponse = await getMarketMap(market, source, beforeSnapshotTime, nxtOnly, basis)
+      const [beforeResponse, indexPairs] = await Promise.all([
+        getMarketMap(market, source, beforeSnapshotTime, nxtOnly, basis),
+        market === 'ALL_STOCK' && basis === 'daily'
+          ? Promise.all([
+            getMarketIndexPair('KOSPI', now.snapshotTime, beforeSnapshotTime),
+            getMarketIndexPair('KOSDAQ', now.snapshotTime, beforeSnapshotTime),
+          ])
+          : Promise.resolve<(MarketIndexPair | null)[]>([]),
+      ])
       return {
         now,
         before: isValidBefore(beforeResponse, beforeSnapshotTime) ? beforeResponse : null,
+        marketIndexes: indexPairs.filter((pair): pair is MarketIndexPair => pair !== null),
       }
     },
     enabled: enabled && nowSnapshotTime !== null,

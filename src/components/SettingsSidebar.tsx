@@ -886,9 +886,15 @@ export function SettingsSectorStockScopeSection({
 export function SettingsAverageModeSection({
   avgChangeRateUseSimple,
   onChange,
+  enabled,
+  onToggle,
+  toggleDisabled = false,
 }: {
   avgChangeRateUseSimple: boolean
   onChange: (useSimple: boolean) => void
+  enabled: boolean
+  onToggle: () => void
+  toggleDisabled?: boolean
 }) {
   const options = [
     { value: false, label: '시총 가중' },
@@ -896,29 +902,33 @@ export function SettingsAverageModeSection({
   ]
   return (
     <div className="settings-first-depth-level text-sm">
-      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-white">
-        <span className="settings-plain-title">등락률 기준</span>
-      </span>
-      <SettingDescription>업종 등락률 계산 기준</SettingDescription>
-      <div role="radiogroup" aria-label="등락률 기준" className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 rounded-md border border-gray-600 bg-zinc-700 p-0.5">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded bg-[var(--accent)]" />
-        {options.map(option => {
-          const selected = avgChangeRateUseSimple === option.value
-          return (
-            <button
-              key={option.label}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => onChange(option.value)}
-              className={`relative z-10 min-h-9 rounded border-0 bg-transparent px-1 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                selected ? 'text-black' : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              {option.label}
-            </button>
-          )
-        })}
+      <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
+        <span className={`settings-plain-title ${enabled ? 'text-white' : 'text-gray-500'}`}>등락률 기준</span>
+        <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
+      </div>
+      <div className={enabled ? '' : 'opacity-40'}>
+        <SettingDescription>업종 등락률 계산 기준</SettingDescription>
+        <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 rounded-md border border-gray-600 bg-zinc-700 p-0.5">
+          <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded bg-[var(--accent)]" />
+          {options.map(option => {
+            const selected = avgChangeRateUseSimple === option.value
+            return (
+              <button
+                key={option.label}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => onChange(option.value)}
+                disabled={!enabled}
+                className={`relative z-10 min-h-9 rounded border-0 bg-transparent px-1 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+                  selected ? 'text-black' : 'text-gray-300 hover:text-white'
+                }`}
+              >
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
@@ -930,9 +940,15 @@ const BEFORE_MINUTES_OPTIONS = [15, 30, 60, 120]
 export function SettingsBeforeMinutesSection({
   beforeMinutes,
   onChange,
+  enabled,
+  onToggle,
+  disabled = false,
 }: {
   beforeMinutes: number
   onChange: (minutes: number) => void
+  enabled: boolean
+  onToggle: () => void
+  disabled?: boolean
 }) {
   // URL 파라미터로 옵션에 없는 값(예: 10)이 들어와도 슬라이더는 가장 가까운 칸을 가리킨다.
   const index = BEFORE_MINUTES_OPTIONS.reduce(
@@ -942,17 +958,24 @@ export function SettingsBeforeMinutesSection({
   )
   return (
     <div className="settings-second-depth-metric relative mt-6 text-sm">
-      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-white">
-        <span className="settings-plain-title">비교 시점</span>
-      </span>
-      <SettingDescription>현재 등락률과 비교할 시점</SettingDescription>
-      <div className="settings-slider-control mt-[18px]">
-        <SingleValueSlider
-          index={index}
-          labels={BEFORE_MINUTES_OPTIONS.map(minutes => `${minutes}분`)}
-          ariaLabel="비교 시점(분 전)"
-          onChange={i => onChange(BEFORE_MINUTES_OPTIONS[i])}
-        />
+      <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
+        <span className={`flex items-center gap-1 ${enabled ? 'text-white' : 'text-gray-500'}`}>
+          <span className="settings-plain-title">비교 시점</span>
+          {disabled && <SettingHelpBubble label="비교 시점" description="기간 등락률을 보는 동안에는 N분 전 대비를 사용할 수 없습니다." />}
+        </span>
+        <ToggleSwitch checked={enabled} onChange={onToggle} label="비교 그래프" hideLabel disabled={disabled} />
+      </div>
+      <div className={enabled ? '' : 'opacity-40'}>
+        <SettingDescription>현재 등락률과 비교할 시점</SettingDescription>
+        <div className="settings-slider-control mt-[18px]">
+          <SingleValueSlider
+            index={index}
+            labels={BEFORE_MINUTES_OPTIONS.map(minutes => `${minutes}분`)}
+            ariaLabel="비교 시점(분 전)"
+            onChange={i => onChange(BEFORE_MINUTES_OPTIONS[i])}
+            disabled={disabled || !enabled}
+          />
+        </div>
       </div>
     </div>
   )
