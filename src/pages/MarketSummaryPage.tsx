@@ -8,6 +8,7 @@ import { CaptureIcon } from '@/components/icons/MarketMapIcons'
 import SettingsSidebar, { SettingsGroupDepthSection } from '@/components/SettingsSidebar'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
+import Spinner from '@/components/Spinner'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -34,7 +35,7 @@ export default function MarketSummaryPage() {
   const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
-  const { settingsModalProps, data, market, isLoading, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers } = useGlobalSettings()
+  const { settingsModalProps, data, market, isLoading, isError, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers } = useGlobalSettings()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsSidebarSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
@@ -136,7 +137,15 @@ export default function MarketSummaryPage() {
                     <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
                     {frame.title}
                   </h2>
-                  {isLoading ? <div className="flex-1" /> : frame.body}
+                  {isLoading ? (
+                    <div className="flex flex-1 items-center justify-center">
+                      <Spinner showElapsed />
+                    </div>
+                  ) : isError ? (
+                    <div className="flex flex-1 items-center justify-center">
+                      <Spinner errorMessage="데이터를 불러오지 못했습니다." />
+                    </div>
+                  ) : frame.body}
                 </div>
                 <button
                   type="button"

@@ -69,7 +69,7 @@ export default function OverviewMap({
           <button
             key={item.key}
             type="button"
-            title={item.name}
+            aria-label={item.name}
             onClick={() => onSelect?.(item.name)}
             className="absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight hover:brightness-125"
             style={{ left: x, top: y, width, height, backgroundColor: background, color: '#ffffff' }}
