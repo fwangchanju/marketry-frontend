@@ -8,6 +8,7 @@ import {
 } from '@/api/marketryPublish'
 import { marketMapKeys } from '@/hooks/queryKeys'
 import Spinner from '@/components/Spinner'
+import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 const BUTTON_CLASS =
@@ -33,6 +34,7 @@ export default function MarketryPublishControls() {
   // 올리거나 되돌리는 중이면 그 안내 문구, 아니면 null.
   const [busyMessage, setBusyMessage] = useState<string | null>(null)
   const isBusy = busyMessage !== null
+  const mainAreaRect = useMainAreaRect(isBusy)
   const [isVersionsOpen, setIsVersionsOpen] = useState(false)
   const [versions, setVersions] = useState<MarketryPublication[] | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -109,8 +111,14 @@ export default function MarketryPublishControls() {
       </button>
       {/* 올리거나 되돌리는 동안 화면 전체를 가리고 큰 로딩을 보여준다 — 오래 걸려도 "진행 중"임을 알 수 있고, 그 사이 다른 곳을 누르지 못한다. */}
       {isBusy && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70">
-          <Spinner showElapsed message={busyMessage} />
+        // 어두운 배경은 화면 전체를 덮고, 로딩 원은 메인 영역 안의 가운데에 놓는다.
+        <div className="fixed inset-0 z-[90] bg-black/70">
+          <div
+            className={`flex items-center justify-center ${mainAreaRect ? 'absolute' : 'h-full w-full'}`}
+            style={mainAreaRect ? { left: mainAreaRect.left, top: mainAreaRect.top, width: mainAreaRect.width, height: mainAreaRect.height } : undefined}
+          >
+            <Spinner showElapsed message={busyMessage} />
+          </div>
         </div>
       )}
       {isVersionsOpen && (

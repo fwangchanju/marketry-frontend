@@ -42,6 +42,8 @@ export function useSectorMarketMapPair(
   beforeMinutes: number,
   now: MarketMapResponse | undefined,
   basis: ChangeRateMode = 'daily',
+  // false면 before를 받지 않는다 — 기간 등락률을 볼 때는 "N분 전 대비"가 의미가 없어서 쓰지 않는다.
+  enabled = true,
 ) {
   const nowSnapshotTime = now?.snapshotTime ?? null
 
@@ -65,7 +67,7 @@ export function useSectorMarketMapPair(
         before: isValidBefore(beforeResponse, beforeSnapshotTime) ? beforeResponse : null,
       }
     },
-    enabled: nowSnapshotTime !== null,
+    enabled: enabled && nowSnapshotTime !== null,
     staleTime: Infinity,
     refetchInterval: false,
     retry: 1,

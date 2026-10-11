@@ -236,6 +236,7 @@ export default function CustomPage() {
               captureRef.current = node
               setEmptyMessageArea(node)
             }}
+            data-main-area
             className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white"
           >
             <div className="mt-[5.25px] mb-[5.25px] flex h-7 w-full shrink-0 items-center justify-between bg-black/70 pl-[7px] pr-[7px] text-sm font-bold text-white">

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { googleLoginUrl } from '@/api/auth'
+import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 
 interface Props {
   // 로그인 성공 후 백엔드가 돌려보낼 프론트 경로("/"로 시작). 로그인 팝업을 연 지점(메뉴 클릭,
@@ -14,6 +15,7 @@ interface Props {
 // 그대로 재사용한다 — 새 시각 스타일을 만들지 않는다. 강조 버튼도 기존 accent 토큰(노랑)만 쓰고
 // 등락률 전용인 red/blue 계열(--stock-up/--stock-down/--negative)은 쓰지 않는다.
 export default function LoginModal({ returnTo, hideMessage = false, onClose }: Props) {
+  const mainAreaRect = useMainAreaRect(true)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -26,7 +28,12 @@ export default function LoginModal({ returnTo, hideMessage = false, onClose }: P
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/70" onClick={onClose}>
+      {/* 어두운 배경은 화면 전체를 덮고, 창은 메인 영역 안의 가운데에 놓는다(메인 영역이 없는 화면에서는 화면 가운데). */}
+      <div
+        className={`flex items-center justify-center ${mainAreaRect ? 'absolute' : 'h-full w-full'}`}
+        style={mainAreaRect ? { left: mainAreaRect.left, top: mainAreaRect.top, width: mainAreaRect.width, height: mainAreaRect.height } : undefined}
+      >
       <div
         className="w-[calc(100%-2rem)] max-w-sm border border-gray-700 bg-[var(--surface)] p-6"
         onClick={e => e.stopPropagation()}
@@ -57,6 +64,7 @@ export default function LoginModal({ returnTo, hideMessage = false, onClose }: P
         <a href="/privacy" className="mt-4 block text-center text-xs text-gray-500 hover:text-gray-300">
           개인정보처리방침
         </a>
+      </div>
       </div>
     </div>
   )

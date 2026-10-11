@@ -1,9 +1,11 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { getCurrentAppDialog, resolveCurrentAppDialog, subscribeAppDialogs } from '@/utils/appDialogBus'
 import { HINT_BUBBLE_COLOR_CLASS } from './hintBubbleStyle'
+import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 
 export default function AppDialogHost() {
   const dialog = useSyncExternalStore(subscribeAppDialogs, getCurrentAppDialog, getCurrentAppDialog)
+  const mainAreaRect = useMainAreaRect(dialog !== null)
 
   useEffect(() => {
     if (!dialog) return
@@ -23,7 +25,12 @@ export default function AppDialogHost() {
 
   // 바깥(어두운 배경)을 눌러도 닫히지 않는다 — 반드시 버튼이나 Esc로 답해야 한다.
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4">
+    <div className="fixed inset-0 z-[100] bg-black/70">
+      {/* 어두운 배경은 화면 전체를 덮고, 창은 메인 영역 안의 가운데에 놓는다. */}
+      <div
+        className={`flex items-center justify-center p-4 ${mainAreaRect ? 'absolute' : 'h-full w-full'}`}
+        style={mainAreaRect ? { left: mainAreaRect.left, top: mainAreaRect.top, width: mainAreaRect.width, height: mainAreaRect.height } : undefined}
+      >
       <section
         role="alertdialog"
         aria-modal="true"
@@ -56,6 +63,7 @@ export default function AppDialogHost() {
           </button>
         </div>
       </section>
+      </div>
     </div>
   )
 }
