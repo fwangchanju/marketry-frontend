@@ -42,6 +42,7 @@ import { marketRoute } from '@/utils/marketRoute'
 import type { Market, MarketMapSectorNode } from '@/types/api'
 import RankColumns, { type RankColumnItem } from '@/components/RankColumns'
 import { buildRankChart } from '@/utils/rankChart'
+import { collectAtDepth } from '@/utils/sectorDepth'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
@@ -58,31 +59,6 @@ function sectorKey(sectorName: string): string {
 // 막대가 이 개수(지수 제외)까지는 전부 보여 주고, 넘으면 상위·하위 각 EDGE_COUNT개만 남기고 가운데를 "외 N개" 칸 하나로 줄인다.
 // 27은 거래소 대분류(27개)가 줄지 않는 값이다.
 const GROUP_DEPTH_NAMES = ['대분류', '중분류', '소분류']
-
-interface DepthEntry {
-  node: MarketMapSectorNode
-  // 같은 이름의 업종이 다른 대분류 밑에 또 있을 수 있어 위에서부터 이어 붙인 이름으로 구분한다.
-  pathKey: string
-}
-
-// 고른 깊이(1=대분류, 2=중분류, 3=소분류)의 업종을 모은다. 그 깊이에 닿기 전에 하위 업종이 끝나는 업종은 그대로 한 막대가 된다.
-// 제외한 업종은 그 밑까지 뺀다.
-function collectAtDepth(
-  nodes: MarketMapSectorNode[],
-  depth: number,
-  excludedSectorIds: Set<number>,
-  parentKey = '',
-  level = 1,
-): DepthEntry[] {
-  const entries: DepthEntry[] = []
-  for (const node of nodes) {
-    if (excludedSectorIds.has(node.sectorId)) continue
-    const pathKey = parentKey ? `${parentKey}>${node.sectorName}` : node.sectorName
-    if (level >= depth || node.children.length === 0) entries.push({ node, pathKey })
-    else entries.push(...collectAtDepth(node.children, depth, excludedSectorIds, pathKey, level + 1))
-  }
-  return entries
-}
 
 export default function GroupPage() {
   const navigate = useNavigate()

@@ -76,7 +76,7 @@ export default function OverviewMap({
           >
             {/* 이름은 줄이거나 숨기지 않고 전부 넣는다 — 박스보다 길면 `…` 없이 박스 가장자리에서 그대로 잘린다. */}
             <span className="max-w-full overflow-hidden whitespace-nowrap font-medium" style={{ fontSize: nameSize }}>{item.name}</span>
-            {showRate && <span style={{ fontSize: Math.max(12, Math.round(nameSize * 0.7)) }}>{toPctSigned(item.changeRate)}</span>}
+            {showRate && <span className="tabular-nums" style={{ fontSize: Math.max(12, Math.round(nameSize * 0.7)) }}>{toPctSigned(item.changeRate)}</span>}
           </button>
         )
       })}

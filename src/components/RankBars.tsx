@@ -66,7 +66,7 @@ export default function RankBars({
                     }}
                   />
                   <span
-                    className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1.5 font-bold"
+                    className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1.5 font-bold tabular-nums"
                     style={{
                       left: `calc((100% - ${VALUE_WIDTH}px) * ${Math.abs(item.value) / axisMax})`,
                       color: resolveMarketMapExtremeColor(item.value, colorScale),
