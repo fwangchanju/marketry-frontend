@@ -410,7 +410,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 선호 업종 라디오의 활성 상한은 업종 단계 설정을 따른다. 대/중/소분류 설정은 데이터가 얕아도
   // 미리 선택할 수 있게 두고, 현재 데이터에 해당 섹터가 없으면 강조 대상만 빈 Set으로 둔다.
   // 거래소(KRX·NXT) 분류는 대분류만 있어서, MARKETRY에서 중·소분류로 골라 둔 값은 저장은 그대로 두고
-  // 여기서만 대분류로 따라간다(1-1 업종 분류 단계와 같은 한계). MARKETRY로 돌아오면 원래 값이 살아난다.
+  // 여기서만 대분류로 따라간다(1-1 업종 분류 깊이와 같은 한계). MARKETRY로 돌아오면 원래 값이 살아난다.
   const taxonomyMaxDepth = usesCustomTree ? null : 1
   const topPickMaxSelectableDepth = Math.min(
     maxDepth === null ? Math.max(3, availableMaxDepth) : maxDepth,
