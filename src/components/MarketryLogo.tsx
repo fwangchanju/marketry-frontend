@@ -6,6 +6,7 @@ interface Props {
 }
 
 // 원본 PNG는 보관하고 슬로건 영역만 가린다. SVG 텍스트가 로고와 같은 비율로 확대·축소된다.
+// 슬로건 색은 로고의 MARKETRY 글자(원본 PNG의 약 #fdfdfd)와 같게 맞춘다.
 export default function MarketryLogo({ className }: Props) {
   const clipId = useId()
 
@@ -30,7 +31,7 @@ export default function MarketryLogo({ className }: Props) {
         dominantBaseline="text-before-edge"
         fontSize={117.36}
         fontWeight={500}
-        fill="#e5e7eb"
+        fill="#fdfdfd"
         className="font-roboto-latin"
       >
         Design Your Market
