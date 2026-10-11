@@ -127,7 +127,7 @@ export const marketValueTiers = [
   { id: 1, label: '소형주', thresholdValue: 0, isExcludedByDefault: true },
   { id: 2, label: '중형주', thresholdValue: 500_000_000_000, isExcludedByDefault: false },
   { id: 3, label: '대형주', thresholdValue: 5_000_000_000_000, isExcludedByDefault: false },
-  { id: 4, label: 'Top 2', thresholdValue: 200_000_000_000_000, isExcludedByDefault: false },
+  { id: 4, label: 'Top 2', thresholdValue: 500_000_000_000_000, isExcludedByDefault: false },
 ]
 
 // 섹터 7~18처럼 종목 상세가 중요하지 않은 자리에 대표 종목 하나만 채울 때 쓴다.
