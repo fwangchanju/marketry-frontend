@@ -1,5 +1,5 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
@@ -38,42 +38,24 @@ import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captu
 import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/utils/captureToDownload'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toMarketMapSnapshotDateLabel } from '@/utils/format'
 import { marketRoute } from '@/utils/marketRoute'
-import {
-  resolveMarketMapColor,
-  resolveMarketMapExtremeColor,
-  type ColorScaleConfig,
-} from '@/utils/marketMapColorScale'
 import type { Market, MarketMapSectorNode } from '@/types/api'
+import RankColumns, { type RankColumnItem, type RankColumnsChart } from '@/components/RankColumns'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
+type GroupGraphMode = 'current' | 'delta'
 
-
-// 지수 등락률 참조 막대에 붙는 한글 라벨 — ALL_STOCK은 단일 지수가 없어 대상에서 제외된다.
+// 지수 등락률 참조 막대에 붙는 한글 라벨 — ALL STOCK은 두 지수를 각각 표시한다.
 const MARKET_INDEX_LABEL_KO: Record<Market, string> = { KOSPI: '코스피', KOSDAQ: '코스닥' }
 // 지수 참조 막대 전용 React key — 섹터 이름(예: '코스피'라는 섹터가 실제로 있을 수 있다)과
 // 겹치지 않도록 일반 섹터 key(sectorKey)와 다른 접두사를 쓴다.
-const MARKET_INDEX_KEY = 'market-index'
 function sectorKey(sectorName: string): string {
   return `sector:${sectorName}`
 }
 
-interface RankedItem {
-  key: string
-  sectorName: string
-  value: number
-  // 지수 등락률 참조 막대 표시용 — 일반 섹터 막대와 색을 다르게 칠하는 데만 쓴다.
-  isReference?: boolean
-}
-
-interface RankChart {
-  rankedItems: RankedItem[]
-  axisMax: number
-}
-
 // (key, 값) 목록을 값 내림차순 랭킹 막대그래프 데이터로 변환한다 — "현재" 그래프/"변화율" 그래프 둘
 // 다 이 함수로 각각 독립적으로 정렬·스케일을 만든다(같은 포맷, 정렬 기준값만 다름).
-function buildRankChart(entries: RankedItem[]): RankChart {
+function buildRankChart(entries: RankColumnItem[]): RankColumnsChart {
   const rankedItems = [...entries].sort((a, b) => b.value - a.value)
 
   const rawMaxAbsValue = Math.max(1, ...rankedItems.map(item => Math.abs(item.value)))
@@ -81,92 +63,6 @@ function buildRankChart(entries: RankedItem[]): RankChart {
   const axisMax = Math.ceil(rawMaxAbsValue * 2) / 2
 
   return { rankedItems, axisMax }
-}
-
-// "현재" 그래프는 실제 등락률(%)이지만 "변화율" 그래프는 두 시점의 %끼리 뺀 차이(%p)라 단위가
-// 다르다 — 호출부가 unit을 넘겨서 값 표기에만 반영하고, 그 외 포맷(부호/소수점)은 동일하게 맞춘다.
-function toChartValueLabel(value: number, unit: string): string {
-  const sign = value > 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)}${unit}`
-}
-
-// 라벨 열은 내용에 맞춰(auto), 그래프 열은 남는 공간을 다 쓴다 — "현재"/"변화율" 그래프 둘 다 동일한
-// 포맷으로 그린다. header는 그래프(막대 트랙)와 같은 열(1fr)에 그려서, 그래프가 시작하는 위치와
-// header 텍스트가 시작하는 위치가 라벨 폭과 무관하게 항상 맞도록 한다.
-function RankBars({
-  chart,
-  highlightColor,
-  unit = '%',
-  colorScale,
-  onSelectSector,
-}: {
-  chart: RankChart
-  // 헤더 글자/기준 업종 이름·막대에 쓰는 강조 색 — 지도 설정의 "강조 색상"(strongIndustryColor) 그대로.
-  highlightColor: string
-  unit?: string
-  // 지도 페이지 트리맵 박스와 동일한 등락률 컬러 스케일(설정 사이드바의 "색상 설정") — 막대 색도
-  // 고정된 상승/하락 2색 대신 이 스케일로 칠한다.
-  colorScale: ColorScaleConfig
-  // 업종 이름이나 막대를 누르면 그 업종을 눌러 둔 지도 페이지로 이동한다. 지수 참조 막대는 업종이 아니라 대상에서 뺀다.
-  onSelectSector?: (sectorName: string) => void
-}) {
-  // 데이터가 비어도 헤더(페이지의 별도 헤더 줄)는 그대로 보이므로, 그 아래 빈 자리의 한가운데에 안내 문구를 크게 보여준다.
-  if (chart.rankedItems.length === 0) {
-    return (
-      <div className="relative h-full min-h-0 w-full flex-1">
-        <EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" />
-      </div>
-    )
-  }
-  return (
-    // min-h-0: flex 아이템 기본값(min-height:auto)을 눌러서 부모가 준 높이보다 작게도 줄어들 수 있게
-    // 한다(콘텐츠가 더 크면 그만큼 넘쳐서 조상의 overflow-y-auto가 스크롤 처리) — align-self:stretch
-    // (flex 기본값)로 실제 높이는 부모 flex 행 높이를 그대로 받는다. content-between으로 헤더 행은
-    // 맨 위에 붙이고 종목 행들 사이 간격만 넓혀서, 섹터 수가 적어도 컨테이너 높이를 채운다.
-    <div
-      className="grid h-full min-h-0 w-full flex-1 content-between items-center gap-x-3 gap-y-2 text-[16px]"
-      style={{ gridTemplateColumns: 'auto 1fr' }}
-    >
-      {chart.rankedItems.map(item => (
-        <Fragment key={item.key}>
-          {/* 눌러서 지도로 갈 수 있는 업종은 이름에만 반응한다 — 커서를 올리면 지도 설정창의 제외 업종 목록처럼 이름 칸이 연하게 밝아진다.
-              칸 폭은 이름 글자에 맞춰 늘고 줄며(justify-self-end), 좌우 8px 여백은 음수 마진으로 상쇄해 칸 위치는 그대로 둔다. */}
-          <span
-            className={`-mx-2 inline-flex h-[25px] items-center justify-self-end whitespace-nowrap px-2 text-right font-medium ${onSelectSector && !item.isReference ? 'cursor-pointer transition-colors hover:bg-white/35' : ''}`}
-            style={item.isReference ? { color: highlightColor } : undefined}
-            onClick={onSelectSector && !item.isReference ? () => onSelectSector(item.sectorName) : undefined}
-          >
-            {item.sectorName}
-          </span>
-          {/* 퍼센트 텍스트를 막대 트랙(flex-1) 안에 막대 끝 위치(left: pct%)로 떠 있게 배치한다 —
-              막대가 길어질수록 텍스트도 같이 따라간다. 오른쪽 w-[84px]는 막대가 축 최대치까지 길어져도
-              텍스트가 열 밖으로 밀려나지 않도록 미리 비워두는 여백(16px 폰트 기준으로 폭을 넉넉히 잡음)
-              — 보이는 내용은 없고 폭만 차지한다. */}
-          <div className="flex h-[25px] items-center gap-1.5">
-            <div className="relative h-full flex-1">
-              <div
-                className="h-full rounded-sm"
-                style={{
-                  width: `${(Math.abs(item.value) / chart.axisMax) * 100}%`,
-                  backgroundColor: item.isReference ? highlightColor : resolveMarketMapColor(item.value, colorScale),
-                }}
-              />
-              <span
-                className="absolute top-0 flex h-full items-center pl-1.5 whitespace-nowrap"
-                style={{
-                  left: `${(Math.abs(item.value) / chart.axisMax) * 100}%`,
-                  color: resolveMarketMapExtremeColor(item.value, colorScale),
-                }}
-              >
-                {toChartValueLabel(item.value, unit)}
-              </span>
-            </div>
-            <span className="w-[84px] shrink-0" />
-          </div>
-        </Fragment>
-      ))}
-    </div>
-  )
 }
 
 export default function GroupPage() {
@@ -208,6 +104,7 @@ export default function GroupPage() {
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·누적/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
+  const [graphMode, setGraphMode] = usePageSetting<GroupGraphMode>('groupPage.graphMode', 'current')
   // 집계 대상 종목: 맵 페이지면 지도 설정창의 제외 기준을 따르고, 전체 포함이면 제외 설정 없이 전체 종목으로 계산한다.
   const [sectorStockScope, setSectorStockScope] = usePageSetting<SectorStockScope>('groupPage.sectorStockScope', 'MAP')
   const isAllStocks = sectorStockScope === 'ALL'
@@ -227,8 +124,11 @@ export default function GroupPage() {
     }
     navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
   }
-  // 기간 등락률을 보는 중이면 "N분 전 대비"(오른쪽 그래프)는 쓰지 않는다 — before를 받지 않고, 지금 값(data)이 곧 기간 등락률이다.
+  // 기간 등락률을 보는 중이면 "N분 전 대비"는 쓰지 않는다 — before를 받지 않고, 지금 값(data)이 곧 기간 등락률이다.
   const isRangeView = rangeStartTime !== undefined
+  // 두 토글을 하나의 선택값으로 관리해 항상 정확히 한 그래프만 켜진다. 기간 보기에서는 현재 그래프를 강제로 표시한다.
+  const showDeltaGraph = !isRangeView && graphMode === 'delta'
+  const toggleGraph = () => setGraphMode(showDeltaGraph ? 'current' : 'delta')
   const pairQuery = useSectorMarketMapPair(market, source, nxtOnly, beforeMinutes, data, changeRateMode, !isRangeView)
   // 쌍 쿼리가 에러(재시도 1회 뒤)면 "before 없음"으로 보고 now 쿼리의 현재 data로 그린다. 그 외에는
   // 화면에 그리는 now가 항상 "쌍 안의 now"다 — placeholder 기간에도 그 쌍이 만들어질 때의 now·before가
@@ -345,8 +245,8 @@ export default function GroupPage() {
       (displayBefore?.items ?? []).map(node => [node.sectorName, node]),
     )
 
-    const currentEntries: RankedItem[] = []
-    const deltaEntries: RankedItem[] = []
+    const currentEntries: RankColumnItem[] = []
+    const deltaEntries: RankColumnItem[] = []
 
     for (const node of displayNow.items) {
       if (scopedExcludedSectorIds.has(node.sectorId)) continue
@@ -370,30 +270,25 @@ export default function GroupPage() {
       })
     }
 
-    // marketOverview는 단일 마켓 조회에만 온다(ALL_STOCK이면 단일 지수값이 없어 null) — 지도 페이지와
-    // 동일하게 ALL_STOCK이면 지수 막대를 아예 안 보여준다. 지수 참조 값은 누적 등락률이므로 별도에서는 표시하지 않는다.
-    const nowOverview = displayNow.marketOverview
-    // 기간 등락률에는 하루치 지수 등락률을 섞지 않는다.
-    if (nowOverview && changeRateMode === 'daily' && !isRangeView) {
-      currentEntries.push({
-        key: MARKET_INDEX_KEY,
-        sectorName: MARKET_INDEX_LABEL_KO[nowOverview.market],
-        value: nowOverview.changeRate,
-        isReference: true,
-      })
-      const beforeOverview = displayBefore?.marketOverview ?? null
-      if (beforeOverview) {
-        deltaEntries.push({
-          key: MARKET_INDEX_KEY,
-          sectorName: MARKET_INDEX_LABEL_KO[nowOverview.market],
-          value: nowOverview.changeRate - beforeOverview.changeRate,
-          isReference: true,
-        })
+    // ALL STOCK은 같은 시각으로 조회한 코스피·코스닥을 각각 추가한다.
+    // 지수 참조 값은 일간 누적 등락률이므로 시간외 별도·기간 등락률에는 섞지 않는다.
+    if (changeRateMode === 'daily' && !isRangeView) {
+      const marketIndexes = displayNow.marketOverview
+        ? [{ now: displayNow.marketOverview, before: displayBefore?.marketOverview ?? null }]
+        : (pairQuery.data?.marketIndexes ?? [])
+      for (const { now: nowOverview, before: beforeOverview } of marketIndexes) {
+        const key = `market-index:${nowOverview.market}`
+        const sectorName = MARKET_INDEX_LABEL_KO[nowOverview.market]
+        currentEntries.push({ key, sectorName, value: nowOverview.changeRate, isReference: true })
+        if (beforeOverview) {
+          deltaEntries.push({ key, sectorName, value: nowOverview.changeRate - beforeOverview.changeRate, isReference: true })
+        }
       }
     }
 
     return { current: buildRankChart(currentEntries), delta: buildRankChart(deltaEntries) }
-  }, [displayNow, displayBefore, scopedExcludedSectorIds, scopedExcludedTiers, avgChangeRateUseSimple, changeRateMode, isRangeView])
+  }, [displayNow, displayBefore, pairQuery.data?.marketIndexes, scopedExcludedSectorIds, scopedExcludedTiers, avgChangeRateUseSimple, changeRateMode, isRangeView])
+  const activeChart = showDeltaGraph ? charts.delta : charts.current
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
@@ -502,67 +397,27 @@ export default function GroupPage() {
                 <div className="flex flex-1 items-center justify-center">
                   <Spinner showElapsed />
                 </div>
-              ) : charts.current.rankedItems.length === 0 && charts.delta.rankedItems.length === 0 ? (
-                <div className="relative flex-1">
-                  <EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" />
-                </div>
               ) : (
-                // 스크롤 칸이 바깥의 아래 여백(19.5px)까지 내려오게(-mb) 하고, 그 여백은 칸 안쪽(pb)에 둔다 — 목록이 넘쳐서 스크롤될 때 잘리는 위치가 면책조항 바로 위가 되고, 끝까지 내리면 같은 여백이 생긴다.
-                <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-y-auto pb-[19.5px]">
-                  {/* 현재 그래프(왼쪽)/변화율 그래프(오른쪽)를 나란히 배치. "시가총액 가중/동일 가중 등락률"·
-                      "N분 전 대비" 캡션은 각각 RankBars의 header로 넘겨서, 그래프(막대 트랙) 시작 위치와
-                      캡션 시작 위치가 라벨 폭과 무관하게 항상 맞도록 한다. 바깥을 flex-col + min-h-0로
-                      만들어 RankBars(그리드)가 실제 남는 높이를 그대로 받게 하고, RankBars 안에서
-                      content-between으로 행 사이 여백을 균등 분배해 컨테이너 높이를 꽉 채운다(섹터
-                      수가 많아 다 못 채우면 자연스럽게 스크롤). px-[10%]로 좌우 바깥쪽에 폭 기준 10%씩
-                      여백을 둬서 막대가 화면 양 끝까지 닿지 않게 한다. */}
-                  {/* 헤더는 그래프가 아니라 본문 전체 폭을 2:1로 나눈 구간의 가운데에 놓는다(좌 2/3, 우 1/3).
-                      오른쪽은 설정창 슬라이더로 고른 비교 시점 하나만 보여준다. */}
+                <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-auto pb-[19.5px]">
                   <div
-                    className="mb-[19.5px] flex w-full shrink-0 items-center font-bold whitespace-nowrap"
-                    style={{ fontSize: 20, color: strongIndustryColor }}
+                    className="mt-[25px] mb-[19.5px] flex w-full shrink-0 items-center justify-center font-medium whitespace-nowrap"
+                    style={{ fontSize: 22, color: '#ffffff' }}
                   >
-                    <div className="flex flex-[3] items-center justify-center">
-                      {/* 헤더 배지는 끝이 완전히 둥근 알약 모양이고, 배경은 지도 설정창의 강조 색상, 글자는 그 반대인 검정이며 20px 굵게(700)이다. */}
-                      <span
-                        className="rounded-full border-2 px-[12px] py-[4px] text-[20px] leading-none font-bold"
-                        style={{ borderColor: strongIndustryColor, backgroundColor: strongIndustryColor, color: '#000000' }}
-                      >
-                        {avgChangeRateUseSimple ? '동일 가중 등락률' : '시총 가중 등락률'}
+                    <span className="inline-flex items-center leading-none font-medium">
+                      <span aria-hidden="true" className="mr-[6px] inline-block h-[1em] w-1 shrink-0 rounded-sm" style={{ backgroundColor: strongIndustryColor }} />
+                      <span>
+                        {showDeltaGraph ? `${beforeMinutes}분 전 대비` : avgChangeRateUseSimple ? '동일 가중 등락률' : '시총 가중 등락률'}{' '}
+                        <span className="font-light">({showDeltaGraph ? '%p' : '%'})</span>
                       </span>
-                    </div>
-                    {!isRangeView && (
-                      <div className="flex flex-[1] items-center justify-center">
-                        <span
-                          className="rounded-full border-2 px-[12px] py-[4px] text-[20px] leading-none font-bold"
-                          style={{ borderColor: strongIndustryColor, backgroundColor: strongIndustryColor, color: '#000000' }}
-                        >
-                          {beforeMinutes}분 전 대비
-                        </span>
-                      </div>
-                    )}
+                    </span>
                   </div>
-                  <div className="flex min-h-0 flex-1 gap-x-8 px-[10%]">
-                    {/* 좌(현재) 3 : 우(변화율) 1 비율 — 변화율 쪽은 막대가 항상 더 짧아서 면적을 덜 준다. */}
-                    <div className="flex min-h-0 min-w-0 flex-[3]">
-                      <RankBars
-                        chart={charts.current}
-                        highlightColor={strongIndustryColor}
-                        colorScale={colorScale}
-                        onSelectSector={handleSelectSector}
-                      />
-                    </div>
-                    {!isRangeView && (
-                      <div className="flex min-h-0 min-w-0 flex-[1]">
-                        <RankBars
-                          chart={charts.delta}
-                          highlightColor={strongIndustryColor}
-                          unit="%p"
-                          colorScale={colorScale}
-                          onSelectSector={handleSelectSector}
-                        />
-                      </div>
-                    )}
+                  <div className="flex min-h-[260px] min-w-0 w-full flex-1 pl-[1%] pr-[2%]">
+                    <RankColumns
+                      chart={activeChart}
+                      highlightColor={strongIndustryColor}
+                      colorScale={colorScale}
+                      onSelectSector={handleSelectSector}
+                    />
                   </div>
                 </div>
               )}
@@ -592,8 +447,17 @@ export default function GroupPage() {
                   <SettingsAverageModeSection
                     avgChangeRateUseSimple={avgChangeRateUseSimple}
                     onChange={onChangeAvgChangeRateUseSimple}
+                    enabled={!showDeltaGraph}
+                    onToggle={toggleGraph}
+                    toggleDisabled={isRangeView}
                   />
-                  <SettingsBeforeMinutesSection beforeMinutes={beforeMinutes} onChange={setBeforeMinutes} />
+                  <SettingsBeforeMinutesSection
+                    beforeMinutes={beforeMinutes}
+                    onChange={setBeforeMinutes}
+                    enabled={showDeltaGraph}
+                    onToggle={toggleGraph}
+                    disabled={isRangeView}
+                  />
                 </>
               }
             />
