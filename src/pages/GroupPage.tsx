@@ -195,7 +195,6 @@ export default function GroupPage() {
     isMarketMapSuccess,
     isMarketValueTierRangeReady,
     isRefetchingMarketMap,
-    isChangeRateLoading,
     refetchMarketMap,
     onChangeSectorFilterEnabled,
     excludedMarketValueTiers,
@@ -458,7 +457,7 @@ export default function GroupPage() {
                 </span>
                 {isPastSnapshot === false && (
                   <span className="flex shrink-0">
-                    <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} afterHoursStart={data?.afterHoursStart} loading={isChangeRateLoading || pairQuery.isPlaceholderData} onChange={onChangeChangeRateMode} />
+                    <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} afterHoursStart={data?.afterHoursStart} onChange={onChangeChangeRateMode} />
                   </span>
                 )}
                   </>
