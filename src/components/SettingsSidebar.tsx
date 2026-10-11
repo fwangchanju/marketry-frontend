@@ -883,6 +883,37 @@ export function SettingsSectorStockScopeSection({
   )
 }
 
+// 그룹 페이지 "업종 분류 단계" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다.
+// 분류 자체에 하위 단계가 없으면(거래소 분류 KRX·NXT) 대분류만 고를 수 있다. 저장된 값은 건드리지 않고 화면에서만 막는다.
+export function SettingsGroupDepthSection({
+  depth,
+  onChange,
+  selectableDepth,
+}: {
+  depth: number
+  onChange: (depth: number) => void
+  selectableDepth: number
+}) {
+  return (
+    <div className="settings-first-depth-level text-sm">
+      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-white">
+        <span className="settings-plain-title">업종 분류 단계</span>
+      </span>
+      <SettingDescription>그래프에 표시할 업종 분류의 단계</SettingDescription>
+      <div className="settings-slider-control mt-[18px]">
+        <SingleValueSlider
+          index={Math.min(depth, selectableDepth) - 1}
+          labels={DEPTH_LABELS}
+          ariaLabel="그래프 업종 분류 단계"
+          onChange={index => onChange(index + 1)}
+          maxSelectableIndex={selectableDepth - 1}
+          blockedReason={label => <>현재 {label} 데이터가 없어<br />비활성화되어 있습니다.</>}
+        />
+      </div>
+    </div>
+  )
+}
+
 export function SettingsAverageModeSection({
   avgChangeRateUseSimple,
   onChange,

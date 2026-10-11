@@ -6,6 +6,7 @@ import NavSubBar from '@/components/NavSubBar'
 import { ChangeRateModeToggle, MarketDropdown } from '@/components/MarketMapControls'
 import SettingsSidebar, {
   SettingsAverageModeSection,
+  SettingsGroupDepthSection,
   SettingsSectorStockScopeSection,
   type SectorStockScope,
   SettingsBeforeMinutesSection,
@@ -53,16 +54,60 @@ function sectorKey(sectorName: string): string {
   return `sector:${sectorName}`
 }
 
+// 막대가 이 개수(지수 제외)까지는 전부 보여 주고, 넘으면 상위·하위 각 EDGE_COUNT개만 남기고 가운데를 "외 N개" 칸 하나로 줄인다.
+// 27은 거래소 대분류(27개)가 줄지 않는 값이다.
+const GROUP_DEPTH_NAMES = ['대분류', '중분류', '소분류']
+const SHOW_ALL_LIMIT = 27
+const EDGE_COUNT = 15
+
 // (key, 값) 목록을 값 내림차순 랭킹 막대그래프 데이터로 변환한다 — "현재" 그래프/"변화율" 그래프 둘
 // 다 이 함수로 각각 독립적으로 정렬·스케일을 만든다(같은 포맷, 정렬 기준값만 다름).
+// 지수 참조 막대는 개수에 세지 않고 값 순서 자리에 그대로 둔다. 줄인 구간 안에 들어가는 지수는 "외 N개" 칸 바로 뒤에 둔다.
 function buildRankChart(entries: RankColumnItem[]): RankColumnsChart {
-  const rankedItems = [...entries].sort((a, b) => b.value - a.value)
+  const sorted = [...entries].sort((a, b) => b.value - a.value)
+  const sectors = sorted.filter(item => !item.isReference)
+  let rankedItems = sorted
 
-  const rawMaxAbsValue = Math.max(1, ...rankedItems.map(item => Math.abs(item.value)))
+  if (sectors.length > SHOW_ALL_LIMIT) {
+    const top = sectors.slice(0, EDGE_COUNT)
+    const bottom = sectors.slice(-EDGE_COUNT)
+    const hiddenCount = sectors.length - top.length - bottom.length
+    const ellipsis: RankColumnItem = { key: 'hidden-sectors', sectorName: `외 ${hiddenCount}개`, value: 0, hiddenCount }
+    const visible = sorted.filter(item => item.isReference || top.includes(item) || bottom.includes(item))
+    const splitAt = visible.indexOf(top[top.length - 1]) + 1
+    rankedItems = [...visible.slice(0, splitAt), ellipsis, ...visible.slice(splitAt)]
+  }
+
+  const rawMaxAbsValue = Math.max(1, ...rankedItems.filter(item => item.hiddenCount === undefined).map(item => Math.abs(item.value)))
   // 핀비즈처럼 축 눈금이 딱 떨어지게, 0.5%p 단위로 올림한 값을 막대 스케일에 쓴다.
   const axisMax = Math.ceil(rawMaxAbsValue * 2) / 2
 
   return { rankedItems, axisMax }
+}
+
+interface DepthEntry {
+  node: MarketMapSectorNode
+  // 같은 이름의 업종이 다른 대분류 밑에 또 있을 수 있어 위에서부터 이어 붙인 이름으로 구분한다.
+  pathKey: string
+}
+
+// 고른 깊이(1=대분류, 2=중분류, 3=소분류)의 업종을 모은다. 그 깊이에 닿기 전에 하위 업종이 끝나는 업종은 그대로 한 막대가 된다.
+// 제외한 업종은 그 밑까지 뺀다.
+function collectAtDepth(
+  nodes: MarketMapSectorNode[],
+  depth: number,
+  excludedSectorIds: Set<number>,
+  parentKey = '',
+  level = 1,
+): DepthEntry[] {
+  const entries: DepthEntry[] = []
+  for (const node of nodes) {
+    if (excludedSectorIds.has(node.sectorId)) continue
+    const pathKey = parentKey ? `${parentKey}>${node.sectorName}` : node.sectorName
+    if (level >= depth || node.children.length === 0) entries.push({ node, pathKey })
+    else entries.push(...collectAtDepth(node.children, depth, excludedSectorIds, pathKey, level + 1))
+  }
+  return entries
 }
 
 export default function GroupPage() {
@@ -108,6 +153,10 @@ export default function GroupPage() {
   // 집계 대상 종목: 맵 페이지면 지도 설정창의 제외 기준을 따르고, 전체 포함이면 제외 설정 없이 전체 종목으로 계산한다.
   const [sectorStockScope, setSectorStockScope] = usePageSetting<SectorStockScope>('groupPage.sectorStockScope', 'MAP')
   const isAllStocks = sectorStockScope === 'ALL'
+  // 막대 하나가 가리키는 업종 분류 깊이(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 고를 수 있다.
+  const [groupDepth, setGroupDepth] = usePageSetting<number>('groupPage.depth', 1)
+  const selectableDepth = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT' ? 1 : 3
+  const effectiveDepth = Math.min(groupDepth, selectableDepth)
   const scopedExcludedSectorIds = useMemo(() => (isAllStocks ? new Set<number>() : excludedSectorIds), [isAllStocks, excludedSectorIds])
   const scopedExcludedTiers = useMemo(() => (isAllStocks ? new Set<string>() : excludedMarketValueTiers), [isAllStocks, excludedMarketValueTiers])
 
@@ -241,30 +290,28 @@ export default function GroupPage() {
   const charts = useMemo(() => {
     if (!displayNow) return { current: buildRankChart([]), delta: buildRankChart([]) }
 
-    const beforeByName = new Map<string, MarketMapSectorNode>(
-      (displayBefore?.items ?? []).map(node => [node.sectorName, node]),
+    const beforeByPath = new Map<string, MarketMapSectorNode>(
+      collectAtDepth(displayBefore?.items ?? [], effectiveDepth, new Set<number>()).map(({ node, pathKey }) => [pathKey, node]),
     )
 
     const currentEntries: RankColumnItem[] = []
     const deltaEntries: RankColumnItem[] = []
 
-    for (const node of displayNow.items) {
-      if (scopedExcludedSectorIds.has(node.sectorId)) continue
-
+    for (const { node, pathKey } of collectAtDepth(displayNow.items, effectiveDepth, scopedExcludedSectorIds)) {
       const nowAverage = computeSectorAverage(node, scopedExcludedTiers)
       const nowValue = avgChangeRateUseSimple ? nowAverage.simpleAvg : nowAverage.weightedAvg
       // 새 트리는 종목이 하나도 없는 최상위 섹터도 노드로 준다 — 그런 섹터는 평균이 null이라
       // 두 그래프 모두에서 뺀다(옛 /api/sector는 애초에 그런 섹터를 안 내려줬다).
       if (nowValue === null) continue
-      currentEntries.push({ key: sectorKey(node.sectorName), sectorName: node.sectorName, value: nowValue })
+      currentEntries.push({ key: sectorKey(pathKey), sectorName: node.sectorName, value: nowValue })
 
-      const beforeNode = beforeByName.get(node.sectorName)
+      const beforeNode = beforeByPath.get(pathKey)
       if (!beforeNode) continue
       const beforeAverage = computeSectorAverage(beforeNode, scopedExcludedTiers)
       const beforeValue = avgChangeRateUseSimple ? beforeAverage.simpleAvg : beforeAverage.weightedAvg
       if (beforeValue === null) continue
       deltaEntries.push({
-        key: sectorKey(node.sectorName),
+        key: sectorKey(pathKey),
         sectorName: node.sectorName,
         value: nowValue - beforeValue,
       })
@@ -287,7 +334,7 @@ export default function GroupPage() {
     }
 
     return { current: buildRankChart(currentEntries), delta: buildRankChart(deltaEntries) }
-  }, [displayNow, displayBefore, pairQuery.data?.marketIndexes, scopedExcludedSectorIds, scopedExcludedTiers, avgChangeRateUseSimple, changeRateMode, isRangeView])
+  }, [displayNow, displayBefore, pairQuery.data?.marketIndexes, scopedExcludedSectorIds, scopedExcludedTiers, avgChangeRateUseSimple, changeRateMode, isRangeView, effectiveDepth])
   const activeChart = showDeltaGraph ? charts.delta : charts.current
 
   return (
@@ -400,7 +447,7 @@ export default function GroupPage() {
               ) : (
                 <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-auto pb-[19.5px]">
                   <div
-                    className="mt-[25px] mb-[19.5px] flex w-full shrink-0 items-center justify-center font-medium whitespace-nowrap"
+                    className="mt-[25px] flex w-full shrink-0 items-center justify-center font-medium whitespace-nowrap"
                     style={{ fontSize: 22, color: '#ffffff' }}
                   >
                     <span className="inline-flex items-center leading-none font-medium">
@@ -411,6 +458,10 @@ export default function GroupPage() {
                       </span>
                     </span>
                   </div>
+                  {/* 설정창 설명과 같은 모양("- 문구")으로, 고른 업종 분류 단계와 함께 숫자가 왜곡될 수 있음을 알린다. */}
+                  <p className="settings-description mt-1.5 mb-[19.5px] w-full shrink-0 text-center text-sm whitespace-nowrap text-gray-400">
+                    {GROUP_DEPTH_NAMES[effectiveDepth - 1]}: 그룹에 포함된 종목이 적을수록 왜곡이 커질 수 있습니다.
+                  </p>
                   <div className="flex min-h-[260px] min-w-0 w-full flex-1 pl-[1%] pr-[2%]">
                     <RankColumns
                       chart={activeChart}
@@ -444,6 +495,7 @@ export default function GroupPage() {
               plainContent={
                 <>
                   <SettingsSectorStockScopeSection scope={sectorStockScope} onChange={setSectorStockScope} />
+                  <SettingsGroupDepthSection depth={groupDepth} onChange={setGroupDepth} selectableDepth={selectableDepth} />
                   <SettingsAverageModeSection
                     avgChangeRateUseSimple={avgChangeRateUseSimple}
                     onChange={onChangeAvgChangeRateUseSimple}
