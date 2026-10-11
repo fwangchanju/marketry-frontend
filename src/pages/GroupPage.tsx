@@ -40,7 +40,9 @@ import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/ut
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toMarketMapSnapshotDateLabel } from '@/utils/format'
 import { marketRoute } from '@/utils/marketRoute'
 import type { Market, MarketMapSectorNode } from '@/types/api'
-import RankColumns, { type RankColumnItem, type RankColumnsChart } from '@/components/RankColumns'
+import RankColumns, { type RankColumnItem } from '@/components/RankColumns'
+import { buildRankChart } from '@/utils/rankChart'
+import { collectAtDepth } from '@/utils/sectorDepth'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
@@ -57,58 +59,6 @@ function sectorKey(sectorName: string): string {
 // 막대가 이 개수(지수 제외)까지는 전부 보여 주고, 넘으면 상위·하위 각 EDGE_COUNT개만 남기고 가운데를 "외 N개" 칸 하나로 줄인다.
 // 27은 거래소 대분류(27개)가 줄지 않는 값이다.
 const GROUP_DEPTH_NAMES = ['대분류', '중분류', '소분류']
-const SHOW_ALL_LIMIT = 27
-const EDGE_COUNT = 15
-
-// (key, 값) 목록을 값 내림차순 랭킹 막대그래프 데이터로 변환한다 — "현재" 그래프/"변화율" 그래프 둘
-// 다 이 함수로 각각 독립적으로 정렬·스케일을 만든다(같은 포맷, 정렬 기준값만 다름).
-// 지수 참조 막대는 개수에 세지 않고 값 순서 자리에 그대로 둔다. 줄인 구간 안에 들어가는 지수는 "외 N개" 칸 바로 뒤에 둔다.
-function buildRankChart(entries: RankColumnItem[]): RankColumnsChart {
-  const sorted = [...entries].sort((a, b) => b.value - a.value)
-  const sectors = sorted.filter(item => !item.isReference)
-  let rankedItems = sorted
-
-  if (sectors.length > SHOW_ALL_LIMIT) {
-    const top = sectors.slice(0, EDGE_COUNT)
-    const bottom = sectors.slice(-EDGE_COUNT)
-    const hiddenCount = sectors.length - top.length - bottom.length
-    const ellipsis: RankColumnItem = { key: 'hidden-sectors', sectorName: `외 ${hiddenCount}개`, value: 0, hiddenCount }
-    const visible = sorted.filter(item => item.isReference || top.includes(item) || bottom.includes(item))
-    const splitAt = visible.indexOf(top[top.length - 1]) + 1
-    rankedItems = [...visible.slice(0, splitAt), ellipsis, ...visible.slice(splitAt)]
-  }
-
-  const rawMaxAbsValue = Math.max(1, ...rankedItems.filter(item => item.hiddenCount === undefined).map(item => Math.abs(item.value)))
-  // 핀비즈처럼 축 눈금이 딱 떨어지게, 0.5%p 단위로 올림한 값을 막대 스케일에 쓴다.
-  const axisMax = Math.ceil(rawMaxAbsValue * 2) / 2
-
-  return { rankedItems, axisMax }
-}
-
-interface DepthEntry {
-  node: MarketMapSectorNode
-  // 같은 이름의 업종이 다른 대분류 밑에 또 있을 수 있어 위에서부터 이어 붙인 이름으로 구분한다.
-  pathKey: string
-}
-
-// 고른 깊이(1=대분류, 2=중분류, 3=소분류)의 업종을 모은다. 그 깊이에 닿기 전에 하위 업종이 끝나는 업종은 그대로 한 막대가 된다.
-// 제외한 업종은 그 밑까지 뺀다.
-function collectAtDepth(
-  nodes: MarketMapSectorNode[],
-  depth: number,
-  excludedSectorIds: Set<number>,
-  parentKey = '',
-  level = 1,
-): DepthEntry[] {
-  const entries: DepthEntry[] = []
-  for (const node of nodes) {
-    if (excludedSectorIds.has(node.sectorId)) continue
-    const pathKey = parentKey ? `${parentKey}>${node.sectorName}` : node.sectorName
-    if (level >= depth || node.children.length === 0) entries.push({ node, pathKey })
-    else entries.push(...collectAtDepth(node.children, depth, excludedSectorIds, pathKey, level + 1))
-  }
-  return entries
-}
 
 export default function GroupPage() {
   const navigate = useNavigate()
