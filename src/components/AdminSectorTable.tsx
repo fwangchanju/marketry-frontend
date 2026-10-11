@@ -409,7 +409,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, onCou
   ]
   // 가장 깊이 선택된 열 — 이 열의 머리글만 강조색으로 칠하고 화살표를 붙인다.
   const activeColumn = selectedMiddleId !== null ? 2 : selectedMajorId !== null ? 1 : 0
-  useReportCountLabel(`${toCount(viewSectors.length)}/${toCount(sectors.length)}업종`, onCountLabelChange)
+  // 설정창 머리글 개수는 대분류만 센다 — MARKETRY·거래소(읽기 전용 표)와 같은 기준이다. 중·소분류 개수는 위 열 머리글에 따로 적혀 있다.
+  const topLevelTotal = sectors.filter(sector => sector.depth === 0).length
+  useReportCountLabel(`${toCount(sectorCounts[0])}/${toCount(topLevelTotal)}업종`, onCountLabelChange)
   const rootSectors = orderSectors(viewSectors.filter(c => c.parentId === null), null, sectorOrder)
   const middleSectors = selectedMajorId === null ? [] : orderSectors(viewSectors.filter(c => c.parentId === selectedMajorId), selectedMajorId, sectorOrder)
   const smallSectors = selectedMiddleId === null ? [] : orderSectors(viewSectors.filter(c => c.parentId === selectedMiddleId), selectedMiddleId, sectorOrder)
