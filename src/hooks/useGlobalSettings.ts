@@ -106,6 +106,9 @@ function topPickAverage(node: FilteredMarketMapSectorNode, metric: DepthMetric):
 // 간접적으로 필요한 페이지는 false를 넘겨서 사이드바를 열기 전까지 조회 자체를 미룬다 — 그래도 설정을
 // 열면 그 순간부터는 조회하므로(그리고 지도/섹터를 먼저 봤다면 react-query 캐시로 즉시 뜨므로) 설정
 // 내용 자체는 어느 페이지에서 열든 동일하게 보인다.
+// 제외 업종 목록을 서버 기본값으로 마지막에 채운 분류 — 이 탭의 sessionStorage에 둔다.
+const SEEDED_KEY_STORAGE = 'marketMap.excludedSeedKey'
+
 export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRateMode?: boolean }) {
   const needsTree = options?.needsTree ?? true
   // 등락률 기준(누적/시간외) 선택은 지도 페이지만 쓴다. 그룹 페이지는 now·before 쌍을 따로 받아 누적 기준으로 그리므로
@@ -241,7 +244,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 새로 받아온 (market, source) 조합의 데이터가 처음 도착했을 때만 서버 isExcluded로 시드하고,
   // 그 뒤 60초 백그라운드 재조회가 로컬에서 방금 토글한 상태를 덮어쓰지 않게 한다(fire-and-forget 저장이라
   // 서버 반영 전에 재조회가 먼저 도착할 수 있음).
-  const seededKeyRef = useRef<string | null>(null)
 
   // 달력에서 지난 날짜를 골랐을 때의 종가 스냅샷 시각 — 없으면 실시간(최신). 시장(코스피·코스닥·전체)을 바꿔도 선택은 풀리지 않는다.
   // 고른 시장의 시각을 그대로 기억해 두고, 다른 시장으로 바뀌면 그 시장의 종가 지도 목록에서 같은 날짜의 시각을 다시 찾는다.
@@ -356,11 +358,17 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     // 비로그인의 거래소 제외 목록은 서버 값이 아니라 이 탭에서 직접 고른 것이라 서버 값으로 다시 채우지 않는다.
     // MARKETRY에 정해 둔 제외 업종을 처음 값으로 받는다(그 뒤 바꾸는 건 이 탭에서만 유효하다).
     if (!isLoggedIn && !isMarketry) return
-    const key = `${market}:${source}:${nxtOnly}`
-    if (seededKeyRef.current === key) return
-    seededKeyRef.current = key
+    // 어떤 분류로 채웠는지를 이 탭에 기억해 둔다 — 페이지를 옮길 때(지도→홈·그룹) 이 훅이 다시 만들어져도 지도에서 직접 바꾼 제외 목록을
+    // 서버 기본값으로 되돌리지 않는다. 시장(코스피·코스닥·전체)은 키에 넣지 않는다: 업종 id가 시장과 무관해서 시장을 바꿔도 목록이 그대로여야 한다.
+    const key = `${source}:${nxtOnly}`
+    try {
+      if (sessionStorage.getItem(SEEDED_KEY_STORAGE) === key) return
+      sessionStorage.setItem(SEEDED_KEY_STORAGE, key)
+    } catch {
+      // 저장소를 못 쓰면 화면을 열 때마다 기본값으로 채운다(예전 동작).
+    }
     setExcludedSectorNames(seedExcludedSectorNames(data.items, []))
-  }, [data, market, source, nxtOnly, isLoggedIn, isMarketry, setExcludedSectorNames])
+  }, [data, source, nxtOnly, isLoggedIn, isMarketry, setExcludedSectorNames])
 
   // 로그인 사용자의 거래소 분류 트리는 사용자 정의 섹터를 쓰지 않으므로 isExcluded와 제외 목록을 적용하지 않는다.
   // 비로그인은 거래소 분류만 쓰지만 직접 고른 제외 목록을 이 탭에서 적용한다(새로고침하면 초기화).
