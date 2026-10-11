@@ -16,7 +16,7 @@ interface Props {
   liveSnapshotTime: string | null
   // 지난 날짜의 종가 스냅샷 시각, 또는 실시간으로 돌아가려면 null.
   onSelectSnapshotTime: (snapshotTime: string | null) => void
-  // 기간 등락률 — 시작일·끝일의 종가 스냅샷 시각(시작일이 앞선다). 기간을 보는 중이면 시작일의 스냅샷 시각이 rangeStartTime으로 들어온다.
+  // 기간 등락률 — 시작일·종료일의 종가 스냅샷 시각(시작일이 앞선다). 기간을 보는 중이면 시작일의 스냅샷 시각이 rangeStartTime으로 들어온다.
   // onSelectRange를 주지 않으면 "기간" 스위치가 없다.
   onSelectRange?: (startSnapshotTime: string, endSnapshotTime: string) => void
   rangeStartTime?: string
@@ -87,7 +87,7 @@ interface MonthGridProps {
   // 눌러도 되는 날인지 — 종가 지도가 있는지, 1거래일 전 종가가 있는지(맨 처음 데이터 날은 없다)를 함께 알려 준다.
   isSelectable: (date: string, hasClosingMap: boolean, hasPreviousDay: boolean) => boolean
   isSelected: (date: string) => boolean
-  // 기간(시작일~끝일)을 이어진 띠로 칠할 때의 양 끝 날짜. 둘 다 있고 서로 다른 날일 때만 띠가 그려진다.
+  // 기간(시작일~종료일)을 이어진 띠로 칠할 때의 양 끝 날짜. 둘 다 있고 서로 다른 날일 때만 띠가 그려진다.
   bandStart: string | null
   bandEnd: string | null
   // 누른 날짜와, 그날 종가 지도의 스냅샷 시각(없는 날이면 undefined).
@@ -170,7 +170,7 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
               const selected = isSelected(date)
               // 이미 지나간 날인데 지도가 없는 날(주말·휴장일 등)은 빨간 숫자로 알린다. 불러오는 중이거나 아직 오지 않은 날은 회색 그대로.
               const isMissing = selectable === false && hasClosingMap === false && isLoading === false && isError === false && liveDate !== null && date <= liveDate
-              // 기간 띠 — 시작일은 오른쪽 절반, 끝일은 왼쪽 절반, 그 사이 날은 칸 전체를 칠한다. 줄이 바뀌는 곳(일요일·1일 / 토요일·말일)은 끝을 둥글게 한다.
+              // 기간 띠 — 시작일은 오른쪽 절반, 종료일은 왼쪽 절반, 그 사이 날은 칸 전체를 칠한다. 줄이 바뀌는 곳(일요일·1일 / 토요일·말일)은 끝을 둥글게 한다.
               const hasBand = bandStart !== null && bandEnd !== null && bandStart < bandEnd && date >= bandStart && date <= bandEnd
               const weekday = (firstWeekday + day - 1) % 7
               const bandShape = date === bandStart ? 'left-1/2 right-0' : date === bandEnd ? 'left-0 right-1/2' : `inset-x-0 ${weekday === 0 || day === 1 ? 'rounded-l-full' : ''} ${weekday === 6 || day === daysInMonth ? 'rounded-r-full' : ''}`
@@ -291,7 +291,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   const [isRangeMode, setIsRangeMode] = useState(false)
   // 하루 고르기 — snapshotTime이 null이면 실시간(오늘)이다.
   const [draftDay, setDraftDay] = useState<{ date: string; snapshotTime: string | null } | null>(null)
-  // 기간 고르기 — 시작·종료 대기 값.
+  // 기간 고르기 — 시작일·종료일 대기 값.
   const [draftStart, setDraftStart] = useState<PickedDay | null>(null)
   const [draftEnd, setDraftEnd] = useState<PickedDay | null>(null)
   // 하루 달력의 달, 기간 달력의 왼쪽 달(오른쪽은 그 다음 달).
@@ -314,7 +314,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     }
   }, [isOpen])
 
-  // 기간 달력을 열 때 — 이미 기간을 보는 중이면 그 시작·종료를 채우고, 아니면 비운다. 오른쪽 달은 종료(또는 지금 보는 날)가 있는 달, 왼쪽은 그 전 달이다.
+  // 기간 달력을 열 때 — 이미 기간을 보는 중이면 그 시작일·종료일을 채우고, 아니면 비운다. 오른쪽 달은 종료일(또는 지금 보는 날)이 있는 달, 왼쪽은 그 전 달이다.
   const prepareRange = () => {
     if (isViewingRange) {
       setDraftStart({ date: rangeStartTime.slice(0, 10), snapshotTime: rangeStartTime })
@@ -323,7 +323,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       setDraftStart(null)
       setDraftEnd(null)
     }
-    // 시작이 있는 달을 왼쪽에 두고 그 다음 달을 오른쪽에 둔다(한 달 안의 기간이면 둘 다 보인다). 종료가 그보다 뒤면 종료가 오른쪽 달이 되게 하고,
+    // 시작일이 있는 달을 왼쪽에 두고 그 다음 달을 오른쪽에 둔다(한 달 안의 기간이면 둘 다 보인다). 종료일이 그보다 뒤면 종료일이 오른쪽 달이 되게 하고,
     // 오른쪽 달이 실시간 달을 넘지 않게 한다. 기간을 고르는 중이 아니면 오른쪽이 지금 보는 달이다.
     const endMonth = toShownMonth(viewedSnapshotTime ?? anchorDate ?? new Date().toISOString())
     const wantedLeft = isViewingRange && rangeStartTime ? maxMonth(toShownMonth(rangeStartTime), addMonths(endMonth, -1)) : addMonths(endMonth, -1)
@@ -367,7 +367,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   }
 
   // ── 기간 고르기 ──
-  // 첫 번째로 누른 날이 시작, 두 번째가 종료다. 시작보다 앞선 날을 두 번째로 누르면 그 날이 시작이 되고 앞서 누른 날이 종료가 된다.
+  // 첫 번째로 누른 날이 시작일, 두 번째가 종료일이다. 시작일보다 앞선 날을 두 번째로 누르면 그 날이 시작일이 되고 앞서 누른 날이 종료일이 된다.
   // 둘 다 정해진 뒤에 누르면 새로 시작한다.
   const pickRangeDay = (date: string, snapshotTime: string | undefined) => {
     if (snapshotTime === undefined) return
@@ -389,7 +389,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       setDraftEnd(null)
     }
   }
-  // 이 날이 시작이 될 수 있는지(=1거래일 전 종가가 필요한지)에 따라 눌러도 되는 날을 정한다.
+  // 이 날이 시작일이 될 수 있는지(=1거래일 전 종가가 필요한지)에 따라 눌러도 되는 날을 정한다.
   const isRangeDaySelectable = (date: string, hasClosingMap: boolean, hasPreviousDay: boolean) => {
     if (!hasClosingMap) return false
     if (draftStart !== null && draftEnd === null) return date >= draftStart.date || hasPreviousDay
@@ -402,7 +402,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     setIsOpen(false)
   }
 
-  // ── 지금 버튼 — 날짜 칸을 가장 최근 지도의 날짜로 채운다(적용을 눌러야 지도가 바뀐다). 하루는 실시간이고, 기간은 종료가 된다. ──
+  // ── 지금 버튼 — 날짜 칸을 가장 최근 지도의 날짜로 채운다(적용을 눌러야 지도가 바뀐다). 하루는 실시간이고, 기간은 종료일이 된다. ──
   // 최근 거래일의 종가 지도가 있으면 그 시각, 아직 없으면(장중) 실시간 지도의 시각을 종료로 쓴다.
   const { data: liveMonthDays } = useMarketMapSnapshotDays(market, liveDate?.slice(0, 7) ?? '', { enabled: isOpen && isRangeCalendar && liveDate !== null, retry: 1 })
   const pickToday = () => {
@@ -502,14 +502,14 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 />
               </div>
               <div className="mt-1 flex gap-4 border-t border-gray-500 pt-2 text-xs">
-                {/* 시작은 왼쪽 달력 왼쪽, 종료는 오른쪽 달력 왼쪽에 놓고 고른 날짜를 오른쪽에 적는다. 적용은 맨 오른쪽 끝이다. */}
+                {/* 시작일은 왼쪽 달력 왼쪽, 종료일은 오른쪽 달력 왼쪽에 놓고 고른 날짜를 오른쪽에 적는다. 적용은 맨 오른쪽 끝이다. */}
                 <div className="flex w-60 shrink-0 items-center gap-2">
-                  <span className="text-[var(--accent)]">시작</span>
+                  <span className="text-[var(--accent)]">시작일</span>
                   <span className="text-gray-200">{draftStart ? toMarketMapSnapshotDateLabel(draftStart.snapshotTime) : '-'}</span>
                 </div>
                 <div className="flex w-60 shrink-0 items-center justify-between gap-2">
                   <span className="flex items-center gap-2">
-                    <span className="text-[var(--accent)]">종료</span>
+                    <span className="text-[var(--accent)]">종료일</span>
                     <span className="text-gray-200">{draftEnd ? toMarketMapSnapshotDateLabel(draftEnd.snapshotTime) : '-'}</span>
                   </span>
                   <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={APPLY_BUTTON_CLASS}>
@@ -528,7 +528,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 isMonthAllowed={isMonthWithinLive}
                 liveDate={liveDate}
                 isSelectable={(date, hasClosingMap) => date === liveDate || hasClosingMap}
-                // 하루 달력은 날짜 하나를 새로 고르는 화면이라, 기간을 보는 중이어도 그 기간의 띠나 시작·끝 표시를 보여 주지 않는다.
+                // 하루 달력은 날짜 하나를 새로 고르는 화면이라, 기간을 보는 중이어도 그 기간의 띠나 시작일·종료일 표시를 보여 주지 않는다.
                 isSelected={date => (draftDay ? date === draftDay.date : rangeStartDate === null && date === anchorDate)}
                 bandStart={null}
                 bandEnd={null}

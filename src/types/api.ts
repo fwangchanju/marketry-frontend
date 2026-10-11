@@ -204,7 +204,7 @@ const MarketMapItemSchema = z.object({
   marketValueTier: z.string(),
   changeRate: z.number(),
   snapshotTime: z.string(),
-  // 기간 등락률에서만 프론트가 붙인다(서버는 보내지 않는다) — 종목 팝업의 가격 줄 이름. lastPrice는 기준가, currentPrice는 끝일의 종가(장중이면 현재가)다.
+  // 기간 등락률에서만 프론트가 붙인다(서버는 보내지 않는다) — 종목 팝업의 가격 줄 이름. lastPrice는 기준가, currentPrice는 종료일의 종가(장중이면 현재가)다.
   rangeLabels: z.object({ base: z.string(), end: z.string() }).optional(),
 })
 export type MarketMapItem = z.infer<typeof MarketMapItemSchema>
