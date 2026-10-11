@@ -22,7 +22,7 @@ function MinusCircleIcon({ className }: { className?: string }) {
   )
 }
 
-// 기간 등락률을 볼 때 날짜 뒤에 붙는 "~ 2026-10-02 (금) ⊖ 10종목". 앞의 시작일 날짜는 달력 아이콘 옆 글자가 맡는다.
+// 기간 등락률을 볼 때 날짜 뒤에 붙는 "~ 2026-10-02 (금) ⊖ 제외 종목". 앞의 시작일 날짜는 달력 아이콘 옆 글자가 맡는다.
 // 시작일의 기준가(= 그 전 거래일 종가)와 종료일의 종가/현재가 설명은 상단이 길어지지 않게 종목 팝업에서 보여 주고,
 // 거래일 수는 달력 맨 위 가운데에 보인다. 빼기 원 아이콘(제외 종목 버튼)을 누르면 제외 종목 이름 목록이 그 버튼 왼쪽에 맞춰 팝업으로 뜬다.
 export default function RangeCompareLabel({ endSnapshotTime, excludedStocks }: Props) {
@@ -56,7 +56,7 @@ export default function RangeCompareLabel({ endSnapshotTime, excludedStocks }: P
       {hasExcluded && (
         // 팝업은 이 버튼을 기준으로 놓아서, 팝업의 왼쪽 끝이 버튼의 왼쪽 끝과 맞는다.
         <span className="relative flex items-center gap-1 font-normal text-gray-400">
-          {/* 버튼은 빼기 원 아이콘뿐이고, 개수 글자는 버튼 밖의 일반 글자다. */}
+          {/* 버튼은 빼기 원 아이콘뿐이고, "제외 종목" 글자는 버튼 밖의 일반 글자다(개수는 팝업 제목에 있다). */}
           <button
             type="button"
             aria-label="제외 종목"
@@ -67,7 +67,7 @@ export default function RangeCompareLabel({ endSnapshotTime, excludedStocks }: P
           >
             <MinusCircleIcon className="h-[15px] w-[15px] shrink-0" />
           </button>
-          <span>{excludedStocks.length}종목</span>
+          <span>제외 종목</span>
           {isPopupOpen && (
                 <div
                   role="dialog"
