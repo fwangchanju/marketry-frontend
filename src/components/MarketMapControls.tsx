@@ -176,11 +176,13 @@ export function TradingSessionIndicator({ session: sessionOverride }: { session?
 // 등락률 기준 토글 — 종가(그날 정규장 종가 지도) / 누적(전일 종가 대비) / 별도(당일 종가 대비). 애프터 마켓 시작부터 다음 프리 마켓 개장 전까지만 보인다.
 // 시간외 스냅샷이 아직 없으면 별도는 잠긴다. 시장 시간대 말머리는 버튼의 표시 여부와 무관하게 유지한다.
 // 버튼을 누르면 그 버튼 아래에 설명 팝업이 뜬다(새로고침 버튼의 설명창과 같은 모양). 잠긴 별도도 눌러서 설명을 볼 수 있다.
-export function ChangeRateModeToggle({ basis, visible, selectable, afterHoursStart, onChange }: {
+export function ChangeRateModeToggle({ basis, visible, selectable, afterHoursStart, loading = false, onChange }: {
   basis: ChangeRateChoice
   visible: boolean
   selectable: boolean
   afterHoursStart?: string | null
+  // 새 기준의 지도를 받는 동안 선택 칸이 깜빡여 "불러오는 중"임을 알린다.
+  loading?: boolean
   onChange: (basis: ChangeRateChoice) => void
 }) {
   const closeNote = <>*당일 종가 15:30</>
@@ -293,12 +295,13 @@ export function ChangeRateModeToggle({ basis, visible, selectable, afterHoursSta
       {visible && <div
         role="radiogroup"
         aria-label="등락률 기준"
+        aria-busy={loading}
         className="relative inline-flex h-6 w-24 shrink-0 items-center overflow-visible rounded-none bg-[#202020] p-0.5"
       >
         {highlight && (
           <span
             aria-hidden="true"
-            className="absolute bottom-0.5 top-0.5 transition-[left,width] duration-[500ms] ease-out"
+            className={`absolute bottom-0.5 top-0.5 transition-[left,width] duration-[500ms] ease-out ${loading ? 'animate-pulse' : ''}`}
             style={{
               left: highlight.left,
               width: highlight.width,
