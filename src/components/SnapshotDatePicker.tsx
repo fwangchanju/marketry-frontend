@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/MarketMapIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
-import { useMarketMapSnapshotDays } from '@/hooks/useMarketMap'
+import { useMarketMapSnapshotDays, useTradingDayGap } from '@/hooks/useMarketMap'
 import Spinner from '@/components/Spinner'
 import { toMarketMapSnapshotDateLabel } from '@/utils/format'
 import type { MarketQuery } from '@/types/api'
@@ -352,6 +352,9 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   }
 
   const isRangeCalendar = isRangeMode && onSelectRange !== undefined
+  // 고른 기간의 거래일 수 — 시작일을 포함해 종료일까지 센다(시작일 하루 전 종가가 기준이라 시작일 하루도 기간에 든다). 시작일·종료일을 둘 다 고르기 전이나 아직 못 받았으면 비운다.
+  const { data: rangeGap } = useTradingDayGap(isRangeCalendar ? (draftStart?.date ?? null) : null, isRangeCalendar ? (draftEnd?.date ?? null) : null)
+  const rangeDayCount = rangeGap !== undefined && draftStart !== null && draftEnd !== null ? `${rangeGap + 1}거래일` : null
   // 실시간 지도가 있는 달보다 뒤로는 갈 수 없다.
   const isMonthWithinLive = (month: ShownMonth) => liveDate === null || toMonthKey(month) <= liveDate.slice(0, 7)
 
@@ -441,9 +444,9 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           aria-label="날짜 선택 달력"
           className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-gray-500 bg-[#363639] p-2 text-sm font-normal tracking-normal text-white shadow-xl"
         >
-          {/* 위쪽 줄: 왼쪽 하루/기간 스위치, 오른쪽 지금(날짜 칸을 가장 최근 지도 날짜로 채운다). */}
-          <div className="mb-2 flex items-center justify-between gap-2 border-b border-gray-500 pb-2 text-xs">
-            <span>
+          {/* 위쪽 줄: 왼쪽 하루/기간 스위치, 가운데 고른 기간의 거래일 수, 오른쪽 지금(날짜 칸을 가장 최근 지도 날짜로 채운다). */}
+          <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-gray-500 pb-2 text-xs">
+            <span className="justify-self-start">
               {onSelectRange && (
                 <span role="radiogroup" aria-label="선택 방식" className="inline-flex overflow-hidden rounded-sm border border-[var(--accent)]">
                   {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
@@ -461,10 +464,11 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 </span>
               )}
             </span>
+            <span className="text-gray-200">{isRangeCalendar && rangeDayCount !== null ? rangeDayCount : ''}</span>
             <button
               type="button"
               onClick={pickToday}
-              className="w-[2.05rem] shrink-0 rounded-sm border border-[var(--accent)] bg-transparent px-0 py-0.5 text-center text-xs font-medium leading-none text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black"
+              className="justify-self-end w-[2.05rem] shrink-0 rounded-sm border border-[var(--accent)] bg-transparent px-0 py-0.5 text-center text-xs font-medium leading-none text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black"
             >
               지금
             </button>
