@@ -8,8 +8,9 @@ interface Props {
   // 설정 창이 없는 화면(커스텀 종목·카테고리)은 둘 다 넘기지 않는다 — 그러면 설정 버튼도 그리지 않는다.
   onToggleSettings?: () => void
   isSettingsOpen?: boolean
-  onOpenShare: () => void
-  isCaptureOpen: boolean
+  // 캡처할 화면이 없는 페이지(홈)는 둘 다 넘기지 않는다 — 그러면 캡처 버튼도 그리지 않는다.
+  onOpenShare?: () => void
+  isCaptureOpen?: boolean
   isNativeFullscreen: boolean
   onToggleFullscreen: () => void
   // false면 새로고침 버튼을 이 묶음에서 뺀다 — 콘솔 줄(시계 옆)에 PageRefreshButton으로 따로 둘 때.
@@ -152,7 +153,7 @@ export default function NavBarPageActions({
   onToggleSettings,
   isSettingsOpen = false,
   onOpenShare,
-  isCaptureOpen,
+  isCaptureOpen = false,
   isNativeFullscreen,
   onToggleFullscreen,
   showRefresh = true,
@@ -160,7 +161,7 @@ export default function NavBarPageActions({
   return (
     <>
       {showRefresh && <PageRefreshButton onRefresh={onRefresh} isRefreshing={isRefreshing} />}
-      <button
+      {onOpenShare && <button
         type="button"
         aria-label="캡처"
         aria-haspopup="dialog"
@@ -169,7 +170,7 @@ export default function NavBarPageActions({
         onClick={onOpenShare}
       >
         <CaptureIcon className={`h-4 w-4 ${isCaptureOpen ? FILLED_ICON_CLASS : ''}`} />
-      </button>
+      </button>}
       <button
         type="button"
         aria-label="F11"

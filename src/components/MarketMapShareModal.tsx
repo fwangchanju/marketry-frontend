@@ -15,6 +15,9 @@ interface Props {
   captureTarget: HTMLElement | null
 }
 
+// 텔레그램 버튼은 임시로 숨겼다. 다시 쓰라는 요청이 오면 새 버튼을 만들지 말고 이 값을 true로 바꿔 기존 버튼을 복원한다.
+const SHOW_TELEGRAM_BUTTON = false
+
 // MARKETRY 텔레그램 방 초대 링크 — 텔레그램 버튼이 연다.
 const TELEGRAM_ROOM_URL = 'https://t.me/+dqHQ460Ni5BmODdl'
 
@@ -128,16 +131,18 @@ export default function MarketMapShareModal({
               {isDownloading ? <Spinner className="h-4 w-4" /> : <DownloadIcon className="h-4 w-4" />}
               {downloadLabel}
             </button>
-            <button
-              type="button"
-              onClick={handleTelegramShare}
-              disabled={!previewSrc}
-              aria-label="텔레그램으로 공유"
-              className="nes-btn flex items-center gap-2 border-gray-600 bg-black px-3 py-1.5 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
-            >
-              <TelegramIcon className="h-4 w-4" />
-              텔레그램
-            </button>
+            {SHOW_TELEGRAM_BUTTON && (
+              <button
+                type="button"
+                onClick={handleTelegramShare}
+                disabled={!previewSrc}
+                aria-label="텔레그램으로 공유"
+                className="nes-btn flex items-center gap-2 border-gray-600 bg-black px-3 py-1.5 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+              >
+                <TelegramIcon className="h-4 w-4" />
+                텔레그램
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {/* 복사는 자동으로 하지 않고 이 버튼으로만 한다. 글자는 다른 버튼과 같은 4글자로 고정하고, 상태는

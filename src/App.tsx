@@ -49,7 +49,7 @@ export default function App() {
       <LoginGateProvider>
         <PageNumberStyle />
         <Routes>
-          <Route path="/" element={<Navigate to="/map/allstock" replace />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<MarketSummaryPage />} />
           <Route path="/summary" element={<Navigate to="/home" replace />} />
           <Route path="/map" element={<Navigate to="/map/allstock" replace />} />
