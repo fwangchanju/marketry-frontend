@@ -312,9 +312,12 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     enabled: needsTree && !isWaitingForSession && isRangeActive && rangeBaseSnapshotTime !== undefined,
     snapshotTime: rangeBaseSnapshotTime,
   })
+  // 끝일 가격의 이름 — 끝일의 종가 지도 시각 목록에 있으면 종가, 없으면(장중 실시간 지도) 현재가. 종목 팝업에 보인다.
+  const { data: rangeEndMonthDays } = useMarketMapSnapshotDays(market, pinnedSnapshotTime?.slice(0, 7) ?? '', { enabled: isRangeActive, retry: 1 })
+  const rangeEndPriceLabel = rangeEndMonthDays?.some(day => day.snapshotTime === pinnedSnapshotTime) === false ? '현재가' : '종가'
   const rangeResult = useMemo(
-    () => (snapshotData && rangeStartData ? buildRangeChangeRateTree(snapshotData.items, rangeStartData.items, rangeBaseKind) : null),
-    [snapshotData, rangeStartData, rangeBaseKind],
+    () => (snapshotData && rangeStartData ? buildRangeChangeRateTree(snapshotData.items, rangeStartData.items, rangeBaseKind, rangeEndPriceLabel) : null),
+    [snapshotData, rangeStartData, rangeBaseKind, rangeEndPriceLabel],
   )
   // 기간 등락률을 보는 동안 두 지도가 다 오기 전에는 값이 없다 — 끝일 지도 그대로의(하루치) 등락률을 기간 값처럼 보여 주지 않는다.
   const data: MarketMapResponse | undefined = useMemo(

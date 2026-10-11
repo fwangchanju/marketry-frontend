@@ -14,7 +14,8 @@ const roundTo2 = (value: number) => Math.round(value * 100) / 100
 // baseKind — 'close'는 기준일 종가 지도의 종가(현재가)를, 'previousClose'는 시작일 지도의 전일종가를 기준 가격으로 쓴다(앞선 거래일이 없을 때의 대비책).
 export type RangeBaseKind = 'close' | 'previousClose'
 
-export function buildRangeChangeRateTree(endRoots: MarketMapSectorNode[], startRoots: MarketMapSectorNode[], baseKind: RangeBaseKind = 'close'): RangeChangeRateResult {
+// endPriceLabel — 끝일 가격의 이름(끝일의 종가 지도면 '종가', 장중 실시간 지도면 '현재가'). 종목 팝업에 보인다.
+export function buildRangeChangeRateTree(endRoots: MarketMapSectorNode[], startRoots: MarketMapSectorNode[], baseKind: RangeBaseKind = 'close', endPriceLabel = '종가'): RangeChangeRateResult {
   const basePriceByCode = new Map<string, number>()
   const collectBasePrices = (nodes: MarketMapSectorNode[]) => {
     for (const node of nodes) {
@@ -34,7 +35,7 @@ export function buildRangeChangeRateTree(endRoots: MarketMapSectorNode[], startR
       excludedStockCount += 1
       return null
     }
-    return { ...item, lastPrice: basePrice, changeRate: roundTo2((item.currentPrice / basePrice - 1) * 100) }
+    return { ...item, lastPrice: basePrice, changeRate: roundTo2((item.currentPrice / basePrice - 1) * 100), rangeLabels: { base: '기준가', end: endPriceLabel } }
   }
   const convertNodes = (nodes: MarketMapSectorNode[]): MarketMapSectorNode[] =>
     nodes.flatMap(node => {
