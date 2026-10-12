@@ -46,6 +46,7 @@ import ClosingPriceLabel from '@/components/ClosingPriceLabel'
 import RangeCompareLabel from '@/components/RangeCompareLabel'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
+import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { marketRoute } from '@/utils/marketRoute'
 import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/utils/captureToDownload'
@@ -268,11 +269,23 @@ export default function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- market이 바뀔 때만 반응하면 됨(reset은 매 렌더 새 함수)
   }, [market])
 
+  // 안내창을 닫으면 들어온 곳(Home·Group)으로 돌려보낸다.
+  const leaveToEntryPage = useLeaveToEntryPage()
+
   // 그룹 페이지에서 업종을 눌러 온 주소(?sector=이름) — 데이터가 준비되면 그 업종을 누른 상태로 열고 주소에서 지운다.
+  // 못 찾으면 안내한다. 개발 모드의 효과 두 번 실행에도 안내창이 한 번만 뜨게, 안내한 이름을 기억해 둔다.
   const sectorParam = searchParams.get('sector')
+  const noticedSectorRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!sectorParam || filteredRootNodes.length === 0) return
-    enterSector(sectorParam)
+    if (!sectorParam) {
+      noticedSectorRef.current = null
+      return
+    }
+    if (filteredRootNodes.length === 0) return
+    if (!enterSector(sectorParam) && noticedSectorRef.current !== sectorParam) {
+      noticedSectorRef.current = sectorParam
+      void appAlert('해당 업종을 찾을 수 없습니다.\n이전 화면으로 돌아갑니다.').then(leaveToEntryPage)
+    }
     setSearchParams(
       prev => {
         const next = new URLSearchParams(prev)
@@ -284,8 +297,9 @@ export default function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 주소 값이 있고 트리가 준비됐을 때만 반응하면 된다(enterSector는 매 렌더 새 함수)
   }, [sectorParam, filteredRootNodes])
 
-  // 렌더러가 옛 캡처 URL(?market=...)로 요청할 때도 마켓 자체는 useGlobalSettings가 이미 우선 반영했으니,
-  // 여기서는 avgMode/sectorFilter를 반영하고 소비한 쿼리 파라미터만 주소에서 지운다.
+  // 캡처 URL의 avgMode/sectorFilter를 반영하고, 소비한 쿼리 파라미터를 주소에서 지운다.
+  // 옛 캡처 URL의 ?market=은 /map·/group 리다이렉트(App.tsx LegacyMarketRedirect)가 이미 경로로 옮겼다.
+  // 여기서 지우는 market은 경로가 있는 주소에 붙어 온 값뿐이다 — 마켓은 경로가 정하므로 지우기만 한다.
   useEffect(() => {
     const marketParam = searchParams.get('market')
     const isValidMarket = marketParam === 'KOSPI' || marketParam === 'KOSDAQ' || marketParam === 'ALL_STOCK'

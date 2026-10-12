@@ -9,6 +9,7 @@ import ProfilePage from './pages/ProfilePage'
 import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
 import MobileNotice from './components/MobileNotice'
+import { marketRoute } from '@/utils/marketRoute'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 
 // 페이지 전체와 document.body로 포털 렌더링한 메뉴/팝업에 같은 숫자 폭 규칙을 적용한다.
@@ -24,6 +25,18 @@ function PageNumberStyle() {
   }, [useTabularNumbers])
 
   return null
+}
+
+// 시장이 주소 조각으로 오기 전의 옛 주소(/map?market=KOSPI)를 지금 주소(/map/kospi)로 옮긴다.
+// ?market=은 경로 조각보다 먼저 지워지므로 그대로 두면 값이 사라진다 — 시장 값을 경로로 바꾸고, 나머지 쿼리와 해시는 그대로 둔다.
+function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/group' }) {
+  const { search, hash } = useLocation()
+  const params = new URLSearchParams(search)
+  const marketParam = params.get('market')
+  const market = marketParam === 'KOSPI' || marketParam === 'KOSDAQ' || marketParam === 'ALL_STOCK' ? marketParam : null
+  if (market) params.delete('market')
+  const rest = params.toString()
+  return <Navigate to={`${marketRoute(basePath, market ?? 'ALL_STOCK')}${rest ? `?${rest}` : ''}${hash}`} replace />
 }
 
 function LegacyGroupRedirect() {
@@ -52,11 +65,11 @@ export default function App() {
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<MarketSummaryPage />} />
           <Route path="/summary" element={<Navigate to="/home" replace />} />
-          <Route path="/map" element={<Navigate to="/map/allstock" replace />} />
+          <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
           <Route path="/map/kospi" element={<MapPage />} />
           <Route path="/map/kosdaq" element={<MapPage />} />
           <Route path="/map/allstock" element={<MapPage />} />
-          <Route path="/group" element={<Navigate to="/group/allstock" replace />} />
+          <Route path="/group" element={<LegacyMarketRedirect basePath="/group" />} />
           <Route path="/group/kospi" element={<GroupPage />} />
           <Route path="/group/kosdaq" element={<GroupPage />} />
           <Route path="/group/allstock" element={<GroupPage />} />
@@ -78,7 +91,7 @@ export default function App() {
               있어야 하고, 세션/시세 등 데이터 API를 호출하지 않는 순수 정적 페이지다. */}
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="*" element={<Navigate to="/map/allstock" replace />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </LoginGateProvider>
       </MobileGate>

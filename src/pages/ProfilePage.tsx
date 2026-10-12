@@ -4,6 +4,7 @@ import { isAxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import ProfileAvatar from '@/components/ProfileAvatar'
+import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useDeleteProfileImage, useUpdateNickname, useUploadProfileImage } from '@/hooks/useProfile'
 import { useLogout, useSession } from '@/hooks/useSession'
@@ -16,6 +17,7 @@ export default function ProfilePage() {
   const navigate = useNavigate()
   const { data: session, isLoading, isError } = useSession()
   const { requireLogin } = useLoginGate()
+  const leaveToEntryPage = useLeaveToEntryPage()
   const logout = useLogout()
   const updateNickname = useUpdateNickname()
   const uploadImage = useUploadProfileImage()
@@ -98,23 +100,23 @@ export default function ProfilePage() {
     }
   }
 
-  // 비로그인이 이 페이지에 들어오면 안내 문구를 보기 전에 바로 로그인 팝업을 띄운다. 팝업을 닫으면 아래 안내와 로그인 버튼이 남는다.
+  // 비로그인이 이 페이지에 들어오면 바로 로그인 팝업을 띄운다. 로그인 없이 팝업을 닫으면 들어온 곳으로 돌려보낸다.
   const needsLogin = !isLoading && !isError && session?.authenticated === false
   useEffect(() => {
-    if (needsLogin) requireLogin('/profile')
-  }, [needsLogin, requireLogin])
+    if (!needsLogin) return
+    void requireLogin('/profile').then(dismissed => { if (dismissed) leaveToEntryPage() })
+  }, [needsLogin, requireLogin, leaveToEntryPage])
 
   const handleLogout = async () => {
     try {
       await logout.mutateAsync()
-      navigate('/map/allstock', { replace: true })
+      navigate('/home', { replace: true })
     } catch {
       // 요청 실패는 아래 계정 카드에서 안내한다.
     }
   }
 
   // 로그인하지 않은 상태(세션 확인 중 포함)에서는 로고 말고 아무것도 보이지 않게 한다 — 로그인 팝업만 뜬다.
-  // 로그인 안내를 다시 보려면 페이지를 새로고침한다.
   if (!session?.authenticated && !isError) {
     return (
       <div className="min-h-screen text-white">
@@ -223,18 +225,7 @@ export default function ProfilePage() {
                 {logout.isError && <p role="alert" className="mt-3 text-sm text-red-300">로그아웃하지 못했습니다. 다시 시도해 주세요.</p>}
               </div>
             </>
-          ) : (
-            <>
-              <p className="text-sm text-gray-300">로그인 후 이용 가능합니다.</p>
-              <button
-                type="button"
-                onClick={() => requireLogin('/profile')}
-                className="nes-btn mt-5 border-[var(--accent)] bg-transparent px-4 py-2 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black"
-              >
-                로그인
-              </button>
-            </>
-          )}
+          ) : null}
         </section>
       </main>
     </div>
