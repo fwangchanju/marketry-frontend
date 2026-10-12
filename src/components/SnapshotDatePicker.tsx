@@ -430,9 +430,9 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     }
   }
 
-  // 지난 날짜나 기간을 보는 중이거나 기간을 고르는 중일 때 보인다 — 고른 날짜·기간을 모두 풀고 실시간 지도로 바로 돌아간다(적용을 따로 누를 필요 없다).
+  // 지난 날짜나 기간을 보는 중일 때만 보인다(하루·기간 모드 모두) — 고른 날짜·기간을 모두 풀고 실시간 지도로 바로 돌아간다(적용을 따로 누를 필요 없다).
   // 아래쪽 "초기화"(고른 날짜만 비움)와 헷갈리지 않게 되돌리기 화살표 대신 지도 위의 "실시간" 시계 아이콘과 글자를 쓴다.
-  const liveButton = (isPast || isRangeCalendar) ? (
+  const liveButton = isPast ? (
     <button
       type="button"
       aria-label="실시간으로 돌아가기"
@@ -447,14 +447,14 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       실시간
     </button>
   ) : null
-  // 하루 모드는 날짜 칸을, 기간 모드는 종료일을 오늘로 채운다("실시간" 버튼은 지난 날짜·기간을 풀고 바로 실시간으로 돌아간다).
+  // 하루 모드는 날짜 칸을, 기간 모드는 종료일을 가장 최근 거래일로 채운다(휴장일에는 실제 오늘이 아니라 최근 거래일이라 "최근일"이다). "실시간" 버튼은 지난 날짜·기간을 풀고 바로 실시간으로 돌아간다.
   const todayButton = (
     <button
       type="button"
       onClick={pickToday}
       className="shrink-0 rounded-lg border-0 bg-zinc-600 px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-white transition-colors hover:bg-zinc-500"
     >
-      오늘
+      최근일
     </button>
   )
 
@@ -481,7 +481,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           aria-label="날짜 선택 달력"
           className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-gray-500 bg-[#363639] p-2 text-sm font-normal tracking-normal text-white shadow-xl"
         >
-          {/* 위쪽 줄: 왼쪽에 하루/기간 스위치, 오른쪽 끝에 실시간·오늘을 나란히 둔다(하루·기간 모드가 같은 배치). 고른 기간의 거래일 수는 아래쪽 줄의 종료일 오른쪽에 적는다. */}
+          {/* 위쪽 줄: 왼쪽에 하루/기간 스위치, 오른쪽 끝에 실시간·최근일을 나란히 둔다(하루·기간 모드가 같은 배치). 고른 기간의 거래일 수는 아래쪽 줄의 종료일 오른쪽에 적는다. */}
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-gray-500 pb-2 text-[13px]">
             <span>
               {onSelectRange && (
