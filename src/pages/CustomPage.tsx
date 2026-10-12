@@ -127,6 +127,7 @@ export default function CustomPage() {
     data: stockCatalog,
     isLoading: isStockCatalogLoading,
     isError: isStockCatalogError,
+    refetch: refetchStockCatalog,
   } = useStockCatalog({ enabled: isReadOnlySheet || mode === 'stock' })
   const nxtStockCodes = useMemo(
     () => new Set((stockCatalog ?? []).filter(item => item.nxtEnabled).map(item => item.stockCode)),
@@ -264,6 +265,7 @@ export default function CustomPage() {
                     data={taxonomyMap}
                     isLoading={isTaxonomyLoading}
                     isError={isTaxonomyError || (mode === 'stock' && isStockCatalogError)}
+                    onRetry={() => { void refetchTaxonomy(); if (mode === 'stock') void refetchStockCatalog() }}
                     source={sheet === 'MARKETRY' ? 'MARKETRY' : 'KRX'}
                     nxtOnly={nxtOnly}
                     onNxtOnlyChange={setIsNxtOnlyView}

@@ -56,6 +56,7 @@ export function useSectorDeletePreview() {
 export function useCreateSector() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { failure: '업종을 추가하지 못했습니다.' },
     mutationFn: ({ name, parentId }: { name: string; parentId: number | null }) => createSector(name, parentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customMarketMapKeys.sectors() })
@@ -67,6 +68,7 @@ export function useCreateSector() {
 export function useRenameSector() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { failure: '업종 이름을 바꾸지 못했습니다.' },
     mutationFn: ({ id, name }: { id: number; name: string }) => renameSector(id, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customMarketMapKeys.sectors() })
@@ -78,6 +80,7 @@ export function useRenameSector() {
 export function useReparentSector() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { failure: '업종을 옮기지 못했습니다.' },
     mutationFn: ({ id, parentId }: { id: number; parentId: number | null }) => reparentSector(id, parentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customMarketMapKeys.sectors() })
@@ -174,6 +177,7 @@ function patchStockSectorId(queryClient: ReturnType<typeof useQueryClient>, stoc
 export function useAssignStockSector() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { failure: '종목의 업종을 바꾸지 못했습니다.' },
     mutationFn: ({ stockCode, sectorId }: { stockCode: string; sectorId: number }) =>
       assignStockSector(stockCode, sectorId),
     onSuccess: (_data, { stockCode, sectorId }) => patchStockSectorId(queryClient, [stockCode], sectorId),
@@ -183,6 +187,7 @@ export function useAssignStockSector() {
 export function useBulkAssignStockSector() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { failure: '종목의 업종을 바꾸지 못했습니다.' },
     mutationFn: ({ stockCodes, sectorId }: { stockCodes: string[]; sectorId: number }) =>
       bulkAssignStockSector(stockCodes, sectorId),
     onSuccess: (_data, { stockCodes, sectorId }) => patchStockSectorId(queryClient, stockCodes, sectorId),
@@ -192,6 +197,7 @@ export function useBulkAssignStockSector() {
 export function useUpdateStockAlias() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { failure: '종목 약칭을 바꾸지 못했습니다.' },
     mutationFn: ({ stockCode, alias }: { stockCode: string; alias: string | null }) =>
       updateStockAlias(stockCode, alias),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: customMarketMapKeys.stockSectors() }),
@@ -212,16 +218,17 @@ export function useStockSectors(options?: { enabled?: boolean }) {
 // 받아 draft를 직접 갱신하고 필요하면 그때 캐시도 같이 맞춘다(한 번의 "적용"이 여러 건의 create/
 // update/delete로 나뉠 수 있어서, 낱개 뮤테이션마다 캐시를 건드리면 중간 상태가 잠깐씩 노출된다).
 export function useCreateCustomScaleThreshold() {
-  return useMutation({ mutationFn: createCustomScaleThreshold })
+  return useMutation({ mutationFn: createCustomScaleThreshold, meta: { failure: '등락률 색상을 저장하지 못했습니다.' } })
 }
 
 export function useUpdateCustomScaleThreshold() {
   return useMutation({
+    meta: { failure: '등락률 색상을 저장하지 못했습니다.' },
     mutationFn: ({ id, payload }: { id: number; payload: Parameters<typeof updateCustomScaleThreshold>[1] }) =>
       updateCustomScaleThreshold(id, payload),
   })
 }
 
 export function useDeleteCustomScaleThreshold() {
-  return useMutation({ mutationFn: (id: number) => deleteCustomScaleThreshold(id) })
+  return useMutation({ mutationFn: (id: number) => deleteCustomScaleThreshold(id), meta: { failure: '등락률 색상을 삭제하지 못했습니다.' } })
 }

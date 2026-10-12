@@ -7,7 +7,8 @@ const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: (error, _variables, _context, mutation) => {
       if (mutation.options.meta?.skipGlobalError) return
-      appAlert(getErrorDetail(error))
+      const failure = mutation.options.meta?.failure
+      appAlert(getErrorDetail(error, typeof failure === 'string' ? failure : undefined))
     },
   }),
   defaultOptions: {

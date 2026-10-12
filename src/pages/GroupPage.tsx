@@ -379,7 +379,7 @@ export default function GroupPage() {
                 </div>
               ) : isError ? (
                 <div className="flex flex-1 items-center justify-center">
-                  <Spinner errorMessage="데이터를 불러오지 못했습니다." />
+                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
                 </div>
               ) : data?.snapshotTime == null ? (
                 // now가 성공했지만 그 시각 데이터 자체가 없다 — 쌍 쿼리가 비활성이라(결정 4)

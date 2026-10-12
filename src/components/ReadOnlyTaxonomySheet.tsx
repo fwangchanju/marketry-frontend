@@ -102,6 +102,8 @@ interface Props {
   isLoading: boolean
   // 데이터를 불러오지 못했는지 — 못 불러온 것을 "표시할 데이터가 없다"로 잘못 보여주지 않는다.
   isError: boolean
+  // 불러오지 못했을 때 "다시 시도"를 누르면 호출한다.
+  onRetry?: () => void
   // 어떤 분류를 읽기 전용으로 보여주는지 — krx는 거래소 분류, marketry는 올린 분류다. "NXT만 보기"는 krx만 쓴다.
   source: 'KRX' | 'MARKETRY'
   // NXT 시트면 NXT 거래 가능 종목만 남긴다. 업종 분류는 KRX 것을 그대로 쓴다.
@@ -139,7 +141,7 @@ function collectSectorRows(nodes: MarketMapResponse['items'], parentPath: string
 
 // KRX/NXT·MARKETRY 시트 — 업종 분류를 읽기만 하는 화면이다. 편집 기능(추가·이동·배정)은 없고, 지도의 해당 분류이 보여주는
 // 분류(/map?source=...)를 그대로 표로 보여준다. 시세가 있는 종목만 내려오므로 거래정지 종목 등은 빠질 수 있다.
-export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, source, nxtOnly, onNxtOnlyChange, nxtStockCodes, stockMarkets, stockIndustries, isNxtLoading, onCountLabelChange }: Props) {
+export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, onRetry, source, nxtOnly, onNxtOnlyChange, nxtStockCodes, stockMarkets, stockIndustries, isNxtLoading, onCountLabelChange }: Props) {
   // "NXT만 보기"는 업종 표에서만 쓴다. 종목 표는 NXT 열의 필터로 거른다.
   const effectiveNxtOnly = nxtOnly && mode !== 'stock'
   const sectors = useMemo<SectorRow[]>(() => {
@@ -160,7 +162,7 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
   if (isError) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center p-8">
-        <Spinner errorMessage="데이터를 불러오지 못했습니다." />
+        <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} />
       </div>
     )
   }

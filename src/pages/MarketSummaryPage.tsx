@@ -35,7 +35,7 @@ export default function MarketSummaryPage() {
   const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
-  const { settingsModalProps, data, market, isLoading, isError, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers } = useGlobalSettings()
+  const { settingsModalProps, data, market, isLoading, isError, refetchMarketMap, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers } = useGlobalSettings()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsSidebarSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
@@ -143,7 +143,7 @@ export default function MarketSummaryPage() {
                     </div>
                   ) : isError ? (
                     <div className="flex flex-1 items-center justify-center">
-                      <Spinner errorMessage="데이터를 불러오지 못했습니다." />
+                      <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
                     </div>
                   ) : frame.body}
                 </div>
