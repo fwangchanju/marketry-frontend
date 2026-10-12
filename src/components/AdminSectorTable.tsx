@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { createPortal } from 'react-dom'
 import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragMoveEvent, type DragOverEvent, type Modifier } from '@dnd-kit/core'
@@ -37,6 +37,28 @@ const ADD_CHILD_MAX_PARENT_DEPTH = 1
 // 섹터 이름 글자 수 상한(공백 포함) — 대/중/소분류 구분 없이 통일한다. 이미 이 길이를 넘는 이름은 그대로
 // 표시되고, 이름을 고칠 때만 제한이 걸린다.
 const MAX_SECTOR_NAME_LENGTH = 12
+
+// 업종 이름 입력칸 — 글자 수 상한에 닿으면 칸 아래에 이유를 알려 준다(상한을 넘는 글자는 조용히 잘리므로).
+function SectorNameInput({ wrapperClassName = '', onFocus, onBlur, ...props }: ComponentProps<'input'> & { wrapperClassName?: string }) {
+  const [focused, setFocused] = useState(false)
+  const atLimit = typeof props.value === 'string' && props.value.length >= MAX_SECTOR_NAME_LENGTH
+  return (
+    <span className={`relative ${wrapperClassName}`}>
+      <input
+        type="text"
+        maxLength={MAX_SECTOR_NAME_LENGTH}
+        {...props}
+        onFocus={e => { setFocused(true); onFocus?.(e) }}
+        onBlur={e => { setFocused(false); onBlur?.(e) }}
+      />
+      {focused && atLimit && (
+        <span role="status" className={`pointer-events-none absolute left-0 top-full z-50 mt-1 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}>
+          최대 {MAX_SECTOR_NAME_LENGTH}자까지 입력할 수 있습니다.
+        </span>
+      )}
+    </span>
+  )
+}
 
 // 상단바 우측 아이콘(NavBarPageActions)과 같은 모양 — 회색 아이콘, hover 때 강조색.
 const ICON_BUTTON_CLASS =
@@ -352,7 +374,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, onCou
   const handleCreate = () => {
     const trimmed = newName.trim()
     if (!trimmed) return
-    createSector.mutate({ name: trimmed, parentId: null }, { onSuccess: created => triggerHighlight(created.id) })
+    // 서버가 거절하거나 실패하면(안내창이 뜬다) 입력했던 이름을 칸에 되돌려 다시 입력하지 않게 한다.
+    createSector.mutate({ name: trimmed, parentId: null }, {
+      onSuccess: created => triggerHighlight(created.id),
+      onError: () => setNewName(trimmed),
+    })
     setNewName('')
   }
 
@@ -361,7 +387,10 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, onCou
     if (parent && parent.depth >= MAX_SECTOR_DEPTH) return
     const trimmed = (childNameByParent[parentId] ?? '').trim()
     if (!trimmed) return
-    createSector.mutate({ name: trimmed, parentId }, { onSuccess: created => triggerHighlight(created.id) })
+    createSector.mutate({ name: trimmed, parentId }, {
+      onSuccess: created => triggerHighlight(created.id),
+      onError: () => setChildNameByParent(prev => ({ ...prev, [parentId]: trimmed })),
+    })
     setChildNameByParent(prev => ({ ...prev, [parentId]: '' }))
   }
 
@@ -380,6 +409,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, onCou
       onSuccess: () => {
         triggerHighlight(sector.id)
         pushHistory({ type: 'rename', sectorId: sector.id, before: sector.name, after: trimmed })
+      },
+      // 실패하면 이름 입력칸을 입력했던 이름 그대로 다시 열어 고쳐서 다시 저장하게 한다.
+      onError: () => {
+        setRenamingId(sector.id)
+        setRenameValue(trimmed)
       },
     })
   }
@@ -520,9 +554,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, onCou
           <td className="py-0.5 text-left" style={{ paddingLeft: `${row.depth * 20 + 8}px` }}>
             {/* 입력칸 왼쪽을 항목 이름 글자의 시작선에 맞춘다 — 손잡이(24px) + 간격(4px) + 번호 칸(28px) + 간격(8px) = 64px. */}
             <div className="group/create flex items-center gap-2 pl-16">
-              <input
-                type="text"
-                maxLength={MAX_SECTOR_NAME_LENGTH}
+              <SectorNameInput
+                wrapperClassName="inline-flex"
                 autoFocus
                 value={childNameByParent[parentId] ?? ''}
                 onChange={e => setChildNameByParent(prev => ({ ...prev, [parentId]: e.target.value }))}
@@ -575,9 +608,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, onCou
             <div className="flex min-w-0 flex-1 items-center">
               <DraggableSectorHandle sectorId={sector.id} parentId={sector.parentId} enabled />
               {isRenaming ? (
-                <input
-                  type="text"
-                  maxLength={MAX_SECTOR_NAME_LENGTH}
+                <SectorNameInput
+                  wrapperClassName="flex min-w-0 flex-1"
                   autoFocus
                   value={renameValue}
                   onChange={e => setRenameValue(e.target.value)}
@@ -803,9 +835,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, onCou
       <section aria-label="업종 추가">
         <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">업종 추가</h2>
         <div className="flex min-w-0 items-center gap-2">
-          <input
-            type="text"
-            maxLength={MAX_SECTOR_NAME_LENGTH}
+          <SectorNameInput
+            wrapperClassName="flex min-w-0 flex-1"
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
