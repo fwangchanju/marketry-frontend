@@ -20,8 +20,9 @@ interface Props {
 const BUTTON_BASE_CLASS =
   'flex h-7 items-center justify-center border-0 outline-none hover:text-[var(--accent)] focus-visible:text-[var(--accent)]'
 // 아이콘만 있는 버튼의 회색 채움 — 시간 글자가 붙은 새로고침 버튼은 채우지 않는다.
-const ICON_FILL_CLASS = 'rounded-lg bg-zinc-600 transition-colors hover:bg-zinc-500'
-const BUTTON_CLASS = `${BUTTON_BASE_CLASS} ${ICON_FILL_CLASS} w-7`
+// 아이콘만 있는 버튼은 평소·마우스를 올릴 때·켜져 있을 때 모두 틀 없이 아이콘만 보인다(켜진 상태는 아이콘 색과 안쪽 채움으로 알린다).
+const ICON_FRAME_CLASS = 'bg-transparent'
+const BUTTON_CLASS = `${BUTTON_BASE_CLASS} w-7`
 // 켜진 상태의 아이콘은 선 색(청록)을 35% 투명하게 안쪽에 채운다 — 북마크가 켜진 모양.
 export const FILLED_ICON_CLASS = 'fill-current/35'
 
@@ -116,7 +117,7 @@ export function PageRefreshButton({
         aria-label="스냅샷 새로고침"
         aria-busy={showRefreshing}
         aria-describedby={helpText && isHelpOpen ? 'snapshot-refresh-help' : undefined}
-        className={`${BUTTON_BASE_CLASS} ${children ? 'group/refresh gap-1.5 whitespace-nowrap bg-transparent' : `${ICON_FILL_CLASS} w-7`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default text-[var(--accent)]' : 'text-gray-200'} ${className}`}
+        className={`${BUTTON_BASE_CLASS} ${children ? 'group/refresh gap-1.5 whitespace-nowrap bg-transparent' : `${ICON_FRAME_CLASS} w-7`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default text-[var(--accent)]' : 'text-gray-300'} ${className}`}
         onClick={handleRefresh}
         onFocus={helpText ? () => setIsHelpOpen(true) : undefined}
         onBlur={helpText ? () => setIsHelpOpen(false) : undefined}
@@ -168,7 +169,7 @@ export default function NavBarPageActions({
         aria-label="캡처"
         aria-haspopup="dialog"
         aria-expanded={isCaptureOpen}
-        className={`flex h-7 w-7 items-center justify-center rounded-lg border-0 bg-zinc-600 outline-none transition-colors hover:bg-zinc-500 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${isCaptureOpen ? 'text-[var(--brand)]' : 'text-gray-200'}`}
+        className={`flex h-7 w-7 items-center justify-center border-0 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${ICON_FRAME_CLASS} ${isCaptureOpen ? 'text-[var(--brand)]' : 'text-gray-300'}`}
         onClick={onOpenShare}
       >
         <CaptureIcon className={`h-4 w-4 ${isCaptureOpen ? FILLED_ICON_CLASS : ''}`} />
@@ -176,8 +177,8 @@ export default function NavBarPageActions({
       <button
         type="button"
         aria-label="F11"
-        className={`flex h-7 w-7 items-center justify-center rounded-lg border-0 bg-zinc-600 outline-none transition-colors hover:bg-zinc-500 hover:text-[var(--accent)] ${
-          isNativeFullscreen ? 'text-[var(--accent)]' : 'text-gray-200'
+        className={`flex h-7 w-7 items-center justify-center border-0 outline-none hover:text-[var(--accent)] ${ICON_FRAME_CLASS} ${
+          isNativeFullscreen ? 'text-[var(--accent)]' : 'text-gray-300'
         }`}
         onClick={onToggleFullscreen}
       >
@@ -188,7 +189,7 @@ export default function NavBarPageActions({
           type="button"
           aria-label="설정"
           data-settings-toggle
-          className={`${BUTTON_CLASS} ${isSettingsOpen ? 'text-[var(--accent)]' : 'text-gray-200'}`}
+          className={`${BUTTON_CLASS} ${ICON_FRAME_CLASS} ${isSettingsOpen ? 'text-[var(--accent)]' : 'text-gray-300'}`}
           onClick={onToggleSettings}
         >
           <SettingsIcon className={`h-4 w-4 ${isSettingsOpen ? FILLED_ICON_CLASS : ''}`} />
