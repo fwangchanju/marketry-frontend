@@ -282,7 +282,11 @@ export default function MapPage() {
       return
     }
     if (filteredRootNodes.length === 0) return
-    if (!enterSector(sectorParam) && noticedSectorRef.current !== sectorParam) {
+    // 그룹 페이지에서 들어온 칸은 단계별로 기록을 쌓지 않고 그 자체를 기준 칸으로 삼는다 — 뒤로가기를 한 번 누르면 바로 그룹으로 돌아간다.
+    // (지금보다 더 깊은 경로로 들어갈 때만 — 깊이가 같거나 얕으면 새 칸이 필요 없다.)
+    const entered = enterSector(sectorParam)
+    entryFromOtherPageRef.current = entered !== null && entered.length > path.length
+    if (entered === null && noticedSectorRef.current !== sectorParam) {
       noticedSectorRef.current = sectorParam
       void appAlert('해당 업종을 찾을 수 없습니다.\n이전 화면으로 돌아갑니다.').then(leaveToEntryPage)
     }
@@ -346,6 +350,10 @@ export default function MapPage() {
   const historyConsumingRef = useRef(false) // 코드가 일으킨 history.go()의 popstate는 무시한다
   const historyPathnameRef = useRef('') // 기록 칸을 쌓은 주소 — 다른 주소로 이동했으면 go()로 정리하지 않는다
   const prevPathLengthRef = useRef(0)
+  // 다른 페이지(그룹)에서 업종을 눌러 들어온 칸 — 그 칸이 곧 기준 칸이다. 기준 칸의 깊이(평소 0, 그룹에서 중분류로 들어오면 2)보다 얕은 단계는 기록 칸이 없다.
+  const entryFromOtherPageRef = useRef(false)
+  const baseDepthRef = useRef(0)
+  const pendingBasePathRef = useRef<string[] | null>(null) // history.go()가 끝난 뒤 기준 칸에 적을 경로
   const pendingUpDepthRef = useRef<number | null>(null)
 
   // 위로 가는 요청 — 줌아웃 애니메이션 중이면 가장 위쪽 목표 깊이만 기억해 뒀다가 끝나면 이어서 처리한다.
@@ -371,19 +379,39 @@ export default function MapPage() {
     const previous = prevPathLengthRef.current
     prevPathLengthRef.current = depth
     if (depth > previous) {
-      if (depth > historyDepthRef.current) {
+      if (entryFromOtherPageRef.current) {
+        // 그룹에서 들어온 칸: 새 칸을 쌓지 않고 지금 칸에 경로를 적어 기준 칸으로 삼는다.
+        entryFromOtherPageRef.current = false
+        window.history.replaceState({ ...(window.history.state ?? {}), marketMapPath: path }, '')
+        baseDepthRef.current = depth
+        historyDepthRef.current = depth
+        historyPathnameRef.current = window.location.pathname
+      } else if (depth > historyDepthRef.current) {
         for (let k = historyDepthRef.current + 1; k <= depth; k++) {
           window.history.pushState({ ...(window.history.state ?? {}), marketMapPath: path.slice(0, k) }, '')
         }
         historyDepthRef.current = depth
         historyPathnameRef.current = window.location.pathname
       }
-    } else if (depth < previous && depth < historyDepthRef.current) {
-      const stale = historyDepthRef.current - depth
-      historyDepthRef.current = depth
-      if (window.location.pathname === historyPathnameRef.current) {
-        historyConsumingRef.current = true
-        window.history.go(-stale)
+    } else if (depth < previous) {
+      // 위로 올라올 때: 기준 칸 위에 쌓인 칸만 history.go()로 정리한다(기준 칸까지 지우면 그룹으로 나가 버린다).
+      const floor = Math.max(depth, baseDepthRef.current)
+      let consuming = false
+      if (floor < historyDepthRef.current) {
+        const stale = historyDepthRef.current - floor
+        historyDepthRef.current = floor
+        if (window.location.pathname === historyPathnameRef.current) {
+          historyConsumingRef.current = true
+          window.history.go(-stale)
+          consuming = true
+        }
+      }
+      // 기준 칸보다 얕은 단계로 올라오면 기준 칸이 그 얕은 경로를 가리키게 고친다(안 그러면 나중에 이 칸으로 돌아왔을 때 처음 깊이로 되돌아간다).
+      if (depth < baseDepthRef.current) {
+        baseDepthRef.current = depth
+        historyDepthRef.current = depth
+        if (consuming) pendingBasePathRef.current = path.slice(0, depth)
+        else window.history.replaceState({ ...(window.history.state ?? {}), marketMapPath: path.slice(0, depth) }, '')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 길이가 바뀔 때만 반응하면 된다(path 내용은 그때의 값을 쓴다)
@@ -392,6 +420,10 @@ export default function MapPage() {
     const handlePopState = (e: PopStateEvent) => {
       if (historyConsumingRef.current) {
         historyConsumingRef.current = false
+        if (pendingBasePathRef.current !== null) {
+          window.history.replaceState({ ...(window.history.state ?? {}), marketMapPath: pendingBasePathRef.current }, '')
+          pendingBasePathRef.current = null
+        }
         return
       }
       // 이 지도 화면 안에서의 이동만 다룬다 — 다른 페이지로 나가는 뒤로가기는 그대로 둔다.
