@@ -24,10 +24,10 @@ export const FONT_BAR_TITLE = 'text-xl leading-none font-bold'
 export const FONT_BAR_MODE_STATUS = 'text-base leading-none font-medium'
 
 // 세 번째 바 — 날짜·시간(스냅샷 시각). 숫자 폭을 같게 맞춰 시각이 바뀌어도 뒤의 시장 아이콘이 움직이지 않게 한다.
-// 14px, semibold(600) — 옆의 ALL STOCK 드롭다운과 같은 크기. 글자 사이 간격(자간)은 조금 좁힌다(-0.04em — tracking-tight의 -0.025em보다 한 걸음 더).
-// 크기·굵기를 뺀 나머지 모양 — 크기와 굵기를 따로 정하는 곳(설정창 아래의 업데이트 시각 12px, 500)이 쓴다.
-export const FONT_BAR_TIME_SHAPE = 'leading-none tabular-nums tracking-[-0.04em]'
-export const FONT_BAR_TIME = `text-sm font-semibold ${FONT_BAR_TIME_SHAPE}`
+// 15px, medium(500). 글자 사이 간격(자간)은 조금 좁힌다(-0.04em — tracking-tight의 -0.025em보다 한 걸음 더).
+// 크기를 뺀 나머지 모양 — 크기를 따로 정하는 곳(설정창 아래의 업데이트 시각)이 쓴다.
+export const FONT_BAR_TIME_SHAPE = 'leading-none font-medium tabular-nums tracking-[-0.04em]'
+export const FONT_BAR_TIME = `text-[15px] ${FONT_BAR_TIME_SHAPE}`
 
 // 세 번째 바 — 범례. 12px, bold.
 export const FONT_BAR_LEGEND = 'text-xs font-bold'
