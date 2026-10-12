@@ -1,3 +1,4 @@
+import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useState } from 'react'
 import { captureElementToDataUrl } from '@/utils/captureToPreview'
 import { CheckIcon, CopyIcon, DownloadIcon, TelegramIcon } from '@/components/icons/MarketMapIcons'
@@ -126,7 +127,7 @@ export default function MarketMapShareModal({
               type="button"
               onClick={() => onDownload(previewSrc)}
               disabled={isDownloading}
-              className="nes-btn flex items-center gap-2 border-gray-600 bg-black px-3 py-1.5 text-sm text-white hover:bg-gray-800"
+              className={BUTTON_BASE_CLASS}
             >
               {isDownloading ? <Spinner className="h-4 w-4" /> : <DownloadIcon className="h-4 w-4" />}
               {downloadLabel}
@@ -137,7 +138,7 @@ export default function MarketMapShareModal({
                 onClick={handleTelegramShare}
                 disabled={!previewSrc}
                 aria-label="텔레그램으로 공유"
-                className="nes-btn flex items-center gap-2 border-gray-600 bg-black px-3 py-1.5 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+                className={BUTTON_BASE_CLASS}
               >
                 <TelegramIcon className="h-4 w-4" />
                 텔레그램
@@ -145,17 +146,13 @@ export default function MarketMapShareModal({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {/* 복사는 자동으로 하지 않고 이 버튼으로만 한다. 글자는 다른 버튼과 같은 4글자로 고정하고, 상태는
-                아이콘(복사 중=스피너, 완료=체크)과 색(완료=강조색)으로 보여준다. 실패만 "복사실패"(4글자). */}
+            {/* 복사는 자동으로 하지 않고 이 버튼으로만 한다. 공유는 대부분 붙여 넣는 용도라 이 버튼이 강조 버튼이다(청록). 글자는 다른 버튼과 같은 4글자로 고정하고,
+                상태는 아이콘(복사 중=스피너, 완료=체크)으로 보여준다. 실패만 "복사실패"(4글자). */}
             <button
               type="button"
               onClick={() => onCopy(previewSrc)}
               disabled={!previewSrc || isCopying}
-              className={`nes-btn flex items-center gap-2 px-3 py-1.5 text-sm disabled:opacity-50 ${
-                copyLabel === 'Copied'
-                  ? 'border-[var(--accent)] bg-[var(--accent)] text-black hover:bg-[var(--accent-hover)] hover:text-black'
-                  : 'border-gray-600 bg-black text-white hover:bg-gray-800'
-              }`}
+              className={BUTTON_ACCENT_CLASS}
             >
               {isCopying ? <Spinner className="h-4 w-4" /> : copyLabel === 'Copied' ? <CheckIcon className="h-4 w-4" /> : <CopyIcon className="h-4 w-4" />}
               {copyLabel === 'Failed' ? '복사실패' : '클립보드'}
@@ -163,7 +160,7 @@ export default function MarketMapShareModal({
             <button
               type="button"
               onClick={onClose}
-              className="nes-btn flex items-center gap-2 border-gray-600 bg-black px-3 py-1.5 text-sm text-white hover:bg-gray-800"
+              className={BUTTON_BASE_CLASS}
             >
               닫기
             </button>

@@ -1,3 +1,4 @@
+import { BUTTON_SMALL_ACCENT_CLASS, BUTTON_SMALL_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useSession, useLogout, useSessionKeepAlive, useLocalDevLogin } from '@/hooks/useSession'
@@ -22,7 +23,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isDevSignupPending, setIsDevSignupPending] = useState(false)
   const [devSignupError, setDevSignupError] = useState<string | null>(null)
-  // 로컬 전용 "테스트 회원" 버튼 — 눌러서 테스트 회원으로 바꾸고, 다시 누르면 로그아웃 없이 원래 계정으로 돌아온다.
+  // 로컬 전용 "테스트" 버튼 — 눌러서 테스트 회원으로 바꾸고, 다시 누르면 로그아웃 없이 원래 계정으로 돌아온다.
   const [isTestMember] = useState(isTestMemberActive)
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profileButtonRef = useRef<HTMLButtonElement>(null)
@@ -96,20 +97,23 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
             onClick={handleToggleTestMember}
             disabled={isLoading || isDevSignupPending}
             aria-pressed={isTestMember}
-            className={`nes-btn bg-black px-3 py-1 text-xs hover:bg-zinc-700 disabled:opacity-50 ${isTestMember ? 'border-[var(--brand)] text-[var(--brand)]' : 'border-gray-600 text-white'}`}
+            className={`${BUTTON_SMALL_BASE_CLASS} ${isTestMember ? '!text-[var(--brand)]' : ''}`}
             title={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다.'}
           >
-            {isDevSignupPending ? '전환 중…' : '테스트 회원'}
+            {isDevSignupPending ? '전환 중…' : '테스트'}
           </button>
           {devSignupError && <span role="alert" className="text-xs text-[var(--accent)]">{devSignupError}</span>}
         </div>
       )}
-      {hideAccount ? null : isLoggedOut ? (
+      {hideAccount ? null : (
+      // 계정 칸 폭을 고정한다 — 프로필 사진과 로그인 버튼의 폭이 달라서, 그대로 두면 로그인 상태가 바뀔 때 왼쪽의 "테스트" 버튼이 옆으로 밀린다.
+      <div className="flex min-w-[60px] justify-end">
+      {isLoggedOut ? (
         // 비로그인은 프로필 아이콘 대신 "로그인" 버튼을 바로 보여줘서 로그인/비로그인 상태가 한눈에 구분된다.
         <button
           type="button"
           onClick={() => requireLogin(`${pathname}${search}${hash}`, { hideMessage: true })}
-          className="nes-btn border-[var(--accent)] bg-transparent px-3 py-1 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black"
+          className={BUTTON_SMALL_ACCENT_CLASS}
         >
           로그인
         </button>
@@ -158,6 +162,8 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
             ) : null}
           </div>
         )}
+      </div>
+      )}
       </div>
       )}
       </div>
