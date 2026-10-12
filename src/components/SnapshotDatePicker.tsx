@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { CalendarIcon, ChevronDownIcon } from '@/components/icons/MarketMapIcons'
+import { CalendarIcon, ChevronDownIcon, ClockIcon } from '@/components/icons/MarketMapIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useMarketMapSnapshotDays, useTradingDayGap } from '@/hooks/useMarketMap'
 import Spinner from '@/components/Spinner'
@@ -62,7 +62,7 @@ function MonthChoice({ market, month, isCurrent, isAllowed, onChoose }: { market
       aria-pressed={isCurrent}
       onClick={onChoose}
       className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${
-        isCurrent ? 'bg-[var(--accent)] font-semibold text-black' : disabled ? 'cursor-not-allowed bg-transparent text-gray-600' : 'bg-transparent text-gray-200 hover:bg-white/10'
+        isCurrent ? 'bg-cyan-700 font-semibold text-white' : disabled ? 'cursor-not-allowed bg-transparent text-gray-600' : 'bg-transparent text-gray-200 hover:bg-white/10'
       }`}
     >
       {month.monthIndex + 1}월
@@ -151,7 +151,7 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
           </div>
           {/* 날짜 영역은 요일 줄을 뺀 나머지 높이를 모두 차지해서, 로딩 원이 그 영역 정중앙에 놓인다(날짜 줄이 5줄인 달도 마찬가지). */}
           <div className="flex min-h-[13.5rem] flex-col">
-        <div className="grid grid-cols-7 text-center text-xs text-gray-400">
+        <div className="grid grid-cols-7 text-center text-[13px] text-gray-400">
           {WEEKDAY_LABELS.map(label => (
             <span key={label} className="py-1">{label}</span>
           ))}
@@ -177,7 +177,7 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
               const bandShape = date === bandStart ? 'left-1/2 right-0' : date === bandEnd ? 'left-0 right-1/2' : `inset-x-0 ${weekday === 0 || day === 1 ? 'rounded-l-full' : ''} ${weekday === 6 || day === daysInMonth ? 'rounded-r-full' : ''}`
               return (
                 <div key={date} className="relative my-0.5 flex h-7 items-center justify-center">
-                  {hasBand && <span aria-hidden="true" className={`absolute inset-y-0 bg-[var(--accent)]/25 ${bandShape}`} />}
+                  {hasBand && <span aria-hidden="true" className={`absolute inset-y-0 bg-cyan-700/30 ${bandShape}`} />}
                   <button
                     type="button"
                     disabled={selectable === false}
@@ -185,7 +185,7 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
                     onClick={() => onPick(date, closingTimeByDate.get(date))}
                     className={`relative flex h-7 w-7 items-center justify-center rounded-full border-0 ${
                       selected
-                        ? 'bg-[var(--accent)] font-semibold text-black'
+                        ? 'bg-cyan-700 font-semibold text-white'
                         : selectable
                           ? 'bg-transparent text-gray-200 hover:bg-white/10'
                           : `cursor-not-allowed bg-transparent ${isMissing ? 'text-red-500/70' : 'text-gray-600'}`
@@ -253,7 +253,7 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
                   aria-pressed={year === month.year}
                   onClick={() => { setPickerYear(year); setView('month') }}
                   className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${
-                    year === month.year ? 'bg-[var(--accent)] font-semibold text-black' : disabled ? 'cursor-not-allowed bg-transparent text-gray-700' : isOutsideDecade ? 'bg-transparent text-gray-500 hover:bg-white/10' : 'bg-transparent text-gray-200 hover:bg-white/10'
+                    year === month.year ? 'bg-cyan-700 font-semibold text-white' : disabled ? 'cursor-not-allowed bg-transparent text-gray-700' : isOutsideDecade ? 'bg-transparent text-gray-500 hover:bg-white/10' : 'bg-transparent text-gray-200 hover:bg-white/10'
                   }`}
                 >
                   {year}
@@ -264,7 +264,7 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
         </>
       )}
       {isError && (
-        <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-400">
+        <p className="mt-1 flex items-center gap-1.5 text-[13px] text-gray-400">
           불러오지 못했습니다
           <button type="button" onClick={() => void refetch()} className="border-0 bg-transparent p-0 text-[var(--accent)] hover:underline">
             다시 시도
@@ -276,10 +276,10 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
 }
 
 const APPLY_BUTTON_CLASS =
-  'shrink-0 rounded-lg border-0 bg-cyan-700 px-2.5 py-1 text-center text-xs font-semibold leading-none text-white transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-cyan-700'
+  'shrink-0 rounded-lg border-0 bg-cyan-700 px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-white transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-cyan-700'
 
 const RESET_BUTTON_CLASS =
-  'shrink-0 rounded-lg border-0 bg-zinc-600 px-2.5 py-1 text-center text-xs font-semibold leading-none text-white transition-colors hover:bg-zinc-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-zinc-600'
+  'shrink-0 rounded-lg border-0 bg-zinc-600 px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-white transition-colors hover:bg-zinc-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-zinc-600'
 
 // 달력 아이콘을 누르면 아래로 달력 창이 뜬다. 데이터가 있는 날짜(종가 지도가 있는 날과 오늘)만 누를 수 있다.
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.
@@ -430,6 +430,34 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     }
   }
 
+  // 지난 날짜나 기간을 보는 중이거나 기간을 고르는 중일 때 보인다 — 고른 날짜·기간을 모두 풀고 실시간 지도로 바로 돌아간다(적용을 따로 누를 필요 없다).
+  // 아래쪽 "초기화"(고른 날짜만 비움)와 헷갈리지 않게 되돌리기 화살표 대신 지도 위의 "실시간" 시계 아이콘과 글자를 쓴다.
+  const liveButton = (isPast || isRangeCalendar) ? (
+    <button
+      type="button"
+      aria-label="실시간으로 돌아가기"
+      title="실시간으로 돌아가기"
+      onClick={() => {
+        onSelectSnapshotTime(null)
+        setIsOpen(false)
+      }}
+      className="flex h-6 shrink-0 items-center gap-1 rounded-lg border-0 bg-zinc-600 px-2 text-[13px] font-semibold leading-none text-white transition-colors hover:bg-zinc-500"
+    >
+      <ClockIcon className="h-3.5 w-3.5" aria-hidden />
+      실시간
+    </button>
+  ) : null
+  // 하루 모드는 날짜 칸을, 기간 모드는 종료일을 오늘로 채운다("실시간" 버튼은 지난 날짜·기간을 풀고 바로 실시간으로 돌아간다).
+  const todayButton = (
+    <button
+      type="button"
+      onClick={pickToday}
+      className="shrink-0 rounded-lg border-0 bg-zinc-600 px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-white transition-colors hover:bg-zinc-500"
+    >
+      오늘
+    </button>
+  )
+
   const dayLabel = draftDay
     ? (draftDay.snapshotTime ? toMarketMapSnapshotDateLabel(draftDay.snapshotTime) : `${draftDay.date} (${WEEKDAY_LABELS[new Date(`${draftDay.date}T00:00:00`).getDay()]})`)
     : '-'
@@ -453,34 +481,38 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           aria-label="날짜 선택 달력"
           className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-gray-500 bg-[#363639] p-2 text-sm font-normal tracking-normal text-white shadow-xl"
         >
-          {/* 위쪽 줄: 왼쪽 하루/기간 스위치, 가운데 고른 기간의 거래일 수, 오른쪽 지금(날짜 칸을 가장 최근 지도 날짜로 채운다). */}
-          <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-gray-500 pb-2 text-xs">
-            <span className="justify-self-start">
-              {onSelectRange && (
-                <span role="radiogroup" aria-label="선택 방식" className="inline-flex rounded-lg bg-gray-300 p-0.5">
-                  {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
-                    <button
-                      key={label}
-                      type="button"
-                      role="radio"
-                      aria-checked={isRangeMode === rangeValue}
-                      onClick={() => switchMode(rangeValue)}
-                      className={`rounded-md border-0 px-2 py-1 text-xs font-semibold leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-zinc-800 text-white' : 'bg-transparent text-zinc-800 hover:text-black'}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </span>
-              )}
-            </span>
-            <span className="text-gray-200">{isRangeCalendar && rangeDayCount !== null ? rangeDayCount : ''}</span>
-            <button
-              type="button"
-              onClick={pickToday}
-              className="shrink-0 justify-self-end rounded-lg border-0 bg-zinc-600 px-2.5 py-1 text-center text-xs font-semibold leading-none text-white transition-colors hover:bg-zinc-500"
-            >
-              지금
-            </button>
+          {/* 위쪽 줄: 왼쪽 달력 위에 하루/기간 스위치와 실시간(왼쪽 달력 오른쪽 끝), 오른쪽 달력 위에 고른 기간의 거래일 수(오른쪽 달력 왼쪽 끝)와 오늘(맨 오른쪽 끝). 하루 모드는 달력이 하나라 실시간·오늘을 오른쪽에 나란히 둔다. */}
+          <div className="mb-2 flex gap-4 border-b border-gray-500 pb-2 text-[13px]">
+            <div className={`flex items-center justify-between gap-2 ${isRangeCalendar ? 'w-60 shrink-0' : 'flex-1'}`}>
+              <span>
+                {onSelectRange && (
+                  <span role="radiogroup" aria-label="선택 방식" className="inline-flex rounded-lg bg-gray-300 p-0.5">
+                    {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
+                      <button
+                        key={label}
+                        type="button"
+                        role="radio"
+                        aria-checked={isRangeMode === rangeValue}
+                        onClick={() => switchMode(rangeValue)}
+                        className={`rounded-md border-0 px-2 py-1 text-[13px] font-semibold leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-zinc-800 text-white' : 'bg-transparent text-zinc-800 hover:text-black'}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </span>
+              <span className="flex items-center gap-1.5">
+                {liveButton}
+                {!isRangeCalendar && todayButton}
+              </span>
+            </div>
+            {isRangeCalendar && (
+              <div className="flex w-60 shrink-0 items-center justify-between gap-2 text-gray-200">
+                <span>{rangeDayCount !== null ? rangeDayCount : ''}</span>
+                {todayButton}
+              </div>
+            )}
           </div>
           {isRangeCalendar ? (
             <>
@@ -514,26 +546,25 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   onPick={pickRangeDay}
                 />
               </div>
-              <div className="mt-1 flex gap-4 border-t border-gray-500 pt-2 text-xs">
-                {/* 시작일은 왼쪽 달력 왼쪽, 종료일은 오른쪽 달력 왼쪽에 놓고 고른 날짜를 오른쪽에 적는다. 적용은 맨 오른쪽 끝이다. */}
-                <div className="flex w-60 shrink-0 items-center gap-2">
-                  <span className="text-[var(--accent)]">시작일</span>
-                  <span className="text-gray-200">{draftStart ? toMarketMapSnapshotDateLabel(draftStart.snapshotTime) : '-'}</span>
-                </div>
-                <div className="flex w-60 shrink-0 items-center justify-between gap-2">
+              <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-t border-gray-500 pt-2 text-[13px]">
+                {/* 초기화는 맨 왼쪽 끝, 적용은 맨 오른쪽 끝에 놓고 고른 시작일 ~ 종료일은 창 가운데에 적는다(양쪽 칸이 같은 폭이라 버튼 크기와 상관없이 가운데에 온다). */}
+                <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={`${RESET_BUTTON_CLASS} justify-self-start`}>
+                  초기화
+                </button>
+                <span className="flex items-center gap-3">
                   <span className="flex items-center gap-2">
-                    <span className="text-[var(--accent)]">종료일</span>
-                    <span className="text-gray-200">{draftEnd ? toMarketMapSnapshotDateLabel(draftEnd.snapshotTime) : '-'}</span>
+                    <span className="font-semibold text-[var(--accent)]">시작일</span>
+                    {draftStart && <span className="text-gray-200">{toMarketMapSnapshotDateLabel(draftStart.snapshotTime)}</span>}
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
-                      초기화
-                    </button>
-                    <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={APPLY_BUTTON_CLASS}>
-                      적용
-                    </button>
+                  <span aria-hidden="true" className="text-white">~</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-semibold text-[var(--accent)]">종료일</span>
+                    {draftEnd && <span className="text-gray-200">{toMarketMapSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
                   </span>
-                </div>
+                </span>
+                <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={`${APPLY_BUTTON_CLASS} justify-self-end`}>
+                  적용
+                </button>
               </div>
             </>
           ) : (
@@ -552,9 +583,9 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 bandEnd={null}
                 onPick={pickSingleDay}
               />
-              <div className="mt-1 flex w-60 items-center justify-between gap-2 border-t border-gray-500 pt-2 text-xs">
+              <div className="mt-1 flex w-60 items-center justify-between gap-2 border-t border-gray-500 pt-2 text-[13px]">
                 <span className="flex items-center gap-2">
-                  <span className="text-[var(--accent)]">날짜</span>
+                  <span className="font-semibold text-[var(--accent)]">날짜</span>
                   <span className="text-gray-200">{dayLabel}</span>
                 </span>
                 <button type="button" disabled={draftDay === null} onClick={applyDay} className={APPLY_BUTTON_CLASS}>
