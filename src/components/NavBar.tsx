@@ -119,24 +119,24 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           <ProfileAvatar className="size-full object-cover" />
         </button>
         {isProfileMenuOpen && (
-          <div className="absolute right-0 top-full z-30 -mt-2 w-64 overflow-hidden rounded-md border border-gray-500 bg-zinc-800 pb-2 text-white shadow-2xl shadow-black/60">
+          <div className="absolute right-0 top-full z-30 -mt-2 w-64 overflow-hidden rounded-md border border-zinc-400 bg-gray-300 pb-2 text-zinc-900 shadow-2xl shadow-black/60">
             {isLoading ? (
-              <p className="px-4 py-3 text-sm text-zinc-400">계정 확인 중...</p>
+              <p className="px-4 py-3 text-sm text-zinc-600">계정 확인 중...</p>
             ) : session?.authenticated ? (
               <>
-                <div className="flex items-center gap-3 border-b border-gray-500 px-4 py-3 text-sm">
+                <div className="flex items-center gap-3 border-b border-zinc-400 px-4 py-3 text-sm">
                   <ProfileAvatar className="size-10 shrink-0 object-cover" />
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{session.nickname || '내 계정'}</p>
-                    <p className="mt-1 truncate text-zinc-400">{session.email || `사용자 ${session.userId}`}</p>
+                    <p className="mt-1 truncate text-zinc-600">{session.email || `사용자 ${session.userId}`}</p>
                   </div>
                 </div>
-                {/* 프로필·로그아웃은 공유창·상단바와 같은 회색 채움 버튼 두 개를 나란히 놓는다. */}
+                {/* 메뉴는 설정창 위에 겹쳐도 구분되도록 밝은 틀로 두고, 프로필·로그아웃은 설정창 선택 칸과 같은 검정 버튼 두 개를 나란히 놓고, 개발 전용 항목만 청록이다. */}
                 <div className="flex gap-2 px-3 pb-1 pt-2.5">
                   <Link
                     to="/profile"
                     onClick={() => setIsProfileMenuOpen(false)}
-                    className="flex-1 rounded-lg bg-zinc-600 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-zinc-500 focus:bg-zinc-500"
+                    className="flex-1 rounded-lg bg-zinc-800 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-zinc-700 focus:bg-zinc-700"
                   >
                     프로필
                   </Link>
@@ -147,14 +147,14 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                       logout.mutate()
                     }}
                     disabled={logout.isPending}
-                    className="flex-1 rounded-lg border-0 bg-zinc-600 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-500 focus:bg-zinc-500 disabled:opacity-50"
+                    className="flex-1 rounded-lg border-0 bg-zinc-800 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-700 focus:bg-zinc-700 disabled:opacity-50"
                   >
                     로그아웃
                   </button>
                 </div>
                 {/* 로컬 개발 전용 — 누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꾸고, 다시 누르면 로그아웃 없이 원래 계정으로 돌아온다. 운영 화면에는 나오지 않는다. */}
                 {isLocalSignupEnabled() && (
-                  <div className="mx-3 mt-2 border-t border-gray-500 pt-2">
+                  <div className="mx-3 mt-2 border-t border-zinc-400 pt-2">
                     <button
                       type="button"
                       onClick={handleToggleTestMember}
@@ -165,7 +165,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                     >
                       {isDevSignupPending ? '전환 중…' : isTestMember ? '개발 · 원래 계정으로 돌아가기' : '개발 · 테스트 회원으로 전환'}
                     </button>
-                    {devSignupError && <p role="alert" className="mt-1.5 text-xs text-[var(--accent)]">{devSignupError}</p>}
+                    {devSignupError && <p role="alert" className="mt-1.5 text-xs text-red-700">{devSignupError}</p>}
                   </div>
                 )}
               </>
