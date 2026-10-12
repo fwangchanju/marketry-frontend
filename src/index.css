@@ -620,11 +620,15 @@ a { color: var(--accent-light); text-decoration: none; }
 
 /* smooth가 꺼진 슬라이더(값이 끊김 없이 이어지는 것)는 기본 손잡이를 그대로 보인다. */
 .settings-single-slider.is-native-thumb::-webkit-slider-thumb {
-  background: var(--accent);
+  box-sizing: border-box;
+  border: 1px solid #e4e4e7;
+  background: #27272a;
 }
 
 .settings-single-slider.is-native-thumb::-moz-range-thumb {
-  background: var(--accent);
+  box-sizing: border-box;
+  border: 1px solid #e4e4e7;
+  background: #27272a;
 }
 
 /* 체크박스 — 브라우저 기본 체크박스와 같은 색이지만 안쪽 체크 표시를 가늘게 직접 그리고, 크기는 옆 글자만큼이다. */

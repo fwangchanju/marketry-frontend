@@ -293,7 +293,7 @@ function ToggleSwitch({
         className={`relative h-4 w-7 shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-gray-600'} ${disabled ? 'cursor-not-allowed' : ''}`}
       >
         <span
-          className={`absolute top-1/2 left-0 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white transition-transform duration-[500ms] ease-out ${checked ? 'translate-x-3.5' : 'translate-x-0'}`}
+          className={`absolute top-1/2 left-0 box-border h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-zinc-200 bg-zinc-800 transition-transform duration-[500ms] ease-out ${checked ? 'translate-x-3.5' : 'translate-x-0'}`}
         />
       </button>
     </div>
@@ -343,7 +343,7 @@ const SIDEBAR_ANIMATION_MS = 250
 
 // 핸들 크기는 SingleValueSlider(네이티브 range thumb, 16px)와 맞춘다.
 const RANGE_HANDLE_CLASS =
-  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--accent)] text-black touch-none'
+  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center box-border rounded-full border border-zinc-200 bg-zinc-800 text-white touch-none'
 
 // 섹션 전체가 막혔을 때의 안내 말풍선은 섹션 아래 끝이 아니라 마우스 커서 바로 옆에 띄운다 —
 // 섹션이 높아도 안내가 컨트롤에서 멀어지지 않는다. x·y는 마우스의 화면 좌표이고, bounds는 말풍선이 나가면 안 되는 설정창의 화면 위치다.
@@ -726,7 +726,7 @@ function SingleRangeInput({
       {smooth && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]"
+          className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-200 bg-zinc-800"
           style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)`, transition: `left ${slide}` }}
         />
       )}
@@ -2348,12 +2348,12 @@ export default function SettingsSidebar({
           )}
         </div>
         {/* 바꾼 값은 임시값이라 저장을 눌러야 서버에 올라간다. 초기화는 임시값을 버리고 저장값으로 돌아간다. 비로그인은 저장할 곳이 없어 로그인 창을 띄운다. */}
-        {showPreferenceActions && <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        {showPreferenceActions && <div className="ml-auto flex shrink-0 items-center gap-1">
           <button type="button" aria-label="초기화" disabled={isPreferenceFeedbackActive} onClick={async () => {
               if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?')) runPreferenceAction(discardDrafts)
-            }} className="group relative flex border-0 bg-transparent p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)]">
+            }} className="group relative flex h-6 w-6 items-center justify-center rounded-md border-0 bg-zinc-600 p-0 text-white transition-colors hover:bg-zinc-500 disabled:opacity-50">
             <HeaderButtonHint>{'기존 저장값으로 되돌리기'}</HeaderButtonHint>
-            <svg viewBox="0 0 16 16" className="h-[18px] w-[18px]" aria-hidden="true">
+            <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
               <path d="M2.5 8a5.5 5.5 0 1 0 1.8-4.07M2.5 2.5v3h3" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
@@ -2374,19 +2374,19 @@ export default function SettingsSidebar({
                 commitDrafts(commitPreferences).catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.'))
               })
             }}
-            className="group relative flex border-0 bg-transparent p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
+            className="group relative flex h-6 w-6 items-center justify-center rounded-md border-0 bg-zinc-600 p-0 text-white transition-colors hover:bg-zinc-500 disabled:opacity-50"
           >
             {/* 비로그인도 같은 말풍선이 뜨고, 누르면 로그인 창이 열린다. */}
             <HeaderButtonHint>{'변경사항 저장하기'}</HeaderButtonHint>
             {hasDrafts && <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[var(--brand)]" />}
-            <svg viewBox="0 0 16 16" className="h-[18px] w-[18px]" aria-hidden="true">
+            <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
               <path d="M2.5 2.5h8l3 3v8h-11zM5 2.5v3.5h5V2.5M5 13.5V9h6v4.5" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>}
       </div>
       {availableSections.length > 0 && (
-      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-gray-500 bg-[#363639] px-1">
+      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch gap-0.5 border-b border-gray-500 bg-[#363639] p-1">
           {availableSections.map(section => {
             const selected = section.id === selectedSection?.id
             return (
@@ -2402,16 +2402,12 @@ export default function SettingsSidebar({
                   if (section.id === 'favorites' && bookmarkLoginRequired && onRequestLogin) onRequestLogin()
                   else setActiveSection(section.id)
                 }}
-                className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  selected ? 'text-[var(--brand)]' : 'text-gray-400 hover:text-[var(--brand)]'
+                className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg border-0 px-0 py-1 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
+                  selected ? 'bg-zinc-600 text-[var(--brand)]' : 'bg-transparent text-gray-400 hover:text-[var(--brand)]'
                 }`}
               >
                 <SettingsSectionIcon icon={section.icon} />
                 <span className="max-w-full truncate font-bold">{section.label}</span>
-                <span
-                  aria-hidden="true"
-                  className={`absolute inset-x-2 bottom-0 h-0.5 bg-[var(--brand)] transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
-                />
               </button>
             )
           })}
