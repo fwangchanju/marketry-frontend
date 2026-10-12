@@ -12,7 +12,7 @@ export default function TaxonomyBadge({ taxonomy }: { taxonomy: TaxonomyKey }) {
         <span className="flex min-w-0 items-center bg-[var(--brand)] px-2.5 font-semibold text-black">
           <span className="truncate">{title}</span>
         </span>
-        <span className="flex shrink-0 items-center bg-cyan-700 px-2 text-[13px] font-semibold text-white">분류</span>
+        <span className="flex shrink-0 items-center bg-cyan-700 px-2 text-sm font-semibold text-white">분류</span>
       </span>
     </span>
   )
