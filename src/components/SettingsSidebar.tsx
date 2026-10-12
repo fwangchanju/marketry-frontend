@@ -1112,7 +1112,7 @@ function SettingsTaxonomySelector({
         {TAXONOMY_SELECT_TITLE}
       </p>
       <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 rounded-lg bg-[var(--accent)] p-[3px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] bg-[var(--brand)]" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] bg-cyan-700" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1121,7 +1121,7 @@ function SettingsTaxonomySelector({
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
             className={`relative z-10 min-h-[34px] rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-sm font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-              isSelected(option.key) ? 'text-black' : 'text-zinc-800 hover:text-black'
+              isSelected(option.key) ? 'text-white' : 'text-zinc-800 hover:text-black'
             }`}
           >
             {option.label}
