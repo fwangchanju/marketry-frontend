@@ -870,8 +870,8 @@ export function SettingsSectorStockScopeSection({
             </button>
           )
         })}
-        {/* 전종목 버튼 안쪽 오른쪽 — 버튼 안에 버튼을 넣을 수 없어 같은 자리에 겹쳐 두고, 눌러도 선택이 바뀌지 않는다. translate를 쓰면 안쪽의 fixed 말풍선이 이 칸 기준으로 위치가 틀어져 inset-y-0으로 가운데에 둔다. 전종목이 선택되면 바탕이 밝아져 아이콘을 진하게 바꾼다. */}
-        <span className={`pointer-events-none absolute inset-y-0 left-1/2 right-0.5 z-20 flex items-center justify-center text-[13px]/4 font-medium ${scope === 'ALL' ? '[&_button]:text-gray-200 [&_button:hover]:text-white' : ''}`}>
+        {/* 전종목 버튼 안쪽 오른쪽 — 버튼 안에 버튼을 넣을 수 없어 같은 자리에 겹쳐 두고, 눌러도 선택이 바뀌지 않는다. translate를 쓰면 안쪽의 fixed 말풍선이 이 칸 기준으로 위치가 틀어져 inset-y-0으로 가운데에 둔다. 밝은 미선택 배경에서는 아이콘을 진하게, 어두운 선택 배경에서는 밝게 표시하고 호버·포커스에도 대비를 유지한다. */}
+        <span className={`pointer-events-none absolute inset-y-0 left-1/2 right-0.5 z-20 flex items-center justify-center text-[13px]/4 font-medium ${scope === 'ALL' ? '[&_button]:text-gray-200 [&_button:hover]:text-white [&_button:focus-visible]:text-white' : '[&_button]:text-zinc-800 [&_button:hover]:text-black [&_button:focus-visible]:text-black'}`}>
           <span aria-hidden="true" className="invisible whitespace-nowrap">전종목</span>
           <span className="pointer-events-auto flex items-center">
             <SettingHelpBubble

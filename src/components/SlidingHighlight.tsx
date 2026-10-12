@@ -7,10 +7,25 @@ const INSET = 3
 export function SlidingHighlight({ count, index, className }: { count: number; index: number; className: string }) {
   if (index < 0) return null
   return (
-    <span
-      aria-hidden="true"
-      className={`absolute transition-transform duration-[500ms] ease-out ${className}`}
-      style={{ top: INSET, bottom: INSET, left: INSET, width: `calc((100% - ${INSET * 2}px) / ${count})`, transform: `translateX(${index * 100}%)` }}
-    />
+    <>
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none absolute transition-transform duration-[500ms] ease-out ${className}`}
+        style={{ top: INSET, bottom: INSET, left: INSET, width: `calc((100% - ${INSET * 2}px) / ${count})`, transform: `translateX(${index * 100}%)` }}
+      />
+      {/* 선택 칸에 맞닿은 경계는 숨기고, 나머지 선은 버튼 가상 요소 대신 묶음 안의 고정된 위치에 그린다. */}
+      {Array.from({ length: Math.max(0, count - 1) }, (_, offset) => {
+        const boundary = offset + 1
+        if (boundary === index || boundary === index + 1) return null
+        return (
+          <span
+            key={boundary}
+            aria-hidden="true"
+            className="pointer-events-none absolute z-10 w-px bg-gray-500"
+            style={{ top: INSET + 8, bottom: INSET + 8, left: `calc(${INSET}px + (100% - ${INSET * 2}px) * ${boundary} / ${count})` }}
+          />
+        )
+      })}
+    </>
   )
 }
