@@ -59,7 +59,7 @@ export default function SettingsSectionIcon({ icon, className = '' }: SettingsSe
       </svg>
       <span
         aria-hidden="true"
-        className={`inline-block h-[30px] w-[30px] shrink-0 bg-current ${className}`}
+        className={`inline-block shrink-0 bg-current ${className || 'h-[30px] w-[30px]'}`}
         style={{ ...maskStyle, filter: `url(#${filterId})`, transform: `scale(${ICON_SCALE[icon] ?? 1})` }}
       />
     </>

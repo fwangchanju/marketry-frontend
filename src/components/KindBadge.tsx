@@ -9,7 +9,7 @@ export type Kind = '종목' | '업종'
 // onDark: 어두운 바탕(설정창)에서는 업종·종목 모두 분류 배지의 "분류" 칸과 같은 청록 채움에 흰 글자다. 팝업의 연한 바탕에서는 업종 청록, 종목 진한 회색 테두리다.
 export default function KindBadge({ kind, onDark = false, className = '' }: { kind: Kind; onDark?: boolean; className?: string }) {
   const shape = onDark
-    ? 'rounded bg-cyan-700 px-1.5 py-[3px] font-semibold text-white'
+    ? 'inline-flex h-6 items-center rounded bg-cyan-700 px-1.5 font-semibold text-white'
     : `rounded-sm border border-current px-1 py-0.5 font-medium ${kind === '업종' ? 'text-[var(--brand)]' : 'text-gray-500'}`
   return (
     <span className={`shrink-0 text-xs leading-none ${shape} ${className}`}>
