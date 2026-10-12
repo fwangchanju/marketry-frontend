@@ -1,0 +1,35 @@
+import { toPctSigned } from '@/utils/format'
+
+interface IndexChange {
+  label: string
+  // 지수 값(예: 7,003.74)과 등락률(%) — 아직 못 받았으면 null
+  indexValue: number | null
+  changeRate: number | null
+}
+
+// 오르면 빨강·내리면 파랑(지도와 같은 방향) — 변화가 없거나 값이 없으면 회색.
+function rateColorClass(changeRate: number | null): string {
+  if (changeRate === null || changeRate === 0) return 'text-gray-300'
+  return changeRate > 0 ? 'text-red-400' : 'text-blue-400'
+}
+
+const toIndexValue = (value: number): string => value.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+// 홈 시장 요약 지도 위 한 줄 — 코스피·코스닥의 지수 값과 등락률을 어두운 배지로 보여 준다("코스피 7,003.74 +0.46%").
+// 등락이 작은 날에도 오르내림이 한눈에 보이도록 배경은 고정 색으로 두고 등락률 글자만 색을 입힌다.
+// 두 배지가 줄 폭을 좌우로 꽉 채우고, 배지 안은 라벨(왼쪽)·지수 값(가운데)·등락률(오른쪽)으로 벌려 놓는다.
+// 위젯 폭(342px) 안에 들어가도록 글자는 13px다(14px는 11px 넘친다). 높이 24px 안에 들어가도록 줄 간격을 붙인다.
+// 지수가 만 단위·1,000 이상이 되거나 등락이 두 자리가 되어 폭이 모자라면, 배지 안 글자 사이 간격(최소 2px)이 먼저 줄어든다.
+export default function MarketIndexLine({ indexes }: { indexes: IndexChange[] }) {
+  return (
+    <div className="mb-1 flex h-6 shrink-0 items-center gap-2 whitespace-nowrap text-[13px] font-medium leading-none tabular-nums">
+      {indexes.map(({ label, indexValue, changeRate }) => (
+        <span key={label} className="flex h-[22px] flex-1 items-center justify-between gap-0.5 rounded-sm bg-zinc-800 px-2">
+          <span className="text-white">{label}</span>
+          <span className="text-gray-300">{indexValue === null ? '-' : toIndexValue(indexValue)}</span>
+          <span className={rateColorClass(changeRate)}>{changeRate === null ? '-' : toPctSigned(changeRate)}</span>
+        </span>
+      ))}
+    </div>
+  )
+}

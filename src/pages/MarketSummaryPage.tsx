@@ -1,21 +1,22 @@
 import { useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import MarketMapShareModal from '@/components/MarketMapShareModal'
 import { CaptureIcon } from '@/components/icons/MarketMapIcons'
 import SettingsSidebar, { SettingsGroupDepthSection } from '@/components/SettingsSidebar'
+import MarketIndexLine from '@/components/MarketIndexLine'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import Spinner from '@/components/Spinner'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, captureFileName, downloadDataUrl } from '@/utils/captureToDownload'
-import { marketRoute } from '@/utils/marketRoute'
+import { toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAtDepth } from '@/utils/sectorDepth'
@@ -26,7 +27,6 @@ type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 export default function MarketSummaryPage() {
-  const navigate = useNavigate()
   // 틀마다 캡처 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 캡처하며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const [homeDepth, setHomeDepth] = usePageSetting<number>('homePage.depth', 1)
@@ -35,10 +35,19 @@ export default function MarketSummaryPage() {
   const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
-  const { settingsModalProps, data, market, isLoading, isError, refetchMarketMap, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers } = useGlobalSettings()
+  const { settingsModalProps, data, isLoading, isError, refetchMarketMap, pinnedSnapshotTime, rangeStartTime, changeRateMode, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers } = useGlobalSettings()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsSidebarSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+
+  // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
+  const { data: marketSummary } = useMarketSummary()
+  // 요약 조회의 지수는 항상 최근 값이다 — 지도가 지난 시각이나 기간을 보고 있거나 시간외 별도 등락률이면 맞지 않으므로 보여 주지 않는다(그룹 페이지도 일간 등락률일 때만 넣는다).
+  const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily'
+  const indexOf = (market: 'KOSPI' | 'KOSDAQ') => {
+    const item = isLatestDailyView ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market) : undefined
+    return { indexValue: item?.indexValue ?? null, changeRate: item?.changeRate ?? null }
+  }
 
   const selectableDepth = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT' ? 1 : 3
   const effectiveDepth = Math.min(homeDepth, selectableDepth)
@@ -50,9 +59,15 @@ export default function MarketSummaryPage() {
       if (average.weightedAvg === null) continue
       items.push({ key: pathKey, name: node.sectorName, marketValue: node.totalMarketValue, changeRate: average.weightedAvg })
     }
-    const chart = buildRankChart(items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate })))
+    const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
+    // 그룹 페이지처럼 코스피·코스닥 지수 등락률을 강조 색 참조 막대로 값 순서 자리에 끼운다.
+    for (const [market, label] of [['KOSPI', '코스피'], ['KOSDAQ', '코스닥']] as const) {
+      const changeRate = isLatestDailyView ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market)?.changeRate : undefined
+      if (changeRate !== undefined) entries.push({ key: `market-index:${market}`, sectorName: label, value: changeRate, isReference: true })
+    }
+    const chart = buildRankChart(entries)
     return { items, chart }
-  }, [data, excludedSectorIds, excludedMarketValueTiers, effectiveDepth])
+  }, [data, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, isLatestDailyView])
   // 세 틀을 한 장으로 캡처하는 중에는 틀마다 있는 캡처 버튼을 감춰서 이미지에 찍히지 않게 한다.
   const isCapturingAll = captureTarget !== null && captureTarget === allFramesRef.current
   const handleCopy = async (previewSrc?: string | null) => {
@@ -84,7 +99,12 @@ export default function MarketSummaryPage() {
 
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   const downloadLabel = downloadStatus === 'error' ? '다운로드 실패' : '다운로드'
-  const openSector = (sectorName: string) => navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
+  // 세 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
+  const snapshotClock = data?.snapshotTime ? (
+    <span className="ml-auto pr-1 text-[14px] font-medium tabular-nums text-gray-400">
+      {toMarketMapSnapshotDateLabel(data.snapshotTime)} {toMarketMapSnapshotTimeOnlyLabel(data.snapshotTime)}
+    </span>
+  ) : null
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-black">
@@ -118,12 +138,20 @@ export default function MarketSummaryPage() {
             {/* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */}
             <div ref={allFramesRef} className="flex h-[min(100%,780px)] shrink-0 gap-6 bg-black">
             {[
-              { title: '시장 요약 지도', body: <OverviewMap items={overview.items} colorScale={colorScale} onSelect={openSector} /> },
+              {
+                title: '시장 요약 지도',
+                body: (
+                  <div className="flex min-h-0 w-full flex-1 flex-col">
+                    <MarketIndexLine indexes={[{ label: '코스피', ...indexOf('KOSPI') }, { label: '코스닥', ...indexOf('KOSDAQ') }]} />
+                    <OverviewMap items={overview.items} colorScale={colorScale} />
+                  </div>
+                ),
+              },
               {
                 title: '그룹 등락률 (%)',
                 body: (
                   <div className="flex min-h-0 w-full flex-1">
-                    <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={openSector} />
+                    <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
                   </div>
                 ),
               },
@@ -136,6 +164,7 @@ export default function MarketSummaryPage() {
                   <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-bold text-white">
                     <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
                     {frame.title}
+                    {snapshotClock}
                   </h2>
                   {isLoading ? (
                     <div className="flex flex-1 items-center justify-center">
@@ -147,14 +176,20 @@ export default function MarketSummaryPage() {
                     </div>
                   ) : frame.body}
                 </div>
-                <button
-                  type="button"
-                  aria-label={`${frame.title} 캡처`}
-                  onClick={() => setCaptureTarget(frameRefs.current[frame.title] ?? null)}
-                  className={`absolute right-2 top-2 ${isCapturingAll ? 'invisible' : ''} flex h-7 w-7 items-center justify-center border-0 bg-transparent text-gray-400 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)]`}
-                >
-                  <CaptureIcon className="h-4 w-4" />
-                </button>
+                {/* 캡처 버튼을 제목 바로 오른쪽에 둔다 — 제목과 같은 글자를 보이지 않게 깔아 그 끝에 버튼이 오게 하므로 제목 길이를 재지 않아도 된다.
+                    칸 밖에 있어서 캡처 이미지에는 찍히지 않는다. */}
+                <div className={`pointer-events-none absolute left-2 top-2 flex h-7 items-center pl-1 text-base font-bold ${isCapturingAll ? 'invisible' : ''}`}>
+                  <span aria-hidden="true" className="invisible mr-1.5 inline-block w-1 shrink-0" />
+                  <span aria-hidden="true" className="invisible">{frame.title}</span>
+                  <button
+                    type="button"
+                    aria-label={`${frame.title} 캡처`}
+                    onClick={() => setCaptureTarget(frameRefs.current[frame.title] ?? null)}
+                    className="pointer-events-auto ml-1 flex h-7 w-7 items-center justify-center border-0 bg-transparent text-gray-400 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
+                  >
+                    <CaptureIcon className="h-4 w-4" />
+                  </button>
+                </div>
               </section>
             ))}
             </div>
