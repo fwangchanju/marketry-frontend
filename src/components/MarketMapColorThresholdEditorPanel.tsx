@@ -82,7 +82,7 @@ function ThresholdRow({ threshold, locked, onChangeThreshold }: ThresholdRowProp
         style={{ width: THRESHOLD_BOX_WIDTH }}
         className="h-7 shrink-0 rounded border border-gray-600 bg-zinc-700 px-2 text-right text-sm text-white outline-none [appearance:textfield] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
-      <span className="text-xs text-gray-400">%</span>
+      <span className="text-[13px] text-gray-400">%</span>
       {/* 색상 칸 — 아래 색상 줄 맨 오른쪽 두 동그라미(24px, 사이 간격은 8칸을 양끝 맞춤으로 나눈 값)의 바깥 두 끝선에 이 칸의 양 끝을 맞춘다. 입력칸과 같은 너비다. */}
       <span
         className="ml-auto h-7 shrink-0 rounded border border-gray-600"
@@ -143,7 +143,7 @@ export default function MarketMapColorThresholdEditorPanel({
   return (
     <div className="color-editor-steps mt-4 flex flex-col gap-4 text-sm text-white">
       <div>
-        <p className="color-editor-step mb-2 text-xs text-gray-300">등락률</p>
+        <p className="color-editor-step mb-2 text-[13px] text-gray-300">등락률</p>
         <ThresholdRow
           threshold={threshold}
           locked={isZeroLocked}
@@ -152,7 +152,7 @@ export default function MarketMapColorThresholdEditorPanel({
       </div>
 
       <div>
-        <p className="color-editor-step mb-2 text-xs text-gray-300">색상</p>
+        <p className="color-editor-step mb-2 text-[13px] text-gray-300">색상</p>
         <div className="flex justify-between" role="group" aria-label="색상 선택">
           {swatches.map(swatch => (
             <span key={swatch.key} className="group relative inline-flex">
@@ -177,7 +177,7 @@ export default function MarketMapColorThresholdEditorPanel({
       </div>
 
       <div>
-        <p className="color-editor-step mb-2 text-xs text-gray-300">명도</p>
+        <p className="color-editor-step mb-2 text-[13px] text-gray-300">명도</p>
         <input
           type="range"
           min={MIN_LIGHTNESS}
@@ -194,7 +194,7 @@ export default function MarketMapColorThresholdEditorPanel({
       </div>
 
       {errorMessage && (
-        <p role="alert" className="text-xs text-red-400">{errorMessage}</p>
+        <p role="alert" className="text-[13px] text-red-400">{errorMessage}</p>
       )}
 
       {(hasChanges || isSaving) && (
@@ -203,7 +203,7 @@ export default function MarketMapColorThresholdEditorPanel({
             type="button"
             onClick={onApply}
             disabled={isSaving}
-            className="flex-1 rounded border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-black transition-colors hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
+            className="flex-1 rounded border border-cyan-700 bg-cyan-700 px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-cyan-600 hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-60"
           >
             {isSaving ? '적용 중...' : '적용'}
           </button>
@@ -211,7 +211,7 @@ export default function MarketMapColorThresholdEditorPanel({
             type="button"
             onClick={onCancel}
             disabled={isSaving}
-            className="flex-1 rounded border border-gray-600 bg-transparent px-3 py-1.5 text-xs text-gray-200 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
+            className="flex-1 rounded border border-zinc-600 bg-zinc-600 px-3 py-1.5 text-[13px] text-white transition-colors hover:border-zinc-500 hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-60"
           >
             취소
           </button>
