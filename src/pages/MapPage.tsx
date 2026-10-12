@@ -608,7 +608,7 @@ export default function MapPage() {
                 </div>
               ) : isError ? (
                 <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
-                  <Spinner errorMessage="데이터를 불러오지 못했습니다." />
+                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
                 </div>
               ) : visibleItems.length === 0 ? (
                 <div className="relative flex-1">

@@ -65,19 +65,24 @@ export default function OverviewMap({
         const background = resolveMarketMapColor(item.changeRate, colorScale)
         const showRate = width >= 44 && height >= 38
         const nameSize = nameFontSize(width, height, item.name)
-        return (
-          <button
-            key={item.key}
-            type="button"
-            aria-label={item.name}
-            onClick={() => onSelect?.(item.name)}
-            className="absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight hover:brightness-125"
-            style={{ left: x, top: y, width, height, backgroundColor: background, color: '#ffffff' }}
-          >
+        const boxClassName = 'absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight'
+        const boxStyle = { left: x, top: y, width, height, backgroundColor: background, color: '#ffffff' }
+        const content = (
+          <>
             {/* 이름은 줄이거나 숨기지 않고 전부 넣는다 — 박스보다 길면 `…` 없이 박스 가장자리에서 그대로 잘린다. */}
             <span className="max-w-full overflow-hidden whitespace-nowrap font-medium" style={{ fontSize: nameSize }}>{item.name}</span>
             {showRate && <span className="tabular-nums" style={{ fontSize: Math.max(12, Math.round(nameSize * 0.7)) }}>{toPctSigned(item.changeRate)}</span>}
+          </>
+        )
+        // onSelect가 없으면 눌러서 이동하지 않는 그냥 박스다(홈 시장 요약 지도).
+        return onSelect ? (
+          <button key={item.key} type="button" aria-label={item.name} onClick={() => onSelect(item.name)} className={`${boxClassName} hover:brightness-125`} style={boxStyle}>
+            {content}
           </button>
+        ) : (
+          <div key={item.key} role="img" aria-label={`${item.name} ${toPctSigned(item.changeRate)}`} className={boxClassName} style={boxStyle}>
+            {content}
+          </div>
         )
       })}
     </div>

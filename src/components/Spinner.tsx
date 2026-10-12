@@ -10,13 +10,15 @@ interface Props {
   showLogo?: boolean
   // 데이터를 불러오지 못했을 때 — 로딩 화면과 같은 자리·크기로 로고 아래에 이 문구를 보여준다(원은 돌지 않고 시간도 없다).
   errorMessage?: string
+  // 오류 화면에서 문구 아래에 "다시 시도" 버튼을 보여 준다 — 서버가 회복돼도 화면이 저절로 다시 불러오지는 않으므로 직접 누르게 한다.
+  onRetry?: () => void
   // showElapsed 로딩에서 로고 위쪽에 따로 보여 줄 안내 문구 — 없으면 문구 없이 로고와 경과 시간(숫자)만 보인다.
   message?: string
   // showElapsed 로딩을 좁은 영역(캘린더 등)에 맞춰 얇은 테두리·작은 글자로 그린다.
   compact?: boolean
 }
 
-export default function Spinner({ className, showElapsed = false, showLogo = false, errorMessage, message, compact = false }: Props) {
+export default function Spinner({ className, showElapsed = false, showLogo = false, errorMessage, onRetry, message, compact = false }: Props) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
   useEffect(() => {
@@ -35,6 +37,15 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
           <MarketryLogo className="h-auto w-[72%]" />
           <div className="flex flex-col items-center gap-1 pt-4">
             <span className="text-base text-gray-300">{errorMessage}</span>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="mt-2 rounded border border-gray-500 bg-transparent px-4 py-1.5 text-sm text-gray-200 hover:border-[var(--brand)] hover:text-[var(--brand)]"
+              >
+                다시 시도
+              </button>
+            )}
           </div>
         </div>
       </div>
