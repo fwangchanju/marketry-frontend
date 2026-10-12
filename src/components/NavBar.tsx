@@ -1,4 +1,3 @@
-import { BUTTON_SMALL_ACCENT_CLASS, BUTTON_SMALL_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useSession, useLogout, useSessionKeepAlive, useLocalDevLogin } from '@/hooks/useSession'
@@ -90,32 +89,22 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
         <MarketryLogo className="h-[40.9px] w-auto max-w-[18rem]" />
       </Link>
       <div className="flex items-center gap-3">
-      {!hideAccount && isLocalSignupEnabled() && (
-        <div className="flex flex-col items-end gap-1">
-          <button
-            type="button"
-            onClick={handleToggleTestMember}
-            disabled={isLoading || isDevSignupPending}
-            aria-pressed={isTestMember}
-            className={`${BUTTON_SMALL_BASE_CLASS} ${isTestMember ? '!text-[var(--brand)]' : ''}`}
-            title={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다.'}
-          >
-            {isDevSignupPending ? '전환 중…' : '테스트'}
-          </button>
-          {devSignupError && <span role="alert" className="text-xs text-[var(--accent)]">{devSignupError}</span>}
-        </div>
-      )}
       {hideAccount ? null : (
-      // 계정 칸 폭을 고정한다 — 프로필 사진과 로그인 버튼의 폭이 달라서, 그대로 두면 로그인 상태가 바뀔 때 왼쪽의 "테스트" 버튼이 옆으로 밀린다.
-      <div className="flex min-w-[60px] justify-end">
+      // 비로그인의 사람 모양 칸과 로그인한 프로필 사진 칸은 크기와 자리가 같아서, 로그인 상태가 바뀌어도 오른쪽 위 모양이 달라지지 않는다.
+      <div className="flex justify-end">
       {isLoggedOut ? (
-        // 비로그인은 프로필 아이콘 대신 "로그인" 버튼을 바로 보여줘서 로그인/비로그인 상태가 한눈에 구분된다.
+        // 비로그인은 프로필 사진 자리에 사람 모양 칸을 보여주고, 누르면 바로 로그인 창이 열린다.
         <button
           type="button"
+          aria-label="로그인"
+          title="로그인"
           onClick={() => requireLogin(`${pathname}${search}${hash}`, { hideMessage: true })}
-          className={BUTTON_SMALL_ACCENT_CLASS}
+          className="relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center rounded-[12%] border-0 bg-zinc-600 p-0 text-gray-300 transition-colors hover:bg-zinc-500"
         >
-          로그인
+          <svg viewBox="0 0 24 24" className="size-[26px]" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="8.5" r="4" />
+            <path d="M3.5 21c.7-4.6 4.2-7 8.5-7s7.8 2.4 8.5 7z" />
+          </svg>
         </button>
       ) : (
       <div ref={profileMenuRef} className="relative flex h-16 items-center">
@@ -130,7 +119,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           <ProfileAvatar className="size-full object-cover" />
         </button>
         {isProfileMenuOpen && (
-          <div className="absolute right-0 top-full z-30 -mt-2 w-64 overflow-hidden rounded-md border border-gray-500 bg-[#363639] py-2 text-white shadow-xl">
+          <div className="absolute right-0 top-full z-30 -mt-2 w-64 overflow-hidden rounded-md border border-gray-500 bg-zinc-800 pb-2 text-white shadow-2xl shadow-black/60">
             {isLoading ? (
               <p className="px-4 py-3 text-sm text-zinc-400">계정 확인 중...</p>
             ) : session?.authenticated ? (
@@ -163,6 +152,22 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                     로그아웃
                   </button>
                 </div>
+                {/* 로컬 개발 전용 — 누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꾸고, 다시 누르면 로그아웃 없이 원래 계정으로 돌아온다. 운영 화면에는 나오지 않는다. */}
+                {isLocalSignupEnabled() && (
+                  <div className="mx-3 mt-2 border-t border-gray-500 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleToggleTestMember}
+                      disabled={isLoading || isDevSignupPending}
+                      aria-pressed={isTestMember}
+                      title={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다.'}
+                      className="w-full rounded-lg border-0 bg-cyan-700 py-2 text-sm font-semibold text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+                    >
+                      {isDevSignupPending ? '전환 중…' : isTestMember ? '개발 · 원래 계정으로 돌아가기' : '개발 · 테스트 회원으로 전환'}
+                    </button>
+                    {devSignupError && <p role="alert" className="mt-1.5 text-xs text-[var(--accent)]">{devSignupError}</p>}
+                  </div>
+                )}
               </>
             ) : null}
           </div>
