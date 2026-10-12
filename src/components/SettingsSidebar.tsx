@@ -796,6 +796,8 @@ function SingleValueSlider({
           if (next > selectableMax) {
             setBlockedIndex(next)
             setHintVisible(true)
+            // 이미 고를 수 있는 가장 끝 칸이면 값이 그대로라서 저장하지 않는다 — 저장하면 다른 분류에서 골라 둔 더 깊은 단계가 덮어써진다.
+            if (index === selectableMax) return
           }
           onChange(Math.min(next, selectableMax))
         }}
