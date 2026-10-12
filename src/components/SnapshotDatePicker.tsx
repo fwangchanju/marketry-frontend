@@ -278,6 +278,9 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
 const APPLY_BUTTON_CLASS =
   'shrink-0 rounded-sm border border-[var(--accent)] bg-[var(--accent)] px-1.5 py-0.5 text-center text-xs font-medium leading-none text-black hover:brightness-110 disabled:cursor-not-allowed disabled:border-gray-600 disabled:bg-transparent disabled:text-gray-600 disabled:hover:brightness-100'
 
+const RESET_BUTTON_CLASS =
+  'shrink-0 rounded-sm border border-[var(--accent)] bg-transparent px-1.5 py-0.5 text-center text-xs font-medium leading-none text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black disabled:cursor-not-allowed disabled:border-gray-600 disabled:bg-transparent disabled:text-gray-600 disabled:hover:bg-transparent disabled:hover:text-gray-600'
+
 // 달력 아이콘을 누르면 아래로 달력 창이 뜬다. 데이터가 있는 날짜(종가 지도가 있는 날과 오늘)만 누를 수 있다.
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.
 // "기간"을 켜면 이어진 두 달이 나란히 뜨고(이전·다음 달 버튼은 두 달을 함께 움직인다), 첫 번째로 누른 날이 시작, 두 번째가 종료다.
@@ -400,6 +403,11 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     if (draftStart === null && draftEnd !== null) return date > draftEnd.date || hasPreviousDay
     return hasPreviousDay
   }
+  // 고른 시작일·종료일 대기 값만 비운다 — 화면의 지도는 그대로고 달력은 열려 있다.
+  const resetRange = () => {
+    setDraftStart(null)
+    setDraftEnd(null)
+  }
   const applyRange = () => {
     if (!onSelectRange || draftStart === null || draftEnd === null) return
     onSelectRange(draftStart.snapshotTime, draftEnd.snapshotTime)
@@ -517,9 +525,14 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                     <span className="text-[var(--accent)]">종료일</span>
                     <span className="text-gray-200">{draftEnd ? toMarketMapSnapshotDateLabel(draftEnd.snapshotTime) : '-'}</span>
                   </span>
-                  <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={APPLY_BUTTON_CLASS}>
-                    적용
-                  </button>
+                  <span className="flex items-center gap-1.5">
+                    <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
+                      초기화
+                    </button>
+                    <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={APPLY_BUTTON_CLASS}>
+                      적용
+                    </button>
+                  </span>
                 </div>
               </div>
             </>
