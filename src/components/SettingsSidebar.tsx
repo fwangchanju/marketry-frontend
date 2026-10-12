@@ -1112,7 +1112,7 @@ function SettingsTaxonomySelector({
         {TAXONOMY_SELECT_TITLE}
       </p>
       <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 rounded-lg bg-[var(--accent)] p-[3px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] bg-[var(--brand)]" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] bg-cyan-700" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1121,7 +1121,7 @@ function SettingsTaxonomySelector({
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
             className={`relative z-10 min-h-[34px] rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-sm font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-              isSelected(option.key) ? 'text-black' : 'text-zinc-800 hover:text-black'
+              isSelected(option.key) ? 'text-white' : 'text-zinc-800 hover:text-black'
             }`}
           >
             {option.label}
@@ -2386,7 +2386,7 @@ export default function SettingsSidebar({
         </div>}
       </div>
       {availableSections.length > 0 && (
-      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch gap-0.5 border-b border-gray-500 bg-[#363639] p-1">
+      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-gray-500 bg-[#363639] px-1">
           {availableSections.map(section => {
             const selected = section.id === selectedSection?.id
             return (
@@ -2402,12 +2402,16 @@ export default function SettingsSidebar({
                   if (section.id === 'favorites' && bookmarkLoginRequired && onRequestLogin) onRequestLogin()
                   else setActiveSection(section.id)
                 }}
-                className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg border-0 px-0 py-1 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  selected ? 'bg-zinc-600 text-[var(--brand)]' : 'bg-transparent text-gray-400 hover:text-[var(--brand)]'
+                className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
+                  selected ? 'text-[var(--brand)]' : 'text-gray-400 hover:text-[var(--brand)]'
                 }`}
               >
                 <SettingsSectionIcon icon={section.icon} />
                 <span className="max-w-full truncate font-bold">{section.label}</span>
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-x-2 bottom-0 h-0.5 bg-[var(--brand)] transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
+                />
               </button>
             )
           })}

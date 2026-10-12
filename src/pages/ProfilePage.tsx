@@ -156,7 +156,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isImageBusy}
-                      className="rounded border border-gray-500 bg-transparent px-4 py-2 text-sm text-white hover:bg-zinc-700 disabled:cursor-wait disabled:opacity-50"
+                      className="rounded-lg border-0 bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-50"
                     >
                       {isImageBusy ? '처리 중...' : '사진 선택'}
                     </button>
@@ -165,7 +165,7 @@ export default function ProfilePage() {
                         type="button"
                         onClick={handleDeleteImage}
                         disabled={isImageBusy}
-                        className="rounded border border-gray-500 bg-transparent px-4 py-2 text-sm text-white hover:bg-zinc-700 disabled:cursor-wait disabled:opacity-50"
+                        className="rounded-lg border-0 bg-zinc-600 px-4 py-2 text-sm text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-50"
                       >
                         사진 삭제
                       </button>
@@ -198,7 +198,7 @@ export default function ProfilePage() {
                     <button
                       type="submit"
                       disabled={updateNickname.isPending}
-                      className="rounded border border-gray-500 bg-transparent px-4 py-2 text-sm text-white hover:bg-zinc-700 disabled:cursor-wait disabled:opacity-50"
+                      className="rounded-lg border-0 bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-50"
                     >
                       {updateNickname.isPending ? '저장 중...' : '저장'}
                     </button>
@@ -216,7 +216,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={handleLogout}
                   disabled={logout.isPending}
-                  className="rounded border border-gray-500 bg-transparent px-4 py-2 text-sm text-white hover:bg-zinc-700 disabled:cursor-wait disabled:opacity-50"
+                  className="rounded-lg border-0 bg-zinc-600 px-4 py-2 text-sm text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-50"
                 >
                   {logout.isPending ? '로그아웃 중...' : '로그아웃'}
                 </button>

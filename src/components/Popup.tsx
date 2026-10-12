@@ -177,14 +177,14 @@ function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
         <div className="flex items-center justify-between gap-3 font-bold">
           <div className="flex items-center gap-1.5">
             <KindBadge kind={isSectorPopup ? '업종' : '종목'} />
-            <span className={isSectorPopup ? 'text-[var(--brand)]' : undefined}>{popup.title}</span>
+            <span>{popup.title}</span>
           </div>
           {excludeSector && (
             <button
               type="button"
               aria-label={`${excludeSector.name} 제외`}
               title="업종 제외"
-              className="flex h-5 w-5 items-center justify-center border-0 bg-transparent p-0 outline-none text-gray-700 hover:text-black"
+              className="flex h-6 w-6 items-center justify-center rounded-md border-0 bg-zinc-300 p-0 text-zinc-800 outline-none transition-colors hover:bg-zinc-400"
               onClick={async () => {
                 // 확인 창이 뜨는 동안 우클릭 팝업은 먼저 닫는다(두 창이 겹쳐 보이지 않게).
                 onClose()

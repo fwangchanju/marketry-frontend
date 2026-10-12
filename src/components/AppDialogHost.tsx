@@ -49,7 +49,7 @@ export default function AppDialogHost() {
         <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-black">{dialog.message}</p>
         <div className="mt-6 flex justify-end gap-2">
           {dialog.kind === 'confirm' && (
-            <button type="button" onClick={dismiss} className="nes-btn border-gray-600 bg-black px-4 py-2 text-sm text-white hover:bg-gray-800">
+            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-zinc-300 px-4 py-2 text-sm text-zinc-800 transition-colors hover:bg-zinc-400">
               취소
             </button>
           )}
@@ -57,7 +57,7 @@ export default function AppDialogHost() {
             type="button"
             autoFocus
             onClick={() => resolveCurrentAppDialog(true)}
-            className={`nes-btn px-4 py-2 text-sm font-bold ${dialog.adminOnly ? 'border-[#ff4d2e] bg-[#ff4d2e] text-white hover:bg-[#e03a1c]' : 'border-[var(--accent)] bg-[var(--accent)] text-black hover:bg-[var(--accent-hover)]'}`}
+            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold text-white transition-colors ${dialog.adminOnly ? 'bg-[#ff4d2e] hover:bg-[#e03a1c]' : 'bg-cyan-700 hover:bg-cyan-600'}`}
           >
             {dialog.kind === 'confirm' ? '확인' : '닫기'}
           </button>
