@@ -258,7 +258,7 @@ export default function MapPage() {
   // 상단 오른쪽 분류 배지(설정창 분류 선택 버튼과 같은 청록색).
   const modeStatusText = <TaxonomyBadge taxonomy={taxonomy} />
 
-  // market은 이제 useGlobalSettings(useRouteAwareMarket)가 경로/쿼리를 반영해서 매 렌더 계산해준다 —
+  // market은 이제 useGlobalSettings(useRouteAwareMarket)가 경로를 반영해서 매 렌더 계산해준다 —
   // 여기서는 그 값이 바뀔 때(NavSubBar에서 마켓을 고르는 등) 드릴다운만 초기화한다. 첫 렌더는 초기화할
   // 드릴다운이 없으므로 ref로 이전 값과 비교해서 실제로 바뀐 경우에만 반응한다.
   const previousMarketRef = useRef(market)

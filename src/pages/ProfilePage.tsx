@@ -131,9 +131,7 @@ export default function ProfilePage() {
       <main className="mx-auto w-full max-w-2xl px-4 py-10">
         <h1 className="text-2xl font-bold">프로필</h1>
         <section className="mt-6 rounded-lg border border-gray-700 bg-zinc-800 p-6">
-          {isLoading ? (
-            <p className="text-sm text-gray-400">계정 정보를 불러오는 중입니다.</p>
-          ) : isError ? (
+          {isError ? (
             <p className="text-sm text-gray-300">계정 정보를 불러오지 못했습니다. 페이지를 새로고침해 주세요.</p>
           ) : session?.authenticated ? (
             <>

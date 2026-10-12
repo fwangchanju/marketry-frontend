@@ -1,15 +1,12 @@
 import { useEffect } from 'react'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { usePersistedState } from './usePersistedState'
 import { marketFromRouteSegment } from '@/utils/marketRoute'
 import type { MarketQuery } from '@/types/api'
 
-function toValidMarketQuery(value: string | null): MarketQuery | null {
-  return value === 'KOSPI' || value === 'KOSDAQ' || value === 'ALL_STOCK' ? value : null
-}
-
-// 마켓 우선순위: ?market= 쿼리(옛 캡처 URL 호환) > 경로 세그먼트(/map|sector/kospi 등) > 세션스토리지
-// 저장값(경로에 마켓이 없는 /map, /sector에서 마지막으로 본 마켓을 기억) > 기본값.
+// 마켓 우선순위: 경로 세그먼트(/map|group/kospi 등) > 세션스토리지 저장값 > 기본값.
+// 옛 ?market= 쿼리는 여기서 읽지 않는다 — /map·/group 리다이렉트(App.tsx LegacyMarketRedirect)가 경로로 옮기므로,
+// 경로가 있는 주소에 ?market=이 붙어 와도 경로가 이긴다.
 //
 // usePersistedState(key, routeMarket ?? defaultMarket)처럼 우선순위를 initialValue 하나로 욱여넣으면
 // 안 된다 — sessionStorage에 저장값이 있으면 그 값이 initialValue를 이기므로(usePersistedState.ts:17-20)
@@ -20,11 +17,10 @@ export function useRouteAwareMarket(
   defaultMarket: MarketQuery,
 ): [MarketQuery, (market: MarketQuery) => void] {
   const { pathname } = useLocation()
-  const [searchParams] = useSearchParams()
   const [storedMarket, setStoredMarket] = usePersistedState<MarketQuery>(storageKey, defaultMarket)
 
   const routeMarket = marketFromRouteSegment(pathname.split('/')[2])
-  const market = toValidMarketQuery(searchParams.get('market')) ?? routeMarket ?? storedMarket
+  const market = routeMarket ?? storedMarket
 
   // 경로/쿼리로 정해진 마켓을 저장해둬야, 마켓 세그먼트가 없는 다음 방문(/sector, /map)에서 폴백으로 쓸 수 있다.
   useEffect(() => {
