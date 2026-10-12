@@ -5,7 +5,8 @@ export interface LoginGateContextValue {
   // 커스텀 페이지 직접 진입/새로고침이면 지금 있는 경로를 그대로 넘긴다.
   // options.hideMessage가 true면 팝업의 안내 문구("로그인 후 이용 가능합니다.")를 숨긴다 — 오른쪽 위 로그인 버튼처럼
   // 그냥 로그인하려는 경우용이다.
-  requireLogin: (path: string, options?: { hideMessage?: boolean }) => void
+  // 반환값은 팝업이 닫힐 때 정해진다 — 사용자가 로그인 없이 닫으면 true, 팝업을 열지 않았거나 다시 열렸으면 false.
+  requireLogin: (path: string, options?: { hideMessage?: boolean }) => Promise<boolean>
 }
 
 // Provider 구현(LoginGateProvider)은 JSX가 필요해 components/LoginGateProvider.tsx에 둔다 — 이
