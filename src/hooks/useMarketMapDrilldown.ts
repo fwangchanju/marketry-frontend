@@ -31,12 +31,12 @@ export function useMarketMapDrilldown<T extends MarketMapSectorNode>(rootNodes: 
     currentSiblings = found.children as T[]
   }
 
-  // 업종을 찾아 들어가면 true, 트리에 없으면 그대로 두고 false.
-  const enterSector = (sectorName: string) => {
+  // 업종을 찾아 들어가면 그 업종까지의 경로를, 트리에 없으면 그대로 두고 null을 돌려준다.
+  const enterSector = (sectorName: string): string[] | null => {
     const fullPath = findPathToSector(rootNodes, sectorName)
-    if (!fullPath) return false
+    if (!fullPath) return null
     setPath(fullPath)
-    return true
+    return fullPath
   }
   const goBack = () => setPath(prev => prev.slice(0, -1))
   const goToDepth = (depth: number) => setPath(prev => prev.slice(0, depth))
