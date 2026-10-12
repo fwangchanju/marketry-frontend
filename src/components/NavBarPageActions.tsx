@@ -117,7 +117,7 @@ export function PageRefreshButton({
         aria-label="스냅샷 새로고침"
         aria-busy={showRefreshing}
         aria-describedby={helpText && isHelpOpen ? 'snapshot-refresh-help' : undefined}
-        className={`${BUTTON_BASE_CLASS} ${children ? 'group/refresh gap-1.5 whitespace-nowrap bg-transparent' : `${ICON_FRAME_CLASS} w-7`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default text-[var(--accent)]' : 'text-gray-300'} ${className}`}
+        className={`${BUTTON_BASE_CLASS} ${children ? 'group/refresh gap-1.5 whitespace-nowrap bg-transparent' : `${ICON_FRAME_CLASS} w-7`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default text-[var(--accent)]' : children ? 'text-gray-400' : 'text-gray-300'} ${className}`}
         onClick={handleRefresh}
         onFocus={helpText ? () => setIsHelpOpen(true) : undefined}
         onBlur={helpText ? () => setIsHelpOpen(false) : undefined}
