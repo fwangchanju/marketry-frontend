@@ -1943,6 +1943,8 @@ export function SettingsExcludeSection({
   )
 }
 
+const COLOR_OFF_NOTICE_MS = 2000
+
 export function SettingsColorSection({
   colorScaleDraft,
   colorCustomOn,
@@ -1974,6 +1976,13 @@ export function SettingsColorSection({
   // 색상 설정은 비로그인에게도 보인다 — 기본 색상(공개 /map/scale)으로 시작해서 바꿀 수 있고, 비로그인의
   // 변경은 서버에 저장되지 않고 이 탭의 세션에만 남는다(다른 화면 설정과 같다).
   const runWithFeedback = useContext(SettingsFeedbackContext)
+  // 커스텀을 끌 때 색상 칸 위에 잠깐 띄우는 안내 — 눌러야 사라지는 창이 아니라 일정 시간 뒤 스스로 사라진다.
+  const [colorOffNoticeVisible, setColorOffNoticeVisible] = useState(false)
+  useEffect(() => {
+    if (!colorOffNoticeVisible) return
+    const timer = window.setTimeout(() => setColorOffNoticeVisible(false), COLOR_OFF_NOTICE_MS)
+    return () => window.clearTimeout(timer)
+  }, [colorOffNoticeVisible])
   if (colorScaleDraft === null) return null
 
   // 편집 중인 구간의 범례 칸을 강조해서, 아래 편집 영역이 어느 칸의 것인지 바로 보이게 한다.
@@ -1997,14 +2006,18 @@ export function SettingsColorSection({
           </button>
           <ToggleSwitch
             checked={colorCustomOn}
-            onChange={() => onChangeColorCustomOn(!colorCustomOn)}
+            onChange={() => {
+              onChangeColorCustomOn(!colorCustomOn)
+              setColorOffNoticeVisible(colorCustomOn)
+            }}
             label="색상 범위 커스텀"
             hideLabel
           />
         </div>
       </div>
       <SettingDescription dimmed={!colorCustomOn}>등락률 구간별 지도 색상</SettingDescription>
-      <div className={`mt-[18px] flex flex-col gap-1 text-sm ${colorCustomOn ? '' : 'pointer-events-none opacity-40'}`}>
+      <div className="relative mt-[18px]">
+      <div className={`flex flex-col gap-1 text-sm ${colorCustomOn ? '' : 'pointer-events-none opacity-40'}`}>
         {/* 저장된 색상은 바로 편집하고, 기본 색상은 같은 위치에 새 설정을 만들어 편집한다. */}
         <div className="grid w-full grid-cols-7 gap-0.5">
           {legendSwatches.map(({ label, color }) => {
@@ -2023,6 +2036,15 @@ export function SettingsColorSection({
             )
           })}
         </div>
+      </div>
+      {!colorCustomOn && colorOffNoticeVisible && (
+        <span
+          role="status"
+          className={`pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}
+        >
+          기본 색상이 적용됩니다.
+        </span>
+      )}
       </div>
       {colorEditorProps && (
         <div className={colorCustomOn ? '' : 'opacity-40'} inert={!colorCustomOn}>
