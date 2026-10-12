@@ -50,7 +50,7 @@ export function MarketDropdown({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         onClick={() => setIsOpen(open => !open)}
-        className="inline-flex h-6 w-[7.5rem] shrink-0 items-center justify-between gap-1 rounded-md border-0 bg-[#3b3b3b] px-2 text-sm font-bold text-white hover:bg-[#484848]"
+        className="inline-flex h-6 w-[7.5rem] shrink-0 items-center justify-between gap-1 rounded-lg border-0 bg-zinc-600 px-2 text-sm font-bold text-white transition-colors hover:bg-zinc-500"
       >
         <span className="min-w-0 flex-1 truncate text-left">{MARKET_LABEL[market]}</span>
         <svg aria-hidden="true" viewBox="0 0 16 16" className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
