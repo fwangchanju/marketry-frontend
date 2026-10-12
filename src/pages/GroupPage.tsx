@@ -123,6 +123,8 @@ export default function GroupPage() {
     }
     navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
   }
+  // 코스피·코스닥 지수 막대를 누르면 그 시장의 지도로 간다. 업종과 달리 지도에서도 같은 지수라 전종목 제한은 두지 않는다.
+  const handleSelectIndex = (indexMarket: 'KOSPI' | 'KOSDAQ') => navigate(marketRoute('/map', indexMarket))
   // 기간 등락률을 보는 중이면 "N분 전 대비"는 쓰지 않는다 — before를 받지 않고, 지금 값(data)이 곧 기간 등락률이다.
   const isRangeView = rangeStartTime !== undefined
   // 두 토글을 하나의 선택값으로 관리해 항상 정확히 한 그래프만 켜진다. 기간 보기에서는 현재 그래프를 강제로 표시한다.
@@ -418,6 +420,7 @@ export default function GroupPage() {
                       highlightColor={strongIndustryColor}
                       colorScale={colorScale}
                       onSelectSector={handleSelectSector}
+                      onSelectIndex={handleSelectIndex}
                     />
                   </div>
                 </div>

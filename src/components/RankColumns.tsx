@@ -70,17 +70,23 @@ function RankColumnValue({ value, color, heightPercent }: { value: number; color
   )
 }
 
+// 지수 참조 막대의 key(GroupPage가 정한다) → 시장
+const INDEX_MARKET_BY_KEY: Record<string, 'KOSPI' | 'KOSDAQ'> = { 'market-index:KOSPI': 'KOSPI', 'market-index:KOSDAQ': 'KOSDAQ' }
+
 // 막대는 절댓값만큼 위로 자라고, 부호는 색과 값으로 구분한다. 항목명은 아래에 45도 사선으로 모은다.
 export default function RankColumns({
   chart,
   highlightColor,
   colorScale,
   onSelectSector,
+  onSelectIndex,
 }: {
   chart: RankColumnsChart
   highlightColor: string
   colorScale: ColorScaleConfig
   onSelectSector?: (sectorName: string) => void
+  // 코스피·코스닥 지수 참조 막대를 눌렀을 때 — 주면 그 막대도 눌러서 이동할 수 있다.
+  onSelectIndex?: (market: 'KOSPI' | 'KOSDAQ') => void
 }) {
   const items = chart.rankedItems
   if (items.length === 0) {
@@ -134,7 +140,8 @@ export default function RankColumns({
       <div className="relative shrink-0 border-t border-white/25" style={{ height: NAME_BAND_HEIGHT }}>
         <div className="absolute inset-0 grid" style={columnsStyle}>
           {items.map(item => {
-            const selectable = onSelectSector !== undefined && !item.isReference && item.hiddenCount === undefined
+            const indexMarket = item.isReference ? INDEX_MARKET_BY_KEY[item.key] : undefined
+            const selectable = item.hiddenCount === undefined && (item.isReference ? onSelectIndex !== undefined && indexMarket !== undefined : onSelectSector !== undefined)
             const nameClassName = 'absolute left-1/2 top-1.5 w-max max-w-[145px] truncate whitespace-nowrap px-1 text-right font-medium'
             const nameStyle = {
               transform: 'translateX(-100%) rotate(-45deg)',
@@ -149,7 +156,7 @@ export default function RankColumns({
                     className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent transition-colors hover:bg-white/35 focus-visible:outline focus-visible:outline-white`}
                     style={nameStyle}
                     title={item.sectorName}
-                    onClick={() => onSelectSector(item.sectorName)}
+                    onClick={() => (indexMarket ? onSelectIndex?.(indexMarket) : onSelectSector?.(item.sectorName))}
                   >
                     {item.sectorName}
                   </button>
