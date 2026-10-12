@@ -2000,7 +2000,7 @@ export function SettingsColorSection({
             type="button"
             onClick={async () => { if (await appConfirm('등락률 색상을 기본 색상으로 초기화하시겠습니까?')) runWithFeedback(onResetColorScale) }}
             disabled={isResettingColorScale}
-            className="-my-px h-6 rounded border border-gray-600 bg-zinc-700 px-2 text-xs text-gray-300 transition-colors hover:border-gray-400 hover:text-white disabled:cursor-wait disabled:opacity-60"
+            className="-my-px h-[26px] rounded-lg border-0 bg-zinc-600 px-3 text-[13px] font-semibold text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-60"
           >
             초기화
           </button>
