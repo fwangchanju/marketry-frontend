@@ -1,0 +1,13 @@
+// 공용 버튼 모양 — 채움 + 둥근 사각형. 기본 버튼은 회색 채움이고, 강조 버튼(로그인·클립보드처럼 지금 가장 먼저 눌러야 하는 것)만 청록 채움이다.
+// 아이콘 버튼(카메라·전체 화면·설정 등)과 드롭다운·선택 버튼 묶음은 따로 쓴다.
+// 크기마다 안쪽 여백이 겹쳐 서로 덮어쓰지 못하므로(클래스를 더해도 나중 것이 이기지 않는다), 크기별 여백을 따로 받아 한 벌로 만든다.
+const layoutClass = (padding: string) => `flex items-center gap-2 rounded-lg border-0 ${padding} text-sm font-semibold leading-5 transition-colors disabled:opacity-50`
+const BASE_COLOR_CLASS = 'bg-zinc-600 text-white hover:bg-zinc-500'
+const ACCENT_COLOR_CLASS = 'bg-[var(--brand)] text-black hover:brightness-110'
+
+// 보통 크기(높이 36px) — 공유 창 같은 창 안 버튼.
+export const BUTTON_BASE_CLASS = `${layoutClass('px-3.5 py-2')} ${BASE_COLOR_CLASS}`
+export const BUTTON_ACCENT_CLASS = `${layoutClass('px-3.5 py-2')} ${ACCENT_COLOR_CLASS}`
+// 작은 크기(높이 30px) — 상단바처럼 줄이 좁은 곳.
+export const BUTTON_SMALL_BASE_CLASS = `${layoutClass('px-3 py-[5px]')} ${BASE_COLOR_CLASS}`
+export const BUTTON_SMALL_ACCENT_CLASS = `${layoutClass('px-3 py-[5px]')} ${ACCENT_COLOR_CLASS}`
