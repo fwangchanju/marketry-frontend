@@ -481,38 +481,30 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           aria-label="날짜 선택 달력"
           className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-gray-500 bg-[#363639] p-2 text-sm font-normal tracking-normal text-white shadow-xl"
         >
-          {/* 위쪽 줄: 왼쪽 달력 위에 하루/기간 스위치와 실시간(왼쪽 달력 오른쪽 끝), 오른쪽 달력 위에 고른 기간의 거래일 수(오른쪽 달력 왼쪽 끝)와 오늘(맨 오른쪽 끝). 하루 모드는 달력이 하나라 실시간·오늘을 오른쪽에 나란히 둔다. */}
-          <div className="mb-2 flex gap-4 border-b border-gray-500 pb-2 text-[13px]">
-            <div className={`flex items-center justify-between gap-2 ${isRangeCalendar ? 'w-60 shrink-0' : 'flex-1'}`}>
-              <span>
-                {onSelectRange && (
-                  <span role="radiogroup" aria-label="선택 방식" className="inline-flex rounded-lg bg-gray-300 p-0.5">
-                    {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
-                      <button
-                        key={label}
-                        type="button"
-                        role="radio"
-                        aria-checked={isRangeMode === rangeValue}
-                        onClick={() => switchMode(rangeValue)}
-                        className={`rounded-md border-0 px-2 py-1 text-[13px] font-semibold leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-zinc-800 text-white' : 'bg-transparent text-zinc-800 hover:text-black'}`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </span>
-                )}
-              </span>
-              <span className="flex items-center gap-1.5">
-                {liveButton}
-                {!isRangeCalendar && todayButton}
-              </span>
-            </div>
-            {isRangeCalendar && (
-              <div className="flex w-60 shrink-0 items-center justify-between gap-2 text-gray-200">
-                <span>{rangeDayCount !== null ? rangeDayCount : ''}</span>
-                {todayButton}
-              </div>
-            )}
+          {/* 위쪽 줄: 왼쪽에 하루/기간 스위치, 오른쪽 끝에 실시간·오늘을 나란히 둔다(하루·기간 모드가 같은 배치). 고른 기간의 거래일 수는 아래쪽 줄의 종료일 오른쪽에 적는다. */}
+          <div className="mb-2 flex items-center justify-between gap-3 border-b border-gray-500 pb-2 text-[13px]">
+            <span>
+              {onSelectRange && (
+                <span role="radiogroup" aria-label="선택 방식" className="inline-flex rounded-lg bg-gray-300 p-0.5">
+                  {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      role="radio"
+                      aria-checked={isRangeMode === rangeValue}
+                      onClick={() => switchMode(rangeValue)}
+                      className={`rounded-md border-0 px-2 py-1 text-[13px] font-semibold leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-zinc-800 text-white' : 'bg-transparent text-zinc-800 hover:text-black'}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </span>
+              )}
+            </span>
+            <span className="flex items-center gap-1.5">
+              {liveButton}
+              {todayButton}
+            </span>
           </div>
           {isRangeCalendar ? (
             <>
@@ -546,11 +538,8 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   onPick={pickRangeDay}
                 />
               </div>
-              <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-t border-gray-500 pt-2 text-[13px]">
-                {/* 초기화는 맨 왼쪽 끝, 적용은 맨 오른쪽 끝에 놓고 고른 시작일 ~ 종료일은 창 가운데에 적는다(양쪽 칸이 같은 폭이라 버튼 크기와 상관없이 가운데에 온다). */}
-                <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={`${RESET_BUTTON_CLASS} justify-self-start`}>
-                  초기화
-                </button>
+              <div className="mt-1 flex items-center justify-between gap-3 border-t border-gray-500 pt-2 text-[13px]">
+                {/* 시작일 ~ 종료일과 그 오른쪽의 거래일 수는 왼쪽부터 차례로 적고, 초기화와 적용은 오른쪽 끝에 붙여 놓는다. */}
                 <span className="flex items-center gap-3">
                   <span className="flex items-center gap-2">
                     <span className="font-semibold text-[var(--accent)]">시작일</span>
@@ -561,10 +550,16 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                     <span className="font-semibold text-[var(--accent)]">종료일</span>
                     {draftEnd && <span className="text-gray-200">{toMarketMapSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
                   </span>
+                  {rangeDayCount !== null && <span className="text-gray-200">{rangeDayCount}</span>}
                 </span>
-                <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={`${APPLY_BUTTON_CLASS} justify-self-end`}>
-                  적용
-                </button>
+                <span className="flex items-center gap-1.5">
+                  <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
+                    초기화
+                  </button>
+                  <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={APPLY_BUTTON_CLASS}>
+                    적용
+                  </button>
+                </span>
               </div>
             </>
           ) : (
@@ -586,7 +581,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
               <div className="mt-1 flex w-60 items-center justify-between gap-2 border-t border-gray-500 pt-2 text-[13px]">
                 <span className="flex items-center gap-2">
                   <span className="font-semibold text-[var(--accent)]">날짜</span>
-                  <span className="text-gray-200">{dayLabel}</span>
+                  {draftDay && <span className="text-gray-200">{dayLabel}</span>}
                 </span>
                 <button type="button" disabled={draftDay === null} onClick={applyDay} className={APPLY_BUTTON_CLASS}>
                   적용
