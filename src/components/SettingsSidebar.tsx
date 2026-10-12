@@ -2403,7 +2403,7 @@ export default function SettingsSidebar({
                   else setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg border-0 px-0 py-1 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  selected ? 'bg-zinc-600 text-[var(--brand)]' : 'bg-transparent text-gray-400 hover:text-[var(--brand)]'
+                  selected ? 'bg-cyan-700 text-white' : 'bg-transparent text-gray-400 hover:text-white'
                 }`}
               >
                 <SettingsSectionIcon icon={section.icon} />
