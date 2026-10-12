@@ -403,16 +403,18 @@ export default function GroupPage() {
                     style={{ fontSize: 22, color: '#ffffff' }}
                   >
                     <span className="inline-flex items-center leading-none font-medium">
-                      <span aria-hidden="true" className="mr-[6px] inline-block h-[1em] w-1 shrink-0 rounded-sm" style={{ backgroundColor: strongIndustryColor }} />
                       <span>
                         {showDeltaGraph ? `${beforeMinutes}분 전 대비` : avgChangeRateUseSimple ? '동일 가중 등락률' : '시총 가중 등락률'}{' '}
                         <span className="font-light">({showDeltaGraph ? '%p' : '%'})</span>
                       </span>
+                      {/* 지금 보는 업종 분류 단계는 제목 옆 배지로 따로 보여 준다(분류 배지의 "분류" 칸과 같은 짙은 청록). */}
+                      <span className="ml-2.5 rounded bg-cyan-700 px-2 py-1 text-sm leading-none font-semibold text-white">{GROUP_DEPTH_NAMES[effectiveDepth - 1]}</span>
                     </span>
                   </div>
-                  {/* 설정창 설명과 같은 모양("- 문구")으로, 고른 업종 분류 단계와 함께 숫자가 왜곡될 수 있음을 알린다. */}
-                  <p className="settings-description mt-1.5 mb-[19.5px] w-full shrink-0 text-center text-sm whitespace-nowrap text-gray-400">
-                    {GROUP_DEPTH_NAMES[effectiveDepth - 1]}: 그룹에 포함된 종목이 적을수록 왜곡이 커질 수 있습니다.
+                  {/* 숫자가 왜곡될 수 있음을 알리는 주의 문구 — 제목보다 덜 눈에 띄게 "-" 표시와 함께 작게 둔다(설정창 설명과 같은 모양). */}
+                  <p className="mt-1.5 mb-[19.5px] flex w-full shrink-0 items-center justify-center gap-1.5 text-[13px] leading-5 whitespace-nowrap text-gray-400">
+                    <span aria-hidden="true">-</span>
+                    그룹에 포함된 종목이 적을수록 왜곡이 커질 수 있습니다.
                   </p>
                   <div className="flex min-h-[260px] min-w-0 w-full flex-1 pl-[1%] pr-[2%]">
                     <RankColumns

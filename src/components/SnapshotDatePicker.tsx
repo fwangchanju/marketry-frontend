@@ -540,7 +540,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
               </div>
               <div className="mt-1 flex items-center justify-between gap-3 border-t border-gray-500 pt-2 text-[13px]">
                 {/* 시작일 ~ 종료일과 그 오른쪽의 거래일 수는 왼쪽부터 차례로 적고, 초기화와 적용은 오른쪽 끝에 붙여 놓는다. */}
-                <span className="flex items-center gap-3">
+                <span className="flex items-center gap-2">
                   <span className="flex items-center gap-2">
                     <span className="font-semibold text-[var(--accent)]">시작일</span>
                     {draftStart && <span className="text-gray-200">{toMarketMapSnapshotDateLabel(draftStart.snapshotTime)}</span>}
@@ -550,7 +550,8 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                     <span className="font-semibold text-[var(--accent)]">종료일</span>
                     {draftEnd && <span className="text-gray-200">{toMarketMapSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
                   </span>
-                  {rangeDayCount !== null && <span className="text-gray-200">{rangeDayCount}</span>}
+                  {/* 고른 기간의 길이라 한눈에 보이게 분류 배지의 "분류" 칸과 같은 짙은 청록 배지로 둔다. */}
+                  {rangeDayCount !== null && <span className="rounded bg-cyan-700 px-1.5 py-0.5 font-semibold leading-none text-white">{rangeDayCount}</span>}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
