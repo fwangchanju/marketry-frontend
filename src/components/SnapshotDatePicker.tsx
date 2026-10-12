@@ -276,10 +276,10 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
 }
 
 const APPLY_BUTTON_CLASS =
-  'shrink-0 rounded-sm border border-[var(--accent)] bg-[var(--accent)] px-1.5 py-0.5 text-center text-xs font-medium leading-none text-black hover:brightness-110 disabled:cursor-not-allowed disabled:border-gray-600 disabled:bg-transparent disabled:text-gray-600 disabled:hover:brightness-100'
+  'shrink-0 rounded-lg border-0 bg-cyan-700 px-2.5 py-1 text-center text-xs font-semibold leading-none text-white transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-cyan-700'
 
 const RESET_BUTTON_CLASS =
-  'shrink-0 rounded-sm border border-[var(--accent)] bg-transparent px-1.5 py-0.5 text-center text-xs font-medium leading-none text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black disabled:cursor-not-allowed disabled:border-gray-600 disabled:bg-transparent disabled:text-gray-600 disabled:hover:bg-transparent disabled:hover:text-gray-600'
+  'shrink-0 rounded-lg border-0 bg-zinc-600 px-2.5 py-1 text-center text-xs font-semibold leading-none text-white transition-colors hover:bg-zinc-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-zinc-600'
 
 // 달력 아이콘을 누르면 아래로 달력 창이 뜬다. 데이터가 있는 날짜(종가 지도가 있는 날과 오늘)만 누를 수 있다.
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.
@@ -457,7 +457,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-gray-500 pb-2 text-xs">
             <span className="justify-self-start">
               {onSelectRange && (
-                <span role="radiogroup" aria-label="선택 방식" className="inline-flex overflow-hidden rounded-sm border border-[var(--accent)]">
+                <span role="radiogroup" aria-label="선택 방식" className="inline-flex rounded-lg bg-gray-300 p-0.5">
                   {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
                     <button
                       key={label}
@@ -465,7 +465,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                       role="radio"
                       aria-checked={isRangeMode === rangeValue}
                       onClick={() => switchMode(rangeValue)}
-                      className={`border-0 px-1.5 py-0.5 text-xs font-medium leading-none ${isRangeMode === rangeValue ? 'bg-[var(--accent)] text-black' : 'bg-transparent text-[var(--accent)] hover:bg-white/10'}`}
+                      className={`rounded-md border-0 px-2 py-1 text-xs font-semibold leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-zinc-800 text-white' : 'bg-transparent text-zinc-800 hover:text-black'}`}
                     >
                       {label}
                     </button>
@@ -477,7 +477,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
             <button
               type="button"
               onClick={pickToday}
-              className="justify-self-end w-[2.05rem] shrink-0 rounded-sm border border-[var(--accent)] bg-transparent px-0 py-0.5 text-center text-xs font-medium leading-none text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black"
+              className="shrink-0 justify-self-end rounded-lg border-0 bg-zinc-600 px-2.5 py-1 text-center text-xs font-semibold leading-none text-white transition-colors hover:bg-zinc-500"
             >
               지금
             </button>
