@@ -62,5 +62,21 @@ export function useCustomPreferences() {
     scheduleSave()
   }
 
-  return { data: query.data, isLoaded: query.isSuccess, setPreference }
+  // 저장 버튼용 — 바로 서버에 올리고, 성공했을 때만 화면의 저장값(캐시)을 바꾼다. 실패하면 던져서 호출한 쪽이 알리게 한다.
+  // 대기 중이던 디바운스 저장은 이 요청이 대신하므로 취소하고, 실패하면 다시 걸어 둔다.
+  const commitPreferences = async (entries: Array<[string, unknown]>) => {
+    const current = queryClient.getQueryData<CustomPreferences>(customPreferenceKeys.preferences()) ?? {}
+    const next = { ...current, ...Object.fromEntries(entries) }
+    const hadPendingSave = saveTimer !== null
+    cancelPendingPreferenceSave()
+    try {
+      await replaceCustomPreferences(next)
+    } catch (error) {
+      if (hadPendingSave) scheduleSave()
+      throw error
+    }
+    queryClient.setQueryData(customPreferenceKeys.preferences(), next)
+  }
+
+  return { data: query.data, isLoaded: query.isSuccess, setPreference, commitPreferences }
 }

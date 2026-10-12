@@ -46,12 +46,14 @@ export function discardDrafts() {
   notify()
 }
 
-// 임시값을 저장값으로 올린다. setPreference는 로그인 사용자의 서버 저장 함수(useCustomPreferences).
-export function commitDrafts(setPreference: (key: string, value: unknown) => void) {
-  activeDraftKeys().forEach(key => {
-    setPreference(key, readDraft(key).value)
-    removeDraft(key)
-  })
+// 임시값을 저장값으로 올린다. save는 로그인 사용자의 서버 저장 함수(useCustomPreferences의 commitPreferences).
+// 저장이 성공한 뒤에만 임시값을 지운다 — 실패하면 던지고 임시값을 그대로 둬서 다시 저장할 수 있다.
+export async function commitDrafts(save: (entries: Array<[string, unknown]>) => Promise<void>) {
+  const entries = activeDraftKeys().map(key => [key, readDraft(key).value] as [string, unknown])
+  if (entries.length === 0) return
+  await save(entries)
+  // 저장하는 동안 사용자가 다시 바꾼 값은 남겨 둔다.
+  entries.forEach(([key, value]) => { if (readDraft(key).value === value) removeDraft(key) })
   notify()
 }
 
