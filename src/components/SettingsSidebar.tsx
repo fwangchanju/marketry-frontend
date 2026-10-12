@@ -39,7 +39,7 @@ export function SettingsSidebarGroup({ children }: SettingsSidebarGroupProps) {
 // 한 줄(16px) + 위 간격(4px)이라 높이를 20px로 계산해서 index.css의 탭 정렬 값을 맞춘다.
 // dimmed: 그 항목의 토글이 꺼져 있을 때 제목 줄만 밝게 두고 설명과 조작부를 함께 옅게 한다(조작부는 호출부가 옅게 한다).
 function SettingDescription({ children, dimmed = false }: { children: ReactNode; dimmed?: boolean }) {
-  return <p className={`settings-description mt-1 max-w-[16rem] text-xs text-gray-400 ${dimmed ? 'opacity-40' : ''}`}>{children}</p>
+  return <p className={`settings-description mt-1 max-w-[16rem] text-[13px]/4 text-gray-400 ${dimmed ? 'opacity-40' : ''}`}>{children}</p>
 }
 
 // 설정창 맨 위 아이콘 버튼(초기화·저장)에 마우스를 올리거나 키보드로 오면 아래에 뜨는 설명. 오른쪽 끝에 맞춰 설정창 밖으로 나가지 않게 한다.
@@ -421,7 +421,7 @@ function DepthTextSelect({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className={`relative flex max-w-[16rem] flex-row items-center gap-3 whitespace-nowrap text-left text-xs ${className}`}
+      className={`relative flex max-w-[16rem] flex-row items-center gap-3 whitespace-nowrap text-left text-[13px]/4 ${className}`}
       onPointerMove={e => { if (hint) setHint(cursorHintFrom(e)) }}
       onPointerLeave={() => setHint(null)}
     >
@@ -445,7 +445,7 @@ function DepthTextSelect({
               aria-checked={depth === index}
               onClick={() => onChange(index)}
               disabled={disabled || isCapped}
-              className={`border-0 bg-transparent p-0 text-left text-xs disabled:cursor-not-allowed ${
+              className={`border-0 bg-transparent p-0 text-left text-[13px]/4 disabled:cursor-not-allowed ${
                 depth === index ? 'text-white' : isCapped ? 'text-gray-600' : 'text-gray-400 hover:text-white'
               }`}
             >
@@ -661,7 +661,7 @@ function SliderTickLabels({
   onBlockedHintChange?: (visible: boolean, index?: number) => void
 }) {
   return (
-    <div className={`relative mt-1 h-4 text-xs text-gray-400 ${inset ? 'mx-2' : ''}`}>
+    <div className={`relative mt-1 h-4 text-[13px]/4 text-gray-400 ${inset ? 'mx-2' : ''}`}>
       {labels.map((label, index) => {
         const blocked = blockedFromIndex !== undefined && index >= blockedFromIndex
         const highlighted = highlightedIndex === index || (
@@ -860,7 +860,7 @@ export function SettingsSectorStockScopeSection({
               role="radio"
               aria-checked={selected}
               onClick={() => onChange(option.value)}
-              className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+              className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
                 selected ? 'text-white' : 'text-gray-400 hover:text-white'
               }`}
             >
@@ -871,7 +871,7 @@ export function SettingsSectorStockScopeSection({
           )
         })}
         {/* 전종목 버튼 안쪽 오른쪽 — 버튼 안에 버튼을 넣을 수 없어 같은 자리에 겹쳐 두고, 눌러도 선택이 바뀌지 않는다. translate를 쓰면 안쪽의 fixed 말풍선이 이 칸 기준으로 위치가 틀어져 inset-y-0으로 가운데에 둔다. 전종목이 선택되면 바탕이 밝아져 아이콘을 진하게 바꾼다. */}
-        <span className={`pointer-events-none absolute inset-y-0 left-1/2 right-0.5 z-20 flex items-center justify-center text-xs font-medium ${scope === 'ALL' ? '[&_button]:text-gray-200 [&_button:hover]:text-white' : ''}`}>
+        <span className={`pointer-events-none absolute inset-y-0 left-1/2 right-0.5 z-20 flex items-center justify-center text-[13px]/4 font-medium ${scope === 'ALL' ? '[&_button]:text-gray-200 [&_button:hover]:text-white' : ''}`}>
           <span aria-hidden="true" className="invisible whitespace-nowrap">전종목</span>
           <span className="pointer-events-auto flex items-center">
             <SettingHelpBubble
@@ -953,7 +953,7 @@ export function SettingsAverageModeSection({
                 aria-checked={selected}
                 onClick={() => onChange(option.value)}
                 disabled={!enabled}
-                className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+                className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
                   selected ? 'text-white' : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -1188,7 +1188,7 @@ function SettingsAverageModeSelector({
             role="radio"
             aria-checked={avgChangeRateUseSimple === option.value}
             onClick={() => avgChangeRateUseSimple !== option.value && onToggleAvgChangeRateUseSimple()}
-            className={`relative z-10 min-h-8 rounded-[5px] border-0 bg-transparent px-1 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+            className={`relative z-10 min-h-8 rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
               avgChangeRateUseSimple === option.value ? 'text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -1425,7 +1425,7 @@ export function SettingsSectorLevelSection({
                     onClick={() => onChangeActiveDepthMetric(option.key)}
                     disabled={isDepthMetricDisabled || !depthMetricEnabled}
                     aria-label={option.label}
-                    className={`relative z-10 min-h-9 rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-xs font-medium whitespace-nowrap transition-colors duration-[500ms] disabled:cursor-not-allowed ${
+                    className={`relative z-10 min-h-9 rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] disabled:cursor-not-allowed ${
                       selected ? 'text-white' : 'text-gray-400 hover:text-white'
                     }`}
                   >
@@ -1576,7 +1576,7 @@ export function SettingsSectorLevelSection({
                     aria-checked={selected}
                     disabled={!stockLabelEnabled}
                     onClick={() => onChangeStockLabelModeIndex(value)}
-                    className={`relative z-10 min-h-9 rounded-[5px] border-0 bg-transparent px-1 py-1 text-xs font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
+                    className={`relative z-10 min-h-9 rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
                       selected ? 'text-white' : 'text-gray-400 hover:text-white'
                     }`}
                   >
@@ -1700,7 +1700,7 @@ export function SettingsSectorLevelSection({
                       role="radio"
                       aria-checked={selected}
                       onClick={() => onChangeStockPopupOnHover(option.onHover)}
-                      className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-xs font-medium transition-colors duration-[500ms] ${
+                      className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
                       selected ? 'text-white' : 'text-gray-400 hover:text-white'
                     }`}
                     >
@@ -1842,7 +1842,7 @@ export function SettingsSectorChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-xs font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-white' : 'text-gray-400 hover:text-white'}`}
           >
             {option.label}
           </button>
@@ -1875,7 +1875,7 @@ export function SettingsStockChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-xs font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`relative z-10 min-h-7 rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-white' : 'text-gray-400 hover:text-white'}`}
           >
             {option.label}
           </button>
