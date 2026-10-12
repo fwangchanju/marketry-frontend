@@ -20,7 +20,7 @@ import { commitDrafts, discardDrafts, useHasDrafts } from '@/utils/settingsDraft
 import { BOOKMARK_ORDER, type SettingsBookmarkId } from '@/utils/settingsBookmarks'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
-import { appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 export type { SettingsBookmarkId }
 export type SettingsSidebarSectionId = 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors'
@@ -2179,7 +2179,7 @@ export default function SettingsSidebar({
   children,
 }: Props) {
   const isLoggedIn = useIsLoggedIn()
-  const { setPreference, isLoaded: preferencesLoaded } = useCustomPreferences()
+  const { commitPreferences, isLoaded: preferencesLoaded } = useCustomPreferences()
   const hasDrafts = useHasDrafts()
   const [isPreferenceFeedbackActive, setIsPreferenceFeedbackActive] = useState(false)
   const preferenceFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -2362,8 +2362,17 @@ export default function SettingsSidebar({
             aria-label="저장"
             disabled={isPreferenceFeedbackActive}
             onClick={async () => {
-              if (!isLoggedIn) onRequestLogin?.()
-              else if (preferencesLoaded && hasDrafts && await appConfirm('변경사항을 저장하시겠습니까?')) runPreferenceAction(() => commitDrafts(setPreference))
+              if (!isLoggedIn) { onRequestLogin?.(); return }
+              if (!hasDrafts) return
+              if (!preferencesLoaded) {
+                appAlert('저장된 설정을 아직 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.')
+                return
+              }
+              if (!await appConfirm('변경사항을 저장하시겠습니까?')) return
+              // 저장에 실패하면 임시값은 그대로 남아 있으니 알리고, 사용자가 다시 저장하게 한다.
+              runPreferenceAction(() => {
+                commitDrafts(commitPreferences).catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.'))
+              })
             }}
             className="group relative flex border-0 bg-transparent p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
           >
