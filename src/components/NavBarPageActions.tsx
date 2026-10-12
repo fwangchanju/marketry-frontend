@@ -21,7 +21,8 @@ const BUTTON_BASE_CLASS =
   'flex h-7 items-center justify-center border-0 outline-none hover:text-[var(--accent)] focus-visible:text-[var(--accent)]'
 // 아이콘만 있는 버튼의 회색 채움 — 시간 글자가 붙은 새로고침 버튼은 채우지 않는다.
 // 아이콘만 있는 버튼은 평소·마우스를 올릴 때·켜져 있을 때 모두 틀 없이 아이콘만 보인다(켜진 상태는 아이콘 색과 안쪽 채움으로 알린다).
-const ICON_FRAME_CLASS = 'bg-transparent'
+// 위의 프로필 사진과 아래 설정창 사이에서 위·아래 간격이 같도록(각각 14px) 3.5px 아래로 내린다.
+const ICON_FRAME_CLASS = 'relative top-[3.5px] bg-transparent'
 const BUTTON_CLASS = `${BUTTON_BASE_CLASS} w-7`
 // 켜진 상태의 아이콘은 선 색(청록)을 35% 투명하게 안쪽에 채운다 — 북마크가 켜진 모양.
 export const FILLED_ICON_CLASS = 'fill-current/35'
