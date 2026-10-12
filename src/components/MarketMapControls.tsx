@@ -50,7 +50,7 @@ export function MarketDropdown({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         onClick={() => setIsOpen(open => !open)}
-        className="inline-flex h-6 w-[7.5rem] shrink-0 items-center justify-between gap-1 rounded-lg border-0 bg-zinc-600 px-2 text-sm font-bold text-white transition-colors hover:bg-zinc-500"
+        className="inline-flex h-6 w-[7.5rem] shrink-0 items-center justify-between gap-1 rounded-lg border-0 bg-zinc-600 px-2 text-base font-semibold text-white transition-colors hover:bg-zinc-500"
       >
         <span className="min-w-0 flex-1 truncate text-left">{MARKET_LABEL[market]}</span>
         <svg aria-hidden="true" viewBox="0 0 16 16" className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -246,7 +246,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
               setPopup({ text: option.help, anchor: event.currentTarget.getBoundingClientRect() })
             }}
             // 안 선택 글자는 옆 거래 세션 글자(text-gray-400)와 같은 회색이다. 잠긴 별도는 흐리게 해서 잠긴 것을 알아보게 한다.
-            className={`relative z-10 h-5 min-w-0 flex-1 rounded-full border-0 bg-transparent px-0 text-[13px] font-semibold leading-none transition-colors duration-[500ms] ${
+            className={`relative z-10 h-5 min-w-0 flex-1 rounded-full border-0 bg-transparent px-0 text-sm font-semibold leading-none transition-colors duration-[500ms] ${
               basis === option.value
                 ? 'text-gray-900'
                 : option.locked

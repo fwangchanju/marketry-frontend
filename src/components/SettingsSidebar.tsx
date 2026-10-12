@@ -10,7 +10,7 @@ import MarketMapColorThresholdEditorPanel, { type ColorThresholdEditorProps } fr
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import { ReturnArrowIcon } from '@/components/icons/MarketMapIcons'
 import type { MarketValueTierItem } from '@/types/api'
-import { FONT_BAR_TIME } from '@/components/FontStyle'
+import { FONT_BAR_TIME_SHAPE } from '@/components/FontStyle'
 import { ACCENT_PALETTE } from '@/utils/accentPalette'
 import { TAXONOMY_SELECT_TITLE, TAXONOMY_NAMES, type TaxonomyKey } from '@/utils/taxonomyNames'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
@@ -1130,7 +1130,7 @@ function SettingsTaxonomySelector({
       </div>
       {/* 업데이트 시각이 없어도(올린 MARKETRY가 아직 없을 때 등) 줄은 그대로 둬서 다른 분류와 모양이 달라지지 않게 한다. 시각 글자만 같은 폭으로 자리를 잡고 숨긴다. */}
       {atBottom && (
-        <p className={`${FONT_BAR_TIME} mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-xs text-gray-400`}>
+        <p className={`${FONT_BAR_TIME_SHAPE} font-medium mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-xs text-gray-400`}>
           <span className="flex items-center">
             업데이트
             <SettingHelpBubble
