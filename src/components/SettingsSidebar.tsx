@@ -1976,7 +1976,7 @@ export function SettingsColorSection({
   // 색상 설정은 비로그인에게도 보인다 — 기본 색상(공개 /map/scale)으로 시작해서 바꿀 수 있고, 비로그인의
   // 변경은 서버에 저장되지 않고 이 탭의 세션에만 남는다(다른 화면 설정과 같다).
   const runWithFeedback = useContext(SettingsFeedbackContext)
-  // 커스텀을 끌 때 색상 칸 위에 잠깐 띄우는 안내 — 눌러야 사라지는 창이 아니라 일정 시간 뒤 스스로 사라진다.
+  // 커스텀을 끌 때 색상 칸에 포개서 잠깐 띄우는 안내 — 눌러야 사라지는 창이 아니라 일정 시간 뒤 스스로 사라진다.
   const [colorOffNoticeVisible, setColorOffNoticeVisible] = useState(false)
   useEffect(() => {
     if (!colorOffNoticeVisible) return
@@ -2040,7 +2040,7 @@ export function SettingsColorSection({
       {!colorCustomOn && colorOffNoticeVisible && (
         <span
           role="status"
-          className={`pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}
+          className={`pointer-events-none absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}
         >
           기본 색상이 적용됩니다.
         </span>
