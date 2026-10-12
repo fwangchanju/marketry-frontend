@@ -148,7 +148,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // NXT 종목만 보기 — 어느 분류(거래소/MARKETRY)이든 오늘의 시간표가 정한 필터 구간에만
   // 분류는 그대로 두고 NXT 거래 종목만 남기고, 그 밖의 시간에는 전체 종목을 보여준다. 사용자가 직접 켜고 끄지 않는다.
   const nxtOnlyWindow = useNxtOnlyWindow()
-  const nxtOnly = nxtOnlyWindow !== null
   // 등락률 기준은 애프터 마켓 시작부터 다음 프리 마켓 개장 전까지 선택한다.
   // 표시 시간대가 아니거나 시간외 스냅샷이 아직 없으면 저장한 선택과 무관하게 누적으로 보인다.
   const [afterHoursStart, setAfterHoursStart] = useState<string | null>(null)
@@ -156,7 +155,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [storedChangeRateChoice, setStoredChangeRateChoice] = usePersistedState<ChangeRateChoice>('marketMap.changeRateMode', 'daily')
   const requestedChoice: ChangeRateChoice = allowChangeRateMode && isAfterHoursControlsVisible ? storedChangeRateChoice : 'daily'
   const requestedBasis: ChangeRateMode = requestedChoice === 'afterHours' ? 'afterHours' : 'daily'
-  const taxonomy: TaxonomyKey = isMarketry ? 'MARKETRY' : isCustom ? 'MINE' : nxtOnly ? 'NXT' : 'KRX'
   // 섹터 랭킹/강세 업종 계산에 쓰는 평균 방식은 박스 크기 비율과 별도로 저장한다.
   const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting('marketMap.avgChangeRateUseSimple', defaults.avgChangeRateUseSimple)
   // 0은 동일 크기, 100은 시가총액 비례이며 중간값은 시가총액 차이를 거듭제곱으로 압축한다.
@@ -276,6 +274,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const rangeStartTime = rangeSelection === null || pinnedSnapshotTime === undefined
     ? undefined
     : (rangeNeedsLookup ? (rangeMonthDays?.find(day => day.date === rangeSelection.snapshotTime.slice(0, 10))?.snapshotTime ?? rangeSelection.snapshotTime) : rangeSelection.snapshotTime)
+  // NXT 종목만 보기는 실시간 지도에만 쓴다 — 그 시간대(15:40~16:00 등)에도 종가·지난 날짜·기간은 그날의 전종목을 보여 준다.
+  // (종가는 오늘 정규장이 어떻게 끝났는지 보는 것이라 NXT 거래 종목만이 아니다.) 종목 수 분모도 받아 온 종목 수라 같이 전종목이 된다.
+  const nxtOnly = nxtOnlyWindow !== null && pinnedSnapshotTime === undefined && requestedChoice !== 'close'
+  const taxonomy: TaxonomyKey = isMarketry ? 'MARKETRY' : isCustom ? 'MINE' : nxtOnly ? 'NXT' : 'KRX'
   // 달력이 "오늘(실시간)"을 알아보려면 지난 날짜를 보는 동안에도 최신 스냅샷 시각을 기억해야 한다.
 
   // 종가 선택 — 지금 보는 날짜(실시간 스냅샷의 날짜)의 정규장 종가 스냅샷 시각을 달력과 같은 목록에서 찾아 그 지도를 받는다.

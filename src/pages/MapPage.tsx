@@ -575,7 +575,7 @@ export default function MapPage() {
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-black">
               {/* NXT 단독 시간대 공지 — 그 시간대에만 보여주는 알림이다. 닫을 수 있고, 시간대가 끝났다가 다시 오면 또 나온다. */}
               {/* 지도가 그려진 뒤에만 보인다 — 로딩 중이거나 불러오지 못했을 때는 가운데 로딩 원 위에 겹쳐 뜨지 않게 한다. */}
-              {nxtOnlyWindow && !isNxtNoticeDismissed && !isLoading && !isError && (
+              {nxtOnly && nxtOnlyWindow && !isNxtNoticeDismissed && !isLoading && !isError && (
                 // 색은 설정창의 말풍선과 같고, 지도 한가운데에 설정창 헤더(text-lg)와 같은 크기의 글자로 보여준다.
                 <div
                   role="status"
