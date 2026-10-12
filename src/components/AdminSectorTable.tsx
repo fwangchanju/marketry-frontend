@@ -39,7 +39,7 @@ const ADD_CHILD_MAX_PARENT_DEPTH = 1
 const MAX_SECTOR_NAME_LENGTH = 12
 
 // 업종 이름 입력칸 — 글자 수 상한에 닿으면 칸 아래에 이유를 알려 준다(상한을 넘는 글자는 조용히 잘리므로).
-function SectorNameInput({ wrapperClassName = '', onFocus, onBlur, ...props }: ComponentProps<'input'> & { wrapperClassName?: string }) {
+function SectorNameInput({ wrapperClassName = '', onChange, onFocus, onBlur, ...props }: ComponentProps<'input'> & { wrapperClassName?: string }) {
   const [focused, setFocused] = useState(false)
   const atLimit = typeof props.value === 'string' && props.value.length >= MAX_SECTOR_NAME_LENGTH
   return (
@@ -48,6 +48,11 @@ function SectorNameInput({ wrapperClassName = '', onFocus, onBlur, ...props }: C
         type="text"
         maxLength={MAX_SECTOR_NAME_LENGTH}
         {...props}
+        // 한글처럼 글자를 조합하며 치는 입력은 maxLength를 넘는 한 글자가 조합 중에 잠깐 보인다 — 넘는 순간 바로 잘라 낸다.
+        onChange={e => {
+          if (e.target.value.length > MAX_SECTOR_NAME_LENGTH) e.target.value = e.target.value.slice(0, MAX_SECTOR_NAME_LENGTH)
+          onChange?.(e)
+        }}
         onFocus={e => { setFocused(true); onFocus?.(e) }}
         onBlur={e => { setFocused(false); onBlur?.(e) }}
       />
