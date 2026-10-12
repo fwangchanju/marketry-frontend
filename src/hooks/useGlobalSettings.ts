@@ -109,6 +109,14 @@ function topPickAverage(node: FilteredMarketMapSectorNode, metric: DepthMetric):
 // 제외 업종 목록을 서버 기본값으로 마지막에 채운 분류 — 이 탭의 sessionStorage에 둔다.
 const SEEDED_KEY_STORAGE = 'marketMap.excludedSeedKey'
 
+function withPriceLabels(nodes: MarketMapSectorNode[], labels: { base: string; end: string }): MarketMapSectorNode[] {
+  return nodes.map(node => ({
+    ...node,
+    items: node.items.map(item => ({ ...item, rangeLabels: labels })),
+    children: withPriceLabels(node.children, labels),
+  }))
+}
+
 export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRateMode?: boolean }) {
   const needsTree = options?.needsTree ?? true
   // 등락률 기준(누적/시간외) 선택은 지도 페이지만 쓴다. 그룹 페이지는 now·before 쌍을 따로 받아 누적 기준으로 그리므로
@@ -321,8 +329,17 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   )
   // 기간 등락률을 보는 동안 두 지도가 다 오기 전에는 값이 없다 — 종료일 지도 그대로의(하루치) 등락률을 기간 값처럼 보여 주지 않는다.
   const data: MarketMapResponse | undefined = useMemo(
-    () => (isRangeActive ? (rangeResult && snapshotData ? { ...snapshotData, items: rangeResult.items } : undefined) : snapshotData),
-    [isRangeActive, rangeResult, snapshotData],
+    () => {
+      if (isRangeActive) return rangeResult && snapshotData ? { ...snapshotData, items: rangeResult.items } : undefined
+      // 종가를 보는 동안에는 지도가 정규장 종가라서, 종목 팝업의 가격 줄 이름을 "현재가" 대신 "당일종가"로 보여 준다.
+      if (isCloseActive && snapshotData) return { ...snapshotData, items: withPriceLabels(snapshotData.items, { base: '전일종가', end: '당일종가' }) }
+      // 별도(시간외)는 정규장 종가가 기준가라서, 서버가 전일종가 자리에 그 종가를 담아 보낸다.
+      if (requestedBasis === 'afterHours' && snapshotData && isAfterHoursSelectableAt(snapshotData.snapshotTime, snapshotData.afterHoursStart)) {
+        return { ...snapshotData, items: withPriceLabels(snapshotData.items, { base: '당일종가', end: '현재가' }) }
+      }
+      return snapshotData
+    },
+    [isRangeActive, rangeResult, snapshotData, isCloseActive, requestedBasis],
   )
   const rangeExcludedStocks = rangeResult?.excludedStocks ?? []
   const isMarketMapLoading = isSnapshotLoading || (isRangeActive && (rangePreviousDay === undefined || isRangeStartLoading))
