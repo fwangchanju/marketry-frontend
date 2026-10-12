@@ -142,10 +142,15 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                     <p className="mt-1 truncate text-zinc-400">{session.email || `사용자 ${session.userId}`}</p>
                   </div>
                 </div>
-                <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold hover:bg-white/10 focus:bg-white/10">
-                  프로필
-                </Link>
-                <div className="mt-1 border-t border-gray-500 pt-1">
+                {/* 프로필·로그아웃은 공유창·상단바와 같은 회색 채움 버튼 두 개를 나란히 놓는다. */}
+                <div className="flex gap-2 px-3 pb-1 pt-2.5">
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className="flex-1 rounded-lg bg-zinc-600 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-zinc-500 focus:bg-zinc-500"
+                  >
+                    프로필
+                  </Link>
                   <button
                     type="button"
                     onClick={() => {
@@ -153,7 +158,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                       logout.mutate()
                     }}
                     disabled={logout.isPending}
-                    className="block w-full border-0 bg-transparent px-4 py-3 text-left text-sm font-semibold text-white hover:bg-white/10 focus:bg-white/10 disabled:opacity-50"
+                    className="flex-1 rounded-lg border-0 bg-zinc-600 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-500 focus:bg-zinc-500 disabled:opacity-50"
                   >
                     로그아웃
                   </button>
