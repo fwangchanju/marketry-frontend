@@ -2386,7 +2386,7 @@ export default function SettingsSidebar({
         </div>}
       </div>
       {availableSections.length > 0 && (
-      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch gap-0.5 border-b border-gray-500 bg-[#363639] p-1">
+      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-gray-500 bg-[#363639] px-1">
           {availableSections.map(section => {
             const selected = section.id === selectedSection?.id
             return (
@@ -2402,12 +2402,16 @@ export default function SettingsSidebar({
                   if (section.id === 'favorites' && bookmarkLoginRequired && onRequestLogin) onRequestLogin()
                   else setActiveSection(section.id)
                 }}
-                className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg border-0 px-0 py-1 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  selected ? 'bg-cyan-700 text-white' : 'bg-transparent text-gray-400 hover:text-white'
+                className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
+                  selected ? 'text-[var(--brand)]' : 'text-gray-400 hover:text-[var(--brand)]'
                 }`}
               >
                 <SettingsSectionIcon icon={section.icon} />
                 <span className="max-w-full truncate font-bold">{section.label}</span>
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-x-2 bottom-0 h-0.5 bg-[var(--brand)] transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
+                />
               </button>
             )
           })}
