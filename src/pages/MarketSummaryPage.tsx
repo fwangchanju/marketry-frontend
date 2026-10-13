@@ -34,10 +34,10 @@ import { collectAtDepth } from '@/utils/sectorDepth'
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
 
-// 안내 틀에 항상 한 칸씩 두는 안내 종류 — 정지(거래정지로 지도에서 빠지기 시작한 종목), 신규(신규 상장).
+// 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
 const NOTICE_TYPES = [
-  { type: 'TRADING_SUSPENSION', label: '정지', badgeClass: 'bg-amber-700' },
   { type: 'NEW_LISTING', label: '신규', badgeClass: 'bg-cyan-700' },
+  { type: 'TRADING_SUSPENSION', label: '정지', badgeClass: 'bg-amber-700' },
 ] as const
 
 export default function MarketSummaryPage() {
