@@ -245,11 +245,11 @@ export default function MarketSummaryPage() {
                 <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
               </div>
             ) : (
-            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 여백은 사방 4px). 전체를 외곽선(gray-700)으로 두르고 틀 사이는 같은 색 세로 구분선이다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
-            <div className="flex min-h-0 min-w-0 flex-1">
-            <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto border border-gray-700 bg-black">
+            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 툴바 아래 여백(5.25px)만큼 위로 붙여 위쪽 여백도 없다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
+            <div className="-mt-[5.25px] flex min-h-0 min-w-0 flex-1">
+            <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto bg-black">
             {/* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */}
-            <div ref={allFramesRef} className="flex min-h-0 min-w-full flex-1 divide-x divide-gray-700 bg-black">
+            <div ref={allFramesRef} className="flex min-h-0 min-w-full flex-1 bg-black">
             {[
               {
                 title: '시장 요약',
@@ -318,9 +318,10 @@ export default function MarketSummaryPage() {
                   </div>
                 ),
               },
-            ].map(frame => (
+            ].map((frame, frameIndex) => (
               <section key={frame.title} className="relative flex h-full min-w-[300px] flex-1 flex-col bg-black">
-                                <div className="flex min-h-0 flex-1 flex-col bg-black p-1">
+                                {/* 안쪽 여백은 양 끝(첫 틀의 왼쪽·마지막 틀의 오른쪽)에는 두지 않고 틀 사이(구분선 양옆)에만 8px 둔다. 여백은 틀(section)이 아니라 이 안쪽 칸에 둬서 세 틀의 너비는 같다. 위아래 여백은 없다. */}
+                <div className={`flex min-h-0 flex-1 flex-col bg-black ${frameIndex === 0 ? 'pl-0 pr-2' : frameIndex === 2 ? 'pl-2 pr-0' : 'px-2'}`}>
                   {/* 안내 틀의 제목 줄(28px). 시장 요약·그룹 등락률은 제목이 본문의 첫 줄 격자 안에 있어 따로 그리지 않는다. */}
                   {!('ownHeader' in frame) && (
                     <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start">
