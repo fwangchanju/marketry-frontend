@@ -100,6 +100,8 @@
   --stock-down: #42a5f5;
   --negative: #ef5350;
   --accent: #4dd0e1;
+  /* 밝은 회색 면(설정창 선택 버튼 배경영역·Basis·프로필 팝업·알림창 버튼 등)의 공통 색 — 한 값으로 맞춘다. */
+  --panel-gray: #d1d5db;
   --accent-hover: #26c6da;
   --accent-light: var(--accent);
   /* 홈페이지 메인 청록색 — 옵션 사이드바는 --accent를 회색으로 덮어써서 별도 변수로 둔다. */

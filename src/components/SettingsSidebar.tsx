@@ -2331,7 +2331,7 @@ export default function SettingsSidebar({
     <div
       data-settings-sidebar
       className="relative tabular-nums select-none flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-gray-500 bg-[#363639]"
-      style={{ '--accent': '#d1d5db', '--accent-hover': '#f3f4f6', '--accent-light': '#d1d5db' } as CSSProperties}
+      style={{ '--accent': 'var(--panel-gray)', '--accent-hover': '#f3f4f6', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
     >
       <div className="flex shrink-0 items-center border-b border-gray-500 px-4 py-2">
         <div className="flex min-w-0 items-center gap-2">
