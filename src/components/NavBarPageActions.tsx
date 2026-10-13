@@ -33,7 +33,7 @@ export const SNAPSHOT_REFRESH_HELP = '5분 간격으로 데이터를 수집합�
 // 스냅샷 새로고침 아이콘 버튼 — 상단바 우측 묶음(NavBarPageActions)과 콘솔 줄(시계 옆) 어디에 두든 같은 모양이다.
 // helpText를 주면 커서를 올리거나 포커스하면 설명창(지도 설정의 도움말 팝업과 같은 모양·글자 크기/굵기)을 버튼 아래에 띄운다.
 // 누르면 새로고침만 실행한다.
-// children을 주면 평소에는 텍스트를 보여주고, 호버·키보드 포커스 시 아이콘으로 대체하며 갱신 중에는 회전한다.
+// children을 주면 텍스트를 보여주고, 갱신 중에만 아이콘으로 대체해 회전한다.
 export function PageRefreshButton({
   onRefresh,
   isRefreshing,
@@ -121,7 +121,7 @@ export function PageRefreshButton({
         aria-label="스냅샷 새로고침"
         aria-busy={showRefreshing}
         aria-describedby={helpText && isHelpOpen ? 'snapshot-refresh-help' : undefined}
-        className={`${BUTTON_BASE_CLASS} ${children ? `group/refresh gap-1.5 whitespace-nowrap bg-transparent ${leading ? 'px-2.5' : ''}` : `${ICON_FRAME_CLASS} w-7`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default text-[var(--accent)]' : children ? 'text-gray-400' : 'text-gray-300'} ${className}`}
+        className={`${BUTTON_BASE_CLASS} ${children ? `gap-1.5 whitespace-nowrap bg-transparent ${leading ? 'px-2.5' : ''}` : `${ICON_FRAME_CLASS} w-7`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default text-[var(--accent)]' : children ? 'text-gray-400' : 'text-gray-300'} ${className}`}
         onClick={handleRefresh}
         onFocus={helpText ? () => setIsHelpOpen(true) : undefined}
         onBlur={helpText ? () => setIsHelpOpen(false) : undefined}
@@ -129,8 +129,9 @@ export function PageRefreshButton({
         {leading}
         {children ? (
           <span className="relative inline-flex items-center justify-center">
-            <span aria-hidden={showRefreshing || undefined} className={showRefreshing ? 'invisible' : 'group-hover/refresh:invisible group-focus-visible/refresh:invisible'}>{children}</span>
-            <span aria-hidden="true" className={`absolute inset-0 flex items-center justify-center ${showRefreshing ? '' : 'invisible group-hover/refresh:visible group-focus-visible/refresh:visible'}`}>
+            <span aria-hidden={showRefreshing || undefined} className={showRefreshing ? 'invisible' : undefined}>{children}</span>
+            {/* 새로고침 아이콘은 갱신하는 동안에만 시각 글자 자리에 돌아간다 — 커서를 올려도 바뀌지 않는다. */}
+            <span aria-hidden="true" className={`absolute inset-0 flex items-center justify-center ${showRefreshing ? '' : 'invisible'}`}>
               <RefreshIcon className={`h-[15px] w-[15px] shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
             </span>
           </span>
