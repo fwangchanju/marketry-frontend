@@ -181,13 +181,9 @@ export default function MarketSummaryPage() {
                 ),
               },
               {
-                title: '준비 중',
-                body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col">
-                    {indexLine}
-                    <div className="flex flex-1 items-center justify-center text-sm text-gray-500">내용 미정</div>
-                  </div>
-                ),
+                // 거래정지·신규 상장 같은 특수한 종목이 생기면 안내를 띄울 자리다. 내용은 아직 없다.
+                title: '안내',
+                body: <div className="flex min-h-0 w-full flex-1 flex-col" />,
               },
             ].map(frame => (
               <section key={frame.title} className="relative flex h-full w-[360px] shrink-0 flex-col bg-black">
@@ -198,24 +194,26 @@ export default function MarketSummaryPage() {
                   <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-bold text-white">
                     <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
                     {frame.title}
-                    {snapshotClock}
+                    {frame.title !== '안내' && snapshotClock}
                   </h2>
                   {frame.body}
                 </div>
                 {/* 캡처 버튼을 제목 바로 오른쪽에 둔다 — 제목과 같은 글자를 보이지 않게 깔아 그 끝에 버튼이 오게 하므로 제목 길이를 재지 않아도 된다.
-                    칸 밖에 있어서 캡처 이미지에는 찍히지 않는다. */}
-                <div className={`pointer-events-none absolute left-[9px] top-[9px] flex h-7 items-center pl-1 text-base font-bold ${isCapturingAll ? 'invisible' : ''}`}>
-                  <span aria-hidden="true" className="invisible mr-1.5 inline-block w-1 shrink-0" />
-                  <span aria-hidden="true" className="invisible">{frame.title}</span>
-                  <button
-                    type="button"
-                    aria-label={`${frame.title} 캡처`}
-                    onClick={() => setCaptureTarget(frameRefs.current[frame.title] ?? null)}
-                    className="pointer-events-auto ml-1 flex h-7 w-7 items-center justify-center border-0 bg-transparent text-gray-400 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
-                  >
-                    <CaptureIcon className="h-4 w-4" />
-                  </button>
-                </div>
+                    칸 밖에 있어서 캡처 이미지에는 찍히지 않는다. 안내 틀은 캡처하지 않으므로 버튼이 없다. */}
+                {frame.title !== '안내' && (
+                  <div className={`pointer-events-none absolute left-[9px] top-[9px] flex h-7 items-center pl-1 text-base font-bold ${isCapturingAll ? 'invisible' : ''}`}>
+                    <span aria-hidden="true" className="invisible mr-1.5 inline-block w-1 shrink-0" />
+                    <span aria-hidden="true" className="invisible">{frame.title}</span>
+                    <button
+                      type="button"
+                      aria-label={`${frame.title} 캡처`}
+                      onClick={() => setCaptureTarget(frameRefs.current[frame.title] ?? null)}
+                      className="pointer-events-auto ml-1 flex h-7 w-7 items-center justify-center border-0 bg-transparent text-gray-400 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
+                    >
+                      <CaptureIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </section>
             ))}
             </div>
