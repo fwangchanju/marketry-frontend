@@ -220,7 +220,8 @@ export default function MarketSummaryPage() {
                       const rowClass = 'flex h-6 items-center'
                       return (
                         <Fragment key={type}>
-                          <span className={rowClass}>
+                          {/* 종류 배지(신규 상장·거래 정지)는 한 칸(8px) 들여 쓴다 — 아래 현황 배지(3개월 내 상장·현재 정지 종목)보다 한 단계 안쪽이다. */}
+                          <span className={`${rowClass} pl-2`}>
                             <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{label}</span>
                           </span>
                           {/* 그날 안내 종목이 없으면 종류 배지 바로 오른쪽에 "없음"을 적는다. 있으면 칸은 비우고 종목 줄이 그 아래에 붙는다. */}
