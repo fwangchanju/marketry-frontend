@@ -36,7 +36,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
           <div />
           {/* 로딩 화면(안내 문구 없음)과 같은 로고 크기·같은 칸·같은 아래 여백이라, 오류 문구가 경과 시간 숫자가 있던 바로 그 자리에 놓인다.
               compact(달력)는 원이 작아 문구와 버튼이 들어갈 자리를 더 주려고 로고를 줄이고 버튼을 작게 그린다. */}
-          <MarketryLogo className={`h-auto ${compact ? 'w-[60%]' : 'w-[84%]'}`} />
+          <MarketryLogo className={`h-auto ${compact ? 'w-[56%]' : 'w-[84%]'}`} />
           <div className={`flex flex-col items-center justify-center gap-1 ${compact ? 'pb-[8cqw]' : 'pb-[10cqw]'}`}>
             {/* 문구 크기도 경과 시간 숫자와 같이 원 너비에 비례한다(큰 원 기준 5.5%, 11~24px). */}
             <span className="relative text-center text-[clamp(11px,5.5cqw,24px)] leading-tight text-gray-300">
@@ -46,7 +46,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
                 <button
                   type="button"
                   onClick={onRetry}
-                  className={`absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded border border-[var(--brand)] bg-transparent text-[var(--brand)] font-semibold transition-colors hover:bg-[var(--brand)] hover:text-black ${compact ? 'px-2 py-px text-[11px]' : 'px-3 py-0.5 text-xs'}`}
+                  className={`absolute left-1/2 top-full -translate-x-1/2 whitespace-nowrap ${compact ? 'mt-[13px]' : 'mt-[15px]'} rounded border border-[var(--brand)] bg-transparent text-[var(--brand)] font-semibold transition-colors hover:bg-[var(--brand)] hover:text-black ${compact ? 'px-2 py-px text-[11px]' : 'px-3 py-0.5 text-xs'}`}
                 >
                   다시 시도
                 </button>

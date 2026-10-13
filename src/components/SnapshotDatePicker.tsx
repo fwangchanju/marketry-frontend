@@ -166,7 +166,7 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
           )}
           {isError && !isLoading && showSpinner && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639] pt-1">
-              <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetch()} className="h-44 w-44" />
+              <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetch()} className="h-[11.5rem] w-[11.5rem]" />
             </div>
           )}
           <div className="grid grid-cols-7 text-center font-roboto-latin tabular-nums" aria-busy={isLoading}>
@@ -528,7 +528,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 {isRangeError && (
                   // 두 달 중 하나라도 못 받으면 달마다 문구를 따로 두지 않고, 로딩 원과 같은 자리·같은 모양으로 하나만 둔다.
                   <div className="absolute inset-x-0 bottom-0 top-[3.75rem] z-10 flex items-center justify-center bg-[#363639]">
-                    <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className="h-44 w-44" />
+                    <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className="h-[11.5rem] w-[11.5rem]" />
                   </div>
                 )}
                 <MonthGrid
