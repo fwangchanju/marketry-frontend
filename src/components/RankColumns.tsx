@@ -142,7 +142,7 @@ export default function RankColumns({
           {items.map(item => {
             const indexMarket = item.isReference ? INDEX_MARKET_BY_KEY[item.key] : undefined
             const selectable = item.hiddenCount === undefined && (item.isReference ? onSelectIndex !== undefined && indexMarket !== undefined : onSelectSector !== undefined)
-            const nameClassName = 'absolute left-1/2 top-1.5 w-max max-w-[145px] truncate whitespace-nowrap px-1 text-right font-medium'
+            const nameClassName = 'absolute left-1/2 top-1.5 w-max max-w-[145px] truncate whitespace-nowrap px-1 text-right font-bold'
             const nameStyle = {
               transform: 'translateX(-100%) rotate(-45deg)',
               transformOrigin: 'top right',

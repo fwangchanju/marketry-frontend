@@ -406,10 +406,10 @@ export default function GroupPage() {
               ) : (
                 <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-auto pb-[19.5px]">
                   <div
-                    className="mt-[25px] flex w-full shrink-0 items-center justify-center font-medium whitespace-nowrap"
+                    className="mt-[25px] flex w-full shrink-0 items-center justify-center font-bold whitespace-nowrap"
                     style={{ fontSize: 22, color: '#ffffff' }}
                   >
-                    <span className="inline-flex items-center leading-none font-medium">
+                    <span className="inline-flex items-center leading-none font-bold">
                       <span>
                         {showDeltaGraph ? `${beforeMinutes}분 전 대비` : avgChangeRateUseSimple ? '동일 가중 등락률' : '시총 가중 등락률'}{' '}
                         <span className="font-light">({showDeltaGraph ? '%p' : '%'})</span>
@@ -419,7 +419,7 @@ export default function GroupPage() {
                     </span>
                   </div>
                   {/* 숫자가 왜곡될 수 있음을 알리는 주의 문구 — 제목보다 덜 눈에 띄게 "-" 표시와 함께 작게 둔다(설정창 설명과 같은 모양). */}
-                  <p className="mt-1.5 mb-[19.5px] flex w-full shrink-0 items-center justify-center gap-1.5 text-[13px] leading-5 whitespace-nowrap text-gray-400">
+                  <p className="mt-1.5 mb-[19.5px] flex w-full shrink-0 items-center justify-center gap-1.5 text-[13px] font-medium leading-5 whitespace-nowrap text-gray-400">
                     <span aria-hidden="true">-</span>
                     그룹에 포함된 종목이 적을수록 왜곡이 커질 수 있습니다.
                   </p>
