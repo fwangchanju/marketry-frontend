@@ -26,7 +26,7 @@ const ICON_FRAME_CLASS = 'relative top-[3.5px] bg-transparent'
 const BUTTON_CLASS = `${BUTTON_BASE_CLASS} w-7`
 // 툴바 칩 안의 새로고침 칸 — 칩(24px) 안에서 사방 1px씩 띄워 22px 높이에 폭은 18px로 좁혀 세로로 긴 직사각형이고, 평소엔 배경 없이 아이콘이 청록(--brand)이고, 올리면 글자색은 그대로 두고 다른 칩과 같은 밝은 회색(#838385) 면만 깔린다.
 const CELL_CLASS = 'm-px flex h-[22px] w-[18px] items-center justify-center border-0 bg-transparent text-[var(--brand)] outline-none transition-colors hover:bg-[#838385] focus-visible:bg-[#838385]'
-// 시각 구역(시계 + 시각 글자) — 아이콘 칸과 따로 호버 면(#838385)을 가지지만, 눌러도 아무 동작이 없다.
+// 시각 칩(시계 + 시각 글자) 하나가 새로고침 버튼이다 — 호버 면(#838385)이 칩 전체에 깔린다.
 const CELL_TIME_CLASS = 'flex h-6 shrink-0 items-center gap-1.5 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[#838385]'
 // 켜진 상태의 아이콘은 선 색(청록)을 35% 투명하게 안쪽에 채운다 — 북마크가 켜진 모양.
 export const FILLED_ICON_CLASS = 'fill-current/35'
@@ -37,7 +37,7 @@ export const SNAPSHOT_REFRESH_HELP = '5분 간격으로 데이터를 수집합�
 // 스냅샷 새로고침 아이콘 버튼 — 상단바 우측 묶음(NavBarPageActions)과 콘솔 줄(시계 옆) 어디에 두든 같은 모양이다.
 // helpText를 주면 커서를 올리거나 포커스하면 설명창(지도 설정의 도움말 팝업과 같은 모양·글자 크기/굵기)을 버튼 아래에 띄운다.
 // 누르면 새로고침만 실행한다.
-// cell을 주면 툴바 시각 칩 안의 한 구간(18×22px 세로 직사각형, 배경 없이 청록 아이콘)으로 그린다. children을 함께 주면 그 앞에 시계·시각 구역이 붙는다.
+// cell을 주면 툴바 시각 칩 안의 한 구간(18×22px 세로 직사각형, 배경 없이 청록 아이콘)으로 그린다. children을 함께 주면(시계·시각) 칩 전체가 버튼이 되어, 커서를 올릴 때 글자 자리에 아이콘이 나타난다.
 export function PageRefreshButton({
   onRefresh,
   isRefreshing,
@@ -119,23 +119,40 @@ export function PageRefreshButton({
       onPointerEnter={helpText ? () => setIsHelpOpen(true) : undefined}
       onPointerLeave={helpText ? () => setIsHelpOpen(false) : undefined}
     >
-      {cell && children && (
-        // 눌러도 아무 일이 없는 표시 구역이다 — 새로고침은 오른쪽 아이콘 칸만 한다. 올리면 설명창만 뜬다.
-        <span className={`${CELL_TIME_CLASS} cursor-default`}>{children}</span>
+      {cell && children ? (
+        // 시각 칩 전체가 새로고침 버튼이다 — 평소에는 시계·시각 글자가 보이고, 커서를 올리거나 키보드 포커스가 오면 글자가 사라진 자리(칩 한가운데, 시 분 사이 콜론 자리)에
+        // 청록 새로고침 아이콘이 나타난다. 갱신하는 동안에는 글자 대신 아이콘이 돌아간다. 자리를 글자가 계속 차지(invisible)해서 칩 폭은 변하지 않는다.
+        <button
+          ref={buttonRef}
+          type="button"
+          aria-label="스냅샷 새로고침"
+          aria-busy={showRefreshing}
+          aria-describedby={helpText && isHelpOpen ? 'snapshot-refresh-help' : undefined}
+          className={`${CELL_TIME_CLASS} group/refresh relative cursor-pointer border-0 outline-none focus-visible:bg-[#838385] ${showRefreshing ? 'cursor-default' : ''} nav-refresh-button ${className}`}
+          onClick={handleRefresh}
+          onFocus={helpText ? () => setIsHelpOpen(true) : undefined}
+          onBlur={helpText ? () => setIsHelpOpen(false) : undefined}
+        >
+          <span aria-hidden={showRefreshing || undefined} className={`flex items-center gap-1.5 ${showRefreshing ? 'invisible' : 'group-hover/refresh:invisible group-focus-visible/refresh:invisible'}`}>{children}</span>
+          <span aria-hidden="true" className={`absolute inset-0 flex items-center justify-center text-[var(--brand)] ${showRefreshing ? '' : 'invisible group-hover/refresh:visible group-focus-visible/refresh:visible'}`}>
+            <RefreshIcon aria-hidden="true" className={`h-[15px] w-[15px] shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
+          </span>
+        </button>
+      ) : (
+        <button
+          ref={buttonRef}
+          type="button"
+          aria-label="스냅샷 새로고침"
+          aria-busy={showRefreshing}
+          aria-describedby={helpText && isHelpOpen ? 'snapshot-refresh-help' : undefined}
+          className={`${cell ? CELL_CLASS : `${BUTTON_BASE_CLASS} ${ICON_FRAME_CLASS} w-7 ${showRefreshing ? 'text-[var(--accent)]' : 'text-gray-300'}`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default' : ''} ${className}`}
+          onClick={handleRefresh}
+          onFocus={helpText ? () => setIsHelpOpen(true) : undefined}
+          onBlur={helpText ? () => setIsHelpOpen(false) : undefined}
+        >
+          <RefreshIcon aria-hidden="true" className={`${cell ? 'h-[15px] w-[15px]' : 'h-4 w-4'} shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
+        </button>
       )}
-      <button
-        ref={buttonRef}
-        type="button"
-        aria-label="스냅샷 새로고침"
-        aria-busy={showRefreshing}
-        aria-describedby={helpText && isHelpOpen ? 'snapshot-refresh-help' : undefined}
-        className={`${cell ? CELL_CLASS : `${BUTTON_BASE_CLASS} ${ICON_FRAME_CLASS} w-7 ${showRefreshing ? 'text-[var(--accent)]' : 'text-gray-300'}`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default' : ''} ${className}`}
-        onClick={handleRefresh}
-        onFocus={helpText ? () => setIsHelpOpen(true) : undefined}
-        onBlur={helpText ? () => setIsHelpOpen(false) : undefined}
-      >
-        <RefreshIcon aria-hidden="true" className={`${cell ? 'h-[15px] w-[15px]' : 'h-4 w-4'} shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
-      </button>
       {helpText && isHelpOpen && (
         <span
           id="snapshot-refresh-help"
