@@ -101,6 +101,7 @@ export default function CustomPage() {
   const {
     data: sectors,
     isLoading: isSectorsLoading,
+    isError: isSectorsError,
     refetch: refetchSectors,
     isRefetching: isRefetchingSectors,
   } = useCustomSectors({ enabled: isLoggedIn })
@@ -253,6 +254,11 @@ export default function CustomPage() {
                   // 지도·그룹 페이지의 로딩 원과 같은 높이에 오도록 위 16px, 아래 47.5px(19.5px + 이 페이지에 없는 아래 줄 28px) 여백 안에서 가운데에 둔다.
                   <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
                     <Spinner showElapsed />
+                  </div>
+                ) : !isReadOnlySheet && isSectorsError ? (
+                  // 내 분류의 분류(업종) 목록을 받지 못하면 표를 그리지 않고 오류 원을 보여 준다 — 비어 있다고 오해하거나 분류 선택지 없이 반쪽 표에서 고치지 않게 한다.
+                  <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
+                    <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetchSectors()} />
                   </div>
                 ) : isReadOnlySheet ? (
                   <ReadOnlyTaxonomySheet
