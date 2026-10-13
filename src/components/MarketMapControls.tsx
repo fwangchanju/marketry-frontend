@@ -107,7 +107,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
 
 // 등락률 기준 토글 — 종가(그날 정규장 종가 지도) / 누적(전일 종가 대비) / 별도(당일 종가 대비). 애프터 마켓 시작부터 다음 프리 마켓 개장 전까지만 보인다.
 // 시간외 스냅샷이 아직 없으면 별도는 잠긴다. 시장 시간대 말머리는 버튼의 표시 여부와 무관하게 유지한다.
-// 버튼을 누르면 그 버튼 아래에 설명 팝업이 뜬다(새로고침 버튼의 설명창과 같은 모양). 잠긴 별도도 눌러서 설명을 볼 수 있다.
+// 버튼에 커서를 올리면 그 버튼 아래에 설명 팝업이 뜬다(새로고침 버튼의 설명창과 같은 모양). 잠긴 별도도 올려서 설명을 볼 수 있다.
 export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
   basis: ChangeRateChoice
   visible: boolean
@@ -172,7 +172,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
     element.style.top = `${top}px`
   }, [popup])
 
-  // 팝업 바깥을 누르거나 Esc를 누르거나 4초가 지나면 닫는다.
+  // 커서를 치우면 닫히고, 그 밖에 Esc를 누르거나 창 크기가 바뀌어도 닫는다.
   useEffect(() => {
     if (!popup) return
     const close = () => setPopup(null)
@@ -182,12 +182,10 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close()
     }
-    const timer = window.setTimeout(close, 4000)
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
     window.addEventListener('resize', close)
     return () => {
-      window.clearTimeout(timer)
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('resize', close)
@@ -214,12 +212,12 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
       {visible && <div
         role="radiogroup"
         aria-label="등락률 기준"
-        className="relative inline-flex h-6 w-[120px] shrink-0 items-center overflow-visible rounded-full bg-zinc-800 p-0.5"
+        className="relative inline-flex h-6 w-[120px] shrink-0 items-center overflow-visible bg-zinc-800 p-0.5"
       >
         {highlight && (
           <span
             aria-hidden="true"
-            className="absolute bottom-0.5 top-0.5 rounded-full transition-[left,width] duration-[500ms] ease-out"
+            className="absolute bottom-0.5 top-0.5 transition-[left,width] duration-[500ms] ease-out"
             style={{
               left: highlight.left,
               width: highlight.width,
@@ -227,8 +225,21 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
             }}
           />
         )}
+        {/* 칸 사이 구분선 — 설정창 선택 스위치와 같은 규칙으로, 선택 칸에 맞닿은 경계는 숨기고 나머지는 회색 선을 긋는다. 칸은 같은 폭이고 안쪽 여백이 2px이다. */}
+        {options.slice(1).map((option, offset) => {
+          const boundary = offset + 1
+          if (boundary === selectedIndex || boundary === selectedIndex + 1) return null
+          return (
+            <span
+              key={option.value}
+              aria-hidden="true"
+              className="pointer-events-none absolute z-10 w-px bg-gray-500"
+              style={{ top: 7, bottom: 7, left: `calc(2px + (100% - 4px) * ${boundary} / ${options.length})` }}
+            />
+          )
+        })}
         {options.map((option, index) => (
-          // disabled를 쓰지 않는다 — 비활성 버튼은 클릭 이벤트가 없어서 잠긴 별도의 설명을 볼 수 없다. 잠긴 동안은 값만 안 바꾼다.
+          // disabled를 쓰지 않는다 — 비활성 버튼은 마우스 이벤트가 없어서 잠긴 별도의 설명을 볼 수 없다. 잠긴 동안은 값만 안 바꾼다.
           <button
             key={option.value}
             type="button"
@@ -238,12 +249,14 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
             ref={element => {
               buttonRefs.current[index] = element
             }}
-            onClick={event => {
+            onClick={() => {
               if (!option.locked && basis !== option.value) onChange(option.value)
-              setPopup({ text: option.help, anchor: event.currentTarget.getBoundingClientRect() })
             }}
+            // 설명 팝업은 누르는 것과 상관없이 커서를 올리는 동안만 뜬다(잠긴 별도도 올리면 설명이 보인다).
+            onPointerEnter={event => setPopup({ text: option.help, anchor: event.currentTarget.getBoundingClientRect() })}
+            onPointerLeave={() => setPopup(null)}
             // 안 선택 글자는 옆 거래 세션 글자(text-gray-400)와 같은 회색이다. 잠긴 별도는 흐리게 해서 잠긴 것을 알아보게 한다.
-            className={`relative z-10 h-5 min-w-0 flex-1 rounded-full border-0 bg-transparent px-0 text-[13px] font-semibold leading-none transition-colors duration-[500ms] ${
+            className={`relative z-10 h-5 min-w-0 flex-1 border-0 bg-transparent px-0 text-[13px] font-semibold leading-none transition-colors duration-[500ms] ${
               basis === option.value
                 ? 'text-gray-900'
                 : option.locked
