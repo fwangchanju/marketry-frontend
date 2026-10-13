@@ -891,10 +891,13 @@ export function SettingsGroupDepthSection({
   depth,
   onChange,
   selectableDepth,
+  lockedMessage,
 }: {
   depth: number
   onChange: (depth: number) => void
   selectableDepth: number
+  // 막힌 단계에 올렸을 때 보여 줄 문구 — 없으면 "데이터가 없어 비활성화"로 안내한다. 데이터가 있는데도 화면 정책으로 잠근 곳(홈)이 쓴다.
+  lockedMessage?: ReactNode
 }) {
   return (
     <div className="settings-first-depth-level text-sm">
@@ -909,7 +912,7 @@ export function SettingsGroupDepthSection({
           ariaLabel="그래프 업종 분류 단계"
           onChange={index => onChange(index + 1)}
           maxSelectableIndex={selectableDepth - 1}
-          blockedReason={label => <>현재 {label} 데이터가 없어<br />비활성화되어 있습니다.</>}
+          blockedReason={label => lockedMessage ?? <>현재 {label} 데이터가 없어<br />비활성화되어 있습니다.</>}
         />
       </div>
     </div>

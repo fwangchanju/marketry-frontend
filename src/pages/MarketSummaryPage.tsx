@@ -19,7 +19,6 @@ import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useMarketNotices } from '@/hooks/useMarketNotices'
-import { usePageSetting } from '@/hooks/usePageSetting'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
@@ -43,7 +42,6 @@ const NOTICE_TYPES = [
 export default function MarketSummaryPage() {
   // 틀마다 캡처 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 캡처하며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
-  const [homeDepth, setHomeDepth] = usePageSetting<number>('homePage.depth', 1)
   const allFramesRef = useRef<HTMLDivElement>(null)
   const frameRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
@@ -70,8 +68,8 @@ export default function MarketSummaryPage() {
     return { indexValue: item?.indexValue ?? null, changeRate: item?.changeRate ?? null }
   }
 
-  const selectableDepth = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT' ? 1 : 3
-  const effectiveDepth = Math.min(homeDepth, selectableDepth)
+  // 홈은 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
+  const effectiveDepth = 1
   // 고른 단계의 업종만 모아 지도 박스와 그래프 막대로 쓴다 — 지도 페이지와 같은 제외 기준을 따른다.
   const overview = useMemo(() => {
     const items: OverviewMapItem[] = []
@@ -283,7 +281,7 @@ export default function MarketSummaryPage() {
             onOpenChange={setIsSettingsOpen}
             isOnLeft={isSettingsOnLeft}
             onToggleSide={toggleSettingsSide}
-            plainContent={<SettingsGroupDepthSection depth={homeDepth} onChange={setHomeDepth} selectableDepth={selectableDepth} />}
+            plainContent={<SettingsGroupDepthSection depth={1} onChange={() => {}} selectableDepth={1} lockedMessage={<>홈은 대분류로<br />고정되어 있습니다.</>} />}
             taxonomyAtBottom
             snapshotTime={data?.taxonomyUpdatedAt}
           />
