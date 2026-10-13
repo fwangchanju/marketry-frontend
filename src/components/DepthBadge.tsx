@@ -13,10 +13,10 @@ interface Props {
 // 눌러서 바꾸지 않는다(단계는 설정창의 "업종 분류 단계"에서 고른다). 그룹 페이지 제목 옆의 단계 배지와 같은 짙은 청록 배지이고, 코스피·코스닥 지수 배지 줄과 같은 높이(24px)를 지켜 두 틀의 아래 그래프가 어긋나지 않게 한다.
 export default function DepthBadge({ depth, advancers, decliners, upColor, downColor }: Props) {
   return (
-    <div className="mb-1 flex h-6 shrink-0 items-center justify-start gap-2 whitespace-nowrap px-1 text-[13px] leading-none">
-      <span className="rounded bg-cyan-700 px-2 py-[3px] font-semibold text-white">{DEPTH_LABELS[depth - 1] ?? DEPTH_LABELS[0]}</span>
+    <div className="mb-1 flex h-6 shrink-0 items-center justify-start gap-2 whitespace-nowrap px-1 text-[13px] font-medium leading-none">
+      <span className="rounded bg-cyan-700 px-2 py-[3px] text-white">{DEPTH_LABELS[depth - 1] ?? DEPTH_LABELS[0]}</span>
       {advancers !== undefined && decliners !== undefined && (
-        <span className="flex items-center gap-2 font-semibold tabular-nums">
+        <span className="flex items-center gap-2 tabular-nums">
           <span style={{ color: upColor }}>상승 {advancers}</span>
           <span style={{ color: downColor }}>하락 {decliners}</span>
         </span>
