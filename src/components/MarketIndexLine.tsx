@@ -1,3 +1,5 @@
+import { Fragment, type ReactNode } from 'react'
+import FrameTitleBadge from '@/components/FrameTitleBadge'
 import { toPctSigned } from '@/utils/format'
 
 interface IndexChange {
@@ -24,17 +26,24 @@ const toIndexValue = (value: number): string => value.toLocaleString('ko-KR', { 
 // 값을 아직 못 받았으면 "-" 대신 비워 두고 라벨만 보인다.
 // 위젯 폭(342px) 안에 들어가도록 글자는 13px다(14px는 11px 넘친다). 높이 24px 안에 들어가도록 줄 간격을 붙인다.
 // 지수가 만 단위·1,000 이상이 되거나 등락이 두 자리가 되어 폭이 모자라면, 배지 안 글자 사이 간격(최소 2px)이 먼저 줄어든다.
-export default function MarketIndexLine({ indexes }: { indexes: IndexChange[] }) {
+export default function MarketIndexLine({ title, belowTitle, indexes }: { title: string; belowTitle?: ReactNode; indexes: IndexChange[] }) {
   return (
-    <div className="mb-1 flex h-6 shrink-0 items-center gap-2 whitespace-nowrap text-[13px] font-medium leading-none tabular-nums">
-      {indexes.map(({ label, indexValue, changeRate, badgeClass = 'bg-cyan-700' }) => (
-        <span key={label} className="flex h-[22px] min-w-0 flex-1 items-center gap-1">
-          <span className={`shrink-0 rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{label}</span>
-          <span className="flex h-[22px] min-w-0 flex-1 items-center justify-between gap-0.5 rounded-sm bg-zinc-800 px-1">
-            <span className="text-gray-300">{indexValue === null ? '' : toIndexValue(indexValue)}</span>
-            <span className={rateColorClass(changeRate)}>{changeRate === null ? '' : toPctSigned(changeRate)}</span>
+    // 틀 제목 줄과 지수 줄을 한 격자로 짠다: 같은 폭의 두 칸(간격 8px, 이전 한 줄 배치의 칸 그대로). 코스피·코스닥 칸의 크기와 모양은 그대로이고 위치만 바뀐다 —
+    // 첫 줄(28px)은 왼쪽에 제목, 오른쪽 칸에 코스피이고, 둘째 줄(24px)은 왼쪽에 belowTitle(제목 아래에 둘 것, 홈은 단계 배지)이고 오른쪽 칸(코스닥의 원래 자리)에 코스닥이 코스피 바로 아래에 온다.
+    <div className="mb-1 grid shrink-0 grid-cols-2 gap-x-2 whitespace-nowrap text-[13px] font-medium leading-none tabular-nums">
+      {indexes.map(({ label, indexValue, changeRate, badgeClass = 'bg-cyan-700' }, index) => (
+        <Fragment key={label}>
+          <span className={`flex items-center ${index === 0 ? 'h-7' : 'h-6'}`}>{index === 0 ? <FrameTitleBadge title={title} /> : index === 1 ? belowTitle : null}</span>
+          <span className={`flex items-center ${index === 0 ? 'h-7' : 'h-6'}`}>
+            <span className="flex h-[22px] min-w-0 flex-1 items-center gap-1">
+              <span className={`shrink-0 rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{label}</span>
+              <span className="flex h-[22px] min-w-0 flex-1 items-center justify-between gap-0.5 rounded-sm bg-zinc-800 px-1">
+                <span className="text-gray-300">{indexValue === null ? '' : toIndexValue(indexValue)}</span>
+                <span className={rateColorClass(changeRate)}>{changeRate === null ? '' : toPctSigned(changeRate)}</span>
+              </span>
+            </span>
           </span>
-        </span>
+        </Fragment>
       ))}
     </div>
   )

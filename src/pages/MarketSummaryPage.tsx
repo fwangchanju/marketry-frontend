@@ -5,7 +5,8 @@ import NavSubBar from '@/components/NavSubBar'
 import MarketMapShareModal from '@/components/MarketMapShareModal'
 import { ClockIcon } from '@/components/icons/MarketMapIcons'
 import SettingsSidebar, { SettingsGroupDepthSection } from '@/components/SettingsSidebar'
-import DepthBadge from '@/components/DepthBadge'
+import DepthBadge, { DepthLevelBadge } from '@/components/DepthBadge'
+import FrameTitleBadge from '@/components/FrameTitleBadge'
 import MarketIndexLine from '@/components/MarketIndexLine'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
@@ -150,7 +151,7 @@ export default function MarketSummaryPage() {
   const downloadLabel = downloadStatus === 'error' ? '다운로드 실패' : '다운로드'
   // 세 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
   // 시장 요약 지도와 준비 중 박스 위쪽에 코스피·코스닥 지수 배지를 둔다(그룹 등락률 박스는 지금 보여 주는 업종 분류 단계만 알려 주는 배지).
-  const indexLine = <MarketIndexLine indexes={[{ label: '코스피', ...indexOf('KOSPI') }, { label: '코스닥', badgeClass: 'bg-cyan-900', ...indexOf('KOSDAQ') }]} />
+  const indexLine = <MarketIndexLine title="시장 요약" belowTitle={<DepthLevelBadge depth={effectiveDepth} />} indexes={[{ label: '코스피', ...indexOf('KOSPI') }, { label: '코스닥', ...indexOf('KOSDAQ') }]} />
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-black">
@@ -244,14 +245,16 @@ export default function MarketSummaryPage() {
                 <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
               </div>
             ) : (
-            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 여백은 사방 4px). 전체를 외곽선(gray-700)으로 두르고 틀 사이는 같은 색 세로 구분선이다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
+            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
             <div className="flex min-h-0 min-w-0 flex-1">
-            <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto border border-gray-700 bg-black">
+            <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto bg-black">
             {/* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */}
-            <div ref={allFramesRef} className="flex min-h-0 min-w-full flex-1 divide-x divide-gray-700 bg-black">
+            <div ref={allFramesRef} className="flex min-h-0 min-w-full flex-1 bg-black">
             {[
               {
                 title: '시장 요약',
+                // 제목은 본문의 지수 줄 격자 안에 있다(코스피가 제목 줄로 올라가므로).
+                ownHeader: true,
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
                     {indexLine}
@@ -261,9 +264,10 @@ export default function MarketSummaryPage() {
               },
               {
                 title: '그룹 등락률 (%)',
+                ownHeader: true,
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <DepthBadge depth={effectiveDepth} advancers={overview.advancers} decliners={overview.decliners} unchanged={overview.unchanged} />
+                    <DepthBadge title="그룹 등락률 (%)" advancers={overview.advancers} decliners={overview.decliners} unchanged={overview.unchanged} />
                     <div className="flex min-h-0 w-full flex-1">
                       <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
                     </div>
@@ -314,17 +318,16 @@ export default function MarketSummaryPage() {
                   </div>
                 ),
               },
-            ].map(frame => (
+            ].map((frame, frameIndex) => (
               <section key={frame.title} className="relative flex h-full min-w-[300px] flex-1 flex-col bg-black">
-                                <div className="flex min-h-0 flex-1 flex-col bg-black p-1">
-                  {/* 헤더 높이는 28px로 고정한다. 제목은 가운데에 두고, 검정 바와 제목을 직사각형 흰색 배지 하나에 담는다(배지 바탕 흰색, 바·글자 검정). 카메라 버튼과 기준 시각은 두지 않는다(날짜·시각은 툴바에, 캡처는 상단 영역의 카메라 버튼에 있다). */}
-                  <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-center text-base font-bold text-white">
-                    {/* 검정 바를 품은 직사각형 흰색 배지 — 바 왼쪽·글자 오른쪽 여백을 같은 8px로 둬서 바가 배지 가장자리에 붙지 않는다. */}
-                    <span className="inline-flex items-center gap-2 bg-white px-2 py-0.5 leading-tight text-black">
-                      <span aria-hidden="true" className="inline-block h-[1em] w-1 shrink-0 bg-black" />
-                      {frame.title}
-                    </span>
-                  </h2>
+                                {/* 안쪽 여백은 양 끝(첫 틀의 왼쪽·마지막 틀의 오른쪽)에는 두지 않고 틀 사이(구분선 양옆)에만 8px 둔다. 여백은 틀(section)이 아니라 이 안쪽 칸에 둬서 세 틀의 너비는 같다. 위아래 여백은 없다. */}
+                <div className={`flex min-h-0 flex-1 flex-col bg-black ${frameIndex === 0 ? 'pl-0 pr-2' : frameIndex === 2 ? 'pl-2 pr-0' : 'px-2'}`}>
+                  {/* 안내 틀의 제목 줄(28px). 시장 요약·그룹 등락률은 제목이 본문의 첫 줄 격자 안에 있어 따로 그리지 않는다. */}
+                  {!('ownHeader' in frame) && (
+                    <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start">
+                      <FrameTitleBadge title={frame.title} />
+                    </h2>
+                  )}
                   {frame.body}
                 </div>
               </section>
