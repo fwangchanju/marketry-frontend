@@ -403,6 +403,27 @@ NXT 단독 시간대의 오전 구간은 08:00~09:00이다. 서버 시간표는 
 공유 이미지: NXT 안내창의 어두운 배경은 일시적인 알림이라 공유 이미지에 담지 않는다(`data-capture-ignore`가 붙은 요소는 `shareCaptureOptions`의 필터가 뺀다).
 
 
+## 키움 문의 답변 (2026-10-13)
+
+종가 확정 시점(ka20002·ka11081), 권리락 정보, 통합시세(`_AL`)의 거래소 구분, 업종지수(ka20001) 확정 시점, 종목정보(ka10099)의 `nxtEnable`·상장폐지 처리를 키움에 문의했다. 답변은 개별 질문에 답하지 않았다. REST API는 HTS 데이터를 그대로 주므로 필드 단위 설명은 어렵고, 영웅문4·영웅문G와 같으니 API 가이드·이용가이드·HTS 도움말을 보고 직접 테스트해서 HTS와 비교해 파악하라는 내용이다. 안내된 자료는 공지사항의 「영웅문4(HTS)-키움 REST API, 키움 OPEN API+TR매칭_파일」 첨부(TR과 HTS 화면 매핑), 유량 정책(공지 49번, FAQ 41번), 접속 단절 시간(FAQ 42번)이다.
+
+따라서 위 질문들은 공식 확답 없이 실제 호출 결과를 HTS 화면과 대조해 정해야 한다. 앞의 공식 종가 검토(`ka11081`·`ka10086`을 15:35 스냅샷과 비교)도 같은 방식으로 진행한다.
+
+키움 공식 GitHub(`https://github.com/Kiwoom-Securities/Kiwoom-REST-API`)의 `examples/`에 TR별 요청·응답 필드와 설명이 있어서, 막혀 있는 가이드 사이트 대신 이걸로 확인했다. 확인한 것은 다음과 같다.
+
+- `ka20002` 응답(`inds_stkpc`)에는 거래소 구분 필드가 없다(`stk_cd`·`cur_prc`·`flu_rt` 등). `stex_tp`는 1 KRX, 2 NXT, 3 통합이다. 그래서 통합 응답의 가격이 어느 거래소 체결인지는 응답만으로 구분할 수 없다.
+- `ka20001`은 요청이 `mrkt_tp`·`inds_cd`뿐이고 `stex_tp`가 없다. KRX 기준일 가능성이 높지만 추정이다. 종가 확정 시각은 명세에 없다.
+- 일봉 `ka10081`은 `upd_stkpc_tp=1`에 `base_dt`를 권리발생일 이후로 넣으면 그 이전 값이 수정주가로 나온다. 권리락을 `flu_rt` 역산 대신 공식 방법으로 받을 수 있다는 뜻이지만 전종목 호출량 문제가 있어 도입은 아직 정하지 않았다. 종목코드 접미사는 KRX 없음, NXT `_NX`, 통합(SOR) `_AL`이다. 정규장 일봉 `ka11081`은 이 저장소 예제에 없다.
+- `ka10099`에는 상장폐지 전용 필드가 없다. 필드는 `state`(종목상태)·`auditInfo`·`orderWarning`·`nxtEnable`·`lastPrice` 등이고 값 설명은 없다(제3자 블로그는 `orderWarning` 2를 정리매매로 설명). 우리 백엔드는 응답에서 빠진 종목을 비활성(`active=false`)으로 돌린다(`StockInfoCollector`).
+
+키움 게시판에서 새로 알게 된 운영 사항은 다음과 같다.
+
+- REST 접속 단절은 월~토 07:50~07:55, 일 05:00~05:15다(2026-06-29부터. 이전은 05:05~05:10). 이 시간에는 REST가 안 되고 웹소켓이 끊긴다. 백엔드 수집은 08:00부터라 겹치지 않는다.
+- 유량은 국내 TR당 토큰별 초당 5회다.
+- 시간외단일가 TR `ka10098`·`ka10087`은 2026-09-12에 삭제됐다. 백엔드 코드에는 사용처가 없다.
+- 2026-09-14부터 KRX 시간외단일가가 없어지고 애프터마켓(16:00~20:00)이 생겼다. KRX 정규장은 종가단일가가 15:20~15:30이다.
+
+아직 못 한 것: 공지 28번 첨부(TR과 HTS 화면 매핑 xlsx)와 가이드 사이트의 TR 상세 화면은 사이트가 요청 서명으로 막아서 받지 못했고, 우회하지 않았다. 종가 확정 시각은 장 마감 뒤 `ka11081` 실호출과 15:35 스냅샷을 비교해서 정해야 한다. 업종지수는 HTS에서 15:20·15:30·15:35 값을 대조해야 한다.
 ## 안 붙은 요약 위젯과 관심종목 코드 정리 (2026-10-13)
 
 예전 `/summary` 화면의 위젯 7개(`MarketOverviewSection`·`InvestorTradingSection`·`ProgramTradingSection`·`ProgramTradingHistorySection`·`IntradayTopSection`·`IndexContributionSection`·`ShortSellingHistorySection`)와 이들만 쓰던 `TabSelector`·`WidgetSection`, 데이터 훅 8개(`useIntradayTop`·`useProgramTradingRankings`·`useIndexContribution`·`useShortSellingHistory`·`useProgramTradingHistory`·`useProgramTradingDailyHistory`·`useWatchStocks`·`useStocks`)를 지웠다. 어느 페이지에도 붙어 있지 않던 코드였고, 관심종목 구조를 정리한 뒤 되살리려던 계획을 접었다. 개발 전용 TEST 탭에 보관하자던 안도 함께 접었다.
