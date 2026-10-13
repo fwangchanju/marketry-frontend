@@ -212,8 +212,8 @@ export default function MarketSummaryPage() {
                 // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '안내',
                 body: (
-                  // 두 칸 격자다: [배지 칸(네 배지 중 가장 긴 쪽 너비)] [회색 칸(남는 폭)]. 신규 상장·최근 3개월·거래 정지·현재 정지중 네 줄을 세로 한 열로 쌓고,
-                  // 배지 칸이 네 줄에 공유돼 짧은 배지는 오른쪽만 늘어나 모두 같은 너비가 된다(글자는 왼쪽). 짝이 되는 두 배지(신규 상장·최근 3개월, 거래 정지·현재 정지중)는 같은 색이라 한눈에 짝이 보인다. 색은 분류 배지(코스피·대분류)의 청록(cyan-700)과 그보다 짙은 청록(cyan-900) 두 가지다 — 빨강·파랑은 오름·내림 뜻이 있어 쓰지 않는다.
+                  // 두 칸 격자다: [배지 칸(네 배지 중 가장 긴 쪽 너비)] [회색 칸(남는 폭)]. 신규 상장·3개월 내 상장·거래 정지·현재 정지 종목 네 줄을 세로 한 열로 쌓고,
+                  // 배지 칸이 네 줄에 공유돼 짧은 배지는 오른쪽만 늘어나 모두 같은 너비가 된다(글자는 왼쪽). 짝이 되는 두 배지(신규 상장·3개월 내 상장, 거래 정지·현재 정지 종목)는 같은 색이라 한눈에 짝이 보인다. 색은 분류 배지(코스피·대분류)의 청록(cyan-700)과 그보다 짙은 청록(cyan-900) 두 가지다 — 빨강·파랑은 오름·내림 뜻이 있어 쓰지 않는다.
                   <div className="grid min-h-0 w-full flex-1 grid-cols-[max-content_minmax(0,1fr)] content-start gap-x-1 gap-y-1 overflow-y-auto text-[13px] font-medium leading-none">
                     {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
