@@ -23,7 +23,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, captureFileName, downloadDataUrl } from '@/utils/captureToDownload'
-import { toCount, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
+import { toCount, toJoEokDecimal, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredMarketMapTree'
@@ -36,8 +36,8 @@ type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
 const NOTICE_TYPES = [
-  { type: 'NEW_LISTING', label: '신규 상장', badgeClass: 'bg-cyan-700', countLabel: '3개월 내 상장', countKey: 'recentNewListingCount' },
-  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeClass: 'bg-cyan-900', countLabel: '현재 정지 종목', countKey: 'currentSuspensionCount' },
+  { type: 'NEW_LISTING', label: '신규 상장', badgeClass: 'bg-cyan-700', countLabel: '3개월 내 상장', countKey: 'recentNewListingCount', valueKey: 'recentNewListingMarketValue' },
+  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeClass: 'bg-cyan-900', countLabel: '현재 정지 종목', countKey: 'currentSuspensionCount', valueKey: 'currentSuspensionMarketValue' },
 ] as const
 
 export default function MarketSummaryPage() {
@@ -214,8 +214,8 @@ export default function MarketSummaryPage() {
                 body: (
                   // 두 칸 격자다: [배지 칸(네 배지 중 가장 긴 쪽 너비)] [회색 칸(남는 폭)]. 신규 상장·3개월 내 상장·거래 정지·현재 정지 종목 네 줄을 세로 한 열로 쌓고,
                   // 배지 칸이 네 줄에 공유돼 짧은 배지는 오른쪽만 늘어나 모두 같은 너비가 된다(글자는 왼쪽). 짝이 되는 두 배지(신규 상장·3개월 내 상장, 거래 정지·현재 정지 종목)는 같은 색이라 한눈에 짝이 보인다. 색은 분류 배지(코스피·대분류)의 청록(cyan-700)과 그보다 짙은 청록(cyan-900) 두 가지다 — 빨강·파랑은 오름·내림 뜻이 있어 쓰지 않는다.
-                  <div className="grid min-h-0 w-full flex-1 grid-cols-[max-content_minmax(0,1fr)] content-start gap-x-1 gap-y-1 overflow-y-auto text-[13px] font-medium leading-none tabular-nums">
-                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }) => {
+                  <div className="grid min-h-0 w-full flex-1 grid-cols-[max-content_minmax(0,1fr)_max-content_minmax(0,1.5fr)] content-start gap-x-1 gap-y-1 overflow-y-auto text-[13px] font-medium leading-none tabular-nums">
+                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey, valueKey }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       const rowClass = 'flex h-6 items-center'
                       return (
@@ -224,11 +224,11 @@ export default function MarketSummaryPage() {
                             <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{label}</span>
                           </span>
                           {/* 그날 안내 종목이 없으면 종류 배지 바로 오른쪽에 "없음"을 적는다. 있으면 칸은 비우고 종목 줄이 그 아래에 붙는다. */}
-                          <span className={rowClass}>
+                          <span className={`${rowClass} col-span-3`}>
                             {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
                           </span>
                           {items.map(item => (
-                            <div key={item.stockCode} className="col-span-2 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-white">
+                            <div key={item.stockCode} className="col-span-4 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-white">
                               <span className="min-w-0 truncate">{item.stockName}</span>
                               <span className="shrink-0 tabular-nums text-gray-300">{item.stockCode}</span>
                             </div>
@@ -239,6 +239,15 @@ export default function MarketSummaryPage() {
                           </span>
                           <span className={rowClass}>
                             <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? ''}</span>
+                          </span>
+                          {/* 같은 줄 오른쪽에 그 종목들의 현시점 시가총액 합을 "시가총액 합" 배지(같은 줄 배지와 같은 색)와 회색 칸으로 둔다. 표기는 Custom 페이지와 같은 n,nnn.n조/억이다. */}
+                          <span className={`${rowClass} whitespace-nowrap`}>
+                            <span className={`rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>시가총액 합</span>
+                          </span>
+                          <span className={rowClass}>
+                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">
+                              {notices?.[valueKey] != null ? toJoEokDecimal(notices[valueKey] / 100_000_000) : ''}
+                            </span>
                           </span>
                         </Fragment>
                       )

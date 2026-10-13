@@ -68,6 +68,9 @@ export const MarketNoticeResponseSchema = z.object({
   // 날짜와 무관한 현황 — 최근 3개월 내 신규 상장 수, 지금 거래정지 중인 종목 수. 옛 응답에는 없을 수 있다.
   recentNewListingCount: z.number().nullish(),
   currentSuspensionCount: z.number().nullish(),
+  // 그 종목들의 현시점 시가총액 합(원). 옛 응답에는 없을 수 있다.
+  recentNewListingMarketValue: z.number().nullish(),
+  currentSuspensionMarketValue: z.number().nullish(),
 })
 
 // ─── Market map ────────────────────────────────────────────────────────────────
