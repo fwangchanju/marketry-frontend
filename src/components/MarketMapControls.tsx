@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import type { ChangeRateChoice } from '@/api/marketMap'
 import { accentColor } from '@/utils/accentPalette'
-import { LONGEST_TRADING_SESSION, type TradingSession } from '@/utils/tradingWindow'
+import { type TradingSession } from '@/utils/tradingWindow'
 import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
@@ -22,13 +22,85 @@ export function TradingSessionIndicator({ session: sessionOverride }: { session?
   const currentSession = useTradingSession()
   const session = sessionOverride ?? currentSession
   return (
-    <span className={`${FONT_BAR_TIME} flex items-center text-gray-400`}>
+    <span className={`${FONT_BAR_TIME} flex items-center text-white`}>
       <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[session] }} />
-      {/* 가장 긴 이름으로 너비를 유지해 시간대가 바뀌어도 옆 항목이 움직이지 않게 한다. */}
-      <span className="grid">
-        <span aria-hidden="true" className="invisible col-start-1 row-start-1">{LONGEST_TRADING_SESSION}</span>
-        <span className="col-start-1 row-start-1">{session}</span>
-      </span>
+      {/* 칩 폭은 지금 시간대 이름에 맞춘다 — 애프터 마켓일 때만 그만큼 넓어진다. */}
+      <span>{session}</span>
+    </span>
+  )
+}
+
+// 시간대 안내 팝업의 고정 내용 — 서버 시간표나 지금 시간대와 연동하지 않는 안내문이다(칩의 시간대 판정과는 별개).
+const SESSION_GUIDE: { session: TradingSession; range: string }[] = [
+  { session: '프리 마켓', range: '08:00 ~ 08:50' },
+  { session: '메인 마켓', range: '09:00 ~ 15:30' },
+  { session: '애프터 마켓', range: '15:40 ~ 20:00' },
+  { session: '마켓 종료', range: '그 외' },
+]
+
+// 시장 시간대 칩 — 눌러서 시간대별 시간 범위를 안내하는 팝업을 칩 아래에 연다(달력 팝업과 같은 색·테두리).
+// 바깥을 누르거나 Esc를 누르면 닫힌다.
+function TradingSessionChip({ session: sessionOverride }: { session?: TradingSession }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const rootRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false)
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false)
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen])
+
+  return (
+    <span ref={rootRef} className="relative z-40 flex">
+      <ToolbarChip bare>
+        <button
+          type="button"
+          aria-label="시장 시간대 안내"
+          aria-expanded={isOpen}
+          aria-haspopup="dialog"
+          onClick={() => setIsOpen(open => !open)}
+          className={`flex h-6 items-center border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-[#838385] focus-visible:bg-[#838385] ${isOpen ? 'bg-[#838385]' : 'bg-transparent'}`}
+        >
+          <TradingSessionIndicator session={sessionOverride} />
+        </button>
+      </ToolbarChip>
+      {isOpen && (
+        <div
+          role="dialog"
+          aria-label="시장 시간대 안내"
+          className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-gray-500 bg-[#363639] p-2 text-sm font-normal tracking-normal text-white shadow-xl"
+        >
+          <p className="mb-1.5 px-1 text-[13px] text-gray-400">시장 시간대 (한국 시간)</p>
+          {SESSION_GUIDE.map(row => (
+            <div key={row.session} className="flex items-center justify-between gap-6 px-2 py-1">
+              <span className="flex items-center">
+                <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[row.session] }} />
+                {row.session}
+              </span>
+              {/* 시작·끝 시각을 각각 같은 폭의 칸(5글자)에 두고 굵기도 바꾸지 않아서, 줄마다 시작점과 끝점이 세로로 맞는다. */}
+              {row.range.includes(' ~ ') ? (
+                <span className="flex items-center gap-1 font-normal tabular-nums">
+                  <span className="w-[5ch] text-right">{row.range.split(' ~ ')[0]}</span>
+                  <span aria-hidden="true">~</span>
+                  <span className="w-[5ch] text-right">{row.range.split(' ~ ')[1]}</span>
+                </span>
+              ) : (
+                <span className="font-normal">{row.range}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </span>
   )
 }
@@ -136,11 +208,9 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
   }, [visible, selectedIndex])
 
   return (
-    <div className="-mr-[5px] flex shrink-0 items-center gap-2 whitespace-nowrap" data-basis-toggle>
+    <div className="-mr-[5px] flex shrink-0 items-center gap-1 whitespace-nowrap" data-basis-toggle>
       {/* 종가 지도는 정규장이 끝난 시점의 지도라서, 지금이 애프터 마켓이어도 시간대 글자는 "마켓 종료"로 둔다. 시각으로 계산하지 않아 개장·마감이 달라지는 날에도 맞다. */}
-      <ToolbarChip>
-        <TradingSessionIndicator session={basis === 'close' ? '마켓 종료' : undefined} />
-      </ToolbarChip>
+      <TradingSessionChip session={basis === 'close' ? '마켓 종료' : undefined} />
       {visible && <div
         role="radiogroup"
         aria-label="등락률 기준"

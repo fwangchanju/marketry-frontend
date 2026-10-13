@@ -21,7 +21,7 @@ import { ClockIcon } from '@/components/icons/MarketMapIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import ClosingPriceLabel from '@/components/ClosingPriceLabel'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
-import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import ToolbarChip from '@/components/ToolbarChip'
@@ -36,7 +36,7 @@ import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredMarketMapTree'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
-import { FONT_BAR_MODE_STATUS, FONT_BAR_TIME } from '@/components/FontStyle'
+import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/utils/captureToDownload'
@@ -322,12 +322,12 @@ export default function GroupPage() {
               안에서만 처리된다. */}
           <div ref={captureRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white">
             <Toolbar>
-              <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+              <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="GROUP" label={MARKET_LABEL[market]} />
                 {/* 로딩 원이나 오류 문구가 보이는 동안에도 시계·시간대·누적/별도·분류명을 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                   <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
-                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
                   <SnapshotDatePicker
                     market={market}
                     viewedSnapshotTime={displayNow?.snapshotTime ?? null}
@@ -349,20 +349,20 @@ export default function GroupPage() {
                       </ToolbarChip>
                     )
                     : (
-                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
                         <ClosingPriceLabel viewedSnapshotTime={displayNow?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
                       </ToolbarChip>
                     ))}
                   {isPastSnapshot === false && (
-                    <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                    <ToolbarChip bare tone="text-white">
                       <PageRefreshButton
-                        leading={<ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />}
+                        cell
                         onRefresh={refetchMarketMap}
                         isRefreshing={isRefreshing}
-                        className={FONT_BAR_TIME}
                         helpText={SNAPSHOT_REFRESH_HELP}
-                        minSpinDurationMs={REFRESH_FEEDBACK_MIN_DURATION_MS}
+                        minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                       >
+                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
                         <AnimatedClockLabel snapshotTime={displayNow?.snapshotTime ?? null} />
                       </PageRefreshButton>
                     </ToolbarChip>

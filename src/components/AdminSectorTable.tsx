@@ -18,6 +18,8 @@ import { EditIcon, PlusIcon, TrashIcon } from '@/components/icons/MarketMapIcons
 interface Props {
   sectors: SectorItem[]
   settingsActionsTarget?: HTMLElement | null
+  // 검색창을 그릴 윗줄의 자리(왼쪽 제목 박스 옆).
+  toolbarContainer?: HTMLElement | null
   // 검색창 옆에 두던 개수를 받아 갈 곳 — 페이지가 설정창 머리글에 그려 준다.
   onCountLabelChange?: (label: string | undefined) => void
 }
@@ -182,7 +184,7 @@ function DroppableSectorRow({
   )
 }
 
-export default function AdminSectorTable({ sectors, settingsActionsTarget, onCountLabelChange }: Props) {
+export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange }: Props) {
   const [query, setQuery] = useState('')
   const [sectorOrder, setSectorOrder] = useState<SectorOrder>(loadSectorOrder)
   const [undoStack, setUndoStack] = useState<SectorHistoryAction[]>([])
@@ -770,12 +772,16 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, onCou
       }}
     >
       <div ref={mainAreaRef} className="flex min-h-0 flex-1 flex-col">
-        <SearchBar
-          query={query}
-          onChange={setQuery}
-          placeholder="업종 검색"
-          ariaLabel="업종 검색"
-        />
+        {toolbarContainer && createPortal(
+          <SearchBar
+            inline
+            query={query}
+            onChange={setQuery}
+            placeholder="업종 검색"
+            ariaLabel="업종 검색"
+          />,
+          toolbarContainer,
+        )}
         <div className="relative grid min-h-0 flex-1 grid-cols-3 overflow-hidden border border-slate-700 select-none [&_input]:select-text">
           {(['대분류', '중분류', '소분류'] as const).map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">

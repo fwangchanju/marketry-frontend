@@ -244,8 +244,8 @@ export default function CustomPage() {
               <div className="flex h-full shrink-0 items-center gap-2">
                 <ToolbarModeText page="CUSTOM" label={mode === 'stock' ? 'STOCK' : 'SECTOR'} />
               </div>
-              {/* 종목수/실행취소·다시실행/필터/엑셀 등 — AdminStockTable이 이 노드로 포털링해서 그린다. */}
-              {!isReadOnlySheet && mode === 'stock' && <div ref={setToolbarContainer} className="ml-1 flex h-full min-h-0 min-w-0 flex-1 items-center" />}
+              {/* 검색창(과 필터 초기화) — 종목·업종 표가 모두 이 노드로 포털링해서 그린다. */}
+              <div ref={setToolbarContainer} className="ml-1 flex h-full min-h-0 min-w-0 flex-1 items-center" />
               <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-gray-400`}>
                 <TaxonomyBadge taxonomy={sheet} />
               </div>
@@ -270,6 +270,7 @@ export default function CustomPage() {
                     stockMarkets={stockMarkets}
                     stockIndustries={stockIndustries}
                     isNxtLoading={isStockCatalogLoading}
+                    toolbarContainer={toolbarContainer}
                     onCountLabelChange={setCountLabel}
                   />
                 ) : mode === 'stock' ? (
@@ -288,6 +289,7 @@ export default function CustomPage() {
                   <AdminSectorTable
                     sectors={sectors ?? []}
                     settingsActionsTarget={sectorSettingsActionsTarget}
+                    toolbarContainer={toolbarContainer}
                     onCountLabelChange={setCountLabel}
                   />
                 )}
@@ -325,7 +327,7 @@ export default function CustomPage() {
               ) : (
                 // 마켓트리·거래소 화면은 읽기 전용이라 설정할 항목이 없다 — 그 사실만 알린다.
                 <div className="text-sm">
-                  <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">읽기 전용 · 쓰기 불가</h2>
+                  <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">읽기 전용(쓰기 불가)</h2>
                 </div>
               )}
               taxonomyAtBottom

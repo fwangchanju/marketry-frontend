@@ -26,9 +26,9 @@ import DisclaimerNotice from '@/components/DisclaimerNotice'
 import { HINT_BUBBLE_COLOR_CLASS } from '@/components/hintBubbleStyle'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
-import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
-import { FONT_BAR_MODE_STATUS, FONT_BAR_TIME } from '@/components/FontStyle'
+import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useMarketMapDrilldown } from '@/hooks/useMarketMapDrilldown'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
@@ -518,12 +518,12 @@ export default function MapPage() {
             {/* 왼쪽은 마켓·기간·시계·시간대 묶음, 오른쪽 끝은 프로필(사진 + 거래소·MARKETRY). 두 묶음이 같은 줄에서 서로 밀어내므로
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
-              <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+              <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} />
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·누적/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
-                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
                   <SnapshotDatePicker
                     market={market}
                     viewedSnapshotTime={data?.snapshotTime ?? null}
@@ -547,20 +547,20 @@ export default function MapPage() {
                       </ToolbarChip>
                     )
                     : (
-                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
                         <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
                       </ToolbarChip>
                     ))}
                   {isPastSnapshot === false && (
-                    <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                    <ToolbarChip bare tone="text-white">
                       <PageRefreshButton
-                        leading={<ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />}
+                        cell
                         onRefresh={refetchMarketMap}
                         isRefreshing={isRefetchingMarketMap}
-                        className={FONT_BAR_TIME}
                         helpText={SNAPSHOT_REFRESH_HELP}
-                        minSpinDurationMs={REFRESH_FEEDBACK_MIN_DURATION_MS}
+                        minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                       >
+                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
                         <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
                       </PageRefreshButton>
                     </ToolbarChip>
