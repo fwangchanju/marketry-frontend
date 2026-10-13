@@ -106,6 +106,8 @@ export default function CustomPage() {
   } = useCustomSectors({ enabled: isLoggedIn })
   const {
     data: stockSectors,
+    isLoading: isStockSectorsLoading,
+    isError: isStockSectorsError,
     refetch: refetchStockSectors,
     isRefetching: isRefetchingStockSectors,
   } = useStockSectors({ enabled: isLoggedIn })
@@ -289,6 +291,9 @@ export default function CustomPage() {
                     bulkContainer={stockBulkTarget}
                     onCountLabelChange={setCountLabel}
                     nxtStockCodes={nxtStockCodes}
+                    isLoading={isStockSectorsLoading}
+                    isError={isStockSectorsError}
+                    onRetry={() => void refetchStockSectors()}
                   />
                 ) : (
                   <AdminSectorTable

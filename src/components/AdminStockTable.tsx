@@ -48,6 +48,10 @@ interface Props {
   onCountLabelChange?: (label: string | undefined) => void
   // NXT에서도 거래되는 종목 코드 — NXT 열에 O/-로 보여준다(공개 종목 정보라 모든 사용자가 같다).
   nxtStockCodes?: ReadonlySet<string>
+  // 종목 목록을 처음 받는 중이거나 받지 못했을 때 표 자리에 다른 페이지와 같은 로딩·오류 원을 보여 준다.
+  isLoading?: boolean
+  isError?: boolean
+  onRetry?: () => void
 }
 
 // 약칭 최대 글자 수 — 분류 이름(대·중·소분류)과 같다.
@@ -912,6 +916,9 @@ export default function AdminStockTable({
   bulkContainer,
   onCountLabelChange,
   nxtStockCodes = NO_NXT_CODES,
+  isLoading = false,
+  isError = false,
+  onRetry,
 }: Props) {
   const [sortKey, setSortKey] = usePersistedState<SortKey | null>('adminStockTable.sortKey', DEFAULT_SORT_KEY)
   const [sortDirection, setSortDirection] = usePersistedState<SortDirection>('adminStockTable.sortDirection', 'desc')
@@ -1751,12 +1758,16 @@ export default function AdminStockTable({
             </tr>
           </thead>
           <tbody>
-            {isPending ? (
+            {isPending || isLoading || isError ? (
               <tr>
                 <td colSpan={columns.length + 1} className="p-8">
-                  {/* 지도·그룹 페이지처럼 크게 가운데에 보여준다. */}
+                  {/* 지도·그룹 페이지처럼 크게 가운데에 보여준다. 정렬 중이거나 목록을 받는 중이면 로딩 원, 받지 못했으면 오류 원이다. */}
                   <div className="flex h-[min(32rem,60vh)] items-center justify-center">
-                    <Spinner showElapsed />
+                    {isError && !isLoading && !isPending ? (
+                      <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} />
+                    ) : (
+                      <Spinner showElapsed />
+                    )}
                   </div>
                 </td>
               </tr>
@@ -1805,7 +1816,7 @@ export default function AdminStockTable({
           </tbody>
           </table>
           {/* 보여줄 종목이 없으면 거래소·MARKETRY 표와 같은 안내 글을 가운데에 보여준다. */}
-          {!isPending && sorted.length === 0 && <EmptyMessage message={items.length === 0 ? EMPTY_DATA_MESSAGE : EMPTY_SEARCH_MESSAGE} />}
+          {!isPending && !isLoading && !isError && sorted.length === 0 && <EmptyMessage message={items.length === 0 ? EMPTY_DATA_MESSAGE : EMPTY_SEARCH_MESSAGE} />}
         </div>
       </div>
     </div>
