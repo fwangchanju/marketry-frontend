@@ -46,7 +46,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
                 <button
                   type="button"
                   onClick={onRetry}
-                  className={`absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded border border-[var(--brand)] bg-transparent text-[var(--brand)] transition-colors hover:bg-[var(--brand)] hover:text-black ${compact ? 'px-2 py-px text-[11px]' : 'px-3 py-0.5 text-xs'}`}
+                  className={`absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded border border-[var(--brand)] bg-transparent text-[var(--brand)] font-semibold transition-colors hover:bg-[var(--brand)] hover:text-black ${compact ? 'px-2 py-px text-[11px]' : 'px-3 py-0.5 text-xs'}`}
                 >
                   다시 시도
                 </button>
