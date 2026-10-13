@@ -195,7 +195,7 @@ export default function MarketSummaryPage() {
                 title: '그룹 등락률 (%)',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <DepthBadge depth={effectiveDepth} advancers={overview.advancers} decliners={overview.decliners} upColor={upColor} downColor={downColor} />
+                    <DepthBadge depth={effectiveDepth} advancers={overview.advancers} decliners={overview.decliners} />
                     <div className="flex min-h-0 w-full flex-1">
                       <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
                     </div>
@@ -212,14 +212,14 @@ export default function MarketSummaryPage() {
                       return (
                         <section key={type} className="border-b border-gray-800 px-1 py-1.5">
                           {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기다. 배지는 안내가 없어도 항상 하나씩 두고, 없으면 옆에 "없음"을 적는다. */}
-                          <div className="flex items-center gap-2 text-[13px] font-medium leading-none">
+                          <div className="flex items-center gap-1 text-[13px] font-medium leading-none">
                             <span className="shrink-0 rounded-sm px-1 py-[3px] text-white" style={{ backgroundColor: badgeColor === 'up' ? upColor : downColor }}>{label}</span>
-                            {items.length === 0 && <span className="text-gray-500">없음</span>}
+                            {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-500">없음</span>}
                           </div>
                           {items.map(item => (
-                            <div key={item.stockCode} className="mt-1 flex items-center gap-2 pl-1 text-[13px] font-medium leading-none text-white">
+                            <div key={item.stockCode} className="mt-1 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-[13px] font-medium leading-none text-white">
                               <span className="min-w-0 truncate">{item.stockName}</span>
-                              <span className="ml-auto shrink-0 tabular-nums text-gray-500">{item.stockCode}</span>
+                              <span className="shrink-0 tabular-nums text-gray-300">{item.stockCode}</span>
                             </div>
                           ))}
                         </section>
