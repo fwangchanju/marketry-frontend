@@ -10,6 +10,12 @@ import MarketIndexLine from '@/components/MarketIndexLine'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import Spinner from '@/components/Spinner'
+import Toolbar from '@/components/Toolbar'
+import ToolbarModeText from '@/components/ToolbarModeText'
+import TaxonomyBadge from '@/components/TaxonomyBadge'
+import DisclaimerNotice from '@/components/DisclaimerNotice'
+import ChangeRateBar from '@/components/ChangeRateBar'
+import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { usePageSetting } from '@/hooks/usePageSetting'
@@ -133,9 +139,15 @@ export default function MarketSummaryPage() {
           (SettingsSidebar)은 이 박스의 맨 오른쪽 자식으로 넣으면 같은 높이에 붙는다. */}
       <div ref={settingsRowRef} className="relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-black text-white">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className="relative mt-[5.25px] mb-[5.25px] flex h-7 w-full shrink-0 items-center justify-between bg-black/70 pl-[7px] pr-3 text-sm font-bold text-white">
-            {/* 콘솔 줄: 드롭다운 → 스냅샷 날짜/시간 순으로 왼쪽에 배치 */}
-          </div>
+          {/* 툴바 — 지도·그룹 페이지와 같은 틀. 왼쪽에 제목 배지, 오른쪽 끝에 분류 배지를 둔다. 로딩 중에도 제자리에 둔다. */}
+          <Toolbar>
+            <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+              <ToolbarModeText page="HOME" label="ALL STOCK" />
+            </div>
+            <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-gray-400`}>
+              <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
+            </div>
+          </Toolbar>
           {/* 스마트폰 화면 크기(가로 360px)의 틀 두 개 — 등락률 지도와 그룹 등락률 그래프를 캡처해서 모바일 사용자에게 보여 주기 좋게 나란히 둔다(시험 배치). */}
           <div className="flex min-h-0 flex-1 items-center justify-center gap-6 overflow-auto px-2 pb-4">
             {/* 불러오는 중이나 오류일 때는 틀을 모두 감추고 지도·그룹·커스텀 페이지처럼 메인 영역 가운데에 원 하나만 둔다. */}
@@ -207,6 +219,13 @@ export default function MarketSummaryPage() {
             ))}
             </div>
             )}
+          </div>
+          {/* 아래 줄 — 지도·그룹 페이지와 같은 높이(28px)로 왼쪽에 면책조항, 오른쪽 끝에 등락률 색상 범례를 둔다. 로딩 중에도 제자리에 둔다. */}
+          <div className="flex h-7 shrink-0 items-end justify-between gap-3 px-[7px]">
+            <div className="flex h-7 min-w-0 items-end">
+              <DisclaimerNotice />
+            </div>
+            <ChangeRateBar swatches={settingsModalProps.legendSwatches} />
           </div>
         </div>
         {/* 설정창 틀만 먼저 둔다 — 항목은 홈 화면 내용이 정해지면 채운다. */}
