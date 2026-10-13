@@ -13,6 +13,9 @@ const DISCLAIMER_LINES = [
 const DATA_SOURCES: { data: string; source: string }[] = [
   { data: '시세/등락률/종목 정보/시가총액/업종명', source: '키움증권' },
   { data: '날짜/시간/거래 세션', source: '토스증권' },
+  { data: '거래정지 종목(안내·지도 제외)', source: '토스증권' },
+  { data: '상장폐지 종목(지도 제외)', source: '토스증권' },
+  { data: '신규 상장 종목(안내)', source: '키움증권(종목 정보를 처음 받은 날 기준)' },
   { data: 'NXT 거래 가능 종목', source: '키움증권, NEXTRADE' },
   { data: 'MARKETRY 분류', source: 'MARKETRY' },
   { data: '내 분류', source: '사용자가 직접 분류' },
