@@ -15,7 +15,7 @@ interface Props {
 // 눌러서 바꾸지 않는다(단계는 설정창의 "업종 분류 단계"에서 고른다). 지수 줄과 같은 높이(24px)를 지켜 두 틀의 아래 그래프가 어긋나지 않게 한다.
 // 업종 분류 단계 배지(대분류·중분류·소분류) — 홈에서는 시장 요약 틀의 제목 아래에 둔다.
 export function DepthLevelBadge({ depth }: { depth: number }) {
-  return <span className="shrink-0 rounded-sm bg-cyan-700 px-1 py-[3px] text-[13px] font-medium leading-none text-white">{DEPTH_LABELS[depth - 1] ?? DEPTH_LABELS[0]}</span>
+  return <span className="shrink-0 rounded-sm bg-cyan-900 px-1 py-[3px] text-[13px] font-medium leading-none text-white">{DEPTH_LABELS[depth - 1] ?? DEPTH_LABELS[0]}</span>
 }
 
 export default function DepthBadge({ title, advancers, decliners, unchanged }: Props) {
