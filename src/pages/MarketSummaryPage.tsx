@@ -220,13 +220,13 @@ export default function MarketSummaryPage() {
                       const rowClass = 'flex h-6 items-center'
                       return (
                         <Fragment key={type}>
-                          {/* 종류 배지(신규 상장·거래 정지)는 배지 상자가 아니라 안의 글자를 한 칸(글자 한 자 폭) 들여 쓴다 — 네 배지의 너비·좌우 끝은 모두 같다. */}
+                          {/* 네 배지의 너비·좌우 끝은 모두 같다. 들여쓰기는 배지가 아니라 오른쪽 회색 칸의 "없음"(또는 종목 이름) 글자에 한다. */}
                           <span className={rowClass}>
-                            <span className={`w-full whitespace-nowrap rounded-sm py-[3px] pl-[calc(0.25rem+1em)] pr-1 text-white ${badgeClass}`}>{label}</span>
+                            <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{label}</span>
                           </span>
                           {/* 그날 안내 종목은 종류 배지 바로 오른쪽 회색 칸에 한 줄로 적는다 — 없으면 "없음", 둘 이상이면 이름을 " · "(공백·가운뎃점·공백)로 이어 쓰고 칸보다 길면 …로 줄인다. */}
                           <span className={`${rowClass} col-span-3`}>
-                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">
+                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 pl-[calc(0.25rem+1em)] pr-1 text-gray-300">
                               <span className="min-w-0 truncate">{items.length === 0 ? '없음' : items.map(item => item.stockName).join(' · ')}</span>
                             </span>
                           </span>
