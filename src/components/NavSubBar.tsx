@@ -49,8 +49,20 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   const links = [...BASE_LINKS, CUSTOM_LINK]
   const [openTo, setOpenTo] = useState<string | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const barRef = useRef<HTMLDivElement>(null)
+  // 터치로 누르기 직전에 이 메뉴 목록이 열려 있었는지 — 터치는 누르면 마우스 이벤트가 먼저 와서 목록을 열어 버리므로 누르기 전 상태를 따로 기억한다.
+  const touchStartRef = useRef<{ to: string; wasOpen: boolean } | null>(null)
   // 메뉴를 떠날 때 예약해 둔 닫기 타이머가 화면이 바뀐 뒤에 실행되지 않게 정리한다.
   useEffect(() => () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current) }, [])
+  // 목록이 열려 있을 때 메뉴 밖을 누르면 닫는다(터치 화면은 커서를 치울 수 없어서 필요하다).
+  useEffect(() => {
+    if (openTo === null) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!barRef.current?.contains(event.target as Node)) setOpenTo(null)
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [openTo])
 
   const isLinkActive = (to: string) => {
     if (to === '/map/allstock') return location.pathname.startsWith('/map/')
@@ -79,7 +91,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
 
   return (
     <div className="relative z-30 -top-[13px] flex h-8 after:absolute after:inset-x-0 after:top-full after:h-[2.5px] after:bg-zinc-900 shrink-0 items-center justify-between gap-3 bg-zinc-900 px-3 text-xs">
-      <div className="flex h-8 items-center gap-3">
+      <div ref={barRef} className="flex h-8 items-center gap-3">
         {links.map(link => (
           <div
             key={link.to}
@@ -87,7 +99,22 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
             onMouseEnter={() => link.options && open(link.to)}
             onMouseLeave={() => link.options && closeSoon()}
           >
-            <Link to={link.to} className={linkClassName(link.to)}>
+            <Link
+              to={link.to}
+              className={linkClassName(link.to)}
+              onPointerDown={event => {
+                touchStartRef.current = event.pointerType === 'touch' ? { to: link.to, wasOpen: openTo === link.to } : null
+              }}
+              onClick={event => {
+                // 터치 화면은 목록이 닫혀 있을 때 처음 누르면 이동하지 않고 목록을 연다(다시 누르면 기본 화면으로 이동한다).
+                const touch = touchStartRef.current
+                touchStartRef.current = null
+                if (link.options && touch?.to === link.to && !touch.wasOpen) {
+                  event.preventDefault()
+                  open(link.to)
+                }
+              }}
+            >
               {link.label}
             </Link>
             {link.options && openTo === link.to && (

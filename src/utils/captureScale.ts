@@ -10,6 +10,9 @@ export function shareCaptureScale(el: HTMLElement): number {
   return Math.min(2, Math.max(0.5, SHARE_IMAGE_LONG_SIDE / longSide))
 }
 
+// data-capture-ignore가 붙은 요소(예: 지도 위 NXT 안내창과 그 어두운 배경)는 일시적인 알림이라 공유 이미지에 담지 않는다.
+const isCapturable = (node: Node) => !(node instanceof Element && node.hasAttribute('data-capture-ignore'))
+
 export function shareCaptureOptions(el: HTMLElement) {
-  return { scale: shareCaptureScale(el), backgroundColor: '#0f1117' }
+  return { scale: shareCaptureScale(el), backgroundColor: '#0f1117', filter: isCapturable }
 }

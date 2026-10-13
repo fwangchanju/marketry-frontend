@@ -586,8 +586,8 @@ export default function MapPage() {
               {/* 지도가 그려진 뒤에만 보인다 — 로딩 중이거나 불러오지 못했을 때는 가운데 로딩 원 위에 겹쳐 뜨지 않게 한다. */}
               {nxtOnly && nxtOnlyWindow && !isNxtNoticeDismissed && !isLoading && !isError && (
                 // 확인창(AppDialogHost)과 같은 양식 — 어두운 배경 위 가운데에 크림색 창, 굵은 제목, 본문, 오른쪽 아래 청록 닫기 버튼.
-                // 어두운 배경은 지도만 덮고 클릭을 막지 않는다(확인창과 달리 창 밖에서도 지도를 계속 쓸 수 있다).
-                <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/70 p-4">
+                // 어두운 배경은 지도만 덮고 클릭을 막지 않는다(확인창과 달리 창 밖에서도 지도를 계속 쓸 수 있다). 공유 이미지에는 담지 않는다(data-capture-ignore).
+                <div data-capture-ignore className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/70 p-4">
                   <section
                     role="status"
                     aria-labelledby="nxt-notice-title"
