@@ -213,7 +213,8 @@ export default function CustomPage() {
       <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
         <NavBar />
         <NavSubBar />
-        <div className="flex min-h-0 flex-1 items-center justify-center p-8">
+        {/* 위쪽 바가 겹쳐 있는 다른 페이지의 본문 틀과 로딩 원 높이를 맞추려고 아래 여백을 3.5px 더 둔다(원이 1.75px 올라간다). */}
+        <div className="flex min-h-0 flex-1 items-center justify-center p-8 pb-[calc(2rem+3.5px)]">
           <Spinner showElapsed />
         </div>
       </div>

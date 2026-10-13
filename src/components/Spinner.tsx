@@ -40,12 +40,12 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
             {/* 문구 크기도 경과 시간 숫자와 같이 원 너비에 비례한다(큰 원 기준 5.5%, 11~24px). */}
             <span className="relative text-center text-[clamp(11px,5.5cqw,24px)] leading-tight text-gray-300">
               {errorMessage}
-              {/* 버튼은 문구 아래에 띄워 둔다 — 문구가 숫자 자리에서 밀리지 않게 한다. */}
+              {/* 버튼은 문구 아래에 띄워 둔다 — 문구가 숫자 자리에서 밀리지 않게 한다. 평소에도 강조색 테두리·글자이고, 마우스를 올리면 안을 강조색으로 채운다. */}
               {onRetry && (
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded border border-gray-500 bg-transparent px-4 py-1.5 text-sm text-gray-200 hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                  className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded border border-[var(--brand)] bg-transparent px-4 py-1.5 text-sm text-[var(--brand)] transition-colors hover:bg-[var(--brand)] hover:text-black"
                 >
                   다시 시도
                 </button>
