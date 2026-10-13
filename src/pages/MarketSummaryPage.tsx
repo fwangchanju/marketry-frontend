@@ -34,11 +34,11 @@ type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 export default function MarketSummaryPage() {
-  // 틀마다 캡처 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 캡처하며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
+  // 시장 요약 틀의 캡처 버튼(또는 상단 영역 캡처 버튼)으로 지도·그룹 막대를 한 장으로 캡처하며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const [homeDepth, setHomeDepth] = usePageSetting<number>('homePage.depth', 1)
-  const allFramesRef = useRef<HTMLDivElement>(null)
-  const frameRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  // 합친 시장 요약 틀(지도 + 그룹 막대) — 캡처 대상이다. 안내 틀은 캡처하지 않는다.
+  const summaryFrameRef = useRef<HTMLDivElement>(null)
   const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
@@ -76,7 +76,7 @@ export default function MarketSummaryPage() {
     return { items, chart }
   }, [data, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, isLatestDailyView])
   // 세 틀을 한 장으로 캡처하는 중에는 틀마다 있는 캡처 버튼을 감춰서 이미지에 찍히지 않게 한다.
-  const isCapturingAll = captureTarget !== null && captureTarget === allFramesRef.current
+  const isCapturingSummary = captureTarget !== null && captureTarget === summaryFrameRef.current
   const handleCopy = async (previewSrc?: string | null) => {
     if (!previewSrc && !captureTarget) return
     setCopyStatus('copying')
@@ -128,8 +128,8 @@ export default function MarketSummaryPage() {
             isSettingsOpen={isSettingsOpen}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
-            onOpenShare={() => setCaptureTarget(allFramesRef.current)}
-            isCaptureOpen={isCapturingAll}
+            onOpenShare={() => setCaptureTarget(summaryFrameRef.current)}
+            isCaptureOpen={isCapturingSummary}
           />
         }
       />
@@ -148,7 +148,7 @@ export default function MarketSummaryPage() {
               <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
             </div>
           </Toolbar>
-          {/* 스마트폰 화면 크기(가로 360px)의 틀 두 개 — 등락률 지도와 그룹 등락률 그래프를 캡처해서 모바일 사용자에게 보여 주기 좋게 나란히 둔다(시험 배치). */}
+          {/* 틀 두 개 — 지도와 그룹 등락률 막대를 한 틀(시장 요약)에 합쳐 한 장으로 캡처하고, 오른쪽에 안내 틀을 둔다. */}
           {/* 로딩·오류 원은 지도·그룹 페이지와 같은 높이에 오도록 위 16px·아래 19.5px 여백 안에서 가운데에 둔다(틀이 보일 때는 아래 16px만). */}
           <div className={`flex min-h-0 flex-1 items-center justify-center gap-6 overflow-auto px-2 ${isLoading || isError ? 'pt-4 pb-[19.5px]' : 'pb-4'}`}>
             {/* 불러오는 중이나 오류일 때는 틀을 모두 감추고 지도·그룹·커스텀 페이지처럼 메인 영역 가운데에 원 하나만 둔다. */}
@@ -157,67 +157,56 @@ export default function MarketSummaryPage() {
             ) : isError ? (
               <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
             ) : (
-            /* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */
-            <div ref={allFramesRef} className="flex h-[min(100%,780px)] shrink-0 gap-6 bg-black">
-            {[
-              {
-                title: '시장 요약 지도',
-                body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col">
-                    {indexLine}
-                    <OverviewMap items={overview.items} colorScale={colorScale} />
-                  </div>
-                ),
-              },
-              {
-                title: '그룹 등락률 (%)',
-                body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <DepthBadge depth={effectiveDepth} />
-                    <div className="flex min-h-0 w-full flex-1">
-                      <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
-                    </div>
-                  </div>
-                ),
-              },
-              {
-                title: '준비 중',
-                body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col">
-                    {indexLine}
-                    <div className="flex flex-1 items-center justify-center text-sm text-gray-500">내용 미정</div>
-                  </div>
-                ),
-              },
-            ].map(frame => (
-              <section key={frame.title} className="relative flex h-full w-[360px] shrink-0 flex-col bg-black">
-                {/* 캡처 대상은 이 안쪽 칸이다 — 테두리와 안쪽 여백까지 이 칸에 두어 이미지에도 같이 찍힌다(지도·배지가 이미지 가장자리에 붙어 잘려 보이지 않게).
-                    오른쪽 위 캡처 버튼은 칸 밖에 두어 이미지에 찍히지 않는다. */}
-                <div ref={element => { frameRefs.current[frame.title] = element }} className="flex min-h-0 flex-1 flex-col border border-gray-700 bg-black p-2">
+            <div className="flex h-[min(100%,780px)] shrink-0 gap-6 bg-black">
+              {/* 시장 요약 틀 — 지도와 그룹 등락률 막대를 한 틀에 담아 한 장으로 캡처한다.
+                  캡처 대상은 안쪽 칸이다(테두리와 안쪽 여백까지 찍혀 지도·배지가 이미지 가장자리에 붙어 잘려 보이지 않는다).
+                  제목 옆 캡처 버튼은 칸 밖에 두어 이미지에 찍히지 않는다. */}
+              <section className="relative flex h-full w-[728px] shrink-0 flex-col bg-black">
+                <div ref={summaryFrameRef} className="flex min-h-0 flex-1 flex-col border border-gray-700 bg-black p-2">
                   {/* 헤더 높이를 28px(캡처 버튼 높이)로 고정해서 버튼이 헤더 높이의 가운데에 오게 한다. 제목은 왼쪽에 붙이고, 강조색 바가 맨 앞에 온다. */}
                   <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-bold text-white">
                     <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
-                    {frame.title}
+                    시장 요약
                     {snapshotClock}
                   </h2>
-                  {frame.body}
+                  <div className="flex min-h-0 flex-1 gap-4">
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                      <p className="m-0 mb-1 shrink-0 pl-1 text-[13px] font-semibold text-gray-400">시장 요약 지도</p>
+                      {indexLine}
+                      <OverviewMap items={overview.items} colorScale={colorScale} />
+                    </div>
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                      <p className="m-0 mb-1 shrink-0 pl-1 text-[13px] font-semibold text-gray-400">그룹 등락률 (%)</p>
+                      <DepthBadge depth={effectiveDepth} />
+                      <div className="flex min-h-0 w-full flex-1">
+                        <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {/* 캡처 버튼을 제목 바로 오른쪽에 둔다 — 제목과 같은 글자를 보이지 않게 깔아 그 끝에 버튼이 오게 하므로 제목 길이를 재지 않아도 된다.
-                    칸 밖에 있어서 캡처 이미지에는 찍히지 않는다. */}
-                <div className={`pointer-events-none absolute left-[9px] top-[9px] flex h-7 items-center pl-1 text-base font-bold ${isCapturingAll ? 'invisible' : ''}`}>
+                {/* 캡처 버튼을 제목 바로 오른쪽에 둔다 — 제목과 같은 글자를 보이지 않게 깔아 그 끝에 버튼이 오게 하므로 제목 길이를 재지 않아도 된다. */}
+                <div className={`pointer-events-none absolute left-[9px] top-[9px] flex h-7 items-center pl-1 text-base font-bold ${isCapturingSummary ? 'invisible' : ''}`}>
                   <span aria-hidden="true" className="invisible mr-1.5 inline-block w-1 shrink-0" />
-                  <span aria-hidden="true" className="invisible">{frame.title}</span>
+                  <span aria-hidden="true" className="invisible">시장 요약</span>
                   <button
                     type="button"
-                    aria-label={`${frame.title} 캡처`}
-                    onClick={() => setCaptureTarget(frameRefs.current[frame.title] ?? null)}
+                    aria-label="시장 요약 캡처"
+                    onClick={() => setCaptureTarget(summaryFrameRef.current)}
                     className="pointer-events-auto ml-1 flex h-7 w-7 items-center justify-center border-0 bg-transparent text-gray-400 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
                   >
                     <CaptureIcon className="h-4 w-4" />
                   </button>
                 </div>
               </section>
-            ))}
+              {/* 안내 틀 — 거래정지·신규 상장 같은 특수한 종목이 생기면 안내를 띄울 자리다. 내용은 아직 없다. */}
+              <section className="relative flex h-full w-[360px] shrink-0 flex-col bg-black">
+                <div className="flex min-h-0 flex-1 flex-col border border-gray-700 bg-black p-2">
+                  <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-bold text-white">
+                    <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
+                    안내
+                  </h2>
+                </div>
+              </section>
             </div>
             )}
           </div>
