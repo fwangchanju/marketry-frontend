@@ -74,7 +74,7 @@ function SourceHelpBubble() {
           <b>데이터 출처</b>
           {DATA_SOURCES.map(({ data, source }) => (
             <div key={data} className="mt-1">
-              <div className="font-bold text-red-600">{data}</div>
+              <div className="font-medium text-red-600">{data}</div>
               <div className="pl-3">{source}</div>
             </div>
           ))}
