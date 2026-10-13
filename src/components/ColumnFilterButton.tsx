@@ -152,7 +152,7 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
                 placeholder="검색"
                 aria-label={`${label} 검색`}
                 autoFocus
-                className="h-7 w-full rounded border border-gray-600 bg-zinc-700 px-2 text-sm text-white outline-none focus:border-[var(--brand)]"
+                className="h-7 w-full rounded border border-gray-600 bg-zinc-700 px-2 text-sm text-white outline-none placeholder:indent-[3px] focus:border-[var(--brand)]"
               />
             </div>
           )}

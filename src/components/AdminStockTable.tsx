@@ -2,7 +2,7 @@ import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { loadSectorOrder, sectorNamesByDepth, type SectorOrder } from '@/utils/sectorOrder'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { SectorItem, StockSectorListItem } from '@/types/api'
@@ -16,6 +16,7 @@ import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
 import { SearchBar } from './ReadOnlyTaxonomySheet'
+import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
 import { createStockMatcher } from '@/utils/stockSearch'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from './EmptyMessage'
 import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
@@ -24,7 +25,6 @@ import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
-import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
 import ColumnFilterButton, { SectorOrderToggle } from '@/components/ColumnFilterButton'
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
@@ -42,11 +42,16 @@ interface Props {
   historyContainer?: HTMLElement | null
   // 설정창의 "엑셀" 항목 자리 — 있으면 다운로드 버튼을 이 안에 그린다.
   excelContainer?: HTMLElement | null
+  // 설정창의 "일괄 변경" 항목 자리 — 대·중·소분류 일괄 변경 버튼을 이 안에 그린다.
+  bulkContainer?: HTMLElement | null
   // 검색창 옆에 두던 "N/N종목" 개수를 받아 갈 곳 — 페이지가 설정창 머리글에 그려 준다.
   onCountLabelChange?: (label: string | undefined) => void
   // NXT에서도 거래되는 종목 코드 — NXT 열에 O/-로 보여준다(공개 종목 정보라 모든 사용자가 같다).
   nxtStockCodes?: ReadonlySet<string>
 }
+
+// 약칭 최대 글자 수 — 분류 이름(대·중·소분류)과 같다.
+const ALIAS_MAX_LENGTH = 12
 
 const NO_NXT_CODES: ReadonlySet<string> = new Set()
 const NO_EXCLUDED: ReadonlySet<string> = new Set()
@@ -370,7 +375,7 @@ function SectorSearchPopup({
           onKeyDown={e => (e.key === 'Escape' ? onEscape() : search.handleArrowsAndEnter(e, onSelect))}
           placeholder="업종 검색"
           aria-label="업종 검색"
-          className="h-7 w-full rounded border border-gray-600 bg-zinc-700 px-2 text-sm text-white outline-none focus:border-[var(--brand)]"
+          className="h-7 w-full rounded border border-gray-600 bg-zinc-700 px-2 text-sm text-white outline-none placeholder:indent-[3px] focus:border-[var(--brand)]"
         />
         {contextLabel && <p className="m-0 mt-1.5 truncate text-xs text-gray-400">{contextLabel}</p>}
       </div>
@@ -529,16 +534,17 @@ function BulkAssignButton({
   count,
   options,
   onAssign,
-  alignRight = false,
   disabled = false,
   disabledHint,
+  label,
   title,
   orderMode,
 }: {
   count: number
   options: SectorOption[]
   onAssign: (sectorId: number) => void
-  alignRight?: boolean
+  // 버튼에 보일 글자(대분류·중분류·소분류) — "일괄 변경"은 위 섹션 제목이 말해 준다.
+  label: string
   title: string
   orderMode: { value: 'alpha' | 'custom'; onChange: (value: 'alpha' | 'custom') => void }
   // 선행 단계(1차/2차)가 아직 적용 안 된 상태의 2차/3차 버튼 — 버튼 자체는 평소와 똑같이 보이되,
@@ -552,6 +558,8 @@ function BulkAssignButton({
   const popupRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 설정창은 좌우로 옮길 수 있어서, 누르는 순간 버튼이 화면 오른쪽 절반에 있으면 팝업을 왼쪽으로 연다.
+  const [alignRight, setAlignRight] = useState(false)
   const search = useSectorSearchState(options, isOpen)
 
   const position = usePopupPosition(
@@ -582,6 +590,7 @@ function BulkAssignButton({
       return
     }
     search.reset()
+    setAlignRight((buttonRef.current?.getBoundingClientRect().left ?? 0) > window.innerWidth / 2)
     setIsOpen(true)
   }
 
@@ -601,7 +610,7 @@ function BulkAssignButton({
           isIdle ? 'cursor-not-allowed border-gray-700 text-gray-600' : 'border-[var(--brand)]/60 text-[var(--brand)] hover:bg-white/10'
         }`}
       >
-        {isIdle ? '일괄 변경' : `일괄 변경 (${count})`}
+        {label}
       </button>
       {isOpen && position && !disabled && (
         <SectorSearchPopup
@@ -678,7 +687,9 @@ function AdminAliasCell({
           autoFocus
           aria-label="운영자 전용 약칭"
           value={value}
-          onChange={e => setValue(e.target.value)}
+          maxLength={ALIAS_MAX_LENGTH}
+          // 한글 조합 중에 maxLength를 넘는 한 글자가 잠깐 들어오므로 넘는 순간 바로 잘라 낸다.
+          onChange={e => setValue(e.target.value.slice(0, ALIAS_MAX_LENGTH))}
           onBlur={stopEdit}
           onKeyDown={e => {
             if (e.key === 'Enter') submit()
@@ -898,6 +909,7 @@ export default function AdminStockTable({
   toolbarContainer,
   historyContainer,
   excelContainer,
+  bulkContainer,
   onCountLabelChange,
   nxtStockCodes = NO_NXT_CODES,
 }: Props) {
@@ -1538,46 +1550,38 @@ export default function AdminStockTable({
     />
   )
 
+  const rootRef = useRef<HTMLDivElement>(null)
+  // 검색창 오른쪽 끝을 아래 약칭 열의 오른쪽 줄에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
+  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { columnKey: 'alias', leftEl: toolbarContainer })
+  // 윗줄(드롭다운 오른쪽)에 그리는 검색창과 필터 초기화 — 실행취소·다시실행은 설정창 안(historyContainer)에 그리고, 컨테이너가 없으면 이 줄에 그대로 그린다.
   const toolbar = (
-    <div className="flex h-full min-h-0 w-full items-center justify-between gap-3">
-        {/* 실행취소·다시실행은 설정창 안(historyContainer)에 그린다 — 컨테이너가 없으면 이 자리에 그대로 그린다. */}
-        {!historyContainer && historyControls}
+    <div className="flex h-full min-h-0 w-full items-center gap-2">
+      <SearchBar
+        inline
+        inputRightEdgePx={nameRightEdge}
+        query={searchQuery}
+        onChange={query => {
+          setSearchQuery(query)
+          scrollContainerRef.current?.scrollTo({ top: 0 })
+        }}
+        placeholder={isAdmin ? '종목명·약칭·코드·분류' : '종목명·코드·분류'}
+        ariaLabel="종목 검색"
+        afterInput={
+          columnFilters.activeCount > 0 ? (
+            <button
+              type="button"
+              onClick={columnFilters.clearAll}
+              className="flex h-7 items-center whitespace-nowrap border-0 bg-transparent p-0 text-xs text-[var(--brand)] hover:underline"
+            >
+              필터 {columnFilters.activeCount}개 적용 · 초기화
+            </button>
+          ) : null
+        }
+      />
+      {!historyContainer && historyControls}
     </div>
   )
 
-  // 일괄 변경 버튼 — 검색창이 있는 줄 안에, 대·중·소분류 열 바로 위에 각 열과 같은 폭으로 얹는다(새 줄을 만들지 않아 표가 밀리지 않는다).
-  // 열 위치는 머리글 칸(th)에서 직접 재서 따라가므로 열 폭이 바뀌거나 표가 옆으로 스크롤돼도 어긋나지 않는다.
-  const rootRef = useRef<HTMLDivElement>(null)
-  // 검색창 오른쪽 끝을 아래 종목명 열의 오른쪽 줄에 맞춘다.
-  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef)
-  const [bulkColumns, setBulkColumns] = useState<Partial<Record<'parentSectorName' | 'midSectorName' | 'subSectorName', { left: number; width: number }>>>({})
-  useLayoutEffect(() => {
-    const root = rootRef.current
-    const scroller = scrollContainerRef.current
-    if (!root || !scroller) return
-    const measure = () => {
-      const rootLeft = root.getBoundingClientRect().left
-      const next: typeof bulkColumns = {}
-      for (const key of ['parentSectorName', 'midSectorName', 'subSectorName'] as const) {
-        const th = scroller.querySelector<HTMLElement>(`th[data-column-key="${key}"]`)
-        if (!th) continue
-        const rect = th.getBoundingClientRect()
-        next[key] = { left: Math.round(rect.left - rootLeft), width: Math.round(rect.width) }
-      }
-      setBulkColumns(prev => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
-    }
-    measure()
-    scroller.addEventListener('scroll', measure, { passive: true })
-    const observer = new ResizeObserver(measure)
-    observer.observe(root)
-    observer.observe(scroller)
-    window.addEventListener('resize', measure)
-    return () => {
-      scroller.removeEventListener('scroll', measure)
-      observer.disconnect()
-      window.removeEventListener('resize', measure)
-    }
-  }, [columns])
 
   useReportCountLabel(`${toCount(sorted.length)}/${toCount(items.length)}종목`, onCountLabelChange)
   return (
@@ -1631,67 +1635,38 @@ export default function AdminStockTable({
         </div>,
         excelContainer,
       )}
-      <SearchBar
-        query={searchQuery}
-        onChange={query => {
-          setSearchQuery(query)
-          scrollContainerRef.current?.scrollTo({ top: 0 })
-        }}
-        inputRightEdgePx={nameRightEdge}
-        placeholder={isAdmin ? '종목명·약칭·코드·분류 검색' : '종목명·코드·분류 검색'}
-        ariaLabel="종목 검색"
-        afterInput={
-          <>
-            {columnFilters.activeCount > 0 && (
-              <button
-                type="button"
-                onClick={columnFilters.clearAll}
-                className="flex h-7 items-center whitespace-nowrap border-0 bg-transparent p-0 text-xs text-[var(--brand)] hover:underline"
-              >
-                필터 {columnFilters.activeCount}개 적용 · 초기화
-              </button>
-            )}
-          </>
-        }
-      />
-      {/* 검색창 줄 위에 얹는 층 — 일괄 변경 버튼은 대·중·소분류 열 위에 둔다. 층 자체는 클릭을 막지 않는다. */}
-      <div className="pointer-events-none absolute left-0 top-0 h-7 w-full overflow-hidden">
-        {(['parentSectorName', 'midSectorName', 'subSectorName'] as const).map(key => {
-          const layout = bulkColumns[key]
-          if (!layout) return null
-          return (
-            <div key={key} className="pointer-events-auto absolute top-0.5 px-1" style={{ left: layout.left, width: layout.width }}>
-              {key === 'parentSectorName' && (
-                <BulkAssignButton count={selectedStockCodes.size} options={bulkParentOptions} onAssign={handleBulkAssignParent} alignRight title="대분류 일괄 변경" orderMode={bulkOrderMode} />
-              )}
-              {key === 'midSectorName' && (
-                <BulkAssignButton
-                  count={selectedStockCodes.size}
-                  options={bulkMidOptions}
-                  onAssign={handleBulkAssignMid}
-                  alignRight
-                  title="중분류 일괄 변경"
-                  orderMode={bulkOrderMode}
-                  disabled={effectiveParentId == null}
-                  disabledHint="선택한 종목의 대분류가 같아야 합니다. 다르면 대분류를 먼저 일괄적용하세요"
-                />
-              )}
-              {key === 'subSectorName' && (
-                <BulkAssignButton
-                  count={selectedStockCodes.size}
-                  options={bulkSubOptions}
-                  onAssign={handleBulkAssignSub}
-                  alignRight
-                  title="소분류 일괄 변경"
-                  orderMode={bulkOrderMode}
-                  disabled={effectiveMidId == null}
-                  disabledHint="선택한 종목의 중분류가 같아야 합니다. 다르면 중분류를 먼저 일괄적용하세요"
-                />
-              )}
-            </div>
-          )
-        })}
-      </div>
+      {bulkContainer && createPortal(
+        <div>
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">일괄 변경</h2>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs text-gray-400">
+            {selectedStockCodes.size > 0 ? `선택한 종목 ${selectedStockCodes.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택하세요'}
+          </p>
+          <div className="mt-4 grid max-w-[16rem] grid-cols-3 gap-2">
+            <BulkAssignButton count={selectedStockCodes.size} options={bulkParentOptions} onAssign={handleBulkAssignParent} label="대분류" title="대분류 일괄 변경" orderMode={bulkOrderMode} />
+            <BulkAssignButton
+              count={selectedStockCodes.size}
+              options={bulkMidOptions}
+              onAssign={handleBulkAssignMid}
+              label="중분류"
+              title="중분류 일괄 변경"
+              orderMode={bulkOrderMode}
+              disabled={effectiveParentId == null}
+              disabledHint="선택한 종목의 대분류가 같아야 합니다. 다르면 대분류를 먼저 일괄적용하세요"
+            />
+            <BulkAssignButton
+              count={selectedStockCodes.size}
+              options={bulkSubOptions}
+              onAssign={handleBulkAssignSub}
+              label="소분류"
+              title="소분류 일괄 변경"
+              orderMode={bulkOrderMode}
+              disabled={effectiveMidId == null}
+              disabledHint="선택한 종목의 중분류가 같아야 합니다. 다르면 중분류를 먼저 일괄적용하세요"
+            />
+          </div>
+        </div>,
+        bulkContainer,
+      )}
       {/* 표 둘레에 본문 줄과 같은 색의 바깥 테두리를 둔다 — 마켓트리·거래소 표와 같은 모양이다. */}
       <div className="relative min-h-0 flex-1 border border-slate-700">
         {isSelectionHintOpen && <SelectionHintBubble onClose={() => setIsSelectionHintOpen(false)} />}
