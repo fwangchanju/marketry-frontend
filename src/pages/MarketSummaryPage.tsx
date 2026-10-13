@@ -36,7 +36,7 @@ type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
 const NOTICE_TYPES = [
-  { type: 'NEW_LISTING', label: '신규 상장', badgeClass: 'bg-cyan-700', countLabel: '최근 3개월', countKey: 'recentNewListingCount' },
+  { type: 'NEW_LISTING', label: '신규 상장', badgeClass: 'bg-cyan-700', countLabel: '3개월 내 상장', countKey: 'recentNewListingCount' },
   { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeClass: 'bg-cyan-900', countLabel: '현재 정지중', countKey: 'currentSuspensionCount' },
 ] as const
 
@@ -233,7 +233,7 @@ export default function MarketSummaryPage() {
                               <span className="shrink-0 tabular-nums text-gray-300">{item.stockCode}</span>
                             </div>
                           ))}
-                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재 정지중")는 짝이 되는 종류 배지와 같은 색 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 글자만 비워 둔다. */}
+                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "3개월 내 상장", 거래 정지는 "현재 정지중")는 짝이 되는 종류 배지와 같은 색 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 글자만 비워 둔다. */}
                           <span className={rowClass}>
                             <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{countLabel}</span>
                           </span>
