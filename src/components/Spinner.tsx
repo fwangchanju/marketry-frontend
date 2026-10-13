@@ -59,7 +59,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   // 시간을 보여주는 로딩은 화면 한가운데에서 오래 보게 되므로 원을 아주 크게(작은 화면에서는 화면 짧은 변의 60%까지) 그린다.
   // 숫자와 로고가 같이 돌지 않도록 도는 테두리와 안쪽 내용을 따로 겹쳐 놓는다.
   // 안쪽은 [빈 칸 / 로고 / 문구·숫자]의 3줄 격자다. 위·아래 빈 칸이 같은 크기(1fr)라 로고가 원의 정확한 가운데에 오고,
-  // 숫자(경과 초)는 로고 아래 칸(로고 아래쪽 끝~원 아래쪽 끝)의 한가운데에 놓인다. 문구는 message를 줄 때만 숫자 위에 붙는다.
+  // 숫자(경과 초)는 로고 아래 칸(로고 아래쪽 끝~원 아래쪽 끝)의 한가운데보다 조금 위에 놓인다. 문구는 message를 줄 때만 숫자 위에 붙는다.
   // 설정창처럼 좁은 영역(showLogo만 준 경우)은 얇은 테두리·작은 글자로 같은 모양을 그린다.
   const isThin = compact || !showElapsed
   return (
@@ -68,10 +68,11 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
       <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
         <div />
         <MarketryLogo className={`h-auto ${message ? 'w-[72%]' : 'w-[84%]'}`} />
-        <div className="flex flex-col items-center justify-center gap-1">
+        {/* pb-[10cqw]로 숫자를 칸 한가운데보다 조금 위에 둔다. */}
+        <div className="flex flex-col items-center justify-center gap-1 pb-[10cqw]">
           {message && <span className="text-base text-gray-300">{message}</span>}
-          {/* 숫자 크기는 원 너비에 비례한다(원이 작아도 11px 밑으로는 내려가지 않는다). */}
-          <span className="min-h-[1em] text-[clamp(11px,7cqw,28px)] leading-none tabular-nums text-gray-300">{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
+          {/* 숫자 크기는 원 너비에 비례한다(원이 작아도 11px 밑으로는 내려가지 않는다). 큰 원(메인 영역)은 숫자가 두드러지지 않게 더 작게 그린다. */}
+          <span className={`min-h-[1em] leading-none tabular-nums text-gray-300 ${isThin ? 'text-[clamp(11px,7cqw,28px)]' : 'text-[clamp(11px,4.5cqw,20px)]'}`}>{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
         </div>
       </div>
     </div>
