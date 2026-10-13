@@ -318,7 +318,7 @@ export default function MarketSummaryPage() {
               <section key={frame.title} className="relative flex h-full min-w-[300px] flex-1 flex-col bg-black">
                 {/* 캡처 대상은 이 안쪽 칸이다 — 테두리와 안쪽 여백까지 이 칸에 두어 이미지에도 같이 찍힌다(지도·배지가 이미지 가장자리에 붙어 잘려 보이지 않게).
                     오른쪽 위 캡처 버튼은 칸 밖에 두어 이미지에 찍히지 않는다. */}
-                <div className="flex min-h-0 flex-1 flex-col bg-black px-1">
+                <div className="flex min-h-0 flex-1 flex-col bg-black p-1">
                   {/* 헤더 높이는 28px로 고정한다. 제목은 왼쪽에 붙이고, 강조색 바가 맨 앞에 온다. 카메라 버튼과 기준 시각은 두지 않는다(날짜·시각은 툴바에, 캡처는 상단 영역의 카메라 버튼에 있다). */}
                   <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-bold text-white">
                     <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
