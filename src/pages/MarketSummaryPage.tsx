@@ -36,8 +36,8 @@ type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
 const NOTICE_TYPES = [
-  { type: 'NEW_LISTING', label: '신규', badgeClass: 'bg-cyan-700' },
-  { type: 'TRADING_SUSPENSION', label: '정지', badgeClass: 'bg-amber-700' },
+  { type: 'NEW_LISTING', label: '신규', badgeColor: 'up' },
+  { type: 'TRADING_SUSPENSION', label: '정지', badgeColor: 'down' },
 ] as const
 
 export default function MarketSummaryPage() {
@@ -58,6 +58,11 @@ export default function MarketSummaryPage() {
   const { data: marketSummary } = useMarketSummary()
   // 안내는 지도와 따로 불러온다 — 실패하거나 느려도 홈 화면을 막지 않고, 못 받으면 틀만 비워 둔다.
   const { data: notices } = useMarketNotices()
+  // 안내 배지 색 — 등락률 색상 바의 양 끝(가장 큰 상승·가장 큰 하락)을 쓴다. 신규는 상승 끝(희망찬 빨강), 정지는 하락 끝(파랑).
+  const legendSwatches = settingsModalProps.legendSwatches
+  const swatchValue = (label: string) => Number.parseFloat(label)
+  const upColor = legendSwatches.reduce((a, b) => (swatchValue(b.label) > swatchValue(a.label) ? b : a), legendSwatches[0])?.color
+  const downColor = legendSwatches.reduce((a, b) => (swatchValue(b.label) < swatchValue(a.label) ? b : a), legendSwatches[0])?.color
   // 요약 조회의 지수는 항상 최근 값이다 — 지도가 지난 시각이나 기간을 보고 있거나 시간외 별도 등락률이면 맞지 않으므로 보여 주지 않는다(그룹 페이지도 일간 등락률일 때만 넣는다).
   const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily'
   const indexOf = (market: 'KOSPI' | 'KOSDAQ') => {
@@ -194,13 +199,13 @@ export default function MarketSummaryPage() {
                 title: '안내',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
-                    {NOTICE_TYPES.map(({ type, label, badgeClass }) => {
+                    {NOTICE_TYPES.map(({ type, label, badgeColor }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       return (
                         <section key={type} className="border-b border-gray-800 px-1 py-1.5">
                           {/* 배지는 안내가 없어도 항상 하나씩 두고, 없으면 옆에 "없음"을 적는다. */}
                           <div className="flex items-center gap-2 text-sm">
-                            <span className={`shrink-0 rounded-sm px-1.5 py-px text-[11.5px] font-extrabold text-white ${badgeClass}`}>{label}</span>
+                            <span className={"shrink-0 rounded-sm px-1.5 py-px text-[11.5px] font-extrabold text-white"} style={{ backgroundColor: badgeColor === 'up' ? upColor : downColor }}>{label}</span>
                             {items.length === 0 && <span className="text-gray-500">없음</span>}
                           </div>
                           {items.map(item => (
