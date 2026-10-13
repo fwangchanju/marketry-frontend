@@ -37,7 +37,7 @@ type DownloadStatus = 'idle' | 'downloading' | 'error'
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
 const NOTICE_TYPES = [
   { type: 'NEW_LISTING', label: '신규 상장', badgeClass: 'bg-red-400', countLabel: '최근 3개월', countKey: 'recentNewListingCount' },
-  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeClass: 'bg-blue-400', countLabel: '현재', countKey: 'currentSuspensionCount' },
+  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeClass: 'bg-blue-400', countLabel: '현재 정지중', countKey: 'currentSuspensionCount' },
 ] as const
 
 export default function MarketSummaryPage() {
@@ -217,9 +217,12 @@ export default function MarketSummaryPage() {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       return (
                         <section key={type} className="border-b border-gray-800 py-1.5">
-                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기다. 배지는 지수 줄의 "코스닥" 배지와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작해 위아래로 쌓인다. 배지는 안내가 없어도 항상 하나씩 두고, 그날 안내가 없으면 아래 줄에 "없음"을 적는다. */}
-                          <div className="flex items-center gap-1 pl-[calc(50%+4px)] text-[13px] font-medium leading-none">
-                            <span className={`shrink-0 rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
+                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기다. 두 줄이 위아래로 쌓인다. 배지는 안내가 없어도 항상 하나씩 두고, 그날 안내가 없으면 아래 줄에 "없음"을 적는다. */}
+                          <div className="flex items-center gap-1 text-[13px] font-medium leading-none">
+                            {/* 종류 배지는 왼쪽 끝, 이름표 배지는 지수 줄의 "코스닥" 배지와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작한다. */}
+                            <span className="w-[calc(50%+4px-0.25rem)] shrink-0">
+                              <span className={`inline-block rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
+                            </span>
                             {/* 종류 배지 오른쪽에 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재")를 지수 줄의 "코스피" 배지와 같은 청록 배지로 두고, 그 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"로 둔다. */}
                             <span className="shrink-0 rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
                             <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? '-'}</span>
