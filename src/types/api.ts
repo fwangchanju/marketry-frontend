@@ -51,6 +51,22 @@ export const MarketSummaryResponseSchema = z.object({
   marketOverviews: snapshotResponseSchema(MarketOverviewItemSchema),
 })
 
+// ─── Home notices (/map/notices) ───────────────────────────────────────────────
+
+// 그날 안내할 특수 종목 — 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목.
+const MarketNoticeItemSchema = z.object({
+  type: z.enum(['TRADING_SUSPENSION', 'NEW_LISTING']),
+  stockCode: z.string(),
+  stockName: z.string(),
+  market: MarketSchema,
+  baseDate: z.string(),
+})
+export type MarketNoticeItem = z.infer<typeof MarketNoticeItemSchema>
+export const MarketNoticeResponseSchema = z.object({
+  date: z.string(),
+  items: z.array(MarketNoticeItemSchema),
+})
+
 // ─── Market map ────────────────────────────────────────────────────────────────
 
 // 시가총액 구간(초대형주/대형주/...) 정의 — 코드 enum이 아니라 GET /map/value-tiers로 조회한다.

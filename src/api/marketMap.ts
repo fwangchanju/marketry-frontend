@@ -2,6 +2,7 @@ import client from './client'
 import {
   MarketMapResponseSchema,
   MarketMapScaleResponseSchema,
+  MarketNoticeResponseSchema,
   MarketTradingScheduleSchema,
   MarketValueTierListResponseSchema,
   StockCatalogItemSchema,
@@ -60,6 +61,10 @@ export const getTradingDayGap = (from: string, to: string) =>
 // 로그인 없이 읽는 종목 공통 정보(시장·NXT 거래 가능 여부·거래소 분류명) — 읽기 전용 시트가 쓴다.
 export const getStockCatalog = () =>
   client.get('/map/stock-catalog').then(r => z.array(StockCatalogItemSchema).parse(r.data))
+
+// 오늘 안내할 특수 종목(거래정지 제외 시작·신규 상장). 날짜를 주지 않으면 서버의 오늘이다.
+export const getMarketNotices = () =>
+  client.get('/map/notices').then(r => MarketNoticeResponseSchema.parse(r.data))
 
 export const getMarketValueTiers = () =>
   client.get('/map/value-tiers').then(r => MarketValueTierListResponseSchema.parse(r.data))
