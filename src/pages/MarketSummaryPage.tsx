@@ -212,13 +212,13 @@ export default function MarketSummaryPage() {
                 // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '안내',
                 body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
+                  <div className="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto">
                     {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       return (
-                        <section key={type} className="border-b border-gray-800 py-1.5">
-                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기다. 두 줄이 위아래로 쌓인다. 배지는 안내가 없어도 항상 하나씩 두고, 그날 안내가 없으면 아래 줄에 "없음"을 적는다. */}
-                          <div className="flex items-center gap-1 text-[13px] font-medium leading-none">
+                        <section key={type} className="shrink-0">
+                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기이고, 맨 위 줄은 다른 틀의 첫 줄(지수 줄·단계 배지 줄)과 같은 높이(24px)·같은 세로 위치다. 두 칸(신규 상장·거래 정지)이 위아래로 쌓이고 칸 사이는 8px이다. 배지는 안내가 없어도 항상 하나씩 두고, 그날 안내가 없으면 아래 줄에 "없음"을 적는다. */}
+                          <div className="flex h-6 items-center gap-1 text-[13px] font-medium leading-none">
                             {/* 종류 배지는 왼쪽 끝, 이름표 배지는 지수 줄의 "코스닥" 배지와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작한다. */}
                             <span className="w-[calc(50%+4px-0.25rem)] shrink-0">
                               <span className={`inline-block rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
@@ -228,10 +228,10 @@ export default function MarketSummaryPage() {
                             <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? '-'}</span>
                           </div>
                           {items.length === 0 && (
-                            <div className="mt-1 flex h-[22px] items-center rounded-sm bg-zinc-800 px-1 text-[13px] font-medium leading-none text-gray-300">없음</div>
+                            <div className="flex h-[22px] items-center rounded-sm bg-zinc-800 px-1 text-[13px] font-medium leading-none text-gray-300">없음</div>
                           )}
                           {items.map(item => (
-                            <div key={item.stockCode} className="mt-1 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-[13px] font-medium leading-none text-white">
+                            <div key={item.stockCode} className="flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-[13px] font-medium leading-none text-white">
                               <span className="min-w-0 truncate">{item.stockName}</span>
                               <span className="shrink-0 tabular-nums text-gray-300">{item.stockCode}</span>
                             </div>
