@@ -34,6 +34,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
         <div className="absolute inset-0 rounded-full border-[1.9cqw] border-gray-600" />
         <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
           <div />
+          <MarketryLogo className="h-auto w-[84%]" />
           {/* 로딩 화면(안내 문구 없음)과 같은 로고 크기·같은 칸·같은 아래 여백(14%)이라, "다시 시도" 버튼이 경과 시간 숫자가 있던 바로 그 자리에 놓인다. 오류 문구는 화면에 적지 않고(스크린 리더용으로만 role="alert"의 aria-label에 둔다),
               onRetry가 없는 곳만 버튼이 없어 아무것도 알 수 없으므로 그때는 문구를 보여 준다. */}
           <div className="flex flex-col items-center justify-center pb-[14cqw]">
