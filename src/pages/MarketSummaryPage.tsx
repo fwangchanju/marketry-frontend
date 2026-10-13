@@ -212,33 +212,34 @@ export default function MarketSummaryPage() {
                 // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '안내',
                 body: (
-                  // 세 칸 격자다: [종류 배지 칸(틀 폭의 절반)] [이름표 배지 칸(두 줄 중 더 긴 쪽 너비)] [건수 칸(남는 폭)]. 이름표 칸이 두 줄에 공유돼 더 짧은 "최근 3개월" 배지가 오른쪽만 늘어나 "현재 정지중" 배지와 같은 너비가 된다.
-                  // 이름표 배지는 "지수 줄의 코스닥 배지"와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작한다.
-                  <div className="grid min-h-0 w-full flex-1 grid-cols-[50%_max-content_minmax(0,1fr)] content-start gap-x-1 gap-y-1 overflow-y-auto text-[13px] font-medium leading-none">
-                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }, index) => {
+                  // 두 칸 격자다: [배지 칸(네 배지 중 가장 긴 쪽 너비)] [회색 칸(남는 폭)]. 신규 상장·최근 3개월·거래 정지·현재 정지중 네 줄을 세로 한 열로 쌓고,
+                  // 배지 칸이 네 줄에 공유돼 짧은 배지는 오른쪽만 늘어나 모두 같은 너비가 된다(글자는 왼쪽). 짝이 되는 두 배지(신규 상장·최근 3개월, 거래 정지·현재 정지중)는 같은 색이라 한눈에 짝이 보인다.
+                  <div className="grid min-h-0 w-full flex-1 grid-cols-[max-content_minmax(0,1fr)] content-start gap-x-1 gap-y-1 overflow-y-auto text-[13px] font-medium leading-none">
+                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
-                      // 맨 위 줄은 다른 틀의 첫 줄(지수 줄·단계 배지 줄)과 같은 높이(24px)·같은 세로 위치다. 두 종류 사이는 8px(격자 간격 4px + 4px)이다.
-                      const rowClass = `flex h-6 items-center gap-1 ${index > 0 ? 'mt-1' : ''}`
+                      const rowClass = 'flex h-6 items-center'
                       return (
                         <Fragment key={type}>
                           <span className={rowClass}>
-                            <span className={`shrink-0 rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
-                            {/* 그날 안내 종목이 없으면 종류 배지 바로 오른쪽(맨 처음 두었던 자리)에 "없음"을 적는다. */}
+                            <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
+                          </span>
+                          {/* 그날 안내 종목이 없으면 종류 배지 바로 오른쪽에 "없음"을 적는다. 있으면 칸은 비우고 종목 줄이 그 아래에 붙는다. */}
+                          <span className={rowClass}>
                             {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
                           </span>
-                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재 정지중")는 지수 줄의 "코스피"와 같은 청록 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 칸은 두고 글자만 비워 둔다. */}
-                          <span className={`${rowClass} whitespace-nowrap`}>
-                            <span className="w-full rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
-                          </span>
-                          <span className={rowClass}>
-                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? ''}</span>
-                          </span>
                           {items.map(item => (
-                            <div key={item.stockCode} className="col-span-3 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-white">
+                            <div key={item.stockCode} className="col-span-2 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-white">
                               <span className="min-w-0 truncate">{item.stockName}</span>
                               <span className="shrink-0 tabular-nums text-gray-300">{item.stockCode}</span>
                             </div>
                           ))}
+                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재 정지중")는 짝이 되는 종류 배지와 같은 색 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 글자만 비워 둔다. */}
+                          <span className={rowClass}>
+                            <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{countLabel}</span>
+                          </span>
+                          <span className={rowClass}>
+                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? ''}</span>
+                          </span>
                         </Fragment>
                       )
                     })}
