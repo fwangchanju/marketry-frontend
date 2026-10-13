@@ -319,11 +319,11 @@ export default function MarketSummaryPage() {
                 {/* 캡처 대상은 이 안쪽 칸이다 — 테두리와 안쪽 여백까지 이 칸에 두어 이미지에도 같이 찍힌다(지도·배지가 이미지 가장자리에 붙어 잘려 보이지 않게).
                     오른쪽 위 캡처 버튼은 칸 밖에 두어 이미지에 찍히지 않는다. */}
                 <div className="flex min-h-0 flex-1 flex-col bg-black p-1">
-                  {/* 헤더 높이는 28px로 고정한다. 제목은 가운데에 두고, 흰색 바와 제목을 직사각형 청록 배지(분류 배지와 같은 cyan-700) 하나에 담는다. 카메라 버튼과 기준 시각은 두지 않는다(날짜·시각은 툴바에, 캡처는 상단 영역의 카메라 버튼에 있다). */}
+                  {/* 헤더 높이는 28px로 고정한다. 제목은 가운데에 두고, 검정 바와 제목을 직사각형 흰색 배지 하나에 담는다(배지 바탕 흰색, 바·글자 검정). 카메라 버튼과 기준 시각은 두지 않는다(날짜·시각은 툴바에, 캡처는 상단 영역의 카메라 버튼에 있다). */}
                   <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-center text-base font-bold text-white">
                     {/* 흰 바를 품은 직사각형 청록 배지 — 바 양옆에 여백(왼쪽 8px·바와 제목 사이 8px)을 둬서 바가 배지 가장자리에 붙지 않는다. */}
-                    <span className="inline-flex items-center gap-2 bg-cyan-700 py-0.5 pl-2 pr-3 leading-tight text-white">
-                      <span aria-hidden="true" className="inline-block h-[1em] w-1 shrink-0 bg-white" />
+                    <span className="inline-flex items-center gap-2 bg-white py-0.5 pl-2 pr-3 leading-tight text-black">
+                      <span aria-hidden="true" className="inline-block h-[1em] w-1 shrink-0 bg-black" />
                       {frame.title}
                     </span>
                   </h2>
