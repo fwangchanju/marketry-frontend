@@ -8,9 +8,9 @@ interface Props {
   showElapsed?: boolean
   // 설정창처럼 좁은 영역에서는 얇은 원 안에 로고와 경과 시간(숫자)만 표시한다.
   showLogo?: boolean
-  // 데이터를 불러오지 못했을 때 — 로딩 화면과 같은 자리·크기로 로고 아래에 이 문구를 보여준다(원은 돌지 않고 시간도 없다).
+  // 데이터를 불러오지 못했을 때 — 로딩 화면과 같은 자리·크기의 원(돌지 않는다)을 그린다. 이 문구는 onRetry가 없을 때만 화면에 적고, 버튼이 있으면 스크린 리더용 aria-label에만 둔다.
   errorMessage?: string
-  // 오류 화면에서 문구 아래에 "다시 시도" 버튼을 보여 준다 — 서버가 회복돼도 화면이 저절로 다시 불러오지는 않으므로 직접 누르게 한다.
+  // 오류 화면에서 경과 시간 숫자가 있던 자리에 "다시 시도" 버튼을 보여 준다 — 서버가 회복돼도 화면이 저절로 다시 불러오지는 않으므로 직접 누르게 한다.
   onRetry?: () => void
   // showElapsed 로딩에서 로고 위쪽에 따로 보여 줄 안내 문구 — 없으면 문구 없이 로고와 경과 시간(숫자)만 보인다.
   message?: string
@@ -30,27 +30,26 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   // 달력처럼 작은 원도 같은 비율로 줄어 로고·문구·숫자·버튼의 배치가 어느 크기에서나 같다.
   if (errorMessage) {
     return (
-      <div role="alert" className={`@container relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
+      <div role="alert" aria-label={errorMessage} className={`@container relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
         <div className="absolute inset-0 rounded-full border-[1.9cqw] border-gray-600" />
         <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
           <div />
-          {/* 로딩 화면(안내 문구 없음)과 같은 로고 크기·같은 칸·같은 아래 여백이라, 오류 문구가 경과 시간 숫자가 있던 바로 그 자리에 놓인다. */}
           <MarketryLogo className="h-auto w-[84%]" />
-          {/* 문구는 로딩 화면의 경과 시간 숫자와 같은 칸·같은 아래 여백(14%)이라 같은 높이에 온다. */}
-          <div className="flex flex-col items-center justify-center gap-1 pb-[14cqw]">
-            <span className="relative text-center text-[5.5cqw] leading-tight text-white">
-              {errorMessage}
-              {/* 버튼은 문구 아래에 띄워 둔다 — 문구가 숫자 자리에서 밀리지 않게 한다. 색은 설정창의 "적용" 버튼·확인 팝업의 확인 버튼과 같다(청록 채움 + 흰 글자, 마우스를 올리면 한 단계 밝아짐). */}
-              {onRetry && (
-                <button
-                  type="button"
-                  onClick={onRetry}
-                  className="absolute left-1/2 top-full mt-[5cqw] -translate-x-1/2 whitespace-nowrap rounded border-0 bg-cyan-700 px-[2.6cqw] py-[0.8cqw] text-[4.25cqw] font-bold text-white transition-colors hover:bg-cyan-600"
-                >
-                  다시 시도
-                </button>
-              )}
-            </span>
+          {/* 로딩 화면(안내 문구 없음)과 같은 로고 크기·같은 칸·같은 아래 여백(14%)이라, "다시 시도" 버튼이 경과 시간 숫자가 있던 바로 그 자리에 놓인다. 오류 문구는 화면에 적지 않고(스크린 리더용으로만 role="alert"의 aria-label에 둔다),
+              onRetry가 없는 곳만 버튼이 없어 아무것도 알 수 없으므로 그때는 문구를 보여 준다. */}
+          <div className="flex flex-col items-center justify-center pb-[14cqw]">
+            {onRetry ? (
+              // 색은 설정창의 "적용" 버튼·확인 팝업의 확인 버튼과 같다(청록 채움 + 흰 글자, 마우스를 올리면 한 단계 밝아짐).
+              <button
+                type="button"
+                onClick={onRetry}
+                className="whitespace-nowrap rounded border-0 bg-cyan-700 px-[2.6cqw] py-[0.8cqw] text-[4.25cqw] font-bold text-white transition-colors hover:bg-cyan-600"
+              >
+                다시 시도
+              </button>
+            ) : (
+              <span className="text-center text-[5.5cqw] leading-tight text-white">{errorMessage}</span>
+            )}
           </div>
         </div>
       </div>
