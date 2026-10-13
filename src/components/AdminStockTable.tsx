@@ -1674,7 +1674,12 @@ export default function AdminStockTable({
         </div>,
         bulkContainer,
       )}
-      {/* 표 둘레에 본문 줄과 같은 색의 바깥 테두리를 둔다 — 마켓트리·거래소 표와 같은 모양이다. */}
+      {/* 종목 목록을 처음 받는 중이거나 받지 못했으면 표 대신 본문 한가운데에 원을 보여 준다(마켓트리·거래소 표와 같다). 정렬 중의 원은 아래 표 안에 그대로 있다. */}
+      {isLoading || isError ? (
+        <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
+          {isLoading ? <Spinner showElapsed /> : <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} />}
+        </div>
+      ) : (
       <div className="relative min-h-0 flex-1 border border-slate-700">
         {isSelectionHintOpen && <SelectionHintBubble onClose={() => setIsSelectionHintOpen(false)} />}
         <div ref={scrollContainerRef} className="relative h-full overflow-auto scrollbar-thin">
@@ -1758,16 +1763,12 @@ export default function AdminStockTable({
             </tr>
           </thead>
           <tbody>
-            {isPending || isLoading || isError ? (
+            {isPending ? (
               <tr>
                 <td colSpan={columns.length + 1} className="p-8">
-                  {/* 지도·그룹 페이지처럼 크게 가운데에 보여준다. 정렬 중이거나 목록을 받는 중이면 로딩 원, 받지 못했으면 오류 원이다. */}
+                  {/* 정렬을 바꾸는 동안의 로딩 원 — 지도·그룹 페이지처럼 크게 가운데에 보여준다. */}
                   <div className="flex h-[min(32rem,60vh)] items-center justify-center">
-                    {isError && !isLoading && !isPending ? (
-                      <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} />
-                    ) : (
-                      <Spinner showElapsed />
-                    )}
+                    <Spinner showElapsed />
                   </div>
                 </td>
               </tr>
@@ -1816,9 +1817,10 @@ export default function AdminStockTable({
           </tbody>
           </table>
           {/* 보여줄 종목이 없으면 거래소·MARKETRY 표와 같은 안내 글을 가운데에 보여준다. */}
-          {!isPending && !isLoading && !isError && sorted.length === 0 && <EmptyMessage message={items.length === 0 ? EMPTY_DATA_MESSAGE : EMPTY_SEARCH_MESSAGE} />}
+          {!isPending && sorted.length === 0 && <EmptyMessage message={items.length === 0 ? EMPTY_DATA_MESSAGE : EMPTY_SEARCH_MESSAGE} />}
         </div>
       </div>
+      )}
     </div>
   )
 }
