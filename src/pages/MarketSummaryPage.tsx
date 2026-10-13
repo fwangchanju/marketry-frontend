@@ -136,7 +136,7 @@ export default function MarketSummaryPage() {
   const downloadLabel = downloadStatus === 'error' ? '다운로드 실패' : '다운로드'
   // 세 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
   // 시장 요약 지도와 준비 중 박스 위쪽에 코스피·코스닥 지수 배지를 둔다(그룹 등락률 박스는 지금 보여 주는 업종 분류 단계만 알려 주는 배지).
-  const indexLine = <MarketIndexLine indexes={[{ label: '코스피', ...indexOf('KOSPI') }, { label: '코스닥', ...indexOf('KOSDAQ') }]} />
+  const indexLine = <MarketIndexLine indexes={[{ label: '코스피', ...indexOf('KOSPI') }, { label: '코스닥', badgeClass: 'bg-cyan-900', ...indexOf('KOSDAQ') }]} />
   const snapshotClock = data?.snapshotTime ? (
     <span className="ml-auto pr-1 text-[14px] font-medium tabular-nums text-gray-400">
       {toMarketMapSnapshotDateLabel(data.snapshotTime)} {toMarketMapSnapshotTimeOnlyLabel(data.snapshotTime)}
