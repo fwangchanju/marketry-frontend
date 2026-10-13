@@ -226,14 +226,12 @@ export default function MarketSummaryPage() {
                             {/* 그날 안내 종목이 없으면 종류 배지 바로 오른쪽(맨 처음 두었던 자리)에 "없음"을 적는다. */}
                             {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
                           </span>
-                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재 정지중")는 지수 줄의 "코스피"와 같은 청록 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 칸 없이 비워 둔다. */}
+                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재 정지중")는 지수 줄의 "코스피"와 같은 청록 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 칸은 두고 글자만 비워 둔다. */}
                           <span className={`${rowClass} whitespace-nowrap`}>
                             <span className="w-full rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
                           </span>
                           <span className={rowClass}>
-                            {notices?.[countKey] != null && (
-                              <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices[countKey]}</span>
-                            )}
+                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? ''}</span>
                           </span>
                           {items.map(item => (
                             <div key={item.stockCode} className="col-span-3 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-white">
