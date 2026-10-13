@@ -1,5 +1,5 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
@@ -54,6 +54,8 @@ import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/ut
 import { limitDepth, flattenAllItems, type FilteredMarketMapSectorNode } from '@/hooks/useFilteredMarketMapTree'
 import type { MarketQuery, MarketMapSectorNode, MarketMapItem } from '@/types/api'
 
+// 업종 트리 전체의 종목 수(제외 업종도 포함한다).
+const countStocks = (nodes: MarketMapSectorNode[]): number => nodes.reduce((sum, node) => sum + node.items.length + countStocks(node.children), 0)
 const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'ALL STOCK' }
 // 종목·업종 헤더와 같은 방식 — 올리면 흰색 35% 덮개가 씌워진다(index.css의 hover와 같은 불투명도).
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-white transition-colors hover:bg-white/35'
@@ -228,6 +230,8 @@ export default function MapPage() {
   const captureRef = useRef<HTMLDivElement>(null)
 
   const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth, reset } = useMarketMapDrilldown(filteredRootNodes)
+  // NXT 단독 시간대 안내창에 보여 줄 종목 수 — 서버가 준 NXT 종목 전체(분모)다. 제외 업종·표시 설정을 적용하기 전의 수라서 지도에 그려지는 수와 다를 수 있다.
+  const nxtStockTotal = useMemo(() => countStocks(rootNodes), [rootNodes])
 
   // "업종 단계" 뎁스 제한은 진짜 루트(대분류) 기준 절대값이다 — 설정이 중분류까지면 어디로 드릴다운해도 중분류까지만 보인다.
   // 드릴다운해서 대분류 하나로 들어가면(path.length = 1) 이미 한 단계를 내려온 것이라, 그 안에서는 남은 단계(설정값 - path.length)만 보인다.
@@ -581,24 +585,30 @@ export default function MapPage() {
               {/* NXT 단독 시간대 공지 — 그 시간대에만 보여주는 알림이다. 닫을 수 있고, 시간대가 끝났다가 다시 오면 또 나온다. */}
               {/* 지도가 그려진 뒤에만 보인다 — 로딩 중이거나 불러오지 못했을 때는 가운데 로딩 원 위에 겹쳐 뜨지 않게 한다. */}
               {nxtOnly && nxtOnlyWindow && !isNxtNoticeDismissed && !isLoading && !isError && (
-                // 색은 설정창의 말풍선과 같고, 지도 한가운데에 설정창 헤더(text-lg)와 같은 크기의 글자로 보여준다.
-                <div
-                  role="status"
-                  className={`${HINT_BUBBLE_COLOR_CLASS} absolute left-1/2 top-1/2 z-30 flex max-w-[calc(100%-1rem)] -translate-x-1/2 -translate-y-1/2 items-start gap-4 px-5 py-3 text-lg leading-snug`}
-                >
-                  <span>
-                    <b>{nxtOnlyWindow.label}</b>
-                    <br />
-                    NXT 종목만 표시 중
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsNxtNoticeDismissed(true)}
-                    aria-label="안내 닫기"
-                    className="shrink-0 border-0 bg-transparent p-0 text-gray-500 hover:text-black"
+                // 확인창(AppDialogHost)과 같은 양식 — 어두운 배경 위 가운데에 크림색 창, 굵은 제목, 본문, 오른쪽 아래 청록 닫기 버튼.
+                // 어두운 배경은 지도만 덮고 클릭을 막지 않는다(확인창과 달리 창 밖에서도 지도를 계속 쓸 수 있다).
+                <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/70 p-4">
+                  <section
+                    role="status"
+                    aria-labelledby="nxt-notice-title"
+                    className={`${HINT_BUBBLE_COLOR_CLASS} pointer-events-auto w-full max-w-sm p-5`}
                   >
-                    ✕
-                  </button>
+                    <h2 id="nxt-notice-title" className="text-base font-bold text-black">{nxtOnlyWindow.label}</h2>
+                    <p className="mt-3 break-keep text-sm leading-relaxed text-black">
+                      NXT 종목만 표시 중 ({toCount(nxtStockTotal)}종목)
+                      <br />
+                      <span className="text-gray-600">설정에 따라 달라질 수 있습니다.</span>
+                    </p>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsNxtNoticeDismissed(true)}
+                        className="rounded-lg border-0 bg-cyan-700 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-cyan-600"
+                      >
+                        닫기
+                      </button>
+                    </div>
+                  </section>
                 </div>
               )}
               {path.length > 0 && (
