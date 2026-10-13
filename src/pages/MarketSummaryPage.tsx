@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -212,30 +212,34 @@ export default function MarketSummaryPage() {
                 // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '안내',
                 body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto">
-                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }) => {
+                  // 세 칸 격자다: [종류 배지 칸(틀 폭의 절반)] [이름표 배지 칸(두 줄 중 더 긴 쪽 너비)] [건수 칸(남는 폭)]. 이름표 칸이 두 줄에 공유돼 더 짧은 "최근 3개월" 배지가 오른쪽만 늘어나 "현재 정지중" 배지와 같은 너비가 된다.
+                  // 이름표 배지는 "지수 줄의 코스닥 배지"와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작한다.
+                  <div className="grid min-h-0 w-full flex-1 grid-cols-[50%_max-content_minmax(0,1fr)] content-start gap-x-1 gap-y-1 overflow-y-auto text-[13px] font-medium leading-none">
+                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }, index) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
+                      // 맨 위 줄은 다른 틀의 첫 줄(지수 줄·단계 배지 줄)과 같은 높이(24px)·같은 세로 위치다. 두 종류 사이는 8px(격자 간격 4px + 4px)이다.
+                      const rowClass = `flex h-6 items-center gap-1 ${index > 0 ? 'mt-1' : ''}`
                       return (
-                        <section key={type} className="shrink-0">
-                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기이고, 맨 위 줄은 다른 틀의 첫 줄(지수 줄·단계 배지 줄)과 같은 높이(24px)·같은 세로 위치다. 두 칸(신규 상장·거래 정지)이 위아래로 쌓이고 칸 사이는 8px이다. 두 줄은 그날 안내가 없어도 항상 있고, 그날 안내 종목이 없으면 종류 배지 오른쪽에 "없음"을 적고, 있으면 그 줄 아래에 종목 줄이 붙는다. */}
-                          <div className="flex h-6 items-center gap-1 text-[13px] font-medium leading-none">
-                            {/* 종류 배지는 왼쪽 끝, 이름표 배지는 지수 줄의 "코스닥" 배지와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작한다. */}
-                            <span className="flex w-[calc(50%+4px-0.25rem)] shrink-0 items-center gap-1">
-                              <span className={`shrink-0 rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
-                              {/* 그날 안내 종목이 없으면 종류 배지 바로 오른쪽(맨 처음 두었던 자리)에 "없음"을 적는다. */}
-                              {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
-                            </span>
-                            {/* 종류 배지 오른쪽에 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재")를 지수 줄의 "코스피" 배지와 같은 청록 배지로 두고, 그 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"로 둔다. */}
-                            <span className="min-w-[78px] shrink-0 whitespace-nowrap rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
+                        <Fragment key={type}>
+                          <span className={rowClass}>
+                            <span className={`shrink-0 rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
+                            {/* 그날 안내 종목이 없으면 종류 배지 바로 오른쪽(맨 처음 두었던 자리)에 "없음"을 적는다. */}
+                            {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
+                          </span>
+                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재 정지중")는 지수 줄의 "코스피"와 같은 청록 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"로 둔다. */}
+                          <span className={`${rowClass} whitespace-nowrap`}>
+                            <span className="w-full rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
+                          </span>
+                          <span className={rowClass}>
                             <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? '-'}</span>
-                          </div>
+                          </span>
                           {items.map(item => (
-                            <div key={item.stockCode} className="flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-[13px] font-medium leading-none text-white">
+                            <div key={item.stockCode} className="col-span-3 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-white">
                               <span className="min-w-0 truncate">{item.stockName}</span>
                               <span className="shrink-0 tabular-nums text-gray-300">{item.stockCode}</span>
                             </div>
                           ))}
-                        </section>
+                        </Fragment>
                       )
                     })}
                   </div>
