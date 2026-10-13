@@ -239,21 +239,22 @@ export default function MarketSummaryPage() {
               <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
             </div>
           </Toolbar>
-          {/* 본문 영역 — 지도·그룹·커스텀 페이지와 같은 고정 영역(좌우 7px·위 16px·아래 19.5px 여백)이다. 로딩·오류 원은 이 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
-          <div className="flex min-h-0 flex-1 px-[7px] pt-4 pb-[19.5px]">
+          {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다(좌우 7px). 로딩·오류 원은 지도·그룹·커스텀 페이지와 같은 위 16px·아래 19.5px 여백 안에서 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
+          <div className="flex min-h-0 flex-1 px-[7px]">
             {isLoading ? (
-              <div className="flex flex-1 items-center justify-center">
+              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
                 <Spinner showElapsed />
               </div>
             ) : isError ? (
-              <div className="flex flex-1 items-center justify-center">
+              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
                 <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
               </div>
             ) : (
-            /* 전체 프레임 — 본문 영역을 채우고 세 틀(스마트폰 화면 가로 360px)을 가운데에 가둔다. 창이 작으면 이 프레임 안에서만 스크롤된다. */
-            <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-auto border border-gray-700 bg-black p-2">
+            /* 세 틀이 툴바 바로 아래(2px)부터 맨 아래 줄 바로 위(4px)까지 영역 전체를 나눠 채운다 — 외곽선·안쪽 여백은 두지 않아, 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
+            <div className="flex min-h-0 min-w-0 flex-1 pt-[2px] pb-1">
+            <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto bg-black">
             {/* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */}
-            <div ref={allFramesRef} className="flex h-[min(100%,780px)] shrink-0 gap-6 bg-black">
+            <div ref={allFramesRef} className="flex min-h-0 min-w-full flex-1 divide-x divide-gray-700 bg-black">
             {[
               {
                 title: '시장 요약',
@@ -320,10 +321,10 @@ export default function MarketSummaryPage() {
                 ),
               },
             ].map(frame => (
-              <section key={frame.title} className="relative flex h-full w-[360px] shrink-0 flex-col bg-black">
+              <section key={frame.title} className="relative flex h-full min-w-[300px] flex-1 flex-col bg-black">
                 {/* 캡처 대상은 이 안쪽 칸이다 — 테두리와 안쪽 여백까지 이 칸에 두어 이미지에도 같이 찍힌다(지도·배지가 이미지 가장자리에 붙어 잘려 보이지 않게).
                     오른쪽 위 캡처 버튼은 칸 밖에 두어 이미지에 찍히지 않는다. */}
-                <div ref={element => { frameRefs.current[frame.title] = element }} className="flex min-h-0 flex-1 flex-col border border-gray-700 bg-black p-2">
+                <div ref={element => { frameRefs.current[frame.title] = element }} className="flex min-h-0 flex-1 flex-col bg-black p-2">
                   {/* 헤더 높이를 28px(캡처 버튼 높이)로 고정해서 버튼이 헤더 높이의 가운데에 오게 한다. 제목은 왼쪽에 붙이고, 강조색 바가 맨 앞에 온다. */}
                   <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-bold text-white">
                     <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
@@ -350,6 +351,7 @@ export default function MarketSummaryPage() {
                 )}
               </section>
             ))}
+            </div>
             </div>
             </div>
             )}
