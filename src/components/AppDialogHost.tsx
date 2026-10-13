@@ -49,7 +49,7 @@ export default function AppDialogHost() {
         <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-black">{dialog.message}</p>
         <div className="mt-6 flex justify-end gap-2">
           {dialog.kind === 'confirm' && (
-            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-zinc-300 px-4 py-2 text-sm text-zinc-800 transition-colors hover:bg-zinc-400">
+            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-[var(--panel-gray)] px-4 py-2 text-sm text-zinc-800 transition-colors hover:bg-zinc-400">
               취소
             </button>
           )}

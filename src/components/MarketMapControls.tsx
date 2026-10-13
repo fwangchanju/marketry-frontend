@@ -1,86 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import type { MarketQuery } from '@/types/api'
 import type { ChangeRateChoice } from '@/api/marketMap'
 import { accentColor } from '@/utils/accentPalette'
 import { LONGEST_TRADING_SESSION, type TradingSession } from '@/utils/tradingWindow'
 import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
-
-const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'ALL STOCK' }
-// 순서는 KOSPI / KOSDAQ / ALL STOCK이다(지도·그룹 화면 공통).
-const MARKET_OPTIONS: { market: MarketQuery; label: string }[] = [
-  { market: 'KOSPI', label: 'KOSPI' },
-  { market: 'KOSDAQ', label: 'KOSDAQ' },
-  { market: 'ALL_STOCK', label: 'ALL STOCK' },
-]
-
-export function MarketDropdown({
-  market,
-  onSelect,
-}: {
-  market: MarketQuery
-  onSelect: (market: MarketQuery) => void
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!isOpen) return
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false)
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false)
-    }
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen])
-
-  return (
-    <div ref={rootRef} className="relative z-40 flex items-center font-roboto-latin tabular-nums">
-      <button
-        type="button"
-        role="combobox"
-        aria-label="시장 선택"
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        onClick={() => setIsOpen(open => !open)}
-        className="inline-flex h-6 w-[7.5rem] shrink-0 items-center justify-between gap-1 rounded-lg border-0 bg-zinc-600 px-2 text-sm font-bold text-white transition-colors hover:bg-zinc-500"
-      >
-        <span className="min-w-0 flex-1 truncate text-left">{MARKET_LABEL[market]}</span>
-        <svg aria-hidden="true" viewBox="0 0 16 16" className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m4 6 4 4 4-4" />
-        </svg>
-      </button>
-      {isOpen && (
-        <div className="absolute left-0 top-full z-50 w-[7.5rem] rounded-md bg-[#202020] p-2 text-sm text-white shadow-md">
-          <div role="listbox" aria-label="시장 목록">
-            {MARKET_OPTIONS.map(option => (
-              <button
-                key={option.market}
-                type="button"
-                role="option"
-                aria-selected={market === option.market}
-                onClick={() => {
-                  onSelect(option.market)
-                  setIsOpen(false)
-                }}
-                className={`block w-full border-0 bg-transparent px-2.5 py-2 text-left ${market === option.market ? 'font-semibold text-[var(--accent)]' : 'text-gray-300 hover:text-white'}`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 // 시간대 말머리 앞 점의 색 — 설정창 4-1) 강조 색상 기준으로 프리 마켓은 연노랑,
 // 메인 마켓은 형광, 애프터 마켓은 연보라, 마켓 종료은 연회색이다.

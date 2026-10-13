@@ -12,7 +12,7 @@ import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 const BUTTON_CLASS =
-  'h-6 w-full whitespace-nowrap rounded-md border-0 bg-gray-300 px-2 text-xs font-medium text-[#ff4d2e] hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50'
+  'h-6 w-full whitespace-nowrap rounded-md border-0 bg-[var(--panel-gray)] px-2 text-xs font-medium text-[#ff4d2e] hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50'
 
 // "MARKETRY 2026-10-08 14:30"에서 앞의 이름을 뺀 날짜·시간만 — 안내 문구에서 이름이 겹쳐 보이지 않게 한다.
 function toDateTimeLabel(label: string) {

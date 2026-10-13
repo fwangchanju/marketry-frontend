@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
@@ -11,7 +11,7 @@ import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsSidebar from '@/components/SettingsSidebar'
 import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
-import ModeDropdown from '@/components/ModeDropdown'
+import ToolbarModeText from '@/components/ToolbarModeText'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
 import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
@@ -34,7 +34,6 @@ type DownloadStatus = 'idle' | 'downloading' | 'error'
 // 팝업을 띄우고, 성공하면 이 경로로 돌아온다.
 export default function CustomPage() {
   const { pathname } = useLocation()
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   // /custom/sector는 업종 화면이고, /custom/stock은 종목 화면이다.
   const mode = pathname === '/custom/stock' || searchParams.get('mode') === 'stock' ? 'stock' : 'sector'
@@ -243,10 +242,7 @@ export default function CustomPage() {
           >
             <div className="mt-[5.25px] mb-[5.25px] flex h-7 w-full shrink-0 items-center justify-between bg-black/70 pl-[7px] pr-[7px] text-sm font-bold text-white">
               <div className="flex h-full shrink-0 items-center gap-2">
-                <ModeDropdown
-                  mode={mode === 'stock' ? 'stock' : 'category'}
-                  onSelect={path => navigate(path)}
-                />
+                <ToolbarModeText label={mode === 'stock' ? 'STOCK' : 'SECTOR'} />
               </div>
               {/* 종목수/실행취소·다시실행/필터/엑셀 등 — AdminStockTable이 이 노드로 포털링해서 그린다. */}
               {!isReadOnlySheet && mode === 'stock' && <div ref={setToolbarContainer} className="ml-2 flex h-full min-h-0 min-w-0 flex-1 items-center" />}
