@@ -92,7 +92,7 @@ interface MonthGridProps {
   bandEnd: string | null
   // 누른 날짜와, 그날 종가 지도의 스냅샷 시각(없는 날이면 undefined).
   onPick: (date: string, snapshotTime: string | undefined) => void
-  // false면 불러오는 중 원을 이 달력이 그리지 않는다 — 두 달을 나란히 둘 때 바깥에서 원 하나만 가운데에 그린다.
+  // false면 불러오는 중·오류 원을 이 달력이 그리지 않는다 — 두 달을 나란히 둘 때 바깥에서 원 하나만 가운데에 그린다.
   showSpinner?: boolean
 }
 
@@ -162,6 +162,11 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
           {isLoading && showSpinner && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639] pt-1">
               <Spinner showElapsed compact className="h-36 w-36" />
+            </div>
+          )}
+          {isError && !isLoading && showSpinner && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639] pt-1">
+              <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetch()} className="h-44 w-44" />
             </div>
           )}
           <div className="grid grid-cols-7 text-center font-roboto-latin tabular-nums" aria-busy={isLoading}>
@@ -265,14 +270,6 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
           </div>
         </>
       )}
-      {isError && (
-        <p className="mt-1 flex items-center gap-1.5 text-[13px] text-gray-400">
-          불러오지 못했습니다
-          <button type="button" onClick={() => void refetch()} className="border-0 bg-transparent p-0 text-[var(--accent)] hover:underline">
-            다시 시도
-          </button>
-        </p>
-      )}
     </div>
   )
 }
@@ -359,9 +356,15 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
 
   const isRangeCalendar = isRangeMode && onSelectRange !== undefined
   // 기간 달력은 두 달을 나란히 두므로 달마다 원이 돌지 않게 여기서 로딩을 합쳐 원 하나만 가운데에 그린다(달력 안의 조회와 같은 키라 요청은 늘지 않는다).
-  const { isLoading: isRangeLeftLoading } = useMarketMapSnapshotDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen && isRangeCalendar, retry: 1 })
-  const { isLoading: isRangeRightLoading } = useMarketMapSnapshotDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen && isRangeCalendar, retry: 1 })
-  const isRangeLoading = isRangeLeftLoading || isRangeRightLoading
+  const rangeLeftDays = useMarketMapSnapshotDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen && isRangeCalendar, retry: 1 })
+  const rangeRightDays = useMarketMapSnapshotDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen && isRangeCalendar, retry: 1 })
+  const isRangeLoading = rangeLeftDays.isLoading || rangeRightDays.isLoading
+  const isRangeError = !isRangeLoading && (rangeLeftDays.isError || rangeRightDays.isError)
+  // 오류 화면의 "다시 시도"는 실패한 달만 다시 받는다.
+  const retryRange = () => {
+    if (rangeLeftDays.isError) void rangeLeftDays.refetch()
+    if (rangeRightDays.isError) void rangeRightDays.refetch()
+  }
   // 고른 기간의 거래일 수 — 시작일을 포함해 종료일까지 센다(시작일 하루 전 종가가 기준이라 시작일 하루도 기간에 든다). 시작일·종료일을 둘 다 고르기 전이나 아직 못 받았으면 비운다.
   const { data: rangeGap } = useTradingDayGap(isRangeCalendar ? (draftStart?.date ?? null) : null, isRangeCalendar ? (draftEnd?.date ?? null) : null)
   const rangeDayCount = rangeGap !== undefined && draftStart !== null && draftEnd !== null ? `${rangeGap + 1}거래일` : null
@@ -520,6 +523,12 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   // 월 이름·요일 줄(약 60px) 아래의 날짜 영역 전체를 덮고 그 가운데에 원 하나를 둔다.
                   <div className="absolute inset-x-0 bottom-0 top-[3.75rem] z-10 flex items-center justify-center bg-[#363639]">
                     <Spinner showElapsed compact className="h-36 w-36" />
+                  </div>
+                )}
+                {isRangeError && (
+                  // 두 달 중 하나라도 못 받으면 달마다 문구를 따로 두지 않고, 로딩 원과 같은 자리·같은 모양으로 하나만 둔다.
+                  <div className="absolute inset-x-0 bottom-0 top-[3.75rem] z-10 flex items-center justify-center bg-[#363639]">
+                    <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className="h-44 w-44" />
                   </div>
                 )}
                 <MonthGrid

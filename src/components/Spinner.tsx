@@ -14,7 +14,7 @@ interface Props {
   onRetry?: () => void
   // showElapsed 로딩에서 로고 위쪽에 따로 보여 줄 안내 문구 — 없으면 문구 없이 로고와 경과 시간(숫자)만 보인다.
   message?: string
-  // showElapsed 로딩을 좁은 영역(캘린더 등)에 맞춰 얇은 테두리·작은 글자로 그린다.
+  // 로딩·오류를 좁은 영역(캘린더 등)에 맞춰 얇은 테두리·작은 글자로 그린다.
   compact?: boolean
 }
 
@@ -31,12 +31,13 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   if (errorMessage) {
     return (
       <div role="alert" className={`@container relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
-        <div className="absolute inset-0 rounded-full border-[6px] border-gray-600" />
+        <div className={`absolute inset-0 rounded-full border-gray-600 ${compact ? 'border-[3px]' : 'border-[6px]'}`} />
         <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
           <div />
-          {/* 로딩 화면(안내 문구 없음)과 같은 로고 크기·같은 칸·같은 아래 여백이라, 오류 문구가 경과 시간 숫자가 있던 바로 그 자리에 놓인다. */}
-          <MarketryLogo className="h-auto w-[84%]" />
-          <div className="flex flex-col items-center justify-center gap-1 pb-[10cqw]">
+          {/* 로딩 화면(안내 문구 없음)과 같은 로고 크기·같은 칸·같은 아래 여백이라, 오류 문구가 경과 시간 숫자가 있던 바로 그 자리에 놓인다.
+              compact(달력)는 원이 작아 문구와 버튼이 들어갈 자리를 더 주려고 로고를 줄이고 버튼을 작게 그린다. */}
+          <MarketryLogo className={`h-auto ${compact ? 'w-[60%]' : 'w-[84%]'}`} />
+          <div className={`flex flex-col items-center justify-center gap-1 ${compact ? 'pb-[8cqw]' : 'pb-[10cqw]'}`}>
             {/* 문구 크기도 경과 시간 숫자와 같이 원 너비에 비례한다(큰 원 기준 5.5%, 11~24px). */}
             <span className="relative text-center text-[clamp(11px,5.5cqw,24px)] leading-tight text-gray-300">
               {errorMessage}
@@ -45,7 +46,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded border border-[var(--brand)] bg-transparent px-4 py-1.5 text-sm text-[var(--brand)] transition-colors hover:bg-[var(--brand)] hover:text-black"
+                  className={`absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded border border-[var(--brand)] bg-transparent text-[var(--brand)] transition-colors hover:bg-[var(--brand)] hover:text-black ${compact ? 'px-3 py-0.5 text-xs' : 'px-4 py-1.5 text-sm'}`}
                 >
                   다시 시도
                 </button>
