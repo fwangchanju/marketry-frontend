@@ -72,7 +72,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
         <div className="flex flex-col items-center justify-center gap-1 pb-[10cqw]">
           {message && <span className="text-base text-gray-300">{message}</span>}
           {/* 숫자 크기는 원 너비에 비례한다(원이 작아도 11px 밑으로는 내려가지 않는다). 큰 원(메인 영역)은 숫자가 두드러지지 않게 더 작게 그린다. */}
-          <span className={`min-h-[1em] leading-none tabular-nums text-gray-300 ${isThin ? 'text-[clamp(11px,7cqw,28px)]' : 'text-[clamp(11px,4.5cqw,20px)]'}`}>{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
+          <span className={`min-h-[1em] leading-none tabular-nums text-gray-300 ${isThin ? 'text-[clamp(11px,7cqw,28px)]' : 'text-[clamp(11px,5.5cqw,24px)]'}`}>{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
         </div>
       </div>
     </div>
