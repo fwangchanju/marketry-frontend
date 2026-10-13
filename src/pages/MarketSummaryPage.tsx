@@ -317,8 +317,8 @@ export default function MarketSummaryPage() {
             ].map(frame => (
               <section key={frame.title} className="relative flex h-full min-w-[300px] flex-1 flex-col bg-black">
                                 <div className="flex min-h-0 flex-1 flex-col bg-black p-1">
-                  {/* 헤더 높이는 28px로 고정한다. 제목은 가운데에 두고, 검정 바와 제목을 직사각형 흰색 배지 하나에 담는다(배지 바탕 흰색, 바·글자 검정). 카메라 버튼과 기준 시각은 두지 않는다(날짜·시각은 툴바에, 캡처는 상단 영역의 카메라 버튼에 있다). */}
-                  <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-center text-base font-bold text-white">
+                  {/* 헤더 높이는 28px로 고정한다. 제목은 왼쪽에 두고, 검정 바와 제목을 직사각형 흰색 배지 하나에 담는다(배지 바탕 흰색, 바·글자 검정). 카메라 버튼과 기준 시각은 두지 않는다(날짜·시각은 툴바에, 캡처는 상단 영역의 카메라 버튼에 있다). */}
+                  <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start text-base font-bold text-white">
                     {/* 검정 바를 품은 직사각형 흰색 배지 — 바 왼쪽·글자 오른쪽 여백을 같은 8px로 둬서 바가 배지 가장자리에 붙지 않는다. */}
                     <span className="inline-flex items-center gap-2 bg-white px-2 py-0.5 leading-tight text-black">
                       <span aria-hidden="true" className="inline-block h-[1em] w-1 shrink-0 bg-black" />
