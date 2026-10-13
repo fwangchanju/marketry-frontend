@@ -34,6 +34,12 @@ import { collectAtDepth } from '@/utils/sectorDepth'
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
 
+// 안내 틀에 항상 한 칸씩 두는 안내 종류 — 정지(거래정지로 지도에서 빠지기 시작한 종목), 신규(신규 상장).
+const NOTICE_TYPES = [
+  { type: 'TRADING_SUSPENSION', label: '정지', badgeClass: 'bg-amber-700' },
+  { type: 'NEW_LISTING', label: '신규', badgeClass: 'bg-cyan-700' },
+] as const
+
 export default function MarketSummaryPage() {
   // 틀마다 캡처 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 캡처하며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
@@ -184,20 +190,29 @@ export default function MarketSummaryPage() {
                 ),
               },
               {
-                // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 한 줄씩 보여 준다. 없으면 틀만 비어 있다.
+                // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(정지·신규)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '안내',
                 body: (
-                  <ul className="m-0 flex min-h-0 w-full flex-1 list-none flex-col overflow-y-auto p-0">
-                    {(notices?.items ?? []).map(item => (
-                      <li key={`${item.type}-${item.stockCode}`} className="flex items-center gap-2 border-b border-gray-800 px-1 py-1.5 text-sm text-white">
-                        <span className={`shrink-0 rounded-sm px-1.5 py-px text-[11.5px] font-extrabold ${item.type === 'TRADING_SUSPENSION' ? 'bg-amber-700' : 'bg-cyan-700'}`}>
-                          {item.type === 'TRADING_SUSPENSION' ? '정지' : '신규'}
-                        </span>
-                        <span className="min-w-0 truncate">{item.stockName}</span>
-                        <span className="ml-auto shrink-0 text-xs tabular-nums text-gray-500">{item.stockCode}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
+                    {NOTICE_TYPES.map(({ type, label, badgeClass }) => {
+                      const items = (notices?.items ?? []).filter(item => item.type === type)
+                      return (
+                        <section key={type} className="border-b border-gray-800 px-1 py-1.5">
+                          {/* 배지는 안내가 없어도 항상 하나씩 두고, 없으면 옆에 "없음"을 적는다. */}
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className={`shrink-0 rounded-sm px-1.5 py-px text-[11.5px] font-extrabold text-white ${badgeClass}`}>{label}</span>
+                            {items.length === 0 && <span className="text-gray-500">없음</span>}
+                          </div>
+                          {items.map(item => (
+                            <div key={item.stockCode} className="mt-1 flex items-center gap-2 pl-1 text-sm text-white">
+                              <span className="min-w-0 truncate">{item.stockName}</span>
+                              <span className="ml-auto shrink-0 text-xs tabular-nums text-gray-500">{item.stockCode}</span>
+                            </div>
+                          ))}
+                        </section>
+                      )
+                    })}
+                  </div>
                 ),
               },
             ].map(frame => (
