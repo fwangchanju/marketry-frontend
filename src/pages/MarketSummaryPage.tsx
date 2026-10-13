@@ -59,7 +59,8 @@ export default function MarketSummaryPage() {
     settingsModalProps, data, isLoading, isError, refetchMarketMap, isRefetchingMarketMap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
     changeRateMode, changeRateChoice, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers,
     market, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
-  } = useGlobalSettings()
+    isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
+  } = useGlobalSettings({ allowChangeRateMode: true })
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsSidebarSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
@@ -72,7 +73,7 @@ export default function MarketSummaryPage() {
   // 안내는 지도와 따로 불러온다 — 실패하거나 느려도 홈 화면을 막지 않고, 못 받으면 틀만 비워 둔다.
   const { data: notices } = useMarketNotices()
   // 요약 조회의 지수는 항상 최근 값이다 — 지도가 지난 시각이나 기간을 보고 있거나 시간외 별도 등락률이면 맞지 않으므로 보여 주지 않는다(그룹 페이지도 일간 등락률일 때만 넣는다).
-  const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily'
+  const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
   const indexOf = (market: 'KOSPI' | 'KOSDAQ') => {
     const item = isLatestDailyView ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market) : undefined
     return { indexValue: item?.indexValue ?? null, changeRate: item?.changeRate ?? null }
@@ -186,7 +187,7 @@ export default function MarketSummaryPage() {
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="HOME" label="ALL STOCK" />
               {/* 지도·그룹 페이지와 같은 날짜·시각·시간대 — 홈도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
-                  홈은 등락률 기준(종가·누적·별도) 선택이 없어서 시간대 표시만 둔다. 로딩·오류에서도 제자리에 둔다. */}
+                  애프터 마켓 시간에는 등락률 기준(종가·누적·별도) 선택도 지도·그룹 페이지와 같이 보인다. 로딩·오류에서도 제자리에 둔다. */}
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
                 <SnapshotDatePicker
                   market={market}
@@ -230,7 +231,7 @@ export default function MarketSummaryPage() {
               )}
               {isPastSnapshot === false && (
                 <span className="flex shrink-0">
-                  <ChangeRateModeToggle basis={changeRateChoice} visible={false} selectable={false} onChange={() => {}} />
+                  <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} onChange={onChangeChangeRateMode} />
                 </span>
               )}
             </div>
