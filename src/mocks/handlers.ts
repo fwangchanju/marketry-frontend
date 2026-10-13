@@ -2,12 +2,6 @@ import { http, HttpResponse, delay } from 'msw'
 import * as data from './data'
 
 const snapshot = <T>(items: T[]) => ({ snapshotTime: new Date().toISOString().slice(0, 19), items })
-// 응답의 snapshotTime은 "가장 최근 항목 시각"으로 맞춰서 isStale 오탐(빨간 테두리)이 안 뜨게 함.
-const stockHistory = <T>(stockCode: string | null, items: T[], latestSnapshotTime: string | null) => ({
-  stockCode,
-  snapshotTime: items.length > 0 ? latestSnapshotTime : null,
-  items,
-})
 const ok = () => HttpResponse.json({})
 const anonymousSession = () =>
   HttpResponse.json({
@@ -87,44 +81,8 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 
-  // ── 대시보드(시장요약, /summary는 빈 껍데기라 이제 호출되지 않지만 목업은 남겨둔다) ──────────
-  http.get('/api/summary', () =>
-    HttpResponse.json({
-      marketOverviews: snapshot(data.marketOverviews),
-      investorTradingSummaries: snapshot(data.investorTradingSummaries),
-      intradayTopRankings: snapshot(data.intradayTopItems),
-      programTradingHighlights: snapshot(data.programTradingRankingItems),
-      indexContributionHighlights: snapshot(data.indexContributionItems),
-      mainShortSellingHistory: stockHistory('005930', data.shortSellingHistoryItems, data.shortSellingHistoryItems[0]?.tradeDate ?? null),
-      mainProgramTradingHistory: stockHistory('005930', data.programTradingHistoryItems, data.programTradingHistoryItems[0]?.snapshotTime ?? null),
-    }),
-  ),
-
-  http.get('/api/intraday-top', () => HttpResponse.json(snapshot(data.intradayTopItems))),
-  http.get('/api/program-trading-rankings', () => HttpResponse.json(snapshot(data.programTradingRankingItems))),
-  http.get('/api/index-contribution', () => HttpResponse.json(snapshot(data.indexContributionItems))),
-
-  // ── 종목 마스터/관심종목(관리자 전용 API는 그대로 유지, 화면 UI는 제거됨) ───────────────────
-  http.get('/api/stocks', () => HttpResponse.json(data.stocks)),
-  http.get('/api/watch-stocks', () => HttpResponse.json(data.watchStocks)),
-  http.post('/api/watch-stocks/:stockCode', ok),
-  http.delete('/api/watch-stocks/:stockCode', ok),
-  http.patch('/api/watch-stocks/:stockCode/primary', ok),
-  http.put('/api/watch-stocks/:stockCode/primary', ok),
-  http.delete('/api/watch-stocks/:stockCode/primary', ok),
-
-  // ── 종목별 이력 ─────────────────────────────────────────────────────
-  http.get('/api/stocks/:stockCode/program-trading', () =>
-    HttpResponse.json(
-      stockHistory('005930', data.programTradingHistoryItems, data.programTradingHistoryItems[0]?.snapshotTime ?? null),
-    ),
-  ),
-  http.get('/api/stocks/:stockCode/program-trading/daily', () =>
-    HttpResponse.json(stockHistory('005930', data.programTradingDailyItems, null)),
-  ),
-  http.get('/api/stocks/:stockCode/short-selling', () =>
-    HttpResponse.json(stockHistory('005930', data.shortSellingHistoryItems, null)),
-  ),
+  // ── 대시보드(시장요약, 홈 화면이 지수 등락률만 쓴다) ────────────────────────────────
+  http.get('/api/summary', () => HttpResponse.json({ marketOverviews: snapshot(data.marketOverviews) })),
 
   // ── 마켓맵(공개 기본 조회) ────────────────────────────────────────────
   // marketOverview는 market이 단일 마켓일 때만(ALL_STOCK이면 단일 지수값이 없어 null) — 실제 백엔드와 동일.
