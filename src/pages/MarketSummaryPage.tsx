@@ -3,7 +3,7 @@ import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import MarketMapShareModal from '@/components/MarketMapShareModal'
-import { CaptureIcon, ClockIcon } from '@/components/icons/MarketMapIcons'
+import { ClockIcon } from '@/components/icons/MarketMapIcons'
 import SettingsSidebar, { SettingsGroupDepthSection } from '@/components/SettingsSidebar'
 import DepthBadge from '@/components/DepthBadge'
 import MarketIndexLine from '@/components/MarketIndexLine'
@@ -30,7 +30,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, captureFileName, downloadDataUrl } from '@/utils/captureToDownload'
-import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toMarketMapSnapshotDateLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredMarketMapTree'
@@ -51,7 +51,6 @@ export default function MarketSummaryPage() {
   // 틀마다 캡처 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 캡처하며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const allFramesRef = useRef<HTMLDivElement>(null)
-  const frameRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
@@ -152,11 +151,6 @@ export default function MarketSummaryPage() {
   // 세 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
   // 시장 요약 지도와 준비 중 박스 위쪽에 코스피·코스닥 지수 배지를 둔다(그룹 등락률 박스는 지금 보여 주는 업종 분류 단계만 알려 주는 배지).
   const indexLine = <MarketIndexLine indexes={[{ label: '코스피', ...indexOf('KOSPI') }, { label: '코스닥', badgeClass: 'bg-cyan-900', ...indexOf('KOSDAQ') }]} />
-  const snapshotClock = data?.snapshotTime ? (
-    <span className="ml-auto pr-1 text-[14px] font-medium tabular-nums text-gray-400">
-      {toMarketMapSnapshotDateLabel(data.snapshotTime)} {toMarketMapSnapshotTimeOnlyLabel(data.snapshotTime)}
-    </span>
-  ) : null
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-black">
@@ -324,31 +318,14 @@ export default function MarketSummaryPage() {
               <section key={frame.title} className="relative flex h-full min-w-[300px] flex-1 flex-col bg-black">
                 {/* 캡처 대상은 이 안쪽 칸이다 — 테두리와 안쪽 여백까지 이 칸에 두어 이미지에도 같이 찍힌다(지도·배지가 이미지 가장자리에 붙어 잘려 보이지 않게).
                     오른쪽 위 캡처 버튼은 칸 밖에 두어 이미지에 찍히지 않는다. */}
-                <div ref={element => { frameRefs.current[frame.title] = element }} className="flex min-h-0 flex-1 flex-col bg-black">
-                  {/* 헤더 높이를 28px(캡처 버튼 높이)로 고정해서 버튼이 헤더 높이의 가운데에 오게 한다. 제목은 왼쪽에 붙이고, 강조색 바가 맨 앞에 온다. */}
+                <div className="flex min-h-0 flex-1 flex-col bg-black p-1">
+                  {/* 헤더 높이는 28px로 고정한다. 제목은 왼쪽에 붙이고, 강조색 바가 맨 앞에 온다. 카메라 버튼과 기준 시각은 두지 않는다(날짜·시각은 툴바에, 캡처는 상단 영역의 카메라 버튼에 있다). */}
                   <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-bold text-white">
                     <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
                     {frame.title}
-                    {frame.title !== '안내' && snapshotClock}
                   </h2>
                   {frame.body}
                 </div>
-                {/* 캡처 버튼을 제목 바로 오른쪽에 둔다 — 제목과 같은 글자를 보이지 않게 깔아 그 끝에 버튼이 오게 하므로 제목 길이를 재지 않아도 된다.
-                    칸 밖에 있어서 캡처 이미지에는 찍히지 않는다. 안내 틀은 캡처하지 않으므로 버튼이 없다. */}
-                {frame.title !== '안내' && (
-                  <div className={`pointer-events-none absolute left-[9px] top-[9px] flex h-7 items-center pl-1 text-base font-bold ${isCapturingAll ? 'invisible' : ''}`}>
-                    <span aria-hidden="true" className="invisible mr-1.5 inline-block w-1 shrink-0" />
-                    <span aria-hidden="true" className="invisible">{frame.title}</span>
-                    <button
-                      type="button"
-                      aria-label={`${frame.title} 캡처`}
-                      onClick={() => setCaptureTarget(frameRefs.current[frame.title] ?? null)}
-                      className="pointer-events-auto ml-1 flex h-7 w-7 items-center justify-center border-0 bg-transparent text-gray-400 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
-                    >
-                      <CaptureIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
               </section>
             ))}
             </div>
