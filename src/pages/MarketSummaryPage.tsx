@@ -216,9 +216,9 @@ export default function MarketSummaryPage() {
                     {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       return (
-                        <section key={type} className="border-b border-gray-800 px-1 py-1.5">
-                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기다. 배지는 안내가 없어도 항상 하나씩 두고, 없으면 옆에 "없음"을 적는다. */}
-                          <div className="flex items-center gap-1 text-[13px] font-medium leading-none">
+                        <section key={type} className="border-b border-gray-800 py-1.5">
+                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기다. 배지는 지수 줄의 "코스닥" 배지와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작해 위아래로 쌓인다. 배지는 안내가 없어도 항상 하나씩 두고, 없으면 옆에 "없음"을 적는다. */}
+                          <div className="flex items-center gap-1 pl-[calc(50%+4px)] text-[13px] font-medium leading-none">
                             <span className={`shrink-0 rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
                             {/* 배지 바로 오른쪽에 날짜와 무관한 현황 건수를 적는다(신규 상장은 최근 3개월, 거래 정지는 현재). 아직 못 받았으면 비워 둔다. */}
                             {notices?.[countKey] != null && <span className="text-gray-300">{countLabel} {notices[countKey]}</span>}
