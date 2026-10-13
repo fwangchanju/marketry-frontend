@@ -136,9 +136,9 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
       {view === 'day' && showSpinner && (isLoading || isError) && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639]">
           {isLoading ? (
-            <Spinner showElapsed compact className={CALENDAR_SPINNER_CLASS} />
+            <Spinner showElapsed className={CALENDAR_SPINNER_CLASS} />
           ) : (
-            <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetch()} className={CALENDAR_SPINNER_CLASS} />
+            <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetch()} className={CALENDAR_SPINNER_CLASS} />
           )}
         </div>
       )}
@@ -274,8 +274,8 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
   )
 }
 
-// 달력의 로딩·오류 원 크기 — 두 달을 나란히 둔 기간 달력의 높이(약 250px) 안에 들어가는 가장 큰 크기다.
-const CALENDAR_SPINNER_CLASS = 'h-[11.5rem] w-[11.5rem]'
+// 달력의 로딩·오류 원 크기 — 한 달 달력(너비 240px, 높이 약 248px) 안에 들어가는 가장 큰 크기다. 안의 크기는 모두 원 너비에 대한 비율이라 메인 영역과 같은 모양이다.
+const CALENDAR_SPINNER_CLASS = 'h-[14.5rem] w-[14.5rem]'
 
 const APPLY_BUTTON_CLASS =
   'shrink-0 rounded-lg border-0 bg-cyan-700 px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-white transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-cyan-700'
@@ -526,9 +526,9 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   // 월 이름·요일 줄까지 덮고 가운데에 원 하나만 둔다. 두 달 중 하나라도 못 받으면 오류 원 하나를 둔다. 로딩과 오류의 원 크기는 같다.
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639]">
                     {isRangeLoading ? (
-                      <Spinner showElapsed compact className={CALENDAR_SPINNER_CLASS} />
+                      <Spinner showElapsed className={CALENDAR_SPINNER_CLASS} />
                     ) : (
-                      <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className={CALENDAR_SPINNER_CLASS} />
+                      <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className={CALENDAR_SPINNER_CLASS} />
                     )}
                   </div>
                 )}
