@@ -5,6 +5,8 @@ interface IndexChange {
   // 지수 값(예: 7,003.74)과 등락률(%) — 아직 못 받았으면 null
   indexValue: number | null
   changeRate: number | null
+  // 이름 배지의 배경 클래스 — 기본은 청록(cyan-700). 두 지수를 색으로 나누려고 코스닥은 더 짙은 청록(cyan-900)을 넘긴다.
+  badgeClass?: string
 }
 
 // 오르면 빨강·내리면 파랑(지도와 같은 방향) — 변화가 없거나 값이 없으면 회색.
@@ -25,9 +27,9 @@ const toIndexValue = (value: number): string => value.toLocaleString('ko-KR', { 
 export default function MarketIndexLine({ indexes }: { indexes: IndexChange[] }) {
   return (
     <div className="mb-1 flex h-6 shrink-0 items-center gap-2 whitespace-nowrap text-[13px] font-medium leading-none tabular-nums">
-      {indexes.map(({ label, indexValue, changeRate }) => (
+      {indexes.map(({ label, indexValue, changeRate, badgeClass = 'bg-cyan-700' }) => (
         <span key={label} className="flex h-[22px] min-w-0 flex-1 items-center gap-1">
-          <span className="shrink-0 rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{label}</span>
+          <span className={`shrink-0 rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{label}</span>
           <span className="flex h-[22px] min-w-0 flex-1 items-center justify-between gap-0.5 rounded-sm bg-zinc-800 px-1">
             <span className="text-gray-300">{indexValue === null ? '' : toIndexValue(indexValue)}</span>
             <span className={rateColorClass(changeRate)}>{changeRate === null ? '' : toPctSigned(changeRate)}</span>
