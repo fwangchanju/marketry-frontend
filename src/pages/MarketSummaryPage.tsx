@@ -5,7 +5,7 @@ import NavSubBar from '@/components/NavSubBar'
 import MarketMapShareModal from '@/components/MarketMapShareModal'
 import { ClockIcon } from '@/components/icons/MarketMapIcons'
 import SettingsSidebar, { SettingsGroupDepthSection } from '@/components/SettingsSidebar'
-import DepthBadge from '@/components/DepthBadge'
+import DepthBadge, { DepthLevelBadge } from '@/components/DepthBadge'
 import FrameTitleBadge from '@/components/FrameTitleBadge'
 import MarketIndexLine from '@/components/MarketIndexLine'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
@@ -151,7 +151,7 @@ export default function MarketSummaryPage() {
   const downloadLabel = downloadStatus === 'error' ? '다운로드 실패' : '다운로드'
   // 세 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
   // 시장 요약 지도와 준비 중 박스 위쪽에 코스피·코스닥 지수 배지를 둔다(그룹 등락률 박스는 지금 보여 주는 업종 분류 단계만 알려 주는 배지).
-  const indexLine = <MarketIndexLine title="시장 요약" indexes={[{ label: '코스피', ...indexOf('KOSPI') }, { label: '코스닥', badgeClass: 'bg-cyan-900', ...indexOf('KOSDAQ') }]} />
+  const indexLine = <MarketIndexLine title="시장 요약" belowTitle={<DepthLevelBadge depth={effectiveDepth} />} indexes={[{ label: '코스피', ...indexOf('KOSPI') }, { label: '코스닥', badgeClass: 'bg-cyan-900', ...indexOf('KOSDAQ') }]} />
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-black">
@@ -267,7 +267,7 @@ export default function MarketSummaryPage() {
                 ownHeader: true,
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <DepthBadge title="그룹 등락률 (%)" depth={effectiveDepth} advancers={overview.advancers} decliners={overview.decliners} unchanged={overview.unchanged} />
+                    <DepthBadge title="그룹 등락률 (%)" advancers={overview.advancers} decliners={overview.decliners} unchanged={overview.unchanged} />
                     <div className="flex min-h-0 w-full flex-1">
                       <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
                     </div>
