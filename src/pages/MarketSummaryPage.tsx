@@ -238,7 +238,7 @@ export default function MarketSummaryPage() {
                             <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{countLabel}</span>
                           </span>
                           <span className={rowClass}>
-                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? ''}</span>
+                            <span className="flex h-[22px] min-w-0 flex-1 items-center justify-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? ''}</span>
                           </span>
                           {/* 같은 줄 오른쪽에 그 종목들의 현시점 시가총액 합을 "시가총액 합" 배지(같은 줄 배지와 같은 색)와 회색 칸으로 둔다. 표기는 Custom 페이지와 같은 n,nnn.n조/억이다. */}
                           <span className={`${rowClass} whitespace-nowrap`}>
