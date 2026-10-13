@@ -14,9 +14,9 @@ interface Props {
 export default function DepthBadge({ depth, advancers, decliners, unchanged }: Props) {
   return (
     <div className="mb-1 flex h-6 shrink-0 items-center gap-2 whitespace-nowrap text-[13px] font-medium leading-none tabular-nums">
-      {/* 아래 그래프(RankBars)의 항목 이름 칸(92px, 오른쪽 정렬)과 같은 폭·같은 정렬이라, 배지 오른쪽 끝이 항목 이름 오른쪽 끝에 맞고 오른쪽 칸은 막대가 시작하는 자리에서 시작한다. */}
+      {/* 아래 그래프(RankBars)의 항목 이름 칸(92px, 오른쪽 정렬)과 같은 폭·같은 정렬이라, 배지 글자의 오른쪽 끝(배지 여백 4px은 칸 밖으로 내민다)이 항목 이름 글자의 오른쪽 끝에 맞고 오른쪽 칸은 막대가 시작하는 자리에서 시작한다. */}
       <span className="flex w-[92px] shrink-0 justify-end">
-        <span className="rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{DEPTH_LABELS[depth - 1] ?? DEPTH_LABELS[0]}</span>
+        <span className="-mr-1 rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{DEPTH_LABELS[depth - 1] ?? DEPTH_LABELS[0]}</span>
       </span>
       {advancers !== undefined && decliners !== undefined && unchanged !== undefined && (
         <span className="flex h-[22px] min-w-0 flex-1 items-center justify-end gap-3 rounded-sm bg-zinc-800 px-1.5">
