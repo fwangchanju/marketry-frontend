@@ -26,7 +26,7 @@ import DisclaimerNotice from '@/components/DisclaimerNotice'
 import { HINT_BUBBLE_COLOR_CLASS } from '@/components/hintBubbleStyle'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
-import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useMarketMapDrilldown } from '@/hooks/useMarketMapDrilldown'
@@ -553,17 +553,16 @@ export default function MapPage() {
                     ))}
                   {isPastSnapshot === false && (
                     <ToolbarChip bare tone="text-white">
-                      <span className="flex items-center gap-1.5 pl-1.5 pr-1">
-                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
-                        <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
-                      </span>
                       <PageRefreshButton
                         cell
                         onRefresh={refetchMarketMap}
                         isRefreshing={isRefetchingMarketMap}
                         helpText={SNAPSHOT_REFRESH_HELP}
-                        minSpinDurationMs={REFRESH_FEEDBACK_MIN_DURATION_MS}
-                      />
+                        minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
+                      >
+                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                        <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
+                      </PageRefreshButton>
                     </ToolbarChip>
                   )}
                 {/* 시장 시간대 말머리와 누적/별도 — 시간과 관련된 표시라 시계 옆에 붙인다. */}

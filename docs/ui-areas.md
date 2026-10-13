@@ -34,7 +34,10 @@
 | 페이지 | `MapPage` · `GroupPage` · `CustomPage` | Map · Group · Custom |
 | 상단 영역의 메뉴 줄 | `NavSubBar` | 메뉴 줄 |
 | 상단 영역 메뉴(Map·Group·Custom)에 커서를 올리면 뜨는 목록 (Map·Group은 시장, Custom은 업종·종목) | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |
-| 툴바 맨 왼쪽의 현재 시장·화면 이름 글자 (고르는 것은 메뉴 목록) | `ToolbarModeText` | 툴바 이름 글자 |
+| 툴바 맨 왼쪽의 현재 시장·화면 이름 배지 (푸른 회색 박스 + 윗변에 걸친 페이지 이름 + 청록 하이라이트, 고르는 것은 메뉴 목록) | `ToolbarModeText` | 제목 배지 |
+| 툴바의 날짜·시각·시장 시간대·제외 종목 회색 직사각형 | `ToolbarChip` | 칩 |
+| 시각 칩 오른쪽의 새로고침 아이콘 칸 | `PageRefreshButton`(`cell`) | 새로고침 칸 |
+| 시장 시간대 칩을 누르면 뜨는 시간 안내 팝업 | `MarketMapControls`의 `TradingSessionChip` | 시간대 안내 팝업 |
 | 시계 옆 "● 메인 마켓" 표시 (프리 마켓 · 메인 마켓 · 애프터 마켓 · 마켓 종료) | `TradingSession`, `TradingSessionIndicator` | 거래 세션 |
 | 종가 / 일간(누적) / 시간외(별도) 등락률 전환 스위치 | `ChangeRateChoice`, `ChangeRateMode`, `ChangeRateModeToggle` | 애프터 버튼 · 애프터 토글 (종가/누적/별도 세 칸) |
 

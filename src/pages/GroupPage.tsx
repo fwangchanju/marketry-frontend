@@ -21,7 +21,7 @@ import { ClockIcon } from '@/components/icons/MarketMapIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import ClosingPriceLabel from '@/components/ClosingPriceLabel'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
-import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import ToolbarChip from '@/components/ToolbarChip'
@@ -355,17 +355,16 @@ export default function GroupPage() {
                     ))}
                   {isPastSnapshot === false && (
                     <ToolbarChip bare tone="text-white">
-                      <span className="flex items-center gap-1.5 pl-1.5 pr-1">
-                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
-                        <AnimatedClockLabel snapshotTime={displayNow?.snapshotTime ?? null} />
-                      </span>
                       <PageRefreshButton
                         cell
                         onRefresh={refetchMarketMap}
                         isRefreshing={isRefreshing}
                         helpText={SNAPSHOT_REFRESH_HELP}
-                        minSpinDurationMs={REFRESH_FEEDBACK_MIN_DURATION_MS}
-                      />
+                        minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
+                      >
+                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                        <AnimatedClockLabel snapshotTime={displayNow?.snapshotTime ?? null} />
+                      </PageRefreshButton>
                     </ToolbarChip>
                   )}
                 {isPastSnapshot === false && (
