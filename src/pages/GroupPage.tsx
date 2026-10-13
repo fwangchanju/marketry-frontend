@@ -322,7 +322,7 @@ export default function GroupPage() {
               안에서만 처리된다. */}
           <div ref={captureRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white">
             <Toolbar>
-              <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+              <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="GROUP" label={MARKET_LABEL[market]} />
                 {/* 로딩 원이나 오류 문구가 보이는 동안에도 시계·시간대·누적/별도·분류명을 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                   <>

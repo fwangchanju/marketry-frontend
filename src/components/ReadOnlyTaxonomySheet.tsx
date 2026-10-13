@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
@@ -121,6 +122,8 @@ interface Props {
   isNxtLoading: boolean
   // 검색창 옆에 두던 "27/27업종" 개수를 받아 갈 곳 — 페이지가 설정창 머리글에 그려 준다.
   onCountLabelChange?: (label: string | undefined) => void
+  // 검색창을 그릴 윗줄의 자리(왼쪽 제목 박스 옆) — 없으면 검색창을 그리지 않는다.
+  toolbarContainer?: HTMLElement | null
 }
 
 interface SectorRow {
@@ -142,7 +145,7 @@ function collectSectorRows(nodes: MarketMapResponse['items'], parentPath: string
 
 // KRX/NXT·MARKETRY 시트 — 업종 분류를 읽기만 하는 화면이다. 편집 기능(추가·이동·배정)은 없고, 지도의 해당 분류이 보여주는
 // 분류(/map?source=...)를 그대로 표로 보여준다. 시세가 있는 종목만 내려오므로 거래정지 종목 등은 빠질 수 있다.
-export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, onRetry, source, nxtOnly, onNxtOnlyChange, nxtStockCodes, stockMarkets, stockIndustries, isNxtLoading, onCountLabelChange }: Props) {
+export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, onRetry, source, nxtOnly, onNxtOnlyChange, nxtStockCodes, stockMarkets, stockIndustries, isNxtLoading, onCountLabelChange, toolbarContainer }: Props) {
   // "NXT만 보기"는 업종 표에서만 쓴다. 종목 표는 NXT 열의 필터로 거른다.
   const effectiveNxtOnly = nxtOnly && mode !== 'stock'
   const sectors = useMemo<SectorRow[]>(() => {
@@ -192,9 +195,9 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
     </label>
   )
   return mode === 'stock' ? (
-    <StockTable showHierarchy={source === 'MARKETRY'} sectors={sectors} emptyMessage={emptyMessage} nxtStockCodes={nxtStockCodes} stockMarkets={stockMarkets} stockIndustries={stockIndustries} extra={null} onCountLabelChange={onCountLabelChange} />
+    <StockTable showHierarchy={source === 'MARKETRY'} sectors={sectors} emptyMessage={emptyMessage} nxtStockCodes={nxtStockCodes} stockMarkets={stockMarkets} stockIndustries={stockIndustries} extra={null} onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
   ) : (
-    <CategoryTable sectors={sectors} emptyMessage={emptyMessage} extra={nxtOnlyToggle} onCountLabelChange={onCountLabelChange} />
+    <CategoryTable sectors={sectors} emptyMessage={emptyMessage} extra={nxtOnlyToggle} onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
   )
 }
 
@@ -250,7 +253,7 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
 
 type CategorySortKey = 'name' | 'stockCount' | 'marketValue'
 
-function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange }: { sectors: SectorRow[]; emptyMessage: string; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void }) {
+function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolbarContainer }: { sectors: SectorRow[]; emptyMessage: string; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
   const [query, setQuery] = useState('')
   // 시가총액 합이 큰 업종부터 처음 보여준다.
   const { sortKey, direction, toggle } = useSort<CategorySortKey>('marketValue', 'desc')
@@ -312,13 +315,17 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange }: { s
   return (
     <div className="relative flex min-h-0 flex-1 flex-col text-white">
       {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
-      <SearchBar
-        query={query}
-        onChange={setQuery}
-        placeholder="업종 검색"
-        ariaLabel="업종 검색"
-        extra={extra}
-      />
+      {toolbarContainer && createPortal(
+        <SearchBar
+          inline
+          query={query}
+          onChange={setQuery}
+          placeholder="업종 검색"
+          ariaLabel="업종 검색"
+          afterInput={extra}
+        />,
+        toolbarContainer,
+      )}
       <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-y-auto border border-slate-700">
         {/* 업종·업종 시가총액·종목 수 세 칸을 같은 폭(삼등분)으로 나눈다 — MARKETRY 업종 화면의 대·중·소분류 칸과 같은 모양이다. */}
         <table className={`${TABLE_CLASS} table-fixed select-none`}>
@@ -373,7 +380,7 @@ const STOCK_COLUMN_KEYS: readonly StockColumnKey[] = ['stockCode', 'stockName', 
 const STOCK_TABLE_COLUMN_COUNT = STOCK_COLUMN_KEYS.length + 1
 const NO_EXCLUDED: ReadonlySet<string> = new Set()
 
-function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stockMarkets, stockIndustries, extra, onCountLabelChange }: { showHierarchy: boolean; sectors: SectorRow[]; emptyMessage: string; nxtStockCodes: ReadonlySet<string>; stockMarkets: ReadonlyMap<string, Market>; stockIndustries: ReadonlyMap<string, string | null>; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void }) {
+function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stockMarkets, stockIndustries, extra, onCountLabelChange, toolbarContainer }: { showHierarchy: boolean; sectors: SectorRow[]; emptyMessage: string; nxtStockCodes: ReadonlySet<string>; stockMarkets: ReadonlyMap<string, Market>; stockIndustries: ReadonlyMap<string, string | null>; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
   const [query, setQuery] = useState('')
   const { sortKey, direction, toggle } = useSort<StockSortKey>('totalMarketValue', 'desc')
   const activeSortKey = !showHierarchy && (sortKey === 'parentSector' || sortKey === 'midSector' || sortKey === 'subSector' || sortKey === 'industryName') ? 'sectorName' : sortKey
@@ -465,7 +472,8 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   // 검색창 오른쪽 끝을 아래 종목명 열의 오른쪽 줄에 맞춘다.
-  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef)
+  // 검색창 오른쪽 끝을 아래 약칭 열의 오른쪽 줄에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
+  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { columnKey: 'alias', leftEl: toolbarContainer ?? null })
   // 줄 누르기·Shift+클릭 범위·끌어서 연속 선택 — MARKETRY 종목 표와 같은 동작이다.
   const { rowProps, selectionHint } = useRowRangeSelection(
     useMemo(() => visibleRows.map(row => row.stockCode), [visibleRows]),
@@ -489,27 +497,31 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
   }, [trimmed, sortKey, direction])
   return (
     <div ref={rootRef} className="flex h-full min-h-0 flex-col">
-      <SearchBar
-        query={query}
-        onChange={setQuery}
-        inputRightEdgePx={nameRightEdge}
-        placeholder="종목명·약칭·코드·분류"
-        ariaLabel="종목 검색"
-        extra={
-          <>
-            {filters.activeCount > 0 && (
-              <button
-                type="button"
-                onClick={filters.clearAll}
-                className="mr-3 border-0 bg-transparent p-0 text-xs text-[var(--brand)] hover:underline"
-              >
-                필터 {filters.activeCount}개 적용 · 초기화
-              </button>
-            )}
-            {extra}
-          </>
-        }
-      />
+      {toolbarContainer && createPortal(
+        <SearchBar
+          inline
+          query={query}
+          onChange={setQuery}
+          inputRightEdgePx={nameRightEdge}
+          placeholder="종목명·약칭·코드·분류"
+          ariaLabel="종목 검색"
+          afterInput={
+            <>
+              {filters.activeCount > 0 && (
+                <button
+                  type="button"
+                  onClick={filters.clearAll}
+                  className="flex h-7 items-center whitespace-nowrap border-0 bg-transparent p-0 text-xs text-[var(--brand)] hover:underline"
+                >
+                  필터 {filters.activeCount}개 적용 · 초기화
+                </button>
+              )}
+              {extra}
+            </>
+          }
+        />,
+        toolbarContainer,
+      )}
       <div className="relative min-h-0 flex-1 border border-slate-700">
       {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
       <div ref={scrollContainerRef} className="relative h-full overflow-auto scrollbar-thin">

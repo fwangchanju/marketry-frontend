@@ -97,9 +97,6 @@ export function currentTradingSession(now: Date, schedule?: MarketTradingSchedul
   return '마켓 종료'
 }
 
-// 이름 중 가장 긴 것 — 상단바 말머리는 이 이름의 너비를 기준으로 자리를 잡아서 시간대가 바뀌어도 시작 위치가 같다.
-export const LONGEST_TRADING_SESSION: TradingSession = '애프터 마켓'
-
 export function getKstDate(now: Date): string {
   const parts = KST_PARTS.formatToParts(now)
   const value = (type: string) => parts.find(part => part.type === type)?.value ?? ''

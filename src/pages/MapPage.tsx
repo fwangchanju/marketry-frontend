@@ -518,7 +518,7 @@ export default function MapPage() {
             {/* 왼쪽은 마켓·기간·시계·시간대 묶음, 오른쪽 끝은 프로필(사진 + 거래소·MARKETRY). 두 묶음이 같은 줄에서 서로 밀어내므로
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
-              <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+              <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} />
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·누적/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>

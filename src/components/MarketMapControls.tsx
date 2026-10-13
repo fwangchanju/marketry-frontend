@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import type { ChangeRateChoice } from '@/api/marketMap'
 import { accentColor } from '@/utils/accentPalette'
-import { LONGEST_TRADING_SESSION, type TradingSession } from '@/utils/tradingWindow'
+import { type TradingSession } from '@/utils/tradingWindow'
 import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
@@ -24,11 +24,8 @@ export function TradingSessionIndicator({ session: sessionOverride }: { session?
   return (
     <span className={`${FONT_BAR_TIME} flex items-center text-gray-400`}>
       <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[session] }} />
-      {/* 가장 긴 이름으로 너비를 유지해 시간대가 바뀌어도 옆 항목이 움직이지 않게 한다. */}
-      <span className="grid">
-        <span aria-hidden="true" className="invisible col-start-1 row-start-1">{LONGEST_TRADING_SESSION}</span>
-        <span className="col-start-1 row-start-1">{session}</span>
-      </span>
+      {/* 칩 폭은 지금 시간대 이름에 맞춘다 — 애프터 마켓일 때만 그만큼 넓어진다. */}
+      <span>{session}</span>
     </span>
   )
 }
@@ -136,7 +133,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
   }, [visible, selectedIndex])
 
   return (
-    <div className="-mr-[5px] flex shrink-0 items-center gap-2 whitespace-nowrap" data-basis-toggle>
+    <div className="-mr-[5px] flex shrink-0 items-center gap-1 whitespace-nowrap" data-basis-toggle>
       {/* 종가 지도는 정규장이 끝난 시점의 지도라서, 지금이 애프터 마켓이어도 시간대 글자는 "마켓 종료"로 둔다. 시각으로 계산하지 않아 개장·마감이 달라지는 날에도 맞다. */}
       <ToolbarChip>
         <TradingSessionIndicator session={basis === 'close' ? '마켓 종료' : undefined} />
