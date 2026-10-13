@@ -16,13 +16,6 @@ export interface ColorScaleConfig {
   thresholds: ColorScaleThreshold[]
 }
 
-// 지도 페이지 최상위 뎁스(대분류) 섹터 헤더 글자색 & 섹터 페이지 지수 참조 막대/헤더 글자색이
-// 공유하는 "기준" 청록색. Tailwind 유틸리티 클래스를 쓰면 v4의 oklch 정의를 브라우저가
-// sRGB로 변환하는 과정에서 실제 렌더링 값이 미묘하게 달라질 수 있어(DEFAULT_ZERO_COLOR와 동일한
-// 이유), 두 페이지가 "정확히 같은 색"이어야 하는 이 값만은 hex 리터럴을 직접 공유해서 픽셀 단위로
-// 맞춘다.
-export const MARKET_INDEX_REFERENCE_COLOR = '#4dd0e1'
-
 // 기본 색상 규칙 — 파랑(음수)과 빨강(양수)은 같은 채도(75)와 같은 명도를 쓰고, 명도는 변동률에 따라 일정하게 오른다(2%=16, 5%=37,
 // 8%=58 — 색상 편집기 명도 슬라이더의 10%/35%/60% 위치). 0%는 색상 편집기의 첫 색인 회색(채도 0)이고 명도는 슬라이더 정가운데(50)다. 색상은 색상 편집기의 파랑(217)·빨강(0) 프리셋과 같다.
 // 0%일 때 색 — 저장된 threshold가 없으면 이 값으로 폴백.
@@ -123,19 +116,6 @@ export function resolveMarketMapColor(changeRate: number, config: ColorScaleConf
 
   // 가장 큰 threshold보다도 크면 그 이후는 추정하지 않고 그대로 clamp(CSS 그라데이션/D3 스케일과 동일).
   return thresholds[thresholds.length - 1].color
-}
-
-// 등락률 색상 위에 얹는 텍스트가 충분히 읽히도록, 검정/흰색 중 대비가 더 큰 쪽을 고른다.
-// 커스텀 색상도 같은 규칙을 타므로 특정 상승/하락 색상 밝기에 종속되지 않는다.
-export function resolveContrastingTextColor(backgroundColor: string): 'black' | 'white' {
-  const [red, green, blue] = hexToRgb(backgroundColor).map(value => value / 255)
-  if (![red, green, blue].every(Number.isFinite)) return 'white'
-
-  const toLinear = (value: number) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
-  const luminance = 0.2126 * toLinear(red) + 0.7152 * toLinear(green) + 0.0722 * toLinear(blue)
-  const blackContrast = (luminance + 0.05) / 0.05
-  const whiteContrast = 1.05 / (luminance + 0.05)
-  return blackContrast >= whiteContrast ? 'black' : 'white'
 }
 
 // changeRate(부호 있는 등락률, %) → 그 부호 쪽 threshold 중 절댓값이 가장 큰 색(보간 없이 고정).

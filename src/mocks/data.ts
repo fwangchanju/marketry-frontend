@@ -181,7 +181,6 @@ export function shiftMarketMapTreeChangeRates(nodes: MarketMapSectorNode[]): Mar
 
 export const MOCK_BEFORE_INDEX_CHANGE_RATE_DELTA = 0.2
 
-export const excludedStocks: { stockCode: string; stockName: string }[] = []
 
 // ── 커스텀 섹터·종목 배정(가입/로그인 전환 이후 /api/custom/*) ───────────
 export const customSectors = [

@@ -1,6 +1,5 @@
 import client from './client'
 import {
-  ExcludedStockItemSchema,
   MarketMapResponseSchema,
   MarketMapScaleResponseSchema,
   MarketTradingScheduleSchema,
@@ -11,7 +10,6 @@ import {
 import { z } from 'zod'
 import type { TaxonomySource } from '@/utils/taxonomyNames'
 
-const excludedStockListResponseSchema = z.array(ExcludedStockItemSchema)
 
 export const getMarketTradingSchedule = (date: string) =>
   client.get('/map/trading-schedule', { params: { date } })
@@ -69,17 +67,6 @@ export const getMarketValueTiers = () =>
 export const getMarketMapScale = () =>
   client.get('/map/scale').then(r => MarketMapScaleResponseSchema.parse(r.data))
 
-export const getExcludedStocks = () =>
-  client.get('/map/excluded-stocks').then(r => excludedStockListResponseSchema.parse(r.data))
-
-export const registerExcludedStock = (stockCode: string) =>
-  client.post(`/map/excluded-stocks/${stockCode}`)
-
-export const unregisterExcludedStock = (stockCode: string) =>
-  client.delete(`/map/excluded-stocks/${stockCode}`)
-
-export const deleteAllExcludedStocks = () => client.delete('/map/excluded-stocks')
-
 // 종목 단위 대신 섹터 단위로 제외한다 — 상태(is_excluded)는 market_map_category에 저장되고,
 // 마켓맵 응답의 각 섹터 노드에 isExcluded로 같이 내려온다.
 export const registerExcludedSector = (sectorId: number) =>
@@ -87,5 +74,3 @@ export const registerExcludedSector = (sectorId: number) =>
 
 export const unregisterExcludedSector = (sectorId: number) =>
   client.delete(`/map/excluded-sectors/${sectorId}`)
-
-export const deleteAllExcludedSectors = () => client.delete('/map/excluded-sectors')

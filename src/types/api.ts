@@ -20,10 +20,6 @@ export type MarketQuery = z.infer<typeof MarketQuerySchema>
 export const MarketSchema = z.enum(['KOSPI', 'KOSDAQ'])
 export type Market = z.infer<typeof MarketSchema>
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- 타입 추출 전용, 실제 파싱엔 안 씀
-const AmtQtySchema = z.enum(['AMOUNT', 'QUANTITY'])
-export type AmtQty = z.infer<typeof AmtQtySchema>
-
 // ─── Generic wrappers ─────────────────────────────────────────────────────────
 
 export const snapshotResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
@@ -132,18 +128,12 @@ export const MarketMapScaleThresholdSchema = z.object({
     .nullable()
     .transform(v => v?.toLowerCase() ?? null),
 })
-export type MarketMapScaleThreshold = z.infer<typeof MarketMapScaleThresholdSchema>
 
 // GET /map/scale 응답
 export const MarketMapScaleResponseSchema = z.object({
   thresholds: z.array(MarketMapScaleThresholdSchema),
 })
 export type MarketMapScaleResponse = z.infer<typeof MarketMapScaleResponseSchema>
-
-export const ExcludedStockItemSchema = z.object({
-  stockCode: z.string(),
-  stockName: z.string(),
-})
 
 // 백엔드 /api/admin/market-map/* → /api/custom/* 전환(가입/로그인 지시서)에 맞춰 DTO 필드명도
 // category* → sector* 로 바뀌었다. /api/map 응답도 category → sector 정리(instructions-sector-rename.md)로
@@ -187,7 +177,6 @@ export const BulkAssignResponseSchema = z.object({
   failedStockCodes: z.array(z.string()),
   sectorId: z.number(),
 })
-export type BulkAssignResponse = z.infer<typeof BulkAssignResponseSchema>
 
 // delete-preview API의 blockingStocks 항목 (백엔드 StockSectorItem — 위 StockSectorListItem과는
 // 다른 타입이라 market/totalMarketValue/parentSectorName이 없음)
@@ -211,7 +200,6 @@ export const SnapshotItemSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 })
-export type SnapshotItem = z.infer<typeof SnapshotItemSchema>
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
 
@@ -235,7 +223,6 @@ export const ProfileResponseSchema = z.object({
   hasImage: z.boolean(),
   imageVersion: z.number().nullable(),
 })
-export type ProfileResponse = z.infer<typeof ProfileResponseSchema>
 
 // GET/PUT /custom/preferences — 사용자가 바꾼 값만 담는 sparse JSON. 값 형태가 키마다 달라 값 자체는
 // 검증하지 않는다.
