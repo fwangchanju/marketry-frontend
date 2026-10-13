@@ -242,10 +242,10 @@ export default function CustomPage() {
           >
             <div className="mt-[5.25px] mb-[5.25px] flex h-7 w-full shrink-0 items-center justify-between bg-black/70 pl-[7px] pr-[7px] text-sm font-bold text-white">
               <div className="flex h-full shrink-0 items-center gap-2">
-                <ToolbarModeText label={mode === 'stock' ? 'STOCK' : 'SECTOR'} />
+                <ToolbarModeText page="CUSTOM" label={mode === 'stock' ? 'STOCK' : 'SECTOR'} />
               </div>
               {/* 종목수/실행취소·다시실행/필터/엑셀 등 — AdminStockTable이 이 노드로 포털링해서 그린다. */}
-              {!isReadOnlySheet && mode === 'stock' && <div ref={setToolbarContainer} className="ml-2 flex h-full min-h-0 min-w-0 flex-1 items-center" />}
+              {!isReadOnlySheet && mode === 'stock' && <div ref={setToolbarContainer} className="ml-1 flex h-full min-h-0 min-w-0 flex-1 items-center" />}
               <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-gray-400`}>
                 <TaxonomyBadge taxonomy={sheet} />
               </div>

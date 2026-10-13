@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { toMarketMapSnapshotDateLabel } from '@/utils/format'
 import type { ExcludedStock } from '@/utils/rangeChangeRate'
 
 // 제외된 종목 팝업에 이름을 적는 최대 종목 수.
 const MAX_LISTED_STOCKS = 10
 
 interface Props {
-  // 기간의 종료일 스냅샷 시각(ISO). 시작일은 달력 아이콘 옆 글자가 맡는다.
-  endSnapshotTime: string
   // 기준일 지도에 없어서 계산에서 뺀 종목.
   excludedStocks: ExcludedStock[]
 }
@@ -22,10 +19,11 @@ function MinusCircleIcon({ className }: { className?: string }) {
   )
 }
 
-// 기간 등락률을 볼 때 날짜 뒤에 붙는 "~ 2026-10-02 (금) ⊖ 제외 종목". 앞의 시작일 날짜는 달력 아이콘 옆 글자가 맡는다.
+// 기간 등락률을 볼 때 날짜 칩 옆에 따로 붙는 "⊖ 제외 종목" 칩 내용. 기간(시작일 ~ 종료일)은 날짜 칩 하나가 맡는다.
 // 시작일의 기준가(= 그 전 거래일 종가)와 종료일의 종가/현재가 설명은 상단이 길어지지 않게 종목 팝업에서 보여 주고,
 // 거래일 수는 달력 맨 위 가운데에 보인다. 빼기 원 아이콘(제외 종목 버튼)을 누르면 제외 종목 이름 목록이 그 버튼 왼쪽에 맞춰 팝업으로 뜬다.
-export default function RangeCompareLabel({ endSnapshotTime, excludedStocks }: Props) {
+// 제외된 종목이 없으면 아무것도 그리지 않으므로, 칩은 이 안이 아니라 호출하는 쪽에서 종목이 있을 때만 만든다.
+export default function RangeExcludedStocks({ excludedStocks }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
 
@@ -52,22 +50,21 @@ export default function RangeCompareLabel({ endSnapshotTime, excludedStocks }: P
   return (
     // 글자와 인라인 버튼이 한 줄에 섞이면 줄 높이가 늘어나 글자가 아래로 밀리므로, flex로 두어 서로 가운데 높이를 맞춘다.
     <span ref={rootRef} className="flex items-center gap-2">
-      <span>~ {toMarketMapSnapshotDateLabel(endSnapshotTime)}</span>
       {hasExcluded && (
         // 팝업은 이 버튼을 기준으로 놓아서, 팝업의 왼쪽 끝이 버튼의 왼쪽 끝과 맞는다.
-        <span className="relative flex items-center gap-1 font-normal text-gray-400">
-          {/* 버튼은 빼기 원 아이콘뿐이고, "제외 종목" 글자는 버튼 밖의 일반 글자다(개수는 팝업 제목에 있다). */}
+        <span className="relative flex items-center font-normal text-gray-400">
+          {/* 아이콘과 "제외 종목" 글자가 한 버튼이라 칩 어디를 눌러도 팝업이 열린다(개수는 팝업 제목에 있다). */}
           <button
             type="button"
             aria-label="제외 종목"
             aria-haspopup="dialog"
             aria-expanded={isPopupOpen}
             onClick={() => setIsOpen(open => !open)}
-            className="flex items-center border-0 bg-transparent p-0 text-inherit hover:text-white"
+            className="flex h-7 items-center gap-1 rounded-md border-0 bg-transparent px-2.5 text-inherit hover:text-white"
           >
             <MinusCircleIcon className="h-[15px] w-[15px] shrink-0" />
+            <span>제외 종목</span>
           </button>
-          <span>제외 종목</span>
           {isPopupOpen && (
                 <div
                   role="dialog"

@@ -5,6 +5,7 @@ import { LONGEST_TRADING_SESSION, type TradingSession } from '@/utils/tradingWin
 import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
+import ToolbarChip from '@/components/ToolbarChip'
 
 // 시간대 말머리 앞 점의 색 — 설정창 4-1) 강조 색상 기준으로 프리 마켓은 연노랑,
 // 메인 마켓은 형광, 애프터 마켓은 연보라, 마켓 종료은 연회색이다.
@@ -137,7 +138,9 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
   return (
     <div className="-mr-[5px] flex shrink-0 items-center gap-2 whitespace-nowrap" data-basis-toggle>
       {/* 종가 지도는 정규장이 끝난 시점의 지도라서, 지금이 애프터 마켓이어도 시간대 글자는 "마켓 종료"로 둔다. 시각으로 계산하지 않아 개장·마감이 달라지는 날에도 맞다. */}
-      <TradingSessionIndicator session={basis === 'close' ? '마켓 종료' : undefined} />
+      <ToolbarChip>
+        <TradingSessionIndicator session={basis === 'close' ? '마켓 종료' : undefined} />
+      </ToolbarChip>
       {visible && <div
         role="radiogroup"
         aria-label="등락률 기준"

@@ -463,18 +463,19 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     : '-'
 
   return (
-    <span ref={rootRef} className="relative z-40 flex items-center gap-1">
+    <span ref={rootRef} className="relative z-40 flex items-center">
       <button
         type="button"
         aria-label="날짜 선택"
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         onClick={toggleOpen}
-        className={`flex items-center border-0 bg-transparent p-0 outline-none ${isPast ? 'text-inherit hover:text-gray-400 focus-visible:text-gray-400' : `hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${isOpen ? 'text-[var(--brand)]' : 'text-inherit'}`}`}
+        className={`flex h-7 items-center gap-1.5 rounded-md border-0 bg-transparent px-2.5 outline-none ${isPast ? 'text-inherit hover:text-gray-400 focus-visible:text-gray-400' : `hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${isOpen ? 'text-[var(--brand)]' : 'text-inherit'}`}`}
       >
         <CalendarIcon className={`h-[15px] w-[15px] shrink-0 ${isOpen ? FILLED_ICON_CLASS : ''}`} aria-hidden />
+        {/* 날짜 글자(기간이면 "~ 종료일"까지)도 버튼 안에 둬서 칩 어디를 눌러도 달력이 열린다. */}
+        {children}
       </button>
-      {children}
       {isOpen && (
         <div
           role="dialog"

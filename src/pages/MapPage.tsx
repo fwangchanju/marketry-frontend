@@ -44,7 +44,8 @@ import { CAPTURE_ID } from '@/utils/captureIds'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/MarketMapIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import ClosingPriceLabel from '@/components/ClosingPriceLabel'
-import RangeCompareLabel from '@/components/RangeCompareLabel'
+import RangeExcludedStocks from '@/components/RangeExcludedStocks'
+import ToolbarChip from '@/components/ToolbarChip'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
@@ -518,11 +519,11 @@ export default function MapPage() {
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
               <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
-                <ToolbarModeText label={MARKET_LABEL[market]} />
+                <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} />
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·누적/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
-                    <span className={`${FONT_BAR_TIME} flex items-center gap-1.5 whitespace-nowrap ${isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}`}>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
+                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
                   <SnapshotDatePicker
                     market={market}
                     viewedSnapshotTime={data?.snapshotTime ?? null}
@@ -536,14 +537,24 @@ export default function MapPage() {
                     <span className={data?.snapshotTime || rangeStartTime ? undefined : 'invisible'}>
                       {toMarketMapSnapshotDateLabel(rangeStartTime ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
                     </span>
+                    {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toMarketMapSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                   </SnapshotDatePicker>
+                  </ToolbarChip>
                   {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
-                    ? <RangeCompareLabel endSnapshotTime={pinnedSnapshotTime} excludedStocks={rangeExcludedStocks} />
-                    : <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />)}
+                    ? rangeExcludedStocks.length > 0 && (
+                      <ToolbarChip bare tone="text-gray-400">
+                        <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
+                      </ToolbarChip>
+                    )
+                    : (
+                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                        <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
+                      </ToolbarChip>
+                    ))}
                   {isPastSnapshot === false && (
-                    <>
-                      <ClockIcon className="-mr-0.5 h-[15px] w-[15px] shrink-0" aria-hidden />
+                    <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
                       <PageRefreshButton
+                        leading={<ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />}
                         onRefresh={refetchMarketMap}
                         isRefreshing={isRefetchingMarketMap}
                         className={FONT_BAR_TIME}
@@ -552,9 +563,8 @@ export default function MapPage() {
                       >
                         <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
                       </PageRefreshButton>
-                    </>
+                    </ToolbarChip>
                   )}
-                </span>
                 {/* 시장 시간대 말머리와 누적/별도 — 시간과 관련된 표시라 시계 옆에 붙인다. */}
                 {isPastSnapshot === false && (
                   <span className="flex shrink-0">
