@@ -153,7 +153,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
       locked: !selectable,
     },
   ]
-  const [popup, setPopup] = useState<{ text: ReactNode; anchor: DOMRect } | null>(null)
+  const [popup, setPopup] = useState<{ text: ReactNode; anchor: DOMRect; touch: boolean } | null>(null)
   const popupRef = useRef<HTMLSpanElement>(null)
   // 버튼 아래(4px)에 붙이고, 화면 밖으로 나가면 안쪽으로 밀거나 위로 뒤집는다 — 새로고침 버튼의 설명창과 같은 배치.
   // 크기를 잰 뒤 DOM 위치만 직접 고쳐서(상태를 다시 설정하지 않는다) 한 번에 자리를 잡는다.
@@ -172,7 +172,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
     element.style.top = `${top}px`
   }, [popup])
 
-  // 커서를 치우면 닫히고, 그 밖에 Esc를 누르거나 창 크기가 바뀌어도 닫는다.
+  // 커서를 치우면 닫히고(터치로 연 팝업은 3초 뒤에 닫힌다), 그 밖에 바깥을 누르거나 Esc를 누르거나 창 크기가 바뀌어도 닫는다.
   useEffect(() => {
     if (!popup) return
     const close = () => setPopup(null)
@@ -182,10 +182,12 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close()
     }
+    const timer = popup.touch ? window.setTimeout(close, 3000) : undefined
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
     window.addEventListener('resize', close)
     return () => {
+      if (timer !== undefined) window.clearTimeout(timer)
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('resize', close)
@@ -206,7 +208,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
   }, [visible, selectedIndex])
 
   return (
-    <div className="-mr-[5px] flex shrink-0 items-center gap-1 whitespace-nowrap" data-basis-toggle>
+    <div className="flex shrink-0 items-center gap-1 whitespace-nowrap" data-basis-toggle>
       {/* 종가 지도는 정규장이 끝난 시점의 지도라서, 지금이 애프터 마켓이어도 시간대 글자는 "마켓 종료"로 둔다. 시각으로 계산하지 않아 개장·마감이 달라지는 날에도 맞다. */}
       <TradingSessionChip session={basis === 'close' ? '마켓 종료' : undefined} />
       {visible && <div
@@ -253,8 +255,9 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
               if (!option.locked && basis !== option.value) onChange(option.value)
             }}
             // 설명 팝업은 누르는 것과 상관없이 커서를 올리는 동안만 뜬다(잠긴 별도도 올리면 설명이 보인다).
-            onPointerEnter={event => setPopup({ text: option.help, anchor: event.currentTarget.getBoundingClientRect() })}
-            onPointerLeave={() => setPopup(null)}
+            // 터치는 손을 떼면 곧바로 pointerleave가 와서 팝업이 바로 사라지므로, 터치로 연 팝업은 남겨 두고 몇 초 뒤에 닫는다.
+            onPointerEnter={event => setPopup({ text: option.help, anchor: event.currentTarget.getBoundingClientRect(), touch: event.pointerType === 'touch' })}
+            onPointerLeave={event => { if (event.pointerType !== 'touch') setPopup(null) }}
             // 안 선택 글자는 옆 거래 세션 글자(text-gray-400)와 같은 회색이다. 잠긴 별도는 흐리게 해서 잠긴 것을 알아보게 한다.
             className={`relative z-10 h-5 min-w-0 flex-1 border-0 bg-transparent px-0 text-[13px] font-semibold leading-none transition-colors duration-[500ms] ${
               basis === option.value

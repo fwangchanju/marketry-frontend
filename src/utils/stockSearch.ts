@@ -37,6 +37,6 @@ export function createStockMatcher<T>(query: string, fieldsOf: (row: T) => Stock
   }
   return row => {
     const { name, code, alias, labels } = fieldsOf(row)
-    return code.includes(needle) || matches(name) || (alias != null && matches(alias)) || (labels ?? []).some(label => label != null && matches(label))
+    return code.toLowerCase().includes(needle) || matches(name) || (alias != null && matches(alias)) || (labels ?? []).some(label => label != null && matches(label))
   }
 }
