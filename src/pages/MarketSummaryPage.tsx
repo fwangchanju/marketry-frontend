@@ -216,7 +216,7 @@ export default function MarketSummaryPage() {
                           {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기다. 배지는 안내가 없어도 항상 하나씩 두고, 없으면 옆에 "없음"을 적는다. */}
                           <div className="flex items-center gap-1 text-[13px] font-medium leading-none">
                             <span className="shrink-0 rounded-sm px-1 py-[3px] text-white" style={{ backgroundColor: badgeColor === 'up' ? upColor : downColor }}>{label}</span>
-                            {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-500">없음</span>}
+                            {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
                           </div>
                           {items.map(item => (
                             <div key={item.stockCode} className="mt-1 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-[13px] font-medium leading-none text-white">
