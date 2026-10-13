@@ -30,13 +30,14 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
 
   if (errorMessage) {
     return (
-      <div role="alert" className={`relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
+      <div role="alert" className={`@container relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
         <div className="absolute inset-0 rounded-full border-[6px] border-gray-600" />
         <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
           <div />
           <MarketryLogo className="h-auto w-[72%]" />
           <div className="flex flex-col items-center gap-1 pt-4">
-            <span className="text-base text-gray-300">{errorMessage}</span>
+            {/* 문구 크기도 경과 시간 숫자와 같이 원 너비에 비례한다(큰 원 기준 5.5%, 11~24px). */}
+            <span className="text-[clamp(11px,5.5cqw,24px)] leading-tight text-gray-300">{errorMessage}</span>
             {onRetry && (
               <button
                 type="button"
@@ -70,7 +71,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
         <MarketryLogo className={`h-auto ${message ? 'w-[72%]' : 'w-[84%]'}`} />
         {/* pb-[10cqw]로 숫자를 칸 한가운데보다 조금 위에 둔다. */}
         <div className="flex flex-col items-center justify-center gap-1 pb-[10cqw]">
-          {message && <span className="text-base text-gray-300">{message}</span>}
+          {message && <span className={`leading-tight text-gray-300 ${isThin ? 'text-base' : 'text-[clamp(11px,5.5cqw,24px)]'}`}>{message}</span>}
           {/* 숫자 크기는 원 너비에 비례한다(원이 작아도 11px 밑으로는 내려가지 않는다). 큰 원(메인 영역)은 숫자가 두드러지지 않게 더 작게 그린다. */}
           <span className={`min-h-[1em] leading-none tabular-nums text-gray-300 ${isThin ? 'text-[clamp(11px,7cqw,28px)]' : 'text-[clamp(11px,5.5cqw,24px)]'}`}>{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
         </div>
