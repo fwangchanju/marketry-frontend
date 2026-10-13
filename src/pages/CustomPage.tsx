@@ -59,6 +59,7 @@ export default function CustomPage() {
   // 종목 화면의 실행취소·다시실행 아이콘이 들어갈 설정창 안의 자리.
   const [stockHistoryTarget, setStockHistoryTarget] = useState<HTMLDivElement | null>(null)
   const [stockExcelTarget, setStockExcelTarget] = useState<HTMLDivElement | null>(null)
+  const [stockBulkTarget, setStockBulkTarget] = useState<HTMLDivElement | null>(null)
   // 비로그인이 내 분류를 누르면 로그인 안내만 띄우고, 보던 분류에 그대로 머문다.
   const handleSelectSheet = (next: TaxonomySelection) => {
     if (next === 'MINE' && isGuestKnown) {
@@ -248,7 +249,7 @@ export default function CustomPage() {
                 />
               </div>
               {/* 종목수/실행취소·다시실행/필터/엑셀 등 — AdminStockTable이 이 노드로 포털링해서 그린다. */}
-              {!isReadOnlySheet && mode === 'stock' && <div ref={setToolbarContainer} className="flex h-full min-h-0 min-w-0 flex-1 items-center" />}
+              {!isReadOnlySheet && mode === 'stock' && <div ref={setToolbarContainer} className="ml-2 flex h-full min-h-0 min-w-0 flex-1 items-center" />}
               <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-gray-400`}>
                 <TaxonomyBadge taxonomy={sheet} />
               </div>
@@ -283,6 +284,7 @@ export default function CustomPage() {
                     toolbarContainer={toolbarContainer}
                     historyContainer={stockHistoryTarget}
                     excelContainer={stockExcelTarget}
+                    bulkContainer={stockBulkTarget}
                     onCountLabelChange={setCountLabel}
                     nxtStockCodes={nxtStockCodes}
                   />
@@ -322,6 +324,7 @@ export default function CustomPage() {
                   {/* 종목 화면은 위에서부터 관리자 → 간편 업종 분류 → 변경 내역 순서다. */}
                   {mode === 'stock' && <div ref={setStockExcelTarget} />}
                   <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'mt-6' : undefined} />
+                  {mode === 'stock' && <div ref={setStockBulkTarget} className="mt-6" />}
                 </>
               ) : (
                 // 마켓트리·거래소 화면은 읽기 전용이라 설정할 항목이 없다 — 그 사실만 알린다.

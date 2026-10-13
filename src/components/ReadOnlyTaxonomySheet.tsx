@@ -198,14 +198,19 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
   )
 }
 
+// 검색어 최대 글자 수 — 분류 이름(대·중·소분류)·약칭 최대 길이(12자)와 같다.
+const SEARCH_MAX_LENGTH = 12
+
 // 표 위의 검색창과 개수 — 카테고리·종목 화면이 같은 틀(위치·크기)을 쓰도록 한 곳에 둔다. 커스텀 종목 표도 이걸 쓴다.
-export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel, extra, settingsLayout = false, inputRightEdgePx, afterInput }: {
+export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel, extra, settingsLayout = false, inline = false, inputRightEdgePx, afterInput }: {
   query: string
   onChange: (query: string) => void
   placeholder: string
   ariaLabel: string
   countLabel?: string
   settingsLayout?: boolean
+  // 윗줄(드롭다운 오른쪽)에 한 줄로 얹을 때 — 표 위 줄 전용 여백(아래 간격·오른쪽 여백)을 없앤다.
+  inline?: boolean
   // 개수 오른쪽 끝에 붙는 추가 조작(예: "NXT만 보기" 체크박스).
   extra?: ReactNode
   // 검색창의 오른쪽 끝을 표 영역 왼쪽에서 이 px에 맞춘다(종목 표: 아래 종목명 열의 오른쪽 줄). 없으면 기본 너비.
@@ -214,14 +219,21 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
   afterInput?: ReactNode
 }) {
   return (
-    <div className={settingsLayout ? 'mb-6 flex min-w-0 flex-col gap-2' : 'flex shrink-0 items-center pr-[18px] pb-2'}>
+    <div className={settingsLayout ? 'mb-6 flex min-w-0 flex-col gap-2' : inline ? 'flex shrink-0 items-center' : 'flex shrink-0 items-center pr-[18px] pb-2'}>
       <input
         type="text"
         value={query}
-        onChange={event => onChange(event.target.value)}
+        maxLength={SEARCH_MAX_LENGTH}
+        // 한글처럼 글자를 조합하며 치는 입력은 maxLength를 넘는 한 글자가 조합 중에 잠깐 들어온다 — 넘는 순간 바로 잘라 낸다.
+        onChange={event => onChange(event.target.value.slice(0, SEARCH_MAX_LENGTH))}
         placeholder={placeholder}
         aria-label={ariaLabel}
-        className={`nes-input is-dark ${settingsLayout ? 'h-8 w-full text-sm' : 'h-7 w-[15.5rem] text-sm'}`}
+        className={`nes-input is-dark text-sm placeholder:indent-[3px] ${
+          // 윗줄 검색창은 표 안의 약칭 입력창과 같은 모양이다(어두운 회색 칸·둥근 모서리·청록 테두리).
+          inline
+            ? 'h-6 w-[15.5rem] !rounded-md !border-0 !bg-[#3b3b3b] text-white outline-none placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]'
+            : `focus:outline-1 focus:outline-offset-0 focus:outline-white ${settingsLayout ? 'h-8 w-full' : 'h-7 w-[15.5rem]'}`
+        }`}
         // 안내 문구와 입력 글자가 위 드롭박스의 글자와 같은 선에서 시작하게 한다: 드롭박스 안쪽 여백(0.5rem)에서
         // 이 입력창의 테두리(1px)만큼 뺀다. 유틸리티 클래스는 nes.css보다 약해서 인라인으로 준다.
         style={{ paddingLeft: 'calc(0.5rem - 1px)', ...(!settingsLayout && inputRightEdgePx ? { width: Math.max(120, inputRightEdgePx) } : {}) }}
@@ -481,7 +493,7 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
         query={query}
         onChange={setQuery}
         inputRightEdgePx={nameRightEdge}
-        placeholder="종목명·약칭·코드·분류 검색"
+        placeholder="종목명·약칭·코드·분류"
         ariaLabel="종목 검색"
         extra={
           <>
