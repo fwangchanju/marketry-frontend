@@ -23,9 +23,10 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, captureFileName, downloadDataUrl } from '@/utils/captureToDownload'
-import { toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
+import { toCount, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
+import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredMarketMapTree'
 import { collectAtDepth } from '@/utils/sectorDepth'
 
 // 홈 화면 시험 배치 — 대분류 업종만으로 그린 약식 등락률 지도와 그룹 등락률 그래프를 스마트폰 크기 틀(가로 360px)에 나란히 둔다.
@@ -97,6 +98,16 @@ export default function MarketSummaryPage() {
     const chart = buildRankChart(entries)
     return { items, chart, advancers, decliners, unchanged }
   }, [data, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, isLatestDailyView])
+  // 설정창 위쪽 "nn/nn종목" — 그룹 페이지와 같은 기준이다. 분모는 지금 시장의 모든 종목, 분자는 제외한 업종(하위 업종까지)·시가총액 구간을 뺀 종목이다.
+  const stockCountLabel = useMemo(() => {
+    const nodes = data?.items ?? []
+    const total = nodes.reduce((sum, node) => sum + collectItems(node).length, 0)
+    const included = filterTreeByExclusions(nodes, excludedSectorIds, excludedMarketValueTiers).reduce(
+      (sum, node) => sum + collectAllItems(node).length,
+      0,
+    )
+    return `${toCount(included)}/${toCount(total)}종목`
+  }, [data, excludedSectorIds, excludedMarketValueTiers])
   // 세 틀을 한 장으로 캡처하는 중에는 틀마다 있는 캡처 버튼을 감춰서 이미지에 찍히지 않게 한다.
   const isCapturingAll = captureTarget !== null && captureTarget === allFramesRef.current
   const handleCopy = async (previewSrc?: string | null) => {
@@ -282,6 +293,7 @@ export default function MarketSummaryPage() {
             isOnLeft={isSettingsOnLeft}
             onToggleSide={toggleSettingsSide}
             plainContent={<SettingsGroupDepthSection depth={1} onChange={() => {}} selectableDepth={1} lockedMessage={<>홈은 대분류로<br />고정되어 있습니다.</>} />}
+            stockCountLabel={stockCountLabel}
             taxonomyAtBottom
             snapshotTime={data?.taxonomyUpdatedAt}
           />
