@@ -65,6 +65,9 @@ export type MarketNoticeItem = z.infer<typeof MarketNoticeItemSchema>
 export const MarketNoticeResponseSchema = z.object({
   date: z.string(),
   items: z.array(MarketNoticeItemSchema),
+  // 날짜와 무관한 현황 — 최근 3개월 신규 상장 수, 지금 거래정지 중인 종목 수. 옛 응답에는 없을 수 있다.
+  recentNewListingCount: z.number().nullish(),
+  currentSuspensionCount: z.number().nullish(),
 })
 
 // ─── Market map ────────────────────────────────────────────────────────────────

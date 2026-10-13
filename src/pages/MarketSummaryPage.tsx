@@ -36,8 +36,8 @@ type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
 const NOTICE_TYPES = [
-  { type: 'NEW_LISTING', label: '신규 상장', badgeColor: 'up' },
-  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeColor: 'down' },
+  { type: 'NEW_LISTING', label: '신규 상장', badgeColor: 'up', countLabel: '최근 3개월', countKey: 'recentNewListingCount' },
+  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeColor: 'down', countLabel: '현재', countKey: 'currentSuspensionCount' },
 ] as const
 
 export default function MarketSummaryPage() {
@@ -209,13 +209,15 @@ export default function MarketSummaryPage() {
                 title: '안내',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
-                    {NOTICE_TYPES.map(({ type, label, badgeColor }) => {
+                    {NOTICE_TYPES.map(({ type, label, badgeColor, countLabel, countKey }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       return (
                         <section key={type} className="border-b border-gray-800 px-1 py-1.5">
                           {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기다. 배지는 안내가 없어도 항상 하나씩 두고, 없으면 옆에 "없음"을 적는다. */}
                           <div className="flex items-center gap-1 text-[13px] font-medium leading-none">
                             <span className="shrink-0 rounded-sm px-1 py-[3px] text-white" style={{ backgroundColor: badgeColor === 'up' ? upColor : downColor }}>{label}</span>
+                            {/* 배지 바로 오른쪽에 날짜와 무관한 현황 건수를 적는다(신규 상장은 최근 3개월, 거래 정지는 현재). 아직 못 받았으면 비워 둔다. */}
+                            {notices?.[countKey] != null && <span className="text-gray-300">{countLabel} {notices[countKey]}</span>}
                             {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
                           </div>
                           {items.map(item => (
