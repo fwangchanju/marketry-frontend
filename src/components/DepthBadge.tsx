@@ -13,14 +13,14 @@ interface Props {
 // 눌러서 바꾸지 않는다(단계는 설정창의 "업종 분류 단계"에서 고른다). 지수 줄과 같은 높이(24px)를 지켜 두 틀의 아래 그래프가 어긋나지 않게 한다.
 export default function DepthBadge({ depth, advancers, decliners, unchanged }: Props) {
   return (
-    // 지수 줄(MarketIndexLine)과 같은 두 칸 구조다 — 같은 폭의 두 칸을 8px 간격으로 두고, 왼쪽 칸("코스피" 자리)에는 단계 배지만, 오른쪽 칸("코스닥" 자리)에는 [등락 배지][▲N ▼N ■N 회색 칸]을 둔다.
+    // 지수 줄(MarketIndexLine)과 같은 두 칸 구조다 — 같은 폭의 두 칸을 8px 간격으로 두고, 왼쪽 칸("코스피" 자리)에는 단계 배지만, 오른쪽 칸("코스닥" 자리)에는 [등락수 배지][▲N ▼N ■N 회색 칸]을 둔다.
     <div className="mb-1 flex h-6 shrink-0 items-center gap-2 whitespace-nowrap text-[13px] font-medium leading-none tabular-nums">
       <span className="flex h-[22px] min-w-0 flex-1 items-center">
         <span className="shrink-0 rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{DEPTH_LABELS[depth - 1] ?? DEPTH_LABELS[0]}</span>
       </span>
       {advancers !== undefined && decliners !== undefined && unchanged !== undefined && (
         <span className="flex h-[22px] min-w-0 flex-1 items-center gap-1">
-          <span className="shrink-0 rounded-sm bg-cyan-900 px-1 py-[3px] text-white">등락</span>
+          <span className="shrink-0 rounded-sm bg-cyan-900 px-1 py-[3px] text-white">등락수</span>
           <span className="flex h-[22px] min-w-0 flex-1 items-center gap-1 rounded-sm bg-zinc-800 px-1">
             <span className="text-red-400">▲{advancers}</span>
             <span className="text-blue-400">▼{decliners}</span>
