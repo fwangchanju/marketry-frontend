@@ -36,7 +36,7 @@ export default function RankBars({
       {items.map(item => {
         const isEllipsis = item.hiddenCount !== undefined
         const selectable = onSelectSector !== undefined && !item.isReference && !isEllipsis
-        const nameClassName = 'w-[92px] shrink-0 truncate text-right font-medium'
+        const nameClassName = 'w-[92px] shrink-0 truncate text-right font-bold'
         const nameColor = item.isReference ? highlightColor : isEllipsis ? '#9ca3af' : '#ffffff'
         return (
           <div key={item.key} className="flex min-h-0 flex-1 items-center gap-2">
