@@ -16,6 +16,7 @@ import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
 import { SearchBar } from './ReadOnlyTaxonomySheet'
+import { createStockMatcher } from '@/utils/stockSearch'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from './EmptyMessage'
 import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
 import { usePopupPosition, type PopupPosition } from '@/hooks/usePopupPosition'
@@ -1337,12 +1338,17 @@ export default function AdminStockTable({
   const bulkMidOptions = effectiveParentId != null ? orderedChildren(effectiveParentId) : []
   const bulkSubOptions = effectiveMidId != null ? orderedChildren(effectiveMidId) : []
 
-  // 표 위 검색창 — 종목명·코드(관리자는 약칭도)만 찾는다. 업종은 머리글 필터로 거른다.
+  // 표 위 검색창 — 종목명·코드·분류명(관리자는 약칭도)을 대소문자·공백 무시와 초성으로 찾는다.
   const [searchQuery, setSearchQuery] = useState('')
   const trimmedSearch = searchQuery.trim()
   const searched = useMemo(() => {
     if (!trimmedSearch) return items
-    return items.filter(item => item.stockName.includes(trimmedSearch) || item.stockCode.includes(trimmedSearch) || (isAdmin && item.alias?.includes(trimmedSearch)))
+    return items.filter(createStockMatcher<StockSectorListItem>(trimmedSearch, item => ({
+      name: item.stockName,
+      code: item.stockCode,
+      alias: isAdmin ? item.alias : null,
+      labels: [item.industryName, item.parentSectorName, item.sectorName],
+    })))
   }, [items, trimmedSearch, isAdmin])
 
   // 머리글 필터 — 종목 크기·마켓·거래소 분류·대/중/소분류·NXT. 값이 없으면 '-'이다.
@@ -1627,9 +1633,12 @@ export default function AdminStockTable({
       )}
       <SearchBar
         query={searchQuery}
-        onChange={setSearchQuery}
+        onChange={query => {
+          setSearchQuery(query)
+          scrollContainerRef.current?.scrollTo({ top: 0 })
+        }}
         inputRightEdgePx={nameRightEdge}
-        placeholder={isAdmin ? '종목명·약칭·코드 검색' : '종목명·코드 검색'}
+        placeholder={isAdmin ? '종목명·약칭·코드·분류 검색' : '종목명·코드·분류 검색'}
         ariaLabel="종목 검색"
         afterInput={
           <>
