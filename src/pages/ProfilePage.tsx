@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { isAxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
+import Spinner from '@/components/Spinner'
 import ProfileAvatar from '@/components/ProfileAvatar'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { useLoginGate } from '@/hooks/useLoginGate'
@@ -15,7 +16,7 @@ const NICKNAME_RULE_MESSAGE = '닉네임은 2~12자의 한글, 영문, 숫자만
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { data: session, isLoading, isError } = useSession()
+  const { data: session, isLoading, isError, refetch } = useSession()
   const { requireLogin } = useLoginGate()
   const leaveToEntryPage = useLeaveToEntryPage()
   const logout = useLogout()
@@ -132,7 +133,10 @@ export default function ProfilePage() {
         <h1 className="text-2xl font-bold">프로필</h1>
         <section className="mt-6 rounded-lg border border-gray-700 bg-zinc-800 p-6">
           {isError ? (
-            <p className="text-sm text-gray-300">계정 정보를 불러오지 못했습니다. 페이지를 새로고침해 주세요.</p>
+            // 다른 화면의 불러오기 실패와 같은 오류 원(문구와 "다시 시도")으로 보여 준다.
+            <div className="flex justify-center py-4">
+              <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetch()} />
+            </div>
           ) : session?.authenticated ? (
             <>
               <h2 className="text-lg font-semibold">계정 정보</h2>
