@@ -10,10 +10,12 @@ export function SlidingHighlight({ count, index, className }: { count: number; i
     <>
       <span
         aria-hidden="true"
-        className={`pointer-events-none absolute transition-transform duration-[500ms] ease-out ${className}`}
+        className={`pointer-events-none absolute z-[1] transition-transform duration-[500ms] ease-out ${className}`}
         style={{ top: INSET, bottom: INSET, left: INSET, width: `calc((100% - ${INSET * 2}px) / ${count})`, transform: `translateX(${index * 100}%)` }}
       />
-      {/* 선택 칸에 맞닿은 경계는 숨기고, 나머지 선은 버튼 가상 요소 대신 묶음 안의 고정된 위치에 그린다. */}
+      {/* 선택 칸에 맞닿은 경계는 숨기고, 나머지 선은 버튼 가상 요소 대신 묶음 안의 고정된 위치에 그린다.
+          강조 칸은 500ms에 걸쳐 미끄러지는데 선은 바로 나타나므로, 선이 강조 칸 위에 그려지면 이동 중에 끊어진 선이 비쳐 보인다 —
+          선을 강조 칸(z-[1]) 아래(z-0)에 둬서 강조 칸이 지나가는 동안 가려지게 한다(글자 버튼은 z-10으로 둘 위에 있다). */}
       {Array.from({ length: Math.max(0, count - 1) }, (_, offset) => {
         const boundary = offset + 1
         if (boundary === index || boundary === index + 1) return null
@@ -21,7 +23,7 @@ export function SlidingHighlight({ count, index, className }: { count: number; i
           <span
             key={boundary}
             aria-hidden="true"
-            className="pointer-events-none absolute z-10 w-px bg-gray-500"
+            className="pointer-events-none absolute z-0 w-px bg-gray-500"
             style={{ top: INSET + 8, bottom: INSET + 8, left: `calc(${INSET}px + (100% - ${INSET * 2}px) * ${boundary} / ${count})` }}
           />
         )
