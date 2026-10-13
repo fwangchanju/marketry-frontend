@@ -15,6 +15,7 @@ import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from '@/compon
 import type { Market, MarketMapResponse } from '@/types/api'
 import { toCount, toJoEokDecimal } from '@/utils/format'
 import { compareKoreanText } from '@/utils/koreanSort'
+import { createStockMatcher } from '@/utils/stockSearch'
 import { collectItems } from '@/utils/sectorAverage'
 import { SortIcon } from '@/components/icons/MarketMapIcons'
 
@@ -394,10 +395,15 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
         return diff === 0 ? b.totalMarketValue - a.totalMarketValue || compareKoreanText(a.stockCode, b.stockCode) : sign * diff
       })
   }, [sectors, stockMarkets, stockIndustries, nxtStockCodes, activeSortKey, direction])
-  // 위쪽 검색창은 종목명·약칭·코드만 찾는다(업종은 머리글 필터로 거른다).
+  // 위쪽 검색창은 종목명·약칭·코드·분류명을 대소문자·공백 무시와 초성으로 찾는다.
   const trimmed = query.trim()
   const searchedRows = useMemo(
-    () => (trimmed ? rows.filter(row => row.stockName.includes(trimmed) || row.alias?.includes(trimmed) || row.stockCode.includes(trimmed)) : rows),
+    () => (trimmed ? rows.filter(createStockMatcher(trimmed, row => ({
+      name: row.stockName,
+      code: row.stockCode,
+      alias: row.alias,
+      labels: [row.industryName, row.parentSector, row.midSector, row.subSector, row.sectorName],
+    }))) : rows),
     [rows, trimmed],
   )
   // 머리글 필터 — 종목 크기·마켓·거래소 분류·대/중/소분류·NXT. 값이 없으면 '-'이다.
@@ -475,7 +481,7 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
         query={query}
         onChange={setQuery}
         inputRightEdgePx={nameRightEdge}
-        placeholder="종목명·약칭·코드 검색"
+        placeholder="종목명·약칭·코드·분류 검색"
         ariaLabel="종목 검색"
         extra={
           <>
