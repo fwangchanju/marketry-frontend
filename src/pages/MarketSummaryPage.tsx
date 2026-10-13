@@ -36,8 +36,8 @@ type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
 const NOTICE_TYPES = [
-  { type: 'NEW_LISTING', label: '신규 상장', badgeClass: 'bg-red-400', countLabel: '최근 3개월', countKey: 'recentNewListingCount' },
-  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeClass: 'bg-blue-400', countLabel: '현재 정지중', countKey: 'currentSuspensionCount' },
+  { type: 'NEW_LISTING', label: '신규 상장', badgeClass: 'bg-red-400', countLabel: '최근 3개월', countPadClass: 'pr-1', countKey: 'recentNewListingCount' },
+  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeClass: 'bg-blue-400', countLabel: '현재 정지중', countPadClass: 'pr-0', countKey: 'currentSuspensionCount' },
 ] as const
 
 export default function MarketSummaryPage() {
@@ -213,7 +213,7 @@ export default function MarketSummaryPage() {
                 title: '안내',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto">
-                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }) => {
+                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countPadClass, countKey }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       return (
                         <section key={type} className="shrink-0">
@@ -226,7 +226,7 @@ export default function MarketSummaryPage() {
                               {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
                             </span>
                             {/* 종류 배지 오른쪽에 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재")를 지수 줄의 "코스피" 배지와 같은 청록 배지로 두고, 그 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"로 둔다. */}
-                            <span className="min-w-[78px] shrink-0 whitespace-nowrap rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
+                            <span className={`min-w-[74px] shrink-0 whitespace-nowrap rounded-sm bg-cyan-700 py-[3px] pl-1 text-white ${countPadClass}`}>{countLabel}</span>
                             <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? '-'}</span>
                           </div>
                           {items.map(item => (
