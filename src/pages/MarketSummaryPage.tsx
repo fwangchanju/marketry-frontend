@@ -226,7 +226,7 @@ export default function MarketSummaryPage() {
                               {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
                             </span>
                             {/* 종류 배지 오른쪽에 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재")를 지수 줄의 "코스피" 배지와 같은 청록 배지로 두고, 그 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"로 둔다. */}
-                            <span className="shrink-0 rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
+                            <span className="w-20 shrink-0 rounded-sm bg-cyan-700 px-1 py-[3px] text-center text-white">{countLabel}</span>
                             <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? '-'}</span>
                           </div>
                           {items.map(item => (
