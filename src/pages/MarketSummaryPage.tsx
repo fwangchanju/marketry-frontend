@@ -217,7 +217,7 @@ export default function MarketSummaryPage() {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       return (
                         <section key={type} className="shrink-0">
-                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기이고, 맨 위 줄은 다른 틀의 첫 줄(지수 줄·단계 배지 줄)과 같은 높이(24px)·같은 세로 위치다. 두 칸(신규 상장·거래 정지)이 위아래로 쌓이고 칸 사이는 8px이다. 배지는 안내가 없어도 항상 하나씩 두고, 그날 안내가 없으면 아래 줄에 "없음"을 적는다. */}
+                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기이고, 맨 위 줄은 다른 틀의 첫 줄(지수 줄·단계 배지 줄)과 같은 높이(24px)·같은 세로 위치다. 두 칸(신규 상장·거래 정지)이 위아래로 쌓이고 칸 사이는 8px이다. 두 줄은 그날 안내가 없어도 항상 있고(건수 칸이 있어 틀이 비어 보이지 않는다), 그날 안내 종목이 있을 때만 그 줄 아래에 종목 줄이 붙는다. */}
                           <div className="flex h-6 items-center gap-1 text-[13px] font-medium leading-none">
                             {/* 종류 배지는 왼쪽 끝, 이름표 배지는 지수 줄의 "코스닥" 배지와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작한다. */}
                             <span className="w-[calc(50%+4px-0.25rem)] shrink-0">
@@ -227,9 +227,6 @@ export default function MarketSummaryPage() {
                             <span className="shrink-0 rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
                             <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? '-'}</span>
                           </div>
-                          {items.length === 0 && (
-                            <div className="flex h-[22px] items-center rounded-sm bg-zinc-800 px-1 text-[13px] font-medium leading-none text-gray-300">없음</div>
-                          )}
                           {items.map(item => (
                             <div key={item.stockCode} className="flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-[13px] font-medium leading-none text-white">
                               <span className="min-w-0 truncate">{item.stockName}</span>
