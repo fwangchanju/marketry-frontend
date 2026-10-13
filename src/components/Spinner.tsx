@@ -64,19 +64,18 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   // 숫자와 로고가 같이 돌지 않도록 도는 테두리와 안쪽 내용을 따로 겹쳐 놓는다.
   // 안쪽은 [빈 칸 / 로고 / 문구·숫자]의 3줄 격자다. 위·아래 빈 칸이 같은 크기(1fr)라 로고가 원의 정확한 가운데에 오고,
   // 숫자(경과 초)는 로고 아래 칸(로고 아래쪽 끝~원 아래쪽 끝)의 한가운데보다 조금 위에 놓인다. 문구는 message를 줄 때만 숫자 위에 붙는다.
-  // 설정창처럼 좁은 영역(showLogo만 준 경우)은 얇은 테두리·작은 글자로 같은 모양을 그린다.
-  const isThin = !showElapsed
+  // 설정창(showLogo만 준 경우)도 같은 비율로 같은 모양을 그린다. 원이 아주 작으면(수십 px) 글자가 읽히지 않으므로 그런 곳은 로고 없는 작은 링(옵션 없음)을 쓴다.
   return (
     <div role="status" aria-label={showElapsed ? '데이터를 불러오는 중입니다.' : '설정 처리 중'} className={`@container relative ${className ?? (showElapsed ? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]' : 'h-24 w-24')}`}>
-      <div aria-hidden="true" className={`absolute inset-0 animate-spin rounded-full border-gray-600 border-t-[var(--brand)] ${isThin ? 'border-[3px]' : 'border-[1.9cqw]'}`} />
+      <div aria-hidden="true" className={`absolute inset-0 animate-spin rounded-full border-gray-600 border-t-[var(--brand)] border-[1.9cqw]`} />
       <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
         <div />
         <MarketryLogo className={`h-auto ${message ? 'w-[72%]' : 'w-[84%]'}`} />
         {/* pb-[10cqw]로 숫자를 칸 한가운데보다 조금 위에 둔다. */}
         <div className="flex flex-col items-center justify-center gap-1 pb-[10cqw]">
-          {message && <span className={`leading-tight text-gray-300 ${isThin ? 'text-base' : 'text-[5.5cqw]'}`}>{message}</span>}
-          {/* 숫자 크기는 원 너비에 비례한다(큰 원 기준 5.5%). 설정창의 얇은 원은 작아서 11px 밑으로 내려가지 않게 한다. */}
-          <span className={`min-h-[1em] leading-none tabular-nums text-gray-300 ${isThin ? 'text-[clamp(11px,7cqw,28px)]' : 'text-[5.5cqw]'}`}>{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
+          {message && <span className={`leading-tight text-gray-300 text-[5.5cqw]`}>{message}</span>}
+          {/* 숫자 크기는 원 너비에 비례한다(큰 원 기준 5.5%). */}
+          <span className={`min-h-[1em] leading-none tabular-nums text-gray-300 text-[5.5cqw]`}>{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
         </div>
       </div>
     </div>

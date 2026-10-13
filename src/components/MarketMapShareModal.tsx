@@ -116,7 +116,7 @@ export default function MarketMapShareModal({
             className={`flex items-center justify-center self-center ${fitWidth ? '' : 'h-[50dvh] w-[60vw]'}`}
             style={fitWidth && previewRatio ? { width: fitWidth, aspectRatio: previewRatio } : undefined}
           >
-            <Spinner />
+            <Spinner showElapsed />
           </div>
         )}
         {/* 양끝 칸의 폭을 같게 유지해 문구 길이와 무관하게 복사 상태를 정중앙에 둔다.
