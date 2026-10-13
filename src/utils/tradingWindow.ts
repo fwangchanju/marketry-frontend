@@ -74,10 +74,6 @@ export function isAfterHoursSelectable(snapshotTime: string | null | undefined, 
   return snapshotTime.slice(11, 16) >= AFTER_HOURS_START
 }
 
-export function isNxtOnlyTime(now: Date, schedule?: MarketTradingSchedule): boolean {
-  return currentNxtOnlyWindow(now, schedule) !== null
-}
-
 // 화면 문구는 유지하고, 확인된 시간표가 있을 때만 고정 시간을 대체한다.
 export type TradingSession = '프리 마켓' | '메인 마켓' | '애프터 마켓' | '마켓 종료'
 

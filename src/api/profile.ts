@@ -1,8 +1,6 @@
 import client from './client'
 import { ProfileResponseSchema } from '@/types/api'
 
-export const getProfile = () => client.get('/profile').then(r => ProfileResponseSchema.parse(r.data))
-
 export const updateNickname = (nickname: string) =>
   client.put('/profile/nickname', { nickname }).then(r => ProfileResponseSchema.parse(r.data))
 

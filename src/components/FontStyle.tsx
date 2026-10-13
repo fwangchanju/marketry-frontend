@@ -14,12 +14,6 @@
 // 네비게이션 바(NavSubBar) 탭 글자. 영문은 Roboto, 한글은 Pretendard로 표시한다.
 export const FONT_NAV_TAB = 'font-roboto-latin text-lg font-bold'
 
-// 세 번째 바(페이지별 상태/옵션 바) — 제목(마켓명, "Custom Sector" 등 페이지 대표 라벨). 20px, bold.
-// leading-none: 기본 line-height(1.5)를 쓰면 줄 높이가 폰트 크기보다 훨씬 커져서 items-center로
-// 정렬해도 실제 글자 위치가 미묘하게 어긋나 보인다 — 줄 높이를 글자 크기에 딱 맞게 줄여야 바 안의
-// 다른 텍스트(지수/모드 상태/시간)와 정확히 같은 기준으로 정렬된다.
-export const FONT_BAR_TITLE = 'text-xl leading-none font-bold'
-
 // 세 번째 바 — 모드 상태 텍스트(예: 커스텀 모드). 16px, medium(500).
 export const FONT_BAR_MODE_STATUS = 'text-base leading-none font-medium'
 
@@ -28,6 +22,3 @@ export const FONT_BAR_MODE_STATUS = 'text-base leading-none font-medium'
 // 크기를 뺀 나머지 모양 — 크기를 따로 정하는 곳(설정창 아래의 업데이트 시각)이 쓴다.
 export const FONT_BAR_TIME_SHAPE = 'leading-none font-medium tabular-nums tracking-[-0.04em]'
 export const FONT_BAR_TIME = `text-[15px] ${FONT_BAR_TIME_SHAPE}`
-
-// 세 번째 바 — 범례. 12px, bold.
-export const FONT_BAR_LEGEND = 'text-xs font-bold'
