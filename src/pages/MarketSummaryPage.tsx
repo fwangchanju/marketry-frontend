@@ -217,11 +217,13 @@ export default function MarketSummaryPage() {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       return (
                         <section key={type} className="shrink-0">
-                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기이고, 맨 위 줄은 다른 틀의 첫 줄(지수 줄·단계 배지 줄)과 같은 높이(24px)·같은 세로 위치다. 두 칸(신규 상장·거래 정지)이 위아래로 쌓이고 칸 사이는 8px이다. 두 줄은 그날 안내가 없어도 항상 있고(건수 칸이 있어 틀이 비어 보이지 않는다), 그날 안내 종목이 있을 때만 그 줄 아래에 종목 줄이 붙는다. */}
+                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기이고, 맨 위 줄은 다른 틀의 첫 줄(지수 줄·단계 배지 줄)과 같은 높이(24px)·같은 세로 위치다. 두 칸(신규 상장·거래 정지)이 위아래로 쌓이고 칸 사이는 8px이다. 두 줄은 그날 안내가 없어도 항상 있고, 그날 안내 종목이 없으면 종류 배지 오른쪽에 "없음"을 적고, 있으면 그 줄 아래에 종목 줄이 붙는다. */}
                           <div className="flex h-6 items-center gap-1 text-[13px] font-medium leading-none">
                             {/* 종류 배지는 왼쪽 끝, 이름표 배지는 지수 줄의 "코스닥" 배지와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작한다. */}
-                            <span className="w-[calc(50%+4px-0.25rem)] shrink-0">
-                              <span className={`inline-block rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
+                            <span className="flex w-[calc(50%+4px-0.25rem)] shrink-0 items-center gap-1">
+                              <span className={`shrink-0 rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
+                              {/* 그날 안내 종목이 없으면 종류 배지 바로 오른쪽(맨 처음 두었던 자리)에 "없음"을 적는다. */}
+                              {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
                             </span>
                             {/* 종류 배지 오른쪽에 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재")를 지수 줄의 "코스피" 배지와 같은 청록 배지로 두고, 그 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"로 둔다. */}
                             <span className="shrink-0 rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
