@@ -36,7 +36,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
           <div />
           {/* 로딩 화면(안내 문구 없음)과 같은 로고 크기·같은 칸·같은 아래 여백이라, 오류 문구가 경과 시간 숫자가 있던 바로 그 자리에 놓인다. */}
           <MarketryLogo className="h-auto w-[84%]" />
-          {/* 문구와 버튼은 숫자 자리보다 조금(원 너비의 2%) 위에 둔다 — 아래 여백을 10%에서 14%로 늘려 가운데가 2% 올라간다. */}
+          {/* 문구는 로딩 화면의 경과 시간 숫자와 같은 칸·같은 아래 여백(14%)이라 같은 높이에 온다. */}
           <div className="flex flex-col items-center justify-center gap-1 pb-[14cqw]">
             <span className="relative text-center text-[5.5cqw] leading-tight text-white">
               {errorMessage}
@@ -72,8 +72,8 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
       <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
         <div />
         <MarketryLogo className={`h-auto ${message ? 'w-[72%]' : 'w-[84%]'}`} />
-        {/* pb-[10cqw]로 숫자를 칸 한가운데보다 조금 위에 둔다. */}
-        <div className="flex flex-col items-center justify-center gap-1 pb-[10cqw]">
+        {/* pb-[14cqw]로 숫자를 칸 한가운데보다 조금 위에 둔다. 오류 화면의 문구와 같은 값이라 숫자와 문구가 같은 높이에 온다. */}
+        <div className="flex flex-col items-center justify-center gap-1 pb-[14cqw]">
           {message && <span className={`leading-tight text-gray-300 text-[5.5cqw]`}>{message}</span>}
           {/* 숫자 크기는 원 너비에 비례한다(큰 원 기준 5.5%). */}
           <span className={`min-h-[1em] leading-none tabular-nums text-gray-300 text-[5.5cqw]`}>{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
