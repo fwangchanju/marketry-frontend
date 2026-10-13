@@ -92,10 +92,12 @@ interface MonthGridProps {
   bandEnd: string | null
   // 누른 날짜와, 그날 종가 지도의 스냅샷 시각(없는 날이면 undefined).
   onPick: (date: string, snapshotTime: string | undefined) => void
+  // false면 불러오는 중 원을 이 달력이 그리지 않는다 — 두 달을 나란히 둘 때 바깥에서 원 하나만 가운데에 그린다.
+  showSpinner?: boolean
 }
 
 // 한 달짜리 달력. 그 달의 종가 지도 목록 조회·불러오는 중/오류 화면을 스스로 맡는다.
-function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, showPrevButton = true, showNextButton = true, liveDate, isSelectable, isSelected, bandStart, bandEnd, onPick }: MonthGridProps) {
+function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, showPrevButton = true, showNextButton = true, liveDate, isSelectable, isSelected, bandStart, bandEnd, onPick, showSpinner = true }: MonthGridProps) {
   const monthKey = toMonthKey(month)
   // 월·년 선택 화면 — 날짜 화면의 "10월"을 누르면 월 선택, "2026년"을 누르면 년 선택이 나온다. 년을 고르면 그 해의 월 선택으로, 월을 고르면 날짜 화면으로 돌아온다.
   const [view, setView] = useState<MonthGridView>('day')
@@ -157,7 +159,7 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
           ))}
         </div>
         <div className="relative flex-1">
-          {isLoading && (
+          {isLoading && showSpinner && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639] pt-1">
               <Spinner showElapsed compact className="h-36 w-36" />
             </div>
@@ -356,6 +358,10 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   }
 
   const isRangeCalendar = isRangeMode && onSelectRange !== undefined
+  // 기간 달력은 두 달을 나란히 두므로 달마다 원이 돌지 않게 여기서 로딩을 합쳐 원 하나만 가운데에 그린다(달력 안의 조회와 같은 키라 요청은 늘지 않는다).
+  const { isLoading: isRangeLeftLoading } = useMarketMapSnapshotDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen && isRangeCalendar, retry: 1 })
+  const { isLoading: isRangeRightLoading } = useMarketMapSnapshotDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen && isRangeCalendar, retry: 1 })
+  const isRangeLoading = isRangeLeftLoading || isRangeRightLoading
   // 고른 기간의 거래일 수 — 시작일을 포함해 종료일까지 센다(시작일 하루 전 종가가 기준이라 시작일 하루도 기간에 든다). 시작일·종료일을 둘 다 고르기 전이나 아직 못 받았으면 비운다.
   const { data: rangeGap } = useTradingDayGap(isRangeCalendar ? (draftStart?.date ?? null) : null, isRangeCalendar ? (draftEnd?.date ?? null) : null)
   const rangeDayCount = rangeGap !== undefined && draftStart !== null && draftEnd !== null ? `${rangeGap + 1}거래일` : null
@@ -509,9 +515,16 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           </div>
           {isRangeCalendar ? (
             <>
-              <div className="flex gap-4">
+              <div className="relative flex gap-4">
+                {isRangeLoading && (
+                  // 월 이름·요일 줄(약 60px) 아래의 날짜 영역 전체를 덮고 그 가운데에 원 하나를 둔다.
+                  <div className="absolute inset-x-0 bottom-0 top-[3.75rem] z-10 flex items-center justify-center bg-[#363639]">
+                    <Spinner showElapsed compact className="h-36 w-36" />
+                  </div>
+                )}
                 <MonthGrid
                   market={market}
+                  showSpinner={false}
                   month={rangeLeftMonth}
                   onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
                   onSetMonth={month => setRangeLeftMonth(month)}
@@ -526,6 +539,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 />
                 <MonthGrid
                   market={market}
+                  showSpinner={false}
                   month={addMonths(rangeLeftMonth, 1)}
                   onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
                   onSetMonth={month => setRangeLeftMonth(addMonths(month, -1))}

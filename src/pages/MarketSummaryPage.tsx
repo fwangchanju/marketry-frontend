@@ -138,7 +138,13 @@ export default function MarketSummaryPage() {
           </div>
           {/* 스마트폰 화면 크기(가로 360px)의 틀 두 개 — 등락률 지도와 그룹 등락률 그래프를 캡처해서 모바일 사용자에게 보여 주기 좋게 나란히 둔다(시험 배치). */}
           <div className="flex min-h-0 flex-1 items-center justify-center gap-6 overflow-auto px-2 pb-4">
-            {/* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */}
+            {/* 불러오는 중이나 오류일 때는 틀을 모두 감추고 지도·그룹·커스텀 페이지처럼 메인 영역 가운데에 원 하나만 둔다. */}
+            {isLoading ? (
+              <Spinner showElapsed />
+            ) : isError ? (
+              <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
+            ) : (
+            /* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */
             <div ref={allFramesRef} className="flex h-[min(100%,780px)] shrink-0 gap-6 bg-black">
             {[
               {
@@ -181,15 +187,7 @@ export default function MarketSummaryPage() {
                     {frame.title}
                     {snapshotClock}
                   </h2>
-                  {isLoading ? (
-                    <div className="flex flex-1 items-center justify-center">
-                      <Spinner showElapsed />
-                    </div>
-                  ) : isError ? (
-                    <div className="flex flex-1 items-center justify-center">
-                      <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
-                    </div>
-                  ) : frame.body}
+                  {frame.body}
                 </div>
                 {/* 캡처 버튼을 제목 바로 오른쪽에 둔다 — 제목과 같은 글자를 보이지 않게 깔아 그 끝에 버튼이 오게 하므로 제목 길이를 재지 않아도 된다.
                     칸 밖에 있어서 캡처 이미지에는 찍히지 않는다. */}
@@ -208,6 +206,7 @@ export default function MarketSummaryPage() {
               </section>
             ))}
             </div>
+            )}
           </div>
         </div>
         {/* 설정창 틀만 먼저 둔다 — 항목은 홈 화면 내용이 정해지면 채운다. */}
