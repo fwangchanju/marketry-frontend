@@ -244,7 +244,7 @@ export default function MarketSummaryPage() {
                 <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
               </div>
             ) : (
-            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 위아래 간격은 틀 안쪽 여백 4px뿐이라 좌우 여백과 같다) — 외곽선·안쪽 여백은 두지 않아, 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
+            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 여백은 사방 4px). 전체를 외곽선(gray-700)으로 두르고 틀 사이는 같은 색 세로 구분선이다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
             <div className="flex min-h-0 min-w-0 flex-1">
             <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto border border-gray-700 bg-black">
             {/* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */}
@@ -316,12 +316,10 @@ export default function MarketSummaryPage() {
               },
             ].map(frame => (
               <section key={frame.title} className="relative flex h-full min-w-[300px] flex-1 flex-col bg-black">
-                {/* 캡처 대상은 이 안쪽 칸이다 — 테두리와 안쪽 여백까지 이 칸에 두어 이미지에도 같이 찍힌다(지도·배지가 이미지 가장자리에 붙어 잘려 보이지 않게).
-                    오른쪽 위 캡처 버튼은 칸 밖에 두어 이미지에 찍히지 않는다. */}
-                <div className="flex min-h-0 flex-1 flex-col bg-black p-1">
+                                <div className="flex min-h-0 flex-1 flex-col bg-black p-1">
                   {/* 헤더 높이는 28px로 고정한다. 제목은 가운데에 두고, 검정 바와 제목을 직사각형 흰색 배지 하나에 담는다(배지 바탕 흰색, 바·글자 검정). 카메라 버튼과 기준 시각은 두지 않는다(날짜·시각은 툴바에, 캡처는 상단 영역의 카메라 버튼에 있다). */}
                   <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-center text-base font-bold text-white">
-                    {/* 흰 바를 품은 직사각형 청록 배지 — 바 왼쪽·글자 오른쪽 여백을 같은 8px로 둬서 바가 배지 가장자리에 붙지 않는다. */}
+                    {/* 검정 바를 품은 직사각형 흰색 배지 — 바 왼쪽·글자 오른쪽 여백을 같은 8px로 둬서 바가 배지 가장자리에 붙지 않는다. */}
                     <span className="inline-flex items-center gap-2 bg-white px-2 py-0.5 leading-tight text-black">
                       <span aria-hidden="true" className="inline-block h-[1em] w-1 shrink-0 bg-black" />
                       {frame.title}
