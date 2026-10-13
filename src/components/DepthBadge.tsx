@@ -16,7 +16,7 @@ export default function DepthBadge({ depth, advancers, decliners, unchanged }: P
     <div className="mb-1 flex h-6 shrink-0 items-center gap-1 whitespace-nowrap text-[13px] font-medium leading-none tabular-nums">
       <span className="shrink-0 rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{DEPTH_LABELS[depth - 1] ?? DEPTH_LABELS[0]}</span>
       {advancers !== undefined && decliners !== undefined && unchanged !== undefined && (
-        <span className="flex h-[22px] min-w-0 flex-1 items-center gap-3 rounded-sm bg-zinc-800 px-1.5">
+        <span className="flex h-[22px] min-w-0 flex-1 items-center justify-end gap-3 rounded-sm bg-zinc-800 px-1.5">
           <span className="text-red-400">상승 {advancers}</span>
           <span className="text-blue-400">하락 {decliners}</span>
           <span className="text-gray-300">보합 {unchanged}</span>
