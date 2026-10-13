@@ -73,7 +73,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
       <div aria-hidden="true" className={`absolute inset-0 animate-spin rounded-full border-gray-600 border-t-[var(--brand)] ${isThin ? 'border-[3px]' : 'border-[6px]'}`} />
       <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
         <div />
-        <MarketryLogo className={`h-auto ${message ? 'w-[72%]' : 'w-[84%]'}`} />
+        <MarketryLogo className={`h-auto ${compact ? 'w-[56%]' : message ? 'w-[72%]' : 'w-[84%]'}`} />
         {/* pb-[10cqw]로 숫자를 칸 한가운데보다 조금 위에 둔다. */}
         <div className="flex flex-col items-center justify-center gap-1 pb-[10cqw]">
           {message && <span className={`leading-tight text-gray-300 ${isThin ? 'text-base' : 'text-[clamp(11px,5.5cqw,24px)]'}`}>{message}</span>}

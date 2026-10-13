@@ -131,7 +131,17 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
   ]
 
   return (
-    <div className="w-60 shrink-0">
+    <div className="relative w-60 shrink-0">
+      {/* 불러오는 중이나 오류일 때는 월 이름·요일 줄까지 덮고 가운데에 원 하나만 둔다. 로딩과 오류의 원 크기는 같아서 서로 바뀌어도 움직이지 않는다. */}
+      {view === 'day' && showSpinner && (isLoading || isError) && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639]">
+          {isLoading ? (
+            <Spinner showElapsed compact className={CALENDAR_SPINNER_CLASS} />
+          ) : (
+            <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetch()} className={CALENDAR_SPINNER_CLASS} />
+          )}
+        </div>
+      )}
       {view === 'day' && (
         <>
           <div className="mb-1 flex items-center justify-between">
@@ -159,16 +169,6 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
           ))}
         </div>
         <div className="relative flex-1">
-          {isLoading && showSpinner && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639] pt-1">
-              <Spinner showElapsed compact className="h-36 w-36" />
-            </div>
-          )}
-          {isError && !isLoading && showSpinner && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639] pt-1">
-              <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetch()} className="h-[11.5rem] w-[11.5rem]" />
-            </div>
-          )}
           <div className="grid grid-cols-7 text-center font-roboto-latin tabular-nums" aria-busy={isLoading}>
             {cells.map((day, index) => {
               if (day === null) return <span key={`blank-${index}`} />
@@ -273,6 +273,9 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
     </div>
   )
 }
+
+// 달력의 로딩·오류 원 크기 — 두 달을 나란히 둔 기간 달력의 높이(약 250px) 안에 들어가는 가장 큰 크기다.
+const CALENDAR_SPINNER_CLASS = 'h-[11.5rem] w-[11.5rem]'
 
 const APPLY_BUTTON_CLASS =
   'shrink-0 rounded-lg border-0 bg-cyan-700 px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-white transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-cyan-700'
@@ -519,16 +522,14 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           {isRangeCalendar ? (
             <>
               <div className="relative flex gap-4">
-                {isRangeLoading && (
-                  // 월 이름·요일 줄(약 60px) 아래의 날짜 영역 전체를 덮고 그 가운데에 원 하나를 둔다.
-                  <div className="absolute inset-x-0 bottom-0 top-[3.75rem] z-10 flex items-center justify-center bg-[#363639]">
-                    <Spinner showElapsed compact className="h-36 w-36" />
-                  </div>
-                )}
-                {isRangeError && (
-                  // 두 달 중 하나라도 못 받으면 달마다 문구를 따로 두지 않고, 로딩 원과 같은 자리·같은 모양으로 하나만 둔다.
-                  <div className="absolute inset-x-0 bottom-0 top-[3.75rem] z-10 flex items-center justify-center bg-[#363639]">
-                    <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className="h-[11.5rem] w-[11.5rem]" />
+                {(isRangeLoading || isRangeError) && (
+                  // 월 이름·요일 줄까지 덮고 가운데에 원 하나만 둔다. 두 달 중 하나라도 못 받으면 오류 원 하나를 둔다. 로딩과 오류의 원 크기는 같다.
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639]">
+                    {isRangeLoading ? (
+                      <Spinner showElapsed compact className={CALENDAR_SPINNER_CLASS} />
+                    ) : (
+                      <Spinner compact errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className={CALENDAR_SPINNER_CLASS} />
+                    )}
                   </div>
                 )}
                 <MonthGrid
