@@ -34,19 +34,23 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
         <div className="absolute inset-0 rounded-full border-[6px] border-gray-600" />
         <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
           <div />
-          <MarketryLogo className="h-auto w-[72%]" />
-          <div className="flex flex-col items-center gap-1 pt-4">
+          {/* 로딩 화면(안내 문구 없음)과 같은 로고 크기·같은 칸·같은 아래 여백이라, 오류 문구가 경과 시간 숫자가 있던 바로 그 자리에 놓인다. */}
+          <MarketryLogo className="h-auto w-[84%]" />
+          <div className="flex flex-col items-center justify-center gap-1 pb-[10cqw]">
             {/* 문구 크기도 경과 시간 숫자와 같이 원 너비에 비례한다(큰 원 기준 5.5%, 11~24px). */}
-            <span className="text-[clamp(11px,5.5cqw,24px)] leading-tight text-gray-300">{errorMessage}</span>
-            {onRetry && (
-              <button
-                type="button"
-                onClick={onRetry}
-                className="mt-2 rounded border border-gray-500 bg-transparent px-4 py-1.5 text-sm text-gray-200 hover:border-[var(--brand)] hover:text-[var(--brand)]"
-              >
-                다시 시도
-              </button>
-            )}
+            <span className="relative text-center text-[clamp(11px,5.5cqw,24px)] leading-tight text-gray-300">
+              {errorMessage}
+              {/* 버튼은 문구 아래에 띄워 둔다 — 문구가 숫자 자리에서 밀리지 않게 한다. */}
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded border border-gray-500 bg-transparent px-4 py-1.5 text-sm text-gray-200 hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                >
+                  다시 시도
+                </button>
+              )}
+            </span>
           </div>
         </div>
       </div>
