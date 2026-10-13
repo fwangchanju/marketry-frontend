@@ -22,7 +22,7 @@ export function TradingSessionIndicator({ session: sessionOverride }: { session?
   const currentSession = useTradingSession()
   const session = sessionOverride ?? currentSession
   return (
-    <span className={`${FONT_BAR_TIME} flex items-center text-gray-400`}>
+    <span className={`${FONT_BAR_TIME} flex items-center text-white`}>
       <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[session] }} />
       {/* 칩 폭은 지금 시간대 이름에 맞춘다 — 애프터 마켓일 때만 그만큼 넓어진다. */}
       <span>{session}</span>

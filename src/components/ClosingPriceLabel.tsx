@@ -13,7 +13,7 @@ export default function ClosingPriceLabel({ viewedSnapshotTime, liveSnapshotTime
   return (
     <span>
       종가
-      {tradingDays ? <span className="font-normal text-gray-400">{` (${tradingDays}거래일 전)`}</span> : null}
+      {tradingDays ? <span className="font-normal">{` (${tradingDays}거래일 전)`}</span> : null}
     </span>
   )
 }

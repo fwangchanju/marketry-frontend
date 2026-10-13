@@ -24,6 +24,8 @@ const BUTTON_BASE_CLASS =
 // 위의 프로필 사진과 아래 설정창 사이에서 위·아래 간격이 같도록(각각 14px) 3.5px 아래로 내린다.
 const ICON_FRAME_CLASS = 'relative top-[3.5px] bg-transparent'
 const BUTTON_CLASS = `${BUTTON_BASE_CLASS} w-7`
+// 툴바 칩 안의 새로고침 칸 — 칩(24px) 안에서 사방 1px씩 띄워 22px 높이에 폭은 18px로 좁혀 세로로 긴 직사각형이고, 평소엔 배경 없이 아이콘이 청록(--brand)이고, 올리면 글자색은 그대로 두고 다른 칩과 같은 밝은 회색(#505050) 면만 깔린다.
+const CELL_CLASS = 'm-px flex h-[22px] w-[18px] items-center justify-center border-0 bg-transparent text-[var(--brand)] outline-none transition-colors hover:bg-[#505050] focus-visible:bg-[#505050]'
 // 켜진 상태의 아이콘은 선 색(청록)을 35% 투명하게 안쪽에 채운다 — 북마크가 켜진 모양.
 export const FILLED_ICON_CLASS = 'fill-current/35'
 
@@ -33,23 +35,20 @@ export const SNAPSHOT_REFRESH_HELP = '5분 간격으로 데이터를 수집합�
 // 스냅샷 새로고침 아이콘 버튼 — 상단바 우측 묶음(NavBarPageActions)과 콘솔 줄(시계 옆) 어디에 두든 같은 모양이다.
 // helpText를 주면 커서를 올리거나 포커스하면 설명창(지도 설정의 도움말 팝업과 같은 모양·글자 크기/굵기)을 버튼 아래에 띄운다.
 // 누르면 새로고침만 실행한다.
-// children을 주면 텍스트를 보여주고, 갱신 중에만 아이콘으로 대체해 회전한다.
+// cell을 주면 툴바 칩 안의 한 구간(24px 정사각형에 가까운 청록 칸)으로 그린다 — 분류 배지의 "분류" 칸과 같은 색이다.
 export function PageRefreshButton({
   onRefresh,
   isRefreshing,
   className = '',
   helpText,
-  children,
-  leading,
+  cell = false,
   minSpinDurationMs = 0,
 }: {
   onRefresh: () => void | Promise<unknown>
   isRefreshing: boolean
   className?: string
   helpText?: ReactNode
-  children?: ReactNode
-  // children 앞에 두는 고정 아이콘(예: 시계) — 버튼 안에 있어서 칩 어디를 눌러도 새로고침이 되고, 올려도 아이콘으로 바뀌지 않는다.
-  leading?: ReactNode
+  cell?: boolean
   minSpinDurationMs?: number
 }) {
   const [isHelpOpen, setIsHelpOpen] = useState(false)
@@ -121,23 +120,12 @@ export function PageRefreshButton({
         aria-label="스냅샷 새로고침"
         aria-busy={showRefreshing}
         aria-describedby={helpText && isHelpOpen ? 'snapshot-refresh-help' : undefined}
-        className={`${BUTTON_BASE_CLASS} ${children ? `gap-1.5 whitespace-nowrap bg-transparent ${leading ? 'px-2.5' : ''}` : `${ICON_FRAME_CLASS} w-7`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default text-[var(--accent)]' : children ? 'text-gray-400' : 'text-gray-300'} ${className}`}
+        className={`${cell ? CELL_CLASS : `${BUTTON_BASE_CLASS} ${ICON_FRAME_CLASS} w-7 ${showRefreshing ? 'text-[var(--accent)]' : 'text-gray-300'}`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default' : ''} ${className}`}
         onClick={handleRefresh}
         onFocus={helpText ? () => setIsHelpOpen(true) : undefined}
         onBlur={helpText ? () => setIsHelpOpen(false) : undefined}
       >
-        {leading}
-        {children ? (
-          <span className="relative inline-flex items-center justify-center">
-            <span aria-hidden={showRefreshing || undefined} className={showRefreshing ? 'invisible' : undefined}>{children}</span>
-            {/* 새로고침 아이콘은 갱신하는 동안에만 시각 글자 자리에 돌아간다 — 커서를 올려도 바뀌지 않는다. */}
-            <span aria-hidden="true" className={`absolute inset-0 flex items-center justify-center ${showRefreshing ? '' : 'invisible'}`}>
-              <RefreshIcon className={`h-[15px] w-[15px] shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
-            </span>
-          </span>
-        ) : (
-          <RefreshIcon aria-hidden="true" className={`h-4 w-4 shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
-        )}
+        <RefreshIcon aria-hidden="true" className={`${cell ? 'h-[15px] w-[15px]' : 'h-4 w-4'} shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
       </button>
       {helpText && isHelpOpen && (
         <span

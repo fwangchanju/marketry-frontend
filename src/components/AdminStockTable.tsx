@@ -1564,7 +1564,7 @@ export default function AdminStockTable({
           setSearchQuery(query)
           scrollContainerRef.current?.scrollTo({ top: 0 })
         }}
-        placeholder={isAdmin ? '종목명·약칭·코드·분류' : '종목명·코드·분류'}
+        placeholder={isAdmin ? '종목명 · 약칭 · 코드 · 분류' : '종목명 · 코드 · 분류'}
         ariaLabel="종목 검색"
         afterInput={
           columnFilters.activeCount > 0 ? (

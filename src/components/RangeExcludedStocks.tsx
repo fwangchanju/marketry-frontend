@@ -60,7 +60,7 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
             aria-haspopup="dialog"
             aria-expanded={isPopupOpen}
             onClick={() => setIsOpen(open => !open)}
-            className="flex h-7 items-center gap-1 rounded-md border-0 bg-transparent px-2.5 text-inherit hover:text-white"
+            className="flex h-6 items-center gap-1 border-0 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[#505050] focus-visible:bg-[#505050]"
           >
             <MinusCircleIcon className="h-[15px] w-[15px] shrink-0" />
             <span>제외 종목</span>

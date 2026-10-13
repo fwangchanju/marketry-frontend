@@ -36,7 +36,7 @@ import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredMarketMapTree'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
-import { FONT_BAR_MODE_STATUS, FONT_BAR_TIME } from '@/components/FontStyle'
+import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/utils/captureToDownload'
@@ -327,7 +327,7 @@ export default function GroupPage() {
                 {/* 로딩 원이나 오류 문구가 보이는 동안에도 시계·시간대·누적/별도·분류명을 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                   <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
-                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
                   <SnapshotDatePicker
                     market={market}
                     viewedSnapshotTime={displayNow?.snapshotTime ?? null}
@@ -349,22 +349,23 @@ export default function GroupPage() {
                       </ToolbarChip>
                     )
                     : (
-                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
                         <ClosingPriceLabel viewedSnapshotTime={displayNow?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
                       </ToolbarChip>
                     ))}
                   {isPastSnapshot === false && (
-                    <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                    <ToolbarChip bare tone="text-white">
+                      <span className="flex items-center gap-1.5 pl-1.5 pr-1">
+                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                        <AnimatedClockLabel snapshotTime={displayNow?.snapshotTime ?? null} />
+                      </span>
                       <PageRefreshButton
-                        leading={<ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />}
+                        cell
                         onRefresh={refetchMarketMap}
                         isRefreshing={isRefreshing}
-                        className={FONT_BAR_TIME}
                         helpText={SNAPSHOT_REFRESH_HELP}
                         minSpinDurationMs={REFRESH_FEEDBACK_MIN_DURATION_MS}
-                      >
-                        <AnimatedClockLabel snapshotTime={displayNow?.snapshotTime ?? null} />
-                      </PageRefreshButton>
+                      />
                     </ToolbarChip>
                   )}
                 {isPastSnapshot === false && (

@@ -28,7 +28,7 @@ import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
-import { FONT_BAR_MODE_STATUS, FONT_BAR_TIME } from '@/components/FontStyle'
+import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useMarketMapDrilldown } from '@/hooks/useMarketMapDrilldown'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
@@ -523,7 +523,7 @@ export default function MapPage() {
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·누적/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
-                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
                   <SnapshotDatePicker
                     market={market}
                     viewedSnapshotTime={data?.snapshotTime ?? null}
@@ -547,22 +547,23 @@ export default function MapPage() {
                       </ToolbarChip>
                     )
                     : (
-                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
                         <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
                       </ToolbarChip>
                     ))}
                   {isPastSnapshot === false && (
-                    <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                    <ToolbarChip bare tone="text-white">
+                      <span className="flex items-center gap-1.5 pl-1.5 pr-1">
+                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                        <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
+                      </span>
                       <PageRefreshButton
-                        leading={<ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />}
+                        cell
                         onRefresh={refetchMarketMap}
                         isRefreshing={isRefetchingMarketMap}
-                        className={FONT_BAR_TIME}
                         helpText={SNAPSHOT_REFRESH_HELP}
                         minSpinDurationMs={REFRESH_FEEDBACK_MIN_DURATION_MS}
-                      >
-                        <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
-                      </PageRefreshButton>
+                      />
                     </ToolbarChip>
                   )}
                 {/* 시장 시간대 말머리와 누적/별도 — 시간과 관련된 표시라 시계 옆에 붙인다. */}
