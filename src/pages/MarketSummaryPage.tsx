@@ -75,9 +75,10 @@ export default function MarketSummaryPage() {
   // 고른 단계의 업종만 모아 지도 박스와 그래프 막대로 쓴다 — 지도 페이지와 같은 제외 기준을 따른다.
   const overview = useMemo(() => {
     const items: OverviewMapItem[] = []
-    // 그래프에 든 업종의 종목 중 오른 종목·내린 종목 수 — 평균과 같은 기준(제외한 시가총액 구간 빼고 하위 업종 전체)으로 센다.
+    // 그래프에 든 업종의 종목 중 오른 종목·내린 종목·보합 종목 수 — 평균과 같은 기준(제외한 시가총액 구간 빼고 하위 업종 전체)으로 센다.
     let advancers = 0
     let decliners = 0
+    let unchanged = 0
     for (const { node, pathKey } of collectAtDepth(data?.items ?? [], effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
       const average = computeSectorAverage(node, excludedMarketValueTiers)
       if (average.weightedAvg === null) continue
@@ -86,6 +87,7 @@ export default function MarketSummaryPage() {
         if (excludedMarketValueTiers.has(item.marketValueTier)) continue
         if (item.changeRate > 0) advancers += 1
         else if (item.changeRate < 0) decliners += 1
+        else unchanged += 1
       }
     }
     const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
@@ -95,7 +97,7 @@ export default function MarketSummaryPage() {
       if (changeRate !== undefined) entries.push({ key: `market-index:${market}`, sectorName: label, value: changeRate, isReference: true })
     }
     const chart = buildRankChart(entries)
-    return { items, chart, advancers, decliners }
+    return { items, chart, advancers, decliners, unchanged }
   }, [data, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, isLatestDailyView])
   // 세 틀을 한 장으로 캡처하는 중에는 틀마다 있는 캡처 버튼을 감춰서 이미지에 찍히지 않게 한다.
   const isCapturingAll = captureTarget !== null && captureTarget === allFramesRef.current
@@ -195,7 +197,7 @@ export default function MarketSummaryPage() {
                 title: '그룹 등락률 (%)',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <DepthBadge depth={effectiveDepth} advancers={overview.advancers} decliners={overview.decliners} />
+                    <DepthBadge depth={effectiveDepth} advancers={overview.advancers} decliners={overview.decliners} unchanged={overview.unchanged} />
                     <div className="flex min-h-0 w-full flex-1">
                       <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
                     </div>
