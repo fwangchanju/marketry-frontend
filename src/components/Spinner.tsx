@@ -36,7 +36,8 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
           <div />
           {/* 로딩 화면(안내 문구 없음)과 같은 로고 크기·같은 칸·같은 아래 여백이라, 오류 문구가 경과 시간 숫자가 있던 바로 그 자리에 놓인다. */}
           <MarketryLogo className="h-auto w-[84%]" />
-          <div className="flex flex-col items-center justify-center gap-1 pb-[10cqw]">
+          {/* 문구와 버튼은 숫자 자리보다 조금(원 너비의 2%) 위에 둔다 — 아래 여백을 10%에서 14%로 늘려 가운데가 2% 올라간다. */}
+          <div className="flex flex-col items-center justify-center gap-1 pb-[14cqw]">
             <span className="relative text-center text-[5.5cqw] leading-tight text-white">
               {errorMessage}
               {/* 버튼은 문구 아래에 띄워 둔다 — 문구가 숫자 자리에서 밀리지 않게 한다. 평소에는 안이 강조색으로 채워진 검정 글자이고, 마우스를 올리면 안이 비고 강조색 테두리·글자가 된다. */}
