@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -19,14 +19,14 @@ import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useMarketNotices } from '@/hooks/useMarketNotices'
-import { usePageSetting } from '@/hooks/usePageSetting'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, captureFileName, downloadDataUrl } from '@/utils/captureToDownload'
-import { toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
+import { toCount, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
-import { computeSectorAverage } from '@/utils/sectorAverage'
+import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
+import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredMarketMapTree'
 import { collectAtDepth } from '@/utils/sectorDepth'
 
 // 홈 화면 시험 배치 — 대분류 업종만으로 그린 약식 등락률 지도와 그룹 등락률 그래프를 스마트폰 크기 틀(가로 360px)에 나란히 둔다.
@@ -34,10 +34,15 @@ import { collectAtDepth } from '@/utils/sectorDepth'
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
 
+// 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
+const NOTICE_TYPES = [
+  { type: 'NEW_LISTING', label: '신규 상장', badgeClass: 'bg-red-400', countLabel: '최근 3개월', countKey: 'recentNewListingCount' },
+  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeClass: 'bg-blue-400', countLabel: '현재 정지중', countKey: 'currentSuspensionCount' },
+] as const
+
 export default function MarketSummaryPage() {
   // 틀마다 캡처 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 캡처하며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
-  const [homeDepth, setHomeDepth] = usePageSetting<number>('homePage.depth', 1)
   const allFramesRef = useRef<HTMLDivElement>(null)
   const frameRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
@@ -59,15 +64,25 @@ export default function MarketSummaryPage() {
     return { indexValue: item?.indexValue ?? null, changeRate: item?.changeRate ?? null }
   }
 
-  const selectableDepth = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT' ? 1 : 3
-  const effectiveDepth = Math.min(homeDepth, selectableDepth)
+  // 홈은 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
+  const effectiveDepth = 1
   // 고른 단계의 업종만 모아 지도 박스와 그래프 막대로 쓴다 — 지도 페이지와 같은 제외 기준을 따른다.
   const overview = useMemo(() => {
     const items: OverviewMapItem[] = []
+    // 그래프에 든 업종의 종목 중 오른 종목·내린 종목·보합 종목 수 — 평균과 같은 기준(제외한 시가총액 구간 빼고 하위 업종 전체)으로 센다.
+    let advancers = 0
+    let decliners = 0
+    let unchanged = 0
     for (const { node, pathKey } of collectAtDepth(data?.items ?? [], effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
       const average = computeSectorAverage(node, excludedMarketValueTiers)
       if (average.weightedAvg === null) continue
       items.push({ key: pathKey, name: node.sectorName, marketValue: node.totalMarketValue, changeRate: average.weightedAvg })
+      for (const item of collectItems(node)) {
+        if (excludedMarketValueTiers.has(item.marketValueTier)) continue
+        if (item.changeRate > 0) advancers += 1
+        else if (item.changeRate < 0) decliners += 1
+        else unchanged += 1
+      }
     }
     const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
     // 그룹 페이지처럼 코스피·코스닥 지수 등락률을 강조 색 참조 막대로 값 순서 자리에 끼운다.
@@ -76,8 +91,18 @@ export default function MarketSummaryPage() {
       if (changeRate !== undefined) entries.push({ key: `market-index:${market}`, sectorName: label, value: changeRate, isReference: true })
     }
     const chart = buildRankChart(entries)
-    return { items, chart }
+    return { items, chart, advancers, decliners, unchanged }
   }, [data, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, isLatestDailyView])
+  // 설정창 위쪽 "nn/nn종목" — 그룹 페이지와 같은 기준이다. 분모는 지금 시장의 모든 종목, 분자는 제외한 업종(하위 업종까지)·시가총액 구간을 뺀 종목이다.
+  const stockCountLabel = useMemo(() => {
+    const nodes = data?.items ?? []
+    const total = nodes.reduce((sum, node) => sum + collectItems(node).length, 0)
+    const included = filterTreeByExclusions(nodes, excludedSectorIds, excludedMarketValueTiers).reduce(
+      (sum, node) => sum + collectAllItems(node).length,
+      0,
+    )
+    return `${toCount(included)}/${toCount(total)}종목`
+  }, [data, excludedSectorIds, excludedMarketValueTiers])
   // 세 틀을 한 장으로 캡처하는 중에는 틀마다 있는 캡처 버튼을 감춰서 이미지에 찍히지 않게 한다.
   const isCapturingAll = captureTarget !== null && captureTarget === allFramesRef.current
   const handleCopy = async (previewSrc?: string | null) => {
@@ -164,7 +189,7 @@ export default function MarketSummaryPage() {
             <div ref={allFramesRef} className="flex h-[min(100%,780px)] shrink-0 gap-6 bg-black">
             {[
               {
-                title: '시장 요약 지도',
+                title: '시장 요약',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
                     {indexLine}
@@ -176,7 +201,7 @@ export default function MarketSummaryPage() {
                 title: '그룹 등락률 (%)',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <DepthBadge depth={effectiveDepth} />
+                    <DepthBadge depth={effectiveDepth} advancers={overview.advancers} decliners={overview.decliners} unchanged={overview.unchanged} />
                     <div className="flex min-h-0 w-full flex-1">
                       <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
                     </div>
@@ -184,20 +209,40 @@ export default function MarketSummaryPage() {
                 ),
               },
               {
-                // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 한 줄씩 보여 준다. 없으면 틀만 비어 있다.
+                // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '안내',
                 body: (
-                  <ul className="m-0 flex min-h-0 w-full flex-1 list-none flex-col overflow-y-auto p-0">
-                    {(notices?.items ?? []).map(item => (
-                      <li key={`${item.type}-${item.stockCode}`} className="flex items-center gap-2 border-b border-gray-800 px-1 py-1.5 text-sm text-white">
-                        <span className={`shrink-0 rounded-sm px-1.5 py-px text-[11.5px] font-extrabold ${item.type === 'TRADING_SUSPENSION' ? 'bg-amber-700' : 'bg-cyan-700'}`}>
-                          {item.type === 'TRADING_SUSPENSION' ? '정지' : '신규'}
-                        </span>
-                        <span className="min-w-0 truncate">{item.stockName}</span>
-                        <span className="ml-auto shrink-0 text-xs tabular-nums text-gray-500">{item.stockCode}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  // 세 칸 격자다: [종류 배지 칸(틀 폭의 절반)] [이름표 배지 칸(두 줄 중 더 긴 쪽 너비)] [건수 칸(남는 폭)]. 이름표 칸이 두 줄에 공유돼 더 짧은 "최근 3개월" 배지가 오른쪽만 늘어나 "현재 정지중" 배지와 같은 너비가 된다.
+                  // 이름표 배지는 "지수 줄의 코스닥 배지"와 같은 가로 위치(틀 폭의 가운데 + 4px)에서 시작한다.
+                  <div className="grid min-h-0 w-full flex-1 grid-cols-[50%_max-content_minmax(0,1fr)] content-start gap-x-1 gap-y-1 overflow-y-auto text-[13px] font-medium leading-none">
+                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey }, index) => {
+                      const items = (notices?.items ?? []).filter(item => item.type === type)
+                      // 맨 위 줄은 다른 틀의 첫 줄(지수 줄·단계 배지 줄)과 같은 높이(24px)·같은 세로 위치다. 두 종류 사이는 8px(격자 간격 4px + 4px)이다.
+                      const rowClass = `flex h-6 items-center gap-1 ${index > 0 ? 'mt-1' : ''}`
+                      return (
+                        <Fragment key={type}>
+                          <span className={rowClass}>
+                            <span className={`shrink-0 rounded-sm px-1 py-[3px] text-black ${badgeClass}`}>{label}</span>
+                            {/* 그날 안내 종목이 없으면 종류 배지 바로 오른쪽(맨 처음 두었던 자리)에 "없음"을 적는다. */}
+                            {items.length === 0 && <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">없음</span>}
+                          </span>
+                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "최근 3개월", 거래 정지는 "현재 정지중")는 지수 줄의 "코스피"와 같은 청록 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 칸은 두고 글자만 비워 둔다. */}
+                          <span className={`${rowClass} whitespace-nowrap`}>
+                            <span className="w-full rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{countLabel}</span>
+                          </span>
+                          <span className={rowClass}>
+                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? ''}</span>
+                          </span>
+                          {items.map(item => (
+                            <div key={item.stockCode} className="col-span-3 flex h-[22px] items-center justify-between gap-2 rounded-sm bg-zinc-800 px-1 text-white">
+                              <span className="min-w-0 truncate">{item.stockName}</span>
+                              <span className="shrink-0 tabular-nums text-gray-300">{item.stockCode}</span>
+                            </div>
+                          ))}
+                        </Fragment>
+                      )
+                    })}
+                  </div>
                 ),
               },
             ].map(frame => (
@@ -251,7 +296,8 @@ export default function MarketSummaryPage() {
             onOpenChange={setIsSettingsOpen}
             isOnLeft={isSettingsOnLeft}
             onToggleSide={toggleSettingsSide}
-            plainContent={<SettingsGroupDepthSection depth={homeDepth} onChange={setHomeDepth} selectableDepth={selectableDepth} />}
+            plainContent={<SettingsGroupDepthSection depth={1} onChange={() => {}} selectableDepth={1} lockedMessage={<>홈은 대분류로<br />고정되어 있습니다.</>} />}
+            stockCountLabel={stockCountLabel}
             taxonomyAtBottom
             snapshotTime={data?.taxonomyUpdatedAt}
           />
