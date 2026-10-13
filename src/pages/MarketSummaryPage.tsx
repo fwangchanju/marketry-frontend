@@ -1,9 +1,9 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import NavBar from '@/components/NavBar'
-import NavBarPageActions from '@/components/NavBarPageActions'
+import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import MarketMapShareModal from '@/components/MarketMapShareModal'
-import { CaptureIcon } from '@/components/icons/MarketMapIcons'
+import { ClockIcon } from '@/components/icons/MarketMapIcons'
 import SettingsSidebar, { SettingsGroupDepthSection } from '@/components/SettingsSidebar'
 import DepthBadge from '@/components/DepthBadge'
 import MarketIndexLine from '@/components/MarketIndexLine'
@@ -11,6 +11,13 @@ import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
+import ToolbarChip from '@/components/ToolbarChip'
+import AnimatedClockLabel from '@/components/AnimatedClockLabel'
+import SnapshotDatePicker from '@/components/SnapshotDatePicker'
+import ClosingPriceLabel from '@/components/ClosingPriceLabel'
+import RangeExcludedStocks from '@/components/RangeExcludedStocks'
+import { ChangeRateModeToggle } from '@/components/MarketMapControls'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
@@ -23,7 +30,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, captureFileName, downloadDataUrl } from '@/utils/captureToDownload'
-import { toCount, toJoEokDecimal, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toMarketMapSnapshotDateLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredMarketMapTree'
@@ -44,21 +51,28 @@ export default function MarketSummaryPage() {
   // 틀마다 캡처 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 캡처하며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const allFramesRef = useRef<HTMLDivElement>(null)
-  const frameRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
-  const { settingsModalProps, data, isLoading, isError, refetchMarketMap, pinnedSnapshotTime, rangeStartTime, changeRateMode, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers } = useGlobalSettings()
+  const {
+    settingsModalProps, data, isLoading, isError, refetchMarketMap, isRefetchingMarketMap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
+    changeRateMode, changeRateChoice, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers,
+    market, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
+    isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
+  } = useGlobalSettings({ allowChangeRateMode: true })
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsSidebarSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+
+  // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대 표시는 숨긴다(실시간 정보라서) — 지도·그룹 페이지와 같다.
+  const isPastSnapshot = pinnedSnapshotTime !== undefined
 
   // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
   const { data: marketSummary } = useMarketSummary()
   // 안내는 지도와 따로 불러온다 — 실패하거나 느려도 홈 화면을 막지 않고, 못 받으면 틀만 비워 둔다.
   const { data: notices } = useMarketNotices()
   // 요약 조회의 지수는 항상 최근 값이다 — 지도가 지난 시각이나 기간을 보고 있거나 시간외 별도 등락률이면 맞지 않으므로 보여 주지 않는다(그룹 페이지도 일간 등락률일 때만 넣는다).
-  const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily'
+  const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
   const indexOf = (market: 'KOSPI' | 'KOSDAQ') => {
     const item = isLatestDailyView ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market) : undefined
     return { indexValue: item?.indexValue ?? null, changeRate: item?.changeRate ?? null }
@@ -137,11 +151,6 @@ export default function MarketSummaryPage() {
   // 세 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
   // 시장 요약 지도와 준비 중 박스 위쪽에 코스피·코스닥 지수 배지를 둔다(그룹 등락률 박스는 지금 보여 주는 업종 분류 단계만 알려 주는 배지).
   const indexLine = <MarketIndexLine indexes={[{ label: '코스피', ...indexOf('KOSPI') }, { label: '코스닥', badgeClass: 'bg-cyan-900', ...indexOf('KOSDAQ') }]} />
-  const snapshotClock = data?.snapshotTime ? (
-    <span className="ml-auto pr-1 text-[14px] font-medium tabular-nums text-gray-400">
-      {toMarketMapSnapshotDateLabel(data.snapshotTime)} {toMarketMapSnapshotTimeOnlyLabel(data.snapshotTime)}
-    </span>
-  ) : null
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-black">
@@ -171,22 +180,75 @@ export default function MarketSummaryPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="HOME" label="ALL STOCK" />
+              {/* 지도·그룹 페이지와 같은 날짜·시각·시간대 — 홈도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
+                  애프터 마켓 시간에는 등락률 기준(종가·누적·별도) 선택도 지도·그룹 페이지와 같이 보인다. 로딩·오류에서도 제자리에 둔다. */}
+              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
+                <SnapshotDatePicker
+                  market={market}
+                  viewedSnapshotTime={data?.snapshotTime ?? null}
+                  liveSnapshotTime={liveSnapshotTime}
+                  onSelectSnapshotTime={onChangePinnedSnapshotTime}
+                  onSelectRange={onSelectRange}
+                  rangeStartTime={rangeStartTime}
+                  isPast={isPastSnapshot}
+                >
+                  <span className={data?.snapshotTime || rangeStartTime ? undefined : 'invisible'}>
+                    {toMarketMapSnapshotDateLabel(rangeStartTime ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
+                  </span>
+                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toMarketMapSnapshotDateLabel(pinnedSnapshotTime)}</span>}
+                </SnapshotDatePicker>
+              </ToolbarChip>
+              {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
+                ? rangeExcludedStocks.length > 0 && (
+                  <ToolbarChip bare tone="text-gray-400">
+                    <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
+                  </ToolbarChip>
+                )
+                : (
+                  <ToolbarChip tone="text-[var(--brand)]">
+                    <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
+                  </ToolbarChip>
+                ))}
+              {isPastSnapshot === false && (
+                <ToolbarChip bare tone="text-white">
+                  <PageRefreshButton
+                    cell
+                    onRefresh={refetchMarketMap}
+                    isRefreshing={isRefetchingMarketMap}
+                    helpText={SNAPSHOT_REFRESH_HELP}
+                    minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
+                  >
+                    <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                    <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
+                  </PageRefreshButton>
+                </ToolbarChip>
+              )}
+              {isPastSnapshot === false && (
+                <span className="flex shrink-0">
+                  <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} onChange={onChangeChangeRateMode} />
+                </span>
+              )}
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-gray-400`}>
               <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
             </div>
           </Toolbar>
-          {/* 스마트폰 화면 크기(가로 360px)의 틀 두 개 — 등락률 지도와 그룹 등락률 그래프를 캡처해서 모바일 사용자에게 보여 주기 좋게 나란히 둔다(시험 배치). */}
-          {/* 로딩·오류 원은 지도·그룹 페이지와 같은 높이에 오도록 위 16px·아래 19.5px 여백 안에서 가운데에 둔다(틀이 보일 때는 아래 16px만). */}
-          <div className={`flex min-h-0 flex-1 items-center justify-center gap-6 overflow-auto px-2 ${isLoading || isError ? 'pt-4 pb-[19.5px]' : 'pb-4'}`}>
-            {/* 불러오는 중이나 오류일 때는 틀을 모두 감추고 지도·그룹·커스텀 페이지처럼 메인 영역 가운데에 원 하나만 둔다. */}
+          {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다(좌우 7px). 로딩·오류 원은 지도·그룹·커스텀 페이지와 같은 위 16px·아래 19.5px 여백 안에서 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
+          <div className="flex min-h-0 flex-1 px-[7px]">
             {isLoading ? (
-              <Spinner showElapsed />
+              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
+                <Spinner showElapsed />
+              </div>
             ) : isError ? (
-              <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
+              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
+                <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
+              </div>
             ) : (
-            /* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */
-            <div ref={allFramesRef} className="flex h-[min(100%,780px)] shrink-0 gap-6 bg-black">
+            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 여백은 사방 4px). 전체를 외곽선(gray-700)으로 두르고 틀 사이는 같은 색 세로 구분선이다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
+            <div className="flex min-h-0 min-w-0 flex-1">
+            <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto border border-gray-700 bg-black">
+            {/* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */}
+            <div ref={allFramesRef} className="flex min-h-0 min-w-full flex-1 divide-x divide-gray-700 bg-black">
             {[
               {
                 title: '시장 요약',
@@ -253,36 +315,22 @@ export default function MarketSummaryPage() {
                 ),
               },
             ].map(frame => (
-              <section key={frame.title} className="relative flex h-full w-[360px] shrink-0 flex-col bg-black">
-                {/* 캡처 대상은 이 안쪽 칸이다 — 테두리와 안쪽 여백까지 이 칸에 두어 이미지에도 같이 찍힌다(지도·배지가 이미지 가장자리에 붙어 잘려 보이지 않게).
-                    오른쪽 위 캡처 버튼은 칸 밖에 두어 이미지에 찍히지 않는다. */}
-                <div ref={element => { frameRefs.current[frame.title] = element }} className="flex min-h-0 flex-1 flex-col border border-gray-700 bg-black p-2">
-                  {/* 헤더 높이를 28px(캡처 버튼 높이)로 고정해서 버튼이 헤더 높이의 가운데에 오게 한다. 제목은 왼쪽에 붙이고, 강조색 바가 맨 앞에 온다. */}
-                  <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-start pl-1 text-base font-bold text-white">
-                    <span aria-hidden="true" className="mr-1.5 inline-block h-[1em] w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
-                    {frame.title}
-                    {frame.title !== '안내' && snapshotClock}
+              <section key={frame.title} className="relative flex h-full min-w-[300px] flex-1 flex-col bg-black">
+                                <div className="flex min-h-0 flex-1 flex-col bg-black p-1">
+                  {/* 헤더 높이는 28px로 고정한다. 제목은 가운데에 두고, 검정 바와 제목을 직사각형 흰색 배지 하나에 담는다(배지 바탕 흰색, 바·글자 검정). 카메라 버튼과 기준 시각은 두지 않는다(날짜·시각은 툴바에, 캡처는 상단 영역의 카메라 버튼에 있다). */}
+                  <h2 className="m-0 mb-1 flex h-7 shrink-0 items-center justify-center text-base font-bold text-white">
+                    {/* 검정 바를 품은 직사각형 흰색 배지 — 바 왼쪽·글자 오른쪽 여백을 같은 8px로 둬서 바가 배지 가장자리에 붙지 않는다. */}
+                    <span className="inline-flex items-center gap-2 bg-white px-2 py-0.5 leading-tight text-black">
+                      <span aria-hidden="true" className="inline-block h-[1em] w-1 shrink-0 bg-black" />
+                      {frame.title}
+                    </span>
                   </h2>
                   {frame.body}
                 </div>
-                {/* 캡처 버튼을 제목 바로 오른쪽에 둔다 — 제목과 같은 글자를 보이지 않게 깔아 그 끝에 버튼이 오게 하므로 제목 길이를 재지 않아도 된다.
-                    칸 밖에 있어서 캡처 이미지에는 찍히지 않는다. 안내 틀은 캡처하지 않으므로 버튼이 없다. */}
-                {frame.title !== '안내' && (
-                  <div className={`pointer-events-none absolute left-[9px] top-[9px] flex h-7 items-center pl-1 text-base font-bold ${isCapturingAll ? 'invisible' : ''}`}>
-                    <span aria-hidden="true" className="invisible mr-1.5 inline-block w-1 shrink-0" />
-                    <span aria-hidden="true" className="invisible">{frame.title}</span>
-                    <button
-                      type="button"
-                      aria-label={`${frame.title} 캡처`}
-                      onClick={() => setCaptureTarget(frameRefs.current[frame.title] ?? null)}
-                      className="pointer-events-auto ml-1 flex h-7 w-7 items-center justify-center border-0 bg-transparent text-gray-400 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
-                    >
-                      <CaptureIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
               </section>
             ))}
+            </div>
+            </div>
             </div>
             )}
           </div>
