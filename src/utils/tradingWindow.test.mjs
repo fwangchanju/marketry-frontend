@@ -66,8 +66,8 @@ test('정상 거래일은 기존 문구와 구간을 그대로 사용한다', ()
 
 test('정상 NXT 필터는 시작을 포함하고 끝은 포함하지 않는다', () => {
   for (const [time, expected] of [
-    ['07:59:59', null], ['08:00:00', '08:00 ~ 08:50'], ['08:49:59', '08:00 ~ 08:50'],
-    ['08:50:00', null], ['15:39:59', null], ['15:40:00', '15:40 ~ 16:00'],
+    ['07:59:59', null], ['08:00:00', '08:00 ~ 09:00'], ['08:49:59', '08:00 ~ 09:00'],
+    ['08:50:00', '08:00 ~ 09:00'], ['08:59:59', '08:00 ~ 09:00'], ['09:00:00', null], ['15:39:59', null], ['15:40:00', '15:40 ~ 16:00'],
     ['15:59:59', '15:40 ~ 16:00'], ['16:00:00', null],
   ]) assert.equal(currentNxtOnlyWindow(at(normal, time), normal)?.label ?? null, expected, time)
 })
@@ -100,7 +100,9 @@ test('FAILED·누락·조회 오류 시 기존 평일 판정을 유지한다', (
     assert.equal(currentTradingSession(at(normal, '08:55:00'), schedule), '프리 마켓')
     assert.equal(currentTradingSession(at(normal, '15:35:00'), schedule), '메인 마켓')
     assert.equal(currentTradingSession(at(normal, '15:50:00'), schedule), '애프터 마켓')
-    assert.equal(currentNxtOnlyWindow(at(normal, '08:30:00'), schedule)?.label, '08:00 ~ 08:50')
+    assert.equal(currentNxtOnlyWindow(at(normal, '08:30:00'), schedule)?.label, '08:00 ~ 09:00')
+    assert.equal(currentNxtOnlyWindow(at(normal, '08:55:00'), schedule)?.label, '08:00 ~ 09:00')
+    assert.equal(currentNxtOnlyWindow(at(normal, '09:00:00'), schedule), null)
     assert.equal(currentNxtOnlyWindow(at(normal, '15:50:00'), schedule)?.label, '15:40 ~ 16:00')
   }
 })
@@ -114,7 +116,7 @@ test('실패한 주말 시간표는 기존대로 종료 표시하고 필터를 �
 test('전날 휴장 캐시를 다음 거래일에 적용하지 않는다', () => {
   const previous = { ...normal, date: '2026-01-01', status: 'HOLIDAY' }
   assert.equal(currentTradingSession(at(normal, '09:00:00'), previous), '메인 마켓')
-  assert.equal(currentNxtOnlyWindow(at(normal, '08:30:00'), previous)?.label, '08:00 ~ 08:50')
+  assert.equal(currentNxtOnlyWindow(at(normal, '08:30:00'), previous)?.label, '08:00 ~ 09:00')
 })
 
 test('한국 날짜가 바뀌면 다음 날짜 시간표 키를 사용한다', () => {

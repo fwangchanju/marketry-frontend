@@ -7,9 +7,9 @@ export interface NxtOnlyWindow {
   toMinutes: number
 }
 
-// 시간표 조회 실패·누락 시 사용하는 기존 한국 시간 기준.
+// 시간표 조회 실패·누락 시 사용하는 기존 한국 시간 기준. 오전 구간은 NXT 단독 거래(08:00~08:50)가 끝난 뒤 단일가 접수 시간(08:50~09:00)에도 정규장 개장까지 NXT 종목만 보여 준다.
 const NXT_ONLY_WINDOWS: readonly NxtOnlyWindow[] = [
-  { label: '08:00 ~ 08:50', fromMinutes: 8 * 60, toMinutes: 8 * 60 + 50 },
+  { label: '08:00 ~ 09:00', fromMinutes: 8 * 60, toMinutes: 9 * 60 },
   { label: '15:40 ~ 16:00', fromMinutes: 15 * 60 + 40, toMinutes: 16 * 60 },
 ]
 
@@ -29,7 +29,12 @@ export function currentNxtOnlyWindow(now: Date, schedule?: MarketTradingSchedule
   if (schedule?.date === getKstDate(now)) {
     if (schedule.status === 'HOLIDAY') return null
     if (schedule.status === 'TRADING_DAY') {
-      const window = schedule.nxtOnlyWindows.find(window => containsTime(now, window))
+      // 서버의 오전 구간은 단일가 접수 시작(08:50)에서 끝나지만, 안내와 필터는 정규장 개장(09:00)까지 이어 간다.
+      const windows = schedule.nxtOnlyWindows.map(window =>
+        schedule.preMarket && schedule.regularMarket && window.startTime === schedule.preMarket.startTime
+          ? { startTime: window.startTime, endTime: schedule.regularMarket.startTime }
+          : window)
+      const window = windows.find(window => containsTime(now, window))
       if (!window) return null
       const start = window.startTime.slice(11, 16)
       const end = window.endTime.slice(11, 16)
