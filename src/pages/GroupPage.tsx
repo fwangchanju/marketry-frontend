@@ -20,10 +20,11 @@ import Toolbar from '@/components/Toolbar'
 import { ClockIcon } from '@/components/icons/MarketMapIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import ClosingPriceLabel from '@/components/ClosingPriceLabel'
-import RangeCompareLabel from '@/components/RangeCompareLabel'
+import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
 import ChangeRateBar from '@/components/ChangeRateBar'
+import ToolbarChip from '@/components/ToolbarChip'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useSectorMarketMapPair } from '@/hooks/useSectorMarketMapPair'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
@@ -322,11 +323,11 @@ export default function GroupPage() {
           <div ref={captureRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white">
             <Toolbar>
               <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
-                <ToolbarModeText label={MARKET_LABEL[market]} />
+                <ToolbarModeText page="GROUP" label={MARKET_LABEL[market]} />
                 {/* 로딩 원이나 오류 문구가 보이는 동안에도 시계·시간대·누적/별도·분류명을 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                   <>
-                <span className={`${FONT_BAR_TIME} flex items-center gap-1.5 whitespace-nowrap ${isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}`}>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
+                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
                   <SnapshotDatePicker
                     market={market}
                     viewedSnapshotTime={displayNow?.snapshotTime ?? null}
@@ -338,14 +339,24 @@ export default function GroupPage() {
                   >
                     {/* 기간을 보는 중이면 시작일은 고른 날짜로 이미 정해져 있으므로, 지도를 기다리는 동안에도 숨기지 않는다. */}
                     <span className={displayNow?.snapshotTime || rangeStartTime ? undefined : 'invisible'}>{toMarketMapSnapshotDateLabel(rangeStartTime ?? displayNow?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}</span>
+                    {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toMarketMapSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                   </SnapshotDatePicker>
+                  </ToolbarChip>
                   {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
-                    ? <RangeCompareLabel endSnapshotTime={pinnedSnapshotTime} excludedStocks={rangeExcludedStocks} />
-                    : <ClosingPriceLabel viewedSnapshotTime={displayNow?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />)}
+                    ? rangeExcludedStocks.length > 0 && (
+                      <ToolbarChip bare tone="text-gray-400">
+                        <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
+                      </ToolbarChip>
+                    )
+                    : (
+                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
+                        <ClosingPriceLabel viewedSnapshotTime={displayNow?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
+                      </ToolbarChip>
+                    ))}
                   {isPastSnapshot === false && (
-                    <>
-                      <ClockIcon className="-mr-0.5 h-[15px] w-[15px] shrink-0" aria-hidden />
+                    <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}>
                       <PageRefreshButton
+                        leading={<ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />}
                         onRefresh={refetchMarketMap}
                         isRefreshing={isRefreshing}
                         className={FONT_BAR_TIME}
@@ -354,9 +365,8 @@ export default function GroupPage() {
                       >
                         <AnimatedClockLabel snapshotTime={displayNow?.snapshotTime ?? null} />
                       </PageRefreshButton>
-                    </>
+                    </ToolbarChip>
                   )}
-                </span>
                 {isPastSnapshot === false && (
                   <span className="flex shrink-0">
                     <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} onChange={onChangeChangeRateMode} />

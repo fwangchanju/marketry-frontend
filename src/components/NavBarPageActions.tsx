@@ -40,6 +40,7 @@ export function PageRefreshButton({
   className = '',
   helpText,
   children,
+  leading,
   minSpinDurationMs = 0,
 }: {
   onRefresh: () => void | Promise<unknown>
@@ -47,6 +48,8 @@ export function PageRefreshButton({
   className?: string
   helpText?: ReactNode
   children?: ReactNode
+  // children 앞에 두는 고정 아이콘(예: 시계) — 버튼 안에 있어서 칩 어디를 눌러도 새로고침이 되고, 올려도 아이콘으로 바뀌지 않는다.
+  leading?: ReactNode
   minSpinDurationMs?: number
 }) {
   const [isHelpOpen, setIsHelpOpen] = useState(false)
@@ -118,11 +121,12 @@ export function PageRefreshButton({
         aria-label="스냅샷 새로고침"
         aria-busy={showRefreshing}
         aria-describedby={helpText && isHelpOpen ? 'snapshot-refresh-help' : undefined}
-        className={`${BUTTON_BASE_CLASS} ${children ? 'group/refresh gap-1.5 whitespace-nowrap bg-transparent' : `${ICON_FRAME_CLASS} w-7`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default text-[var(--accent)]' : children ? 'text-gray-400' : 'text-gray-300'} ${className}`}
+        className={`${BUTTON_BASE_CLASS} ${children ? `group/refresh gap-1.5 whitespace-nowrap bg-transparent ${leading ? 'px-2.5' : ''}` : `${ICON_FRAME_CLASS} w-7`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default text-[var(--accent)]' : children ? 'text-gray-400' : 'text-gray-300'} ${className}`}
         onClick={handleRefresh}
         onFocus={helpText ? () => setIsHelpOpen(true) : undefined}
         onBlur={helpText ? () => setIsHelpOpen(false) : undefined}
       >
+        {leading}
         {children ? (
           <span className="relative inline-flex items-center justify-center">
             <span aria-hidden={showRefreshing || undefined} className={showRefreshing ? 'invisible' : 'group-hover/refresh:invisible group-focus-visible/refresh:invisible'}>{children}</span>
