@@ -220,7 +220,7 @@ export default function MarketSummaryPage() {
                       const rowClass = 'flex h-6 items-center'
                       return (
                         <Fragment key={type}>
-                          {/* 종류 배지(신규 상장·거래 정지)는 한 칸(8px) 들여 쓴다 — 아래 현황 배지(3개월 내 상장·현재 정지 종목)보다 한 단계 안쪽이다. */}
+                          {/* 종류 배지(신규 상장·거래 정지)는 한 칸(8px) 들여 쓴다 — 현황 배지(3개월 내 상장·현재 정지 종목)는 오른쪽에 같은 8px 여백을 둬서 네 배지의 너비가 모두 같고, 종류 배지만 오른쪽으로 8px 밀려 있다. */}
                           <span className={`${rowClass} pl-2`}>
                             <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{label}</span>
                           </span>
@@ -231,7 +231,7 @@ export default function MarketSummaryPage() {
                             </span>
                           </span>
                           {/* 날짜와 무관한 현황 이름표(신규 상장은 "3개월 내 상장", 거래 정지는 "현재 정지 종목")는 짝이 되는 종류 배지와 같은 색 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 글자만 비워 둔다. */}
-                          <span className={rowClass}>
+                          <span className={`${rowClass} pr-2`}>
                             <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{countLabel}</span>
                           </span>
                           <span className={rowClass}>
