@@ -106,6 +106,8 @@ export default function CustomPage() {
   } = useCustomSectors({ enabled: isLoggedIn })
   const {
     data: stockSectors,
+    isLoading: isStockSectorsLoading,
+    isError: isStockSectorsError,
     refetch: refetchStockSectors,
     isRefetching: isRefetchingStockSectors,
   } = useStockSectors({ enabled: isLoggedIn })
@@ -213,8 +215,13 @@ export default function CustomPage() {
       <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
         <NavBar />
         <NavSubBar />
-        <div className="flex min-h-0 flex-1 items-center justify-center p-8">
-          <Spinner showElapsed />
+        {/* 본문이 열렸을 때와 같은 가로 배치 — 원이 설정창을 뺀 메인 영역의 한가운데에 오도록, 설정창이 열려 있으면 그 자리(너비 288px)를
+            비워 두고 왼쪽·오른쪽 위치도 따라간다. 위쪽 바가 겹쳐 있는 다른 페이지의 본문 틀과 원 높이를 맞추려고 아래 여백을 3.5px 더 둔다(원이 1.75px 올라간다). */}
+        <div className="flex min-h-0 min-w-0 flex-1">
+          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center p-8 pb-[calc(2rem+3.5px)]">
+            <Spinner showElapsed />
+          </div>
+          {isSettingsOpen && <div aria-hidden="true" className={`w-72 shrink-0 ${isSettingsOnLeft ? 'order-first' : ''}`} />}
         </div>
       </div>
     )
@@ -284,6 +291,9 @@ export default function CustomPage() {
                     bulkContainer={stockBulkTarget}
                     onCountLabelChange={setCountLabel}
                     nxtStockCodes={nxtStockCodes}
+                    isLoading={isStockSectorsLoading}
+                    isError={isStockSectorsError}
+                    onRetry={() => void refetchStockSectors()}
                   />
                 ) : (
                   <AdminSectorTable

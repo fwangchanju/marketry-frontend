@@ -92,10 +92,12 @@ interface MonthGridProps {
   bandEnd: string | null
   // 누른 날짜와, 그날 종가 지도의 스냅샷 시각(없는 날이면 undefined).
   onPick: (date: string, snapshotTime: string | undefined) => void
+  // false면 불러오는 중·오류 원을 이 달력이 그리지 않는다 — 두 달을 나란히 둘 때 바깥에서 원 하나만 가운데에 그린다.
+  showSpinner?: boolean
 }
 
 // 한 달짜리 달력. 그 달의 종가 지도 목록 조회·불러오는 중/오류 화면을 스스로 맡는다.
-function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, showPrevButton = true, showNextButton = true, liveDate, isSelectable, isSelected, bandStart, bandEnd, onPick }: MonthGridProps) {
+function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, showPrevButton = true, showNextButton = true, liveDate, isSelectable, isSelected, bandStart, bandEnd, onPick, showSpinner = true }: MonthGridProps) {
   const monthKey = toMonthKey(month)
   // 월·년 선택 화면 — 날짜 화면의 "10월"을 누르면 월 선택, "2026년"을 누르면 년 선택이 나온다. 년을 고르면 그 해의 월 선택으로, 월을 고르면 날짜 화면으로 돌아온다.
   const [view, setView] = useState<MonthGridView>('day')
@@ -129,7 +131,17 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
   ]
 
   return (
-    <div className="w-60 shrink-0">
+    <div className="relative w-60 shrink-0">
+      {/* 불러오는 중이나 오류일 때는 월 이름·요일 줄까지 덮고 가운데에 원 하나만 둔다. 로딩과 오류의 원 크기는 같아서 서로 바뀌어도 움직이지 않는다. */}
+      {view === 'day' && showSpinner && (isLoading || isError) && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639]">
+          {isLoading ? (
+            <Spinner showElapsed className={CALENDAR_SPINNER_CLASS} />
+          ) : (
+            <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetch()} className={CALENDAR_SPINNER_CLASS} />
+          )}
+        </div>
+      )}
       {view === 'day' && (
         <>
           <div className="mb-1 flex items-center justify-between">
@@ -157,11 +169,6 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
           ))}
         </div>
         <div className="relative flex-1">
-          {isLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639] pt-1">
-              <Spinner showElapsed compact className="h-36 w-36" />
-            </div>
-          )}
           <div className="grid grid-cols-7 text-center font-roboto-latin tabular-nums" aria-busy={isLoading}>
             {cells.map((day, index) => {
               if (day === null) return <span key={`blank-${index}`} />
@@ -263,17 +270,12 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
           </div>
         </>
       )}
-      {isError && (
-        <p className="mt-1 flex items-center gap-1.5 text-[13px] text-gray-400">
-          불러오지 못했습니다
-          <button type="button" onClick={() => void refetch()} className="border-0 bg-transparent p-0 text-[var(--accent)] hover:underline">
-            다시 시도
-          </button>
-        </p>
-      )}
     </div>
   )
 }
+
+// 달력의 로딩·오류 원 크기 — 한 달 달력(너비 240px, 높이 약 248px) 안에 들어가는 가장 큰 크기다. 안의 크기는 모두 원 너비에 대한 비율이라 메인 영역과 같은 모양이다.
+const CALENDAR_SPINNER_CLASS = 'h-[14.5rem] w-[14.5rem]'
 
 const APPLY_BUTTON_CLASS =
   'shrink-0 rounded-lg border-0 bg-cyan-700 px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-white transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-cyan-700'
@@ -356,6 +358,16 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   }
 
   const isRangeCalendar = isRangeMode && onSelectRange !== undefined
+  // 기간 달력은 두 달을 나란히 두므로 달마다 원이 돌지 않게 여기서 로딩을 합쳐 원 하나만 가운데에 그린다(달력 안의 조회와 같은 키라 요청은 늘지 않는다).
+  const rangeLeftDays = useMarketMapSnapshotDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen && isRangeCalendar, retry: 1 })
+  const rangeRightDays = useMarketMapSnapshotDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen && isRangeCalendar, retry: 1 })
+  const isRangeLoading = rangeLeftDays.isLoading || rangeRightDays.isLoading
+  const isRangeError = !isRangeLoading && (rangeLeftDays.isError || rangeRightDays.isError)
+  // 오류 화면의 "다시 시도"는 실패한 달만 다시 받는다.
+  const retryRange = () => {
+    if (rangeLeftDays.isError) void rangeLeftDays.refetch()
+    if (rangeRightDays.isError) void rangeRightDays.refetch()
+  }
   // 고른 기간의 거래일 수 — 시작일을 포함해 종료일까지 센다(시작일 하루 전 종가가 기준이라 시작일 하루도 기간에 든다). 시작일·종료일을 둘 다 고르기 전이나 아직 못 받았으면 비운다.
   const { data: rangeGap } = useTradingDayGap(isRangeCalendar ? (draftStart?.date ?? null) : null, isRangeCalendar ? (draftEnd?.date ?? null) : null)
   const rangeDayCount = rangeGap !== undefined && draftStart !== null && draftEnd !== null ? `${rangeGap + 1}거래일` : null
@@ -509,9 +521,20 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           </div>
           {isRangeCalendar ? (
             <>
-              <div className="flex gap-4">
+              <div className="relative flex gap-4">
+                {(isRangeLoading || isRangeError) && (
+                  // 월 이름·요일 줄까지 덮고 가운데에 원 하나만 둔다. 두 달 중 하나라도 못 받으면 오류 원 하나를 둔다. 로딩과 오류의 원 크기는 같다.
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#363639]">
+                    {isRangeLoading ? (
+                      <Spinner showElapsed className={CALENDAR_SPINNER_CLASS} />
+                    ) : (
+                      <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className={CALENDAR_SPINNER_CLASS} />
+                    )}
+                  </div>
+                )}
                 <MonthGrid
                   market={market}
+                  showSpinner={false}
                   month={rangeLeftMonth}
                   onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
                   onSetMonth={month => setRangeLeftMonth(month)}
@@ -526,6 +549,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 />
                 <MonthGrid
                   market={market}
+                  showSpinner={false}
                   month={addMonths(rangeLeftMonth, 1)}
                   onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
                   onSetMonth={month => setRangeLeftMonth(addMonths(month, -1))}
