@@ -1,9 +1,9 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import NavBar from '@/components/NavBar'
-import NavBarPageActions from '@/components/NavBarPageActions'
+import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import MarketMapShareModal from '@/components/MarketMapShareModal'
-import { CaptureIcon } from '@/components/icons/MarketMapIcons'
+import { CaptureIcon, ClockIcon } from '@/components/icons/MarketMapIcons'
 import SettingsSidebar, { SettingsGroupDepthSection } from '@/components/SettingsSidebar'
 import DepthBadge from '@/components/DepthBadge'
 import MarketIndexLine from '@/components/MarketIndexLine'
@@ -11,6 +11,13 @@ import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
+import ToolbarChip from '@/components/ToolbarChip'
+import AnimatedClockLabel from '@/components/AnimatedClockLabel'
+import SnapshotDatePicker from '@/components/SnapshotDatePicker'
+import ClosingPriceLabel from '@/components/ClosingPriceLabel'
+import RangeExcludedStocks from '@/components/RangeExcludedStocks'
+import { ChangeRateModeToggle } from '@/components/MarketMapControls'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
@@ -23,7 +30,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, captureFileName, downloadDataUrl } from '@/utils/captureToDownload'
-import { toCount, toJoEokDecimal, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredMarketMapTree'
@@ -48,10 +55,17 @@ export default function MarketSummaryPage() {
   const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
-  const { settingsModalProps, data, isLoading, isError, refetchMarketMap, pinnedSnapshotTime, rangeStartTime, changeRateMode, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers } = useGlobalSettings()
+  const {
+    settingsModalProps, data, isLoading, isError, refetchMarketMap, isRefetchingMarketMap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
+    changeRateMode, changeRateChoice, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers,
+    market, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
+  } = useGlobalSettings()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsSidebarSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+
+  // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대 표시는 숨긴다(실시간 정보라서) — 지도·그룹 페이지와 같다.
+  const isPastSnapshot = pinnedSnapshotTime !== undefined
 
   // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
   const { data: marketSummary } = useMarketSummary()
@@ -171,6 +185,54 @@ export default function MarketSummaryPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="HOME" label="ALL STOCK" />
+              {/* 지도·그룹 페이지와 같은 날짜·시각·시간대 — 홈도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
+                  홈은 등락률 기준(종가·누적·별도) 선택이 없어서 시간대 표시만 둔다. 로딩·오류에서도 제자리에 둔다. */}
+              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
+                <SnapshotDatePicker
+                  market={market}
+                  viewedSnapshotTime={data?.snapshotTime ?? null}
+                  liveSnapshotTime={liveSnapshotTime}
+                  onSelectSnapshotTime={onChangePinnedSnapshotTime}
+                  onSelectRange={onSelectRange}
+                  rangeStartTime={rangeStartTime}
+                  isPast={isPastSnapshot}
+                >
+                  <span className={data?.snapshotTime || rangeStartTime ? undefined : 'invisible'}>
+                    {toMarketMapSnapshotDateLabel(rangeStartTime ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
+                  </span>
+                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toMarketMapSnapshotDateLabel(pinnedSnapshotTime)}</span>}
+                </SnapshotDatePicker>
+              </ToolbarChip>
+              {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
+                ? rangeExcludedStocks.length > 0 && (
+                  <ToolbarChip bare tone="text-gray-400">
+                    <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
+                  </ToolbarChip>
+                )
+                : (
+                  <ToolbarChip tone="text-[var(--brand)]">
+                    <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
+                  </ToolbarChip>
+                ))}
+              {isPastSnapshot === false && (
+                <ToolbarChip bare tone="text-white">
+                  <PageRefreshButton
+                    cell
+                    onRefresh={refetchMarketMap}
+                    isRefreshing={isRefetchingMarketMap}
+                    helpText={SNAPSHOT_REFRESH_HELP}
+                    minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
+                  >
+                    <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                    <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
+                  </PageRefreshButton>
+                </ToolbarChip>
+              )}
+              {isPastSnapshot === false && (
+                <span className="flex shrink-0">
+                  <ChangeRateModeToggle basis={changeRateChoice} visible={false} selectable={false} onChange={() => {}} />
+                </span>
+              )}
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-gray-400`}>
               <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
