@@ -239,16 +239,20 @@ export default function MarketSummaryPage() {
               <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
             </div>
           </Toolbar>
-          {/* 스마트폰 화면 크기(가로 360px)의 틀 두 개 — 등락률 지도와 그룹 등락률 그래프를 캡처해서 모바일 사용자에게 보여 주기 좋게 나란히 둔다(시험 배치). */}
-          {/* 로딩·오류 원은 지도·그룹 페이지와 같은 높이에 오도록 위 16px·아래 19.5px 여백 안에서 가운데에 둔다(틀이 보일 때는 아래 16px만). */}
-          <div className={`flex min-h-0 flex-1 items-center justify-center gap-6 overflow-auto px-2 ${isLoading || isError ? 'pt-4 pb-[19.5px]' : 'pb-4'}`}>
-            {/* 불러오는 중이나 오류일 때는 틀을 모두 감추고 지도·그룹·커스텀 페이지처럼 메인 영역 가운데에 원 하나만 둔다. */}
+          {/* 본문 영역 — 지도·그룹·커스텀 페이지와 같은 고정 영역(좌우 7px·위 16px·아래 19.5px 여백)이다. 로딩·오류 원은 이 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
+          <div className="flex min-h-0 flex-1 px-[7px] pt-4 pb-[19.5px]">
             {isLoading ? (
-              <Spinner showElapsed />
+              <div className="flex flex-1 items-center justify-center">
+                <Spinner showElapsed />
+              </div>
             ) : isError ? (
-              <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
+              <div className="flex flex-1 items-center justify-center">
+                <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
+              </div>
             ) : (
-            /* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */
+            /* 전체 프레임 — 본문 영역을 채우고 세 틀(스마트폰 화면 가로 360px)을 가운데에 가둔다. 창이 작으면 이 프레임 안에서만 스크롤된다. */
+            <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-auto border border-gray-700 bg-black p-2">
+            {/* 세 틀을 한 장으로 캡처할 때의 대상 — 틀 사이 간격까지 이 칸에 담긴다. */}
             <div ref={allFramesRef} className="flex h-[min(100%,780px)] shrink-0 gap-6 bg-black">
             {[
               {
@@ -346,6 +350,7 @@ export default function MarketSummaryPage() {
                 )}
               </section>
             ))}
+            </div>
             </div>
             )}
           </div>
