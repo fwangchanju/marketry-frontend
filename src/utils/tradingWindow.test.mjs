@@ -59,8 +59,8 @@ const at = (schedule, time) => new Date(`${schedule.date}T${time}+09:00`)
 test('정상 거래일은 기존 문구와 구간을 그대로 사용한다', () => {
   for (const [time, expected] of [
     ['07:59:59', '마켓 종료'], ['08:00:00', '프리 마켓'], ['08:50:00', '프리 마켓'],
-    ['09:00:00', '메인 마켓'], ['15:29:59', '메인 마켓'], ['15:30:00', '마켓 종료'],
-    ['15:39:59', '마켓 종료'], ['15:40:00', '애프터 마켓'], ['20:00:00', '마켓 종료'],
+    ['09:00:00', '메인 마켓'], ['15:29:59', '메인 마켓'], ['15:30:00', '메인 마켓'],
+    ['15:39:59', '메인 마켓'], ['15:40:00', '애프터 마켓'], ['20:00:00', '마켓 종료'],
   ]) assert.equal(currentTradingSession(at(normal, time), normal), expected, time)
 })
 
@@ -75,7 +75,7 @@ test('정상 NXT 필터는 시작을 포함하고 끝은 포함하지 않는다'
 test('수능일에는 프리장을 만들지 않고 메인·애프터 시작과 종료가 이동한다', () => {
   for (const [time, expected] of [
     ['08:30:00', '마켓 종료'], ['09:30:00', '마켓 종료'], ['10:00:00', '메인 마켓'],
-    ['16:29:59', '메인 마켓'], ['16:30:00', '마켓 종료'], ['16:39:59', '마켓 종료'],
+    ['16:29:59', '메인 마켓'], ['16:30:00', '메인 마켓'], ['16:39:59', '메인 마켓'],
     ['16:40:00', '애프터 마켓'], ['20:00:00', '마켓 종료'],
   ]) assert.equal(currentTradingSession(at(exam, time), exam), expected, time)
 })
@@ -97,6 +97,8 @@ test('평일 휴장은 저장된 구간이 있더라도 종료 표시와 필터 
 test('FAILED·누락·조회 오류 시 기존 평일 판정을 유지한다', () => {
   for (const schedule of [{ ...normal, status: 'FAILED' }, undefined]) {
     assert.equal(currentTradingSession(at(normal, '08:30:00'), schedule), '프리 마켓')
+    assert.equal(currentTradingSession(at(normal, '08:55:00'), schedule), '프리 마켓')
+    assert.equal(currentTradingSession(at(normal, '15:35:00'), schedule), '메인 마켓')
     assert.equal(currentTradingSession(at(normal, '15:50:00'), schedule), '애프터 마켓')
     assert.equal(currentNxtOnlyWindow(at(normal, '08:30:00'), schedule)?.label, '08:00 ~ 08:50')
     assert.equal(currentNxtOnlyWindow(at(normal, '15:50:00'), schedule)?.label, '15:40 ~ 16:00')

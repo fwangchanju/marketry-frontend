@@ -80,8 +80,9 @@ export function currentTradingSession(now: Date, schedule?: MarketTradingSchedul
   if (schedule?.date === getKstDate(now)) {
     if (schedule.status === 'HOLIDAY') return '마켓 종료'
     if (schedule.status === 'TRADING_DAY') {
-      if (containsTime(now, schedule.preMarket)) return '프리 마켓'
-      if (containsTime(now, schedule.regularMarket)) return '메인 마켓'
+      // 칩 글자는 프리 마켓을 메인 시작(09:00)까지, 메인 마켓을 애프터 시작(15:40)까지 보여 준다. 사이의 단일가 접수 시간도 앞 시간대로 본다.
+      if (isBetween(now, schedule.preMarket?.startTime, schedule.regularMarket?.startTime ?? schedule.preMarket?.endTime)) return '프리 마켓'
+      if (isBetween(now, schedule.regularMarket?.startTime, schedule.afterMarket?.startTime ?? schedule.regularMarket?.endTime)) return '메인 마켓'
       if (containsTime(now, schedule.afterMarket)) return '애프터 마켓'
       return '마켓 종료'
     }
@@ -92,7 +93,7 @@ export function currentTradingSession(now: Date, schedule?: MarketTradingSchedul
   if (weekday === 'Sat' || weekday === 'Sun') return '마켓 종료'
   const minutes = Number(value('hour')) * 60 + Number(value('minute'))
   if (minutes >= 8 * 60 && minutes < 9 * 60) return '프리 마켓'
-  if (minutes >= 9 * 60 && minutes < 15 * 60 + 30) return '메인 마켓'
+  if (minutes >= 9 * 60 && minutes < 15 * 60 + 40) return '메인 마켓'
   if (minutes >= 15 * 60 + 40 && minutes < 20 * 60) return '애프터 마켓'
   return '마켓 종료'
 }
@@ -101,6 +102,12 @@ export function getKstDate(now: Date): string {
   const parts = KST_PARTS.formatToParts(now)
   const value = (type: string) => parts.find(part => part.type === type)?.value ?? ''
   return `${value('year')}-${value('month')}-${value('day')}`
+}
+
+function isBetween(now: Date, startTime: string | undefined, endTime: string | undefined): boolean {
+  if (!startTime || !endTime) return false
+  return now.getTime() >= new Date(`${startTime}+09:00`).getTime()
+    && now.getTime() < new Date(`${endTime}+09:00`).getTime()
 }
 
 function containsTime(now: Date, window: MarketTradingSchedule['preMarket']): boolean {
