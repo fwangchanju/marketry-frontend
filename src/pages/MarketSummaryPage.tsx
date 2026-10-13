@@ -18,6 +18,7 @@ import ChangeRateBar from '@/components/ChangeRateBar'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
+import { useMarketNotices } from '@/hooks/useMarketNotices'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
@@ -49,6 +50,8 @@ export default function MarketSummaryPage() {
 
   // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
   const { data: marketSummary } = useMarketSummary()
+  // 안내는 지도와 따로 불러온다 — 실패하거나 느려도 홈 화면을 막지 않고, 못 받으면 틀만 비워 둔다.
+  const { data: notices } = useMarketNotices()
   // 요약 조회의 지수는 항상 최근 값이다 — 지도가 지난 시각이나 기간을 보고 있거나 시간외 별도 등락률이면 맞지 않으므로 보여 주지 않는다(그룹 페이지도 일간 등락률일 때만 넣는다).
   const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily'
   const indexOf = (market: 'KOSPI' | 'KOSDAQ') => {
@@ -181,9 +184,21 @@ export default function MarketSummaryPage() {
                 ),
               },
               {
-                // 거래정지·신규 상장 같은 특수한 종목이 생기면 안내를 띄울 자리다. 내용은 아직 없다.
+                // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 한 줄씩 보여 준다. 없으면 틀만 비어 있다.
                 title: '안내',
-                body: <div className="flex min-h-0 w-full flex-1 flex-col" />,
+                body: (
+                  <ul className="m-0 flex min-h-0 w-full flex-1 list-none flex-col overflow-y-auto p-0">
+                    {(notices?.items ?? []).map(item => (
+                      <li key={`${item.type}-${item.stockCode}`} className="flex items-center gap-2 border-b border-gray-800 px-1 py-1.5 text-sm text-white">
+                        <span className={`shrink-0 rounded-sm px-1.5 py-px text-[11.5px] font-extrabold ${item.type === 'TRADING_SUSPENSION' ? 'bg-amber-700' : 'bg-cyan-700'}`}>
+                          {item.type === 'TRADING_SUSPENSION' ? '정지' : '신규'}
+                        </span>
+                        <span className="min-w-0 truncate">{item.stockName}</span>
+                        <span className="ml-auto shrink-0 text-xs tabular-nums text-gray-500">{item.stockCode}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ),
               },
             ].map(frame => (
               <section key={frame.title} className="relative flex h-full w-[360px] shrink-0 flex-col bg-black">
