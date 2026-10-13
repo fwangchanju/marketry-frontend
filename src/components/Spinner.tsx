@@ -40,12 +40,12 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
           <div className="flex flex-col items-center justify-center gap-1 pb-[14cqw]">
             <span className="relative text-center text-[5.5cqw] leading-tight text-white">
               {errorMessage}
-              {/* 버튼은 문구 아래에 띄워 둔다 — 문구가 숫자 자리에서 밀리지 않게 한다. 평소에는 안이 강조색으로 채워진 검정 글자이고, 마우스를 올리면 안이 비고 강조색 테두리·글자가 된다. */}
+              {/* 버튼은 문구 아래에 띄워 둔다 — 문구가 숫자 자리에서 밀리지 않게 한다. 색은 설정창의 "적용" 버튼·확인 팝업의 확인 버튼과 같다(청록 채움 + 흰 글자, 마우스를 올리면 한 단계 밝아짐). */}
               {onRetry && (
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="absolute left-1/2 top-full mt-[5cqw] -translate-x-1/2 whitespace-nowrap rounded border border-[var(--brand)] bg-[var(--brand)] px-[2.6cqw] py-[0.8cqw] text-[4.25cqw] font-bold text-black transition-colors hover:bg-transparent hover:text-[var(--brand)]"
+                  className="absolute left-1/2 top-full mt-[5cqw] -translate-x-1/2 whitespace-nowrap rounded border-0 bg-cyan-700 px-[2.6cqw] py-[0.8cqw] text-[4.25cqw] font-bold text-white transition-colors hover:bg-cyan-600"
                 >
                   다시 시도
                 </button>
