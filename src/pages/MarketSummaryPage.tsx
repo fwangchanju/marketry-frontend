@@ -230,12 +230,12 @@ export default function MarketSummaryPage() {
                               <span className="min-w-0 truncate">{items.length === 0 ? '없음' : items.map(item => item.stockName).join(' · ')}</span>
                             </span>
                           </span>
-                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "3개월 내 상장", 거래 정지는 "현재 정지 종목")는 짝이 되는 종류 배지와 같은 색 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 글자만 비워 둔다. */}
+                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "3개월 내 상장", 거래 정지는 "현재 정지 종목")는 짝이 되는 종류 배지와 같은 색 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"를 적는다(0건이면 0). */}
                           <span className={rowClass}>
                             <span className={`w-full whitespace-nowrap rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>{countLabel}</span>
                           </span>
                           <span className={rowClass}>
-                            <span className="flex h-[22px] min-w-0 flex-1 items-center justify-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? ''}</span>
+                            <span className="flex h-[22px] min-w-0 flex-1 items-center justify-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? '-'}</span>
                           </span>
                           {/* 같은 줄 오른쪽에 그 종목들의 현시점 시가총액 합을 "시가총액 합" 배지(같은 줄 배지와 같은 색)와 회색 칸으로 둔다. 표기는 Custom 페이지와 같은 n,nnn.n조/억이다. */}
                           <span className={`${rowClass} whitespace-nowrap`}>
