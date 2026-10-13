@@ -162,10 +162,10 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
       .filter(row => row.stocks.length > 0)
   }, [data, mode, effectiveNxtOnly, nxtStockCodes])
 
-  // 지도·그룹 페이지처럼 불러오지 못했을 때는 큰 원 안에 안내 글을 가운데에 보여준다.
+  // 지도·그룹 페이지처럼 불러오지 못했을 때는 큰 원 안에 안내 글을 가운데에 보여준다(원 높이는 지도·그룹 페이지와 같게 위 16px, 아래 47.5px 여백).
   if (isError) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center p-8">
+      <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
         <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} />
       </div>
     )
@@ -174,7 +174,7 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
   // 지도·그룹 페이지처럼 화면 한가운데에 크게 보여준다.
   if (isLoading || ((effectiveNxtOnly || mode === 'stock') && isNxtLoading)) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center p-8">
+      <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
         <Spinner showElapsed />
       </div>
     )

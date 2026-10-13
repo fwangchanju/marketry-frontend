@@ -208,24 +208,10 @@ export default function CustomPage() {
     />
   )
 
-  // 세션 확인 중이거나(로그인 여부를 아직 모름) 로그인 사용자의 섹터 목록을 받아오는 동안은 상단바+
-  // 스피너만 보여준다 — 비로그인용 안내와 실제 테이블이 뒤섞여 잠깐 보였다 사라지는 걸 막는다.
-  if (isSessionLoading || (isLoggedIn && isSectorsLoading)) {
-    return (
-      <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
-        <NavBar />
-        <NavSubBar />
-        {/* 본문이 열렸을 때와 같은 가로 배치 — 원이 설정창을 뺀 메인 영역의 한가운데에 오도록, 설정창이 열려 있으면 그 자리(너비 288px)를
-            비워 두고 왼쪽·오른쪽 위치도 따라간다. 위쪽 바가 겹쳐 있는 다른 페이지의 본문 틀과 원 높이를 맞추려고 아래 여백을 3.5px 더 둔다(원이 1.75px 올라간다). */}
-        <div className="flex min-h-0 min-w-0 flex-1">
-          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center p-8 pb-[calc(2rem+3.5px)]">
-            <Spinner showElapsed />
-          </div>
-          {isSettingsOpen && <div aria-hidden="true" className={`w-72 shrink-0 ${isSettingsOnLeft ? 'order-first' : ''}`} />}
-        </div>
-      </div>
-    )
-  }
+  // 세션 확인 중이거나(로그인 여부를 아직 모름) 로그인 사용자의 섹터 목록을 받아오는 동안은 본문 자리에 로딩 원만 보여준다 —
+  // 비로그인용 안내와 실제 표가 뒤섞여 잠깐 보였다 사라지는 걸 막는다. 위쪽 바·툴바·설정창은 그대로 두어서(다른 페이지처럼)
+  // 로딩이 길어져도 설정창이 사라졌다가 다시 생기지 않는다.
+  const isPageLoading = isSessionLoading || (isLoggedIn && isSectorsLoading)
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
@@ -263,7 +249,12 @@ export default function CustomPage() {
               <div
                 className={`flex min-h-0 min-w-0 flex-1 flex-col ${mode === 'sector' ? 'overflow-y-auto' : ''}`}
               >
-                {isReadOnlySheet ? (
+                {isPageLoading ? (
+                  // 지도·그룹 페이지의 로딩 원과 같은 높이에 오도록 위 16px, 아래 47.5px(19.5px + 이 페이지에 없는 아래 줄 28px) 여백 안에서 가운데에 둔다.
+                  <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
+                    <Spinner showElapsed />
+                  </div>
+                ) : isReadOnlySheet ? (
                   <ReadOnlyTaxonomySheet
                     mode={mode === 'stock' ? 'stock' : 'category'}
                     data={taxonomyMap}
