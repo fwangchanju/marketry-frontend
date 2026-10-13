@@ -1,6 +1,6 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import SettingsSidebar, {
@@ -19,7 +19,8 @@ import SettingsSidebar, {
 import MarketMapShareModal from '@/components/MarketMapShareModal'
 import Toolbar from '@/components/Toolbar'
 import Treemap from '@/components/Treemap'
-import { ChangeRateModeToggle, MarketDropdown } from '@/components/MarketMapControls'
+import { ChangeRateModeToggle } from '@/components/MarketMapControls'
+import ToolbarModeText from '@/components/ToolbarModeText'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
 import { HINT_BUBBLE_COLOR_CLASS } from '@/components/hintBubbleStyle'
@@ -48,7 +49,6 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
-import { marketRoute } from '@/utils/marketRoute'
 import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/utils/captureToDownload'
 import { limitDepth, flattenAllItems, type FilteredMarketMapSectorNode } from '@/hooks/useFilteredMarketMapTree'
 import type { MarketQuery, MarketMapSectorNode, MarketMapItem } from '@/types/api'
@@ -136,7 +136,6 @@ type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 export default function MapPage() {
-  const navigate = useNavigate()
   const { pathname, search, hash } = useLocation()
   const isLoggedIn = useIsLoggedIn()
   const { requireLogin } = useLoginGate()
@@ -489,6 +488,8 @@ export default function MapPage() {
     <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
       <NavBar />
       <NavSubBar
+        // 지금 보는 시장을 메뉴 목록에서 다시 고르면 처음 단계(드릴다운 맨 위)로 돌아간다.
+        onReselectCurrent={() => handleGoToDepth(0)}
         actions={
           <NavBarPageActions
             onRefresh={refetchMarketMap}
@@ -517,13 +518,7 @@ export default function MapPage() {
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
               <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
-                <MarketDropdown
-                  market={market}
-                  onSelect={selectedMarket => {
-                    if (selectedMarket === market) handleGoToDepth(0)
-                    else navigate(marketRoute('/map', selectedMarket))
-                  }}
-                />
+                <ToolbarModeText label={MARKET_LABEL[market]} />
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·누적/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
                     <span className={`${FONT_BAR_TIME} flex items-center gap-1.5 whitespace-nowrap ${isPastSnapshot ? 'text-[var(--brand)]' : 'text-gray-400'}`}>
