@@ -211,15 +211,15 @@ export default function MarketSummaryPage() {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       return (
                         <section key={type} className="border-b border-gray-800 px-1 py-1.5">
-                          {/* 배지는 안내가 없어도 항상 하나씩 두고, 없으면 옆에 "없음"을 적는다. */}
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className={"shrink-0 rounded-sm px-1.5 py-px text-[11.5px] font-extrabold text-white"} style={{ backgroundColor: badgeColor === 'up' ? upColor : downColor }}>{label}</span>
+                          {/* 글자는 코스피·코스닥 지수 줄과 같은 13px 중간 굵기다. 배지는 안내가 없어도 항상 하나씩 두고, 없으면 옆에 "없음"을 적는다. */}
+                          <div className="flex items-center gap-2 text-[13px] font-medium leading-none">
+                            <span className={"shrink-0 rounded-sm px-1 py-[3px] text-white"} style={{ backgroundColor: badgeColor === 'up' ? upColor : downColor }}>{label}</span>
                             {items.length === 0 && <span className="text-gray-500">없음</span>}
                           </div>
                           {items.map(item => (
-                            <div key={item.stockCode} className="mt-1 flex items-center gap-2 pl-1 text-sm text-white">
+                            <div key={item.stockCode} className="mt-1 flex items-center gap-2 pl-1 text-[13px] font-medium leading-none text-white">
                               <span className="min-w-0 truncate">{item.stockName}</span>
-                              <span className="ml-auto shrink-0 text-xs tabular-nums text-gray-500">{item.stockCode}</span>
+                              <span className="ml-auto shrink-0 tabular-nums text-gray-500">{item.stockCode}</span>
                             </div>
                           ))}
                         </section>
