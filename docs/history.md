@@ -402,3 +402,9 @@ NXT 단독 시간대의 오전 구간은 08:00~09:00이다. 서버 시간표는 
 
 공유 이미지: NXT 안내창의 어두운 배경은 일시적인 알림이라 공유 이미지에 담지 않는다(`data-capture-ignore`가 붙은 요소는 `shareCaptureOptions`의 필터가 뺀다).
 
+
+## 안 붙은 요약 위젯과 관심종목 코드 정리 (2026-10-13)
+
+예전 `/summary` 화면의 위젯 7개(`MarketOverviewSection`·`InvestorTradingSection`·`ProgramTradingSection`·`ProgramTradingHistorySection`·`IntradayTopSection`·`IndexContributionSection`·`ShortSellingHistorySection`)와 이들만 쓰던 `TabSelector`·`WidgetSection`, 데이터 훅 8개(`useIntradayTop`·`useProgramTradingRankings`·`useIndexContribution`·`useShortSellingHistory`·`useProgramTradingHistory`·`useProgramTradingDailyHistory`·`useWatchStocks`·`useStocks`)를 지웠다. 어느 페이지에도 붙어 있지 않던 코드였고, 관심종목 구조를 정리한 뒤 되살리려던 계획을 접었다. 개발 전용 TEST 탭에 보관하자던 안도 함께 접었다.
+
+홈이 요약 API에서 쓰는 것은 지수 등락률(`marketOverviews`)뿐이다. `MarketSummaryResponseSchema`는 그 필드만 요구하도록 줄였다. 백엔드가 요약 응답에서 다른 필드를 빼는 변경과 배포 순서에 상관없이 홈이 깨지지 않는다. `api/marketSummary.ts`·`queryKeys.ts`·`types/api.ts`·`mocks`의 관심종목·종목별 이력·장중 투자자·프로그램매매·지수기여도 관련 항목도 함께 지웠다.
