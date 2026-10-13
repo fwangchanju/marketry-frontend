@@ -189,7 +189,7 @@ export default function MarketSummaryPage() {
             <div ref={allFramesRef} className="flex h-[min(100%,780px)] shrink-0 gap-6 bg-black">
             {[
               {
-                title: '시장 요약 지도',
+                title: '시장 요약',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
                     {indexLine}
