@@ -245,7 +245,7 @@ export default function MarketSummaryPage() {
                             <span className={`rounded-sm px-1 py-[3px] text-white ${badgeClass}`}>시가총액 합</span>
                           </span>
                           <span className={rowClass}>
-                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 px-1 text-gray-300">
+                            <span className="flex h-[22px] min-w-0 flex-1 items-center justify-end rounded-sm bg-zinc-800 px-1 text-gray-300">
                               {notices?.[valueKey] != null ? toJoEokDecimal(notices[valueKey] / 100_000_000) : ''}
                             </span>
                           </span>
