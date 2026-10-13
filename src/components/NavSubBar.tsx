@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
 import { MARKET_OPTIONS } from '@/utils/marketOptions'
@@ -49,6 +49,8 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   const links = [...BASE_LINKS, CUSTOM_LINK]
   const [openTo, setOpenTo] = useState<string | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 메뉴를 떠날 때 예약해 둔 닫기 타이머가 화면이 바뀐 뒤에 실행되지 않게 정리한다.
+  useEffect(() => () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current) }, [])
 
   const isLinkActive = (to: string) => {
     if (to === '/map/allstock') return location.pathname.startsWith('/map/')
