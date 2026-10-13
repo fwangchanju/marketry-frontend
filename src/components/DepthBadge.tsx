@@ -19,7 +19,7 @@ export default function DepthBadge({ depth, advancers, decliners, unchanged }: P
         <span className="-mr-1 rounded-sm bg-cyan-700 px-1 py-[3px] text-white">{DEPTH_LABELS[depth - 1] ?? DEPTH_LABELS[0]}</span>
       </span>
       {advancers !== undefined && decliners !== undefined && unchanged !== undefined && (
-        <span className="flex h-[22px] min-w-0 flex-1 items-center justify-end gap-1 rounded-sm bg-zinc-800 px-1.5">
+        <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-1 rounded-sm bg-zinc-800 px-1.5">
           <span className="text-red-400">▲{advancers}</span>
           <span className="text-blue-400">▼{decliners}</span>
           <span className="text-gray-300">■{unchanged}</span>
