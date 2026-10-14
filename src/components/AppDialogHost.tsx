@@ -41,7 +41,7 @@ export default function AppDialogHost() {
         className={`${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-[#ff4d2e]' : ''}`}
       >
         <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-[#d92b0f]' : 'text-black'}`}>
-          <PopupKindBadge kind={dialog.kind === 'confirm' ? '결정' : '알림'} />
+          <PopupKindBadge kind={dialog.kind === 'confirm' ? '확인' : '알림'} />
           <span>
             {dialog.title}
             {dialog.adminOnly && ' ⚠'}
