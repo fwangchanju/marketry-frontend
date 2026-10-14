@@ -142,7 +142,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
 
   return (
     <div className="max-w-[16rem]">
-      <p className="settings-description m-0 mt-1 text-xs text-gray-400">변경 내역 되돌리기·다시 적용</p>
+      <p className="settings-description m-0 mt-1 text-xs font-medium text-gray-300">변경 내역 되돌리기·다시 적용</p>
       <div ref={rowRef} className="mt-4 grid grid-cols-2 gap-2">
         {pill('undo')}
         {pill('redo')}

@@ -1,6 +1,7 @@
 // 프로필 사진을 올리기 전에 브라우저에서 가운데 정사각형 256×256 JPEG로 줄인다 — 서버(nginx) 업로드 한도 안에 들어오게 하고, 서버가 같은 규칙으로 다시 한 번 만든다.
 export const PROFILE_IMAGE_SIZE = 256
-export const PROFILE_IMAGE_MAX_SOURCE_BYTES = 2 * 1024 * 1024
+// 고른 원본의 한도 — 휴대폰 사진(3~8MB)·카메라 JPEG도 그대로 고를 수 있게 둔다. 올리는 것은 줄인 256×256 JPEG라서 서버 한도와 상관없다.
+export const PROFILE_IMAGE_MAX_SOURCE_BYTES = 10 * 1024 * 1024
 export const PROFILE_IMAGE_MAX_UPLOAD_BYTES = 512 * 1024
 const PROFILE_IMAGE_TYPES = ['image/jpeg', 'image/png']
 const JPEG_QUALITY = 0.85

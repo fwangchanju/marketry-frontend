@@ -39,7 +39,7 @@ export function SettingsPanelGroup({ children }: SettingsPanelGroupProps) {
 // 한 줄(16px) + 위 간격(4px)이라 높이를 20px로 계산해서 index.css의 탭 정렬 값을 맞춘다.
 // dimmed: 그 항목의 토글이 꺼져 있을 때 제목 줄만 밝게 두고 설명과 조작부를 함께 옅게 한다(조작부는 호출부가 옅게 한다).
 function SettingDescription({ children, dimmed = false }: { children: ReactNode; dimmed?: boolean }) {
-  return <p className={`settings-description mt-1 max-w-[16rem] text-[13px]/4 text-gray-400 ${dimmed ? 'opacity-40' : ''}`}>{children}</p>
+  return <p className={`settings-description mt-1 max-w-[16rem] text-xs/4 font-medium text-gray-300 ${dimmed ? 'opacity-40' : ''}`}>{children}</p>
 }
 
 // 좌우 이동 탭을 "Basis" 줄 높이로 옮기고, 그 줄 위에 구분선이 있으면(아래쪽 Basis) 탭을 그 선까지 키운 뒤 아래도 같은 길이만큼 대칭으로
@@ -179,8 +179,9 @@ function BookmarkButton({ id, label }: { id: SettingsBookmarkId; label: string }
       onClick={() => onToggle(id)}
       className={`ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 ${active ? 'text-[var(--brand)]' : 'text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)]'}`}
     >
-      <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3.5 w-3.5" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.35" strokeLinejoin="round">
-        <path d="M4 2.2h8a.8.8 0 0 1 .8.8v10.8L8 10.6 3.2 13.8V3a.8.8 0 0 1 .8-.8Z" />
+      {/* 설정창 메뉴 줄의 북마크 아이콘(SettingsSectionIcon)과 같은 모양이다. 14px에서 선 2.1이 화면에서 약 1.2px로 보인다. */}
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 7v14l-6-4l-6 4v-14a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4" />
       </svg>
     </button>
   )
@@ -1051,7 +1052,7 @@ function SettingsTaxonomySelector({
       </div>
       {/* 업데이트 시각이 없어도(올린 MARKETRY가 아직 없을 때 등) 줄은 그대로 둬서 다른 분류와 모양이 달라지지 않게 한다. 시각 글자만 같은 폭으로 자리를 잡고 숨긴다. */}
       {atBottom && (
-        <p className={`${FONT_BAR_TIME_SHAPE} mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-[13px] text-gray-400`}>
+        <p className={`${FONT_BAR_TIME_SHAPE} mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium text-gray-300`}>
           <span className="flex items-center">
             업데이트
             <SettingHelpBubble
@@ -2229,7 +2230,7 @@ export default function SettingsPanel({
       <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
           if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(discardDrafts)
         }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50">
-        <HistoryIcon className="h-[18px] w-[18px]" aria-hidden="true" />
+        <HistoryIcon className="h-5 w-5" aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -2254,8 +2255,8 @@ export default function SettingsPanel({
       >
         {hasDrafts && <span aria-hidden="true" className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-[var(--brand)]" />}
         {/* 좌우 대칭 디스켓 — 위쪽 셔터와 아래쪽 라벨이 가운데에 있고 접힌 모서리가 없다. 오른쪽 위 청록 점(변경 있음)과 겹치는 모양이 없다. */}
-        <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true">
-          <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM7 3v5h10V3M7 21v-8h10v8" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+          <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM7 3v5h10V3M7 21v-8h10v8" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
     </div>
@@ -2379,7 +2380,7 @@ export default function SettingsPanel({
             />
           ) : null}
           {selectedSection.id === 'favorites' && bookmarkContext.enabled && bookmarkContext.ids.length === 0 && (
-            <p className="text-center text-xs leading-relaxed text-gray-400">
+            <p className="text-center text-xs font-medium leading-relaxed text-gray-300">
               북마크한 항목이 없습니다.
             </p>
           )}

@@ -576,7 +576,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 placeholder={`${row.depth === 1 ? '중분류' : '소분류'} 추가`}
                 data-hint={`${chainLabel} 하위 업종 추가`}
                 aria-label={`${chainLabel} 하위 업종 이름`}
-                className="h-7 w-40 rounded-md border-0 bg-[#3b3b3b] px-2 text-sm font-medium text-white outline-none placeholder:indent-[3px] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
+                className="h-7 w-40 rounded-md border-0 bg-[#3b3b3b] px-2 text-sm font-medium text-white outline-none focus:placeholder:text-transparent placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
               />
             </div>
           </td>
@@ -856,7 +856,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
             placeholder="업종 이름 입력 후 Enter"
             aria-label="최상위 업종 이름"
-            className="h-9 min-w-0 flex-1 rounded-md border border-gray-600 bg-zinc-700 px-2 text-xs text-white outline-none placeholder:indent-[3px] placeholder:text-gray-400 focus:border-[var(--brand)]"
+            className="h-9 min-w-0 flex-1 rounded-md border border-gray-600 bg-zinc-700 px-2 text-xs text-white outline-none focus:placeholder:text-transparent placeholder:text-gray-400 focus:border-[var(--brand)]"
           />
         </div>
       </section>

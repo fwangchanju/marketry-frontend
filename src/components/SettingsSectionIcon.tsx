@@ -1,9 +1,4 @@
-import type { CSSProperties } from 'react'
-import compositionIcon from '@/assets/settings-icons/composition.png'
-import colorsIcon from '@/assets/settings-icons/colors.svg'
-import bookmarkIcon from '@/assets/settings-icons/bookmark.svg'
-import industryIcon from '@/assets/settings-icons/industry.png'
-import stockDisplayIcon from '@/assets/settings-icons/stock-display.svg'
+import type { ReactNode } from 'react'
 
 export type SettingsSectionIconName = 'favorites' | 'composition' | 'industry' | 'stock-display' | 'colors'
 
@@ -12,56 +7,63 @@ interface SettingsSectionIconProps {
   className?: string
 }
 
-const ICON_SOURCES: Record<SettingsSectionIconName, string> = {
-  favorites: bookmarkIcon,
-  composition: compositionIcon,
-  industry: industryIcon,
-  'stock-display': stockDisplayIcon,
-  colors: colorsIcon,
-}
-
-// 아이콘 원본마다 선 굵기가 달라서, 화면에서 비슷한 굵기로 보이도록 아이콘별로 깎는 정도를 다르게 둔다.
-const ICON_ERODE_RADIUS: Record<SettingsSectionIconName, number> = {
-  favorites: 0.6,
-  composition: 1.3,
-  industry: 0.6,
-  'stock-display': 0,
-  colors: 0.6,
-}
-
-// 아이콘 원본마다 여백이 달라 같은 칸에서도 작아 보여서, 레이아웃은 그대로 두고 그리는 크기만 키운다.
-const ICON_SCALE: Partial<Record<SettingsSectionIconName, number>> = {
-  // 그림 원본의 실제 도형 크기가 종목 구성은 476px, 종목 박스는 416px라 476/416 ≈ 1.14배로 키워 두 아이콘의 사각형이 비슷하게 보이게 한다.
-  'stock-display': 1.14,
-}
-
-export default function SettingsSectionIcon({ icon, className = '' }: SettingsSectionIconProps) {
-  const filterId = `settings-icon-${icon}-light-stroke`
-  const iconMask = `url("${ICON_SOURCES[icon]}")`
-  const maskStyle: CSSProperties = {
-    maskImage: iconMask,
-    maskPosition: 'center',
-    maskRepeat: 'no-repeat',
-    maskSize: 'contain',
-    WebkitMaskImage: iconMask,
-    WebkitMaskPosition: 'center',
-    WebkitMaskRepeat: 'no-repeat',
-    WebkitMaskSize: 'contain',
-  }
-
-  return (
+// 설정창 메뉴 줄의 아이콘 — 상단 영역 아이콘과 같은 선 아이콘이다(24×24 격자, 선 끝·꺾임 둥글게).
+// 종목 구성·업종 분류·색상은 Lucide(layout-dashboard·network·palette), 종목 박스·북마크는 Tabler(text-size·bookmark) 모양이다.
+const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
+  composition: (
     <>
-      <svg aria-hidden="true" className="absolute h-0 w-0" focusable="false">
-        <filter id={filterId} colorInterpolationFilters="sRGB">
-          <feMorphology in="SourceAlpha" operator="erode" radius={ICON_ERODE_RADIUS[icon]} result="thinner" />
-          <feComposite in="SourceGraphic" in2="thinner" operator="in" />
-        </filter>
-      </svg>
-      <span
-        aria-hidden="true"
-        className={`inline-block shrink-0 bg-current ${className || 'h-[30px] w-[30px]'}`}
-        style={{ ...maskStyle, filter: `url(#${filterId})`, transform: `scale(${ICON_SCALE[icon] ?? 1})` }}
-      />
+      <rect width="7" height="9" x="3" y="3" rx="1" />
+      <rect width="7" height="5" x="14" y="3" rx="1" />
+      <rect width="7" height="9" x="14" y="12" rx="1" />
+      <rect width="7" height="5" x="3" y="16" rx="1" />
     </>
+  ),
+  industry: (
+    <>
+      <rect x="16" y="16" width="6" height="6" rx="1" />
+      <rect x="2" y="16" width="6" height="6" rx="1" />
+      <rect x="9" y="2" width="6" height="6" rx="1" />
+      <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" />
+      <path d="M12 12V8" />
+    </>
+  ),
+  'stock-display': (
+    <>
+      <path d="M3 7v-2h13v2" />
+      <path d="M10 5v14" />
+      <path d="M12 19h-4" />
+      <path d="M15 13v-1h6v1" />
+      <path d="M18 12v7" />
+      <path d="M17 19h2" />
+    </>
+  ),
+  colors: (
+    <>
+      <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
+      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+      <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+    </>
+  ),
+  favorites: <path d="M18 7v14l-6-4l-6 4v-14a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4" />,
+}
+
+// 30px로 그릴 때 선 1.1이 화면에서 약 1.35px로 보여 상단 영역 아이콘의 굵기(docs/ui-areas.md "아이콘 규칙")와 같다.
+// 크기를 바꾸면 선 값도 `굵기 × 24 ÷ 크기`로 맞춰야 한다.
+export default function SettingsSectionIcon({ icon, className = 'h-[30px] w-[30px]' }: SettingsSectionIconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.1}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`shrink-0 ${className}`}
+    >
+      {ICON_SHAPES[icon]}
+    </svg>
   )
 }
