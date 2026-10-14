@@ -18,7 +18,7 @@ const sectorListResponseSchema = z.array(SectorItemSchema)
 const snapshotListResponseSchema = z.array(SnapshotItemSchema)
 const stockSectorListResponseSchema = snapshotResponseSchema(StockSectorListItemSchema)
 
-// 로그인 사용자 전용(GET /api/custom/**) — 가입/로그인 전환 지시서 4·5에 따라 옛 /api/admin/treemap/*
+// 로그인 사용자 전용(GET /api/custom/**) — 가입/로그인 전환 지시서 4·5에 따라 옛 /api/admin/market-map/*
 // 를 대체한다. Legacy* 컨트롤러(구 프론트 전용 호환 경로)는 여기서 쓰지 않는다.
 
 export const getSectors = () => client.get('/custom/sectors').then(r => sectorListResponseSchema.parse(r.data))
