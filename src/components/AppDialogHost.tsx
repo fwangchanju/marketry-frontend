@@ -45,9 +45,6 @@ export default function AppDialogHost() {
           {dialog.title}
           {dialog.adminOnly && ' ⚠'}
         </h2>
-        {dialog.adminOnly && (
-          <p className="mt-2 bg-[#ff4d2e] px-2 py-1 text-[13px] font-bold text-white">ADMIN 전용 · 모든 사용자 화면에 바로 반영됩니다</p>
-        )}
         <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-black">{dialog.message}</p>
         <div className="mt-6 flex justify-end gap-2">
           {dialog.kind === 'confirm' && (
