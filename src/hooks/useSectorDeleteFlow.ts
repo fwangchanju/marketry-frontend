@@ -6,7 +6,7 @@ import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 function confirmDeletable(sectorName: string, deletableSectors: string[]) {
   const list = deletableSectors.length > 0 ? deletableSectors.join(', ') : '없음'
-  return appConfirm(`[${sectorName}] 업종을 삭제하시겠습니까?\n하위 업종: ${list}`, { title: '업종 삭제' })
+  return appConfirm(`[${sectorName}] 업종을 삭제하시겠습니까?\n하위 업종 ${list}`, { title: '업종 삭제' })
 }
 
 function alertBlocked(sectorName: string, blockingStocks: StockSectorItem[]) {
