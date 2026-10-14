@@ -1,9 +1,9 @@
-// 홈 틀의 제목 — 배지 없이 흰 바 + 흰 글자다(청록 배지들 사이에서 튀지 않게). 바 오른쪽 간격은 8px이다.
+// 홈 틀의 제목 — 회색 16px 소제목에 오른쪽으로 가는 얇은 구분선이다. 아래 항목 글자(흰색)와 색·크기로 구분하고, 청록은 배지에만 남긴다.
 export default function FrameTitleBadge({ title }: { title: string }) {
   return (
-    <span className="inline-flex items-center gap-2 py-0.5 text-base font-bold leading-tight whitespace-nowrap text-white">
-      <span aria-hidden="true" className="inline-block h-[1em] w-1 shrink-0 bg-white" />
+    <span className="flex w-full items-center gap-2 text-base font-semibold leading-tight tracking-[0.02em] whitespace-nowrap text-gray-400">
       {title}
+      <span aria-hidden="true" className="h-px min-w-0 flex-1 bg-zinc-700" />
     </span>
   )
 }
