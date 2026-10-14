@@ -59,8 +59,8 @@ import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
 const countStocks = (nodes: TreemapSectorNode[]): number => nodes.reduce((sum, node) => sum + node.items.length + countStocks(node.children), 0)
 const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'ALL STOCK' }
 // 종목·업종 헤더와 같은 방식 — 올리면 흰색 35% 덮개가 씌워진다(index.css의 hover와 같은 불투명도).
-// 이동 경로의 이름이 몇 번째 업종 단계인지(0부터) — 마우스가 이미 그 이름 위에 있어서 툴팁에는 이름 대신 단계 이름만 쓴다. 4단계 이상은 이름이 없어 "N단계"로 쓴다.
-const SECTOR_LEVEL_LABEL = ['대분류', '중분류', '소분류']
+// 이동 경로의 이름이 몇 번째 업종 단계인지(0부터) — 마우스가 이미 그 이름 위에 있어서 툴팁에는 이름 대신 단계 이름만 쓴다. 업종은 최대 4단계(대분류·중분류·소분류·세분류)다.
+const SECTOR_LEVEL_LABEL = ['대분류', '중분류', '소분류', '세분류']
 
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-white transition-colors hover:bg-white/35'
 
