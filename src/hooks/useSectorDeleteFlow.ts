@@ -5,7 +5,10 @@ import { getErrorDetail } from '@/utils/errorMessage'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 function confirmDeletable(sectorName: string, deletableSectors: string[]) {
-  const list = deletableSectors.length > 0 ? deletableSectors.join(', ') : '없음'
+  // 하위 업종이 많아도 한 줄에 들어가게 앞의 3개만 적는다.
+  const list = deletableSectors.length === 0
+    ? '없음'
+    : `${deletableSectors.slice(0, 3).join(', ')}${deletableSectors.length > 3 ? ` 외 ${deletableSectors.length - 3}개` : ''}`
   return appConfirm(`[${sectorName}] 업종을 삭제하시겠습니까?\n하위 업종 ${list}`, { title: '업종 삭제' })
 }
 
