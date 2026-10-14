@@ -4,8 +4,8 @@ import { useLocation, useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import PopupKindBadge from '@/components/PopupKindBadge'
-import SettingsSidebar, {
-  SettingsSidebarGroup,
+import SettingsPanel, {
+  SettingsPanelGroup,
   SettingsMarketValueSection,
   SettingsSectorChangeSection,
   SettingsStockChangeSection,
@@ -15,8 +15,8 @@ import SettingsSidebar, {
   SettingsStrongIndustryColorSection,
   SettingsStockSizeSelector,
   type SettingsBookmarkId,
-  type SettingsSidebarSectionId,
-} from '@/components/SettingsSidebar'
+  type SettingsPanelSectionId,
+} from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import Toolbar from '@/components/Toolbar'
 import Treemap from '@/components/Treemap'
@@ -32,7 +32,7 @@ import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/c
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useTreemapDrilldown } from '@/hooks/useTreemapDrilldown'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
-import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
+import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { sanitizeBookmarkIds } from '@/utils/settingsBookmarks'
 import { useIsLoggedIn } from '@/hooks/useSession'
@@ -71,7 +71,7 @@ function BreadcrumbBackIcon() {
 
 // 북마크 탭이 한 화면에 들어가도록 항목 수를 제한한다.
 const MAX_SETTINGS_BOOKMARKS = 5
-const MAP_SETTINGS_SECTION_ORDER: SettingsSidebarSectionId[] = [
+const MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [
   'composition', 'industry', 'stockDisplay', 'colors', 'favorites',
 ]
 
@@ -224,7 +224,7 @@ export default function MapPage() {
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   // NXT 안내 알림을 닫았는지 — 다른 분류으로 바꾸면 초기화돼서, NXT를 다시 고를 때 또 보인다.
   const [isNxtNoticeDismissed, setIsNxtNoticeDismissed] = useState(false)
-  const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsSidebarSide()
+  const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   useEffect(() => {
     if (!nxtOnly) setIsNxtNoticeDismissed(false)
   }, [nxtOnly])
@@ -710,7 +710,7 @@ export default function MapPage() {
           </div>
           {/* 설정창 위쪽 여백 7px — 위쪽 바의 누적·별도 토글 윗선과 맞춘 값이다. 아래는 붙인다. */}
           <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
-            <SettingsSidebar
+            <SettingsPanel
               {...settingsModalProps}
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
@@ -730,7 +730,7 @@ export default function MapPage() {
                 reset()
               }}
             >
-              <SettingsSidebarGroup section="composition">
+              <SettingsPanelGroup section="composition">
                 <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
                 <SettingsSectorChangeSection
                   value={sectorChangeFilter}
@@ -754,15 +754,15 @@ export default function MapPage() {
                   }}
                 />
                 <SettingsExcludeSection {...settingsModalProps} afterStockChange />
-              </SettingsSidebarGroup>
-              <SettingsSidebarGroup section="industry">
+              </SettingsPanelGroup>
+              <SettingsPanelGroup section="industry">
                 <SettingsSectorLevelSection {...settingsModalProps} showTopPick showStockDisplay={false} />
-              </SettingsSidebarGroup>
-              <SettingsSidebarGroup section="stockDisplay">
+              </SettingsPanelGroup>
+              <SettingsPanelGroup section="stockDisplay">
                 <SettingsSectorLevelSection {...settingsModalProps} showTaxonomy={false} showDecimalPlaces />
-              </SettingsSidebarGroup>
+              </SettingsPanelGroup>
               {/* 북마크 탭 — 원래 탭의 항목을 같은 순서로 다시 그리고, 북마크한 항목만 보인다. */}
-              <SettingsSidebarGroup section="favorites">
+              <SettingsPanelGroup section="favorites">
                 <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
                 <SettingsSectorChangeSection
                   value={sectorChangeFilter}
@@ -792,14 +792,14 @@ export default function MapPage() {
                 {strongIndustryColor && onChangeStrongIndustryColor && (
                   <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
                 )}
-              </SettingsSidebarGroup>
-              <SettingsSidebarGroup section="colors">
+              </SettingsPanelGroup>
+              <SettingsPanelGroup section="colors">
                 {strongIndustryColor && onChangeStrongIndustryColor && (
                   <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
                 )}
                 <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
-              </SettingsSidebarGroup>
-            </SettingsSidebar>
+              </SettingsPanelGroup>
+            </SettingsPanel>
           </div>
         </div>
       </div>

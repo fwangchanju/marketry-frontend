@@ -6,13 +6,13 @@ import NavSubBar from '@/components/NavSubBar'
 import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import { MARKET_LABEL } from '@/utils/marketOptions'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import SettingsSidebar, {
+import SettingsPanel, {
   SettingsAverageModeSection,
   SettingsGroupDepthSection,
   SettingsSectorStockScopeSection,
   type SectorStockScope,
   SettingsBeforeMinutesSection,
-} from '@/components/SettingsSidebar'
+} from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
@@ -29,7 +29,7 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useSectorTreemapPair } from '@/hooks/useSectorTreemapPair'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePersistedState } from '@/hooks/usePersistedState'
-import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
+import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { appAlert } from '@/utils/appDialogBus'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
@@ -192,7 +192,7 @@ export default function GroupPage() {
   // 맵·커스텀 페이지와 같은 청록색 분류자명 버튼을 표시한다.
   const modeStatusText = <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
 
-  const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsSidebarSide()
+  const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
@@ -446,7 +446,7 @@ export default function GroupPage() {
           </div>
           {/* 설정창 윗선을 지도 페이지와 같은 높이로 맞춘다 — 지도 페이지에서 실제로 맞춘 모양(설정창 윗선이 위쪽 바 윗선보다 3px 아래)을 따른다. 이 칸은 바보다 5.25px 위에서 시작하므로 5.25 + 3 - 1(눈으로 맞춘 보정) = 7.25px이지만, 지도 페이지의 설정창 칸이 7px이라 실제로는 같은 7px을 띄운다. 아래는 붙인다. */}
           <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
-            <SettingsSidebar
+            <SettingsPanel
               {...settingsModalProps}
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}

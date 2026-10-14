@@ -23,15 +23,15 @@ import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 export type { SettingsBookmarkId }
-export type SettingsSidebarSectionId = 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors'
+export type SettingsPanelSectionId = 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors'
 
-interface SettingsSidebarGroupProps {
-  section: SettingsSidebarSectionId
+interface SettingsPanelGroupProps {
+  section: SettingsPanelSectionId
   children?: ReactNode
 }
 
-// 각 페이지가 자기 설정을 참조 탭 아래에 배치한다. SettingsSidebar는 활성 탭의 그룹만 렌더링한다.
-export function SettingsSidebarGroup({ children }: SettingsSidebarGroupProps) {
+// 각 페이지가 자기 설정을 참조 탭 아래에 배치한다. SettingsPanel는 활성 탭의 그룹만 렌더링한다.
+export function SettingsPanelGroup({ children }: SettingsPanelGroupProps) {
   return <>{children}</>
 }
 
@@ -78,7 +78,7 @@ function SettingHelpBubble({ label, description, bookmarkId }: { label: string; 
       if (!anchor || !tooltip) return
 
       // 설정창 밖으로 나가지 않게 가둔다 — 아이콘 왼쪽 끝에 맞추되 설정창 오른쪽에 걸리면 안쪽으로 밀고, 아래에 자리가 모자라면 아이콘 위로 뒤집는다.
-      const sidebar = buttonRef.current?.closest('[data-settings-sidebar]')?.getBoundingClientRect()
+      const sidebar = buttonRef.current?.closest('[data-settings-panel]')?.getBoundingClientRect()
       const bounds = sidebar ?? { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight }
       const margin = HELP_TOOLTIP_MARGIN
       const left = Math.max(bounds.left + margin, Math.min(anchor.left, bounds.right - tooltip.width - margin))
@@ -198,7 +198,7 @@ function SettingTitle({ bookmarkId, className = '', help = false, children }: { 
   )
 }
 
-const SETTINGS_SECTIONS: { id: SettingsSidebarSectionId; label: string; icon: SettingsSectionIconName }[] = [
+const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: SettingsSectionIconName }[] = [
   { id: 'composition', label: '종목 구성', icon: 'composition' },
   { id: 'industry', label: '업종 분류', icon: 'industry' },
   { id: 'stockDisplay', label: '종목 박스', icon: 'stock-display' },
@@ -208,7 +208,7 @@ const SETTINGS_SECTIONS: { id: SettingsSidebarSectionId; label: string; icon: Se
 
 // 탭 제목에는 숫자를 표시하지 않지만 북마크에는 원래 설정 위치를 표기한다.
 // 탭 순서를 바꾸면 이 번호와 BOOKMARK_ORDER, 북마크 그룹의 렌더 순서도 함께 바꾼다.
-const SETTINGS_SECTION_NUMBERS: Record<SettingsSidebarSectionId, number> = {
+const SETTINGS_SECTION_NUMBERS: Record<SettingsPanelSectionId, number> = {
   composition: 1,
   industry: 2,
   stockDisplay: 3,
@@ -326,7 +326,7 @@ function ChevronGlyph({ direction, outward = false }: { direction: 'left' | 'rig
   )
 }
 
-// 설정창이 열리고 닫힐 때의 애니메이션 길이(ms) — index.css의 settings-sidebar-* 애니메이션 시간(0.25s)과 같아야 한다.
+// 설정창이 열리고 닫힐 때의 애니메이션 길이(ms) — index.css의 settings-panel-* 애니메이션 시간(0.25s)과 같아야 한다.
 const SIDEBAR_ANIMATION_MS = 250
 
 // 핸들 크기는 SingleValueSlider(네이티브 range thumb, 16px)와 맞춘다.
@@ -343,7 +343,7 @@ interface CursorHint {
 // 말풍선이 설정창 가장자리에서 띄우는 최소 간격.
 const BUBBLE_MARGIN = 8
 const cursorHintFrom = (e: ReactPointerEvent<HTMLElement>): CursorHint => {
-  const sidebar = e.currentTarget.closest('[data-settings-sidebar]')?.getBoundingClientRect()
+  const sidebar = e.currentTarget.closest('[data-settings-panel]')?.getBoundingClientRect()
   const bounds = sidebar
     ? { left: sidebar.left, right: sidebar.right, top: sidebar.top, bottom: sidebar.bottom }
     : { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight }
@@ -809,10 +809,10 @@ function SingleValueSlider({
   )
 }
 
-// 아래 섹션 컴포넌트들은 전부 페이지가 SettingsSidebar의 children으로 직접 골라서 조립한다 — 페이지마다
+// 아래 섹션 컴포넌트들은 전부 페이지가 SettingsPanel의 children으로 직접 골라서 조립한다 — 페이지마다
 // 유효한 옵션이 다 다른데(지도는 전부 유효, 섹터는 일부만, 요약/어드민은 전혀 없음), 옵션 하나를 켜고
 // 끄는 스위치 하나로는 이 조합을 감당할 수 없기 때문. 새 페이지 전용 옵션이 생기면 그 페이지 파일에
-// 새 섹션 컴포넌트를 하나 추가해서 끼워 넣기만 하면 되고, 여기 다른 섹션이나 SettingsSidebar 껍데기
+// 새 섹션 컴포넌트를 하나 추가해서 끼워 넣기만 하면 되고, 여기 다른 섹션이나 SettingsPanel 껍데기
 // 자체는 안 건드려도 된다.
 
 // 그룹 페이지 등락률 평균 방식 — 시총 가중/동일 가중 중 하나를 고른다.
@@ -2030,9 +2030,9 @@ interface Props {
   // 설정 저장·초기화 기능을 제공하는 페이지에서만 헤더 버튼을 표시한다.
   showPreferenceActions?: boolean
   // 탭 없이 패널 본문에 바로 그리는 내용 — 설정 항목이 한두 개뿐인 페이지(그룹)용. 탭 분류(children의
-  // SettingsSidebarGroup)와 같이 쓰지 않는다.
+  // SettingsPanelGroup)와 같이 쓰지 않는다.
   plainContent?: ReactNode
-  sectionOrder?: readonly SettingsSidebarSectionId[]
+  sectionOrder?: readonly SettingsPanelSectionId[]
   taxonomyAtBottom?: boolean
   // 하단 Basis 선택 아래에 표시할 종목 분류 최종 변경 시각(지도 상단 표기와 같은 형식).
   snapshotTime?: string | null
@@ -2069,11 +2069,11 @@ interface Props {
 
 // 팝업이 아니라 실제 렌더링 영역을 왼쪽으로 밀어내는 도킹형 사이드바 — 헤더 + 스크롤 바디만 그리는
 // 껍데기고, 실제 옵션 내용은 전부 위 Settings*Section들을 children으로 조립해서 채운다.
-function isSettingsSidebarGroup(node: ReactNode): node is ReactElement<SettingsSidebarGroupProps> {
-  return isValidElement<SettingsSidebarGroupProps>(node) && node.type === SettingsSidebarGroup
+function isSettingsPanelGroup(node: ReactNode): node is ReactElement<SettingsPanelGroupProps> {
+  return isValidElement<SettingsPanelGroupProps>(node) && node.type === SettingsPanelGroup
 }
 
-export default function SettingsSidebar({
+export default function SettingsPanel({
   pageLabel,
   showPreferenceActions = true,
   sectionOrder,
@@ -2146,7 +2146,7 @@ export default function SettingsSidebar({
       window.removeEventListener('resize', realign)
     }
   })
-  const [activeSection, setActiveSection] = useState<SettingsSidebarSectionId>(sectionOrder?.[0] ?? 'composition')
+  const [activeSection, setActiveSection] = useState<SettingsPanelSectionId>(sectionOrder?.[0] ?? 'composition')
   // 닫힐 때 사라지는 모습을 보여주려고, isOpen이 꺼져도 닫기 애니메이션이 끝날 때까지는 화면에 남겨 둔다.
   // animated는 열림 상태가 한 번이라도 바뀐 뒤에만 켜서, 페이지를 처음 열 때 이미 열려 있는 설정창은 애니메이션 없이 보인다.
   const [mounted, setMounted] = useState(isOpen)
@@ -2163,21 +2163,21 @@ export default function SettingsSidebar({
     return () => window.clearTimeout(timer)
   }, [isOpen, mounted])
   const childNodes = Children.toArray(children)
-  const sectionContent = new Map<SettingsSidebarSectionId, ReactNode[]>()
-  const addSectionContent = (section: SettingsSidebarSectionId, content: ReactNode) => {
+  const sectionContent = new Map<SettingsPanelSectionId, ReactNode[]>()
+  const addSectionContent = (section: SettingsPanelSectionId, content: ReactNode) => {
     const existing = sectionContent.get(section) ?? []
     existing.push(content)
     sectionContent.set(section, existing)
   }
 
   for (const node of childNodes) {
-    if (!isSettingsSidebarGroup(node)) continue
+    if (!isSettingsPanelGroup(node)) continue
     addSectionContent(node.props.section, node.props.children)
   }
 
   // 기존 페이지에서 아직 group wrapper를 붙이지 않은 아이들은 종목 구성 탭에 넣어 이전 호출부도
   // 계속 표시한다. 각 페이지 통합이 끝나면 모든 설정이 명시적인 group 아래에 놓인다.
-  const ungroupedNodes = childNodes.filter(node => !isSettingsSidebarGroup(node))
+  const ungroupedNodes = childNodes.filter(node => !isSettingsPanelGroup(node))
   if (ungroupedNodes.length > 0) addSectionContent('composition', ungroupedNodes)
   const hasTaxonomySelector = Boolean(taxonomy && onSelectTaxonomy) || (typeof isCustom === 'boolean' && Boolean(onToggleCustom))
   const selectedTaxonomy: TaxonomyKey = taxonomy ?? (isCustom ? 'MARKETRY' : 'KRX')
@@ -2193,7 +2193,7 @@ export default function SettingsSidebar({
   const isNonScrollingSection = !taxonomyAtBottom && (selectedSection?.id === 'industry' || selectedSection?.id === 'colors')
 
   // 북마크 탭에는 원래 위치 번호(탭 번호-항목 번호)를 보여준다. 항목 번호는 각 탭에서 항상 고정된 자리다.
-  const sourceTabNumber = (id: SettingsSidebarSectionId) => SETTINGS_SECTION_NUMBERS[id]
+  const sourceTabNumber = (id: SettingsPanelSectionId) => SETTINGS_SECTION_NUMBERS[id]
   const bookmarkContext: SettingsBookmarkContextValue = {
     enabled: Boolean(onToggleBookmark),
     mode: selectedSection?.id === 'favorites' ? 'bookmark' : 'source',
@@ -2220,7 +2220,7 @@ export default function SettingsSidebar({
   // 닫혀있을 땐 아예 렌더링하지 않는다(트리거 버튼은 더 이상 이 컴포넌트가 아니라 호출부가 따로 그린다).
   if (!isOpen && !mounted) return null
   const sideName = isOnLeft ? 'left' : 'right'
-  const animationClass = !animated ? '' : isOpen ? `settings-sidebar-enter-${sideName}` : `settings-sidebar-leave-${sideName} pointer-events-none`
+  const animationClass = !animated ? '' : isOpen ? `settings-panel-enter-${sideName}` : `settings-panel-leave-${sideName} pointer-events-none`
 
   // 바꾼 값은 임시값이라 저장을 눌러야 서버에 올라간다. 초기화는 임시값을 버리고 저장값으로 돌아간다. 비로그인은 저장할 곳이 없어 로그인 창을 띄운다.
   // 오른쪽으로 3px 당겨(-mr-[3px]) 저장 아이콘이 위쪽 상단 바의 설정 아이콘과 같은 세로줄에 오게 한다.
@@ -2263,7 +2263,7 @@ export default function SettingsSidebar({
 
   return (
     // 바깥 감싸개: 지도 쪽 가장자리 가운데에 튀어나오는 좌우 이동 탭을 패널(overflow-hidden) 밖에 그리려고 둔다. 슬라이드 애니메이션도 여기에 붙는다.
-    <div ref={outerRef} data-settings-sidebar-shell className={`relative z-20 flex shrink-0 ${animationClass}`}>
+    <div ref={outerRef} data-settings-panel-shell className={`relative z-20 flex shrink-0 ${animationClass}`}>
     {onToggleSide && (
       <button
         type="button"
@@ -2289,7 +2289,7 @@ export default function SettingsSidebar({
       </button>
     )}
     <div
-      data-settings-sidebar
+      data-settings-panel
       className="relative tabular-nums select-none flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-gray-500 bg-[#363639]"
       style={{ '--accent': 'var(--panel-gray)', '--accent-hover': '#f3f4f6', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
     >
@@ -2345,7 +2345,7 @@ export default function SettingsSidebar({
       <div aria-busy={isPreferenceFeedbackActive || undefined} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="contents" inert={isPreferenceFeedbackActive || undefined}>
       {plainContent && (
-        <div data-align-second-heading className="settings-section-list settings-plain-content settings-sidebar-tab-content min-h-0 flex-1 overflow-y-auto px-4 pt-5 pb-8 text-sm">
+        <div data-align-second-heading className="settings-section-list settings-plain-content settings-panel-tab-content min-h-0 flex-1 overflow-y-auto px-4 pt-5 pb-8 text-sm">
           {plainContent}
         </div>
       )}
@@ -2360,7 +2360,7 @@ export default function SettingsSidebar({
           data-align-second-heading={(taxonomyAtBottom && selectedSection.id !== 'favorites') || undefined}
           aria-busy={waitingForPreferences || undefined}
           inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-40 transition-opacity' : ''} settings-section-list settings-sidebar-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'favorites' ? 'settings-bookmark-tab' : ''} ${
+          className={`${waitingForPreferences ? 'opacity-40 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'favorites' ? 'settings-bookmark-tab' : ''} ${
             isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
           }`}
         >

@@ -8,13 +8,13 @@ import AdminSectorTable from '@/components/AdminSectorTable'
 import AdminStockTable from '@/components/AdminStockTable'
 import Spinner from '@/components/Spinner'
 import NavBarPageActions from '@/components/NavBarPageActions'
-import SettingsSidebar from '@/components/SettingsSidebar'
+import SettingsPanel from '@/components/SettingsPanel'
 import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
 import { usePersistedState } from '@/hooks/usePersistedState'
-import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
+import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useTaxonomySelection, type TaxonomySelection } from '@/hooks/useTaxonomySelection'
 import { useCustomSectors, useStockSectors } from '@/hooks/useTreemapCustom'
 import { useTreemap, useStockCatalog } from '@/hooks/useTreemap'
@@ -147,7 +147,7 @@ export default function CustomPage() {
 
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
-  const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsSidebarSide()
+  const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
@@ -305,7 +305,7 @@ export default function CustomPage() {
             </EmptyMessageAreaContext.Provider>
           </div>
           <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
-            <SettingsSidebar
+            <SettingsPanel
               pageLabel="Custom"
               stockCountLabel={countLabel}
               // 저장·초기화는 기능 검토 전 임시 숨김. 재요청 시 새 버튼을 만들지 말고 이 옵션을 true로 바꿔 기존 버튼을 복원한다.
