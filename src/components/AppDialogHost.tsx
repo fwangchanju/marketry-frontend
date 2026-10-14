@@ -42,7 +42,7 @@ export default function AppDialogHost() {
       >
         <h2 id="app-dialog-title" className={`text-base font-bold ${dialog.adminOnly ? 'text-[#d92b0f]' : 'text-black'}`}>
           {dialog.adminOnly && '⚠ '}
-          <PopupKindBadge kind={dialog.kind === 'confirm' ? '결정' : '안내'} />
+          <PopupKindBadge kind={dialog.kind === 'confirm' ? '결정' : '알림'} />
           {dialog.title}
         </h2>
         {dialog.adminOnly && (

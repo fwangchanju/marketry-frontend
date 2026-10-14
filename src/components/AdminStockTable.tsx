@@ -1453,7 +1453,7 @@ export default function AdminStockTable({
         ...notes,
         '적용할까요?',
       ].join('\n')
-      if (!(await appConfirm(summary))) return
+      if (!(await appConfirm(summary, { title: '엑셀 적용' }))) return
 
       const idByPath = plan.existingIdByPath
       for (const path of plan.newSectors) {
