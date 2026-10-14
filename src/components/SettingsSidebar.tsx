@@ -187,7 +187,7 @@ function BookmarkButton({ id, label }: { id: SettingsBookmarkId; label: string }
       type="button"
       aria-label={`${label} 북마크${active ? ' 해제' : ''}`}
       aria-pressed={active}
-      data-hint={active ? '북마크 해제' : '북마크에 추가'}
+      data-hint={active ? '북마크 해제' : '북마크 추가'}
       onClick={() => onToggle(id)}
       className={`ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 ${active ? 'text-[var(--brand)]' : 'text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)]'}`}
     >
