@@ -107,7 +107,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
 
 // 등락률 기준 토글 — 종가(그날 정규장 종가 지도) / 누적(전일 종가 대비) / 별도(당일 종가 대비). 애프터 마켓 시작부터 다음 프리 마켓 개장 전까지만 보인다.
 // 시간외 스냅샷이 아직 없으면 별도는 잠긴다. 시장 시간대 말머리는 버튼의 표시 여부와 무관하게 유지한다.
-// 버튼에 커서를 올리면 그 버튼 아래에 설명 팝업이 뜬다(새로고침 버튼의 설명창과 같은 모양). 잠긴 별도도 올려서 설명을 볼 수 있다.
+// 버튼에 커서를 올리면 그 버튼 아래에 설명 팝업이 뜬다(공용 툴팁과 같은 모양). 잠긴 별도도 올려서 설명을 볼 수 있다.
 export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
   basis: ChangeRateChoice
   visible: boolean
@@ -155,7 +155,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
   ]
   const [popup, setPopup] = useState<{ text: ReactNode; anchor: DOMRect; touch: boolean } | null>(null)
   const popupRef = useRef<HTMLSpanElement>(null)
-  // 버튼 아래(4px)에 붙이고, 화면 밖으로 나가면 안쪽으로 밀거나 위로 뒤집는다 — 새로고침 버튼의 설명창과 같은 배치.
+  // 버튼 아래(4px)에 붙이고, 화면 밖으로 나가면 안쪽으로 밀거나 위로 뒤집는다 — 공용 툴팁과 같은 배치.
   // 크기를 잰 뒤 DOM 위치만 직접 고쳐서(상태를 다시 설정하지 않는다) 한 번에 자리를 잡는다.
   useLayoutEffect(() => {
     const element = popupRef.current
