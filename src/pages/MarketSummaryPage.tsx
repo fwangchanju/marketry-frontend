@@ -40,7 +40,7 @@ import { collectAtDepth } from '@/utils/sectorDepth'
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type DownloadStatus = 'idle' | 'downloading' | 'error'
 
-// 안내 틀 맨 위의 지수 줄 — 코스피·코스닥은 청록(cyan-700), 바로 아래 등락수는 더 짙은 청록(cyan-900)으로 나눈다. 오르면 빨강·내리면 파랑, 변화가 없거나 값이 없으면 회색이다.
+// 안내 틀 맨 위의 지수 줄 — 코스피·코스닥은 청록(cyan-700), 바로 아래 등락 종목은 더 짙은 청록(cyan-900)으로 나눈다. 오르면 빨강·내리면 파랑, 변화가 없거나 값이 없으면 회색이다.
 const INDEX_ROWS = [
   { label: '코스피', market: 'KOSPI', badgeClass: 'bg-cyan-700' },
   { label: '코스닥', market: 'KOSDAQ', badgeClass: 'bg-cyan-700' },
@@ -55,8 +55,8 @@ const toIndexChange = (value: number): string => `${value > 0 ? '+' : ''}${toInd
 
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
 const NOTICE_TYPES = [
-  { type: 'NEW_LISTING', label: '신규 상장', badgeClass: 'bg-cyan-700', countLabel: '3개월 내 상장', countKey: 'recentNewListingCount', valueKey: 'recentNewListingMarketValue' },
-  { type: 'TRADING_SUSPENSION', label: '거래 정지', badgeClass: 'bg-cyan-900', countLabel: '현재 정지 종목', countKey: 'currentSuspensionCount', valueKey: 'currentSuspensionMarketValue' },
+  { type: 'NEW_LISTING', label: '신규 상장', showItems: true, badgeClass: 'bg-cyan-700', countLabel: '3개월 내 상장', countKey: 'recentNewListingCount', valueKey: 'recentNewListingMarketValue' },
+  { type: 'TRADING_SUSPENSION', label: '거래 정지', showItems: false, badgeClass: 'bg-cyan-900', countLabel: '거래 정지 중', countKey: 'currentSuspensionCount', valueKey: 'currentSuspensionMarketValue' },
 ] as const
 
 export default function MarketSummaryPage() {
@@ -100,20 +100,21 @@ export default function MarketSummaryPage() {
   // 고른 단계의 업종만 모아 지도 박스와 그래프 막대로 쓴다 — 지도 페이지와 같은 제외 기준을 따른다.
   const overview = useMemo(() => {
     const items: OverviewMapItem[] = []
-    // 그래프에 든 업종의 종목 중 오른 종목·내린 종목·보합 종목 수 — 평균과 같은 기준(제외한 시가총액 구간 빼고 하위 업종 전체)으로 센다.
+    // 오른 종목·내린 종목·보합 종목 수는 제외한 업종·시가총액 구간과 상관없이 지금 시장의 전체 종목을 센다(제외 설정은 막대·지도에만 적용한다).
     let advancers = 0
     let decliners = 0
     let unchanged = 0
-    for (const { node, pathKey } of collectAtDepth(data?.items ?? [], effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
-      const average = computeSectorAverage(node, excludedMarketValueTiers)
-      if (average.weightedAvg === null) continue
-      items.push({ key: pathKey, name: node.sectorName, marketValue: node.totalMarketValue, changeRate: average.weightedAvg })
+    for (const node of data?.items ?? []) {
       for (const item of collectItems(node)) {
-        if (excludedMarketValueTiers.has(item.marketValueTier)) continue
         if (item.changeRate > 0) advancers += 1
         else if (item.changeRate < 0) decliners += 1
         else unchanged += 1
       }
+    }
+    for (const { node, pathKey } of collectAtDepth(data?.items ?? [], effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
+      const average = computeSectorAverage(node, excludedMarketValueTiers)
+      if (average.weightedAvg === null) continue
+      items.push({ key: pathKey, name: node.sectorName, marketValue: node.totalMarketValue, changeRate: average.weightedAvg })
     }
     const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
     // 그룹 페이지처럼 코스피·코스닥 지수 등락률을 강조 색 참조 막대로 값 순서 자리에 끼운다.
@@ -260,19 +261,20 @@ export default function MarketSummaryPage() {
                 <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
               </div>
             ) : (
-            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
+            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
             <div className="flex min-h-0 min-w-0 flex-1">
-            <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto bg-black">
+            {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서(지도 아래 약 15px), 캡처 중에는 스크롤을 풀어 둔다. */}
+            <div className={`flex min-h-0 min-w-0 flex-1 bg-black ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
             <div className="flex min-h-0 min-w-full flex-1 bg-black">
             {[
               {
                 // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '시장 요약',
                 body: (
-                  // 두 칸 격자다: [배지 칸(네 배지 중 가장 긴 쪽 너비)] [회색 칸(남는 폭)]. 신규 상장·3개월 내 상장·거래 정지·현재 정지 종목 네 줄을 세로 한 열로 쌓고,
-                  // 배지 칸이 네 줄에 공유돼 짧은 배지는 오른쪽만 늘어나 모두 같은 너비가 된다(글자는 왼쪽). 짝이 되는 두 배지(신규 상장·3개월 내 상장, 거래 정지·현재 정지 종목)는 같은 색이라 한눈에 짝이 보인다. 색은 분류 배지(코스피·대분류)의 청록(cyan-700)과 그보다 짙은 청록(cyan-900) 두 가지다 — 빨강·파랑은 오름·내림 뜻이 있어 쓰지 않는다.
+                  // 두 칸 격자다: [배지 칸(네 배지 중 가장 긴 쪽 너비)] [회색 칸(남는 폭)]. 신규 상장·3개월 내 상장·거래 정지·거래 정지 중 네 줄을 세로 한 열로 쌓고,
+                  // 배지 칸이 네 줄에 공유돼 짧은 배지는 오른쪽만 늘어나 모두 같은 너비가 된다(글자는 왼쪽). 짝이 되는 두 배지(신규 상장·3개월 내 상장, 거래 정지·거래 정지 중)는 같은 색이라 한눈에 짝이 보인다. 색은 분류 배지(코스피·대분류)의 청록(cyan-700)과 그보다 짙은 청록(cyan-900) 두 가지다 — 빨강·파랑은 오름·내림 뜻이 있어 쓰지 않는다.
                   <div className="grid min-h-0 w-full flex-1 grid-cols-[max-content_minmax(0,1fr)_max-content_minmax(0,1.5fr)] content-start gap-x-1 gap-y-1 overflow-y-auto text-[14px] font-medium leading-none tabular-nums">
-                    {/* 맨 위 세 줄은 코스피·코스닥 지수와 등락수(▲N ▼N ■N)다. 코스닥 아래에 등락수와 거래대금, 그 아래에는 빈 줄을 두고 신규 상장부터 안내 종목을 둔다. */}
+                    {/* 맨 위 세 줄은 코스피·코스닥 지수와 등락 종목(▲N ▼N ■N)다. 코스닥 아래에 등락 종목과 거래 대금, 그 아래에는 빈 줄을 두고 신규 상장부터 안내 종목을 둔다. */}
                     {INDEX_ROWS.map(({ label, market, badgeClass }) => {
                       const { indexValue, changeValue, changeRate } = indexOf(market)
                       return (
@@ -292,18 +294,18 @@ export default function MarketSummaryPage() {
                       )
                     })}
                     <span className="flex h-6 items-center">
-                      <span className="w-full whitespace-nowrap bg-cyan-900 px-1 py-[3px] text-white">등락수</span>
+                      <span className="w-full whitespace-nowrap bg-cyan-900 px-1 py-[3px] text-white">등락 종목</span>
                     </span>
                     <span className="col-span-3 flex h-6 items-center">
                       <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-2 rounded-sm bg-zinc-800 pl-1 pr-3">
                         {/* 위 코스피·코스닥 줄과 같은 칸 폭·정렬이다. */}
-                        <span className="min-w-[8ch] text-right text-red-400">▲{overview.advancers}</span>
-                        <span className="min-w-[7ch] text-right text-blue-400">▼{overview.decliners}</span>
-                        <span className="min-w-[7ch] text-right text-gray-300">■{overview.unchanged}</span>
+                        <span className="min-w-[8ch] text-right text-red-400">▲ {toCount(overview.advancers)}</span>
+                        <span className="min-w-[7ch] text-right text-blue-400">▼ {toCount(overview.decliners)}</span>
+                        <span className="min-w-[7ch] text-right text-gray-300">■ {toCount(overview.unchanged)}</span>
                       </span>
                     </span>
                     <span className="flex h-6 items-center">
-                      <span className="w-full whitespace-nowrap bg-cyan-900 px-1 py-[3px] text-white">거래대금</span>
+                      <span className="w-full whitespace-nowrap bg-cyan-900 px-1 py-[3px] text-white">거래 대금</span>
                     </span>
                     <span className="col-span-3 flex h-6 items-center">
                       <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-2 rounded-sm bg-zinc-800 pl-1 pr-3 text-gray-300">
@@ -314,31 +316,35 @@ export default function MarketSummaryPage() {
                       </span>
                     </span>
                     <span aria-hidden="true" className="col-span-4 h-6" />
-                    {NOTICE_TYPES.map(({ type, label, badgeClass, countLabel, countKey, valueKey }) => {
+                    {NOTICE_TYPES.map(({ type, label, showItems, badgeClass, countLabel, countKey, valueKey }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       const rowClass = 'flex h-6 items-center'
                       return (
                         <Fragment key={type}>
-                          {/* 네 배지의 너비·좌우 끝은 모두 같다. 들여쓰기는 배지가 아니라 오른쪽 회색 칸의 종목 이름 글자에 한다. */}
-                          <span className={rowClass}>
-                            <span className={`w-full whitespace-nowrap px-1 py-[3px] text-white ${badgeClass}`}>{label}</span>
-                          </span>
-                          {/* 그날 안내 종목은 종류 배지 바로 오른쪽 회색 칸에 한 줄로 적는다 — 없으면 글자 없이 빈 칸, 둘 이상이면 이름을 " · "(공백·가운뎃점·공백)로 이어 쓰고 칸보다 길면 …로 줄인다. */}
-                          <span className={`${rowClass} col-span-3`}>
-                            <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 pl-[calc(0.25rem+0.34em)] pr-1 text-gray-300">
-                              <span className="min-w-0 truncate">{items.map(item => item.stockName).join(' · ')}</span>
-                            </span>
-                          </span>
-                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "3개월 내 상장", 거래 정지는 "현재 정지 종목")는 짝이 되는 종류 배지와 같은 색 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"를 적는다(0건이면 0). */}
+                          {showItems && (
+                            <>
+                              {/* 네 배지의 너비·좌우 끝은 모두 같다. 들여쓰기는 배지가 아니라 오른쪽 회색 칸의 종목 이름 글자에 한다. */}
+                              <span className={rowClass}>
+                                <span className={`w-full whitespace-nowrap px-1 py-[3px] text-white ${badgeClass}`}>{label}</span>
+                              </span>
+                              {/* 그날 안내 종목은 종류 배지 바로 오른쪽 회색 칸에 한 줄로 적는다 — 없으면 글자 없이 빈 칸, 둘 이상이면 이름을 " · "(공백·가운뎃점·공백)로 이어 쓰고 칸보다 길면 …로 줄인다. */}
+                              <span className={`${rowClass} col-span-3`}>
+                                <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 pl-[calc(0.25rem+0.34em)] pr-1 text-gray-300">
+                                  <span className="min-w-0 truncate">{items.map(item => item.stockName).join(' · ')}</span>
+                                </span>
+                              </span>
+                            </>
+                          )}
+                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "3개월 내 상장", 거래 정지는 "거래 정지 중")는 짝이 되는 종류 배지와 같은 색 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"를 적는다(0건이면 0). */}
                           <span className={rowClass}>
                             <span className={`w-full whitespace-nowrap px-1 py-[3px] text-white ${badgeClass}`}>{countLabel}</span>
                           </span>
                           <span className={rowClass}>
                             <span className="flex h-[22px] min-w-0 flex-1 items-center justify-center rounded-sm bg-zinc-800 px-1 text-gray-300">{notices?.[countKey] ?? '-'}</span>
                           </span>
-                          {/* 같은 줄 오른쪽에 그 종목들의 현시점 시가총액 합을 "시가총액 합" 배지(같은 줄 배지와 같은 색)와 회색 칸으로 둔다. 표기는 Custom 페이지와 같은 n,nnn.n조/억이다. */}
+                          {/* 같은 줄 오른쪽에 그 종목들의 현시점 시가총액 합을 "시총 합" 배지(같은 줄 배지와 같은 색)와 회색 칸으로 둔다. 표기는 Custom 페이지와 같은 n,nnn.n조/억이다. */}
                           <span className={`${rowClass} whitespace-nowrap`}>
-                            <span className={`px-1 py-[3px] text-white ${badgeClass}`}>시가총액 합</span>
+                            <span className={`px-1 py-[3px] text-white ${badgeClass}`}>시총 합</span>
                           </span>
                           <span className={rowClass}>
                             <span className="flex h-[22px] min-w-0 flex-1 items-center justify-end rounded-sm bg-zinc-800 px-1 text-gray-300">
@@ -370,7 +376,7 @@ export default function MarketSummaryPage() {
                 ),
               },
             ].map((frame, frameIndex) => (
-              <section key={frame.title} className={`relative flex h-full min-w-[300px] flex-col bg-black ${frameIndex === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}>
+              <section key={frame.title} className={`relative flex h-full min-w-[320px] flex-col bg-black ${frameIndex === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}>
                 {/* 안쪽 여백은 양 끝(첫 틀의 왼쪽·마지막 틀의 오른쪽)에는 두지 않고 틀 사이(구분선 양옆)에만 12px 둔다. 그래서 양 끝 틀은 한쪽 여백(12px), 가운데 틀은 양쪽 여백(24px)을 가진다. 틀(section) 폭을 같게 두면 가운데 내용만 12px 좁아지므로, 양 끝 틀의 폭을 (전체 ÷ 3 − 4px)로 정해 세 틀의 내용 폭을 같게 한다. 위아래 여백은 없다. */}
                 <div className={`flex min-h-0 flex-1 flex-col bg-black ${frameIndex === 0 ? 'pl-0 pr-3' : frameIndex === 2 ? 'pl-3 pr-0' : 'px-3'}`}>
                   {/* 세 틀의 제목 줄(28px). */}
