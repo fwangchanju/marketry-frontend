@@ -1931,7 +1931,7 @@ export function SettingsColorSection({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={async () => { if (await appConfirm('등락률 색상을 기본값으로 초기화하시겠습니까?', { title: '등락률 색상 초기화' })) runWithFeedback(onResetColorScale) }}
+            onClick={async () => { if (await appConfirm('등락률 색상을 기본값으로 초기화하시겠습니까?', { title: '색상 초기화' })) runWithFeedback(onResetColorScale) }}
             disabled={isResettingColorScale}
             className="-my-px h-[26px] rounded-lg border-0 bg-zinc-600 px-3 text-[13px] font-semibold text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-60"
           >
