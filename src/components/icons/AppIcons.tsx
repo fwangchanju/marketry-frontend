@@ -197,12 +197,22 @@ export function CloseIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-// 텔레그램 종이비행기 — 공유 팝업의 텔레그램 공유 버튼용.
-export function TelegramIcon(props: SVGProps<SVGSVGElement>) {
+// 공유 범위 아이콘 — 모니터(전체 영역)와 휴대폰(모바일로 보내는 영역). Lucide monitor·smartphone 모양이다.
+export function MonitorIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M21.5 3.5 2.5 10.8l6 2.2 2.2 6.4 3.3-4.3 4.7 3.4z" />
-      <path d="m8.5 13 9-6.5-6.8 8.4" />
+      <rect width="20" height="14" x="2" y="3" rx="2" />
+      <line x1="8" x2="16" y1="21" y2="21" />
+      <line x1="12" x2="12" y1="17" y2="21" />
+    </svg>
+  )
+}
+
+export function SmartphoneIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+      <path d="M12 18h.01" />
     </svg>
   )
 }

@@ -13,32 +13,33 @@ export function shareScreenshotScale(el: HTMLElement): number {
   return scaleForLongSide(Math.max(el.offsetWidth, el.offsetHeight))
 }
 
-// 찍을 영역 안에서 selector에 맞는 요소들을 모두 감싸는 사각형(찍을 영역의 왼쪽 위 기준). 맞는 요소가 없으면 null이다.
-// 홈에서 틀 두 개만 찍을 때 쓴다 — 틀 배치는 그대로 두고 그 영역만 잘라서 찍는다.
+// 찍을 영역을 "맨 왼쪽 위부터 selector에 맞는 요소의 오른쪽 끝까지, 높이는 그대로"로 줄인다. 맞는 요소가 없으면 null이다.
+// 홈에서 맨 오른쪽 틀(시장 요약)만 빼고 찍을 때 쓴다 — 틀 배치는 그대로 두고 오른쪽을 잘라서 찍는다.
 export function captureRegionRect(el: HTMLElement, selector: string): { x: number; y: number; width: number; height: number } | null {
-  const regions = Array.from(el.querySelectorAll(selector))
-  if (regions.length === 0) return null
+  const edges = Array.from(el.querySelectorAll(selector))
+  if (edges.length === 0) return null
   const origin = el.getBoundingClientRect()
-  let left = Infinity
-  let top = Infinity
-  let right = -Infinity
-  let bottom = -Infinity
-  for (const region of regions) {
-    const rect = region.getBoundingClientRect()
-    left = Math.min(left, rect.left)
-    top = Math.min(top, rect.top)
-    right = Math.max(right, rect.right)
-    bottom = Math.max(bottom, rect.bottom)
-  }
-  return { x: left - origin.left, y: top - origin.top, width: right - left, height: bottom - top }
+  const right = Math.max(...edges.map(edge => edge.getBoundingClientRect().right))
+  return { x: 0, y: 0, width: right - origin.left, height: origin.height }
 }
 
 // data-capture-ignore가 붙은 요소(예: 지도 위 NXT 안내창과 그 어두운 배경)는 일시적인 알림이라 공유 이미지에 담지 않는다.
 const isCapturable = (node: Node) => !(node instanceof Element && node.hasAttribute('data-capture-ignore'))
 
+// 찍을 영역 자체에 불투명한 배경색이 있으면 그 색을 찍기 바탕으로 쓴다. 바탕색 옵션이 영역의 배경색을 덮어써서, 홈처럼 영역이 검정인데
+// 바탕색이 다르면 배경이 없는 줄(아래 줄)만 다른 색으로 찍히기 때문이다. 배경이 없으면 기본 바탕색(#0f1117)을 쓴다.
+const DEFAULT_CAPTURE_BACKGROUND = '#0f1117'
+
+function captureBackgroundColor(el: HTMLElement): string {
+  const color = getComputedStyle(el).backgroundColor
+  const alpha = /^rgba\(.*,\s*([\d.]+)\)$/.exec(color)?.[1]
+  const isOpaque = color !== '' && color !== 'transparent' && (alpha === undefined || Number(alpha) === 1)
+  return isOpaque ? color : DEFAULT_CAPTURE_BACKGROUND
+}
+
 // regionSelector를 주면 그 요소들이 차지한 영역만 찍는다(없거나 못 찾으면 전체).
 export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string) {
-  const base = { backgroundColor: '#0f1117', filter: isCapturable }
+  const base = { backgroundColor: captureBackgroundColor(el), filter: isCapturable }
   const region = regionSelector ? captureRegionRect(el, regionSelector) : null
   if (!region) return { scale: shareScreenshotScale(el), ...base }
   return {

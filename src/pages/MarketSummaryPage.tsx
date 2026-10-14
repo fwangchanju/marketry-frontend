@@ -261,12 +261,30 @@ export default function MarketSummaryPage() {
                 <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
               </div>
             ) : (
-            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
+            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 지도" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
             <div className="flex min-h-0 min-w-0 flex-1">
             {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서(지도 아래 약 15px), 캡처 중에는 스크롤을 풀어 둔다. */}
             <div className={`flex min-h-0 min-w-0 flex-1 bg-black ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
             <div className="flex min-h-0 min-w-full flex-1 bg-black">
             {[
+              {
+                title: '시장 지도',
+                body: (
+                  <div className="flex min-h-0 w-full flex-1 flex-col">
+                    <OverviewMap items={overview.items} colorScale={colorScale} />
+                  </div>
+                ),
+              },
+              {
+                title: '그룹 등락률 (%)',
+                body: (
+                  <div className="flex min-h-0 w-full flex-1 flex-col">
+                    <div className="flex min-h-0 w-full flex-1">
+                      <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
+                    </div>
+                  </div>
+                ),
+              },
               {
                 // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '시장 요약',
@@ -357,26 +375,8 @@ export default function MarketSummaryPage() {
                   </div>
                 ),
               },
-              {
-                title: '시장 지도',
-                body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <OverviewMap items={overview.items} colorScale={colorScale} />
-                  </div>
-                ),
-              },
-              {
-                title: '그룹 등락률 (%)',
-                body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <div className="flex min-h-0 w-full flex-1">
-                      <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
-                    </div>
-                  </div>
-                ),
-              },
             ].map((frame, frameIndex) => (
-              <section key={frame.title} data-capture-region={frameIndex >= 1 ? '' : undefined} className={`relative flex h-full min-w-[320px] flex-col bg-black ${frameIndex === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}>
+              <section key={frame.title} data-capture-until={frame.title === '그룹 등락률 (%)' ? '' : undefined} className={`relative flex h-full min-w-[320px] flex-col bg-black ${frameIndex === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}>
                 {/* 안쪽 여백은 양 끝(첫 틀의 왼쪽·마지막 틀의 오른쪽)에는 두지 않고 틀 사이(구분선 양옆)에만 12px 둔다. 그래서 양 끝 틀은 한쪽 여백(12px), 가운데 틀은 양쪽 여백(24px)을 가진다. 틀(section) 폭을 같게 두면 가운데 내용만 12px 좁아지므로, 양 끝 틀의 폭을 (전체 ÷ 3 − 4px)로 정해 세 틀의 내용 폭을 같게 한다. 위아래 여백은 없다. */}
                 <div className={`flex min-h-0 flex-1 flex-col bg-black ${frameIndex === 0 ? 'pl-0 pr-3' : frameIndex === 2 ? 'pl-3 pr-0' : 'px-3'}`}>
                   {/* 세 틀의 제목 줄(28px). */}
@@ -426,7 +426,7 @@ export default function MarketSummaryPage() {
           isCopying={copyStatus === 'copying'}
           isDownloading={downloadStatus === 'downloading'}
           screenshotTarget={screenshotTarget}
-          regionOption={{ label: '텔레그램', selector: '[data-capture-region]' }}
+          regionOption={{ label: '모바일', selector: '[data-capture-until]' }}
         />
       )}
     </div>
