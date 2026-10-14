@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { getCurrentAppDialog, resolveCurrentAppDialog, subscribeAppDialogs } from '@/utils/appDialogBus'
 import { HINT_BUBBLE_COLOR_CLASS } from './hintBubbleStyle'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
+import PopupKindBadge from './PopupKindBadge'
 
 export default function AppDialogHost() {
   const dialog = useSyncExternalStore(subscribeAppDialogs, getCurrentAppDialog, getCurrentAppDialog)
@@ -41,7 +42,8 @@ export default function AppDialogHost() {
       >
         <h2 id="app-dialog-title" className={`text-base font-bold ${dialog.adminOnly ? 'text-[#d92b0f]' : 'text-black'}`}>
           {dialog.adminOnly && '⚠ '}
-          {dialog.kind === 'confirm' ? '확인' : '안내'}
+          <PopupKindBadge kind={dialog.kind === 'confirm' ? '결정' : '안내'} />
+          {dialog.title}
         </h2>
         {dialog.adminOnly && (
           <p className="mt-2 bg-[#ff4d2e] px-2 py-1 text-[13px] font-bold text-white">ADMIN 전용 · 모든 사용자 화면에 바로 반영됩니다</p>
