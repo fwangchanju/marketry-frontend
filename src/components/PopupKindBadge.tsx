@@ -8,5 +8,5 @@ const BADGE_COLOR: Record<PopupKind, string> = {
 }
 
 export default function PopupKindBadge({ kind }: { kind: PopupKind }) {
-  return <span className={`mr-2 inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-xs leading-none font-bold text-white ${BADGE_COLOR[kind]}`}>{kind}</span>
+  return <span className={`mr-2 inline-flex shrink-0 items-center rounded px-1.5 py-[3px] text-xs leading-none font-semibold text-white ${BADGE_COLOR[kind]}`}>{kind}</span>
 }
