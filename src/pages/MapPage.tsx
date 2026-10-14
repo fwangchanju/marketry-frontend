@@ -594,11 +594,11 @@ export default function MapPage() {
                     aria-labelledby="nxt-notice-title"
                     className={`${HINT_BUBBLE_COLOR_CLASS} pointer-events-auto w-full max-w-sm p-5`}
                   >
-                    <h2 id="nxt-notice-title" className="text-base font-bold text-black"><PopupKindBadge kind="안내" />{nxtOnlyWindow.label}</h2>
+                    <h2 id="nxt-notice-title" className="text-base font-bold text-black"><PopupKindBadge kind="안내" />{nxtOnlyWindow.fromMinutes < 12 * 60 ? '프리 마켓' : '애프터 마켓'}</h2>
                     <p className="mt-3 break-keep text-sm leading-relaxed text-black">
-                      NXT 종목만 표시 중 ({toCount(nxtStockTotal)}종목)
+                      {nxtOnlyWindow.label.replace(/ /g, '')}에는 NXT 거래 가능 종목만 표시됩니다.
                       <br />
-                      <span className="text-gray-600">설정에 따라 달라질 수 있습니다.</span>
+                      <span className="text-gray-600">최대 {toCount(nxtStockTotal)}종목이며, 설정에 따라 다를 수 있습니다.</span>
                     </p>
                     <div className="mt-6 flex justify-end">
                       <button
