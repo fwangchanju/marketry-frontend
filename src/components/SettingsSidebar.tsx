@@ -42,18 +42,6 @@ function SettingDescription({ children, dimmed = false }: { children: ReactNode;
   return <p className={`settings-description mt-1 max-w-[16rem] text-[13px]/4 text-gray-400 ${dimmed ? 'opacity-40' : ''}`}>{children}</p>
 }
 
-// 설정창 맨 위 아이콘 버튼(초기화·저장)에 마우스를 올리거나 키보드로 오면 아래에 뜨는 설명. 오른쪽 끝에 맞춰 설정창 밖으로 나가지 않게 한다.
-function HeaderButtonHint({ children }: { children: string }) {
-  return (
-    <span
-      role="tooltip"
-      className={`pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-max whitespace-pre group-hover:block group-focus-visible:block ${HINT_BUBBLE_CLASS}`}
-    >
-      {children}
-    </span>
-  )
-}
-
 // 좌우 이동 탭을 "Basis" 줄 높이로 옮기고, 그 줄 위에 구분선이 있으면(아래쪽 Basis) 탭을 그 선까지 키운 뒤 아래도 같은 길이만큼 대칭으로
 // 키운다. 그릴 때마다 재는 값이라 상태가 아니라 DOM에 바로 쓴다(상태로 두면 다시 그리기가 이어진다). 해당 줄이 없으면 가운데·기본 크기로 둔다.
 function alignSideTab(outerElement: HTMLElement | null, tab: HTMLElement | null) {
@@ -2282,10 +2270,9 @@ export default function SettingsSidebar({
         </div>
         {/* 바꾼 값은 임시값이라 저장을 눌러야 서버에 올라간다. 초기화는 임시값을 버리고 저장값으로 돌아간다. 비로그인은 저장할 곳이 없어 로그인 창을 띄운다. */}
         {showPreferenceActions && <div className="ml-auto flex shrink-0 items-center gap-1">
-          <button type="button" aria-label="초기화" disabled={isPreferenceFeedbackActive} onClick={async () => {
+          <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
               if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(discardDrafts)
             }} className="group relative flex h-6 w-6 items-center justify-center rounded-md border-0 bg-zinc-600 p-0 text-white transition-colors hover:bg-zinc-500 disabled:opacity-50">
-            <HeaderButtonHint>{'저장값으로 되돌리기'}</HeaderButtonHint>
             <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
               <path d="M2.5 8a5.5 5.5 0 1 0 1.8-4.07M2.5 2.5v3h3" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -2293,6 +2280,8 @@ export default function SettingsSidebar({
           <button
             type="button"
             aria-label="저장"
+            // 비로그인도 같은 툴팁이 뜨고, 누르면 로그인 창이 열린다.
+            data-hint="변경값으로 저장하기"
             disabled={isPreferenceFeedbackActive}
             onClick={async () => {
               if (!isLoggedIn) { onRequestLogin?.(); return }
@@ -2309,8 +2298,6 @@ export default function SettingsSidebar({
             }}
             className="group relative flex h-6 w-6 items-center justify-center rounded-md border-0 bg-zinc-600 p-0 text-white transition-colors hover:bg-zinc-500 disabled:opacity-50"
           >
-            {/* 비로그인도 같은 말풍선이 뜨고, 누르면 로그인 창이 열린다. */}
-            <HeaderButtonHint>{'변경값으로 저장하기'}</HeaderButtonHint>
             {hasDrafts && <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[var(--brand)]" />}
             <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
               <path d="M2.5 2.5h8l3 3v8h-11zM5 2.5v3.5h5V2.5M5 13.5V9h6v4.5" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
