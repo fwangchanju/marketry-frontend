@@ -2,7 +2,7 @@ import type { SVGProps } from 'react'
 
 export function SettingsIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M11 10.27 7 3.34" />
       <path d="m11 13.73-4 6.93" />
       <path d="M12 22v-2" />
@@ -90,7 +90,7 @@ export function RefreshIcon(props: SVGProps<SVGSVGElement>) {
 // 지도 위쪽 이동 경로의 "되돌아가기" 표시와 2-4 제외 업종 목록이 같은 모양을 쓴다.
 export function ReturnArrowIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M9 14 4 9l5-5" />
       <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
     </svg>
@@ -156,9 +156,11 @@ export function ClockIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 // 화면 스크린샷 — 점선 사각형 모양.
-export function ScreenshotIcon(props: SVGProps<SVGSVGElement>) {
+// filled: 점선 사각형 안쪽을 35% 투명하게 채운다 — 열려 있을 때의 표시다(점선 선분은 닫힌 모양이 아니라서 fill 클래스가 먹지 않는다).
+export function ScreenshotIcon({ filled = false, ...props }: SVGProps<SVGSVGElement> & { filled?: boolean }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      {filled && <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" fillOpacity={0.35} stroke="none" />}
       <path d="M7 19a2 2 0 0 1-2-2" />
       <path d="M5 13v-2" />
       <path d="M5 7a2 2 0 0 1 2-2" />
