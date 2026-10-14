@@ -81,6 +81,17 @@ export function ReturnArrowIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+// 설정창의 되돌리기(저장값으로 되돌리기) 버튼 — 시계 바늘이 있는 반시계 화살표로 "이전 상태로"를 나타낸다.
+export function HistoryIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+  )
+}
+
 // 표 머리글 정렬 표시 — 정렬 중이면 방향을 가리키는 쐐기 하나(∧/∨), 아니면 위아래 쐐기 한 쌍. 줄기 없이 쐐기만 써서 작은 크기에서도 가볍다.
 export function SortIcon({ active, direction, ...props }: { active: boolean; direction: 'asc' | 'desc' } & SVGProps<SVGSVGElement>) {
   return (
