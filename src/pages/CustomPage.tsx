@@ -3,7 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom'
 import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
-import CaptureModal from '@/components/CaptureModal'
+import ScreenshotModal from '@/components/ScreenshotModal'
 import AdminSectorTable from '@/components/AdminSectorTable'
 import AdminStockTable from '@/components/AdminStockTable'
 import Spinner from '@/components/Spinner'
@@ -21,8 +21,8 @@ import { useTreemap, useStockCatalog } from '@/hooks/useTreemap'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession, useIsLoggedIn } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
-import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
-import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/utils/captureToDownload'
+import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
+import { screenshotElementToDownload, downloadDataUrl, screenshotFileName } from '@/utils/screenshotToDownload'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
@@ -151,16 +151,16 @@ export default function CustomPage() {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const captureRef = useRef<HTMLDivElement>(null)
+  const screenshotRef = useRef<HTMLDivElement>(null)
   // 안내 문구를 본문 영역 전체의 한가운데에 그리기 위한 기준 요소(EmptyMessageAreaContext).
   const [emptyMessageArea, setEmptyMessageArea] = useState<HTMLDivElement | null>(null)
 
   const handleCopy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !captureRef.current) return
+    if (!previewSrc && !screenshotRef.current) return
     setCopyStatus('copying')
     try {
       if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (captureRef.current) await captureElementToClipboard(captureRef.current)
+      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
       setCopyStatus('copied')
     } catch {
       setCopyStatus('error')
@@ -170,11 +170,11 @@ export default function CustomPage() {
   }
 
   const handleDownload = async (previewSrc?: string | null) => {
-    if (!previewSrc && !captureRef.current) return
+    if (!previewSrc && !screenshotRef.current) return
     setDownloadStatus('downloading')
     try {
-      if (previewSrc) downloadDataUrl(previewSrc, captureFileName('CUSTOM'))
-      else if (captureRef.current) await captureElementToDownload(captureRef.current, captureFileName('CUSTOM'))
+      if (previewSrc) downloadDataUrl(previewSrc, screenshotFileName('CUSTOM'))
+      else if (screenshotRef.current) await screenshotElementToDownload(screenshotRef.current, screenshotFileName('CUSTOM'))
     } catch {
       setDownloadStatus('error')
     } finally {
@@ -200,7 +200,7 @@ export default function CustomPage() {
         ))
       }
       onOpenShare={() => setIsShareOpen(true)}
-      isCaptureOpen={isShareOpen}
+      isScreenshotOpen={isShareOpen}
       onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
       isSettingsOpen={isSettingsOpen}
       isNativeFullscreen={isNativeFullscreen}
@@ -222,13 +222,13 @@ export default function CustomPage() {
           "커스텀" 탭 hover 목록으로 이동. 버전관리 저장(AdminVersionSaveSection)은 기능 검증과
           위치 재검토가 더 필요해서 일단 뺐다 — 다시 넣을 땐 이 컴포넌트를 재사용하면 된다. */}
       <div className="flex min-h-0 flex-1">
-        {/* 공유 스크린샷(captureRef)는 [세 번째 바+본문] 열만 찍는다 — 설정 사이드바는 스크린샷에 넣지 않는다. */}
+        {/* 공유 스크린샷(screenshotRef)는 [세 번째 바+본문] 열만 찍는다 — 설정 사이드바는 스크린샷에 넣지 않는다. */}
         <div ref={settingsRowRef} className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-black text-white">
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서 창을 좁혀도 사이드바(w-80)가 항상 같은
               폭을 유지하게 한다(지도/섹터/요약 페이지와 동일). */}
           <div
             ref={node => {
-              captureRef.current = node
+              screenshotRef.current = node
               setEmptyMessageArea(node)
             }}
             data-main-area
@@ -347,7 +347,7 @@ export default function CustomPage() {
       </div>
 
       {isShareOpen && (
-        <CaptureModal
+        <ScreenshotModal
           onClose={() => setIsShareOpen(false)}
           onCopy={handleCopy}
           onDownload={handleDownload}
@@ -355,7 +355,7 @@ export default function CustomPage() {
           downloadLabel={downloadLabel}
           isCopying={copyStatus === 'copying'}
           isDownloading={downloadStatus === 'downloading'}
-          captureTarget={captureRef.current}
+          screenshotTarget={screenshotRef.current}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useState } from 'react'
-import { captureElementToDataUrl } from '@/utils/captureToPreview'
+import { screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import { CheckIcon, CopyIcon, DownloadIcon, TelegramIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
 
@@ -13,7 +13,7 @@ interface Props {
   downloadLabel: string
   isCopying: boolean
   isDownloading: boolean
-  captureTarget: HTMLElement | null
+  screenshotTarget: HTMLElement | null
 }
 
 // 텔레그램 버튼은 임시로 숨겼다. 다시 쓰라는 요청이 오면 새 버튼을 만들지 말고 이 값을 true로 바꿔 기존 버튼을 복원한다.
@@ -22,7 +22,7 @@ const SHOW_TELEGRAM_BUTTON = false
 // MARKETRY 텔레그램 방 초대 링크 — 텔레그램 버튼이 연다.
 const TELEGRAM_ROOM_URL = 'https://t.me/+dqHQ460Ni5BmODdl'
 
-export default function CaptureModal({
+export default function ScreenshotModal({
   onClose,
   onCopy,
   onDownload,
@@ -30,12 +30,12 @@ export default function CaptureModal({
   isDownloading,
   copyLabel,
   isCopying,
-  captureTarget,
+  screenshotTarget,
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 스크린샷 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
   // 스크린샷으로 찍을 영역의 비율로 어림잡고, 이미지가 로드되면 실제 비율로 바로잡는다.
-  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(captureTarget))
+  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget))
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -48,14 +48,14 @@ export default function CaptureModal({
   }, [onClose])
 
   useEffect(() => {
-    if (!captureTarget) return
+    if (!screenshotTarget) return
     // 스크린샷 작업이 무거워서 같은 프레임에서 바로 시작하면 모달이 뜨는 페인트 자체가 밀린다.
     // 두 번의 requestAnimationFrame으로 모달(+스피너)이 먼저 그려진 뒤에 스크린샷을 시작한다.
     let cancelled = false
     const raf1 = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (cancelled) return
-        captureElementToDataUrl(captureTarget)
+        screenshotElementToDataUrl(screenshotTarget)
           .then(dataUrl => {
             if (!cancelled) setPreviewSrc(dataUrl)
           })
@@ -68,7 +68,7 @@ export default function CaptureModal({
       cancelled = true
       cancelAnimationFrame(raf1)
     }
-  }, [captureTarget])
+  }, [screenshotTarget])
 
   // 텔레그램 — 모든 기기에서 MARKETRY 텔레그램 방 링크를 연다. 링크에는 이미지를 붙일 수 없으니, 이미지는 클립보드에 복사해 두어
   // 열린 방의 대화창에 붙여넣게 한다.
@@ -92,7 +92,7 @@ export default function CaptureModal({
       >
         {/* 설정창 헤더와 같은 모양 — 왼쪽 제목, 오른쪽 ✕, 아래 구분선. */}
         <div className="flex shrink-0 items-center border-b border-gray-500 p-4">
-          <p className="flex h-7 items-center whitespace-nowrap text-lg font-bold leading-none text-white">SCREENSHOT</p>
+          <p className="flex h-7 items-center whitespace-nowrap text-lg font-bold leading-none text-white">Screenshot</p>
           <button
             type="button"
             onClick={onClose}

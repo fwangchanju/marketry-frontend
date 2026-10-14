@@ -17,7 +17,7 @@ import SettingsSidebar, {
   type SettingsBookmarkId,
   type SettingsSidebarSectionId,
 } from '@/components/SettingsSidebar'
-import CaptureModal from '@/components/CaptureModal'
+import ScreenshotModal from '@/components/ScreenshotModal'
 import Toolbar from '@/components/Toolbar'
 import Treemap from '@/components/Treemap'
 import { ChangeRateModeToggle } from '@/components/ToolbarControls'
@@ -40,7 +40,7 @@ import { useLoginGate } from '@/hooks/useLoginGate'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import type { DisplayGroup } from '@/hooks/useTreemapLayout'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
-import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
+import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
@@ -51,7 +51,7 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
-import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/utils/captureToDownload'
+import { screenshotElementToDownload, downloadDataUrl, screenshotFileName } from '@/utils/screenshotToDownload'
 import { limitDepth, flattenAllItems, type FilteredTreemapSectorNode } from '@/hooks/useFilteredTreemap'
 import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
 
@@ -231,7 +231,7 @@ export default function MapPage() {
   // null이 아니면 Treemap이 해당 뎁스로 줄어드는 줌아웃 애니메이션을 재생하고, 끝나면
   // handleZoomOutComplete를 불러서 실제 이동을 한다 — 애니메이션 도중엔 path/groups를 먼저 바꾸지 않는다.
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
-  const captureRef = useRef<HTMLDivElement>(null)
+  const screenshotRef = useRef<HTMLDivElement>(null)
 
   const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth, reset } = useTreemapDrilldown(filteredRootNodes)
   // NXT 단독 시간대 안내창에 보여 줄 종목 수 — 서버가 준 NXT 종목 전체(분모)다. 제외 업종·표시 설정을 적용하기 전의 수라서 지도에 그려지는 수와 다를 수 있다.
@@ -464,11 +464,11 @@ export default function MapPage() {
   }, [isShareOpen])
 
   const handleCopy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !captureRef.current) return
+    if (!previewSrc && !screenshotRef.current) return
     setCopyStatus('copying')
     try {
       if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (captureRef.current) await captureElementToClipboard(captureRef.current)
+      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
       setCopyStatus('copied')
     } catch {
       setCopyStatus('error')
@@ -478,11 +478,11 @@ export default function MapPage() {
   }
 
   const handleDownload = async (previewSrc?: string | null) => {
-    if (!previewSrc && !captureRef.current) return
+    if (!previewSrc && !screenshotRef.current) return
     setDownloadStatus('downloading')
     try {
-      if (previewSrc) downloadDataUrl(previewSrc, captureFileName('MAP'))
-      else if (captureRef.current) await captureElementToDownload(captureRef.current, captureFileName('MAP'))
+      if (previewSrc) downloadDataUrl(previewSrc, screenshotFileName('MAP'))
+      else if (screenshotRef.current) await screenshotElementToDownload(screenshotRef.current, screenshotFileName('MAP'))
       setDownloadStatus('idle')
     } catch {
       setDownloadStatus('error')
@@ -506,7 +506,7 @@ export default function MapPage() {
             onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
             isSettingsOpen={settingsModalProps.isOpen}
             onOpenShare={() => setIsShareOpen(true)}
-            isCaptureOpen={isShareOpen}
+            isScreenshotOpen={isShareOpen}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
             showRefresh={false}
@@ -522,7 +522,7 @@ export default function MapPage() {
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
               항상 같은 폭을 유지하게 한다 — 내부 콘텐츠(트리맵)가 넘치면 이 컬럼 안에서만 처리된다. */}
-          <div ref={captureRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black">
+          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black">
             {/* 왼쪽은 마켓·기간·시계·시간대 묶음, 오른쪽 끝은 프로필(사진 + 거래소·MARKETRY). 두 묶음이 같은 줄에서 서로 밀어내므로
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
@@ -805,7 +805,7 @@ export default function MapPage() {
       </div>
 
       {isShareOpen && (
-        <CaptureModal
+        <ScreenshotModal
           onClose={() => setIsShareOpen(false)}
           onCopy={handleCopy}
           onDownload={handleDownload}
@@ -813,7 +813,7 @@ export default function MapPage() {
           downloadLabel={downloadLabel}
           isCopying={copyStatus === 'copying'}
           isDownloading={downloadStatus === 'downloading'}
-          captureTarget={captureRef.current}
+          screenshotTarget={screenshotRef.current}
         />
       )}
     </div>
