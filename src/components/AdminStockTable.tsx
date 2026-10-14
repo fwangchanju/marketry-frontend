@@ -1436,24 +1436,20 @@ export default function AdminStockTable({
         return
       }
       const plan = buildUploadPlan(rows, sectors, new Map(itemsRef.current.map(item => [item.stockCode, item.sectorId])))
-      const notes = [
-        plan.unchangedCount > 0 && `이미 같은 분류 ${plan.unchangedCount}개`,
-        plan.blankCount > 0 && `분류가 비어 건너뜀 ${plan.blankCount}개`,
-        plan.invalidCount > 0 && `대분류 없이 중·소분류만 있어 건너뜀 ${plan.invalidCount}개`,
-        plan.unknownCodes.length > 0 && `목록에 없는 종목코드 ${plan.unknownCodes.length}개 (${plan.unknownCodes.slice(0, 3).join(', ')}${plan.unknownCodes.length > 3 ? ' …' : ''})`,
-      ].filter(Boolean)
+      // 창이 길어지지 않게 개수만 한 줄씩 적는다 — 건너뛰는 종목은 비어 있음·대분류 없음·목록에 없는 코드를 합친 수다.
+      const skippedCount = plan.blankCount + plan.invalidCount + plan.unknownCodes.length
       if (plan.changedCount === 0) {
-        appAlert(`바뀌는 종목이 없습니다.${notes.length > 0 ? `\n${notes.join('\n')}` : ''}`)
+        const parts = [plan.unchangedCount > 0 && `이미 같은 분류 ${plan.unchangedCount}개`, skippedCount > 0 && `건너뜀 ${skippedCount}개`].filter(Boolean)
+        appAlert(`바뀌는 종목이 없습니다.${parts.length > 0 ? `\n${parts.join(' · ')}` : ''}`)
         return
       }
-      const newNames = plan.newSectors.map(path => path.join(' > '))
+      const parts = [plan.newSectors.length > 0 && `새로 만들 분류 ${plan.newSectors.length}개`, skippedCount > 0 && `건너뜀 ${skippedCount}개`].filter(Boolean)
       const summary = [
-        `바뀌는 종목 ${plan.changedCount}개`,
-        newNames.length > 0 ? `새로 만들 분류 ${newNames.length}개\n  ${newNames.slice(0, 5).join('\n  ')}${newNames.length > 5 ? '\n  …' : ''}` : '새로 만들 분류 없음',
-        ...notes,
-        '적용할까요?',
+        `변경되는 종목은 ${plan.changedCount}개입니다.`,
+        ...(parts.length > 0 ? [parts.join(' · ')] : []),
+        '적용하시겠습니까?',
       ].join('\n')
-      if (!(await appConfirm(summary))) return
+      if (!(await appConfirm(summary, { title: '엑셀 적용' }))) return
 
       const idByPath = plan.existingIdByPath
       for (const path of plan.newSectors) {

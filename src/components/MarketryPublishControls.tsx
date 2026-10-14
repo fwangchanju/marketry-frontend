@@ -52,8 +52,8 @@ export default function MarketryPublishControls() {
 
   const handlePublish = async () => {
     const confirmed = await appConfirm(
-      '지금 내 분류를 MARKETRY로 올리시겠습니까?\n모든 사용자에게 보이는 MARKETRY가 바뀝니다.\n이전 버전은 남아서 되돌릴 수 있습니다.',
-      { adminOnly: true },
+      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n내 분류를 서버에 업데이트하시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`,
+      { adminOnly: true, title: 'MARKETRY 업데이트' },
     )
     if (!confirmed) return
     setBusyMessage('MARKETRY를 업데이트 중입니다.')
@@ -85,7 +85,7 @@ export default function MarketryPublishControls() {
   }
 
   const handleRestore = async (version: MarketryPublication) => {
-    const confirmed = await appConfirm(`${version.label}\nMARKETRY를 이 버전으로 되돌리시겠습니까?\n모든 사용자에게 보이는 MARKETRY가 바뀝니다.`, { adminOnly: true })
+    const confirmed = await appConfirm(`[${toDateTimeLabel(version.label)}]\nMARKETRY 맵을 해당 버전으로 되돌리시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
     if (!confirmed) return
     setBusyMessage('MARKETRY를 롤백 중입니다.')
     try {

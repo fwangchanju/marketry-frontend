@@ -33,7 +33,7 @@ const NEW_LISTING_SECTOR_NAME = '신규 상장'
 const NEW_LISTING_DELETE_MESSAGE = '신규 상장시 자동 분류되는 항목이라 삭제가 불가능합니다.'
 const isProtectedSector = (sector: SectorItem) => sector.parentId === null && sector.name === NEW_LISTING_SECTOR_NAME
 const MAX_SECTOR_LEVELS = MAX_SECTOR_DEPTH + 1
-// "세부 업종 추가" 아이콘은 대분류·중분류(깊이 0·1)에만 보여 준다 — 소분류 이하에는 더 만들지 않는다. 이미 있는 4단계 업종은 그대로 둔다.
+// "하위 업종 추가" 아이콘은 대분류·중분류(깊이 0·1)에만 보여 준다 — 소분류 이하에는 더 만들지 않는다. 이미 있는 4단계 업종은 그대로 둔다.
 const ADD_CHILD_MAX_PARENT_DEPTH = 1
 
 // 섹터 이름 글자 수 상한(공백 포함) — 대/중/소분류 구분 없이 통일한다. 이미 이 길이를 넘는 이름은 그대로
@@ -266,8 +266,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const cancelMove = () => setMovingSectorId(null)
   const confirmMove = async (target: SectorItem | null) => {
     if (!movingSector) return
-    const destination = target ? getSectorPath(target) : '최상위'
-    if (!await appConfirm(`${movingSector.name}\n${destination} 안으로 이동하시겠습니까?`)) return
+    if (!await appConfirm(moveMessage(movingSector.name, target), { title: '업종 이동' })) return
     const moved = movingSector
     reparentSector.mutate({ id: moved.id, parentId: target ? target.id : null }, {
       onSuccess: () => {
@@ -296,6 +295,10 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     }
     return path.join(' › ')
   }
+
+  // 이동 확인 문구 — 대상이 없으면 최상위로 옮기는 것이다.
+  const moveMessage = (name: string, target: SectorItem | null) =>
+    `[${name}] 업종을\n${target ? `[${getSectorPath(target)}] 하위로` : '최상위로'} 이동하시겠습니까?`
 
   const persistSiblingOrder = (parentId: number | null, ids: number[]) => {
     setSectorOrder(previous => {
@@ -445,7 +448,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const sectorCounts = [
     viewSectors.filter(sector => sector.depth === 0).length,
     viewSectors.filter(sector => sector.depth === 1).length,
-    // 3단계 이하의 세부 업종도 소분류에 포함해 전체 개수가 항상 합산되게 한다.
+    // 3단계 이하의 하위 업종도 소분류에 포함해 전체 개수가 항상 합산되게 한다.
     viewSectors.filter(sector => sector.depth >= 2).length,
   ]
   // 가장 깊이 선택된 열 — 이 열의 머리글만 강조색으로 칠하고 화살표를 붙인다.
@@ -528,7 +531,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   }
 
   const moveByDrag = async (dragged: SectorItem, target: SectorItem | null) => {
-    if (!await appConfirm(`${dragged.name}\n${target ? getSectorPath(target) : '최상위'} 안으로 이동하시겠습니까?`)) return
+    if (!await appConfirm(moveMessage(dragged.name, target), { title: '업종 이동' })) return
     reparentSector.mutate({ id: dragged.id, parentId: target ? target.id : null }, {
       onSuccess: () => {
         // 보낸 업종(target)을 선택한 상태로 만들어 그 하위 목록이 열리게 하고, 새로 들어온 업종에 표시를 남긴다. 최상위로 올렸다면 그 업종 자신을 선택한다.
@@ -662,11 +665,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                       여기
                     </span>
                   )}
-                  {/* 선택한 항목은 줄 오른쪽 끝에 세부 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 이동 모드 중이거나 번호 칸을 끄는 중에는 "여기"와 겹치지 않게 숨긴다. */}
+                  {/* 선택한 항목은 줄 오른쪽 끝에 하위 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 이동 모드 중이거나 번호 칸을 끄는 중에는 "여기"와 겹치지 않게 숨긴다. */}
                   {selectedSectorId === sector.id && !movingSector && !isMoveDrag && (
                     <span className="ml-auto flex shrink-0 items-center gap-0.5 pl-2 pr-2">
                       {sector.depth <= ADD_CHILD_MAX_PARENT_DEPTH && (
-                        <button type="button" data-no-row-select title="세부 업종 추가" aria-label={`${sector.name} 세부 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none hover:text-[var(--brand)]">
+                        <button type="button" data-no-row-select title="하위 업종 추가" aria-label={`${sector.name} 하위 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none hover:text-[var(--brand)]">
                           <PlusIcon className="h-4 w-4" />
                         </button>
                       )}

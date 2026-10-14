@@ -32,12 +32,12 @@ export default function AdminVersionSaveSection() {
   }
 
   const handleRestore = async (id: number, versionLabel: string) => {
-    if (!await appConfirm(`${versionLabel}\n이 버전으로 불러오시겠습니까?`)) return
+    if (!await appConfirm(`[${versionLabel}]\n해당 버전을 불러오시겠습니까?`, { title: '버전 불러오기' })) return
     restoreVersion.mutate(id)
   }
 
   const handleDelete = async (id: number, versionLabel: string) => {
-    if (!await appConfirm(`${versionLabel}\n삭제하시겠습니까?`)) return
+    if (!await appConfirm(`[${versionLabel}]\n해당 버전을 삭제하시겠습니까?`, { title: '버전 삭제' })) return
     deleteVersion.mutate(id)
     if (selectedId === id) {
       setSelectedId(null)
