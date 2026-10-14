@@ -9,16 +9,28 @@ const DISCLAIMER_LINES = [
   '제공된 정보에 의한 투자결과에 대해 법적인 책임을 지지 않습니다.',
 ]
 
-// 데이터별 출처. 새 외부 데이터를 쓰기 시작하면 여기에 한 줄을 더한다 — 말풍선은 이 목록을 그대로 그린다.
-const DATA_SOURCES: { data: string; source: string }[] = [
-  { data: '시세/등락률/종목 정보/시가총액/업종명', source: '키움증권' },
-  { data: '날짜/시간/거래 세션', source: '토스증권' },
-  { data: '거래정지 종목(안내·지도 제외)', source: '토스증권' },
-  { data: '상장폐지 종목(지도 제외)', source: '토스증권' },
-  { data: '신규 상장 종목(안내)', source: '키움증권(종목 정보를 처음 받은 날 기준)' },
-  { data: 'NXT 거래 가능 종목', source: '키움증권, NEXTRADE' },
-  { data: 'MARKETRY 분류', source: 'MARKETRY' },
-  { data: '내 분류', source: '사용자가 직접 분류' },
+// 데이터 출처. 출처(증권사)를 제목으로 하고 그곳에서 받는 항목 이름을 아래에 줄로 적는다.
+// 보는 사람이 "이 숫자가 어디서 왔나"를 알면 되므로 수집 주기·시각 같은 운영 정보와 내부 용어는 적지 않는다.
+// 새 외부 데이터를 쓰기 시작하면 해당 출처 아래에 한 줄을 더한다(새 출처면 묶음을 더한다) — 말풍선은 이 목록을 그대로 그린다.
+// 백엔드가 실제로 받아 오는 곳(키움 업종현재가·업종별주가·종목정보, 토스 시장 캘린더·종목 정보, NEXTRADE 종목 목록) 기준이다.
+const DATA_SOURCES: { source: string; items: string[] }[] = [
+  {
+    source: '키움증권',
+    items: [
+      '시세/등락률/시가총액',
+      '코스피·코스닥 지수/거래대금',
+      '종목명/업종명',
+      '신규 상장 종목',
+      'NXT 거래 가능 종목',
+    ],
+  },
+  {
+    source: '토스증권',
+    items: ['날짜/시간/거래 세션/휴장일', '거래정지/상장폐지 종목'],
+  },
+  { source: 'NEXTRADE', items: ['NXT 거래 가능 종목 (키움증권 데이터가 없을 때만)'] },
+  { source: 'MARKETRY', items: ['종목·업종 분류'] },
+  { source: '사용자', items: ['내 분류'] },
 ]
 
 // 말풍선이 화면 가장자리에서 띄우는 최소 간격.
@@ -71,11 +83,13 @@ function SourceHelpBubble() {
           style={{ position: 'fixed', left: position.left, top: position.top }}
           className={`z-50 w-max whitespace-pre ${HINT_BUBBLE_CLASS}`}
         >
-          <b>데이터 출처</b>
-          {DATA_SOURCES.map(({ data, source }) => (
-            <div key={data} className="mt-1">
-              <div className="font-medium text-red-600">{data}</div>
-              <div className="pl-3">{source}</div>
+          <div><span className="inline-flex items-center rounded bg-cyan-700 px-1.5 py-[3px] text-xs leading-none font-semibold text-white">출처</span></div>
+          {DATA_SOURCES.map(({ source, items }) => (
+            <div key={source} className="mt-1">
+              <div className="font-medium text-red-600">{source}</div>
+              {items.map(item => (
+                <div key={item} className="pl-3">{item}</div>
+              ))}
             </div>
           ))}
         </div>

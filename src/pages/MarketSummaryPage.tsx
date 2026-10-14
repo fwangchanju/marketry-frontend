@@ -376,7 +376,7 @@ export default function MarketSummaryPage() {
                 ),
               },
             ].map((frame, frameIndex) => (
-              <section key={frame.title} className={`relative flex h-full min-w-[320px] flex-col bg-black ${frameIndex === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}>
+              <section key={frame.title} data-capture-region={frameIndex >= 1 ? '' : undefined} className={`relative flex h-full min-w-[320px] flex-col bg-black ${frameIndex === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}>
                 {/* 안쪽 여백은 양 끝(첫 틀의 왼쪽·마지막 틀의 오른쪽)에는 두지 않고 틀 사이(구분선 양옆)에만 12px 둔다. 그래서 양 끝 틀은 한쪽 여백(12px), 가운데 틀은 양쪽 여백(24px)을 가진다. 틀(section) 폭을 같게 두면 가운데 내용만 12px 좁아지므로, 양 끝 틀의 폭을 (전체 ÷ 3 − 4px)로 정해 세 틀의 내용 폭을 같게 한다. 위아래 여백은 없다. */}
                 <div className={`flex min-h-0 flex-1 flex-col bg-black ${frameIndex === 0 ? 'pl-0 pr-3' : frameIndex === 2 ? 'pl-3 pr-0' : 'px-3'}`}>
                   {/* 세 틀의 제목 줄(28px). */}
@@ -426,6 +426,7 @@ export default function MarketSummaryPage() {
           isCopying={copyStatus === 'copying'}
           isDownloading={downloadStatus === 'downloading'}
           screenshotTarget={screenshotTarget}
+          regionOption={{ label: '텔레그램', selector: '[data-capture-region]' }}
         />
       )}
     </div>

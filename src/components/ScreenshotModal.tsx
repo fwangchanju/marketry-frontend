@@ -1,6 +1,7 @@
 import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useState } from 'react'
 import { screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
+import { captureRegionRect } from '@/utils/screenshotScale'
 import { CheckIcon, CopyIcon, DownloadIcon, TelegramIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
 
@@ -14,13 +15,9 @@ interface Props {
   isCopying: boolean
   isDownloading: boolean
   screenshotTarget: HTMLElement | null
+  // 있으면 "전체" 옆에 이 요소들이 차지한 영역만 따로 찍는 버튼(텔레그램 아이콘 + label)을 보여 준다(홈의 지도·그룹 등락률 두 틀을 텔레그램에 보낼 때).
+  regionOption?: { label: string; selector: string }
 }
-
-// 텔레그램 버튼은 임시로 숨겼다. 다시 쓰라는 요청이 오면 새 버튼을 만들지 말고 이 값을 true로 바꿔 기존 버튼을 복원한다.
-const SHOW_TELEGRAM_BUTTON = false
-
-// MARKETRY 텔레그램 방 초대 링크 — 텔레그램 버튼이 연다.
-const TELEGRAM_ROOM_URL = 'https://t.me/+dqHQ460Ni5BmODdl'
 
 export default function ScreenshotModal({
   onClose,
@@ -31,11 +28,14 @@ export default function ScreenshotModal({
   copyLabel,
   isCopying,
   screenshotTarget,
+  regionOption,
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
+  const [isRegionOnly, setIsRegionOnly] = useState(false)
+  const regionSelector = regionOption && isRegionOnly ? regionOption.selector : undefined
   // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 스크린샷 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
   // 스크린샷으로 찍을 영역의 비율로 어림잡고, 이미지가 로드되면 실제 비율로 바로잡는다.
-  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget))
+  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget, undefined))
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -55,7 +55,7 @@ export default function ScreenshotModal({
     const raf1 = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (cancelled) return
-        screenshotElementToDataUrl(screenshotTarget)
+        screenshotElementToDataUrl(screenshotTarget, regionSelector)
           .then(dataUrl => {
             if (!cancelled) setPreviewSrc(dataUrl)
           })
@@ -68,13 +68,13 @@ export default function ScreenshotModal({
       cancelled = true
       cancelAnimationFrame(raf1)
     }
-  }, [screenshotTarget])
+  }, [screenshotTarget, regionSelector])
 
-  // 텔레그램 — 모든 기기에서 MARKETRY 텔레그램 방 링크를 연다. 링크에는 이미지를 붙일 수 없으니, 이미지는 클립보드에 복사해 두어
-  // 열린 방의 대화창에 붙여넣게 한다.
-  const handleTelegramShare = () => {
-    window.open(TELEGRAM_ROOM_URL, '_blank', 'noopener,noreferrer')
-    onCopy(previewSrc)
+  // 범위를 바꾸면 새 이미지를 찍는 동안 스피너를 보여 준다.
+  const selectRegion = (next: boolean) => {
+    if (next === isRegionOnly) return
+    setPreviewSrc(null)
+    setIsRegionOnly(next)
   }
 
   // 높이는 화면(85dvh에서 버튼 줄을 뺀 만큼), 폭은 화면 폭 안에서 이미지 비율로 정한다 — 원래 크기보다 작으면 키우고 크면 줄여서 화면에
@@ -127,29 +127,28 @@ export default function ScreenshotModal({
             좁은 화면에서는 복사 상태 아래로 양끝 버튼을 내려 겹치지 않게 한다. */}
         <div className="mt-4 flex shrink-0 items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
+            {regionOption && (
+              <>
+                <button type="button" aria-pressed={!isRegionOnly} onClick={() => selectRegion(false)} className={!isRegionOnly ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
+                  전체
+                </button>
+                <button type="button" aria-pressed={isRegionOnly} onClick={() => selectRegion(true)} className={isRegionOnly ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
+                  <TelegramIcon className="h-4 w-4" />
+                  {regionOption.label}
+                </button>
+              </>
+            )}
+          </div>
+          <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
               onClick={() => onDownload(previewSrc)}
-              disabled={isDownloading}
+              disabled={isDownloading || (regionOption !== undefined && !previewSrc)}
               className={BUTTON_BASE_CLASS}
             >
               {isDownloading ? <Spinner className="h-4 w-4" /> : <DownloadIcon className="h-4 w-4" />}
               {downloadLabel}
             </button>
-            {SHOW_TELEGRAM_BUTTON && (
-              <button
-                type="button"
-                onClick={handleTelegramShare}
-                disabled={!previewSrc}
-                aria-label="텔레그램으로 공유"
-                className={BUTTON_BASE_CLASS}
-              >
-                <TelegramIcon className="h-4 w-4" />
-                텔레그램
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
             {/* 복사는 자동으로 하지 않고 이 버튼으로만 한다. 공유는 대부분 붙여 넣는 용도라 이 버튼이 강조 버튼이다(청록). 글자는 다른 버튼과 같은 4글자로 고정하고,
                 상태는 아이콘(복사 중=스피너, 완료=체크)으로 보여준다. 실패만 "복사실패"(4글자). */}
             <button
@@ -177,8 +176,9 @@ export default function ScreenshotModal({
 }
 
 // 스크린샷으로 찍을 영역의 가로/세로 비율 — 아직 없거나 크기를 못 재면 null.
-function elementRatio(element: HTMLElement | null): number | null {
+function elementRatio(element: HTMLElement | null, regionSelector: string | undefined): number | null {
   if (!element) return null
-  const { width, height } = element.getBoundingClientRect()
+  const region = regionSelector ? captureRegionRect(element, regionSelector) : null
+  const { width, height } = region ?? element.getBoundingClientRect()
   return width > 0 && height > 0 ? width / height : null
 }
