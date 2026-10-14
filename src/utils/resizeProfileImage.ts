@@ -41,13 +41,13 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('사진을 읽을 수 없습니다.'))
+    image.onerror = () => reject(new Error('사진을 읽지 못했습니다.'))
     image.src = url
   })
 }
 
 function toBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    canvas.toBlob(blob => (blob === null ? reject(new Error('사진을 줄일 수 없습니다.')) : resolve(blob)), 'image/jpeg', JPEG_QUALITY)
+    canvas.toBlob(blob => (blob === null ? reject(new Error('사진을 줄이지 못했습니다.')) : resolve(blob)), 'image/jpeg', JPEG_QUALITY)
   })
 }

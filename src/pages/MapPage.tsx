@@ -296,7 +296,7 @@ export default function MapPage() {
     entryFromOtherPageRef.current = entered !== null && entered.length > path.length
     if (entered === null && noticedSectorRef.current !== sectorParam) {
       noticedSectorRef.current = sectorParam
-      void appAlert('해당 업종을 찾을 수 없습니다.\n이전 화면으로 돌아갑니다.', { title: '이동 실패' }).then(leaveToEntryPage)
+      void appAlert('해당 업종을 찾지 못했습니다.\n이전 화면으로 돌아갑니다.', { title: '이동 실패' }).then(leaveToEntryPage)
     }
     setSearchParams(
       prev => {
@@ -664,7 +664,7 @@ export default function MapPage() {
               ) : visibleItems.length === 0 ? (
                 <div className="relative flex-1">
                   <EmptyMessage
-                    message={stockChangeFilter === 'all' && sectorChangeFilter === 'all' ? EMPTY_DATA_MESSAGE : '조건에 해당하는 종목이 없습니다'}
+                    message={stockChangeFilter === 'all' && sectorChangeFilter === 'all' ? EMPTY_DATA_MESSAGE : '조건에 해당하는 종목이 없습니다.'}
                     topClass="-top-1"
                   />
                 </div>

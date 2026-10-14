@@ -49,7 +49,7 @@ export default function ProfilePage() {
       const status = isAxiosError(error) ? error.response?.status : undefined
       if (status === 409) setNicknameMessage({ kind: 'error', text: '이미 사용 중인 닉네임입니다.' })
       else if (status === 400) setNicknameMessage({ kind: 'error', text: NICKNAME_RULE_MESSAGE })
-      else setNicknameMessage({ kind: 'error', text: '닉네임을 저장하지 못했습니다. 다시 시도해 주세요.' })
+      else setNicknameMessage({ kind: 'error', text: '닉네임을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' })
     }
   }
 
@@ -72,7 +72,7 @@ export default function ProfilePage() {
     try {
       const resized = await resizeProfileImage(file).catch(() => null)
       if (resized === null) {
-        setImageMessage({ kind: 'error', text: '사진을 읽을 수 없습니다. 다른 사진을 골라 주세요.' })
+        setImageMessage({ kind: 'error', text: '사진을 읽지 못했습니다. 다른 사진을 골라 주세요.' })
         return
       }
       if (resized.size > PROFILE_IMAGE_MAX_UPLOAD_BYTES) {
@@ -82,7 +82,7 @@ export default function ProfilePage() {
       await uploadImage.mutateAsync(resized)
       setImageMessage({ kind: 'done', text: '프로필 사진을 저장했습니다.' })
     } catch {
-      setImageMessage({ kind: 'error', text: '사진을 올리지 못했습니다. 다시 시도해 주세요.' })
+      setImageMessage({ kind: 'error', text: '사진을 올리지 못했습니다. 잠시 후 다시 시도해 주세요.' })
     } finally {
       setIsImageBusy(false)
     }
@@ -95,7 +95,7 @@ export default function ProfilePage() {
       await deleteImage.mutateAsync()
       setImageMessage({ kind: 'done', text: '프로필 사진을 삭제했습니다.' })
     } catch {
-      setImageMessage({ kind: 'error', text: '사진을 삭제하지 못했습니다. 다시 시도해 주세요.' })
+      setImageMessage({ kind: 'error', text: '사진을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.' })
     } finally {
       setIsImageBusy(false)
     }
@@ -225,7 +225,7 @@ export default function ProfilePage() {
                 >
                   {logout.isPending ? '로그아웃 중...' : '로그아웃'}
                 </button>
-                {logout.isError && <p role="alert" className="mt-3 text-sm text-red-300">로그아웃하지 못했습니다. 다시 시도해 주세요.</p>}
+                {logout.isError && <p role="alert" className="mt-3 text-sm text-red-300">로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
               </div>
             </>
           ) : null}

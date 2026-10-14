@@ -62,7 +62,7 @@ function HistoryListPopup<T extends { id: string }>({
       onClick={e => e.stopPropagation()}
     >
       {ordered.length === 0 ? (
-        <p className="whitespace-nowrap px-1 text-gray-400">{actionLabel}할 변경 내역이 없습니다</p>
+        <p className="whitespace-nowrap px-1 text-gray-400">{actionLabel}할 변경 내역이 없습니다.</p>
       ) : (
         <div className="overflow-y-auto scrollbar-thin" style={{ maxHeight: LIST_MAX_HEIGHT }} onMouseLeave={() => setHoverIndex(-1)}>
           {ordered.map((action, index) => (
