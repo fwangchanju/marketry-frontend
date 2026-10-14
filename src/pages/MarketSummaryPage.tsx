@@ -2,8 +2,8 @@ import { Fragment, useMemo, useRef, useState } from 'react'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
-import MarketMapShareModal from '@/components/MarketMapShareModal'
-import { ClockIcon } from '@/components/icons/MarketMapIcons'
+import CaptureModal from '@/components/CaptureModal'
+import { ClockIcon } from '@/components/icons/AppIcons'
 import SettingsSidebar, { SettingsGroupDepthSection } from '@/components/SettingsSidebar'
 import FrameTitleBadge from '@/components/FrameTitleBadge'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
@@ -15,7 +15,7 @@ import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import ClosingPriceLabel from '@/components/ClosingPriceLabel'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
-import { ChangeRateModeToggle } from '@/components/MarketMapControls'
+import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
@@ -29,10 +29,10 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { captureElementToDownload, captureFileName, downloadDataUrl } from '@/utils/captureToDownload'
-import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toMarketMapSnapshotDateLabel, toPctSigned } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toSnapshotDateLabel, toPctSigned } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
-import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredMarketMapTree'
+import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
 import { collectAtDepth } from '@/utils/sectorDepth'
 
 // 홈 화면 시험 배치 — 대분류 업종만으로 그린 약식 등락률 지도와 그룹 등락률 그래프를 스마트폰 크기 틀(가로 360px)에 나란히 둔다.
@@ -67,7 +67,7 @@ export default function MarketSummaryPage() {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   const {
-    settingsModalProps, data, isLoading, isError, refetchMarketMap, isRefetchingMarketMap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
+    settingsModalProps, data, isLoading, isError, refetchTreemap, isRefetchingTreemap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
     changeRateMode, changeRateChoice, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers,
     market, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
     isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
@@ -209,9 +209,9 @@ export default function MarketSummaryPage() {
                   isPast={isPastSnapshot}
                 >
                   <span className={data?.snapshotTime || rangeStartTime ? undefined : 'invisible'}>
-                    {toMarketMapSnapshotDateLabel(rangeStartTime ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
+                    {toSnapshotDateLabel(rangeStartTime ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
                   </span>
-                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toMarketMapSnapshotDateLabel(pinnedSnapshotTime)}</span>}
+                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                 </SnapshotDatePicker>
               </ToolbarChip>
               {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
@@ -229,8 +229,8 @@ export default function MarketSummaryPage() {
                 <ToolbarChip bare tone="text-white">
                   <PageRefreshButton
                     cell
-                    onRefresh={refetchMarketMap}
-                    isRefreshing={isRefetchingMarketMap}
+                    onRefresh={refetchTreemap}
+                    isRefreshing={isRefetchingTreemap}
                     helpText={SNAPSHOT_REFRESH_HELP}
                     minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                   >
@@ -257,7 +257,7 @@ export default function MarketSummaryPage() {
               </div>
             ) : isError ? (
               <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
-                <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
+                <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
               </div>
             ) : (
             /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 요약" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(300px)에서 가로로 스크롤된다. */
@@ -411,7 +411,7 @@ export default function MarketSummaryPage() {
         </div>
       </div>
       {captureTarget && (
-        <MarketMapShareModal
+        <CaptureModal
           onClose={() => setCaptureTarget(null)}
           onCopy={handleCopy}
           onDownload={handleDownload}

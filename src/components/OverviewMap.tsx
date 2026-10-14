@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy'
 import { toPctSigned } from '@/utils/format'
-import { resolveMarketMapColor, type ColorScaleConfig } from '@/utils/marketMapColorScale'
+import { resolveTreemapColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 
 export interface OverviewMapItem {
   key: string
@@ -62,7 +62,7 @@ export default function OverviewMap({
   return (
     <div ref={ref} className="relative min-h-0 w-full flex-1">
       {rects.map(({ item, x, y, width, height }) => {
-        const background = resolveMarketMapColor(item.changeRate, colorScale)
+        const background = resolveTreemapColor(item.changeRate, colorScale)
         const showRate = width >= 44 && height >= 38
         const nameSize = nameFontSize(width, height, item.name)
         const boxClassName = 'absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight'

@@ -1,4 +1,4 @@
-import { useTradingDayGap } from '@/hooks/useMarketMap'
+import { useTradingDayGap } from '@/hooks/useTreemap'
 
 interface Props {
   // 지금 보는 지난 날짜의 스냅샷 시각, 실시간 지도의 스냅샷 시각(ISO).

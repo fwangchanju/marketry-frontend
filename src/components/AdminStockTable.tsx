@@ -6,12 +6,12 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition 
 import { createPortal } from 'react-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { SectorItem, StockSectorListItem } from '@/types/api'
-import { toCount, toJoEokDecimal, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
+import { toCount, toJoEokDecimal, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { buildUploadPlan, pathKey, readClassificationFile } from '@/utils/classificationUpload'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
-import { useAssignStockSector, useBulkAssignStockSector, useCreateSector, useUpdateStockAlias } from '@/hooks/useMarketMapCustom'
+import { useAssignStockSector, useBulkAssignStockSector, useCreateSector, useUpdateStockAlias } from '@/hooks/useTreemapCustom'
 import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
@@ -28,14 +28,14 @@ import SelectionHintBubble from '@/components/SelectionHintBubble'
 import ColumnFilterButton, { SectorOrderToggle } from '@/components/ColumnFilterButton'
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
-import { DownloadIcon, UploadIcon } from './icons/MarketMapIcons'
+import { DownloadIcon, UploadIcon } from './icons/AppIcons'
 
 interface Props {
   items: StockSectorListItem[]
   sectors: SectorItem[]
   snapshotTime: string | null
   // 종목수/실행취소·다시실행/필터/엑셀 등 툴바를 이 컨테이너로 포털링한다 — 페이지 공통 세 번째 바
-  // 안에 그려야 해서, 이 컴포넌트 안에서 직접 렌더링하지 않고 부모(MarketMapAdminPage)가 그 바 안에
+  // 안에 그려야 해서, 이 컴포넌트 안에서 직접 렌더링하지 않고 부모(TreemapAdminPage)가 그 바 안에
   // 마련해준 DOM 노드로 옮겨 그린다. 상태/핸들러는 전부 이 컴포넌트에 그대로 남아있다.
   toolbarContainer: HTMLElement | null
   // 실행취소·다시실행 아이콘을 그릴 설정창 안의 자리 — 없으면 상단 바 도구줄에 같이 그린다.
@@ -1749,7 +1749,7 @@ export default function AdminStockTable({
                               style={{ left: snapshotTooltipPos.left, top: snapshotTooltipPos.top - 4 }}
                             >
                               {/* 툴바 시계와 같은 표기 — "2026-10-02 (금) 20:00". */}
-                              {toMarketMapSnapshotDateLabel(snapshotTime)} {toMarketMapSnapshotTimeOnlyLabel(snapshotTime)}
+                              {toSnapshotDateLabel(snapshotTime)} {toSnapshotTimeOnlyLabel(snapshotTime)}
                             </div>,
                             document.body,
                           )}

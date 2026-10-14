@@ -20,7 +20,7 @@ import {
   updateCustomScaleThreshold,
   deleteCustomScaleThreshold,
 } from '@/api/custom'
-import { customMarketMapKeys, marketMapKeys } from './queryKeys'
+import { customTreemapKeys, treemapKeys } from './queryKeys'
 import { STATIC_REFERENCE_CACHE, INFREQUENT_DATA_CACHE } from './cacheConfig'
 import type { StockSectorListItem } from '@/types/api'
 
@@ -31,7 +31,7 @@ interface StockSectorListResponse {
 
 function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({
-    queryKey: marketMapKeys.all,
+    queryKey: treemapKeys.all,
     predicate: ({ queryKey }) =>
       (queryKey[1] === 'map' || queryKey[1] === 'sectorPair') && queryKey[3] === 'MINE',
   })
@@ -39,7 +39,7 @@ function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQueryClient>
 
 export function useCustomSectors(options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: customMarketMapKeys.sectors(),
+    queryKey: customTreemapKeys.sectors(),
     queryFn: getSectors,
     enabled: options?.enabled ?? true,
     ...INFREQUENT_DATA_CACHE,
@@ -59,7 +59,7 @@ export function useCreateSector() {
     meta: { failure: '업종을 추가하지 못했습니다.' },
     mutationFn: ({ name, parentId }: { name: string; parentId: number | null }) => createSector(name, parentId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
   })
@@ -71,7 +71,7 @@ export function useRenameSector() {
     meta: { failure: '업종 이름을 바꾸지 못했습니다.' },
     mutationFn: ({ id, name }: { id: number; name: string }) => renameSector(id, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
   })
@@ -83,7 +83,7 @@ export function useReparentSector() {
     meta: { failure: '업종을 옮기지 못했습니다.' },
     mutationFn: ({ id, parentId }: { id: number; parentId: number | null }) => reparentSector(id, parentId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
   })
@@ -94,7 +94,7 @@ export function useDeleteSector() {
   return useMutation({
     mutationFn: (id: number) => deleteSector(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
     meta: { skipGlobalError: true },
@@ -103,7 +103,7 @@ export function useDeleteSector() {
 
 export function useSnapshots() {
   return useQuery({
-    queryKey: customMarketMapKeys.snapshots(),
+    queryKey: customTreemapKeys.snapshots(),
     queryFn: getSnapshots,
     ...STATIC_REFERENCE_CACHE,
   })
@@ -111,7 +111,7 @@ export function useSnapshots() {
 
 export function useCurrentSnapshot() {
   return useQuery({
-    queryKey: customMarketMapKeys.currentSnapshot(),
+    queryKey: customTreemapKeys.currentSnapshot(),
     queryFn: getCurrentSnapshot,
     ...STATIC_REFERENCE_CACHE,
   })
@@ -122,8 +122,8 @@ export function useSaveSnapshot() {
   return useMutation({
     mutationFn: (label: string) => saveSnapshot(label),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.snapshots() })
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.currentSnapshot() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.snapshots() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.currentSnapshot() })
     },
   })
 }
@@ -133,8 +133,8 @@ export function useOverwriteSnapshot() {
   return useMutation({
     mutationFn: ({ id, label }: { id: number; label: string }) => overwriteSnapshot(id, label),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.snapshots() })
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.currentSnapshot() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.snapshots() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.currentSnapshot() })
     },
   })
 }
@@ -144,8 +144,8 @@ export function useRestoreSnapshot() {
   return useMutation({
     mutationFn: (id: number) => restoreSnapshot(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.sectors() })
-      queryClient.invalidateQueries({ queryKey: customMarketMapKeys.currentSnapshot() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.currentSnapshot() })
       invalidateCustomTaxonomy(queryClient)
     },
   })
@@ -155,7 +155,7 @@ export function useDeleteSnapshot() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => deleteSnapshot(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customMarketMapKeys.snapshots() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: customTreemapKeys.snapshots() }),
   })
 }
 
@@ -166,7 +166,7 @@ export function useDeleteSnapshot() {
 // 바꾸거나 명시적으로 새로고침할 때만 일어나야 한다.
 function patchStockSectorId(queryClient: ReturnType<typeof useQueryClient>, stockCodes: string[], sectorId: number) {
   const stockCodeSet = new Set(stockCodes)
-  queryClient.setQueryData<StockSectorListResponse>(customMarketMapKeys.stockSectors(), old =>
+  queryClient.setQueryData<StockSectorListResponse>(customTreemapKeys.stockSectors(), old =>
     old
       ? { ...old, items: old.items.map(item => (stockCodeSet.has(item.stockCode) ? { ...item, sectorId } : item)) }
       : old,
@@ -200,13 +200,13 @@ export function useUpdateStockAlias() {
     meta: { failure: '종목 약칭을 바꾸지 못했습니다.' },
     mutationFn: ({ stockCode, alias }: { stockCode: string; alias: string | null }) =>
       updateStockAlias(stockCode, alias),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customMarketMapKeys.stockSectors() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() }),
   })
 }
 
 export function useStockSectors(options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: customMarketMapKeys.stockSectors(),
+    queryKey: customTreemapKeys.stockSectors(),
     queryFn: getStockSectors,
     enabled: options?.enabled ?? true,
     ...STATIC_REFERENCE_CACHE,

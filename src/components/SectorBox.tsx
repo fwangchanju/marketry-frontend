@@ -1,10 +1,10 @@
 import { useRef, type CSSProperties } from 'react'
 import StockBox from './StockBox'
 import type { PopupContent } from './Popup'
-import { sectorHeaderFontSize, sectorHeaderHeight, PADDING, type LaidOutSector } from '@/hooks/useMarketMapLayout'
+import { sectorHeaderFontSize, sectorHeaderHeight, PADDING, type LaidOutSector } from '@/hooks/useTreemapLayout'
 import { TAB_GAP, toJoEokDecimal, toPctSigned } from '@/utils/format'
-import type { MarketMapItem } from '@/types/api'
-import type { ColorScaleConfig } from '@/utils/marketMapColorScale'
+import type { TreemapItem } from '@/types/api'
+import type { ColorScaleConfig } from '@/utils/treemapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 
 interface Props {
@@ -52,7 +52,7 @@ interface Props {
 
 // 이 섹터 태그에 등락률 평균/상승·하락·보합을 보여주려면, 하위 섹터까지 포함한
 // 모든 종목이 필요하다(sector.boxes는 이 뎁스 바로 아래 종목만 담고 있음).
-function collectSectorItems(sector: LaidOutSector): MarketMapItem[] {
+function collectSectorItems(sector: LaidOutSector): TreemapItem[] {
   const items = sector.boxes.map(box => box.item)
   for (const sub of sector.subSectors) items.push(...collectSectorItems(sub))
   return items
@@ -162,12 +162,12 @@ export default function SectorBox({
         width: sector.width,
         height: sector.height,
         zIndex: isTopPick ? 20 : undefined,
-        // 헤더뿐 아니라 아래 hover 오버레이(market-map-sector-hover-overlay)도 이 값을 그대로
+        // 헤더뿐 아니라 아래 hover 오버레이(treemap-sector-hover-overlay)도 이 값을 그대로
         // 상속해서 쓴다 — 오버레이는 헤더의 형제라 헤더에 걸면 안 내려온다(CSS 변수는 자손에게만
         // 상속), 그래서 둘의 공통 조상인 여기(box-content)에 한 번만 건다.
-        '--market-map-base-color': isTopPick ? strongIndustryColor : headerStyle.baseColor,
+        '--treemap-base-color': isTopPick ? strongIndustryColor : headerStyle.baseColor,
       } as CSSProperties}
-      className={`market-map-sector-box box-content ${isPinned ? 'is-pinned' : ''}`}
+      className={`treemap-sector-box box-content ${isPinned ? 'is-pinned' : ''}`}
     >
       {/* 강조 테두리 — border(박스를 4px 키워서 지도 맨 아래·오른쪽 끝에서 잘렸다)가 아니라 박스 안쪽 가장자리에 덮어 그리는 층이다.
           박스 크기는 다른 업종과 같고, 테두리는 항상 박스 안에 들어가며 안쪽 종목 박스 위에 보인다. */}
@@ -179,7 +179,7 @@ export default function SectorBox({
         />
       )}
       {/* isSelf(드릴다운으로 들어온 자기 자신)는 헤더 태그를 안 그린다 — breadcrumb에 이미
-          "KOSPI > 반도체"처럼 같은 이름이 떠 있어서 중복이기 때문(useMarketMapLayout의 paddingTop도
+          "KOSPI > 반도체"처럼 같은 이름이 떠 있어서 중복이기 때문(useTreemapLayout의 paddingTop도
           이 섹터 몫의 헤더 공간을 아예 안 비워둔다). 그 대신 실제 하위 섹터들이 이 자리를 이어받아
           맨 위(depth 0) 취급을 받는다(아래 subSectors map의 depth 전달 참고). isSelf는 헤더가 아예
           없어 우클릭도 못 받으므로(팝업 대상이 될 수 없음) hover 오버레이도 같이 생략한다. */}
@@ -192,7 +192,7 @@ export default function SectorBox({
               하위 섹터 자신의 오버레이만 뜬다. z-index:30은 하위 강세 업종 박스(z-index:20)와
               하위 헤더보다 높다. 선택한 섹터 자신의 헤더는 활성 상태에서 CSS가 31로 올려 기존
               헤더 hover 표기를 유지한다. */}
-          <div className="market-map-sector-hover-overlay absolute inset-0 z-[30] pointer-events-none" aria-hidden="true" />
+          <div className="treemap-sector-hover-overlay absolute inset-0 z-[30] pointer-events-none" aria-hidden="true" />
           {/* 업종 헤더(SectorHeader) — 업종 박스 맨 위 제목. 업종 이름과 등락률 같은 수치를 한 줄로 보여 준다. */}
           <button
             type="button"
@@ -235,7 +235,7 @@ export default function SectorBox({
               width: `calc(100% - ${PADDING * 2}px)`,
               ...(isTopPick ? { backgroundColor: strongIndustryColor, color: '#111827' } : absoluteDepth === 0 ? { color: strongIndustryColor } : {}),
             } as CSSProperties}
-            className={`market-map-sector-header ${isTopPick ? 'market-map-top-pick-header' : ''} absolute top-0 z-[2] flex items-center overflow-hidden truncate px-1 text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
+            className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header' : ''} absolute top-0 z-[2] flex items-center overflow-hidden truncate px-1 text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
           >
             {displaySectorName}
             {headerSuffix && <span className="font-normal tabular-nums">{headerSuffix}</span>}

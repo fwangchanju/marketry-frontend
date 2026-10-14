@@ -1,21 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
-import { getMarketMap, type ChangeRateMode } from '@/api/marketMap'
-import { marketMapKeys } from './queryKeys'
+import { getTreemap, type ChangeRateMode } from '@/api/treemap'
+import { treemapKeys } from './queryKeys'
 import { subtractMinutesFromSnapshotTime } from '@/utils/snapshotTime'
 import { isAfterHoursSelectable } from '@/utils/tradingWindow'
-import type { Market, MarketMapResponse, MarketQuery } from '@/types/api'
+import type { Market, TreemapResponse, MarketQuery } from '@/types/api'
 import type { TaxonomySource } from '@/utils/taxonomyNames'
 
-type MarketOverview = NonNullable<MarketMapResponse['marketOverview']>
+type MarketOverview = NonNullable<TreemapResponse['marketOverview']>
 
 export interface MarketIndexPair {
   now: MarketOverview
   before: MarketOverview | null
 }
 
-export interface SectorMarketMapPair {
-  now: MarketMapResponse
-  before: MarketMapResponse | null
+export interface SectorTreemapPair {
+  now: TreemapResponse
+  before: TreemapResponse | null
   marketIndexes: MarketIndexPair[]
 }
 
@@ -25,7 +25,7 @@ export interface SectorMarketMapPair {
 // - 응답 snapshotTime이 null이 아니다: 그 시각이 없으면 백엔드가 빈 응답을 준다.
 // - 응답 snapshotTime이 요청한 시각과 같다: 옛 백엔드(snapshotTime 파라미터를 모름)는 최신을 그대로
 //   돌려주므로 여기서 걸러진다 — 그걸 before로 쓰면 now와 같아져 변화율이 전부 0으로 보인다.
-function isValidBefore(response: MarketMapResponse, requestedSnapshotTime: string): boolean {
+function isValidBefore(response: TreemapResponse, requestedSnapshotTime: string): boolean {
   return response.snapshotTime !== null && response.snapshotTime === requestedSnapshotTime
 }
 
@@ -36,8 +36,8 @@ async function getMarketIndexPair(
   beforeSnapshotTime: string,
 ): Promise<MarketIndexPair | null> {
   const [nowResponse, beforeResponse] = await Promise.all([
-    getMarketMap(market, 'KRX', nowSnapshotTime),
-    getMarketMap(market, 'KRX', beforeSnapshotTime),
+    getTreemap(market, 'KRX', nowSnapshotTime),
+    getTreemap(market, 'KRX', beforeSnapshotTime),
   ])
   const nowOverview = nowResponse.marketOverview
   if (!isValidBefore(nowResponse, nowSnapshotTime) || nowOverview?.market !== market || nowOverview.snapshotTime !== nowSnapshotTime) {
@@ -53,7 +53,7 @@ async function getMarketIndexPair(
 }
 
 /**
- * 섹터 페이지의 now·before 쌍. now는 useGlobalSettings()가 이미 부르는 useMarketMap(market, source)
+ * 섹터 페이지의 now·before 쌍. now는 useGlobalSettings()가 이미 부르는 useTreemap(market, source)
  * 결과를 그대로 받아 쓴다 — 여기서 now를 다시 조회하지 않는다.
  *
  * 쌍은 (market, source, beforeMinutes, now.snapshotTime, basis)에 묶인다. now.snapshotTime만 바뀌면(60초
@@ -66,12 +66,12 @@ async function getMarketIndexPair(
  * 옛 백엔드 창구에서 "before 없음"으로 굳은 쌍도 다음 tick(5분 안)에 now.snapshotTime이 바뀌며 키가
  * 바뀌어 새로 받는다.
  */
-export function useSectorMarketMapPair(
+export function useSectorTreemapPair(
   market: MarketQuery,
   source: TaxonomySource,
   nxtOnly: boolean,
   beforeMinutes: number,
-  now: MarketMapResponse | undefined,
+  now: TreemapResponse | undefined,
   basis: ChangeRateMode = 'daily',
   // false면 before를 받지 않는다 — 기간 등락률을 볼 때는 "N분 전 대비"가 의미가 없어서 쓰지 않는다.
   enabled = true,
@@ -79,8 +79,8 @@ export function useSectorMarketMapPair(
   const nowSnapshotTime = now?.snapshotTime ?? null
 
   return useQuery({
-    queryKey: marketMapKeys.sectorPair(market, source, nxtOnly, beforeMinutes, nowSnapshotTime, basis, now?.afterHoursStart),
-    queryFn: async (): Promise<SectorMarketMapPair> => {
+    queryKey: treemapKeys.sectorPair(market, source, nxtOnly, beforeMinutes, nowSnapshotTime, basis, now?.afterHoursStart),
+    queryFn: async (): Promise<SectorTreemapPair> => {
       if (!now || now.snapshotTime === null) {
         // enabled가 이 경로를 막지만, TypeScript는 그걸 모른다 — 방어적으로 명시한다.
         throw new Error('now.snapshotTime 없이 쌍 쿼리가 실행됐다')
@@ -93,7 +93,7 @@ export function useSectorMarketMapPair(
         return { now, before: null, marketIndexes: [] }
       }
       const [beforeResponse, indexPairs] = await Promise.all([
-        getMarketMap(market, source, beforeSnapshotTime, nxtOnly, basis),
+        getTreemap(market, source, beforeSnapshotTime, nxtOnly, basis),
         market === 'ALL_STOCK' && basis === 'daily'
           ? Promise.all([
             getMarketIndexPair('KOSPI', now.snapshotTime, beforeSnapshotTime),

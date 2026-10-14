@@ -1,6 +1,6 @@
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import type { RankColumnsChart } from '@/components/RankColumns'
-import { resolveMarketMapColor, resolveMarketMapExtremeColor, type ColorScaleConfig } from '@/utils/marketMapColorScale'
+import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 
 const VALUE_WIDTH = 56
 
@@ -62,14 +62,14 @@ export default function RankBars({
                     className="absolute left-0 top-0 h-full rounded-sm"
                     style={{
                       width: `calc((100% - ${VALUE_WIDTH}px) * ${Math.abs(item.value) / axisMax})`,
-                      backgroundColor: item.isReference ? highlightColor : resolveMarketMapColor(item.value, colorScale),
+                      backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                     }}
                   />
                   <span
                     className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1.5 font-bold tabular-nums"
                     style={{
                       left: `calc((100% - ${VALUE_WIDTH}px) * ${Math.abs(item.value) / axisMax})`,
-                      color: resolveMarketMapExtremeColor(item.value, colorScale),
+                      color: resolveTreemapExtremeColor(item.value, colorScale),
                     }}
                   >
                     {toValueLabel(item.value)}

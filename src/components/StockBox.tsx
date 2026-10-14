@@ -1,17 +1,17 @@
 import type { CSSProperties } from 'react'
 import type { PopupContent } from './Popup'
-import type { MarketMapItem } from '@/types/api'
+import type { TreemapItem } from '@/types/api'
 import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
-import { resolveMarketMapColor, type ColorScaleConfig } from '@/utils/marketMapColorScale'
+import { resolveTreemapColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 
 interface Props {
-  item: MarketMapItem
+  item: TreemapItem
   x: number
   y: number
   width: number
   height: number
-  // 이 박스가 전체 트리맵 컨테이너 넓이에서 차지하는 비중(%) — useMarketMapLayout에서 계산.
+  // 이 박스가 전체 트리맵 컨테이너 넓이에서 차지하는 비중(%) — useTreemapLayout에서 계산.
   areaPercent: number
   // 이 비중 미만이면 종목명/등락률을 아예 표시하지 않는다(설정 사이드바의 슬라이더로 조절).
   labelMinAreaPercent: number
@@ -20,7 +20,7 @@ interface Props {
   stockLabelMode: StockLabelMode
   // 등락률(%) 표시 소수점 자릿수(설정 사이드바의 "소수점 아래 표시" 슬라이더).
   decimalPlaces: number
-  // 박스 색칠은 이 설정 하나로만 결정된다(resolveMarketMapColor) — 범례 바(MapPage)도
+  // 박스 색칠은 이 설정 하나로만 결정된다(resolveTreemapColor) — 범례 바(MapPage)도
   // 같은 설정 + 같은 함수를 거치므로 두 화면이 항상 수학적으로 일치한다.
   colorScale: ColorScaleConfig
   onOpenPopup: (content: PopupContent, target: HTMLElement) => void
@@ -73,7 +73,7 @@ export default function StockBox({
   const showName = wantName && (nameLineHeight <= innerHeight)
   const showRate = wantRate && (wantName ? fitsBoth : rateLineHeight <= innerHeight)
   const showLabel = stockLabelMode !== 'off' && areaPercent >= labelMinAreaPercent && (showName || showRate)
-  const backgroundColor = resolveMarketMapColor(item.changeRate, colorScale)
+  const backgroundColor = resolveTreemapColor(item.changeRate, colorScale)
   const stockKey = `stock:${ancestorPath}\u0000${item.stockCode}`
   // 팝업이 이 종목을 대상으로 떠 있는 동안 hover 모양을 고정해서 보여준다(index.css의 .is-pinned).
   const isPinned = highlightedKey === stockKey
@@ -101,7 +101,7 @@ export default function StockBox({
         width,
         height,
         backgroundColor,
-        '--market-map-base-color': backgroundColor,
+        '--treemap-base-color': backgroundColor,
       } as CSSProperties}
       onContextMenu={e => {
         e.preventDefault()
@@ -111,7 +111,7 @@ export default function StockBox({
       }}
       onPointerEnter={stockPopupOnHover ? e => openStockPopup(e.currentTarget, true, { x: e.clientX, y: e.clientY }) : undefined}
       onPointerLeave={stockPopupOnHover ? () => onClosePopup(stockKey) : undefined}
-      className={`market-map-stock flex flex-col items-center justify-center overflow-hidden border border-black/40 text-white ${isPinned ? 'is-pinned' : ''}`}
+      className={`treemap-stock flex flex-col items-center justify-center overflow-hidden border border-black/40 text-white ${isPinned ? 'is-pinned' : ''}`}
     >
       {showLabel && (
         <>

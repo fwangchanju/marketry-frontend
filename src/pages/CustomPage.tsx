@@ -3,7 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom'
 import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
-import MarketMapShareModal from '@/components/MarketMapShareModal'
+import CaptureModal from '@/components/CaptureModal'
 import AdminSectorTable from '@/components/AdminSectorTable'
 import AdminStockTable from '@/components/AdminStockTable'
 import Spinner from '@/components/Spinner'
@@ -16,8 +16,8 @@ import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
 import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { useTaxonomySelection, type TaxonomySelection } from '@/hooks/useTaxonomySelection'
-import { useCustomSectors, useStockSectors } from '@/hooks/useMarketMapCustom'
-import { useMarketMap, useStockCatalog } from '@/hooks/useMarketMap'
+import { useCustomSectors, useStockSectors } from '@/hooks/useTreemapCustom'
+import { useTreemap, useStockCatalog } from '@/hooks/useTreemap'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession, useIsLoggedIn } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
@@ -122,7 +122,7 @@ export default function CustomPage() {
     isError: isTaxonomyError,
     refetch: refetchTaxonomy,
     isRefetching: isRefetchingTaxonomy,
-  } = useMarketMap('ALL_STOCK', sheet, false, { enabled: canReadSheet })
+  } = useTreemap('ALL_STOCK', sheet, false, { enabled: canReadSheet })
 
   // 읽기 전용 시트의 NXT 여부·시장·거래소 분류명은 회원 데이터가 아니라 공통 종목 정보에서 받는다.
   // 종목 표의 NXT 열은 세 시트(MARKETRY·거래소·내 분류)가 모두 쓰므로, 종목 화면에서는 시트와 상관없이 불러온다.
@@ -347,7 +347,7 @@ export default function CustomPage() {
       </div>
 
       {isShareOpen && (
-        <MarketMapShareModal
+        <CaptureModal
           onClose={() => setIsShareOpen(false)}
           onCopy={handleCopy}
           onDownload={handleDownload}

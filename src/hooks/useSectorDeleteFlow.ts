@@ -1,5 +1,5 @@
 import { isAxiosError } from 'axios'
-import { useSectorDeletePreview, useDeleteSector } from './useMarketMapCustom'
+import { useSectorDeletePreview, useDeleteSector } from './useTreemapCustom'
 import type { StockSectorItem } from '@/types/api'
 import { getErrorDetail } from '@/utils/errorMessage'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'

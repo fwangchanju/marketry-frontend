@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useMarketMapLayout, type DisplayGroup, type LaidOutSector } from '@/hooks/useMarketMapLayout'
+import { useTreemapLayout, type DisplayGroup, type LaidOutSector } from '@/hooks/useTreemapLayout'
 import SectorBox from './SectorBox'
 import Popup, { type PopupContent, type PopupState } from './Popup'
-import type { ColorScaleConfig } from '@/utils/marketMapColorScale'
+import type { ColorScaleConfig } from '@/utils/treemapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 
 interface Props {
@@ -167,7 +167,7 @@ export default function Treemap({
   }, [])
 
   // 시가총액 차이를 거듭제곱으로 압축하는 비율을 레이아웃 계산에 전달한다.
-  const sectors = useMarketMapLayout(groups, selfSectorName, size.width, size.height, boxSizeMarketCapRatio, stretch, tile)
+  const sectors = useTreemapLayout(groups, selfSectorName, size.width, size.height, boxSizeMarketCapRatio, stretch, tile)
 
   // 팝업을 마우스 좌표가 아니라 우클릭한 박스(섹터 전체 박스, 혹은 종목 박스)의 화면상 위치에 붙인다.
   // 여기서는 그 박스의 뷰포트 기준 rect만 그대로 popup 상태에 실어두고, 그 rect의 어느 가장자리에
@@ -197,7 +197,7 @@ export default function Treemap({
   useEffect(() => {
     if (!popup) return
     const handlePointerDown = (e: PointerEvent) => {
-      if (e.target instanceof Element && e.target.closest('[data-market-map-popup]')) return
+      if (e.target instanceof Element && e.target.closest('[data-treemap-popup]')) return
       setPopup(null)
     }
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -363,7 +363,7 @@ export default function Treemap({
     // 이어진다. overflow-hidden으로 이 삐져나옴 자체를 화면에서 잘라내 루프의 시작을 막는다.
     <div
       ref={containerRef}
-      className={`relative isolate w-full overflow-hidden bg-black ${heightClassName} ${suppressSectorHoverBorder ? 'market-map-suppress-sector-border' : ''}`}
+      className={`relative isolate w-full overflow-hidden bg-black ${heightClassName} ${suppressSectorHoverBorder ? 'treemap-suppress-sector-border' : ''}`}
       onPointerMove={() => {
         if (suppressSectorHoverBorder && !ghost) setSuppressSectorHoverBorder(false)
       }}

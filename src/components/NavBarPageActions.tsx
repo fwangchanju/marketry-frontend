@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { CaptureIcon, MaximizeIcon, MinimizeIcon, RefreshIcon, SettingsIcon } from '@/components/icons/MarketMapIcons'
+import { CaptureIcon, MaximizeIcon, MinimizeIcon, RefreshIcon, SettingsIcon } from '@/components/icons/AppIcons'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 
 interface Props {

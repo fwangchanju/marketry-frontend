@@ -7,7 +7,7 @@ import {
   useOverwriteSnapshot,
   useRestoreSnapshot,
   useDeleteSnapshot,
-} from '@/hooks/useMarketMapCustom'
+} from '@/hooks/useTreemapCustom'
 import Spinner from './Spinner'
 
 export default function AdminVersionSaveSection() {

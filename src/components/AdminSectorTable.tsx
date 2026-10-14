@@ -3,7 +3,7 @@ import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { createPortal } from 'react-dom'
 import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragMoveEvent, type DragOverEvent, type Modifier } from '@dnd-kit/core'
 import type { SectorItem } from '@/types/api'
-import { useCreateSector, useRenameSector, useReparentSector } from '@/hooks/useMarketMapCustom'
+import { useCreateSector, useRenameSector, useReparentSector } from '@/hooks/useTreemapCustom'
 import { useSectorDeleteFlow } from '@/hooks/useSectorDeleteFlow'
 import { halfOverlapCollisionDetection } from '@/utils/dndCollision'
 import { toCount } from '@/utils/format'
@@ -13,7 +13,7 @@ import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import { HINT_BUBBLE_CLASS, HINT_BUBBLE_COLOR_CLASS } from '@/components/hintBubbleStyle'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
-import { EditIcon, PlusIcon, TrashIcon } from '@/components/icons/MarketMapIcons'
+import { EditIcon, PlusIcon, TrashIcon } from '@/components/icons/AppIcons'
 
 interface Props {
   sectors: SectorItem[]

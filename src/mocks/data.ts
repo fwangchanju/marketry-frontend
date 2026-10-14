@@ -1,6 +1,6 @@
 // 로컬 mock 서버(MSW)용 가짜 데이터. 실제 화면 확인용이라 값 자체의 정확성은 중요하지 않음.
 
-import type { MarketMapSectorNode, MarketMapItem } from '@/types/api'
+import type { TreemapSectorNode, TreemapItem } from '@/types/api'
 
 const now = () => new Date().toISOString().slice(0, 19)
 
@@ -35,7 +35,7 @@ export const marketOverviews = [
   },
 ]
 
-// 시가총액 구간 정의 목업 — GET /market-map/value-tiers, thresholdValue 오름차순(백엔드 계약과 동일).
+// 시가총액 구간 정의 목업 — GET /treemap/value-tiers, thresholdValue 오름차순(백엔드 계약과 동일).
 export const marketValueTiers = [
   { id: 1, label: '소형주', thresholdValue: 0, isExcludedByDefault: true },
   { id: 2, label: '중형주', thresholdValue: 500_000_000_000, isExcludedByDefault: false },
@@ -50,7 +50,7 @@ function soloItem(
   totalMarketValue: number,
   marketValueTier: string,
   changeRate: number,
-): MarketMapItem[] {
+): TreemapItem[] {
   return [
     {
       stockCode,
@@ -66,7 +66,7 @@ function soloItem(
   ]
 }
 
-export const marketMapTree: MarketMapSectorNode[] = [
+export const treemapData: TreemapSectorNode[] = [
   {
     sectorId: 1,
     sectorName: '반도체',
@@ -148,13 +148,13 @@ export const marketMapTree: MarketMapSectorNode[] = [
 
 // /api/map 목업(isCustom=false) 전용 — 실제 기본 모드는 어드민이 구성한 섹터를 아예 안 쓰고
 // stock_info 섹터 그대로 1뎁스로 묶어서, 노드 sectorId가 전부 0(NO_SECTOR_ID)으로 내려온다.
-// marketMapTree를 그대로 쓰면 커스텀 트리와 구분이 안 돼서, 결정 5의 "now/before를 sectorName으로
+// treemapData를 그대로 쓰면 커스텀 트리와 구분이 안 돼서, 결정 5의 "now/before를 sectorName으로
 // 짝짓는다" 로직이 기본 모드에서 sectorId로 잘못 짝지어도 목업에서는 안 드러난다.
-function toDefaultModeNode(node: MarketMapSectorNode): MarketMapSectorNode {
+function toDefaultModeNode(node: TreemapSectorNode): TreemapSectorNode {
   return { ...node, sectorId: 0, children: node.children.map(toDefaultModeNode) }
 }
 
-export function toDefaultModeTree(nodes: MarketMapSectorNode[]): MarketMapSectorNode[] {
+export function toDefaultModeTree(nodes: TreemapSectorNode[]): TreemapSectorNode[] {
   return nodes.map(toDefaultModeNode)
 }
 
@@ -163,11 +163,11 @@ export function toDefaultModeTree(nodes: MarketMapSectorNode[]): MarketMapSector
 // 걸 dev:mock에서 눈으로 확인하는 게 목적이다(결정 7).
 const MOCK_BEFORE_CHANGE_RATE_DELTA = 0.3
 
-function shiftItemChangeRate(item: MarketMapItem): MarketMapItem {
+function shiftItemChangeRate(item: TreemapItem): TreemapItem {
   return { ...item, changeRate: item.changeRate - MOCK_BEFORE_CHANGE_RATE_DELTA }
 }
 
-function shiftNodeChangeRates(node: MarketMapSectorNode): MarketMapSectorNode {
+function shiftNodeChangeRates(node: TreemapSectorNode): TreemapSectorNode {
   return {
     ...node,
     items: node.items.map(shiftItemChangeRate),
@@ -175,7 +175,7 @@ function shiftNodeChangeRates(node: MarketMapSectorNode): MarketMapSectorNode {
   }
 }
 
-export function shiftMarketMapTreeChangeRates(nodes: MarketMapSectorNode[]): MarketMapSectorNode[] {
+export function shiftTreemapChangeRates(nodes: TreemapSectorNode[]): TreemapSectorNode[] {
   return nodes.map(shiftNodeChangeRates)
 }
 
@@ -313,7 +313,7 @@ export const mockCustomPreferences: Record<string, unknown> = {}
 // 프리셋) 화면과 동일하게 보이도록 한다. 개별 create/update/delete는 이 목업 자체를 실제로 mutate하지
 // 않는다(다른 custom 핸들러들과 동일 — 페이지가 응답을 받아 로컬 colorScaleDraft를 직접 갱신하는
 // 구조라 필요 없음).
-export const marketMapColorScale: {
+export const treemapColorScale: {
   thresholds: { id: number; thresholdPercent: number; color: string; colorLabel: string | null }[]
 } = {
   thresholds: [],

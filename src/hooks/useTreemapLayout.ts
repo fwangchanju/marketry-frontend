@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { hierarchy, treemap, treemapBinary, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
-import type { MarketMapItem } from '@/types/api'
+import type { TreemapItem } from '@/types/api'
 
 export interface DisplayGroup {
   sectorId: number
@@ -8,12 +8,12 @@ export interface DisplayGroup {
   totalMarketValue: number
   weightedAvgChangeRate: number | null
   simpleAvgChangeRate: number | null
-  items: MarketMapItem[]
+  items: TreemapItem[]
   children: DisplayGroup[]
 }
 
 interface LaidOutStockBox {
-  item: MarketMapItem
+  item: TreemapItem
   x: number
   y: number
   width: number
@@ -46,7 +46,7 @@ interface HierarchyDatum {
   totalMarketValue?: number
   weightedAvgChangeRate?: number | null
   simpleAvgChangeRate?: number | null
-  item?: MarketMapItem
+  item?: TreemapItem
   children?: HierarchyDatum[]
 }
 
@@ -112,7 +112,7 @@ function toHierarchyDatum(group: DisplayGroup, marketCapRatio: number): Hierarch
   }
 }
 
-export function useMarketMapLayout(
+export function useTreemapLayout(
   groups: DisplayGroup[],
   selfSectorName: string | null,
   width: number,

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { getMarketValueTiers } from '@/api/marketMap'
+import { getMarketValueTiers } from '@/api/treemap'
 import { getCustomValueTiers } from '@/api/custom'
-import { marketMapKeys, customMarketMapKeys } from './queryKeys'
+import { treemapKeys, customTreemapKeys } from './queryKeys'
 import { STATIC_REFERENCE_CACHE } from './cacheConfig'
 import { useIsLoggedIn } from './useSession'
 
@@ -10,7 +10,7 @@ import { useIsLoggedIn } from './useSession'
 export function useMarketValueTiers() {
   const isLoggedIn = useIsLoggedIn()
   return useQuery({
-    queryKey: isLoggedIn ? customMarketMapKeys.valueTiers() : marketMapKeys.valueTiers(),
+    queryKey: isLoggedIn ? customTreemapKeys.valueTiers() : treemapKeys.valueTiers(),
     queryFn: isLoggedIn ? getCustomValueTiers : getMarketValueTiers,
     ...STATIC_REFERENCE_CACHE,
   })

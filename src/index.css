@@ -639,7 +639,7 @@ a { color: var(--accent-light); text-decoration: none; }
 @layer utilities {
   /* 하이라이트는 마우스가 올라가는 순간 즉시 켜지고(아래 :hover의 transition: none), 벗어날 때만 짧게 사라진다.
      올라갈 때도 서서히 켜지게 하면(0.15초) 마우스를 빠르게 움직일 때 색이 늦게 따라오는 것처럼 보인다. */
-  .market-map-stock {
+  .treemap-stock {
     transition: box-shadow 0.1s ease-out, border-color 0.1s ease-out;
   }
 
@@ -647,28 +647,28 @@ a { color: var(--accent-light); text-decoration: none; }
      동안(마우스는 이미 팝업 쪽으로 옮겨갔을 수 있음)에도 같은 모양을 유지하려면 별도 트리거가
      필요하다 — .is-pinned를 같은 선택자 목록에 얹어서, hover든 팝업-고정이든 정의는 하나만 둔다
      (StockBox.tsx의 isPinned가 이 클래스를 붙인다). */
-  .market-map-stock:hover,
-  .market-map-stock:focus-visible,
-  .market-map-stock.is-pinned {
+  .treemap-stock:hover,
+  .treemap-stock:focus-visible,
+  .treemap-stock.is-pinned {
     transition: none;
     border-width: 2px;
-    border-color: color-mix(in srgb, var(--market-map-base-color) 58%, white);
+    border-color: color-mix(in srgb, var(--treemap-base-color) 58%, white);
     box-shadow: inset 0 0 0 999px rgb(255 255 255 / 35%);
   }
 
-  /* 종목과 같은 이유로(위 .market-map-stock 주석 참고) 헤더도 hover와 "팝업이 뜬 채 고정"을 같은
+  /* 종목과 같은 이유로(위 .treemap-stock 주석 참고) 헤더도 hover와 "팝업이 뜬 채 고정"을 같은
      정의로 묶는다 — 마우스가 팝업 쪽으로 옮겨가 헤더에서 벗어나도(:hover가 자연히 꺼져도) 섹터가
-     계속 hover된 것처럼 보이게 한다. .market-map-sector-box.is-pinned > .market-map-sector-header가
+     계속 hover된 것처럼 보이게 한다. .treemap-sector-box.is-pinned > .treemap-sector-header가
      "이 섹터 박스가 고정 상태일 때의 직계 헤더"를 가리킨다. */
-  .market-map-sector-header:hover,
-  .market-map-sector-header:focus-visible,
-  .market-map-sector-box.is-pinned > .market-map-sector-header {
+  .treemap-sector-header:hover,
+  .treemap-sector-header:focus-visible,
+  .treemap-sector-box.is-pinned > .treemap-sector-header {
     box-shadow: inset 0 0 0 999px rgb(255 255 255 / 35%);
   }
 
-  .market-map-top-pick-header:hover,
-  .market-map-top-pick-header:focus-visible,
-  .market-map-sector-box.is-pinned > .market-map-top-pick-header {
+  .treemap-top-pick-header:hover,
+  .treemap-top-pick-header:focus-visible,
+  .treemap-sector-box.is-pinned > .treemap-top-pick-header {
     border-width: 0;
     border-color: transparent;
   }
@@ -677,7 +677,7 @@ a { color: var(--accent-light); text-decoration: none; }
      (SectorBox.tsx) — 기본은 투명(opacity 0), 아래 두 트리거 중 하나가 켜지면 opacity 1로
      바뀌어 보인다. 배경색 자체가 흰색 35% 알파(rgb(255 255 255 / 35%))라, 종목/섹터 헤더 hover의
      box-shadow와 같은 흰색 불투명도로 통일된다. */
-  .market-map-sector-hover-overlay {
+  .treemap-sector-hover-overlay {
     background-color: rgb(255 255 255 / 35%);
     opacity: 0;
     transition: opacity 0.1s ease-out;
@@ -686,29 +686,29 @@ a { color: var(--accent-light); text-decoration: none; }
   /* 트리거 1: 이 섹터의 "직계" 헤더를 hover/포커스 — ':has(> ...)'의 '>'가 직계 자식만 보므로,
      하위 섹터 헤더를 hover해도 그 상위 섹터의 오버레이는 안 뜬다(하위 섹터 자신의 오버레이만 뜸).
      트리거 2: 팝업이 이 섹터를 대상으로 뜬 채 고정(is-pinned, SectorBox.tsx). */
-  .market-map-sector-box:has(> .market-map-sector-header:hover) > .market-map-sector-hover-overlay,
-  .market-map-sector-box:has(> .market-map-sector-header:focus-visible) > .market-map-sector-hover-overlay,
-  .market-map-sector-box.is-pinned > .market-map-sector-hover-overlay {
+  .treemap-sector-box:has(> .treemap-sector-header:hover) > .treemap-sector-hover-overlay,
+  .treemap-sector-box:has(> .treemap-sector-header:focus-visible) > .treemap-sector-hover-overlay,
+  .treemap-sector-box.is-pinned > .treemap-sector-hover-overlay {
     opacity: 1;
     transition: none;
   }
 
   /* 선택한 섹터 자신의 헤더는 전체 박스 오버레이(z-index:30) 위에 둔다. 하위 섹터 헤더는
      오버레이 아래에 남아 부모 섹터의 흰색 강조가 가려지지 않는다. */
-  .market-map-sector-box:has(> .market-map-sector-header:hover) > .market-map-sector-header,
-  .market-map-sector-box:has(> .market-map-sector-header:focus-visible) > .market-map-sector-header,
-  .market-map-sector-box.is-pinned > .market-map-sector-header {
+  .treemap-sector-box:has(> .treemap-sector-header:hover) > .treemap-sector-header,
+  .treemap-sector-box:has(> .treemap-sector-header:focus-visible) > .treemap-sector-header,
+  .treemap-sector-box.is-pinned > .treemap-sector-header {
     z-index: 31;
   }
 
   /* 드래그/줌 전환 중에는 hover 오버레이를 끈다. 위 트리거들보다 우선한다. */
-  .market-map-suppress-sector-border .market-map-sector-hover-overlay {
+  .treemap-suppress-sector-border .treemap-sector-hover-overlay {
     opacity: 0 !important;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .market-map-stock,
-    .market-map-sector-hover-overlay {
+    .treemap-stock,
+    .treemap-sector-hover-overlay {
       transition: none;
     }
   }
