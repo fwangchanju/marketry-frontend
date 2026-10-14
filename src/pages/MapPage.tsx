@@ -24,7 +24,7 @@ import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
-import { HINT_BUBBLE_COLOR_CLASS } from '@/components/hintBubbleStyle'
+import { HINT_BUBBLE_COLOR_CLASS, POPUP_SIZE_CLASS } from '@/components/hintBubbleStyle'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
@@ -592,7 +592,7 @@ export default function MapPage() {
                   <section
                     role="status"
                     aria-labelledby="nxt-notice-title"
-                    className={`${HINT_BUBBLE_COLOR_CLASS} pointer-events-auto w-full max-w-sm p-5`}
+                    className={`${HINT_BUBBLE_COLOR_CLASS} ${POPUP_SIZE_CLASS} pointer-events-auto`}
                   >
                     <h2 id="nxt-notice-title" className="flex items-center text-base font-bold text-black"><PopupKindBadge kind="안내" />{nxtOnlyWindow.fromMinutes < 12 * 60 ? '프리 마켓' : '애프터 마켓'}</h2>
                     <p className="mt-3 break-keep text-sm leading-relaxed text-black">
@@ -600,7 +600,7 @@ export default function MapPage() {
                       <br />
                       <span className="text-gray-600">최대 {toCount(nxtStockTotal)}종목이며, 설정에 따라 다를 수 있습니다.</span>
                     </p>
-                    <div className="mt-6 flex justify-end">
+                    <div className="mt-auto flex justify-end pt-6">
                       <button
                         type="button"
                         onClick={() => setIsNxtNoticeDismissed(true)}

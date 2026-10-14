@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { getCurrentAppDialog, resolveCurrentAppDialog, subscribeAppDialogs } from '@/utils/appDialogBus'
-import { HINT_BUBBLE_COLOR_CLASS } from './hintBubbleStyle'
+import { HINT_BUBBLE_COLOR_CLASS, POPUP_SIZE_CLASS } from './hintBubbleStyle'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import PopupKindBadge from './PopupKindBadge'
 
@@ -38,7 +38,7 @@ export default function AppDialogHost() {
         aria-labelledby="app-dialog-title"
         aria-describedby="app-dialog-message"
         // 색은 설정창 말풍선·NXT 안내창과 같은 크림색 계열이다.
-        className={`w-full max-w-sm p-5 ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-[#ff4d2e]' : ''}`}
+        className={`${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-[#ff4d2e]' : ''}`}
       >
         <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-[#d92b0f]' : 'text-black'}`}>
           <PopupKindBadge kind={dialog.kind === 'confirm' ? '결정' : '알림'} />
@@ -48,7 +48,7 @@ export default function AppDialogHost() {
           </span>
         </h2>
         <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-black">{dialog.message}</p>
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-auto flex justify-end gap-2 pt-6">
           {dialog.kind === 'confirm' && (
             <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-[var(--panel-gray)] px-4 py-2 text-sm text-zinc-800 transition-colors hover:bg-zinc-400">
               취소
