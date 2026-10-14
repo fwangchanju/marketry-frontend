@@ -67,6 +67,7 @@
 | 메인 | 도움말 (`?`를 누르면 열리는 설명) | `HelpBubble` 계열 — `SettingHelpBubble`(설정창), `SourceHelpBubble`(면책 문구) |
 | 메인 | 등락률 바 (색 단계 -8% … +8%, 맵·그룹 페이지 아래쪽) | `ChangeRateBar` |
 | 메인 | 면책 문구 (+ 출처 도움말) | `DisclaimerNotice` |
+| 메인 | 선택 안내 (Custom 종목 표에서 행을 세 번 누르면 표 아래 가운데에 6초간 뜨는 "여러 줄은 드래그하거나 Shift + 클릭…", 말풍선색) | `SelectionHintBubble` (`AdminStockTable`이 띄움) |
 | 사이드 | 설정창 헤더 | `SettingsPanel` 안 맨 윗줄 |
 | 사이드 | Basis | `SettingsTaxonomySelector` |
 
