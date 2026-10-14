@@ -4,7 +4,7 @@ import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 
 // 마우스를 올리거나 키보드로 오면 뜨는 설명을 한 곳에서 그린다 — 요소에 data-hint="설명"만 달면 된다(브라우저 기본 title 툴팁 대신 쓴다).
 // 규칙은 docs/ui-areas.md "마우스 올림". 앱에 한 번만 둔다.
-const SHOW_DELAY_MS = 350
+const SHOW_DELAY_MS = 150
 const GAP = 8
 const EDGE = 8
 
