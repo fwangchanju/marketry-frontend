@@ -1859,7 +1859,7 @@ export function SettingsExcludeSection({
                 key={sector.sectorId}
                 type="button"
                 onClick={async () => {
-                  if (!await appConfirm(`${sector.sectorName}\n트리맵으로 복원하시겠습니까?`)) return
+                  if (!await appConfirm(`${sector.sectorName}\n트리맵으로 복원하시겠습니까?`, { title: '업종 복원' })) return
                   onRemoveExcludedSector(sector.sectorId)
                 }}
                 aria-label={`${sector.sectorName} 트리맵에 다시 표시`}
@@ -1931,7 +1931,7 @@ export function SettingsColorSection({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={async () => { if (await appConfirm('등락률 색상을 기본 색상으로 초기화하시겠습니까?')) runWithFeedback(onResetColorScale) }}
+            onClick={async () => { if (await appConfirm('등락률 색상을 기본 색상으로 초기화하시겠습니까?', { title: '등락률 색상 초기화' })) runWithFeedback(onResetColorScale) }}
             disabled={isResettingColorScale}
             className="-my-px h-[26px] rounded-lg border-0 bg-zinc-600 px-3 text-[13px] font-semibold text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-60"
           >

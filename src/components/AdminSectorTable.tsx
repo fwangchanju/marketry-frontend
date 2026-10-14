@@ -267,7 +267,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const confirmMove = async (target: SectorItem | null) => {
     if (!movingSector) return
     const destination = target ? getSectorPath(target) : '최상위'
-    if (!await appConfirm(`${movingSector.name}\n${destination} 안으로 이동하시겠습니까?`)) return
+    if (!await appConfirm(`${movingSector.name}\n${destination} 안으로 이동하시겠습니까?`, { title: '업종 이동' })) return
     const moved = movingSector
     reparentSector.mutate({ id: moved.id, parentId: target ? target.id : null }, {
       onSuccess: () => {
@@ -528,7 +528,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   }
 
   const moveByDrag = async (dragged: SectorItem, target: SectorItem | null) => {
-    if (!await appConfirm(`${dragged.name}\n${target ? getSectorPath(target) : '최상위'} 안으로 이동하시겠습니까?`)) return
+    if (!await appConfirm(`${dragged.name}\n${target ? getSectorPath(target) : '최상위'} 안으로 이동하시겠습니까?`, { title: '업종 이동' })) return
     reparentSector.mutate({ id: dragged.id, parentId: target ? target.id : null }, {
       onSuccess: () => {
         // 보낸 업종(target)을 선택한 상태로 만들어 그 하위 목록이 열리게 하고, 새로 들어온 업종에 표시를 남긴다. 최상위로 올렸다면 그 업종 자신을 선택한다.
