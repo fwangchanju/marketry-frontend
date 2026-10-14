@@ -151,19 +151,6 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
             }}
           />
         )}
-        {/* 칸 사이 구분선 — 설정창 선택 스위치와 같은 규칙으로, 선택 칸에 맞닿은 경계는 숨기고 나머지는 회색 선을 긋는다. 칸은 같은 폭이고 안쪽 여백이 2px이다. */}
-        {options.slice(1).map((option, offset) => {
-          const boundary = offset + 1
-          if (boundary === selectedIndex || boundary === selectedIndex + 1) return null
-          return (
-            <span
-              key={option.value}
-              aria-hidden="true"
-              className="pointer-events-none absolute z-10 w-px bg-gray-500"
-              style={{ top: 7, bottom: 7, left: `calc(2px + (100% - 4px) * ${boundary} / ${options.length})` }}
-            />
-          )
-        })}
         {options.map((option, index) => (
           // disabled를 쓰지 않는다 — 비활성 버튼은 마우스 이벤트가 없어서 잠긴 별도의 설명을 볼 수 없다. 잠긴 동안은 값만 안 바꾼다.
           <button
