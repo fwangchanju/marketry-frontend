@@ -1,8 +1,17 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import type { RankColumnsChart } from '@/components/RankColumns'
 import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 
-const VALUE_WIDTH = 56
+// 자리가 있으면 글자·막대를 키우고, 자리가 모자랄 때만 줄인다. 줄 높이(틀 높이 ÷ 항목 수)와 틀 폭에 맞춰 정한다.
+const FONT_HEIGHT_RATIO = 0.38 // 줄 높이에 대한 글자 크기 비율
+const FONT_WIDTH_DIVISOR = 15 // 틀 폭 ÷ 이 값을 넘게 키우지 않는다(글자만 커져 막대 칸이 사라지는 것을 막는다)
+const FONT_MIN = 10
+const FONT_MAX = 20
+const NAME_WIDTH_EM = 6.6 // 항목명 칸 폭(글자 크기의 배수)
+const VALUE_WIDTH_EM = 4 // 숫자 칸 폭(글자 크기의 배수)
+const BAR_HEIGHT_RATIO = 0.6 // 줄 높이에 대한 막대 높이 비율
+const BAR_MAX_FONT_RATIO = 1.6 // 막대 높이 상한(글자 크기의 배수)
 
 function toValueLabel(value: number): string {
   const sign = value > 0 ? '+' : ''
@@ -22,6 +31,18 @@ export default function RankBars({
   onSelectSector?: (sectorName: string) => void
 }) {
   const items = chart.rankedItems
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null)
+  const isEmpty = items.length === 0
+  useLayoutEffect(() => {
+    const element = containerRef.current
+    if (!element) return
+    const measure = () => setSize({ width: element.clientWidth, height: element.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [isEmpty])
   if (items.length === 0) {
     return (
       <div className="relative min-h-0 w-full flex-1">
@@ -30,13 +51,20 @@ export default function RankBars({
     )
   }
   const axisMax = Math.max(chart.axisMax, 0.5)
+  const rowHeight = size ? size.height / items.length : 40
+  const fontSize = size
+    ? Math.min(FONT_MAX, Math.max(FONT_MIN, Math.min(rowHeight * FONT_HEIGHT_RATIO, size.width / FONT_WIDTH_DIVISOR)))
+    : 14
+  const nameWidth = fontSize * NAME_WIDTH_EM
+  const valueWidth = fontSize * VALUE_WIDTH_EM
+  const barHeight = Math.min(rowHeight * BAR_HEIGHT_RATIO, fontSize * BAR_MAX_FONT_RATIO)
 
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col justify-between text-[14px]">
+    <div ref={containerRef} className="flex min-h-0 w-full flex-1 flex-col justify-between" style={{ fontSize }}>
       {items.map(item => {
         const isEllipsis = item.hiddenCount !== undefined
         const selectable = onSelectSector !== undefined && !item.isReference && !isEllipsis
-        const nameClassName = 'w-[92px] shrink-0 truncate text-right font-bold'
+        const nameClassName = 'shrink-0 truncate text-right font-bold'
         const nameColor = item.isReference ? highlightColor : isEllipsis ? '#9ca3af' : '#ffffff'
         return (
           <div key={item.key} className="flex min-h-0 flex-1 items-center gap-2">
@@ -46,14 +74,14 @@ export default function RankBars({
                 aria-label={item.sectorName}
                 onClick={() => onSelectSector(item.sectorName)}
                 className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 hover:bg-white/35`}
-                style={{ color: nameColor }}
+                style={{ color: nameColor, width: nameWidth }}
               >
                 {item.sectorName}
               </button>
             ) : (
-              <span className={nameClassName} style={{ color: nameColor }}>{item.sectorName}</span>
+              <span className={nameClassName} style={{ color: nameColor, width: nameWidth }}>{item.sectorName}</span>
             )}
-            <div className="relative h-[60%] max-h-5 min-w-0 flex-1">
+            <div className="relative min-w-0 flex-1" style={{ height: barHeight }}>
               {isEllipsis ? (
                 <span aria-hidden="true" className="absolute left-0 top-1/2 -translate-y-1/2 leading-none text-gray-400">⋯</span>
               ) : (
@@ -61,14 +89,14 @@ export default function RankBars({
                   <div
                     className="absolute left-0 top-0 h-full rounded-sm"
                     style={{
-                      width: `calc((100% - ${VALUE_WIDTH}px) * ${Math.abs(item.value) / axisMax})`,
+                      width: `calc((100% - ${valueWidth}px) * ${Math.abs(item.value) / axisMax})`,
                       backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                     }}
                   />
                   <span
                     className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1.5 font-bold tabular-nums"
                     style={{
-                      left: `calc((100% - ${VALUE_WIDTH}px) * ${Math.abs(item.value) / axisMax})`,
+                      left: `calc((100% - ${valueWidth}px) * ${Math.abs(item.value) / axisMax})`,
                       color: resolveTreemapExtremeColor(item.value, colorScale),
                     }}
                   >
