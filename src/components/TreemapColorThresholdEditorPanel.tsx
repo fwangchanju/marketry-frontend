@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/treemapColorScale'
-import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 
 const SATURATION = 75
 
@@ -155,22 +154,16 @@ export default function TreemapColorThresholdEditorPanel({
         <p className="color-editor-step mb-2 text-[13px] text-gray-300">색상</p>
         <div className="flex justify-between" role="group" aria-label="색상 선택">
           {swatches.map(swatch => (
-            <span key={swatch.key} className="group relative inline-flex">
+            <span key={swatch.key} className="inline-flex">
               <button
                 type="button"
                 aria-label={swatch.label}
+                data-hint={swatch.label}
                 aria-pressed={selection.key === swatch.key}
                 onClick={() => applySelection(swatch.key, selection.lightness)}
                 className={`h-6 w-6 shrink-0 rounded-full border-2 p-0 ${selection.key === swatch.key ? 'border-white ring-1 ring-white/40' : 'border-transparent hover:border-white/60'}`}
                 style={{ backgroundColor: swatch.color }}
               />
-              {/* 색 이름 — 강조 색상(4-1)과 같은 말풍선으로, 마우스를 올렸을 때만 뜬다. */}
-              <span
-                role="tooltip"
-                className={`pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS} opacity-0 transition-opacity group-hover:visible group-hover:opacity-100`}
-              >
-                {swatch.label}
-              </span>
             </span>
           ))}
         </div>
