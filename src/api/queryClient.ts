@@ -8,7 +8,7 @@ const queryClient = new QueryClient({
     onError: (error, _variables, _context, mutation) => {
       if (mutation.options.meta?.skipGlobalError) return
       const failure = mutation.options.meta?.failure
-      appAlert(getErrorDetail(error, typeof failure === 'string' ? failure : undefined))
+      appAlert(getErrorDetail(error, typeof failure === 'string' ? failure : undefined), { title: '요청 실패' })
     },
   }),
   defaultOptions: {

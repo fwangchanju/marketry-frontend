@@ -23,7 +23,7 @@ function alertBlocked(sectorName: string, blockingStocks: StockSectorItem[]) {
 }
 
 function alertDeleteFailed(sectorName: string, error: unknown) {
-  appAlert(`[${sectorName}] 업종\n${getErrorDetail(error)}`)
+  appAlert(`[${sectorName}] 업종\n${getErrorDetail(error)}`, { title: '삭제 실패' })
 }
 
 /** 섹터 삭제 미리보기→확인→삭제 플로우. 삭제 실행 자체가 409(레이스)로 실패하면

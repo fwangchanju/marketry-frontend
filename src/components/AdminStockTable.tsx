@@ -1307,10 +1307,11 @@ export default function AdminStockTable({
             pushUndo({ type: 'bulkSector', sectorName, after: sectorId, entries })
           }
           if (result.failedStockCodes.length === 0) {
-            appAlert(`업종: ${sectorName}\n일괄 적용 완료되었습니다.`)
+            appAlert(`[${sectorName}] 업종\n일괄 적용 완료되었습니다.`, { title: '일괄 변경 완료' })
           } else {
             appAlert(
-              `업종: ${sectorName}\n다음 종목은 반영되지 않았습니다:\n${result.failedStockCodes.join(', ')}`,
+              `[${sectorName}] 업종\n다음 종목은 반영되지 않았습니다:\n${result.failedStockCodes.join(', ')}`,
+              { title: '일괄 변경 실패' },
             )
           }
         },
@@ -1432,7 +1433,7 @@ export default function AdminStockTable({
     try {
       const rows = await readClassificationFile(file)
       if (rows.length === 0) {
-        appAlert('읽을 수 있는 줄이 없습니다.\n열 이름이 종목코드·대분류·중분류·소분류인지 확인해 주세요.')
+        appAlert('읽을 수 있는 줄이 없습니다.\n열 이름이 종목코드·대분류·중분류·소분류인지 확인해 주세요.', { title: '적용 실패' })
         return
       }
       const plan = buildUploadPlan(rows, sectors, new Map(itemsRef.current.map(item => [item.stockCode, item.sectorId])))
@@ -1440,7 +1441,7 @@ export default function AdminStockTable({
       const skippedCount = plan.blankCount + plan.invalidCount + plan.unknownCodes.length
       if (plan.changedCount === 0) {
         const parts = [plan.unchangedCount > 0 && `이미 같은 분류 ${plan.unchangedCount}개`, skippedCount > 0 && `건너뜀 ${skippedCount}개`].filter(Boolean)
-        appAlert(`바뀌는 종목이 없습니다.${parts.length > 0 ? `\n${parts.join(' · ')}` : ''}`)
+        appAlert(`바뀌는 종목이 없습니다.${parts.length > 0 ? `\n${parts.join(' · ')}` : ''}`, { title: '적용 없음' })
         return
       }
       const parts = [plan.newSectors.length > 0 && `새로 만들 분류 ${plan.newSectors.length}개`, skippedCount > 0 && `건너뜀 ${skippedCount}개`].filter(Boolean)
@@ -1475,9 +1476,9 @@ export default function AdminStockTable({
           if (entries.length > 0) pushUndo({ type: 'bulkSector', sectorName: group.path.join(' > '), after: sectorId, entries })
         }
       }
-      appAlert(`엑셀 적용 완료\n바뀐 종목 ${appliedCount}개${failed.length > 0 ? `\n반영되지 않은 종목 ${failed.length}개` : ''}`)
+      appAlert(`엑셀 적용 완료\n바뀐 종목 ${appliedCount}개${failed.length > 0 ? `\n반영되지 않은 종목 ${failed.length}개` : ''}`, { title: '적용 완료' })
     } catch {
-      appAlert('엑셀을 적용하지 못했습니다.\n파일 형식과 분류 이름을 확인해 주세요.')
+      appAlert('엑셀을 적용하지 못했습니다.\n파일 형식과 분류 이름을 확인해 주세요.', { title: '적용 실패' })
     } finally {
       setIsUploading(false)
     }
