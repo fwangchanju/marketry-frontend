@@ -1617,7 +1617,7 @@ export default function AdminStockTable({
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
               className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-              data-hint="엑셀로 한번에 종목 분류"
+              data-hint="종목 분류를 엑셀로 한번에 올리기"
               aria-label="엑셀 업로드"
             >
               <UploadIcon className="h-4 w-4 text-gray-400" />
