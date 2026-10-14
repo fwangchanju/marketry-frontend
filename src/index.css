@@ -345,7 +345,7 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 
 /* 탭 제목 아래의 중제목은 화면에 보이는 순서대로 1), 2)로 매긴다. */
-.settings-sidebar-tab-content .settings-section-num::before {
+.settings-panel-tab-content .settings-section-num::before {
   counter-increment: settings-section;
   content: counter(settings-section) ") ";
   font-variant-numeric: tabular-nums;
@@ -354,61 +354,61 @@ a { color: var(--accent-light); text-decoration: none; }
   width: 19px;
 }
 
-.settings-sidebar-tab-content .settings-description {
+.settings-panel-tab-content .settings-description {
   padding-left: 19px;
 }
 
 /* 설정창이 열릴 때 붙어 있는 쪽 가장자리에서 서서히 들어온다. 창 크기(w-72 = 18rem)는 그대로 두고 바깥 여백만 -18rem에서
    0으로 바꿔서, 설정창이 차지하는 폭이 조금씩 늘고 그만큼 지도가 프레임마다 줄어드는 것이 그대로 보이게 한다. */
-@keyframes settings-sidebar-in-right {
+@keyframes settings-panel-in-right {
   from { margin-right: -18rem; opacity: 0; }
   to { margin-right: 0; opacity: 1; }
 }
 
-@keyframes settings-sidebar-in-left {
+@keyframes settings-panel-in-left {
   from { margin-left: -18rem; opacity: 0; }
   to { margin-left: 0; opacity: 1; }
 }
 
 /* 닫을 때는 반대로 가장자리로 밀려나며 사라진다. 끝난 모양을 유지(forwards)해서 화면에서 제거되기 전에 한 프레임이라도 다시 보이지 않게 한다. */
-@keyframes settings-sidebar-out-right {
+@keyframes settings-panel-out-right {
   from { margin-right: 0; opacity: 1; }
   to { margin-right: -18rem; opacity: 0; }
 }
 
-@keyframes settings-sidebar-out-left {
+@keyframes settings-panel-out-left {
   from { margin-left: 0; opacity: 1; }
   to { margin-left: -18rem; opacity: 0; }
 }
 
-.settings-sidebar-enter-right {
-  animation: settings-sidebar-in-right 0.25s ease-out;
+.settings-panel-enter-right {
+  animation: settings-panel-in-right 0.25s ease-out;
 }
 
-.settings-sidebar-enter-left {
-  animation: settings-sidebar-in-left 0.25s ease-out;
+.settings-panel-enter-left {
+  animation: settings-panel-in-left 0.25s ease-out;
 }
 
-.settings-sidebar-leave-right {
-  animation: settings-sidebar-out-right 0.25s ease-in forwards;
+.settings-panel-leave-right {
+  animation: settings-panel-out-right 0.25s ease-in forwards;
 }
 
-.settings-sidebar-leave-left {
-  animation: settings-sidebar-out-left 0.25s ease-in forwards;
+.settings-panel-leave-left {
+  animation: settings-panel-out-left 0.25s ease-in forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .settings-sidebar-enter-right,
-  .settings-sidebar-enter-left,
-  .settings-sidebar-leave-right,
-  .settings-sidebar-leave-left {
+  .settings-panel-enter-right,
+  .settings-panel-enter-left,
+  .settings-panel-leave-right,
+  .settings-panel-leave-left {
     animation: none;
   }
 }
 
 /* 설정 창 전체(스크롤 영역 밖인 하단 Basis 선택 포함)의 선택 버튼(radiogroup)은 글자가 두 줄이 되어도(줄바꿈 또는 글자가 길어져 넘칠 때) 줄 간격이 같도록 한곳에서 정한다.
    새 선택 버튼도 이 값을 따르므로 버튼마다 leading을 따로 지정하지 않는다. */
-[data-settings-sidebar] [role="radiogroup"] button {
+[data-settings-panel] [role="radiogroup"] button {
   line-height: 1.3;
 }
 
@@ -421,21 +421,21 @@ a { color: var(--accent-light); text-decoration: none; }
 
 /* 슬라이더·선택 버튼 같은 조작 요소는 설명 앞의 "- " 위치(설명 들여쓰기와 같은 폭)에서 시작하고,
    오른쪽도 같은 폭만큼 줄여 좌우 대칭으로 맞춘다. */
-.settings-sidebar-tab-content .settings-control-inset {
+.settings-panel-tab-content .settings-control-inset {
   margin-left: 19px;
   margin-right: 19px;
 }
 
 /* 설정 탭과 북마크 탭에서 모든 슬라이더 트랙의 실제 폭을 같게 유지한다. */
-.settings-sidebar-tab-content .settings-slider-control,
+.settings-panel-tab-content .settings-slider-control,
 .settings-bookmark-tab .settings-slider-control {
   width: min(16rem, calc(100% - 38px));
   margin-left: auto;
   margin-right: auto;
 }
 
-.settings-sidebar-tab-content .settings-section-bullet::before,
-.settings-sidebar-tab-content .settings-subsection-num::before {
+.settings-panel-tab-content .settings-section-bullet::before,
+.settings-panel-tab-content .settings-subsection-num::before {
   counter-increment: none;
   content: none;
 }
@@ -443,7 +443,7 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 
 /* 북마크 탭의 번호는 자동 카운터 대신 원래 위치 번호를 보여준다. */
-.settings-sidebar-tab-content .settings-section-num.settings-bookmark-num::before {
+.settings-panel-tab-content .settings-section-num.settings-bookmark-num::before {
   counter-increment: none;
   content: attr(data-num) ") ";
   width: 38px;
@@ -453,7 +453,7 @@ a { color: var(--accent-light); text-decoration: none; }
   padding-left: 38px;
 }
 
-.settings-sidebar-tab-content {
+.settings-panel-tab-content {
   scrollbar-gutter: stable;
 }
 
@@ -462,32 +462,32 @@ a { color: var(--accent-light); text-decoration: none; }
    정해지게 한다. 제목은 탭 내용 상단 기준 20/147/274/401/528px에서 시작한다. 첫 항목은 위 여백(20px)을 포함해 147px.
    마지막 항목(강세 표시, 제외 업종, 등락률 색상, 종목 정보 팝업)은 길어도 시작 위치만 맞으면 돼서 높이를 고정하지 않는다.
    북마크 탭은 자체 간격 규칙을 쓴다. 항목 내용이 103px를 넘게 바뀌면 이 값을 다시 정해야 한다. */
-.settings-sidebar-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-sector-change, .settings-third-stock-change, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places) {
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-sector-change, .settings-third-stock-change, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places) {
   height: 127px;
 }
 
-.settings-sidebar-tab-content[data-align-second-heading] :is(.settings-market-value, .settings-first-stock-size, .settings-first-strong-color) {
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-market-value, .settings-first-stock-size, .settings-first-strong-color) {
   height: 147px;
 }
 
-.settings-sidebar-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color) {
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color) {
   margin-top: 0;
   padding-top: 0;
   border-color: transparent;
 }
 
-.settings-sidebar-tab-content[data-align-second-heading] :is(.settings-first-stock-size, .settings-market-value, .settings-first-strong-color) {
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-first-stock-size, .settings-market-value, .settings-first-strong-color) {
   margin-bottom: 0;
   padding-bottom: 0;
   border-color: transparent;
 }
 
 /* 항목 구분선 — 각 탭의 두 번째 이후 항목 제목 위에 긋는다. */
-.settings-sidebar-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color) {
+.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color) {
   position: relative;
 }
 
-.settings-sidebar-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color)::before {
+.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color)::before {
   content: "";
   display: none;
   position: absolute;
@@ -497,7 +497,7 @@ a { color: var(--accent-light); text-decoration: none; }
   border-top: 1px solid rgb(255 255 255 / 12%);
 }
 
-.settings-sidebar-tab-content[data-align-second-heading] :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color)::before {
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color)::before {
   display: block;
 }
 
@@ -716,6 +716,6 @@ a { color: var(--accent-light); text-decoration: none; }
 
 /* 설정창 스크롤 영역(탭 내용 전체, 제외 업종 목록) — 맥 기본 스크롤바는 스크롤할 때만 보여서 내용이 잘린 것처럼 보인다. 가는 스크롤바를 항상 보이게 한다.
    브라우저를 확대하면 탭 내용도 넘쳐서 스크롤이 생긴다. */
-:is(.settings-exclude-list, .settings-sidebar-tab-content)::-webkit-scrollbar { width: 6px; }
-:is(.settings-exclude-list, .settings-sidebar-tab-content)::-webkit-scrollbar-track { background: rgb(255 255 255 / 8%); border-radius: 3px; }
-:is(.settings-exclude-list, .settings-sidebar-tab-content)::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 40%); border-radius: 3px; }
+:is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar { width: 6px; }
+:is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar-track { background: rgb(255 255 255 / 8%); border-radius: 3px; }
+:is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 40%); border-radius: 3px; }

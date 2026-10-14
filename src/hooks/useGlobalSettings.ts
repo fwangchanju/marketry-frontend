@@ -96,7 +96,7 @@ function topPickAverage(node: FilteredTreemapSectorNode, metric: DepthMetric): n
   return metric === 'simpleAvgChangeRate' ? node.simpleAvgChangeRate : node.weightedAvgChangeRate
 }
 
-// "설정" 사이드바(SettingsSidebar) + 색상 구간 편집 패널이 필요로 하는 상태/로직 전부를
+// "설정" 사이드바(SettingsPanel) + 색상 구간 편집 패널이 필요로 하는 상태/로직 전부를
 // 여기 한 곳에 모아둔다 — 세션스토리지 키를 그대로 공유해서 어느 페이지에서 열어도 같은 값을 보고
 // 편집한다(지도/섹터 페이지뿐 아니라 아직 이 옵션이 실제로 영향 안 주는 페이지에서 열어도 동일).
 // 페이지별로 서로 다른 옵션을 보여줘야 할 필요가 생기면 그때 이 훅을 쪼개면 된다.

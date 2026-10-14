@@ -714,3 +714,7 @@ Custom의 본문 로딩·오류 원 여백은 지도·그룹 페이지와 같은
 - 배지: 확인·알림·안내 배지와 설정창 종목 배지를 우클릭 팝업 배지와 같은 높이(18px)·굵기(`semibold`)로 맞췄다.
 - 선택 버튼 구분선: 애프터 버튼과 같은 규격(1px 회색, 묶음 높이의 42%)으로 두고 선택 칸 옆은 숨긴다.
 - 툴팁: 새로고침 아이콘도 `data-hint`로 합쳤다. 애프터 토글은 굵은 글씨·빨간색이 있어 개별 구현으로 남겼다.
+
+## SettingsSidebar를 SettingsPanel로 바꿨다 (2026-10-14)
+
+사이드 영역(설정창)의 코드 이름 `SettingsSidebar`를 `SettingsPanel`로 바꿨다(`SettingsPanelGroup`, `useSettingsPanelSide`, `SettingsPanelSectionId`, 화면 표식 `data-settings-panel`, CSS 클래스 `settings-panel-*` 포함). 후보였던 `Sidebar`는 설정 말고 다른 사이드 영역이 생기면 겹칠 수 있어서, `SettingBar`는 프로젝트에서 "Bar"가 가로 줄(`NavBar`·`ChangeRateBar`)을 뜻하고 단수 `Setting`은 설정 항목 하나를 가리켜서 쓰지 않았다. 설정창 위치(왼쪽·오른쪽)의 브라우저 저장 키도 `settings-sidebar-on-left`에서 `settings-panel-on-left`로 바꿨다. 옛 값은 옮기지 않아서 배포 후 브라우저마다 한 번 오른쪽(기본값)으로 돌아가며, 이동 버튼을 한 번 누르면 새 키에 저장된다. 문서의 영역 이름은 계속 "사이드 영역(설정창)"이다.
