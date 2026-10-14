@@ -187,7 +187,7 @@ function BookmarkButton({ id, label }: { id: SettingsBookmarkId; label: string }
       type="button"
       aria-label={`${label} 북마크${active ? ' 해제' : ''}`}
       aria-pressed={active}
-      title={active ? '북마크 해제' : '북마크에 추가'}
+      data-hint={active ? '북마크 해제' : '북마크에 추가'}
       onClick={() => onToggle(id)}
       className={`ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 ${active ? 'text-[var(--brand)]' : 'text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)]'}`}
     >
@@ -1863,7 +1863,7 @@ export function SettingsExcludeSection({
                   onRemoveExcludedSector(sector.sectorId)
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
-                title="트리맵에 다시 표시"
+                data-hint="맵에 다시 표시"
                 className="flex h-7 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-white transition-colors hover:bg-white/35"
               >
                 <ReturnArrowIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -2242,7 +2242,7 @@ export default function SettingsSidebar({
         type="button"
         onClick={onToggleSide}
         aria-label={isOnLeft ? '설정창을 오른쪽으로 이동' : '설정창을 왼쪽으로 이동'}
-        title={isOnLeft ? '설정창을 오른쪽으로 이동' : '설정창을 왼쪽으로 이동'}
+        data-hint={isOnLeft ? '설정창을 오른쪽으로 이동' : '설정창을 왼쪽으로 이동'}
         ref={sideTabRef}
         style={{ backgroundColor: TAXONOMY_BACKGROUND_COLOR }}
         className={`absolute top-1/2 z-10 flex h-8 w-[17px] -translate-y-1/2 items-center justify-center border border-gray-500 p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${

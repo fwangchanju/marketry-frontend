@@ -79,7 +79,7 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
                     <ul className="space-y-1">
                       {excludedStocks.slice(0, MAX_LISTED_STOCKS).map(stock => (
                         <li key={stock.stockCode} className="flex items-center justify-between gap-2">
-                          <span className="min-w-0 truncate" title={stock.stockName}>{stock.stockName}</span>
+                          <span className="min-w-0 truncate" data-hint={stock.stockName}>{stock.stockName}</span>
                           {/* 종목코드는 숫자와 영문이 섞여 있어(예: 0035S0) 글자 폭이 같은 고정폭 글꼴로 써야 코드마다 너비가 같다. */}
                           <span className="shrink-0 font-mono text-xs text-gray-400">{stock.stockCode}</span>
                         </li>

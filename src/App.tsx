@@ -8,6 +8,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import ProfilePage from './pages/ProfilePage'
 import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
+import HoverHintLayer from './components/HoverHintLayer'
 import MobileNotice from './components/MobileNotice'
 import { marketRoute } from '@/utils/marketRoute'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
@@ -58,6 +59,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppDialogHost />
+      <HoverHintLayer />
       <MobileGate>
       <LoginGateProvider>
         <PageNumberStyle />

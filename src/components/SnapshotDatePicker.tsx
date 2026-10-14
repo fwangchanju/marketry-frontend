@@ -448,7 +448,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     <button
       type="button"
       aria-label="실시간으로 돌아가기"
-      title="실시간으로 돌아가기"
+      data-hint="실시간으로 돌아가기"
       onClick={() => {
         onSelectSnapshotTime(null)
         setIsOpen(false)

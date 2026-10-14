@@ -621,7 +621,7 @@ export default function MapPage() {
                 >
                   <button
                     type="button"
-                    title="전체로 되돌아가기"
+                    data-hint="전체로 되돌아가기"
                     onClick={() => handleGoToDepth(0)}
                     style={{ fontFamily: 'inherit' }}
                     className={BREADCRUMB_LINK_CLASS}
@@ -637,7 +637,7 @@ export default function MapPage() {
                       <button
                         key={index}
                         type="button"
-                        title={`${name} 단계로 되돌아가기`}
+                        data-hint={`${name} 단계로 되돌아가기`}
                         onClick={() => handleGoToDepth(index + 1)}
                         style={{ fontFamily: 'inherit' }}
                         className={BREADCRUMB_LINK_CLASS}

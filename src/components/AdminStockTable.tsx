@@ -1606,7 +1606,7 @@ export default function AdminStockTable({
               type="button"
               onClick={handleExportExcel}
               className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium text-white hover:bg-white/10"
-              title="지금 화면에 보이는(필터/정렬 적용된) 목록을 엑셀로 내려받습니다"
+              data-hint="지금 화면에 보이는(필터/정렬 적용된) 목록을 엑셀로 내려받습니다"
               aria-label="엑셀 다운로드"
             >
               <DownloadIcon className="h-4 w-4 text-gray-400" />
@@ -1617,7 +1617,7 @@ export default function AdminStockTable({
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
               className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-              title="엑셀의 대·중·소분류대로 종목 분류를 한 번에 바꿉니다(적용 전에 확인창이 뜹니다)"
+              data-hint="엑셀의 대·중·소분류대로 종목 분류를 한 번에 바꿉니다(적용 전에 확인창이 뜹니다)"
               aria-label="엑셀 업로드"
             >
               <UploadIcon className="h-4 w-4 text-gray-400" />
@@ -1723,7 +1723,7 @@ export default function AdminStockTable({
                     key={col.key}
                     data-column-key={col.key}
                     className="cursor-pointer whitespace-nowrap bg-[#2b3a4f] text-center align-middle font-bold text-slate-100"
-                    title={col.key === 'alias' && isAdmin ? '운영자 권한이 있는 사용자만 약칭을 보고 수정할 수 있습니다.' : undefined}
+                    data-hint={col.key === 'alias' && isAdmin ? '운영자 권한이 있는 사용자만 약칭을 보고 수정할 수 있습니다.' : undefined}
                     onClick={() => handleSort(col.key)}
                   >
                     {col.key === 'totalMarketValue' ? (

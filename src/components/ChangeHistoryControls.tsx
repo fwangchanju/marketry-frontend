@@ -74,7 +74,7 @@ function HistoryListPopup<T extends { id: string }>({
                 onPick(action.id)
                 setIsOpen(false)
               }}
-              title={`여기까지 ${index + 1}단계 ${actionLabel}`}
+              data-hint={`여기까지 ${index + 1}단계 ${actionLabel}`}
               className={`flex w-full items-center gap-2 whitespace-nowrap rounded-none border-0 px-2 py-1 text-left text-sm font-normal text-white ${index > 0 ? 'border-t border-t-white/30' : ''} ${index <= hoverIndex ? 'bg-[var(--brand)]/20 border-white/25!' : 'bg-transparent'}`}
             >
               <span className="w-6 shrink-0 text-right text-xs tabular-nums text-gray-400">{direction === 'undo' ? '-' : '+'}{index + 1}</span>
@@ -111,7 +111,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
             }}
             disabled={isEmpty}
             className={`flex w-5 shrink-0 items-center justify-center border-0 border-r border-gray-600 bg-transparent p-0 text-gray-300 hover:bg-white/10 disabled:cursor-not-allowed disabled:hover:bg-transparent ${isListOpen ? '!bg-white/10 !text-white' : ''}`}
-            title={`${isUndo ? '실행취소' : '다시실행'} 목록`}
+            data-hint={`${isUndo ? '실행취소' : '다시실행'} 목록`}
             aria-label={`${isUndo ? '실행취소' : '다시실행'} 목록`}
           >
             <ChevronDownIcon className="h-3.5 w-3.5" />
@@ -121,7 +121,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
             onClick={isUndo ? onUndo : onRedo}
             disabled={isEmpty}
             className="flex min-w-0 flex-1 items-center justify-center gap-1 border-0 bg-transparent px-1.5 text-xs font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            title={`${isUndo ? '실행취소' : '다시실행'} (${isUndo ? 'Ctrl+Z' : 'Ctrl+Y'})`}
+            data-hint={`${isUndo ? '실행취소' : '다시실행'} (${isUndo ? 'Ctrl+Z' : 'Ctrl+Y'})`}
             aria-label={isUndo ? '실행취소' : '다시실행'}
           >
             <span className="truncate">{label}{isEmpty ? '' : ` (${stack.length})`}</span>
