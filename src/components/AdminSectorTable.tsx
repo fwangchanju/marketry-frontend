@@ -30,6 +30,8 @@ const MAX_SECTOR_DEPTH = 3
 
 // 신규 종목이 자동 배정되는 최상위 업종 — 삭제할 수 없다(서버도 막는다).
 const NEW_LISTING_SECTOR_NAME = '신규 상장'
+// 업종 경로의 구분 표시 — 글자가 작은 '›' 대신 읽기 쉬운 '>'를 쓴다(금융 > 은행). 경로를 만들고 다시 나눌 때 같은 값을 쓴다.
+const SECTOR_PATH_SEPARATOR = ' > '
 const NEW_LISTING_DELETE_MESSAGE = '신규 상장시 자동 분류되는 항목이라 삭제가 불가능합니다.'
 const isProtectedSector = (sector: SectorItem) => sector.parentId === null && sector.name === NEW_LISTING_SECTOR_NAME
 const MAX_SECTOR_LEVELS = MAX_SECTOR_DEPTH + 1
@@ -293,12 +295,12 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       path.unshift(parent.name)
       current = parent
     }
-    return path.join(' › ')
+    return path.join(SECTOR_PATH_SEPARATOR)
   }
 
   // 이동 확인 문구 — 대상이 없으면 최상위로 옮기는 것이다.
   const moveMessage = (name: string, target: SectorItem | null) =>
-    `[${name}] 업종을\n${target ? `[${getSectorPath(target)}] 하위로` : '최상위로'} 이동하시겠습니까?`
+    `[${name}]\n${target ? `[${getSectorPath(target)}] 하위로` : '최상위로'} 이동하시겠습니까?`
 
   const persistSiblingOrder = (parentId: number | null, ids: number[]) => {
     setSectorOrder(previous => {
@@ -463,7 +465,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     const rows: Row[] = items.map((item, index) => ({ type: 'sector', item, siblingIndex: index + 1 }))
     if (parentId !== null && addingChildFor === parentId) {
       const parent = sectors.find(item => item.id === parentId)
-      if (parent) rows.push({ type: 'add-child', parentId, parentPath: getSectorPath(parent).split(' › '), depth: parent.depth + 1 })
+      if (parent) rows.push({ type: 'add-child', parentId, parentPath: getSectorPath(parent).split(SECTOR_PATH_SEPARATOR), depth: parent.depth + 1 })
     }
     return rows
   }
@@ -558,7 +560,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const renderRow = (row: Row) => {
     if (row.type === 'add-child') {
       const parentId = row.parentId
-      const chainLabel = `[${row.parentPath.join(' › ')}]`
+      const chainLabel = `[${row.parentPath.join(SECTOR_PATH_SEPARATOR)}]`
       return (
         <tr key={`add-child-${parentId}`}>
           <td className="py-0.5 text-left" style={{ paddingLeft: `${row.depth * 20 + 8}px` }}>
@@ -683,7 +685,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                         aria-label={`${sector.name} 삭제`}
                         onClick={() => {
                           if (isProtectedSector(sector)) {
-                            void appAlert(`[${sector.name}] 업종\n${NEW_LISTING_DELETE_MESSAGE}`, { title: '삭제 불가' })
+                            void appAlert(`[${sector.name}]\n${NEW_LISTING_DELETE_MESSAGE}`, { title: '삭제 불가' })
                             return
                           }
                           remove(sector.id, sector.name)
@@ -864,10 +866,10 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">업종 재배치</h2>
         <div className="mb-3 rounded-md border border-gray-600 bg-zinc-700 px-2 py-1.5 text-sm text-white">
           <div className="flex items-start gap-1">
-            {/* 대분류 › 중분류 › 소분류를 한 줄에 이어 보여 주고, 길어서 넘치면 자동으로 다음 줄로 이어진다. */}
+            {/* 대분류 > 중분류 > 소분류를 한 줄에 이어 보여 주고, 길어서 넘치면 자동으로 다음 줄로 이어진다. */}
             <div className="min-w-0 flex-1 py-0.5 text-xs font-medium leading-5">
               {!selectedSector && <span className="text-gray-400">업종을 선택하세요</span>}
-              {selectedSector && getSectorPath(selectedSector).split(' › ').map((name, index) => (
+              {selectedSector && getSectorPath(selectedSector).split(SECTOR_PATH_SEPARATOR).map((name, index) => (
                 <span key={index} className="break-all">
                   {index > 0 && (
                     <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-0.5 inline h-3.5 w-3.5 align-text-bottom text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

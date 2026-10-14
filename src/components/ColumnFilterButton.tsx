@@ -158,7 +158,7 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
           )}
           {orderMode && <SectorOrderToggle label={label} value={orderMode.value} onChange={orderMode.onChange} />}
           <ul className="m-0 max-h-64 list-none overflow-y-auto p-0">
-            {shownOptions.length === 0 && <li className="px-3 py-1 text-gray-400">결과가 없습니다</li>}
+            {shownOptions.length === 0 && <li className="px-3 py-1 text-gray-400">검색 결과가 없습니다.</li>}
             {shownOptions.map(value => (
               <li key={value}>
                 <label className="flex cursor-pointer items-center gap-2 px-3 py-1 hover:bg-white/10">

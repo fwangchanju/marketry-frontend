@@ -386,7 +386,7 @@ function SectorSearchPopup({
       {title && orderMode && <SectorOrderToggle label={title} value={orderMode.value} onChange={orderMode.onChange} />}
       <div className="overflow-y-auto scrollbar-thin" style={{ maxHeight: FILTER_LIST_MAX_HEIGHT }}>
         {search.matches.length === 0 ? (
-          <p className="m-0 px-3 py-1 text-gray-400">검색 결과가 없습니다</p>
+          <p className="m-0 px-3 py-1 text-gray-400">검색 결과가 없습니다.</p>
         ) : (
           search.matches.map((opt, index) => (
             <button
@@ -1307,10 +1307,10 @@ export default function AdminStockTable({
             pushUndo({ type: 'bulkSector', sectorName, after: sectorId, entries })
           }
           if (result.failedStockCodes.length === 0) {
-            appAlert(`[${sectorName}] 업종\n일괄 적용 완료되었습니다.`, { title: '일괄 변경 완료' })
+            appAlert(`[${sectorName}]\n일괄 적용 완료되었습니다.`, { title: '일괄 변경 완료' })
           } else {
             appAlert(
-              `[${sectorName}] 업종\n다음 종목은 반영되지 않았습니다:\n${result.failedStockCodes.join(', ')}`,
+              `[${sectorName}]\n다음 종목은 반영되지 않았습니다:\n${result.failedStockCodes.join(', ')}`,
               { title: '일괄 변경 실패' },
             )
           }

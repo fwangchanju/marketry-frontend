@@ -11,8 +11,9 @@ import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
+// 검정 바탕에 빨간 테두리·글자 — 아래 롤백 목록(검정 바탕, 빨간 테두리)과 같은 모양이고, 올리면 빨간 바탕에 흰 글자가 된다.
 const BUTTON_CLASS =
-  'h-6 w-full whitespace-nowrap rounded-md border-0 bg-[var(--panel-gray)] px-2 text-xs font-medium text-[#ff4d2e] hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50'
+  'h-6 w-full whitespace-nowrap rounded-md border border-[#ff4d2e] bg-black px-2 text-xs font-bold text-[#ff6a4d] transition-colors hover:bg-[#ff4d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-50'
 
 // "MARKETRY 2026-10-08 14:30"에서 앞의 이름을 뺀 날짜·시간만 — 안내 문구에서 이름이 겹쳐 보이지 않게 한다.
 function toDateTimeLabel(label: string) {
@@ -85,7 +86,7 @@ export default function MarketryPublishControls() {
   }
 
   const handleRestore = async (version: MarketryPublication) => {
-    const confirmed = await appConfirm(`[${toDateTimeLabel(version.label)}]\nMARKETRY 맵을 해당 버전으로 되돌리시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
+    const confirmed = await appConfirm(`[${toDateTimeLabel(version.label)}]\nMARKETRY 맵을 되돌리시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
     if (!confirmed) return
     setBusyMessage('MARKETRY를 롤백 중입니다.')
     try {
@@ -102,7 +103,7 @@ export default function MarketryPublishControls() {
 
   return (
     <div ref={rootRef} className="relative grid w-full grid-cols-2 gap-1">
-      <span className="col-span-2 inline-flex h-6 items-center justify-center rounded-md border border-[#ff4d2e] bg-[#ff4d2e] px-2 text-xs font-extrabold text-white">⚠ ADMIN</span>
+      <span className="col-span-2 inline-flex h-6 items-center justify-center rounded-md border border-[#ff4d2e] bg-[#ff4d2e] px-2 text-xs font-bold text-white">⚠ ADMIN</span>
       <button type="button" onClick={handlePublish} disabled={isBusy} className={BUTTON_CLASS}>
         UPDATE
       </button>
@@ -123,6 +124,7 @@ export default function MarketryPublishControls() {
       )}
       {isVersionsOpen && (
         <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto border border-[#ff4d2e] bg-black p-1 text-sm font-normal">
+          {versions !== null && versions.length > 0 && <p className="px-2 py-1 text-xs font-medium text-gray-300">해당 버전으로 롤백합니다.</p>}
           {versions === null ? (
             <p className="px-2 py-1 text-gray-400">불러오는 중…</p>
           ) : versions.length === 0 ? (
@@ -134,10 +136,10 @@ export default function MarketryPublishControls() {
                 type="button"
                 onClick={() => handleRestore(version)}
                 disabled={isBusy}
-                className="flex w-full items-center justify-between border-0 bg-transparent px-2 py-1 text-left text-white hover:bg-white/10 disabled:opacity-50"
+                className="flex w-full items-center border-0 bg-transparent px-2 py-1 text-left text-white hover:bg-white/10 disabled:opacity-50"
               >
-                <span className="truncate">{version.label}</span>
-                <span className="ml-2 shrink-0 text-[#ff6a4d]">ROLLBACK</span>
+                {/* 버전 이름 앞의 "MARKETRY"는 뺀다 — 구분되는 것은 시각이고, 알림창에서도 같은 [시각]으로 쓴다. */}
+                <span className="truncate">[{toDateTimeLabel(version.label)}]</span>
               </button>
             ))
           )}
