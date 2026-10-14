@@ -11,8 +11,8 @@ const SERVICE_DOMAIN = 'marketry.co.kr'
 const EFFECTIVE_DATE = '2026-10-11'
 
 const SECTION_TITLE = 'text-lg font-bold text-white'
-const BODY = 'mt-2 text-sm leading-relaxed text-gray-400'
-const LIST = 'mt-2 list-inside list-disc space-y-1 text-sm leading-relaxed text-gray-400'
+const BODY = 'mt-2 text-sm leading-relaxed text-gray-300'
+const LIST = 'mt-2 list-inside list-disc space-y-1 text-sm leading-relaxed text-gray-300'
 
 export default function PrivacyPolicyPage() {
   return (
@@ -26,7 +26,7 @@ export default function PrivacyPolicyPage() {
       <div className="mx-auto max-w-2xl px-4 py-10">
         <div className="nes-container is-dark">
           <h1 className="text-2xl font-bold text-white">개인정보처리방침</h1>
-          <p className="mt-2 text-sm text-gray-400">시행일: {EFFECTIVE_DATE}</p>
+          <p className="mt-2 text-sm text-gray-300">시행일: {EFFECTIVE_DATE}</p>
 
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>1. 서비스 개요</h2>

@@ -79,7 +79,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           aria-label="시장 시간대 안내"
           className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-gray-500 bg-[#363639] p-2 text-sm font-normal tracking-normal text-white shadow-xl"
         >
-          <p className="mb-1.5 px-1 text-[13px] text-gray-400">시장 시간대 (한국 시간)</p>
+          <p className="mb-1.5 px-1 text-xs font-medium text-gray-300">시장 시간대 (한국 시간)</p>
           {SESSION_GUIDE.map(row => (
             <div key={row.session} className="flex items-center justify-between gap-6 px-2 py-1">
               <span className="flex items-center">

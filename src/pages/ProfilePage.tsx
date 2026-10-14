@@ -64,7 +64,7 @@ export default function ProfilePage() {
       return
     }
     if (problem === 'size') {
-      setImageMessage({ kind: 'error', text: '사진은 2MB 이하만 올릴 수 있습니다.' })
+      setImageMessage({ kind: 'error', text: '사진은 10MB 이하만 올릴 수 있습니다.' })
       return
     }
     setIsImageBusy(true)
@@ -141,14 +141,15 @@ export default function ProfilePage() {
             <>
               <h2 className="text-lg font-semibold">계정 정보</h2>
               <div className="mt-6 border-t border-gray-700 pt-5">
-                <p className="text-sm text-gray-400">이메일</p>
+                <p className="text-sm text-gray-300">이메일</p>
                 <p className="mt-2 break-all text-base">{session.email || '등록된 이메일 없음'}</p>
               </div>
               <div className="mt-8 border-t border-gray-700 pt-6">
                 <h2 className="text-lg font-semibold">프로필</h2>
                 <div className="mt-5 flex items-center gap-5">
-                  <ProfileAvatar className="size-20 shrink-0 object-cover" />
-                  <div className="flex flex-wrap gap-2">
+                  <ProfileAvatar className="size-[84px] shrink-0 object-cover" />
+                  {/* 두 버튼을 세로로 쌓아 프로필 사진(84px)과 높이를 맞춘다 — 버튼 38px(닉네임 입력·저장 버튼과 같은 높이) + 간격 8px + 버튼 38px. 삭제 버튼이 없을 때는 선택 버튼이 세로 가운데에 온다. */}
+                  <div className="flex h-[84px] flex-col justify-center gap-2">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -160,7 +161,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isImageBusy}
-                      className="rounded-lg border-0 bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-50"
+                      className="h-[38px] w-32 rounded-lg border-0 bg-cyan-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-50"
                     >
                       {isImageBusy ? '처리 중...' : '사진 선택'}
                     </button>
@@ -169,21 +170,21 @@ export default function ProfilePage() {
                         type="button"
                         onClick={handleDeleteImage}
                         disabled={isImageBusy}
-                        className="rounded-lg border-0 bg-zinc-600 px-4 py-2 text-sm text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-50"
+                        className="h-[38px] w-32 rounded-lg border-0 bg-zinc-600 px-4 text-sm text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-50"
                       >
                         사진 삭제
                       </button>
                     )}
                   </div>
                 </div>
-                <p className="mt-2 text-xs text-gray-400">JPG, PNG · 2MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
+                <p className="mt-2 text-xs font-medium text-gray-300">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
                 {imageMessage && (
                   <p role={imageMessage.kind === 'error' ? 'alert' : 'status'} className={`mt-2 text-sm ${imageMessage.kind === 'error' ? 'text-red-300' : 'text-green-300'}`}>
                     {imageMessage.text}
                   </p>
                 )}
                 <form onSubmit={handleSaveNickname} className="mt-6">
-                  <label htmlFor="profile-nickname" className="text-sm text-gray-400">
+                  <label htmlFor="profile-nickname" className="text-sm text-gray-300">
                     닉네임
                   </label>
                   <div className="mt-2 flex gap-2">
@@ -197,7 +198,7 @@ export default function ProfilePage() {
                       maxLength={12}
                       autoComplete="off"
                       placeholder="2~12자"
-                      className="w-56 rounded border border-gray-600 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-gray-400"
+                      className="w-56 rounded border border-gray-600 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-gray-400 focus:placeholder:text-transparent"
                     />
                     <button
                       type="submit"
@@ -207,7 +208,7 @@ export default function ProfilePage() {
                       {updateNickname.isPending ? '저장 중...' : '저장'}
                     </button>
                   </div>
-                  <p className="mt-2 text-xs text-gray-400">한글, 영문, 숫자만 쓸 수 있고 다른 사용자와 겹칠 수 없습니다.</p>
+                  <p className="mt-2 text-xs font-medium text-gray-300">한글, 영문, 숫자만 쓸 수 있고 다른 사용자와 겹칠 수 없습니다.</p>
                   {nicknameMessage && (
                     <p role={nicknameMessage.kind === 'error' ? 'alert' : 'status'} className={`mt-2 text-sm ${nicknameMessage.kind === 'error' ? 'text-red-300' : 'text-green-300'}`}>
                       {nicknameMessage.text}
@@ -220,7 +221,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={handleLogout}
                   disabled={logout.isPending}
-                  className="rounded-lg border-0 bg-zinc-600 px-4 py-2 text-sm text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-50"
+                  className="h-[38px] rounded-lg border-0 bg-zinc-600 px-4 text-sm text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-50"
                 >
                   {logout.isPending ? '로그아웃 중...' : '로그아웃'}
                 </button>

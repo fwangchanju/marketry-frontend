@@ -231,7 +231,7 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
         onChange={event => onChange(event.target.value.slice(0, SEARCH_MAX_LENGTH))}
         placeholder={placeholder}
         aria-label={ariaLabel}
-        className={`nes-input is-dark text-sm placeholder:indent-[3px] ${
+        className={`nes-input is-dark text-sm focus:placeholder:text-transparent ${
           // 윗줄 검색창은 표 안의 약칭 입력창과 같은 색(모서리는 직사각형으로 툴바 칩과 같다)이고, 높이는 왼쪽 제목 박스(24px)와 같다.
           inline
             ? 'h-6 w-[15.5rem] !rounded-none !border-0 !bg-[#3b3b3b] text-white outline-none placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]'

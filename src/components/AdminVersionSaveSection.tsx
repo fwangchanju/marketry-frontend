@@ -72,7 +72,7 @@ export default function AdminVersionSaveSection() {
             <span className="text-[14px]">저장 : {currentVersion.createdAt.slice(0, 10)}</span>
           </div>
         ) : (
-          <span className="text-xs text-gray-400">없음</span>
+          <span className="text-xs font-medium text-gray-300">없음</span>
         )}
       </div>
       <div className="mt-2 flex max-h-48 flex-col gap-1 overflow-y-auto">
@@ -117,7 +117,7 @@ export default function AdminVersionSaveSection() {
       <div className="mt-2 flex flex-col gap-1">
         <input
           type="text"
-          className="nes-input is-dark h-9 text-base"
+          className="nes-input is-dark h-9 text-base focus:placeholder:text-transparent"
           value={label}
           onChange={e => handleLabelChange(e.target.value)}
           placeholder="버전 태그명"

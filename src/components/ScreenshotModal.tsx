@@ -92,7 +92,11 @@ export default function ScreenshotModal({
       >
         {/* 설정창 헤더와 같은 모양 — 왼쪽 제목, 오른쪽 ✕, 아래 구분선. */}
         <div className="flex shrink-0 items-center border-b border-gray-500 p-4">
-          <p className="flex h-7 items-center whitespace-nowrap text-lg font-bold leading-none text-white">Screenshot</p>
+          <p className="font-roboto-latin flex h-7 items-center whitespace-nowrap text-lg font-bold leading-none text-white">
+            {/* 설정창 헤더 제목 앞의 막대와 같은 모양(청록 세로 막대)이다. */}
+            <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
+            Screenshot
+          </p>
           <button
             type="button"
             onClick={onClose}

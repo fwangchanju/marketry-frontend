@@ -79,7 +79,7 @@ function ThresholdRow({ threshold, locked, onChangeThreshold }: ThresholdRowProp
         onBlur={commit}
         onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
         style={{ width: THRESHOLD_BOX_WIDTH }}
-        className="h-7 shrink-0 rounded border border-gray-600 bg-zinc-700 px-2 text-right text-sm text-white outline-none [appearance:textfield] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="h-7 shrink-0 rounded border border-gray-600 bg-zinc-700 px-2 text-right text-sm text-white outline-none [appearance:textfield] focus:placeholder:text-transparent focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       <span className="text-[13px] text-gray-400">%</span>
       {/* 색상 칸 — 아래 색상 줄 맨 오른쪽 두 동그라미(24px, 사이 간격은 8칸을 양끝 맞춤으로 나눈 값)의 바깥 두 끝선에 이 칸의 양 끝을 맞춘다. 입력칸과 같은 너비다. */}

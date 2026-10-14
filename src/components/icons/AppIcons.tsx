@@ -96,7 +96,7 @@ export function ReturnArrowIcon(props: SVGProps<SVGSVGElement>) {
 // 설정창의 되돌리기(저장값으로 되돌리기) 버튼 — 시계 바늘이 있는 반시계 화살표로 "이전 상태로"를 나타낸다.
 export function HistoryIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
       <path d="M3 3v5h5" />
       <path d="M12 7v5l4 2" />
@@ -153,9 +153,10 @@ export function ClockIcon(props: SVGProps<SVGSVGElement>) {
 
 // 화면 스크린샷 — 점선 사각형 모양.
 // filled: 점선 사각형 안쪽을 35% 투명하게 채운다 — 열려 있을 때의 표시다(점선 선분은 닫힌 모양이 아니라서 fill 클래스가 먹지 않는다).
+// 점선 사각형(5~19)이 20px에서 옆의 전체화면 아이콘(3~21)과 같은 15px로 보이도록 격자를 안쪽(3.17~21.83)에 맞춘다. 오른쪽 아래 + 표시는 사각형 크기에 영향을 주지 않는다.
 export function ScreenshotIcon({ filled = false, ...props }: SVGProps<SVGSVGElement> & { filled?: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <svg viewBox="3.17 3.17 18.67 18.67" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
       {filled && <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" fillOpacity={0.35} stroke="none" />}
       <path d="M7 19a2 2 0 0 1-2-2" />
       <path d="M5 13v-2" />

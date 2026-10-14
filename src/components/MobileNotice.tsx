@@ -6,7 +6,7 @@ export default function MobileNotice() {
     <div role="alert" className="flex min-h-screen flex-col items-center justify-center gap-6 bg-black px-8 text-center text-white">
       <MarketryLogo className="h-auto w-48" />
       <p className="text-lg font-medium">PC에서 접속해 주세요.</p>
-      <p className="text-sm text-gray-400">모바일 화면은 지원하지 않습니다.</p>
+      <p className="text-sm text-gray-300">모바일 화면은 지원하지 않습니다.</p>
     </div>
   )
 }

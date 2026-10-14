@@ -72,10 +72,10 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
                   className="absolute left-0 top-full z-50 mt-[7px] w-60 whitespace-normal rounded-md border border-gray-500 bg-[#363639] p-3 text-sm font-normal tracking-normal text-white shadow-xl"
                 >
                   <p className="font-semibold">제외 종목 ({excludedStocks.length})</p>
-                  <p className="mt-1 text-xs leading-relaxed text-gray-400">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>
+                  <p className="mt-1 text-xs font-medium leading-relaxed text-gray-300">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>
                   <div className="mt-2 border-t border-gray-500 pt-2">
                     {/* 목록은 시가총액이 큰 10종목까지만 적는다. 10종목이 넘으면 제목에 "10 종목"이라고 밝힌다. */}
-                    <p className="mb-1 text-xs text-gray-500">{excludedStocks.length > MAX_LISTED_STOCKS ? `시가총액 순 ${MAX_LISTED_STOCKS} 종목` : '시가총액 순'}</p>
+                    <p className="mb-1 text-xs font-medium text-gray-300">{excludedStocks.length > MAX_LISTED_STOCKS ? `시가총액 순 ${MAX_LISTED_STOCKS} 종목` : '시가총액 순'}</p>
                     <ul className="space-y-1">
                       {excludedStocks.slice(0, MAX_LISTED_STOCKS).map(stock => (
                         <li key={stock.stockCode} className="flex items-center justify-between gap-2">

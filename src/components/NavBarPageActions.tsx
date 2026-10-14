@@ -22,8 +22,8 @@ const BUTTON_BASE_CLASS =
 // 아이콘만 있는 버튼은 평소·마우스를 올릴 때·켜져 있을 때 모두 틀 없이 아이콘만 보인다(켜진 상태는 아이콘 색과 안쪽 채움으로 알린다).
 // 위의 프로필 사진과 아래 설정창 사이에서 위·아래 간격이 같도록(각각 14px) 3.5px 아래로 내린다.
 const ICON_FRAME_CLASS = 'relative top-[3.5px] bg-transparent'
-// 선 굵기는 아이콘마다 크기에 맞춰 화면에 그려지는 굵기가 같게(약 1.35px, 설정창 저장·되돌리기와 같다) 준다 — 크게 그린 스크린샷은 1.35, 설정은 1.6, 18px 전체화면은 1.8.
-// 폭 28px — 18px 아이콘 사이가 10px이고(스크린샷·설정은 그림 안쪽 여백이 커서 20px로 그려 눈에 보이는 크기를 맞춘다) 설정창 저장·되돌리기 아이콘과 크기·간격이 같다. 묶음의 간격은 NavSubBar가 0으로 둔다.
+// 세 아이콘 모두 20px로 그린다(눈에 보이는 크기가 같도록 스크린샷 아이콘은 그림 격자를 안쪽에 맞춰 두었다). 선 값은 화면 굵기가 약 1.35px가 되게 준다 — 설정창 저장·되돌리기와 같다.
+// 폭 28px — 18px 아이콘 사이가 10px이고 설정창 저장·되돌리기 아이콘과 크기·간격이 같다. 묶음의 간격은 NavSubBar가 0으로 둔다.
 const BUTTON_CLASS = `${BUTTON_BASE_CLASS} w-7`
 // 툴바 칩 안의 새로고침 칸 — 칩(24px) 안에서 사방 1px씩 띄워 22px 높이에 폭은 18px로 좁혀 세로로 긴 직사각형이고, 평소엔 배경 없이 아이콘이 청록(--brand)이고, 올리면 글자색은 그대로 두고 다른 칩과 같은 밝은 회색(#838385) 면만 깔린다.
 const CELL_CLASS = 'm-px flex h-[22px] w-[18px] items-center justify-center border-0 bg-transparent text-[var(--brand)] outline-none transition-colors hover:bg-[#838385] focus-visible:bg-[#838385]'
@@ -139,7 +139,7 @@ export default function NavBarPageActions({
         className={`flex h-7 w-7 items-center justify-center border-0 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${ICON_FRAME_CLASS} ${isScreenshotOpen ? 'text-[var(--brand)]' : 'text-gray-300'}`}
         onClick={onOpenShare}
       >
-        <ScreenshotIcon filled={isScreenshotOpen} strokeWidth={1.35} className="h-6 w-6" />
+        <ScreenshotIcon filled={isScreenshotOpen} strokeWidth={1.26} className="h-5 w-5" />
       </button>}
       <button
         type="button"
@@ -150,7 +150,7 @@ export default function NavBarPageActions({
         }`}
         onClick={onToggleFullscreen}
       >
-        {isNativeFullscreen ? <MinimizeIcon strokeWidth={1.8} className="h-[18px] w-[18px]" /> : <MaximizeIcon strokeWidth={1.8} className="h-[18px] w-[18px]" />}
+        {isNativeFullscreen ? <MinimizeIcon strokeWidth={1.6} className="h-5 w-5" /> : <MaximizeIcon strokeWidth={1.6} className="h-5 w-5" />}
       </button>
       {onToggleSettings && (
         <button
