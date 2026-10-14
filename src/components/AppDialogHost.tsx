@@ -40,10 +40,12 @@ export default function AppDialogHost() {
         // 색은 설정창 말풍선·NXT 안내창과 같은 크림색 계열이다.
         className={`w-full max-w-sm p-5 ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-[#ff4d2e]' : ''}`}
       >
-        <h2 id="app-dialog-title" className={`text-base font-bold ${dialog.adminOnly ? 'text-[#d92b0f]' : 'text-black'}`}>
+        <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-[#d92b0f]' : 'text-black'}`}>
           <PopupKindBadge kind={dialog.kind === 'confirm' ? '결정' : '알림'} />
-          {dialog.title}
-          {dialog.adminOnly && ' ⚠'}
+          <span>
+            {dialog.title}
+            {dialog.adminOnly && ' ⚠'}
+          </span>
         </h2>
         <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-black">{dialog.message}</p>
         <div className="mt-6 flex justify-end gap-2">
