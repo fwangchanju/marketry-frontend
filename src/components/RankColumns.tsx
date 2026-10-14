@@ -155,13 +155,13 @@ export default function RankColumns({
                     type="button"
                     className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent transition-colors hover:bg-white/35 focus-visible:outline focus-visible:outline-white`}
                     style={nameStyle}
-                    title={item.sectorName}
+                    data-hint={item.sectorName}
                     onClick={() => (indexMarket ? onSelectIndex?.(indexMarket) : onSelectSector?.(item.sectorName))}
                   >
                     {item.sectorName}
                   </button>
                 ) : (
-                  <span className={nameClassName} style={nameStyle} title={item.sectorName}>{item.hiddenCount !== undefined ? `외 ${item.hiddenCount}개` : item.sectorName}</span>
+                  <span className={nameClassName} style={nameStyle} data-hint={item.sectorName}>{item.hiddenCount !== undefined ? `외 ${item.hiddenCount}개` : item.sectorName}</span>
                 )}
               </div>
             )

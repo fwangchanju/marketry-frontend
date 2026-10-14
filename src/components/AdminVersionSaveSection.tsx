@@ -95,7 +95,8 @@ export default function AdminVersionSaveSection() {
               <button
                 type="button"
                 onClick={() => handleRestore(version.id, version.label)}
-                title="불러오기"
+                data-hint="불러오기"
+                aria-label="불러오기"
                 className="nes-btn border-[var(--accent)] bg-[var(--accent)] px-2 py-0.5 text-sm text-black hover:brightness-125"
               >
                 ⤴
@@ -103,7 +104,8 @@ export default function AdminVersionSaveSection() {
               <button
                 type="button"
                 onClick={() => handleDelete(version.id, version.label)}
-                title="삭제"
+                data-hint="삭제"
+                aria-label="삭제"
                 className="nes-btn border-red-600 bg-red-600 px-2 py-0.5 text-sm text-white hover:bg-red-700"
               >
                 ✕

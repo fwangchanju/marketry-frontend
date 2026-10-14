@@ -97,7 +97,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
         <button
           type="button"
           aria-label="로그인"
-          title="로그인"
+          data-hint="로그인"
           onClick={() => requireLogin(`${pathname}${search}${hash}`, { hideMessage: true })}
           className="relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center rounded-[12%] border-0 bg-zinc-600 p-0 text-gray-300 transition-colors hover:bg-zinc-500"
         >
@@ -160,7 +160,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                       onClick={handleToggleTestMember}
                       disabled={isLoading || isDevSignupPending}
                       aria-pressed={isTestMember}
-                      title={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다.'}
+                      data-hint={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다.'}
                       className="w-full rounded-lg border-0 bg-cyan-700 py-2 text-sm font-semibold text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
                     >
                       {isDevSignupPending ? '전환 중…' : isTestMember ? '개발 · 원래 계정으로 돌아가기' : '개발 · 테스트 회원으로 전환'}
