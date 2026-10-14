@@ -617,7 +617,7 @@ export default function MapPage() {
                 // 마지막 이름은 링크가 아니라 현재 위치 표시(흰색)다.
                 <nav
                   aria-label="업종 이동 경로"
-                  className="flex h-7 w-full shrink-0 items-center truncate bg-black/70 text-lg leading-none font-bold"
+                  className="flex h-7 w-full shrink-0 items-center truncate bg-black/70 pl-[7px] text-lg leading-none font-bold"
                 >
                   <button
                     type="button"
