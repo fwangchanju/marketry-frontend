@@ -188,7 +188,7 @@ function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
               onClick={async () => {
                 // 확인 창이 뜨는 동안 우클릭 팝업은 먼저 닫는다(두 창이 겹쳐 보이지 않게).
                 onClose()
-                if (!await appConfirm(`${excludeSector.name}\n트리맵에서 제외하시겠습니까?`, { title: '업종 제외' })) return
+                if (!await appConfirm(`[${excludeSector.name}]\n맵에서 제외하시겠습니까?`, { title: '업종 제외' })) return
                 onExcludeSector(excludeSector.id, excludeSector.name)
               }}
             >

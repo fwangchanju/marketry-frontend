@@ -85,7 +85,7 @@ export default function MarketryPublishControls() {
   }
 
   const handleRestore = async (version: MarketryPublication) => {
-    const confirmed = await appConfirm(`${version.label}\nMARKETRY를 이 버전으로 되돌리시겠습니까?\n모든 사용자에게 보이는 MARKETRY가 바뀝니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
+    const confirmed = await appConfirm(`[${version.label}]\nMARKETRY를 이 버전으로 되돌리시겠습니까?\n모든 사용자에게 보이는 MARKETRY가 바뀝니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
     if (!confirmed) return
     setBusyMessage('MARKETRY를 롤백 중입니다.')
     try {

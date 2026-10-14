@@ -1448,10 +1448,10 @@ export default function AdminStockTable({
       }
       const newNames = plan.newSectors.map(path => path.join(' > '))
       const summary = [
-        `바뀌는 종목 ${plan.changedCount}개`,
+        `변경되는 종목은 ${plan.changedCount}개입니다.`,
         newNames.length > 0 ? `새로 만들 분류 ${newNames.length}개\n  ${newNames.slice(0, 5).join('\n  ')}${newNames.length > 5 ? '\n  …' : ''}` : '새로 만들 분류 없음',
         ...notes,
-        '적용할까요?',
+        '적용하시겠습니까?',
       ].join('\n')
       if (!(await appConfirm(summary, { title: '엑셀 적용' }))) return
 

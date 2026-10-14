@@ -41,9 +41,9 @@ export default function AppDialogHost() {
         className={`w-full max-w-sm p-5 ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-[#ff4d2e]' : ''}`}
       >
         <h2 id="app-dialog-title" className={`text-base font-bold ${dialog.adminOnly ? 'text-[#d92b0f]' : 'text-black'}`}>
-          {dialog.adminOnly && '⚠ '}
           <PopupKindBadge kind={dialog.kind === 'confirm' ? '결정' : '알림'} />
           {dialog.title}
+          {dialog.adminOnly && ' ⚠'}
         </h2>
         {dialog.adminOnly && (
           <p className="mt-2 bg-[#ff4d2e] px-2 py-1 text-[13px] font-bold text-white">ADMIN 전용 · 모든 사용자 화면에 바로 반영됩니다</p>
