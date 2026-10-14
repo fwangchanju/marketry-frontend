@@ -139,7 +139,7 @@ export default function NavBarPageActions({
         className={`flex h-7 w-7 items-center justify-center border-0 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${ICON_FRAME_CLASS} ${isScreenshotOpen ? 'text-[var(--brand)]' : 'text-gray-300'}`}
         onClick={onOpenShare}
       >
-        <ScreenshotIcon filled={isScreenshotOpen} strokeWidth={1.26} className="h-5 w-5" />
+        <ScreenshotIcon filled={isScreenshotOpen} className="h-5 w-5" />
       </button>}
       <button
         type="button"
@@ -161,7 +161,7 @@ export default function NavBarPageActions({
           className={`${BUTTON_CLASS} ${ICON_FRAME_CLASS} ${isSettingsOpen ? 'text-[var(--accent)]' : 'text-gray-300'}`}
           onClick={onToggleSettings}
         >
-          <SettingsIcon strokeWidth={1.6} className={`h-5 w-5 ${isSettingsOpen ? FILLED_ICON_CLASS : ''}`} />
+          <SettingsIcon strokeWidth={1.44} className={`h-5 w-5 ${isSettingsOpen ? FILLED_ICON_CLASS : ''}`} />
         </button>
       )}
     </>

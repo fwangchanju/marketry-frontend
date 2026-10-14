@@ -8,14 +8,16 @@ interface SettingsSectionIconProps {
 }
 
 // 설정창 메뉴 줄의 아이콘 — 상단 영역 아이콘과 같은 선 아이콘이다(24×24 격자, 선 끝·꺾임 둥글게).
-// 종목 구성·업종 분류·색상은 Lucide(layout-dashboard·network·palette), 종목 박스·북마크는 Tabler(text-size·bookmark) 모양이다.
+// 업종 분류·색상은 Lucide(network·palette), 종목 구성·종목 박스·북마크는 Tabler(chart-treemap·text-size·bookmark) 모양이다.
 const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
   composition: (
     <>
-      <rect width="7" height="9" x="3" y="3" rx="1" />
-      <rect width="7" height="5" x="14" y="3" rx="1" />
-      <rect width="7" height="9" x="14" y="12" rx="1" />
-      <rect width="7" height="5" x="3" y="16" rx="1" />
+      <path d="M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12" />
+      <path d="M12 4v16" />
+      <path d="M4 15h8" />
+      <path d="M12 12h8" />
+      <path d="M16 12v8" />
+      <path d="M16 16h4" />
     </>
   ),
   industry: (
