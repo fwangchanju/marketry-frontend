@@ -97,7 +97,7 @@ function DraggableSectorHandle({
     data: { sectorId, parentId },
     disabled: !enabled,
   })
-  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '드래그해 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 touch-none items-center justify-center border-0 bg-transparent text-gray-400 hover:text-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-40 ${isDragging ? 'opacity-30' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
+  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 touch-none items-center justify-center border-0 bg-transparent text-gray-400 hover:text-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-40 ${isDragging ? 'opacity-30' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
 }
 
 // 끄는 중 마우스의 세로 위치 — 손잡이를 열 안으로 가두는 제한(keepInColumnVertically) 때문에 손잡이 위치는 맨 위·맨 아래에서 멈추므로,
@@ -136,7 +136,7 @@ function DraggableNumberBadge({ sectorId, parentId, onPress, onClickBadge, child
       }}
       onClick={onClickBadge}
       type="button"
-      data-hint="끌어서 다른 업종 안으로 이동"
+      data-hint="끌어서 다른 업종 하위로 이동"
       className={`${NUMBER_BADGE_CLASS} cursor-grab touch-none ${isDragging ? 'opacity-40' : ''}`}
     >
       {children}
@@ -558,7 +558,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const renderRow = (row: Row) => {
     if (row.type === 'add-child') {
       const parentId = row.parentId
-      const quotedChain = row.parentPath.map(name => `'${name}'`).join(' - ')
+      const chainLabel = `[${row.parentPath.join(' › ')}]`
       return (
         <tr key={`add-child-${parentId}`}>
           <td className="py-0.5 text-left" style={{ paddingLeft: `${row.depth * 20 + 8}px` }}>
@@ -574,8 +574,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   if (e.key === 'Escape') setAddingChildFor(null)
                 }}
                 placeholder={`${row.depth === 1 ? '중분류' : '소분류'} 추가`}
-                data-hint={`${quotedChain} 업종 내 세부항목 추가`}
-                aria-label={`${quotedChain} 업종 내 세부항목 이름`}
+                data-hint={`${chainLabel} 하위 업종 추가`}
+                aria-label={`${chainLabel} 하위 업종 이름`}
                 className="h-7 w-40 rounded-md border-0 bg-[#3b3b3b] px-2 text-sm font-medium text-white outline-none placeholder:indent-[3px] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
               />
             </div>
@@ -649,7 +649,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                     <button
                       type="button"
                       data-no-row-select
-                      data-hint={`${movingSector.name}을(를) ${sector.name} 안으로 이동`}
+                      data-hint={`[${movingSector.name}] 업종을 [${sector.name}] 하위로 이동`}
                       onClick={() => void confirmMove(sector)}
                       className="ml-auto mr-2 h-6 shrink-0 rounded border border-[var(--brand)] bg-transparent px-2 text-xs font-bold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-black"
                     >
@@ -879,7 +879,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
               ))}
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              <button type="button" data-hint="다른 업종 안으로 이동" aria-label="다른 업종 안으로 이동" disabled={!selectedSector} onClick={() => selectedSector && setMovingSectorId(selectedSector.id)} className={`${ICON_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-40`}><span aria-hidden="true" className="text-sm leading-none">↪</span></button>
+              <button type="button" data-hint="다른 업종 하위로 이동" aria-label="다른 업종 하위로 이동" disabled={!selectedSector} onClick={() => selectedSector && setMovingSectorId(selectedSector.id)} className={`${ICON_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-40`}><span aria-hidden="true" className="text-sm leading-none">↪</span></button>
               {movingSector && (
                 <button type="button" onClick={cancelMove} className="h-6 rounded-md border border-gray-600 bg-zinc-700 px-2 text-xs font-medium text-white hover:bg-white/10">이동 취소</button>
               )}
