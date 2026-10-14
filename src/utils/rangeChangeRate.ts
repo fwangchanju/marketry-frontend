@@ -1,4 +1,4 @@
-import type { MarketMapItem, MarketMapSectorNode } from '@/types/api'
+import type { TreemapItem, TreemapSectorNode } from '@/types/api'
 
 export interface ExcludedStock {
   stockCode: string
@@ -6,7 +6,7 @@ export interface ExcludedStock {
 }
 
 export interface RangeChangeRateResult {
-  items: MarketMapSectorNode[]
+  items: TreemapSectorNode[]
   // 기준일 지도에 없어서 계산하지 못하고 뺀 종목(신규 상장 등) — 시가총액이 큰 순서다.
   excludedStocks: ExcludedStock[]
 }
@@ -20,9 +20,9 @@ const roundTo2 = (value: number) => Math.round(value * 100) / 100
 export type RangeBaseKind = 'close' | 'previousClose'
 
 // endPriceLabel — 종료일 가격의 이름(종료일의 종가 지도면 '종가', 장중 실시간 지도면 '현재가'). 종목 팝업에 보인다.
-export function buildRangeChangeRateTree(endRoots: MarketMapSectorNode[], startRoots: MarketMapSectorNode[], baseKind: RangeBaseKind = 'close', endPriceLabel = '종가'): RangeChangeRateResult {
+export function buildRangeChangeRateTree(endRoots: TreemapSectorNode[], startRoots: TreemapSectorNode[], baseKind: RangeBaseKind = 'close', endPriceLabel = '종가'): RangeChangeRateResult {
   const basePriceByCode = new Map<string, number>()
-  const collectBasePrices = (nodes: MarketMapSectorNode[]) => {
+  const collectBasePrices = (nodes: TreemapSectorNode[]) => {
     for (const node of nodes) {
       for (const item of node.items) {
         const price = baseKind === 'close' ? item.currentPrice : item.lastPrice
@@ -34,7 +34,7 @@ export function buildRangeChangeRateTree(endRoots: MarketMapSectorNode[], startR
   collectBasePrices(startRoots)
 
   const excluded: { stock: ExcludedStock; marketValue: number }[] = []
-  const convertItem = (item: MarketMapItem): MarketMapItem | null => {
+  const convertItem = (item: TreemapItem): TreemapItem | null => {
     const basePrice = basePriceByCode.get(item.stockCode)
     if (basePrice === undefined) {
       excluded.push({ stock: { stockCode: item.stockCode, stockName: item.alias ?? item.stockName }, marketValue: item.totalMarketValue })
@@ -42,7 +42,7 @@ export function buildRangeChangeRateTree(endRoots: MarketMapSectorNode[], startR
     }
     return { ...item, lastPrice: basePrice, changeRate: roundTo2((item.currentPrice / basePrice - 1) * 100), rangeLabels: { base: '기준가', end: endPriceLabel } }
   }
-  const convertNodes = (nodes: MarketMapSectorNode[]): MarketMapSectorNode[] =>
+  const convertNodes = (nodes: TreemapSectorNode[]): TreemapSectorNode[] =>
     nodes.flatMap(node => {
       const items = node.items.flatMap(item => convertItem(item) ?? [])
       const children = convertNodes(node.children)

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { CalendarIcon, ChevronDownIcon, ClockIcon } from '@/components/icons/MarketMapIcons'
+import { CalendarIcon, ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
-import { useMarketMapSnapshotDays, useTradingDayGap } from '@/hooks/useMarketMap'
+import { useSnapshotDays, useTradingDayGap } from '@/hooks/useTreemap'
 import Spinner from '@/components/Spinner'
-import { toMarketMapSnapshotDateLabel } from '@/utils/format'
+import { toSnapshotDateLabel } from '@/utils/format'
 import type { MarketQuery } from '@/types/api'
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -52,7 +52,7 @@ const addMonths = (month: ShownMonth, delta: number): ShownMonth => {
 
 // 월 선택 화면의 한 칸 — 그 달의 종가 지도 목록을 받아서 비어 있으면(데이터가 없는 달) 누르지 못하게 한다. 받기 전이나 오류일 때는 막지 않는다.
 function MonthChoice({ market, month, isCurrent, isAllowed, onChoose }: { market: MarketQuery; month: ShownMonth; isCurrent: boolean; isAllowed: boolean; onChoose: () => void }) {
-  const { data: days } = useMarketMapSnapshotDays(market, toMonthKey(month), { retry: 1 })
+  const { data: days } = useSnapshotDays(market, toMonthKey(month), { retry: 1 })
   const isEmpty = days !== undefined && days.length === 0
   const disabled = !isAllowed || isEmpty
   return (
@@ -110,11 +110,11 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
     setView(next)
   }
   // 서버 오류가 계속되면 기본 재시도(3회)가 달력을 30초 넘게 기다리게 하므로 1번만 다시 시도하고, 그 뒤에는 "다시 시도"로 받는다.
-  const { data: days, isLoading, isError, refetch } = useMarketMapSnapshotDays(market, monthKey, { retry: 1 })
+  const { data: days, isLoading, isError, refetch } = useSnapshotDays(market, monthKey, { retry: 1 })
   const closingTimeByDate = new Map((days ?? []).map(day => [day.date, day.snapshotTime]))
   // 이전 달 목록도 함께 본다 — 데이터가 없는 달로는 넘어가지 못하게 하고, 앞선 거래일이 있는지도 따진다.
   const previousMonthKey = toMonthKey(addMonths(month, -1))
-  const { data: previousMonthDays, isSuccess: isPreviousMonthLoaded } = useMarketMapSnapshotDays(market, previousMonthKey, { retry: 1 })
+  const { data: previousMonthDays, isSuccess: isPreviousMonthLoaded } = useSnapshotDays(market, previousMonthKey, { retry: 1 })
   // 이전 달 목록을 받았는데 비어 있으면 그 달로는 넘어가지 않는다(받기 전이나 오류일 때는 막지 않는다).
   const isPreviousMonthEmpty = isPreviousMonthLoaded && previousMonthDays.length === 0
   const firstDataDate = [...(previousMonthDays ?? []), ...(days ?? [])].map(day => day.date).sort()[0] ?? null
@@ -359,8 +359,8 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
 
   const isRangeCalendar = isRangeMode && onSelectRange !== undefined
   // 기간 달력은 두 달을 나란히 두므로 달마다 원이 돌지 않게 여기서 로딩을 합쳐 원 하나만 가운데에 그린다(달력 안의 조회와 같은 키라 요청은 늘지 않는다).
-  const rangeLeftDays = useMarketMapSnapshotDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen && isRangeCalendar, retry: 1 })
-  const rangeRightDays = useMarketMapSnapshotDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen && isRangeCalendar, retry: 1 })
+  const rangeLeftDays = useSnapshotDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen && isRangeCalendar, retry: 1 })
+  const rangeRightDays = useSnapshotDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen && isRangeCalendar, retry: 1 })
   const isRangeLoading = rangeLeftDays.isLoading || rangeRightDays.isLoading
   const isRangeError = !isRangeLoading && (rangeLeftDays.isError || rangeRightDays.isError)
   // 오류 화면의 "다시 시도"는 실패한 달만 다시 받는다.
@@ -428,7 +428,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
 
   // ── 지금 버튼 — 날짜 칸을 가장 최근 지도의 날짜로 채운다(적용을 눌러야 지도가 바뀐다). 하루는 실시간이고, 기간은 종료일이 된다. ──
   // 최근 거래일의 종가 지도가 있으면 그 시각, 아직 없으면(장중) 실시간 지도의 시각을 종료로 쓴다.
-  const { data: liveMonthDays } = useMarketMapSnapshotDays(market, liveDate?.slice(0, 7) ?? '', { enabled: isOpen && isRangeCalendar && liveDate !== null, retry: 1 })
+  const { data: liveMonthDays } = useSnapshotDays(market, liveDate?.slice(0, 7) ?? '', { enabled: isOpen && isRangeCalendar && liveDate !== null, retry: 1 })
   const pickToday = () => {
     if (liveDate === null) return
     if (isRangeCalendar) {
@@ -471,7 +471,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   )
 
   const dayLabel = draftDay
-    ? (draftDay.snapshotTime ? toMarketMapSnapshotDateLabel(draftDay.snapshotTime) : `${draftDay.date} (${WEEKDAY_LABELS[new Date(`${draftDay.date}T00:00:00`).getDay()]})`)
+    ? (draftDay.snapshotTime ? toSnapshotDateLabel(draftDay.snapshotTime) : `${draftDay.date} (${WEEKDAY_LABELS[new Date(`${draftDay.date}T00:00:00`).getDay()]})`)
     : '-'
 
   return (
@@ -568,12 +568,12 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 <span className="flex items-center gap-2">
                   <span className="flex items-center gap-2">
                     <span className="font-semibold text-[var(--accent)]">시작일</span>
-                    {draftStart && <span className="text-gray-200">{toMarketMapSnapshotDateLabel(draftStart.snapshotTime)}</span>}
+                    {draftStart && <span className="text-gray-200">{toSnapshotDateLabel(draftStart.snapshotTime)}</span>}
                   </span>
                   <span aria-hidden="true" className="text-white">~</span>
                   <span className="flex items-center gap-2">
                     <span className="font-semibold text-[var(--accent)]">종료일</span>
-                    {draftEnd && <span className="text-gray-200">{toMarketMapSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
+                    {draftEnd && <span className="text-gray-200">{toSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
                   </span>
                   {/* 고른 기간의 길이라 한눈에 보이게 분류 배지의 "분류" 칸과 같은 짙은 청록 배지로 둔다. */}
                   {rangeDayCount !== null && <span className="rounded bg-cyan-700 px-1.5 py-0.5 font-semibold leading-none text-white">{rangeDayCount}</span>}

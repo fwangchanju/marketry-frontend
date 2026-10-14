@@ -1,10 +1,10 @@
 import { useLayoutEffect, useRef } from 'react'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import {
-  resolveMarketMapColor,
-  resolveMarketMapExtremeColor,
+  resolveTreemapColor,
+  resolveTreemapExtremeColor,
   type ColorScaleConfig,
-} from '@/utils/marketMapColorScale'
+} from '@/utils/treemapColorScale'
 
 export interface RankColumnItem {
   key: string
@@ -122,13 +122,13 @@ export default function RankColumns({
                   <div
                     className="absolute bottom-0 left-[18%] right-[18%] rounded-sm"
                     style={{
-                      backgroundColor: item.isReference ? highlightColor : resolveMarketMapColor(item.value, colorScale),
+                      backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                       height: `${heightPercent}%`,
                     }}
                   />
                   <RankColumnValue
                     value={item.value}
-                    color={resolveMarketMapExtremeColor(item.value, colorScale)}
+                    color={resolveTreemapExtremeColor(item.value, colorScale)}
                     heightPercent={heightPercent}
                   />
                 </div>

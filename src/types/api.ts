@@ -87,7 +87,7 @@ export const MarketValueTierItemSchema = z.object({
 export type MarketValueTierItem = z.infer<typeof MarketValueTierItemSchema>
 export const MarketValueTierListResponseSchema = z.array(MarketValueTierItemSchema)
 
-const MarketMapItemSchema = z.object({
+const TreemapItemSchema = z.object({
   stockCode: z.string(),
   stockName: z.string(),
   // 배정된 약칭 — 없으면 null. 박스 라벨 등 alias를 우선해야 하는 표시는 "alias ?? stockName"으로 계산한다.
@@ -101,47 +101,47 @@ const MarketMapItemSchema = z.object({
   // 기간 등락률에서만 프론트가 붙인다(서버는 보내지 않는다) — 종목 팝업의 가격 줄 이름. lastPrice는 기준가, currentPrice는 종료일의 종가(장중이면 현재가)다.
   rangeLabels: z.object({ base: z.string(), end: z.string() }).optional(),
 })
-export type MarketMapItem = z.infer<typeof MarketMapItemSchema>
+export type TreemapItem = z.infer<typeof TreemapItemSchema>
 
-export interface MarketMapSectorNode {
+export interface TreemapSectorNode {
   sectorId: number
   sectorName: string
   totalMarketValue: number
   isExcluded: boolean
-  children: MarketMapSectorNode[]
-  items: MarketMapItem[]
+  children: TreemapSectorNode[]
+  items: TreemapItem[]
 }
 
-const MarketMapSectorNodeSchema: z.ZodType<MarketMapSectorNode> = z.lazy(() =>
+const TreemapSectorNodeSchema: z.ZodType<TreemapSectorNode> = z.lazy(() =>
   z.object({
     sectorId: z.number(),
     sectorName: z.string(),
     totalMarketValue: z.number(),
     isExcluded: z.boolean(),
-    children: z.array(MarketMapSectorNodeSchema),
-    items: z.array(MarketMapItemSchema),
+    children: z.array(TreemapSectorNodeSchema),
+    items: z.array(TreemapItemSchema),
   }),
 )
 
 // SnapshotResponse<T>를 그대로 안 쓴 이유: marketOverview는 트리 items와 별개인 마켓 전체 단위 값
-// 하나라, 여러 엔드포인트가 공유하는 제네릭 래퍼에 이 필드만을 위해 얹을 수 없다(백엔드 MarketMapResponse
+// 하나라, 여러 엔드포인트가 공유하는 제네릭 래퍼에 이 필드만을 위해 얹을 수 없다(백엔드 TreemapResponse
 // 참고). market이 ALL_STOCK처럼 마켓 여럿을 합친 조회면 단일 지수값이 없어 null.
-export const MarketMapResponseSchema = z.object({
+export const TreemapResponseSchema = z.object({
   snapshotTime: z.string().nullable(),
-  items: z.array(MarketMapSectorNodeSchema),
+  items: z.array(TreemapSectorNodeSchema),
   marketOverview: MarketOverviewItemSchema.nullable(),
   // 선택한 분류의 갱신 시각: MARKETRY는 올린 업종 정보·종목 배정 수정, 거래소는 종목 정보 동기화.
   taxonomyUpdatedAt: z.string().nullish(),
   afterHoursStart: z.string().nullish(),
 })
-export type MarketMapResponse = z.infer<typeof MarketMapResponseSchema>
+export type TreemapResponse = z.infer<typeof TreemapResponseSchema>
 
-// 박스/범례 등락률 컬러 스케일의 기준값 하나(admin이 개별 CRUD하는 단위) — src/utils/marketMapColorScale.ts 참고.
+// 박스/범례 등락률 컬러 스케일의 기준값 하나(admin이 개별 CRUD하는 단위) — src/utils/treemapColorScale.ts 참고.
 // side는 별도 필드로 두지 않고 thresholdPercent의 부호로 표현한다(음수=하락, 0=기준, 양수=상승).
 // id는 서버가 발급 — 로컬에서 막 추가해서 아직 서버에 반영 안 된 행은 id가 없다(생성 응답으로 받기 전까지).
 // colorLabel은 백엔드에서 ColorTone enum(RED/ORANGE/...)이라 대문자로 오는데, 프론트 내부(톤 프리셋
 // 버튼 이름 비교 등)는 전부 소문자 기준이라 파싱 시점에 소문자로 변환해서 그 차이를 여기서 흡수한다.
-export const MarketMapScaleThresholdSchema = z.object({
+export const TreemapScaleThresholdSchema = z.object({
   id: z.number(),
   thresholdPercent: z.number(),
   color: z.string(),
@@ -152,12 +152,12 @@ export const MarketMapScaleThresholdSchema = z.object({
 })
 
 // GET /map/scale 응답
-export const MarketMapScaleResponseSchema = z.object({
-  thresholds: z.array(MarketMapScaleThresholdSchema),
+export const TreemapScaleResponseSchema = z.object({
+  thresholds: z.array(TreemapScaleThresholdSchema),
 })
-export type MarketMapScaleResponse = z.infer<typeof MarketMapScaleResponseSchema>
+export type TreemapScaleResponse = z.infer<typeof TreemapScaleResponseSchema>
 
-// 백엔드 /api/admin/market-map/* → /api/custom/* 전환(가입/로그인 지시서)에 맞춰 DTO 필드명도
+// 백엔드 /api/admin/treemap/* → /api/custom/* 전환(가입/로그인 지시서)에 맞춰 DTO 필드명도
 // category* → sector* 로 바뀌었다. /api/map 응답도 category → sector 정리(instructions-sector-rename.md)로
 // 같은 sectorId/sectorName을 쓰게 됐지만, 두 응답은 여전히 별개 계약이다.
 export const SectorItemSchema = z.object({

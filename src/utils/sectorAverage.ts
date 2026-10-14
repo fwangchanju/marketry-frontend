@@ -1,4 +1,4 @@
-import type { MarketMapSectorNode, MarketMapItem } from '@/types/api'
+import type { TreemapSectorNode, TreemapItem } from '@/types/api'
 
 export interface SectorAverage {
   weightedAvg: number | null
@@ -6,7 +6,7 @@ export interface SectorAverage {
 }
 
 // node.items + 모든 하위 섹터의 items(재귀) — 하위 섹터가 isExcluded여도 포함한다.
-export function collectItems(node: MarketMapSectorNode): MarketMapItem[] {
+export function collectItems(node: TreemapSectorNode): TreemapItem[] {
   const items = [...node.items]
   for (const child of node.children) items.push(...collectItems(child))
   return items
@@ -18,7 +18,7 @@ export function collectItems(node: MarketMapSectorNode): MarketMapItem[] {
 // 그래프·텔레그램 캡션이 전부 이 값을 봐야 화면 숫자가 일치한다. 반드시 필터 전 원본 노드에 적용해야
 // 한다 — 필터로 거른 뒤의 items/children으로 새로 만든 노드에 적용하면 이 규칙이 깨진다.
 export function computeSectorAverage(
-  node: MarketMapSectorNode,
+  node: TreemapSectorNode,
   excludedTierLabels: Set<string>,
 ): SectorAverage {
   let weightedSum = 0

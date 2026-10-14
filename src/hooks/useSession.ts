@@ -14,9 +14,9 @@ const KEEP_ALIVE_CHECK_MS = 60_000
 
 const LAST_USER_ID_STORAGE_KEY = 'auth.lastUserId'
 // 계정마다 뜻이 달라지는 커스텀 모드 관련 저장값 — 로그아웃/계정 전환 시 이전 계정의 값이 새 계정
-// 화면에 잠깐이라도 새어나가지 않도록 지운다. marketMap.excludedSectorNames는 sectorId가 계정마다
+// 화면에 잠깐이라도 새어나가지 않도록 지운다. treemap.excludedSectorNames는 sectorId가 계정마다
 // 다른 섹터를 가리킬 수 있어 특히 중요하다.
-const CUSTOM_MODE_STORAGE_KEYS = ['marketMap.isCustom', 'marketMap.excludedSectorNames']
+const CUSTOM_MODE_STORAGE_KEYS = ['treemap.isCustom', 'treemap.excludedSectorNames']
 
 function clearCustomModeStorage() {
   for (const key of CUSTOM_MODE_STORAGE_KEYS) {

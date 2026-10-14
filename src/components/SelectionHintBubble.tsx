@@ -1,4 +1,4 @@
-import { CloseIcon } from '@/components/icons/MarketMapIcons'
+import { CloseIcon } from '@/components/icons/AppIcons'
 import { HINT_BUBBLE_COLOR_CLASS } from '@/components/hintBubbleStyle'
 
 // 여러 줄 선택 안내 — 표 아래쪽 가운데에 잠깐 뜬다. 보이는 쪽(표 영역)이 relative여야 한다.

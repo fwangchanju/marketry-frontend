@@ -2,7 +2,7 @@
 // 비로그인의 설정은 이 탭의 sessionStorage에만 남으므로, 앱이 시작될 때 그 키들을 지운다. 로그인 사용자의 설정은 서버에 저장되고
 // 세션 정보(auth.*)와 로컬 개발용 비로그인 확인 모드(dev.*)는 건드리지 않는다. 같은 탭 안에서 페이지를 옮기는 것은 새로고침이
 // 아니므로 초기화되지 않는다.
-const GUEST_SETTING_KEY_PREFIXES = ['marketMap.', 'sectorChangeRate.']
+const GUEST_SETTING_KEY_PREFIXES = ['treemap.', 'sectorChangeRate.']
 
 export function resetGuestSettingsOnLoad(): void {
   try {

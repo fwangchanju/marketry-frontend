@@ -6,8 +6,8 @@ import {
   StockSectorListItemSchema,
   BulkAssignResponseSchema,
   snapshotResponseSchema,
-  MarketMapScaleThresholdSchema,
-  MarketMapScaleResponseSchema,
+  TreemapScaleThresholdSchema,
+  TreemapScaleResponseSchema,
   MarketValueTierListResponseSchema,
   CustomPreferencesSchema,
   type CustomPreferences,
@@ -18,7 +18,7 @@ const sectorListResponseSchema = z.array(SectorItemSchema)
 const snapshotListResponseSchema = z.array(SnapshotItemSchema)
 const stockSectorListResponseSchema = snapshotResponseSchema(StockSectorListItemSchema)
 
-// 로그인 사용자 전용(GET /api/custom/**) — 가입/로그인 전환 지시서 4·5에 따라 옛 /api/admin/market-map/*
+// 로그인 사용자 전용(GET /api/custom/**) — 가입/로그인 전환 지시서 4·5에 따라 옛 /api/admin/treemap/*
 // 를 대체한다. Legacy* 컨트롤러(구 프론트 전용 호환 경로)는 여기서 쓰지 않는다.
 
 export const getSectors = () => client.get('/custom/sectors').then(r => sectorListResponseSchema.parse(r.data))
@@ -66,7 +66,7 @@ export const bulkAssignStockSector = (stockCodes: string[], sectorId: number) =>
 export const getStockSectors = () =>
   client.get('/custom/stock-sectors').then(r => stockSectorListResponseSchema.parse(r.data))
 
-// 색상 스케일 기준값(threshold) 단건 CRUD — marketMap.ts의 공개 기본값(/map/scale)과 달리 로그인 사용자
+// 색상 스케일 기준값(threshold) 단건 CRUD — treemap.ts의 공개 기본값(/map/scale)과 달리 로그인 사용자
 // 본인 값을 읽고 고친다. 처음엔 전체 배열을 통째로 PUT하는 full-replace 방식이었으나, 삭제 하나만 하려
 // 해도 안 건드린 행까지 매번 다 지웠다 다시 만드는 낭비였고, id를 프론트에 내려준 순간 그 id가 다음
 // 저장마다 전부 새로 발급돼버려서 "id로 개별 삭제"가 애초에 불안정해져서 폐기함.
@@ -81,15 +81,15 @@ const toScaleThresholdRequestBody = (payload: ScaleThresholdPayload) => ({
   colorLabel: payload.colorLabel?.toUpperCase() ?? null,
 })
 
-export const getCustomScale = () => client.get('/custom/scale').then(r => MarketMapScaleResponseSchema.parse(r.data))
+export const getCustomScale = () => client.get('/custom/scale').then(r => TreemapScaleResponseSchema.parse(r.data))
 
 export const createCustomScaleThreshold = (payload: ScaleThresholdPayload) =>
-  client.post('/custom/scale', toScaleThresholdRequestBody(payload)).then(r => MarketMapScaleThresholdSchema.parse(r.data))
+  client.post('/custom/scale', toScaleThresholdRequestBody(payload)).then(r => TreemapScaleThresholdSchema.parse(r.data))
 
 export const updateCustomScaleThreshold = (id: number, payload: ScaleThresholdPayload) =>
   client
     .put(`/custom/scale/${id}`, toScaleThresholdRequestBody(payload))
-    .then(r => MarketMapScaleThresholdSchema.parse(r.data))
+    .then(r => TreemapScaleThresholdSchema.parse(r.data))
 
 export const deleteCustomScaleThreshold = (id: number) => client.delete(`/custom/scale/${id}`)
 

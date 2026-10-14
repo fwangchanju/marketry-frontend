@@ -8,40 +8,40 @@ import type { TaxonomySource, TaxonomyKey } from '@/utils/taxonomyNames'
 import { useNxtOnlyWindow } from '@/hooks/useNxtOnlyWindow'
 import { useAfterHoursControlsVisible } from '@/hooks/useTradingSession'
 import { isAfterHoursSelectable as isAfterHoursSelectableAt } from '@/utils/tradingWindow'
-import type { ChangeRateChoice, ChangeRateMode } from '@/api/marketMap'
+import type { ChangeRateChoice, ChangeRateMode } from '@/api/treemap'
 import { usePageSetting } from './usePageSetting'
 import { useRouteAwareMarket } from './useRouteAwareMarket'
 import { useIsLoggedIn, useSession } from './useSession'
 import { useLoginGate } from './useLoginGate'
-import { useMarketMap, useMarketMapSnapshotDays, usePreviousTradingDay } from './useMarketMap'
+import { useTreemap, useSnapshotDays, usePreviousTradingDay } from './useTreemap'
 import { useSnapshotSelection } from './useSnapshotSelection'
-import { useMarketMapColorScale } from './useMarketMapColorScale'
+import { useTreemapColorScale } from './useTreemapColorScale'
 import {
-  useCreateCustomScaleThreshold as useCreateMarketMapScaleThreshold,
-  useUpdateCustomScaleThreshold as useUpdateMarketMapScaleThreshold,
-  useDeleteCustomScaleThreshold as useDeleteMarketMapScaleThreshold,
-} from './useMarketMapCustom'
+  useCreateCustomScaleThreshold as useCreateTreemapScaleThreshold,
+  useUpdateCustomScaleThreshold as useUpdateTreemapScaleThreshold,
+  useDeleteCustomScaleThreshold as useDeleteTreemapScaleThreshold,
+} from './useTreemapCustom'
 import {
   collectSectorsAtDepth,
-  useFilteredMarketMapTree,
-  type FilteredMarketMapSectorNode,
+  useFilteredTreemap,
+  type FilteredTreemapSectorNode,
   type StockChangeFilter,
   type SectorChangeFilter,
-} from './useFilteredMarketMapTree'
+} from './useFilteredTreemap'
 import { useMarketValueTierRange } from './useMarketValueTierRange'
-import { registerExcludedSector, unregisterExcludedSector } from '@/api/marketMap'
+import { registerExcludedSector, unregisterExcludedSector } from '@/api/treemap'
 import {
   createDefaultColorScale,
   resolveLegendSwatches,
   type ColorScaleConfig,
   type ColorScaleThreshold,
-} from '@/utils/marketMapColorScale'
+} from '@/utils/treemapColorScale'
 import { withStableSectorIds } from '@/utils/guestSectorIds'
-import type { MarketMapResponse, MarketMapSectorNode } from '@/types/api'
+import type { TreemapResponse, TreemapSectorNode } from '@/types/api'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
 
 // 조회 실패/로딩 중이거나 "색상 커스텀 사용"이 꺼져있을 때 쓰는 폴백 — thresholds가 비어있으면 어차피
-// 기본 프리셋으로 귀결된다(resolveMarketMapColor/resolveLegendSwatches 참고).
+// 기본 프리셋으로 귀결된다(resolveTreemapColor/resolveLegendSwatches 참고).
 const EMPTY_COLOR_SCALE: ColorScaleConfig = { thresholds: [] }
 const DEFAULT_STRONG_INDUSTRY_COLOR = MEMBER_DEFAULTS.strongIndustryColor
 const LEGACY_STRONG_INDUSTRY_COLOR = '#eab308'
@@ -67,7 +67,7 @@ const STOCK_LABEL_MODES: StockLabelMode[] = ['off', 'nameOnly', 'rateOnly', 'bot
 // sectorId -> "상위 - 하위" 형태의 전체 경로. "이 섹터가 제외 목록에 있는지"만 관리하고,
 // 실제로 화면에서 걸러낼지는 별도의 sectorFilterEnabled 마스터 스위치가 결정한다.
 function seedExcludedSectorNames(
-  nodes: MarketMapSectorNode[],
+  nodes: TreemapSectorNode[],
   ancestors: string[] = [],
   out: Map<number, string> = new Map(),
 ) {
@@ -81,7 +81,7 @@ function seedExcludedSectorNames(
 
 // 우클릭 제외 시점엔 리프 섹터명만 알고 있으므로, 뎁스가 있으면(최상위가 아니면) 원본 트리에서
 // 조상 경로를 다시 찾아 "상위 - 하위" 형태로 만든다. 최상위면 경로 길이가 1이라 그대로 리프명만 나온다.
-function findSectorPath(nodes: MarketMapSectorNode[], targetId: number, ancestors: string[] = []): string[] | null {
+function findSectorPath(nodes: TreemapSectorNode[], targetId: number, ancestors: string[] = []): string[] | null {
   for (const node of nodes) {
     const path = [...ancestors, node.sectorName]
     if (node.sectorId === targetId) return path
@@ -91,7 +91,7 @@ function findSectorPath(nodes: MarketMapSectorNode[], targetId: number, ancestor
   return null
 }
 
-function topPickAverage(node: FilteredMarketMapSectorNode, metric: DepthMetric): number | null {
+function topPickAverage(node: FilteredTreemapSectorNode, metric: DepthMetric): number | null {
   // 강세 업종은 업종 탭 표시 지표를 따른다. 평균이 아닌 지표를 고르면 시총 가중으로 계산한다.
   return metric === 'simpleAvgChangeRate' ? node.simpleAvgChangeRate : node.weightedAvgChangeRate
 }
@@ -101,15 +101,15 @@ function topPickAverage(node: FilteredMarketMapSectorNode, metric: DepthMetric):
 // 편집한다(지도/섹터 페이지뿐 아니라 아직 이 옵션이 실제로 영향 안 주는 페이지에서 열어도 동일).
 // 페이지별로 서로 다른 옵션을 보여줘야 할 필요가 생기면 그때 이 훅을 쪼개면 된다.
 //
-// needsTree: 이 페이지가 실제로 트리 데이터(useMarketMap)를 화면에 그리는 데 쓰는지. 지도/섹터처럼
+// needsTree: 이 페이지가 실제로 트리 데이터(useTreemap)를 화면에 그리는 데 쓰는지. 지도/섹터처럼
 // 트리를 직접 렌더링하는 페이지는 true(기본값)로 항상 조회하고, 어드민/요약처럼 설정 사이드바를 통해서만
 // 간접적으로 필요한 페이지는 false를 넘겨서 사이드바를 열기 전까지 조회 자체를 미룬다 — 그래도 설정을
 // 열면 그 순간부터는 조회하므로(그리고 지도/섹터를 먼저 봤다면 react-query 캐시로 즉시 뜨므로) 설정
 // 내용 자체는 어느 페이지에서 열든 동일하게 보인다.
 // 제외 업종 목록을 서버 기본값으로 마지막에 채운 분류 — 이 탭의 sessionStorage에 둔다.
-const SEEDED_KEY_STORAGE = 'marketMap.excludedSeedKey'
+const SEEDED_KEY_STORAGE = 'treemap.excludedSeedKey'
 
-function withPriceLabels(nodes: MarketMapSectorNode[], labels: { base: string; end: string }): MarketMapSectorNode[] {
+function withPriceLabels(nodes: TreemapSectorNode[], labels: { base: string; end: string }): TreemapSectorNode[] {
   return nodes.map(node => ({
     ...node,
     items: node.items.map(item => ({ ...item, rangeLabels: labels })),
@@ -131,9 +131,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 트리 조회 마켓은 경로를 따른다 — /map, /sector 둘 다 경로 세그먼트가 곧 마켓이라 여기서 바로
   // 우선순위(쿼리 > 경로 > 저장값 > 기본값)를 적용하면, 이 훅을 그대로 쓰는 지도 페이지는 물론
   // 트리 조회만 공유하는 섹터 페이지도 같은 마켓으로 트리를 받는다(docs/instructions-route-market-first-render.md 결정 2).
-  const [market] = useRouteAwareMarket('marketMap.market', 'ALL_STOCK')
+  const [market] = useRouteAwareMarket('treemap.market', 'ALL_STOCK')
   // 기존 계정 설정은 브라우저 선택이 없을 때만 기본값으로 사용한다. 새 선택은 세 페이지가 localStorage로 공유한다.
-  const [savedIsCustom] = usePageSetting('marketMap.isCustom', defaults.isCustom)
+  const [savedIsCustom] = usePageSetting('treemap.isCustom', defaults.isCustom)
   const [selectedTaxonomy, setSelectedTaxonomy] = useTaxonomySelection(savedIsCustom ? 'MARKETRY' : 'KRX')
   // 내 분류(mine)는 로그인이 필요하다 — 로그아웃 상태에서는 처음 화면인 MARKETRY로 보이고, 브라우저에 저장한 선택 자체는 보존한다.
   // MARKETRY는 올린 분류라 로그인 없이 읽는다(읽기 전용).
@@ -152,15 +152,15 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 표시 시간대가 아니거나 시간외 스냅샷이 아직 없으면 저장한 선택과 무관하게 누적으로 보인다.
   const [afterHoursStart, setAfterHoursStart] = useState<string | null>(null)
   const isAfterHoursControlsVisible = useAfterHoursControlsVisible(afterHoursStart)
-  const [storedChangeRateChoice, setStoredChangeRateChoice] = usePersistedState<ChangeRateChoice>('marketMap.changeRateMode', 'daily')
+  const [storedChangeRateChoice, setStoredChangeRateChoice] = usePersistedState<ChangeRateChoice>('treemap.changeRateMode', 'daily')
   const requestedChoice: ChangeRateChoice = allowChangeRateMode && isAfterHoursControlsVisible ? storedChangeRateChoice : 'daily'
   const requestedBasis: ChangeRateMode = requestedChoice === 'afterHours' ? 'afterHours' : 'daily'
   // 섹터 랭킹/강세 업종 계산에 쓰는 평균 방식은 박스 크기 비율과 별도로 저장한다.
-  const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting('marketMap.avgChangeRateUseSimple', defaults.avgChangeRateUseSimple)
+  const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting('treemap.avgChangeRateUseSimple', defaults.avgChangeRateUseSimple)
   // 0은 동일 크기, 100은 시가총액 비례이며 중간값은 시가총액 차이를 거듭제곱으로 압축한다.
-  const [storedBoxSizeMarketCapRatio, setBoxSizeMarketCapRatio] = usePageSetting('marketMap.boxSizeMarketCapRatio', defaults.boxSizeMarketCapRatio)
+  const [storedBoxSizeMarketCapRatio, setBoxSizeMarketCapRatio] = usePageSetting('treemap.boxSizeMarketCapRatio', defaults.boxSizeMarketCapRatio)
   const [storedStrongIndustryColor, setStrongIndustryColor] = usePageSetting(
-    'marketMap.strongIndustryColor',
+    'treemap.strongIndustryColor',
     defaults.strongIndustryColor,
   )
   const isLegacyStrongIndustryColor = storedStrongIndustryColor.toLowerCase() === LEGACY_STRONG_INDUSTRY_COLOR
@@ -175,34 +175,34 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   }, [isLegacyStrongIndustryColor, setStrongIndustryColor])
   const boxSizeMarketCapRatio = Math.max(0, Math.min(100, Math.round(storedBoxSizeMarketCapRatio)))
   const [storedDepthMetric, setStoredDepthMetric] = usePageSetting<StoredDepthMetric>(
-    'marketMap.activeDepthMetric',
+    'treemap.activeDepthMetric',
     defaults.depthMetric,
   )
   const selectedDepthMetric = resolveDepthMetric(storedDepthMetric)
   const [depthMetricEnabled, setDepthMetricEnabled] = usePageSetting(
-    'marketMap.depthMetricEnabled',
+    'treemap.depthMetricEnabled',
     storedDepthMetric !== null,
   )
   // 분류별 데이터 깊이에 맞춰 화면에 적용하되, 사용자가 고른 범위는 전환해도 보존한다.
   // 기본값: 대분류~중분류(index 0~1) — 렌더러가 캡처하는 기본 화면에 등락률이 보이도록.
-  const [depthMetricMinIndex, setDepthMetricMinIndex] = usePageSetting('marketMap.depthMetricMinIndex', defaults.depthMetricMinIndex)
-  const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting('marketMap.depthMetricMaxIndex', defaults.depthMetricMaxIndex)
+  const [depthMetricMinIndex, setDepthMetricMinIndex] = usePageSetting('treemap.depthMetricMinIndex', defaults.depthMetricMinIndex)
+  const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting('treemap.depthMetricMaxIndex', defaults.depthMetricMaxIndex)
   // avgChangeRateUseSimple은 섹터 랭킹에 사용한다. 강세 업종은 업종 탭 표시 지표를 따른다.
   // 종목 박스가 전체 트리맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다(섹터 헤더와는 무관).
-  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = usePageSetting('marketMap.boxLabelMinAreaPercent', defaults.boxLabelMinAreaPercent)
+  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = usePageSetting('treemap.boxLabelMinAreaPercent', defaults.boxLabelMinAreaPercent)
   // 종목 박스에 이름만/등락률만/둘 다/끄기 중 뭘 보여줄지 — 기본은 둘 다(기존 동작 유지, 배열 앞에
   // "끄기"가 추가되면서 both의 인덱스가 2에서 3으로 밀림).
-  const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting('marketMap.stockLabelModeIndex', defaults.stockLabelModeIndex)
+  const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting('treemap.stockLabelModeIndex', defaults.stockLabelModeIndex)
   // 기존 저장값 0(끄기)도 유지하며, 켜고 끄는 동안 선택한 표기 방식은 보존한다.
-  const [stockLabelEnabled, setStockLabelEnabled] = usePageSetting('marketMap.stockLabelEnabled', stockLabelModeIndex !== 0)
+  const [stockLabelEnabled, setStockLabelEnabled] = usePageSetting('treemap.stockLabelEnabled', stockLabelModeIndex !== 0)
   const selectedStockLabelModeIndex = stockLabelModeIndex || 3
   const stockLabelMode = stockLabelEnabled ? STOCK_LABEL_MODES[selectedStockLabelModeIndex] : 'off'
   // 지도 페이지에 표시되는 모든 등락률(%)의 소수점 자릿수 — 인덱스가 그대로 자릿수(0=정수, 1=소수
   // 1자리, 2=소수 2자리). 기본값 1(소수 1자리).
-  const [decimalPlacesIndex, setDecimalPlacesIndex] = usePageSetting('marketMap.decimalPlacesIndex', defaults.decimalPlacesIndex)
+  const [decimalPlacesIndex, setDecimalPlacesIndex] = usePageSetting('treemap.decimalPlacesIndex', defaults.decimalPlacesIndex)
   // 종목 박스 설명 팝업을 여는 방식 — false=우클릭(기존 동작), true=커서를 박스 위로 옮길 때. 섹터(대/중/소분류)
   // 팝업은 이 설정과 무관하게 항상 우클릭이다.
-  const [stockPopupOnHover, setStockPopupOnHover] = usePageSetting('marketMap.stockPopupOnHover', defaults.stockPopupOnHover)
+  const [stockPopupOnHover, setStockPopupOnHover] = usePageSetting('treemap.stockPopupOnHover', defaults.stockPopupOnHover)
   const decimalPlaces = decimalPlacesIndex
   // 시가총액 구간 범위 필터 — 마켓맵/섹터 랭킹 화면이 세션스토리지 키를 공유한다(useMarketValueTierRange 참고).
   // 시가총액 구간 필터는 분류 체계와 무관한 표시 설정이라 두 분류 모두에서 적용한다.
@@ -216,7 +216,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     isTierRangeReady: isMarketValueTierRangeReady,
   } = useMarketValueTierRange(true)
   const [excludedSectorNames, setExcludedSectorNames] = usePersistedState<Map<number, string>>(
-    'marketMap.excludedSectorNames',
+    'treemap.excludedSectorNames',
     new Map(),
     {
       serialize: map => [...map.entries()],
@@ -224,19 +224,19 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     },
   )
   // 섹터 제외를 목록별로 켜고 끄는 게 아니라, 제외 적용 자체를 통째로 켜고 끄는 마스터 스위치.
-  const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting('marketMap.sectorFilterEnabled', defaults.sectorFilterEnabled)
-  const [stockChangeFilter, setStockChangeFilter] = usePageSetting<StockChangeFilter>('marketMap.stockChangeFilter', defaults.stockChangeFilter)
-  const [sectorChangeFilter, setSectorChangeFilter] = usePageSetting<SectorChangeFilter>('marketMap.sectorChangeFilter', defaults.sectorChangeFilter)
-  const [sectorChangeDepth, setSectorChangeDepth] = usePageSetting('marketMap.sectorChangeDepth', defaults.sectorChangeDepth)
+  const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting('treemap.sectorFilterEnabled', defaults.sectorFilterEnabled)
+  const [stockChangeFilter, setStockChangeFilter] = usePageSetting<StockChangeFilter>('treemap.stockChangeFilter', defaults.stockChangeFilter)
+  const [sectorChangeFilter, setSectorChangeFilter] = usePageSetting<SectorChangeFilter>('treemap.sectorChangeFilter', defaults.sectorChangeFilter)
+  const [sectorChangeDepth, setSectorChangeDepth] = usePageSetting('treemap.sectorChangeDepth', defaults.sectorChangeDepth)
   // null = 제한 없음(전체 뎁스 표시). 슬라이더의 실제 상한(availableMaxDepth)은 트리 계산 후에 나온다.
   // 기본값 2(렌더러 캡처 기준 화면에 맞춤).
-  const [selectedMaxDepth, setMaxDepth] = usePageSetting<number | null>('marketMap.selectedMaxDepth', defaults.maxDepth)
-  const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting('marketMap.sectorLevelEnabled', defaults.sectorLevelEnabled)
+  const [selectedMaxDepth, setMaxDepth] = usePageSetting<number | null>('treemap.selectedMaxDepth', defaults.maxDepth)
+  const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting('treemap.sectorLevelEnabled', defaults.sectorLevelEnabled)
   const maxDepth = sectorLevelEnabled ? selectedMaxDepth : 0
   // 선호 업종 — 선택한 절대 depth에서 등락률 상위 N개 섹터를 지도 전체에 강조한다.
-  const [topPickDepth, setTopPickDepth] = usePageSetting('marketMap.topPickDepth', defaults.topPickDepth)
-  const [topPickCount, setTopPickCount] = usePageSetting('marketMap.topPickCount', defaults.topPickCount)
-  const [topPickEnabled, setTopPickEnabled] = usePageSetting('marketMap.topPickEnabled', topPickCount !== 0)
+  const [topPickDepth, setTopPickDepth] = usePageSetting('treemap.topPickDepth', defaults.topPickDepth)
+  const [topPickCount, setTopPickCount] = usePageSetting('treemap.topPickCount', defaults.topPickCount)
+  const [topPickEnabled, setTopPickEnabled] = usePageSetting('treemap.topPickEnabled', topPickCount !== 0)
   const selectedTopPickCount = topPickCount || 2
   // 설정 사이드바 열림 상태. 페이지 진입 시 기본으로 연다.
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
@@ -265,12 +265,12 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   }
   // 고른 시장이 아닌 시장을 보는 중이면 그 시장의 같은 날짜 시각을 목록에서 찾는다. 목록을 받기 전이거나 그 날짜가 없으면 고른 시각을 그대로 쓴다.
   const pinnedNeedsLookup = pinnedSelection !== null && pinnedSelection.market !== market
-  const { data: pinnedMonthDays } = useMarketMapSnapshotDays(market, pinnedSelection?.snapshotTime.slice(0, 7) ?? '', { enabled: pinnedNeedsLookup, retry: 1 })
+  const { data: pinnedMonthDays } = useSnapshotDays(market, pinnedSelection?.snapshotTime.slice(0, 7) ?? '', { enabled: pinnedNeedsLookup, retry: 1 })
   const pinnedSnapshotTime = pinnedSelection === null
     ? undefined
     : (pinnedNeedsLookup ? (pinnedMonthDays?.find(day => day.date === pinnedSelection.snapshotTime.slice(0, 10))?.snapshotTime ?? pinnedSelection.snapshotTime) : pinnedSelection.snapshotTime)
   const rangeNeedsLookup = rangeSelection !== null && rangeSelection.market !== market
-  const { data: rangeMonthDays } = useMarketMapSnapshotDays(market, rangeSelection?.snapshotTime.slice(0, 7) ?? '', { enabled: rangeNeedsLookup, retry: 1 })
+  const { data: rangeMonthDays } = useSnapshotDays(market, rangeSelection?.snapshotTime.slice(0, 7) ?? '', { enabled: rangeNeedsLookup, retry: 1 })
   const rangeStartTime = rangeSelection === null || pinnedSnapshotTime === undefined
     ? undefined
     : (rangeNeedsLookup ? (rangeMonthDays?.find(day => day.date === rangeSelection.snapshotTime.slice(0, 10))?.snapshotTime ?? rangeSelection.snapshotTime) : rangeSelection.snapshotTime)
@@ -284,7 +284,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 실시간 날짜는 한 번이라도 실시간 지도를 받아야 알 수 있어서, 처음 한 번은 실시간 지도를 받고 그 뒤에 종가로 옮겨 간다.
   const wantsClose = requestedChoice === 'close' && pinnedSnapshotTime === undefined
   const liveDate = liveSnapshotTime?.slice(0, 10)
-  const { data: closeDays, isSuccess: isCloseDaysSuccess, isError: isCloseDaysError, refetch: refetchCloseDays } = useMarketMapSnapshotDays(
+  const { data: closeDays, isSuccess: isCloseDaysSuccess, isError: isCloseDaysError, refetch: refetchCloseDays } = useSnapshotDays(
     market,
     liveDate?.slice(0, 7) ?? '',
     // 서버 오류가 계속되면 기본 재시도(3회, 30초 넘게)가 "불러오는 중"을 너무 오래 잡으므로 재시도하지 않고, 다시 시도는 종가 버튼으로 받는다.
@@ -300,9 +300,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     isLoading: isSnapshotLoading,
     isError: isSnapshotError,
     isSuccess: isSnapshotSuccess,
-    isRefetching: isRefetchingMarketMap,
+    isRefetching: isRefetchingTreemap,
     refetch: refetchSnapshot,
-  } = useMarketMap(market, source, nxtOnly, {
+  } = useTreemap(market, source, nxtOnly, {
     enabled: needsTree && !isWaitingForSession,
     basis: requestedBasis,
     snapshotTime: pinnedSnapshotTime ?? closeSnapshotTime,
@@ -318,19 +318,19 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     isLoading: isRangeStartLoading,
     isError: isRangeStartError,
     refetch: refetchRangeStart,
-  } = useMarketMap(market, source, nxtOnly, {
+  } = useTreemap(market, source, nxtOnly, {
     enabled: needsTree && !isWaitingForSession && isRangeActive && rangeBaseSnapshotTime !== undefined,
     snapshotTime: rangeBaseSnapshotTime,
   })
   // 종료일 가격의 이름 — 종료일의 종가 지도 시각 목록에 있으면 종가, 없으면(장중 실시간 지도) 현재가. 종목 팝업에 보인다.
-  const { data: rangeEndMonthDays } = useMarketMapSnapshotDays(market, pinnedSnapshotTime?.slice(0, 7) ?? '', { enabled: isRangeActive, retry: 1 })
+  const { data: rangeEndMonthDays } = useSnapshotDays(market, pinnedSnapshotTime?.slice(0, 7) ?? '', { enabled: isRangeActive, retry: 1 })
   const rangeEndPriceLabel = rangeEndMonthDays?.some(day => day.snapshotTime === pinnedSnapshotTime) === false ? '현재가' : '종가'
   const rangeResult = useMemo(
     () => (snapshotData && rangeStartData ? buildRangeChangeRateTree(snapshotData.items, rangeStartData.items, rangeBaseKind, rangeEndPriceLabel) : null),
     [snapshotData, rangeStartData, rangeBaseKind, rangeEndPriceLabel],
   )
   // 기간 등락률을 보는 동안 두 지도가 다 오기 전에는 값이 없다 — 종료일 지도 그대로의(하루치) 등락률을 기간 값처럼 보여 주지 않는다.
-  const data: MarketMapResponse | undefined = useMemo(
+  const data: TreemapResponse | undefined = useMemo(
     () => {
       if (isRangeActive) return rangeResult && snapshotData ? { ...snapshotData, items: rangeResult.items } : undefined
       // 종가를 보는 동안에는 지도가 정규장 종가라서, 종목 팝업의 가격 줄 이름을 "현재가" 대신 "당일종가"로 보여 준다.
@@ -344,10 +344,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     [isRangeActive, rangeResult, snapshotData, isCloseActive, requestedBasis],
   )
   const rangeExcludedStocks = rangeResult?.excludedStocks ?? []
-  const isMarketMapLoading = isSnapshotLoading || (isRangeActive && (rangePreviousDay === undefined || isRangeStartLoading))
+  const isTreemapLoading = isSnapshotLoading || (isRangeActive && (rangePreviousDay === undefined || isRangeStartLoading))
   const isError = isSnapshotError || (isRangeActive && isRangeStartError)
-  const isMarketMapSuccess = isSnapshotSuccess && (!isRangeActive || rangeResult !== null)
-  const refetchMarketMap = () => {
+  const isTreemapSuccess = isSnapshotSuccess && (!isRangeActive || rangeResult !== null)
+  const refetchTreemap = () => {
     void refetchSnapshot()
     if (isRangeActive) void refetchRangeStart()
   }
@@ -406,7 +406,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     sectorUseSimpleAverage: selectedDepthMetric === 'simpleAvgChangeRate',
   }), [pathname, stockChangeFilter, sectorChangeFilter, effectiveSectorChangeDepth, selectedDepthMetric])
 
-  const { filteredRootNodes, availableMaxDepth } = useFilteredMarketMapTree(
+  const { filteredRootNodes, availableMaxDepth } = useFilteredTreemap(
     rootNodes,
     excludedSectorIds,
     excludedMarketValueTiers,
@@ -451,7 +451,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
     const candidates = collectSectorsAtDepth(filteredRootNodes, effectiveTopPickDepth)
       .map((node, index) => ({ node, index, average: topPickAverage(node, selectedDepthMetric) }))
-      .filter((candidate): candidate is { node: FilteredMarketMapSectorNode; index: number; average: number } => {
+      .filter((candidate): candidate is { node: FilteredTreemapSectorNode; index: number; average: number } => {
         return candidate.average !== null
       })
       .sort((a, b) => b.average - a.average || b.node.totalMarketValue - a.node.totalMarketValue || a.index - b.index)
@@ -469,17 +469,17 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     topPickMaxSelectableDepth,
   ])
 
-  // 등락률 컬러 스케일 draft — 서버 값(useMarketMapColorScale)이 도착하면 딱 한 번만 시드하고,
+  // 등락률 컬러 스케일 draft — 서버 값(useTreemapColorScale)이 도착하면 딱 한 번만 시드하고,
   // 이후로는 어드민이 설정 팝업에서 편집하는 draft를 그대로 트리맵/범례에 흘려보낸다. 그래서 "저장"
   // 전에도 실제로 보여주는 지도 색이 곧바로 바뀐다 — 별도의 미리보기 트리맵이 필요 없다.
   const [colorEditIndices, setColorEditIndices] = useState<number[]>([])
   // 세션 시작 시점의 draft 스냅샷 — 취소 복구와 편집 전 비어 있던 부호의 fallback 표시를 위해 보관한다.
   const colorEditSnapshotRef = useRef<ColorScaleConfig | null>(null)
-  const { data: colorScaleServerData, refetch: refetchColorScale } = useMarketMapColorScale()
+  const { data: colorScaleServerData, refetch: refetchColorScale } = useTreemapColorScale()
   const [colorScaleDraft, setColorScaleDraft] = useState<ColorScaleConfig | null>(null)
   // 비로그인은 서버에 저장할 수 없으므로, 이 탭에서 바꾼 색상 설정은 세션(sessionStorage)에만 남긴다 — 다른
   // 화면 설정(usePageSetting의 비로그인 동작)과 같다. 로그인 사용자는 서버 저장이라 이 값을 쓰지 않는다.
-  const [localColorScale, setLocalColorScale] = usePersistedState<ColorScaleConfig | null>('marketMap.localColorScale', null)
+  const [localColorScale, setLocalColorScale] = usePersistedState<ColorScaleConfig | null>('treemap.localColorScale', null)
   // draft가 어느 로그인 상태의 값으로 시드됐는지 — 로그인/로그아웃으로 바뀌면 새 서버 값으로 다시 시드한다.
   const [colorScaleDraftOwner, setColorScaleDraftOwner] = useState<boolean | null>(null)
   const [colorEditError, setColorEditError] = useState<string | null>(null)
@@ -502,7 +502,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   }
   // "색상 커스텀 사용" 토글 — 순수 로컬(세션스토리지) 상태. draft(=저장 대상)와는 완전히 분리돼 있어서
   // 꺼도 draft에 저장해둔 값은 건드리지 않고, 그냥 실제 지도에 넘기는 값만 빈 스케일(=기본 프리셋)로 바꿔치기한다.
-  const [colorCustomOn, setColorCustomOn] = usePageSetting('marketMap.colorCustomOn', defaults.colorCustomOn)
+  const [colorCustomOn, setColorCustomOn] = usePageSetting('treemap.colorCustomOn', defaults.colorCustomOn)
   // 같은 부호/퍼센트에 편집 중인 행이 이미 있는 임계값과 겹치면 편집 중인 값을 우선한다.
   // resolver는 같은 thresholdPercent 중 마지막 값을 유효점으로 삼으므로, 저장 draft의 배열 순서를
   // 바꾸지 않고 렌더링 입력에서만 편집 행을 뒤로 보낸다.
@@ -530,9 +530,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   // 설정 사이드바에서 편집 중인 threshold들 — colorScaleDraft.thresholds의 인덱스 목록.
   // edit 모드는 항상 원소 1개, add 모드는 "+"로 여러 개가 될 수 있다. 빈 배열이면 세션 없음.
-  const createThresholdMutation = useCreateMarketMapScaleThreshold()
-  const updateThresholdMutation = useUpdateMarketMapScaleThreshold()
-  const deleteThresholdMutation = useDeleteMarketMapScaleThreshold()
+  const createThresholdMutation = useCreateTreemapScaleThreshold()
+  const updateThresholdMutation = useUpdateTreemapScaleThreshold()
+  const deleteThresholdMutation = useDeleteTreemapScaleThreshold()
   // "적용"이 세션 안의 여러 행을 순회하며 create/update를 여러 번 호출하는 비동기 작업이라,
   // 개별 뮤테이션 훅의 isPending 하나만으로는 전체 진행 상태를 못 나타내서 별도로 든다.
   const [isApplyingColorEdit, setIsApplyingColorEdit] = useState(false)
@@ -858,11 +858,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     onSelectRange,
     rangeStartTime,
     rangeExcludedStocks,
-    refetchMarketMap,
-    isRefetchingMarketMap,
-    isLoading: isMarketMapLoading || isWaitingForSession || isCloseWaiting,
+    refetchTreemap,
+    isRefetchingTreemap,
+    isLoading: isTreemapLoading || isWaitingForSession || isCloseWaiting,
     isError,
-    isMarketMapSuccess,
+    isTreemapSuccess,
     isMarketValueTierRangeReady,
     rootNodes,
     filteredRootNodes,

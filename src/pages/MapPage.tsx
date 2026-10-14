@@ -17,10 +17,10 @@ import SettingsSidebar, {
   type SettingsBookmarkId,
   type SettingsSidebarSectionId,
 } from '@/components/SettingsSidebar'
-import MarketMapShareModal from '@/components/MarketMapShareModal'
+import CaptureModal from '@/components/CaptureModal'
 import Toolbar from '@/components/Toolbar'
 import Treemap from '@/components/Treemap'
-import { ChangeRateModeToggle } from '@/components/MarketMapControls'
+import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
@@ -30,7 +30,7 @@ import Spinner from '@/components/Spinner'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
-import { useMarketMapDrilldown } from '@/hooks/useMarketMapDrilldown'
+import { useTreemapDrilldown } from '@/hooks/useTreemapDrilldown'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
 import { usePageSetting } from '@/hooks/usePageSetting'
@@ -38,11 +38,11 @@ import { sanitizeBookmarkIds } from '@/utils/settingsBookmarks'
 import { useIsLoggedIn } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
-import type { DisplayGroup } from '@/hooks/useMarketMapLayout'
-import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toMarketMapSnapshotDateLabel } from '@/utils/format'
+import type { DisplayGroup } from '@/hooks/useTreemapLayout'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
 import { CAPTURE_ID } from '@/utils/captureIds'
-import { ClockIcon, ReturnArrowIcon } from '@/components/icons/MarketMapIcons'
+import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import ClosingPriceLabel from '@/components/ClosingPriceLabel'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
@@ -52,11 +52,11 @@ import { appAlert } from '@/utils/appDialogBus'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/utils/captureToDownload'
-import { limitDepth, flattenAllItems, type FilteredMarketMapSectorNode } from '@/hooks/useFilteredMarketMapTree'
-import type { MarketQuery, MarketMapSectorNode, MarketMapItem } from '@/types/api'
+import { limitDepth, flattenAllItems, type FilteredTreemapSectorNode } from '@/hooks/useFilteredTreemap'
+import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
 
 // 업종 트리 전체의 종목 수(제외 업종도 포함한다).
-const countStocks = (nodes: MarketMapSectorNode[]): number => nodes.reduce((sum, node) => sum + node.items.length + countStocks(node.children), 0)
+const countStocks = (nodes: TreemapSectorNode[]): number => nodes.reduce((sum, node) => sum + node.items.length + countStocks(node.children), 0)
 const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'ALL STOCK' }
 // 종목·업종 헤더와 같은 방식 — 올리면 흰색 35% 덮개가 씌워진다(index.css의 hover와 같은 불투명도).
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-white transition-colors hover:bg-white/35'
@@ -78,7 +78,7 @@ const MAP_SETTINGS_SECTION_ORDER: SettingsSidebarSectionId[] = [
 const FLAT_GROUP_SECTOR_ID = -1
 const FLAT_GROUP_NAME = '__flat__'
 
-function toFlatDisplayGroup(items: MarketMapItem[]): DisplayGroup {
+function toFlatDisplayGroup(items: TreemapItem[]): DisplayGroup {
   return {
     sectorId: FLAT_GROUP_SECTOR_ID,
     sectorName: FLAT_GROUP_NAME,
@@ -90,7 +90,7 @@ function toFlatDisplayGroup(items: MarketMapItem[]): DisplayGroup {
   }
 }
 
-function toDisplayGroup(node: FilteredMarketMapSectorNode): DisplayGroup {
+function toDisplayGroup(node: FilteredTreemapSectorNode): DisplayGroup {
   return {
     sectorId: node.sectorId,
     sectorName: node.sectorName,
@@ -104,8 +104,8 @@ function toDisplayGroup(node: FilteredMarketMapSectorNode): DisplayGroup {
 
 // 등락률 평균/상승·하락·보합 종목수는 개별 종목(changeRate) 기준이라, 지금 화면에 보이는
 // 그룹들의 종목을 전부(하위 섹터 포함) 펼쳐서 모아야 한다.
-function collectItems(groups: DisplayGroup[]): MarketMapItem[] {
-  const result: MarketMapItem[] = []
+function collectItems(groups: DisplayGroup[]): TreemapItem[] {
+  const result: TreemapItem[] = []
   for (const group of groups) {
     result.push(...group.items)
     result.push(...collectItems(group.children))
@@ -115,8 +115,8 @@ function collectItems(groups: DisplayGroup[]): MarketMapItem[] {
 
 // 섹터 제외/시가총액 구간 필터를 적용하기 "전" 원본 트리 기준으로, 지금 보고 있는 뎁스(path)에
 // 해당하는 종목을 전부 모은다 — "제외된 개수까지 포함한 전체 리스트 개수"를 보여주기 위한 분모.
-function collectRawItems(nodes: MarketMapSectorNode[]): MarketMapItem[] {
-  const result: MarketMapItem[] = []
+function collectRawItems(nodes: TreemapSectorNode[]): TreemapItem[] {
+  const result: TreemapItem[] = []
   for (const node of nodes) {
     result.push(...node.items)
     result.push(...collectRawItems(node.children))
@@ -124,8 +124,8 @@ function collectRawItems(nodes: MarketMapSectorNode[]): MarketMapItem[] {
   return result
 }
 
-function findRawNodeByPath(nodes: MarketMapSectorNode[], path: string[]): MarketMapSectorNode | null {
-  let node: MarketMapSectorNode | null = null
+function findRawNodeByPath(nodes: TreemapSectorNode[], path: string[]): TreemapSectorNode | null {
+  let node: TreemapSectorNode | null = null
   let siblings = nodes
   for (const name of path) {
     const found = siblings.find(n => n.sectorName === name)
@@ -144,7 +144,7 @@ export default function MapPage() {
   const isLoggedIn = useIsLoggedIn()
   const { requireLogin } = useLoginGate()
   // 북마크는 로그인 사용자의 서버 설정에만 저장한다. 비로그인이 누르면 저장하지 않고 로그인을 안내한다.
-  const [storedSettingsBookmarks, setSettingsBookmarks] = usePageSetting<string[]>('marketMap.settingsBookmarks', [])
+  const [storedSettingsBookmarks, setSettingsBookmarks] = usePageSetting<string[]>('treemap.settingsBookmarks', [])
   // 없어진 항목의 id가 저장돼 있어도 개수 제한(5개)에 잡히지 않도록 알려진 id만 쓴다.
   const settingsBookmarks = sanitizeBookmarkIds(storedSettingsBookmarks)
   const toggleSettingsBookmark = (id: SettingsBookmarkId) => {
@@ -180,8 +180,8 @@ export default function MapPage() {
     rangeStartTime,
     rangeExcludedStocks,
     pinnedSnapshotTime,
-    refetchMarketMap,
-    isRefetchingMarketMap,
+    refetchTreemap,
+    isRefetchingTreemap,
     isLoading,
     isError,
     rootNodes,
@@ -230,7 +230,7 @@ export default function MapPage() {
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
   const captureRef = useRef<HTMLDivElement>(null)
 
-  const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth, reset } = useMarketMapDrilldown(filteredRootNodes)
+  const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth, reset } = useTreemapDrilldown(filteredRootNodes)
   // NXT 단독 시간대 안내창에 보여 줄 종목 수 — 서버가 준 NXT 종목 전체(분모)다. 제외 업종·표시 설정을 적용하기 전의 수라서 지도에 그려지는 수와 다를 수 있다.
   const nxtStockTotal = useMemo(() => countStocks(rootNodes), [rootNodes])
 
@@ -350,7 +350,7 @@ export default function MapPage() {
   // 들어간 단계 = 브라우저 기록 한 칸. 분류에 한 단계 들어갈 때마다 기록에 한 칸씩 쌓아서(직접 깊은 단계로
   // 들어가면 그 단계 수만큼), 브라우저 뒤로가기(⌘[, 트랙패드 스와이프, 마우스 뒤로가기 버튼)를 연달아
   // 눌러도 칸이 있는 만큼 계속 한 단계씩 올라간다. 전체 화면에서 더 누르면 원래대로 사이트 이전 페이지로
-  // 나간다. 앞으로가기(⌘])는 들어갔던 단계로 다시 내려간다. 각 칸은 그 시점의 경로(marketMapPath)를 가진다.
+  // 나간다. 앞으로가기(⌘])는 들어갔던 단계로 다시 내려간다. 각 칸은 그 시점의 경로(treemapPath)를 가진다.
   const historyDepthRef = useRef(0) // 지금 브라우저 기록 위치가 가리키는 깊이
   const historyConsumingRef = useRef(false) // 코드가 일으킨 history.go()의 popstate는 무시한다
   const historyPathnameRef = useRef('') // 기록 칸을 쌓은 주소 — 다른 주소로 이동했으면 go()로 정리하지 않는다
@@ -387,13 +387,13 @@ export default function MapPage() {
       if (entryFromOtherPageRef.current) {
         // 그룹에서 들어온 칸: 새 칸을 쌓지 않고 지금 칸에 경로를 적어 기준 칸으로 삼는다.
         entryFromOtherPageRef.current = false
-        window.history.replaceState({ ...(window.history.state ?? {}), marketMapPath: path }, '')
+        window.history.replaceState({ ...(window.history.state ?? {}), treemapPath: path }, '')
         baseDepthRef.current = depth
         historyDepthRef.current = depth
         historyPathnameRef.current = window.location.pathname
       } else if (depth > historyDepthRef.current) {
         for (let k = historyDepthRef.current + 1; k <= depth; k++) {
-          window.history.pushState({ ...(window.history.state ?? {}), marketMapPath: path.slice(0, k) }, '')
+          window.history.pushState({ ...(window.history.state ?? {}), treemapPath: path.slice(0, k) }, '')
         }
         historyDepthRef.current = depth
         historyPathnameRef.current = window.location.pathname
@@ -416,7 +416,7 @@ export default function MapPage() {
         baseDepthRef.current = depth
         historyDepthRef.current = depth
         if (consuming) pendingBasePathRef.current = path.slice(0, depth)
-        else window.history.replaceState({ ...(window.history.state ?? {}), marketMapPath: path.slice(0, depth) }, '')
+        else window.history.replaceState({ ...(window.history.state ?? {}), treemapPath: path.slice(0, depth) }, '')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 길이가 바뀔 때만 반응하면 된다(path 내용은 그때의 값을 쓴다)
@@ -426,14 +426,14 @@ export default function MapPage() {
       if (historyConsumingRef.current) {
         historyConsumingRef.current = false
         if (pendingBasePathRef.current !== null) {
-          window.history.replaceState({ ...(window.history.state ?? {}), marketMapPath: pendingBasePathRef.current }, '')
+          window.history.replaceState({ ...(window.history.state ?? {}), treemapPath: pendingBasePathRef.current }, '')
           pendingBasePathRef.current = null
         }
         return
       }
       // 이 지도 화면 안에서의 이동만 다룬다 — 다른 페이지로 나가는 뒤로가기는 그대로 둔다.
       if (!window.location.pathname.startsWith('/map')) return
-      const target: string[] = Array.isArray(e.state?.marketMapPath) ? e.state.marketMapPath : []
+      const target: string[] = Array.isArray(e.state?.treemapPath) ? e.state.treemapPath : []
       historyDepthRef.current = target.length
       if (target.length < path.length) requestDepth(target.length)
       else if (target.length > path.length) setPath(target)
@@ -498,8 +498,8 @@ export default function MapPage() {
         onReselectCurrent={() => handleGoToDepth(0)}
         actions={
           <NavBarPageActions
-            onRefresh={refetchMarketMap}
-            isRefreshing={isRefetchingMarketMap}
+            onRefresh={refetchTreemap}
+            isRefreshing={isRefetchingTreemap}
             onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
             isSettingsOpen={settingsModalProps.isOpen}
             onOpenShare={() => setIsShareOpen(true)}
@@ -540,9 +540,9 @@ export default function MapPage() {
                   >
                     {/* 기간을 보는 중이면 시작일은 고른 날짜로 이미 정해져 있으므로, 지도를 기다리는 동안에도 숨기지 않는다. */}
                     <span className={data?.snapshotTime || rangeStartTime ? undefined : 'invisible'}>
-                      {toMarketMapSnapshotDateLabel(rangeStartTime ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
+                      {toSnapshotDateLabel(rangeStartTime ?? data?.snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}
                     </span>
-                    {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toMarketMapSnapshotDateLabel(pinnedSnapshotTime)}</span>}
+                    {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                   </SnapshotDatePicker>
                   </ToolbarChip>
                   {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
@@ -560,8 +560,8 @@ export default function MapPage() {
                     <ToolbarChip bare tone="text-white">
                       <PageRefreshButton
                         cell
-                        onRefresh={refetchMarketMap}
-                        isRefreshing={isRefetchingMarketMap}
+                        onRefresh={refetchTreemap}
+                        isRefreshing={isRefetchingTreemap}
                         helpText={SNAPSHOT_REFRESH_HELP}
                         minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                       >
@@ -656,7 +656,7 @@ export default function MapPage() {
                 </div>
               ) : isError ? (
                 <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
-                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchMarketMap} />
+                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
                 </div>
               ) : visibleItems.length === 0 ? (
                 <div className="relative flex-1">
@@ -802,7 +802,7 @@ export default function MapPage() {
       </div>
 
       {isShareOpen && (
-        <MarketMapShareModal
+        <CaptureModal
           onClose={() => setIsShareOpen(false)}
           onCopy={handleCopy}
           onDownload={handleDownload}

@@ -6,8 +6,8 @@ import { settingDefaultsFor } from '@/utils/settingDefaults'
 import { useMarketValueTiers } from './useMarketValueTiers'
 import { defaultExcludedTierLabels, tierRangeToExcludedLabels } from '@/utils/marketValueTier'
 
-const MIN_INDEX_KEY = 'marketMap.tierRangeMinIndex'
-const MAX_INDEX_KEY = 'marketMap.tierRangeMaxIndex'
+const MIN_INDEX_KEY = 'treemap.tierRangeMinIndex'
+const MAX_INDEX_KEY = 'treemap.tierRangeMaxIndex'
 
 // 시가총액 구간(오름차순 tiers 배열 기준) 범위 필터 — 마켓맵 화면과 섹터 랭킹 화면이 세션스토리지
 // 키를 그대로 공유해서, 한쪽에서 바꾼 토글 상태가 다른 화면에도 항상 똑같이 반영된다(두 화면 모두

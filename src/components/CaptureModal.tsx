@@ -1,7 +1,7 @@
 import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useState } from 'react'
 import { captureElementToDataUrl } from '@/utils/captureToPreview'
-import { CheckIcon, CopyIcon, DownloadIcon, TelegramIcon } from '@/components/icons/MarketMapIcons'
+import { CheckIcon, CopyIcon, DownloadIcon, TelegramIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
 
 interface Props {
@@ -22,7 +22,7 @@ const SHOW_TELEGRAM_BUTTON = false
 // MARKETRY 텔레그램 방 초대 링크 — 텔레그램 버튼이 연다.
 const TELEGRAM_ROOM_URL = 'https://t.me/+dqHQ460Ni5BmODdl'
 
-export default function MarketMapShareModal({
+export default function CaptureModal({
   onClose,
   onCopy,
   onDownload,

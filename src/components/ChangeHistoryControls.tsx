@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
-import { ChevronDownIcon } from '@/components/icons/MarketMapIcons'
+import { ChevronDownIcon } from '@/components/icons/AppIcons'
 
 // 설정창 "변경 내역" 항목 — 되돌리기·다시 적용 두 칸과 변경 내역 목록. 종목 화면과 업종 화면이 같이 쓴다.
 // 목록은 두 칸을 묶은 줄과 같은 왼쪽 끝·폭으로 펼쳐지고, 줄을 고르면 맨 위(다음 차례)부터 그 줄까지 순서대로 처리한다.

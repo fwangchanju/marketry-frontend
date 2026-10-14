@@ -98,7 +98,7 @@ export const handlers = [
     const isCustom = source ? source !== 'KRX' : url.searchParams.get('isCustom') === 'true'
     const snapshotTime = url.searchParams.get('snapshotTime')
     const marketOverview = data.marketOverviews.find(o => o.market === market) ?? null
-    const tree = isCustom ? data.marketMapTree : data.toDefaultModeTree(data.marketMapTree)
+    const tree = isCustom ? data.treemapData : data.toDefaultModeTree(data.treemapData)
 
     if (!snapshotTime) {
       return HttpResponse.json({
@@ -111,7 +111,7 @@ export const handlers = [
     // 목업에서도 통과시키기 위함), 종목 changeRate를 낮춘 트리를 준다.
     return HttpResponse.json({
       snapshotTime,
-      items: data.shiftMarketMapTreeChangeRates(tree),
+      items: data.shiftTreemapChangeRates(tree),
       marketOverview: marketOverview
         ? { ...marketOverview, changeRate: marketOverview.changeRate - data.MOCK_BEFORE_INDEX_CHANGE_RATE_DELTA }
         : null,
@@ -129,13 +129,13 @@ export const handlers = [
       })),
     ),
   ),
-  http.get('/api/map/scale', () => HttpResponse.json(data.marketMapColorScale)),
+  http.get('/api/map/scale', () => HttpResponse.json(data.treemapColorScale)),
   http.post('/api/map/excluded-sectors/:sectorId', ok),
   http.delete('/api/map/excluded-sectors/:sectorId', ok),
   http.delete('/api/map/excluded-sectors', ok),
   http.delete('/api/map/reset', ok),
 
-  // ── 커스텀(로그인 사용자 전용, /api/admin/market-map/* → /api/custom/* 전환) ────────────────
+  // ── 커스텀(로그인 사용자 전용, /api/admin/treemap/* → /api/custom/* 전환) ────────────────
   http.get('/api/custom/sectors', () => HttpResponse.json(data.customSectors)),
   http.post('/api/custom/sectors', async ({ request }) => {
     const body = (await request.json()) as { name: string; parentId: number | null }
@@ -184,7 +184,7 @@ export const handlers = [
   }),
   http.delete('/api/custom/scale/:id', ok),
   // 로그인 사용자 본인 값 — dev:mock에서는 공개 기본값과 동일한 목업 데이터를 그대로 재사용한다.
-  http.get('/api/custom/scale', () => HttpResponse.json(data.marketMapColorScale)),
+  http.get('/api/custom/scale', () => HttpResponse.json(data.treemapColorScale)),
   http.get('/api/custom/value-tiers', () => HttpResponse.json(data.marketValueTiers)),
   http.get('/api/custom/stock-sectors', () => HttpResponse.json(snapshot(data.customStockSectors))),
   http.put('/api/custom/stock-sectors/:stockCode', ok),

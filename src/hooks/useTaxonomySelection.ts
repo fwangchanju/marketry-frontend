@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 
 export type TaxonomySelection = 'MARKETRY' | 'KRX' | 'MINE'
 
-const STORAGE_KEY = 'marketMap.taxonomySelection'
+const STORAGE_KEY = 'treemap.taxonomySelection'
 const CHANGE_EVENT = 'marketry:taxonomy-selection'
 let memorySelection: TaxonomySelection | null = null
 let useMemoryStorage = false

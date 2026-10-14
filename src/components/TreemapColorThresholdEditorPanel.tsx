@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/marketMapColorScale'
+import { hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/treemapColorScale'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 
 const SATURATION = 75
@@ -111,7 +111,7 @@ export interface ColorThresholdEditorProps {
 
 // 범례 아래에서 편집하는 색상 추가/수정 패널. 색상칸을 고르면 지도에 즉시 반영되고,
 // 적용 시 서버에 저장된다. 취소 시에는 부모가 세션 시작 전 값으로 되돌린다.
-export default function MarketMapColorThresholdEditorPanel({
+export default function TreemapColorThresholdEditorPanel({
   thresholds,
   onChangeThreshold,
   onChangeColor,

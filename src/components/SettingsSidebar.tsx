@@ -4,16 +4,16 @@ import { Children, Fragment, createContext, isValidElement, useContext, useEffec
 import { createPortal } from 'react-dom'
 import type { DepthMetric } from '@/hooks/useGlobalSettings'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
-import type { StockChangeFilter, SectorChangeFilter } from '@/hooks/useFilteredMarketMapTree'
-import type { ColorScaleConfig, LegendSwatch } from '@/utils/marketMapColorScale'
-import MarketMapColorThresholdEditorPanel, { type ColorThresholdEditorProps } from '@/components/MarketMapColorThresholdEditorPanel'
+import type { StockChangeFilter, SectorChangeFilter } from '@/hooks/useFilteredTreemap'
+import type { ColorScaleConfig, LegendSwatch } from '@/utils/treemapColorScale'
+import TreemapColorThresholdEditorPanel, { type ColorThresholdEditorProps } from '@/components/TreemapColorThresholdEditorPanel'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
-import { ReturnArrowIcon } from '@/components/icons/MarketMapIcons'
+import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import type { MarketValueTierItem } from '@/types/api'
 import { FONT_BAR_TIME_SHAPE } from '@/components/FontStyle'
 import { ACCENT_PALETTE } from '@/utils/accentPalette'
 import { TAXONOMY_SELECT_TITLE, TAXONOMY_NAMES, type TaxonomyKey } from '@/utils/taxonomyNames'
-import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toMarketMapSnapshotDateLabel, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { useIsLoggedIn } from '@/hooks/useSession'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
 import { commitDrafts, discardDrafts, useHasDrafts } from '@/utils/settingsDraft'
@@ -1086,8 +1086,8 @@ function SettingsTaxonomySelector({
               }
             />
           </span>
-          <span className={snapshotTime ? undefined : 'invisible'}>{toMarketMapSnapshotDateLabel(snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}</span>
-          <span className={snapshotTime ? undefined : 'invisible'}>{toMarketMapSnapshotTimeOnlyLabel(snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}</span>
+          <span className={snapshotTime ? undefined : 'invisible'}>{toSnapshotDateLabel(snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}</span>
+          <span className={snapshotTime ? undefined : 'invisible'}>{toSnapshotTimeOnlyLabel(snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}</span>
         </p>
       )}
     </div>
@@ -1981,7 +1981,7 @@ export function SettingsColorSection({
       </div>
       {colorEditorProps && (
         <div className={colorCustomOn ? '' : 'opacity-40'} inert={!colorCustomOn}>
-          <MarketMapColorThresholdEditorPanel key={colorEditorProps.sessionKey} {...colorEditorProps} />
+          <TreemapColorThresholdEditorPanel key={colorEditorProps.sessionKey} {...colorEditorProps} />
         </div>
       )}
     </div>

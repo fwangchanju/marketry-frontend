@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNumberTween } from '@/hooks/useNumberTween'
 import { FLASH_HOLD_MS } from '@/components/numberEffectTiming'
-import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toMarketMapSnapshotTimeOnlyLabel } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotTimeOnlyLabel } from '@/utils/format'
 
 const CLOCK_TWEEN_MS = 1000
 
@@ -31,7 +31,7 @@ export default function AnimatedClockLabel({ snapshotTime }: { snapshotTime: str
   }, [shownTime])
   useEffect(() => () => window.clearTimeout(flashTimer.current), [])
   const label = shown === null
-    ? toMarketMapSnapshotTimeOnlyLabel(MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)
+    ? toSnapshotTimeOnlyLabel(MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)
     : `${pad(Math.floor(shown / 60))}:${pad(shown % 60)}`
   return <span className={`tabular-nums transition-colors duration-500 ${isFlashing ? 'text-[var(--brand)]' : ''} ${shownTime ? '' : 'invisible'}`}>{label}</span>
 }
