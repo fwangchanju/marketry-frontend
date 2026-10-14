@@ -2,7 +2,7 @@ import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyle
 import { useEffect, useState } from 'react'
 import { screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import { captureRegionRect } from '@/utils/screenshotScale'
-import { CheckIcon, CopyIcon, DownloadIcon, TelegramIcon } from '@/components/icons/AppIcons'
+import { CheckIcon, CopyIcon, DownloadIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
   isCopying: boolean
   isDownloading: boolean
   screenshotTarget: HTMLElement | null
-  // 있으면 "전체" 옆에 이 요소들이 차지한 영역만 따로 찍는 버튼(텔레그램 아이콘 + label)을 보여 준다(홈의 지도·그룹 등락률 두 틀을 텔레그램에 보낼 때).
+  // 있으면 "모니터"(전체) 옆에 맨 왼쪽부터 selector 요소의 오른쪽 끝까지만 찍는 버튼(휴대폰 아이콘 + label)을 보여 준다(홈에서 맨 오른쪽 틀을 뺀 영역).
   regionOption?: { label: string; selector: string }
 }
 
@@ -31,11 +31,12 @@ export default function ScreenshotModal({
   regionOption,
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
-  const [isRegionOnly, setIsRegionOnly] = useState(false)
+  // regionOption이 있으면(홈) 처음부터 그 범위(모바일)로 찍는다. 다른 범위가 필요하면 "모니터"를 누른다.
+  const [isRegionOnly, setIsRegionOnly] = useState(() => regionOption !== undefined)
   const regionSelector = regionOption && isRegionOnly ? regionOption.selector : undefined
   // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 스크린샷 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
   // 스크린샷으로 찍을 영역의 비율로 어림잡고, 이미지가 로드되면 실제 비율로 바로잡는다.
-  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget, undefined))
+  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget, regionOption?.selector))
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -130,10 +131,11 @@ export default function ScreenshotModal({
             {regionOption && (
               <>
                 <button type="button" aria-pressed={!isRegionOnly} onClick={() => selectRegion(false)} className={!isRegionOnly ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
-                  전체
+                  <MonitorIcon className="h-4 w-4" />
+                  모니터
                 </button>
                 <button type="button" aria-pressed={isRegionOnly} onClick={() => selectRegion(true)} className={isRegionOnly ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
-                  <TelegramIcon className="h-4 w-4" />
+                  <SmartphoneIcon className="h-4 w-4" />
                   {regionOption.label}
                 </button>
               </>
