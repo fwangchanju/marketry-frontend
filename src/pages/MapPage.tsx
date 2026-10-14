@@ -640,7 +640,7 @@ export default function MapPage() {
                       <button
                         key={index}
                         type="button"
-                        data-hint={`${SECTOR_LEVEL_LABEL[index] ?? `${index + 1}단계`}로 돌아가기`}
+                        data-hint={`${SECTOR_LEVEL_LABEL[index]}로 돌아가기`}
                         onClick={() => handleGoToDepth(index + 1)}
                         style={{ fontFamily: 'inherit' }}
                         className={BREADCRUMB_LINK_CLASS}
