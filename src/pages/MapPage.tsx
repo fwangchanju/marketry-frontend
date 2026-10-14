@@ -600,7 +600,7 @@ export default function MapPage() {
                       <br />
                       <span className="text-gray-600">최대 {toCount(nxtStockTotal)}종목이며, 설정에 따라 다를 수 있습니다.</span>
                     </p>
-                    <div className="mt-auto flex justify-end pt-6">
+                    <div className="mt-auto flex justify-end pt-3">
                       <button
                         type="button"
                         onClick={() => setIsNxtNoticeDismissed(true)}
