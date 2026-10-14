@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { CaptureIcon, MaximizeIcon, MinimizeIcon, RefreshIcon, SettingsIcon } from '@/components/icons/AppIcons'
+import { ScreenshotIcon, MaximizeIcon, MinimizeIcon, RefreshIcon, SettingsIcon } from '@/components/icons/AppIcons'
 
 interface Props {
   onRefresh: () => void | Promise<unknown>
@@ -9,7 +9,7 @@ interface Props {
   isSettingsOpen?: boolean
   // 스크린샷으로 찍을 화면이 없는 페이지(홈)는 둘 다 넘기지 않는다 — 그러면 스크린샷 버튼도 그리지 않는다.
   onOpenShare?: () => void
-  isCaptureOpen?: boolean
+  isScreenshotOpen?: boolean
   isNativeFullscreen: boolean
   onToggleFullscreen: () => void
   // false면 새로고침 버튼을 이 묶음에서 뺀다 — 콘솔 줄(시계 옆)에 PageRefreshButton으로 따로 둘 때.
@@ -121,7 +121,7 @@ export default function NavBarPageActions({
   onToggleSettings,
   isSettingsOpen = false,
   onOpenShare,
-  isCaptureOpen = false,
+  isScreenshotOpen = false,
   isNativeFullscreen,
   onToggleFullscreen,
   showRefresh = true,
@@ -134,11 +134,11 @@ export default function NavBarPageActions({
         aria-label="스크린샷"
         data-hint="스크린샷 찍기"
         aria-haspopup="dialog"
-        aria-expanded={isCaptureOpen}
-        className={`flex h-7 w-7 items-center justify-center border-0 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${ICON_FRAME_CLASS} ${isCaptureOpen ? 'text-[var(--brand)]' : 'text-gray-300'}`}
+        aria-expanded={isScreenshotOpen}
+        className={`flex h-7 w-7 items-center justify-center border-0 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${ICON_FRAME_CLASS} ${isScreenshotOpen ? 'text-[var(--brand)]' : 'text-gray-300'}`}
         onClick={onOpenShare}
       >
-        <CaptureIcon className={`h-6 w-6 ${isCaptureOpen ? FILLED_ICON_CLASS : ''}`} />
+        <ScreenshotIcon className={`h-6 w-6 ${isScreenshotOpen ? FILLED_ICON_CLASS : ''}`} />
       </button>}
       <button
         type="button"

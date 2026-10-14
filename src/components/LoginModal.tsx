@@ -11,7 +11,7 @@ interface Props {
   onClose: () => void
 }
 
-// CaptureModal과 동일한 팝업 톤(어두운 배경 오버레이 + var(--surface) 패널, nes-btn 버튼)을
+// ScreenshotModal과 동일한 팝업 톤(어두운 배경 오버레이 + var(--surface) 패널, nes-btn 버튼)을
 // 그대로 재사용한다 — 새 시각 스타일을 만들지 않는다. 강조 버튼도 기존 accent 토큰(노랑)만 쓰고
 // 등락률 전용인 red/blue 계열(--stock-up/--stock-down/--negative)은 쓰지 않는다.
 export default function LoginModal({ returnTo, hideMessage = false, onClose }: Props) {

@@ -2,7 +2,7 @@ import type { SVGProps } from 'react'
 
 export function SettingsIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M11 10.27 7 3.34" />
       <path d="m11 13.73-4 6.93" />
       <path d="M12 22v-2" />
@@ -156,7 +156,7 @@ export function ClockIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 // 화면 스크린샷 — 점선 사각형 모양.
-export function CaptureIcon(props: SVGProps<SVGSVGElement>) {
+export function ScreenshotIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M7 19a2 2 0 0 1-2-2" />

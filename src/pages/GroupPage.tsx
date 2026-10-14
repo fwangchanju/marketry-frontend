@@ -13,7 +13,7 @@ import SettingsSidebar, {
   type SectorStockScope,
   SettingsBeforeMinutesSection,
 } from '@/components/SettingsSidebar'
-import CaptureModal from '@/components/CaptureModal'
+import ScreenshotModal from '@/components/ScreenshotModal'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
@@ -38,8 +38,8 @@ import { CAPTURE_ID } from '@/utils/captureIds'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
-import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
-import { captureElementToDownload, downloadDataUrl, captureFileName } from '@/utils/captureToDownload'
+import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
+import { screenshotElementToDownload, downloadDataUrl, screenshotFileName } from '@/utils/screenshotToDownload'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { marketRoute } from '@/utils/marketRoute'
 import type { Market, TreemapSectorNode } from '@/types/api'
@@ -197,14 +197,14 @@ export default function GroupPage() {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const captureRef = useRef<HTMLDivElement>(null)
+  const screenshotRef = useRef<HTMLDivElement>(null)
 
   const handleCopy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !captureRef.current) return
+    if (!previewSrc && !screenshotRef.current) return
     setCopyStatus('copying')
     try {
       if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (captureRef.current) await captureElementToClipboard(captureRef.current)
+      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
       setCopyStatus('copied')
     } catch {
       setCopyStatus('error')
@@ -214,11 +214,11 @@ export default function GroupPage() {
   }
 
   const handleDownload = async (previewSrc?: string | null) => {
-    if (!previewSrc && !captureRef.current) return
+    if (!previewSrc && !screenshotRef.current) return
     setDownloadStatus('downloading')
     try {
-      if (previewSrc) downloadDataUrl(previewSrc, captureFileName('GROUP'))
-      else if (captureRef.current) await captureElementToDownload(captureRef.current, captureFileName('GROUP'))
+      if (previewSrc) downloadDataUrl(previewSrc, screenshotFileName('GROUP'))
+      else if (screenshotRef.current) await screenshotElementToDownload(screenshotRef.current, screenshotFileName('GROUP'))
     } catch {
       setDownloadStatus('error')
     } finally {
@@ -303,7 +303,7 @@ export default function GroupPage() {
             onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
             isSettingsOpen={settingsModalProps.isOpen}
             onOpenShare={() => setIsShareOpen(true)}
-            isCaptureOpen={isShareOpen}
+            isScreenshotOpen={isShareOpen}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
             showRefresh={false}
@@ -320,7 +320,7 @@ export default function GroupPage() {
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
               항상 같은 폭을 유지하게 한다(지도 페이지와 동일) — 내부 그래프가 넘치면 이 컬럼
               안에서만 처리된다. */}
-          <div ref={captureRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white">
+          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white">
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="GROUP" label={MARKET_LABEL[market]} />
@@ -480,7 +480,7 @@ export default function GroupPage() {
       </div>
 
       {isShareOpen && (
-        <CaptureModal
+        <ScreenshotModal
           onClose={() => setIsShareOpen(false)}
           onCopy={handleCopy}
           onDownload={handleDownload}
@@ -488,7 +488,7 @@ export default function GroupPage() {
           downloadLabel={downloadLabel}
           isCopying={copyStatus === 'copying'}
           isDownloading={downloadStatus === 'downloading'}
-          captureTarget={captureRef.current}
+          screenshotTarget={screenshotRef.current}
         />
       )}
     </div>

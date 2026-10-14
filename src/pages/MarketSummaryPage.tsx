@@ -2,7 +2,7 @@ import { Fragment, useMemo, useRef, useState } from 'react'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
-import CaptureModal from '@/components/CaptureModal'
+import ScreenshotModal from '@/components/ScreenshotModal'
 import { ClockIcon } from '@/components/icons/AppIcons'
 import SettingsSidebar, { SettingsGroupDepthSection } from '@/components/SettingsSidebar'
 import FrameTitleBadge from '@/components/FrameTitleBadge'
@@ -27,8 +27,8 @@ import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useMarketNotices } from '@/hooks/useMarketNotices'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsSidebarSide } from '@/hooks/useSettingsSidebarSide'
-import { captureElementToClipboard, copyDataUrlToClipboard } from '@/utils/captureToClipboard'
-import { captureElementToDownload, captureFileName, downloadDataUrl } from '@/utils/captureToDownload'
+import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
+import { screenshotElementToDownload, screenshotFileName, downloadDataUrl } from '@/utils/screenshotToDownload'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toSnapshotDateLabel, toPctSigned } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
@@ -63,7 +63,7 @@ export default function MarketSummaryPage() {
   // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const allFramesRef = useRef<HTMLDivElement>(null)
-  const [captureTarget, setCaptureTarget] = useState<HTMLElement | null>(null)
+  const [screenshotTarget, setScreenshotTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   const {
@@ -135,13 +135,13 @@ export default function MarketSummaryPage() {
     return `${toCount(included)}/${toCount(total)}종목`
   }, [data, excludedSectorIds, excludedMarketValueTiers])
   // 세 틀을 한 장으로 스크린샷으로 찍는 중에는 틀마다 있는 스크린샷 버튼을 감춰서 이미지에 찍히지 않게 한다.
-  const isCapturingAll = captureTarget !== null && captureTarget === allFramesRef.current
+  const isCapturingAll = screenshotTarget !== null && screenshotTarget === allFramesRef.current
   const handleCopy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !captureTarget) return
+    if (!previewSrc && !screenshotTarget) return
     setCopyStatus('copying')
     try {
       if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (captureTarget) await captureElementToClipboard(captureTarget)
+      else if (screenshotTarget) await screenshotElementToClipboard(screenshotTarget)
       setCopyStatus('copied')
     } catch {
       setCopyStatus('error')
@@ -151,11 +151,11 @@ export default function MarketSummaryPage() {
   }
 
   const handleDownload = async (previewSrc?: string | null) => {
-    if (!previewSrc && !captureTarget) return
+    if (!previewSrc && !screenshotTarget) return
     setDownloadStatus('downloading')
     try {
-      if (previewSrc) downloadDataUrl(previewSrc, captureFileName('HOME'))
-      else if (captureTarget) await captureElementToDownload(captureTarget, captureFileName('HOME'))
+      if (previewSrc) downloadDataUrl(previewSrc, screenshotFileName('HOME'))
+      else if (screenshotTarget) await screenshotElementToDownload(screenshotTarget, screenshotFileName('HOME'))
     } catch {
       setDownloadStatus('error')
     } finally {
@@ -180,8 +180,8 @@ export default function MarketSummaryPage() {
             isSettingsOpen={isSettingsOpen}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
-            onOpenShare={() => setCaptureTarget(allFramesRef.current)}
-            isCaptureOpen={isCapturingAll}
+            onOpenShare={() => setScreenshotTarget(allFramesRef.current)}
+            isScreenshotOpen={isCapturingAll}
           />
         }
       />
@@ -410,16 +410,16 @@ export default function MarketSummaryPage() {
           />
         </div>
       </div>
-      {captureTarget && (
-        <CaptureModal
-          onClose={() => setCaptureTarget(null)}
+      {screenshotTarget && (
+        <ScreenshotModal
+          onClose={() => setScreenshotTarget(null)}
           onCopy={handleCopy}
           onDownload={handleDownload}
           copyLabel={copyLabel}
           downloadLabel={downloadLabel}
           isCopying={copyStatus === 'copying'}
           isDownloading={downloadStatus === 'downloading'}
-          captureTarget={captureTarget}
+          screenshotTarget={screenshotTarget}
         />
       )}
     </div>
