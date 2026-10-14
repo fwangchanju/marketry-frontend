@@ -467,7 +467,7 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
   const isAllVisibleSelected = visibleRows.length > 0 && visibleRows.every(row => selectedCodes.has(row.stockCode))
   const toggleSelectAllVisible = () =>
     setSelectedCodes(isAllVisibleSelected ? new Set() : new Set(visibleRows.map(row => row.stockCode)))
-  // 종목이 수천 개라 전부 그려 두면 검색할 때마다 화면 갱신이 느리고, 공유 캡처도 안 보이는 행까지 전부 복제한다 —
+  // 종목이 수천 개라 전부 그려 두면 검색할 때마다 화면 갱신이 느리고, 공유 스크린샷도 안 보이는 행까지 전부 복제한다 —
   // 화면에 보이는 행(+위아래 여유)만 그리고, 나머지 높이는 앞뒤 스페이서 <tr>로 채운다(AdminStockTable과 같은 방식).
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)

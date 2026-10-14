@@ -141,8 +141,8 @@ export default function GroupPage() {
   const displayBefore = isRangeView ? null : (pairQuery.data?.before ?? null)
   const isPairSettled = isRangeView || pairQuery.isSuccess || pairQuery.isError
   // data-capture-ready(결정 4) — now가 성공했고 비어 있으면(그 시각 데이터가 아예 없음) 그대로
-  // "데이터가 없습니다" 화면을 캡처한다. 그 외에는 쌍 쿼리까지 끝나 있고(성공 또는 에러), placeholder가
-  // 아니고, 시가총액 구간 설정이 준비된 뒤에야 캡처를 허용한다 — now 에러는 항상 false다.
+  // "데이터가 없습니다" 화면을 스크린샷으로 찍는다. 그 외에는 쌍 쿼리까지 끝나 있고(성공 또는 에러), placeholder가
+  // 아니고, 시가총액 구간 설정이 준비된 뒤에야 스크린샷을 허용한다 — now 에러는 항상 false다.
   const isDataCaptureReady =
     isTreemapSuccess &&
     (data?.snapshotTime == null ||
@@ -150,7 +150,7 @@ export default function GroupPage() {
   const isRefreshing = isRefetchingTreemap || pairQuery.isFetching
 
   // 렌더러가 /sector/kosdaq?beforeMinutes=15&avgMode=simple&sectorFilter=true로
-  // 캡처 요청할 때 쓰는 진입점 — MapPage와 동일한 패턴(초기 상태 반영 용도일 뿐 주소창엔
+  // 스크린샷을 요청할 때 쓰는 진입점 — MapPage와 동일한 패턴(초기 상태 반영 용도일 뿐 주소창엔
   // 남길 필요 없어 반영 직후 지움). market은 useGlobalSettings()가 내부에서 이미 우선 반영했으므로
   // 여기서는 나머지 세 파라미터만 다룬다. 셋은 서로 독립적으로 판정한다 — 하나가 없거나 잘못됐다고
   // 다른 것까지 무시하면 안 된다. 실제로 소비한(유효했던) 파라미터만 주소에서 지운다.
@@ -165,7 +165,7 @@ export default function GroupPage() {
     const marketParam = searchParams.get('market')
     const isValidMarket = marketParam === 'KOSPI' || marketParam === 'KOSDAQ' || marketParam === 'ALL_STOCK'
 
-    // 백엔드가 캡처 URL에 싣는 avgMode=simple|weighted, sectorFilter=true|false 계약에 맞춘다
+    // 백엔드가 스크린샷 URL에 싣는 avgMode=simple|weighted, sectorFilter=true|false 계약에 맞춘다
     // (marketry-backend의 instructions-telegram-average-mode.md 결정 6).
     const avgModeParam = searchParams.get('avgMode')
     const isValidAvgMode = avgModeParam === 'simple' || avgModeParam === 'weighted'
@@ -311,7 +311,7 @@ export default function GroupPage() {
         }
       />
       <div className="flex min-h-0 flex-1">
-        {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 캡처해 설정창을 제외한다. */}
+        {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
         <div
           ref={settingsRowRef}
           className="relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-black text-white"

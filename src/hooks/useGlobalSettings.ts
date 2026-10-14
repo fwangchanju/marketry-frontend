@@ -168,7 +168,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     ? DEFAULT_STRONG_INDUSTRY_COLOR
     : storedStrongIndustryColor
 
-  // 캡처 렌더러와 로그인 사용자 설정은 저장된 색을 사용한다. 예전 기본 금색 값이 남아 있으면
+  // 스크린샷 렌더러와 로그인 사용자 설정은 저장된 색을 사용한다. 예전 기본 금색 값이 남아 있으면
   // 첫 화면부터 청록색으로 표시하고, sessionStorage 또는 서버 설정에도 새 값을 저장한다.
   useEffect(() => {
     if (isLegacyStrongIndustryColor) setStrongIndustryColor(DEFAULT_STRONG_INDUSTRY_COLOR)
@@ -184,7 +184,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     storedDepthMetric !== null,
   )
   // 분류별 데이터 깊이에 맞춰 화면에 적용하되, 사용자가 고른 범위는 전환해도 보존한다.
-  // 기본값: 대분류~중분류(index 0~1) — 렌더러가 캡처하는 기본 화면에 등락률이 보이도록.
+  // 기본값: 대분류~중분류(index 0~1) — 렌더러가 스크린샷으로 찍는 기본 화면에 등락률이 보이도록.
   const [depthMetricMinIndex, setDepthMetricMinIndex] = usePageSetting('treemap.depthMetricMinIndex', defaults.depthMetricMinIndex)
   const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting('treemap.depthMetricMaxIndex', defaults.depthMetricMaxIndex)
   // avgChangeRateUseSimple은 섹터 랭킹에 사용한다. 강세 업종은 업종 탭 표시 지표를 따른다.
@@ -229,7 +229,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [sectorChangeFilter, setSectorChangeFilter] = usePageSetting<SectorChangeFilter>('treemap.sectorChangeFilter', defaults.sectorChangeFilter)
   const [sectorChangeDepth, setSectorChangeDepth] = usePageSetting('treemap.sectorChangeDepth', defaults.sectorChangeDepth)
   // null = 제한 없음(전체 뎁스 표시). 슬라이더의 실제 상한(availableMaxDepth)은 트리 계산 후에 나온다.
-  // 기본값 2(렌더러 캡처 기준 화면에 맞춤).
+  // 기본값 2(렌더러 스크린샷 기준 화면에 맞춤).
   const [selectedMaxDepth, setMaxDepth] = usePageSetting<number | null>('treemap.selectedMaxDepth', defaults.maxDepth)
   const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting('treemap.sectorLevelEnabled', defaults.sectorLevelEnabled)
   const maxDepth = sectorLevelEnabled ? selectedMaxDepth : 0

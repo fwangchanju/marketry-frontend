@@ -140,7 +140,7 @@ export default function Treemap({
   // onPointerMove) 꺼진다. 예전엔 index.css의 CSS :active로 이 "누르는 순간"을 처리했는데, :active는
   // 버튼을 구분 못 해서 우클릭(팝업) 프레스 중에도 같이 켜지는 버그가 있어 JS로 옮겼다.
   const [suppressSectorHoverBorder, setSuppressSectorHoverBorder] = useState(false)
-  // 섹터 진입(클릭) 시점에 캡처한 "그 박스가 화면에서 차지하던 위치" — 뎁스별로 기억해뒀다가
+  // 섹터 진입(클릭) 시점에 스크린샷으로 찍은 "그 박스가 화면에서 차지하던 위치" — 뎁스별로 기억해뒀다가
   // 다시 나갈 때 정확히 그 자리로 줄어드는 반대 애니메이션에 재사용한다.
   const entryRectsRef = useRef<Map<number, RelativeRect>>(new Map())
   // 클릭~실제 path 반영(재렌더) 사이에 잠깐 들고 있는 값들 — 클릭 시점엔 아직 depth/groups가 안 바뀌어
