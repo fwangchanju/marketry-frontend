@@ -2283,9 +2283,9 @@ export default function SettingsSidebar({
         {/* 바꾼 값은 임시값이라 저장을 눌러야 서버에 올라간다. 초기화는 임시값을 버리고 저장값으로 돌아간다. 비로그인은 저장할 곳이 없어 로그인 창을 띄운다. */}
         {showPreferenceActions && <div className="ml-auto flex shrink-0 items-center gap-1">
           <button type="button" aria-label="초기화" disabled={isPreferenceFeedbackActive} onClick={async () => {
-              if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '저장값으로 돌아가기' })) runPreferenceAction(discardDrafts)
+              if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(discardDrafts)
             }} className="group relative flex h-6 w-6 items-center justify-center rounded-md border-0 bg-zinc-600 p-0 text-white transition-colors hover:bg-zinc-500 disabled:opacity-50">
-            <HeaderButtonHint>{'저장값으로 돌아가기'}</HeaderButtonHint>
+            <HeaderButtonHint>{'저장값으로 되돌리기'}</HeaderButtonHint>
             <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
               <path d="M2.5 8a5.5 5.5 0 1 0 1.8-4.07M2.5 2.5v3h3" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -2301,7 +2301,7 @@ export default function SettingsSidebar({
                 appAlert('저장된 설정을 아직 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.')
                 return
               }
-              if (!await appConfirm('지금 변경사항을 저장하시겠습니까?', { title: '변경값으로 저장하기' })) return
+              if (!await appConfirm('지금 변경사항을 저장하시겠습니까?', { title: '저장하기' })) return
               // 저장에 실패하면 임시값은 그대로 남아 있으니 알리고, 사용자가 다시 저장하게 한다.
               runPreferenceAction(() => {
                 commitDrafts(commitPreferences).catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.'))
