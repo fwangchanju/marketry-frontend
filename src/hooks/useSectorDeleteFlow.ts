@@ -13,10 +13,10 @@ function alertBlocked(sectorName: string, blockingStocks: StockSectorItem[]) {
   // 같은 종목이 하위 섹터 여러 곳에 걸려 있을 수 있어 종목 코드로 중복을 없애서 센다.
   const stockCount = new Set(blockingStocks.map(s => s.stockCode)).size
   if (stockCount === 0) {
-    appAlert(`[${sectorName}] 업종은 삭제할 수 없습니다.`)
+    appAlert(`[${sectorName}] 업종은 삭제할 수 없습니다.`, { title: '삭제 불가' })
     return
   }
-  appAlert(`[${sectorName}] 업종에 ${stockCount}종목이 있어 삭제할 수 없습니다.`)
+  appAlert(`[${sectorName}] 업종에 ${stockCount}종목이 있어 삭제할 수 없습니다.`, { title: '삭제 불가' })
 }
 
 function alertDeleteFailed(sectorName: string, error: unknown) {

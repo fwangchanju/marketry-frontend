@@ -155,7 +155,7 @@ export default function MapPage() {
     if (settingsBookmarks.includes(id)) {
       setSettingsBookmarks(settingsBookmarks.filter(item => item !== id))
     } else if (settingsBookmarks.length >= MAX_SETTINGS_BOOKMARKS) {
-      appAlert(`북마크는 최대 ${MAX_SETTINGS_BOOKMARKS}개까지 설정할 수 있습니다.`)
+      appAlert(`북마크는 최대 ${MAX_SETTINGS_BOOKMARKS}개까지 설정할 수 있습니다.`, { title: '추가 제한' })
     } else {
       setSettingsBookmarks([...settingsBookmarks, id])
     }
