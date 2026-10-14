@@ -718,3 +718,7 @@ Custom의 본문 로딩·오류 원 여백은 지도·그룹 페이지와 같은
 ## SettingsSidebar를 SettingsPanel로 바꿨다 (2026-10-14)
 
 사이드 영역(설정창)의 코드 이름 `SettingsSidebar`를 `SettingsPanel`로 바꿨다(`SettingsPanelGroup`, `useSettingsPanelSide`, `SettingsPanelSectionId`, 화면 표식 `data-settings-panel`, CSS 클래스 `settings-panel-*` 포함). 후보였던 `Sidebar`는 설정 말고 다른 사이드 영역이 생기면 겹칠 수 있어서, `SettingBar`는 프로젝트에서 "Bar"가 가로 줄(`NavBar`·`ChangeRateBar`)을 뜻하고 단수 `Setting`은 설정 항목 하나를 가리켜서 쓰지 않았다. 설정창 위치(왼쪽·오른쪽)의 브라우저 저장 키도 `settings-sidebar-on-left`에서 `settings-panel-on-left`로 바꿨다. 옛 값은 옮기지 않아서 배포 후 브라우저마다 한 번 오른쪽(기본값)으로 돌아가며, 이동 버튼을 한 번 누르면 새 키에 저장된다. 문서의 영역 이름은 계속 "사이드 영역(설정창)"이다.
+
+## 홈 틀의 바깥 모양을 확정했다 (2026-10-14)
+
+홈 세 틀(시장 요약·시장 지도·그룹 등락률)의 바깥 틀을 점검했다. 세 틀의 위치(위 y 124, 높이 848)·내용 폭(1600px 화면 417px, 1280px 화면 310px)·제목 줄(28px)·본문 시작선(제목 줄 아래 4px)이 이미 모두 같아서 코드는 바꾸지 않고 규칙을 `docs/ui-areas.md`의 "홈 틀 규칙"에 적었다. 시장 요약 틀 아래의 빈 공간은 결함이 아니라 나중에 내용이 들어올 자리라서, 내용이 모자란 틀은 위에서부터 쌓고 남는 높이를 비우는 것으로 정했다. 안쪽 내용(더하고 뺄 것)은 사용자가 따로 정한다.
