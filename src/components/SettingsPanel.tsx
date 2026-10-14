@@ -2272,11 +2272,11 @@ export default function SettingsPanel({
         data-hint={isOnLeft ? '설정창을 오른쪽으로 이동' : '설정창을 왼쪽으로 이동'}
         ref={sideTabRef}
         style={{ backgroundColor: TAXONOMY_BACKGROUND_COLOR }}
-        className={`absolute top-1/2 z-10 flex h-8 w-[17px] -translate-y-1/2 items-center justify-center border border-gray-500 p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${
-          isOnLeft ? '-right-4 rounded-r-lg border-l-0' : '-left-4 rounded-l-lg border-r-0'
+        className={`absolute top-1/2 z-10 flex h-8 w-[14px] -translate-y-1/2 items-center justify-center border border-gray-500 p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${
+          isOnLeft ? '-right-[13px] rounded-r-lg border-l-0' : '-left-[13px] rounded-l-lg border-r-0'
         }`}
       >
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
+        <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
           <path
             d={isOnLeft ? 'M13.5 3v10M2 8h9M7.5 4.5 11 8l-3.5 3.5' : 'M2.5 3v10M14 8H5M8.5 4.5 5 8l3.5 3.5'}
             fill="none"
