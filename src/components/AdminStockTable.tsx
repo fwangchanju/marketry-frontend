@@ -1606,7 +1606,7 @@ export default function AdminStockTable({
               type="button"
               onClick={handleExportExcel}
               className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium text-white hover:bg-white/10"
-              data-hint="필터가 적용된 목록을 엑셀로 내려받기"
+              data-hint="필터가 적용된 목록을 엑셀로 다운로드"
               aria-label="엑셀 다운로드"
             >
               <DownloadIcon className="h-4 w-4 text-gray-400" />
@@ -1617,7 +1617,7 @@ export default function AdminStockTable({
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
               className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-              data-hint="종목 분류를 엑셀로 한번에 올리기"
+              data-hint="종목 분류를 엑셀로 한번에 업로드"
               aria-label="엑셀 업로드"
             >
               <UploadIcon className="h-4 w-4 text-gray-400" />
