@@ -455,7 +455,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       }}
       className="flex h-6 shrink-0 items-center gap-1 rounded-lg border-0 bg-zinc-600 px-2 text-[13px] font-semibold leading-none text-white transition-colors hover:bg-zinc-500"
     >
-      <ClockIcon className="h-3.5 w-3.5" aria-hidden />
+      <ClockIcon strokeWidth={2.3} className="h-3.5 w-3.5" aria-hidden />
       실시간
     </button>
   ) : null
@@ -484,7 +484,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
         onClick={toggleOpen}
         className={`flex h-6 items-center gap-1.5 border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-[#838385] focus-visible:bg-[#838385] ${isOpen ? 'bg-[#838385]' : 'bg-transparent'}`}
       >
-        <CalendarIcon className={`h-[15px] w-[15px] shrink-0 ${isOpen ? FILLED_ICON_CLASS : ''}`} aria-hidden />
+        <CalendarIcon strokeWidth={2.2} className={`h-[15px] w-[15px] shrink-0 ${isOpen ? FILLED_ICON_CLASS : ''}`} aria-hidden />
         {/* 날짜 글자(기간이면 "~ 종료일"까지)도 버튼 안에 둬서 칩 어디를 눌러도 달력이 열린다. */}
         {children}
       </button>

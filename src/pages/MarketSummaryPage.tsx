@@ -234,7 +234,7 @@ export default function MarketSummaryPage() {
                     helpText={SNAPSHOT_REFRESH_HELP}
                     minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                   >
-                    <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                    <ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
                     <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
                   </PageRefreshButton>
                 </ToolbarChip>

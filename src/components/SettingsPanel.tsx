@@ -113,7 +113,7 @@ function SettingHelpBubble({ label, description, bookmarkId }: { label: string; 
         }}
         className="inline-flex h-4 w-4 items-center justify-center border-0 bg-transparent p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
       >
-        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round">
+        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="8" cy="8" r="6.35" />
           <path d="M6.25 6.05a1.85 1.85 0 1 1 3.55.78c-.48.86-1.8 1.06-1.8 2.52" />
           <circle cx="8" cy="11.75" r="0.55" fill="currentColor" stroke="none" />
@@ -1855,7 +1855,7 @@ export function SettingsExcludeSection({
                 data-hint="맵에 다시 표시"
                 className="flex h-7 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-white transition-colors hover:bg-white/35"
               >
-                <ReturnArrowIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
               </button>
             ))}
@@ -2242,13 +2242,13 @@ export default function SettingsPanel({
           if (!isLoggedIn) { onRequestLogin?.(); return }
           if (!hasDrafts) return
           if (!preferencesLoaded) {
-            appAlert('저장된 설정을 아직 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.')
+            appAlert('저장된 설정을 아직 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.', { title: '불러오기 실패' })
             return
           }
           if (!await appConfirm('지금 변경사항을 저장하시겠습니까?', { title: '저장하기' })) return
           // 저장에 실패하면 임시값은 그대로 남아 있으니 알리고, 사용자가 다시 저장하게 한다.
           runPreferenceAction(() => {
-            commitDrafts(commitPreferences).catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.'))
+            commitDrafts(commitPreferences).catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.', { title: '저장 실패' }))
           })
         }}
         className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50"

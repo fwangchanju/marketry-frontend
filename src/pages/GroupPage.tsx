@@ -121,7 +121,7 @@ export default function GroupPage() {
   // 전종목이면 그래프의 숫자가 지도와 다르게 집계되므로 지도로 이동하지 않고, 안내창으로 이유를 알려 준다.
   const handleSelectSector = (sectorName: string) => {
     if (isAllStocks) {
-      void appAlert('집계 대상 종목을 전종목으로 선택하는 경우\n이동을 제한합니다.')
+      void appAlert('집계 대상 종목을 전종목으로 선택하는 경우\n이동을 제한합니다.', { title: '이동 제한' })
       return
     }
     navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
@@ -362,7 +362,7 @@ export default function GroupPage() {
                         helpText={SNAPSHOT_REFRESH_HELP}
                         minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                       >
-                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                        <ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
                         <AnimatedClockLabel snapshotTime={displayNow?.snapshotTime ?? null} />
                       </PageRefreshButton>
                     </ToolbarChip>

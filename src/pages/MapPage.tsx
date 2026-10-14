@@ -296,7 +296,7 @@ export default function MapPage() {
     entryFromOtherPageRef.current = entered !== null && entered.length > path.length
     if (entered === null && noticedSectorRef.current !== sectorParam) {
       noticedSectorRef.current = sectorParam
-      void appAlert('해당 업종을 찾을 수 없습니다.\n이전 화면으로 돌아갑니다.').then(leaveToEntryPage)
+      void appAlert('해당 업종을 찾을 수 없습니다.\n이전 화면으로 돌아갑니다.', { title: '이동 실패' }).then(leaveToEntryPage)
     }
     setSearchParams(
       prev => {
@@ -568,7 +568,7 @@ export default function MapPage() {
                         helpText={SNAPSHOT_REFRESH_HELP}
                         minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                       >
-                        <ClockIcon className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                        <ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
                         <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
                       </PageRefreshButton>
                     </ToolbarChip>

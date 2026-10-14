@@ -368,7 +368,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const toggleAddChild = (id: number) => {
     const parent = sectors.find(c => c.id === id)
     if (parent && parent.depth >= MAX_SECTOR_DEPTH) {
-      appAlert(`업종은 ${MAX_SECTOR_LEVELS}단계까지만 만들 수 있습니다.`)
+      appAlert(`업종은 ${MAX_SECTOR_LEVELS}단계까지만 만들 수 있습니다.`, { title: '추가 제한' })
       return
     }
     if (parent?.depth === 0) { setSelectedMajorId(id); setSelectedMiddleId(null) }
@@ -683,7 +683,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                         aria-label={`${sector.name} 삭제`}
                         onClick={() => {
                           if (isProtectedSector(sector)) {
-                            void appAlert(`${sector.name}\n${NEW_LISTING_DELETE_MESSAGE}`)
+                            void appAlert(`[${sector.name}] 업종\n${NEW_LISTING_DELETE_MESSAGE}`, { title: '삭제 불가' })
                             return
                           }
                           remove(sector.id, sector.name)
