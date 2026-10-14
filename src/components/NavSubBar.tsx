@@ -143,7 +143,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
           </div>
         ))}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex items-center">{actions}</div>}
     </div>
   )
 }

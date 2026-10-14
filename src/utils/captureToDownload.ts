@@ -3,7 +3,7 @@ import { shareCaptureOptions } from './captureScale'
 import { waitForNextPaint } from './captureToClipboard'
 import { fileTimestamp } from './fileTimestamp'
 
-// 캡처 내려받기 파일 이름 — 화면이름-년월일_시분초.png (예: MAP-20261008_004512.png).
+// 스크린샷 내려받기 파일 이름 — 화면이름-년월일_시분초.png (예: MAP-20261008_004512.png).
 export function captureFileName(page: 'MAP' | 'GROUP' | 'CUSTOM' | 'HOME', now: Date = new Date()): string {
   return `${page}-${fileTimestamp(now)}.png`
 }

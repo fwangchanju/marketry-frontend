@@ -1010,14 +1010,11 @@ function SettingsTaxonomySelector({
   onSelectTaxonomy,
   atBottom = false,
   snapshotTime,
-  actions,
 }: {
   taxonomy: TaxonomyKey
   onSelectTaxonomy: (taxonomy: TaxonomyKey) => void
   atBottom?: boolean
   snapshotTime?: string | null
-  // 저장·되돌리기 버튼 — 제목(Basis) 줄 오른쪽 끝에 둔다.
-  actions?: ReactNode
 }) {
   // KRX와 NXT는 "거래소" 한 칸으로 합쳤고, 지금 어느 쪽 종목을 보여줄지는 시간대가 정한다. 내 분류는 로그인이 필요하다(고르면 로그인 창이 뜬다).
   const options: { key: TaxonomyKey; label: string }[] = [
@@ -1034,7 +1031,6 @@ function SettingsTaxonomySelector({
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
         {TAXONOMY_SELECT_TITLE}
-        {actions}
       </p>
       <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 rounded-lg bg-[var(--accent)] p-[3px]">
         <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] bg-cyan-700" />
@@ -2227,13 +2223,13 @@ export default function SettingsSidebar({
   const animationClass = !animated ? '' : isOpen ? `settings-sidebar-enter-${sideName}` : `settings-sidebar-leave-${sideName} pointer-events-none`
 
   // 바꾼 값은 임시값이라 저장을 눌러야 서버에 올라간다. 초기화는 임시값을 버리고 저장값으로 돌아간다. 비로그인은 저장할 곳이 없어 로그인 창을 띄운다.
-  // 아래쪽 Basis 줄이 있으면 그 줄 오른쪽에, 없으면 맨 위 줄 오른쪽에 둔다.
+  // 오른쪽으로 3px 당겨(-mr-[3px]) 저장 아이콘이 위쪽 상단 바의 설정 아이콘과 같은 세로줄에 오게 한다.
   const preferenceActions = showPreferenceActions ? (
-    <div className="ml-auto flex shrink-0 items-center gap-1">
+    <div className="-mr-[3px] ml-auto flex shrink-0 items-center gap-1">
       <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
           if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(discardDrafts)
-        }} className="group relative flex h-6 w-6 items-center justify-center rounded-md border-0 bg-zinc-600 p-0 text-white transition-colors hover:bg-zinc-500 disabled:opacity-50">
-        <HistoryIcon className="h-5 w-5" aria-hidden="true" />
+        }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50">
+        <HistoryIcon className="h-[18px] w-[18px]" aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -2254,17 +2250,16 @@ export default function SettingsSidebar({
             commitDrafts(commitPreferences).catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.'))
           })
         }}
-        className="group relative flex h-6 w-6 items-center justify-center rounded-md border-0 bg-zinc-600 p-0 text-white transition-colors hover:bg-zinc-500 disabled:opacity-50"
+        className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50"
       >
-        {hasDrafts && <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[var(--brand)]" />}
-        {/* Lucide save — 흔한 디스켓 모양(윗줄 라벨 칸, 아랫줄 셔터). */}
-        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-          <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7M7 3v4a1 1 0 0 0 1 1h7" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+        {hasDrafts && <span aria-hidden="true" className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-[var(--brand)]" />}
+        {/* 좌우 대칭 디스켓 — 위쪽 셔터와 아래쪽 라벨이 가운데에 있고 접힌 모서리가 없다. 오른쪽 위 청록 점(변경 있음)과 겹치는 모양이 없다. */}
+        <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true">
+          <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM7 3v5h10V3M7 21v-8h10v8" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
     </div>
   ) : null
-  const preferenceActionsInBasis = taxonomyAtBottom && hasTaxonomySelector
 
   return (
     // 바깥 감싸개: 지도 쪽 가장자리 가운데에 튀어나오는 좌우 이동 탭을 패널(overflow-hidden) 밖에 그리려고 둔다. 슬라이드 애니메이션도 여기에 붙는다.
@@ -2312,7 +2307,7 @@ export default function SettingsSidebar({
             </span>
           )}
         </div>
-        {!preferenceActionsInBasis && preferenceActions}
+        {preferenceActions}
       </div>
       {availableSections.length > 0 && (
       <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-gray-500 bg-[#363639] px-1">
@@ -2402,7 +2397,7 @@ export default function SettingsSidebar({
       </div>
       {taxonomyAtBottom && hasTaxonomySelector && (
         <>
-          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom snapshotTime={snapshotTime} actions={preferenceActions} />
+          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom snapshotTime={snapshotTime} />
         </>
       )}
     </div>

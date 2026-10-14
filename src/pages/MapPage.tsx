@@ -309,14 +309,14 @@ export default function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 주소 값이 있고 트리가 준비됐을 때만 반응하면 된다(enterSector는 매 렌더 새 함수)
   }, [sectorParam, filteredRootNodes])
 
-  // 캡처 URL의 avgMode/sectorFilter를 반영하고, 소비한 쿼리 파라미터를 주소에서 지운다.
-  // 옛 캡처 URL의 ?market=은 /map·/group 리다이렉트(App.tsx LegacyMarketRedirect)가 이미 경로로 옮겼다.
+  // 스크린샷 URL의 avgMode/sectorFilter를 반영하고, 소비한 쿼리 파라미터를 주소에서 지운다.
+  // 옛 스크린샷 URL의 ?market=은 /map·/group 리다이렉트(App.tsx LegacyMarketRedirect)가 이미 경로로 옮겼다.
   // 여기서 지우는 market은 경로가 있는 주소에 붙어 온 값뿐이다 — 마켓은 경로가 정하므로 지우기만 한다.
   useEffect(() => {
     const marketParam = searchParams.get('market')
     const isValidMarket = marketParam === 'KOSPI' || marketParam === 'KOSDAQ' || marketParam === 'ALL_STOCK'
 
-    // 백엔드가 캡처 URL에 싣는 avgMode=simple|weighted, sectorFilter=true|false 계약에 맞춘다
+    // 백엔드가 스크린샷 URL에 싣는 avgMode=simple|weighted, sectorFilter=true|false 계약에 맞춘다
     // (marketry-backend의 instructions-telegram-average-mode.md 결정 6).
     const avgModeParam = searchParams.get('avgMode')
     const isValidAvgMode = avgModeParam === 'simple' || avgModeParam === 'weighted'
@@ -514,7 +514,7 @@ export default function MapPage() {
         }
       />
       <div className="flex min-h-0 flex-1">
-        {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 캡처해 설정창을 제외한다. */}
+        {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
         <div
           ref={settingsRowRef}
           className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 bg-black"

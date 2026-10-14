@@ -55,7 +55,7 @@ export function useMarketValueTierRange(enabled: boolean) {
   // 구간 준비됨(marketry-frontend 지시서 결정 4) — 커스텀 모드가 아니면(구간 필터 자체가
   // 꺼져 있다) 항상 준비된 것으로 본다. 커스텀 모드면 value-tiers 조회가 끝나고, 구간이 아예
   // 없거나(minIndex를 정할 필요가 없음) minIndex가 채워진 뒤에야 준비됐다고 본다. 그 전에
-  // 캡처되면(data-capture-ready) 소형주가 포함된 숫자가 찍히는데, 캡션(백엔드)은 그 구간을 뺀다.
+  // 스크린샷에 찍히면(data-capture-ready) 소형주가 포함된 숫자가 찍히는데, 캡션(백엔드)은 그 구간을 뺀다.
   const isTierRangeReady = !enabled || ((!isLoggedIn || isPreferencesLoaded) && isValueTiersSuccess && (tiers.length === 0 || minIndex !== -1))
 
   return { tiers, minIndex, maxIndex, setMinIndex, setMaxIndex, excludedMarketValueTiers, isTierRangeReady }

@@ -3,8 +3,20 @@ import type { SVGProps } from 'react'
 export function SettingsIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      <path d="M11 10.27 7 3.34" />
+      <path d="m11 13.73-4 6.93" />
+      <path d="M12 22v-2" />
+      <path d="M12 2v2" />
+      <path d="M14 12h8" />
+      <path d="m17 20.66-1-1.73" />
+      <path d="m17 3.34-1 1.73" />
+      <path d="M2 12h2" />
+      <path d="m20.66 17-1.73-1" />
+      <path d="m20.66 7-1.73 1" />
+      <path d="m3.34 17 1.73-1" />
+      <path d="m3.34 7 1.73 1" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="12" cy="12" r="8" />
     </svg>
   )
 }
@@ -12,10 +24,14 @@ export function SettingsIcon(props: SVGProps<SVGSVGElement>) {
 export function MaximizeIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
-      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
-      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
-      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+      <path d="m15 15 6 6" />
+      <path d="m15 9 6-6" />
+      <path d="M21 16v5h-5" />
+      <path d="M21 8V3h-5" />
+      <path d="M3 16v5h5" />
+      <path d="m3 21 6-6" />
+      <path d="M3 8V3h5" />
+      <path d="M9 9 3 3" />
     </svg>
   )
 }
@@ -23,10 +39,10 @@ export function MaximizeIcon(props: SVGProps<SVGSVGElement>) {
 export function MinimizeIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M8 3v3a2 2 0 0 1-2 2H3" />
-      <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
-      <path d="M3 16h3a2 2 0 0 1 2 2v3" />
-      <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+      <path d="m15 15 6 6m-6-6v4.8m0-4.8h4.8" />
+      <path d="M9 19.8V15m0 0H4.2M9 15l-6 6" />
+      <path d="M15 4.2V9m0 0h4.8M15 9l6-6" />
+      <path d="M9 4.2V9m0 0H4.2M9 9 3 3" />
     </svg>
   )
 }
@@ -84,7 +100,7 @@ export function ReturnArrowIcon(props: SVGProps<SVGSVGElement>) {
 // 설정창의 되돌리기(저장값으로 되돌리기) 버튼 — 시계 바늘이 있는 반시계 화살표로 "이전 상태로"를 나타낸다.
 export function HistoryIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
       <path d="M3 3v5h5" />
       <path d="M12 7v5l4 2" />
@@ -139,12 +155,19 @@ export function ClockIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-// 화면 캡처 — 카메라 모양.
+// 화면 스크린샷 — 점선 사각형 모양.
 export function CaptureIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M14.5 4h-5L7.5 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5z" />
-      <circle cx="12" cy="13" r="4" />
+      <path d="M7 19a2 2 0 0 1-2-2" />
+      <path d="M5 13v-2" />
+      <path d="M5 7a2 2 0 0 1 2-2" />
+      <path d="M11 5h2" />
+      <path d="M17 5a2 2 0 0 1 2 2" />
+      <path d="M19 11v2" />
+      <path d="M19 17v4" />
+      <path d="M21 19h-4" />
+      <path d="M13 19h-2" />
     </svg>
   )
 }

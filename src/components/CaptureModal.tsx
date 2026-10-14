@@ -33,8 +33,8 @@ export default function CaptureModal({
   captureTarget,
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
-  // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 캡처 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
-  // 캡처할 영역의 비율로 어림잡고, 이미지가 로드되면 실제 비율로 바로잡는다.
+  // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 스크린샷 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
+  // 스크린샷으로 찍을 영역의 비율로 어림잡고, 이미지가 로드되면 실제 비율로 바로잡는다.
   const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(captureTarget))
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -49,8 +49,8 @@ export default function CaptureModal({
 
   useEffect(() => {
     if (!captureTarget) return
-    // 캡처 작업이 무거워서 같은 프레임에서 바로 시작하면 모달이 뜨는 페인트 자체가 밀린다.
-    // 두 번의 requestAnimationFrame으로 모달(+스피너)이 먼저 그려진 뒤에 캡처를 시작한다.
+    // 스크린샷 작업이 무거워서 같은 프레임에서 바로 시작하면 모달이 뜨는 페인트 자체가 밀린다.
+    // 두 번의 requestAnimationFrame으로 모달(+스피너)이 먼저 그려진 뒤에 스크린샷을 시작한다.
     let cancelled = false
     const raf1 = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -85,14 +85,14 @@ export default function CaptureModal({
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70" onClick={onClose}>
       {/* 팝업은 미리보기 이미지 크기에 딱 맞게 줄어든다(w-fit) — 이미지 주변에 빈 여백(레터박스)이 생기지
           않는다. 이미지는 화면(폭 95vw, 높이 85dvh에서 버튼 줄을 뺀 만큼) 안에서 비율을 유지한 채 최대한
-          크게 그린다. 캡처 전(스피너)에는 임시 크기 칸으로 자리를 잡는다. */}
+          크게 그린다. 스크린샷 전(스피너)에는 임시 크기 칸으로 자리를 잡는다. */}
       <div
         className="flex max-w-[calc(100vw-2rem)] flex-col rounded-md border border-gray-500 bg-[#363639]"
         onClick={e => e.stopPropagation()}
       >
         {/* 설정창 헤더와 같은 모양 — 왼쪽 제목, 오른쪽 ✕, 아래 구분선. */}
         <div className="flex shrink-0 items-center border-b border-gray-500 p-4">
-          <p className="flex h-7 items-center whitespace-nowrap text-lg font-bold leading-none text-white">CAPTURE</p>
+          <p className="flex h-7 items-center whitespace-nowrap text-lg font-bold leading-none text-white">SCREENSHOT</p>
           <button
             type="button"
             onClick={onClose}
@@ -172,7 +172,7 @@ export default function CaptureModal({
   )
 }
 
-// 캡처할 영역의 가로/세로 비율 — 아직 없거나 크기를 못 재면 null.
+// 스크린샷으로 찍을 영역의 가로/세로 비율 — 아직 없거나 크기를 못 재면 null.
 function elementRatio(element: HTMLElement | null): number | null {
   if (!element) return null
   const { width, height } = element.getBoundingClientRect()

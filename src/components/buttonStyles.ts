@@ -1,5 +1,5 @@
 // 공용 버튼 모양 — 채움 + 둥근 사각형. 기본 버튼은 회색 채움이고, 강조 버튼(클립보드처럼 지금 가장 먼저 눌러야 하는 것)만 청록 채움(설정창 "적용"·확인 팝업 버튼과 같은 색)이다.
-// 아이콘 버튼(카메라·전체 화면·설정 등)과 드롭다운·선택 버튼 묶음은 따로 쓴다.
+// 아이콘 버튼(스크린샷·전체 화면·설정 등)과 드롭다운·선택 버튼 묶음은 따로 쓴다.
 const layoutClass = (padding: string) => `flex items-center gap-2 rounded-lg border-0 ${padding} text-sm font-semibold leading-5 transition-colors disabled:opacity-50`
 const BASE_COLOR_CLASS = 'bg-zinc-600 text-white hover:bg-zinc-500'
 const ACCENT_COLOR_CLASS = 'bg-cyan-700 text-white hover:bg-cyan-600'
