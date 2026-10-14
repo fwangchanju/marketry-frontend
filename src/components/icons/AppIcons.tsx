@@ -1,22 +1,18 @@
 import type { SVGProps } from 'react'
 
+// 설정 버튼 — 가로 슬라이더 모양(Lucide sliders-horizontal)이다.
 export function SettingsIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M11 10.27 7 3.34" />
-      <path d="m11 13.73-4 6.93" />
-      <path d="M12 22v-2" />
-      <path d="M12 2v2" />
-      <path d="M14 12h8" />
-      <path d="m17 20.66-1-1.73" />
-      <path d="m17 3.34-1 1.73" />
-      <path d="M2 12h2" />
-      <path d="m20.66 17-1.73-1" />
-      <path d="m20.66 7-1.73 1" />
-      <path d="m3.34 17 1.73-1" />
-      <path d="m3.34 7 1.73 1" />
-      <circle cx="12" cy="12" r="2" />
-      <circle cx="12" cy="12" r="8" />
+      <path d="M10 5H3" />
+      <path d="M12 19H3" />
+      <path d="M14 3v4" />
+      <path d="M16 17v4" />
+      <path d="M21 12h-9" />
+      <path d="M21 19h-5" />
+      <path d="M21 5h-7" />
+      <path d="M8 10v4" />
+      <path d="M8 12H3" />
     </svg>
   )
 }
@@ -222,6 +218,16 @@ export function CopyIcon(props: SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <rect x="9" y="9" width="12" height="12" rx="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  )
+}
+
+// 로그인 버튼·프로필 기본 모양 — 둥근 사람(Lucide user-round).
+export function UserIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="8" r="5" />
+      <path d="M20 21a8 8 0 0 0-16 0" />
     </svg>
   )
 }

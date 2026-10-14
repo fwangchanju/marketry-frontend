@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useSession, useLogout, useSessionKeepAlive, useLocalDevLogin } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import ProfileAvatar from '@/components/ProfileAvatar'
+import { UserIcon } from '@/components/icons/AppIcons'
 import MarketryLogo from '@/components/MarketryLogo'
 import { devLogin, devSignup } from '@/api/auth'
 import { settleSessionRefresh } from '@/api/client'
@@ -101,10 +102,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           onClick={() => requireLogin(`${pathname}${search}${hash}`, { hideMessage: true })}
           className="relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center rounded-[12%] border-0 bg-zinc-600 p-0 text-gray-300 transition-colors hover:bg-zinc-500"
         >
-          <svg viewBox="0 0 24 24" className="size-[26px]" fill="currentColor" aria-hidden="true">
-            <circle cx="12" cy="8.5" r="4" />
-            <path d="M3.5 21c.7-4.6 4.2-7 8.5-7s7.8 2.4 8.5 7z" />
-          </svg>
+          <UserIcon aria-hidden="true" strokeWidth={1.25} className="size-[26px]" />
         </button>
       ) : (
       <div ref={profileMenuRef} className="relative flex h-16 items-center">
