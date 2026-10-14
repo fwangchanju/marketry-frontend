@@ -298,7 +298,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
 
   // 이동 확인 문구 — 대상이 없으면 최상위로 옮기는 것이다.
   const moveMessage = (name: string, target: SectorItem | null) =>
-    `[${name}]\n${target ? `[${getSectorPath(target)}] 하위로` : '최상위로'} 이동하시겠습니까?`
+    `[${name}] 업종을\n${target ? `[${getSectorPath(target)}] 하위로` : '최상위로'} 이동하시겠습니까?`
 
   const persistSiblingOrder = (parentId: number | null, ids: number[]) => {
     setSectorOrder(previous => {

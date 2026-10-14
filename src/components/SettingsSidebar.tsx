@@ -1859,7 +1859,7 @@ export function SettingsExcludeSection({
                 key={sector.sectorId}
                 type="button"
                 onClick={async () => {
-                  if (!await appConfirm(`[${sector.sectorName}]\n맵으로 복원하시겠습니까?`, { title: '업종 복원' })) return
+                  if (!await appConfirm(`[${sector.sectorName}] 업종을\n맵으로 복원하시겠습니까?`, { title: '업종 복원' })) return
                   onRemoveExcludedSector(sector.sectorId)
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
