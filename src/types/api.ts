@@ -124,7 +124,7 @@ const TreemapSectorNodeSchema: z.ZodType<TreemapSectorNode> = z.lazy(() =>
 )
 
 // SnapshotResponse<T>를 그대로 안 쓴 이유: marketOverview는 트리 items와 별개인 마켓 전체 단위 값
-// 하나라, 여러 엔드포인트가 공유하는 제네릭 래퍼에 이 필드만을 위해 얹을 수 없다(백엔드 TreemapResponse
+// 하나라, 여러 엔드포인트가 공유하는 제네릭 래퍼에 이 필드만을 위해 얹을 수 없다(백엔드 MarketMapResponse
 // 참고). market이 ALL_STOCK처럼 마켓 여럿을 합친 조회면 단일 지수값이 없어 null.
 export const TreemapResponseSchema = z.object({
   snapshotTime: z.string().nullable(),
@@ -157,7 +157,7 @@ export const TreemapScaleResponseSchema = z.object({
 })
 export type TreemapScaleResponse = z.infer<typeof TreemapScaleResponseSchema>
 
-// 백엔드 /api/admin/treemap/* → /api/custom/* 전환(가입/로그인 지시서)에 맞춰 DTO 필드명도
+// 백엔드 /api/admin/market-map/* → /api/custom/* 전환(가입/로그인 지시서)에 맞춰 DTO 필드명도
 // category* → sector* 로 바뀌었다. /api/map 응답도 category → sector 정리(instructions-sector-rename.md)로
 // 같은 sectorId/sectorName을 쓰게 됐지만, 두 응답은 여전히 별개 계약이다.
 export const SectorItemSchema = z.object({

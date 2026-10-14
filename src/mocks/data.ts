@@ -35,7 +35,7 @@ export const marketOverviews = [
   },
 ]
 
-// 시가총액 구간 정의 목업 — GET /treemap/value-tiers, thresholdValue 오름차순(백엔드 계약과 동일).
+// 시가총액 구간 정의 목업 — GET /market-map/value-tiers, thresholdValue 오름차순(백엔드 계약과 동일).
 export const marketValueTiers = [
   { id: 1, label: '소형주', thresholdValue: 0, isExcludedByDefault: true },
   { id: 2, label: '중형주', thresholdValue: 500_000_000_000, isExcludedByDefault: false },

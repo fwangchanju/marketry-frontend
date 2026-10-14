@@ -135,7 +135,7 @@ export const handlers = [
   http.delete('/api/map/excluded-sectors', ok),
   http.delete('/api/map/reset', ok),
 
-  // ── 커스텀(로그인 사용자 전용, /api/admin/treemap/* → /api/custom/* 전환) ────────────────
+  // ── 커스텀(로그인 사용자 전용, /api/admin/market-map/* → /api/custom/* 전환) ────────────────
   http.get('/api/custom/sectors', () => HttpResponse.json(data.customSectors)),
   http.post('/api/custom/sectors', async ({ request }) => {
     const body = (await request.json()) as { name: string; parentId: number | null }
