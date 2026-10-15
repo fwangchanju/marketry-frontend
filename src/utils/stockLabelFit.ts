@@ -61,8 +61,28 @@ function textWidth(text: string, size: number): number {
   return width100(text) * size / 100
 }
 
-// 두 줄로 나눌 때 긴 줄이 가장 짧아지는 자리에서 자른다. 공백이 있으면 공백에서 먼저 나눠 본다.
-function splitTwoLines(name: string, size: number, avail: number): [string, string] | null {
+// 이름 앞에 오는 그룹사·브랜드 이름 — 이 뒤에서 줄을 나눈다(한화/비전, 삼성/전기, 롯데/쇼핑). 영문 접두어가 앞에 붙은 이름(HD현대/건설기계)도 맞춘다.
+const GROUP_PREFIXES = [
+  '삼성', '현대', '롯데', '한화', '두산', '포스코', '한진', '효성', '코오롱', '신세계', '대한', '대우', '한솔', '동국', '동원', '동양', '세아', '금호',
+  '카카오', '에코프로', '미래에셋', '키움', '유진', '대신', '교보', '메리츠', '하나', '신한', '우리', '한국', '부국', '한양', '아모레', '이수', '서울', '한미', '삼양', '삼천리', '태광',
+]
+const isAsciiChar = (ch: string) => /[\x21-\x7E]/.test(ch)
+
+function groupSplitPositions(chars: string[]): number[] {
+  let lead = 0
+  while (lead < chars.length && isAsciiChar(chars[lead])) lead += 1
+  const rest = chars.slice(lead).join('')
+  const positions: number[] = []
+  for (const prefix of GROUP_PREFIXES) {
+    const length = Array.from(prefix).length
+    if (rest.startsWith(prefix) && Array.from(rest).length > length) positions.push(lead + length)
+  }
+  return positions
+}
+
+// 두 줄로 나눌 자리를 고른다. 순서는 (1) 공백 (2) 영문·숫자·기호와 한글의 경계(LG/이노텍, BNK/금융)와 그룹명 뒤(한화/비전) 중 균형이 좋은 자리 (3) 긴 줄이 가장 짧아지는 자리.
+// 폭이 같으면 윗줄이 더 긴 쪽을 고른다(테크/윙). 영문·숫자·기호 한 덩어리(E1, OCI, F&F) 안에서는 줄을 나누지 않는다. 앞 단계 자리가 폭에 안 들어가면 다음 단계로 넘어간다.
+function splitTwoLines(name: string, size: number, avail: number, semanticOnly: boolean): [string, string] | null {
   const chars = Array.from(name)
   const bestSplit = (positions: number[]): { lines: [string, string]; max: number } | null => {
     let best: { lines: [string, string]; max: number } | null = null
@@ -71,23 +91,27 @@ function splitTwoLines(name: string, size: number, avail: number): [string, stri
       const right = chars.slice(i).join('').trim()
       if (!left || !right) continue
       const max = Math.max(textWidth(left, size), textWidth(right, size))
-      if (!best || max < best.max) best = { lines: [left, right], max }
+      if (!best || max <= best.max) best = { lines: [left, right], max }
     }
     return best
   }
-  // 영문·숫자·기호 한 덩어리(E1, OCI, F&F 등) 안에서는 줄을 나누지 않는다.
-  const isWord = (ch: string) => /[\x21-\x7E]/.test(ch)
+  const isWord = isAsciiChar
   const all = Array.from({ length: Math.max(0, chars.length - 1) }, (_, k) => k + 1).filter(i => !(isWord(chars[i - 1]) && isWord(chars[i])))
   const atSpaces = all.filter(i => chars[i] === ' ' || chars[i - 1] === ' ')
-  // 3글자 이름은 윗줄 1글자 + 아랫줄 2글자로 나눈다(2글자 + 1글자가 아니다). 2글자 이름은 1글자씩이다.
-  if (chars.length === 3 && all.includes(1)) {
-    const short = bestSplit([1])
-    if (short && short.max <= avail) return short.lines
+  const atScriptEdge = all.filter(i => chars[i] !== ' ' && chars[i - 1] !== ' ' && isWord(chars[i - 1]) !== isWord(chars[i]))
+  const atMeaning = Array.from(new Set([...atScriptEdge, ...groupSplitPositions(chars).filter(i => all.includes(i))])).sort((a, b) => a - b)
+  for (const positions of semanticOnly ? [atSpaces, atMeaning] : [atSpaces, atMeaning, all]) {
+    const found = bestSplit(positions)
+    if (found && found.max <= avail) return found.lines
   }
-  const bySpace = bestSplit(atSpaces)
-  if (bySpace && bySpace.max <= avail) return bySpace.lines
-  const any = bestSplit(all)
-  return any && any.max <= avail ? any.lines : null
+  return null
+}
+
+// 공백, 영문·한글 경계, 그룹명 뒤처럼 뜻이 갈리는 자리가 있는 이름인지(DB손해보험, LG이노텍, 한화비전).
+function hasSemanticSplit(name: string): boolean {
+  const chars = Array.from(name)
+  if (groupSplitPositions(chars).length > 0) return true
+  return chars.some((ch, i) => i > 0 && (ch === ' ' || chars[i - 1] === ' ' || isAsciiChar(ch) !== isAsciiChar(chars[i - 1])))
 }
 
 export interface StockLabelFit {
@@ -125,15 +149,19 @@ export function fitStockLabel({
   }
   const none: StockLabelFit = { nameLines: null, nameSize: baseFont, rateSize: null }
   if (wantName) {
-    for (let size = baseFont; size >= MIN_FONT; size -= 0.5) {
-      const rate = wantRate ? rateSizeFor(size) : null
-      const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
-      if (LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight && textWidth(name, size) <= nameAvail) {
-        return { nameLines: [name], nameSize: size, rateSize: rate }
-      }
-      if (2 * LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight) {
-        const lines = splitTwoLines(name, size, nameAvail)
-        if (lines) return { nameLines: lines, nameSize: size, rateSize: rate }
+    // 뜻이 갈리는 자리(공백, 영문·한글 경계)가 있는 이름은 글자를 줄여서라도 그 자리에서 나눈다. 그래도 안 되면 아무 자리에서나 나눈다.
+    const passes = hasSemanticSplit(name) ? [true, false] : [false]
+    for (const semanticOnly of passes) {
+      for (let size = baseFont; size >= MIN_FONT; size -= 0.5) {
+        const rate = wantRate ? rateSizeFor(size) : null
+        const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
+        if (LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight && textWidth(name, size) <= nameAvail) {
+          return { nameLines: [name], nameSize: size, rateSize: rate }
+        }
+        if (2 * LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight) {
+          const lines = splitTwoLines(name, size, nameAvail, semanticOnly)
+          if (lines) return { nameLines: lines, nameSize: size, rateSize: rate }
+        }
       }
     }
   }
