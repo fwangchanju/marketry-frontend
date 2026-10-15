@@ -348,7 +348,7 @@ export default function MarketSummaryPage() {
                               {/* 그날 안내 종목은 종류 배지 바로 오른쪽 회색 칸에 한 줄로 적는다 — 없으면 글자 없이 빈 칸, 둘 이상이면 이름을 " · "(공백·가운뎃점·공백)로 이어 쓰고 칸보다 길면 …로 줄인다. */}
                               <span className={`${rowClass} col-span-3`}>
                                 <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-zinc-800 pl-[calc(0.25rem+0.34em)] pr-1 text-gray-300">
-                                  <span className="min-w-0 truncate">{items.map(item => item.stockName).join(' · ')}</span>
+                                  <span className="min-w-0 truncate" style={{ color: strongIndustryColor }}>{items.map(item => item.stockName).join(' · ')}</span>
                                 </span>
                               </span>
                             </>
