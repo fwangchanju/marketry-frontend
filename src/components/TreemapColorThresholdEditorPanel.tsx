@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/treemapColorScale'
+import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
 const SATURATION = 75
 
@@ -21,13 +22,6 @@ const HUE_PRESETS: HuePreset[] = [
 ]
 
 // 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여주고, 밝기는 아래 슬라이더로 정한다.
-// 색상 줄 동그라미 한 개의 지름(h-6 w-6)과 개수(회색 + 색 7개). 위 등락률 줄의 색상 칸 너비를 이 값으로 맞춘다.
-const SWATCH_SIZE_PX = 24
-const SWATCH_COUNT = 8
-// 등락률 줄의 입력칸과 색상 칸의 너비 — 아래 색상 줄 맨 오른쪽 두 동그라미의 바깥 두 끝선에 맞춘 값이다(둘이 같은 너비).
-const THRESHOLD_BOX_WIDTH = `calc(${SWATCH_SIZE_PX * 2}px + (100% - ${SWATCH_SIZE_PX * SWATCH_COUNT}px) / ${SWATCH_COUNT - 1})`
-// 잘못 입력했을 때 이유 문구를 보여 주는 시간.
-const THRESHOLD_ERROR_MS = 4000
 const SWATCH_LIGHTNESS = 55
 const MIN_LIGHTNESS = 8
 const MAX_LIGHTNESS = 92
@@ -44,80 +38,117 @@ function inferSelection(hex: string): { key: string; lightness: number } {
   return { key: nearest.name, lightness }
 }
 
-interface ThresholdRowProps {
-  threshold: ColorScaleThreshold
-  // 0% 구간은 등락률 자체가 고정이라 색만 바꿀 수 있다.
-  locked: boolean
-  onChangeThreshold: (percent: number) => void
+interface ThresholdBarProps {
+  // 상승 구간의 경계(작은 값부터)와 구간 색 — 막대의 손잡이 하나가 구간 하나다.
+  positive: { percent: number; color: string }[]
+  // 편집 중인 칸이 몇 번째 구간인지(하락 칸이면 같은 순서의 상승 손잡이). 0% 칸이면 null이다.
+  selectedRank: number | null
+  zeroColor: string
+  onChangeRankPercent: (rank: number, percent: number) => void
+  onSelectRank: (rank: number) => void
 }
 
-// 하나의 threshold 행 — 부호 있는 정수 입력(예: 5, -3) + 색 미리보기만 담당한다.
-// 상승/하락은 별도 버튼 없이 입력값의 부호로 정한다. 아래 색상 팔레트에서 고른 색이 이 행에 적용된다.
-function ThresholdRow({ threshold, locked, onChangeThreshold }: ThresholdRowProps) {
-  const savedText = () => String(threshold.thresholdPercent)
-  const [text, setText] = useState(savedText)
+// 등락률 막대 — 0~30%를 제곱근 눈금으로 그리고 손잡이를 끌어 구간 경계를 정한다(손잡이는 이웃을 넘지 못하고 정수로 움직인다).
+// 하락 구간은 같은 값의 거울로 자동 적용된다. 선택하지 않은 손잡이를 누르면 그 구간을 고르고, 선택한 손잡이는 끌거나 ←→ 키로 1씩 옮긴다.
+function ThresholdBar({ positive, selectedRank, zeroColor, onChangeRankPercent, onSelectRank }: ThresholdBarProps) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const draggingRef = useRef(false)
+  const locked = selectedRank === null
+  const lastColor = positive.at(-1)?.color ?? zeroColor
+  const gradient = `linear-gradient(90deg, ${[`${zeroColor} 0%`, ...positive.map(item => `${item.color} ${(percentToPosition(item.percent) * 100).toFixed(2)}%`), `${lastColor} 100%`].join(', ')})`
 
-  // 잘못 입력해 원래 값으로 되돌릴 때 이유를 입력칸 아래에 몇 초 보여 준다(말없이 되돌아가면 왜 안 되는지 알 수 없다).
-  const [error, setError] = useState<string | null>(null)
-  const errorTimerRef = useRef<number | null>(null)
-  const clearErrorTimer = () => {
-    if (errorTimerRef.current !== null) window.clearTimeout(errorTimerRef.current)
-    errorTimerRef.current = null
+  const percentAt = (clientX: number) => {
+    const rect = trackRef.current?.getBoundingClientRect()
+    return rect && rect.width > 0 ? positionToPercent((clientX - rect.left) / rect.width) : null
   }
-  useEffect(() => clearErrorTimer, [])
-  const showError = (message: string) => {
-    clearErrorTimer()
-    setError(message)
-    errorTimerRef.current = window.setTimeout(() => setError(null), THRESHOLD_ERROR_MS)
+  const moveTo = (clientX: number) => {
+    if (selectedRank === null) return
+    const percent = percentAt(clientX)
+    if (percent !== null) onChangeRankPercent(selectedRank, percent)
   }
 
-  const commit = () => {
-    const value = Number(text)
-    // 빈 입력, 정수가 아닌 값, 범위(±30) 밖의 값은 확정하지 않는다. 0%는 0% 칸에서만 쓸 수 있어서 다른 칸에는 입력할 수 없다.
-    const reason =
-      text.trim() === '' ? '값을 입력해 주세요.'
-      : !Number.isInteger(value) ? '정수만 입력할 수 있습니다.'
-      : Math.abs(value) > 30 ? '-30~30 사이로 입력해 주세요.'
-      : value === 0 ? '0%는 0% 칸에서만 쓸 수 있습니다.'
-      : null
-    if (reason) {
-      setText(savedText())
-      showError(reason)
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const handle = (event.target as HTMLElement).closest<HTMLElement>('[data-rank]')
+    if (handle && Number(handle.dataset.rank) !== selectedRank) {
+      // 다른 손잡이를 누르면 그 구간을 고른다(끌기는 고른 다음부터 시작한다).
+      onSelectRank(Number(handle.dataset.rank))
       return
     }
-    clearErrorTimer()
-    setError(null)
-    onChangeThreshold(value)
+    if (locked) return
+    draggingRef.current = true
+    event.currentTarget.setPointerCapture(event.pointerId)
+    moveTo(event.clientX)
   }
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (draggingRef.current) moveTo(event.clientX)
+  }
+  const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    draggingRef.current = false
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+  }
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, rank: number) => {
+    const current = positive[rank]?.percent
+    if (current === undefined) return
+    const step = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp: 5, PageDown: -5 }[event.key]
+    const target = event.key === 'Home' ? BAR_MIN_PERCENT : event.key === 'End' ? BAR_MAX_PERCENT : step === undefined ? null : current + step
+    if (target === null) return
+    event.preventDefault()
+    onChangeRankPercent(rank, target)
+  }
+  const edgeAligned = (position: number) => Math.min(Math.max(position, 0.06), 0.94) * 100
 
   return (
     <>
-    <div className="flex items-center gap-1.5">
-      <input
-        type="number"
-        min={-30}
-        max={30}
-        step={1}
-        placeholder="예: 5, -3"
-        value={text}
-        disabled={locked}
-        onChange={e => { setText(e.target.value); if (error) { clearErrorTimer(); setError(null) } }}
-        onBlur={commit}
-        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
-        style={{ width: THRESHOLD_BOX_WIDTH }}
-        className={`h-7 shrink-0 rounded border ${error ? 'border-red-400' : 'border-gray-600'} bg-zinc-700 px-2 text-right text-sm text-white outline-none [appearance:textfield] focus:placeholder:text-transparent focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
-      />
-      <span className="text-[13px] text-gray-400">%</span>
-      {/* 색상 칸 — 아래 색상 줄 맨 오른쪽 두 동그라미(24px, 사이 간격은 8칸을 양끝 맞춤으로 나눈 값)의 바깥 두 끝선에 이 칸의 양 끝을 맞춘다. 입력칸과 같은 너비다. */}
-      <span
-        className="ml-auto h-7 shrink-0 rounded border border-gray-600"
-        style={{ backgroundColor: threshold.color, width: THRESHOLD_BOX_WIDTH }}
-      />
-    </div>
-    {/* 입력 규칙 안내 — 평소에는 규칙을 보여 주고, 잘못 입력해 되돌아갔을 때는 이유를 붉은 글씨로 몇 초 보여 준다. */}
-    <p className={`mt-1.5 text-[11px] leading-snug ${error ? 'text-red-400' : 'text-gray-400'}`} role={error ? 'alert' : undefined}>
-      {error ?? (locked ? '0% 구간은 색만 바꿀 수 있습니다.' : '정수만 입력 (-30~30, 0 제외)')}
-    </p>
+      <div
+        ref={trackRef}
+        className={`relative h-[62px] touch-none select-none ${locked ? 'opacity-50' : ''}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+      >
+        <div className="absolute inset-x-0 top-[26px] h-2.5 rounded-full border border-white/25" style={{ background: gradient }} />
+        {positive.map((item, rank) => {
+          const selected = rank === selectedRank
+          const left = `${percentToPosition(item.percent) * 100}%`
+          return (
+            <div key={rank}>
+              {selected && (
+                <span
+                  className="absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1.5 text-xs font-bold leading-[18px] text-black"
+                  style={{ left: `${edgeAligned(percentToPosition(item.percent))}%` }}
+                >
+                  +{item.percent}%
+                </span>
+              )}
+              <div
+                data-rank={rank}
+                role="slider"
+                tabIndex={selected ? 0 : -1}
+                aria-label={`+${item.percent}% 구간 경계`}
+                aria-valuemin={BAR_MIN_PERCENT}
+                aria-valuemax={BAR_MAX_PERCENT}
+                aria-valuenow={item.percent}
+                onKeyDown={event => handleKeyDown(event, rank)}
+                className={`absolute top-[21px] h-5 w-5 -translate-x-1/2 cursor-pointer rounded-full border-2 bg-white shadow ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-gray-500 hover:border-gray-300'}`}
+                style={{ left }}
+              />
+            </div>
+          )
+        })}
+        {BAR_TICKS.map((tick, index) => (
+          <span
+            key={tick}
+            className={`pointer-events-none absolute top-[44px] text-[10px] text-gray-500 ${index === 0 ? '' : index === BAR_TICKS.length - 1 ? '-translate-x-full' : '-translate-x-1/2'}`}
+            style={{ left: `${percentToPosition(tick) * 100}%` }}
+          >
+            {tick}%
+          </span>
+        ))}
+      </div>
+      <p className="mt-0.5 text-[11px] leading-snug text-gray-400">
+        {locked ? '0% 구간은 색만 바꿀 수 있습니다.' : `하락도 같은 값으로 자동 적용 (${positive.map(item => `-${item.percent}%`).join(' / ')})`}
+      </p>
     </>
   )
 }
@@ -127,11 +158,12 @@ export interface ColorThresholdEditorProps {
   sessionKey: number
   // 적용하지 않은 수정이 있을 때만 적용/취소 버튼을 보여준다.
   hasChanges: boolean
-  // 이번 세션에서 편집 중인 threshold들(행 순서) — 이 패널이 열려있는 동안 조정할 때마다 부모(페이지)가
-  // draft를 즉시 갱신해서 실제 지도에 실시간으로 반영한다(패널 자체는 로컬 값을 들고 있지 않음).
-  // 한 번에 한 구간만 편집한다(항상 1개).
+  // 이번 세션에서 편집 중인 threshold들 — 첫 행이 지금 고른 칸이고(색 편집 대상), 나머지는 막대로 함께 바뀐 거울 구간이다.
   thresholds: ColorScaleThreshold[]
-  onChangeThreshold: (rowIndex: number, percent: number) => void
+  // 등락률 막대 — 상승 구간의 경계(작은 값부터)와 고른 칸의 순서.
+  bar: { positive: { percent: number; color: string }[]; selectedRank: number | null; zeroColor: string }
+  onChangeRankPercent: (rank: number, percent: number) => void
+  onSelectRank: (rank: number) => void
   onChangeColor: (rowIndex: number, color: string, colorLabel: string | null) => void
   onApply: () => void
   onCancel: () => void
@@ -143,7 +175,9 @@ export interface ColorThresholdEditorProps {
 // 적용 시 서버에 저장된다. 취소 시에는 부모가 세션 시작 전 값으로 되돌린다.
 export default function TreemapColorThresholdEditorPanel({
   thresholds,
-  onChangeThreshold,
+  bar,
+  onChangeRankPercent,
+  onSelectRank,
   onChangeColor,
   onApply,
   onCancel,
@@ -152,8 +186,6 @@ export default function TreemapColorThresholdEditorPanel({
   hasChanges,
 }: ColorThresholdEditorProps) {
   const threshold = thresholds[0]
-  // 0% 칸의 편집인지는 편집을 시작한 시점으로 정한다 — 값이 바뀌는 중에 입력칸이 잠기면 안 된다.
-  const [isZeroLocked] = useState(() => threshold?.thresholdPercent === 0)
   const [selection, setSelection] = useState(() => (threshold ? inferSelection(threshold.color) : { key: GRAY_KEY, lightness: 50 }))
   if (!threshold) return null
 
@@ -173,11 +205,13 @@ export default function TreemapColorThresholdEditorPanel({
   return (
     <div className="color-editor-steps mt-4 flex flex-col gap-4 text-sm text-white">
       <div>
-        <p className="color-editor-step mb-2 text-[13px] text-gray-300">등락률</p>
-        <ThresholdRow
-          threshold={threshold}
-          locked={isZeroLocked}
-          onChangeThreshold={percent => onChangeThreshold(0, percent)}
+        <p className="color-editor-step mb-1 text-[13px] text-gray-300">등락률</p>
+        <ThresholdBar
+          positive={bar.positive}
+          selectedRank={bar.selectedRank}
+          zeroColor={bar.zeroColor}
+          onChangeRankPercent={onChangeRankPercent}
+          onSelectRank={onSelectRank}
         />
       </div>
 

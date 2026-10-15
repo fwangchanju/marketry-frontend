@@ -1941,7 +1941,7 @@ export function SettingsColorSection({
       <div className="relative mt-[18px]">
       <div className={`flex flex-col gap-1 text-sm ${colorCustomOn ? '' : 'pointer-events-none opacity-40'}`}>
         {/* 저장된 색상은 바로 편집하고, 기본 색상은 같은 위치에 새 설정을 만들어 편집한다. */}
-        <div className="grid w-full grid-cols-7 gap-0.5">
+        <div className="grid w-full gap-0.5" style={{ gridTemplateColumns: `repeat(${legendSwatches.length}, minmax(0, 1fr))` }}>
           {legendSwatches.map(({ label, color }) => {
             const percent = Number.parseFloat(label)
             return (
@@ -1953,7 +1953,7 @@ export function SettingsColorSection({
                 style={{ backgroundColor: color }}
                 className={`flex h-6 w-full min-w-0 items-center justify-center border p-0 text-white ${percent === editingPercent ? 'border-white ring-1 ring-white/40' : 'border-transparent'}`}
               >
-                <span className="text-xs font-bold leading-none whitespace-nowrap">{label}</span>
+                <span className={`font-bold leading-none whitespace-nowrap ${legendSwatches.length > 7 ? 'text-[11px]' : 'text-xs'}`}>{label}</span>
               </button>
             )
           })}
