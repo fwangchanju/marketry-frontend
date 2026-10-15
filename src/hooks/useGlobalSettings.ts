@@ -711,7 +711,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 편집 영역을 항상 열어두기 위해, 편집 중인 칸이 없으면(처음, 적용/취소 직후) 마지막으로 보던 칸을 다시 연다.
   useEffect(() => {
     if (!colorCustomOn || !colorScaleDraft || colorEditIndices.length > 0 || isApplyingColorEdit) return
-    // 처음에는 가장 큰 상승 칸(기본 +15%)을 편집 대상으로 연다.
+    // 처음에는 가장 큰 상승 칸(기본 +12%)을 편집 대상으로 연다.
     const swatch = legendSwatches.find(item => Number.parseFloat(item.label) === selectedColorPercentRef.current)
       ?? legendSwatches.at(-1)
       ?? legendSwatches[0]
