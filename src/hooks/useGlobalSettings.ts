@@ -31,7 +31,6 @@ import {
 import { useMarketValueTierRange } from './useMarketValueTierRange'
 import { registerExcludedSector, unregisterExcludedSector } from '@/api/treemap'
 import {
-  colorAtPercent,
   createDefaultColorScale,
   DEFAULT_MINUS_THRESHOLDS,
   DEFAULT_ZERO_COLOR,
@@ -576,16 +575,15 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     const mirror = negativeRows[rank]
     if (percent === target.threshold.thresholdPercent && mirror?.threshold.thresholdPercent === -percent) return
     let thresholds = colorScaleDraft.thresholds.map((threshold, index) => {
-      // 손잡이를 옮기면 명도도 새 등락률에 맞춰 바뀐다(색 계열은 그대로, 회색은 그대로).
-      if (index === target.index) return { ...threshold, thresholdPercent: percent, color: colorAtPercent(threshold.color, percent) }
-      if (index === mirror?.index) return { ...threshold, thresholdPercent: -percent, color: colorAtPercent(threshold.color, percent) }
+      if (index === target.index) return { ...threshold, thresholdPercent: percent }
+      if (index === mirror?.index) return { ...threshold, thresholdPercent: -percent }
       return threshold
     })
     let mirrorIndex = mirror?.index
     if (mirrorIndex === undefined) {
       const fallback = DEFAULT_MINUS_THRESHOLDS[Math.min(rank, DEFAULT_MINUS_THRESHOLDS.length - 1)]
       mirrorIndex = thresholds.length
-      thresholds = [...thresholds, { thresholdPercent: -percent, color: colorAtPercent(fallback.color, percent), colorLabel: fallback.colorLabel }]
+      thresholds = [...thresholds, { thresholdPercent: -percent, color: fallback.color, colorLabel: fallback.colorLabel }]
     }
     setColorEditError(null)
     setColorScaleDraft({ ...colorScaleDraft, thresholds })
@@ -726,9 +724,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 편집 영역을 항상 열어두기 위해, 편집 중인 칸이 없으면(처음, 적용/취소 직후) 마지막으로 보던 칸을 다시 연다.
   useEffect(() => {
     if (!colorCustomOn || !colorScaleDraft || colorEditIndices.length > 0 || isApplyingColorEdit) return
-    // 처음에는 +8%(가장 큰 상승 칸)를 편집 대상으로 연다.
+    // 처음에는 가장 큰 상승 칸(기본 +15%)을 편집 대상으로 연다.
     const swatch = legendSwatches.find(item => Number.parseFloat(item.label) === selectedColorPercentRef.current)
-      ?? legendSwatches.find(item => item.label === '+8%')
+      ?? legendSwatches.at(-1)
       ?? legendSwatches[0]
     if (swatch) handleSelectColorSwatch(Number.parseFloat(swatch.label), swatch.color)
   })
