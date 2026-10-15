@@ -2,7 +2,7 @@ import { useMemo, type CSSProperties } from 'react'
 import type { PopupContent } from './Popup'
 import type { TreemapItem } from '@/types/api'
 import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
-import { resolveTreemapColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
+import { isLightColor, resolveTreemapColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 import { LABEL_LINE_HEIGHT, fitStockLabel, useFontsVersion } from '@/utils/stockLabelFit'
 
@@ -101,6 +101,8 @@ export default function StockBox({
         width,
         height,
         backgroundColor,
+        // 상한가·하한가 부근의 포인트 색(분홍/하늘)처럼 밝은 배경에서는 흰 글자가 안 읽혀 어두운 글자를 쓴다.
+        color: isLightColor(backgroundColor) ? '#18181b' : undefined,
         '--treemap-base-color': backgroundColor,
       } as CSSProperties}
       onContextMenu={e => {
