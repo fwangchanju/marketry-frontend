@@ -1,9 +1,9 @@
 // 종목 박스 안 글자를 박스 크기에 맞춘다. 말줄임표나 잘린 글자는 만들지 않는다.
-// 이름은 한 줄에 들어가면 그대로 두고, 안 들어가면 두 줄로 나눠(균형 있게) 보여 준다. 두 줄로도 안 들어가면 글자를 MIN_FONT까지 줄이고,
+// 이름은 한 줄에 들어가면 그대로 두고, 안 들어가면 두 줄로 나눠(균형 있게) 보여 준다. 두 줄로도 안 들어가면 글자를 MIN_FONT(8px)까지 줄이고,
 // 그래도 안 되면 이름을 감추고 등락률만 보여 준다. 등락률도 폭에 안 들어가면 MIN_FONT까지 줄이고 그래도 안 되면 아무것도 그리지 않는다.
 import { useSyncExternalStore } from 'react'
 
-export const MIN_FONT = 9
+export const MIN_FONT = 8
 export const LABEL_LINE_HEIGHT = 1.25
 export const RATE_FONT_SCALE = 0.85
 // 이름 양옆 여백(px-1 = 4px씩)과 테두리(1px씩), 등락률 쪽은 테두리와 여유 1px씩.
@@ -79,6 +79,11 @@ function splitTwoLines(name: string, size: number, avail: number): [string, stri
   const isWord = (ch: string) => /[\x21-\x7E]/.test(ch)
   const all = Array.from({ length: Math.max(0, chars.length - 1) }, (_, k) => k + 1).filter(i => !(isWord(chars[i - 1]) && isWord(chars[i])))
   const atSpaces = all.filter(i => chars[i] === ' ' || chars[i - 1] === ' ')
+  // 3글자 이름은 윗줄 1글자 + 아랫줄 2글자로 나눈다(2글자 + 1글자가 아니다). 2글자 이름은 1글자씩이다.
+  if (chars.length === 3 && all.includes(1)) {
+    const short = bestSplit([1])
+    if (short && short.max <= avail) return short.lines
+  }
   const bySpace = bestSplit(atSpaces)
   if (bySpace && bySpace.max <= avail) return bySpace.lines
   const any = bestSplit(all)
