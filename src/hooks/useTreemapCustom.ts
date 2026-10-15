@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { isAxiosError } from 'axios'
 import {
   getSectors,
   createSector,
@@ -221,14 +222,34 @@ export function useCreateCustomScaleThreshold() {
   return useMutation({ mutationFn: createCustomScaleThreshold, meta: { failure: '등락률 색상을 저장하지 못했습니다.' } })
 }
 
+// 서버에 이미 없는 기준값이다 — 다른 화면·탭에서 지웠거나 초기화해서 이 화면의 id가 낡았을 때 생긴다("이미 삭제되었거나 존재하지 않는 색상 기준값입니다.").
+const isScaleThresholdMissing = (error: unknown) => isAxiosError(error) && (error.response?.status === 404 || JSON.stringify(error.response?.data ?? '').includes('이미 삭제'))
+
+// 수정하려는 기준값이 서버에 이미 없으면 오류 창을 띄우지 않고 같은 값으로 새로 만든다(결과적으로 원하는 값이 저장된다).
 export function useUpdateCustomScaleThreshold() {
   return useMutation({
     meta: { failure: '등락률 색상을 저장하지 못했습니다.' },
-    mutationFn: ({ id, payload }: { id: number; payload: Parameters<typeof updateCustomScaleThreshold>[1] }) =>
-      updateCustomScaleThreshold(id, payload),
+    mutationFn: async ({ id, payload }: { id: number; payload: Parameters<typeof updateCustomScaleThreshold>[1] }) => {
+      try {
+        return await updateCustomScaleThreshold(id, payload)
+      } catch (error) {
+        if (!isScaleThresholdMissing(error)) throw error
+        return createCustomScaleThreshold(payload)
+      }
+    },
   })
 }
 
+// 지우려는 기준값이 서버에 이미 없으면 목적(없애기)이 이미 이뤄진 것이라 오류로 보지 않는다 — "초기화"가 낡은 id 때문에 막히지 않는다.
 export function useDeleteCustomScaleThreshold() {
-  return useMutation({ mutationFn: (id: number) => deleteCustomScaleThreshold(id), meta: { failure: '등락률 색상을 삭제하지 못했습니다.' } })
+  return useMutation({
+    meta: { failure: '등락률 색상을 삭제하지 못했습니다.' },
+    mutationFn: async (id: number) => {
+      try {
+        await deleteCustomScaleThreshold(id)
+      } catch (error) {
+        if (!isScaleThresholdMissing(error)) throw error
+      }
+    },
+  })
 }
