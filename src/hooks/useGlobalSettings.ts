@@ -31,6 +31,7 @@ import {
 import { useMarketValueTierRange } from './useMarketValueTierRange'
 import { registerExcludedSector, unregisterExcludedSector } from '@/api/treemap'
 import {
+  colorAtPercent,
   createDefaultColorScale,
   DEFAULT_MINUS_THRESHOLDS,
   DEFAULT_ZERO_COLOR,
@@ -494,12 +495,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // draft가 어느 로그인 상태의 값으로 시드됐는지 — 로그인/로그아웃으로 바뀌면 새 서버 값으로 다시 시드한다.
   const [colorScaleDraftOwner, setColorScaleDraftOwner] = useState<boolean | null>(null)
   const [colorEditError, setColorEditError] = useState<string | null>(null)
-  // 편집 대상이 바뀔 때마다 올려서 편집 영역의 입력칸/슬라이더 로컬 상태를 새로 시작하게 한다.
-  const [colorEditSessionKey, setColorEditSessionKey] = useState(0)
   // 편집 영역이 항상 열려 있으므로, 적용/취소 뒤에 같은 칸을 다시 편집 대상으로 잡기 위해 기억해 둔다.
   const selectedColorPercentRef = useRef<number | null>(null)
-  // 편집을 시작할 때의 값 — 지금 값과 다르면 "적용하지 않은 수정"이 있는 것이라 적용/취소 버튼을 보여준다.
-  const [colorEditOriginal, setColorEditOriginal] = useState<{ thresholdPercent: number; color: string } | null>(null)
   if (colorScaleServerData && (colorScaleDraft === null || colorScaleDraftOwner !== isLoggedIn)) {
     setColorScaleDraftOwner(isLoggedIn)
     // 이전 계정에서 열려 있던 편집 세션은 인덱스가 의미를 잃으므로 함께 닫는다.
@@ -548,28 +545,24 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 개별 뮤테이션 훅의 isPending 하나만으로는 전체 진행 상태를 못 나타내서 별도로 든다.
   const [isApplyingColorEdit, setIsApplyingColorEdit] = useState(false)
 
-  // 범례 칸을 눌러 그 구간을 편집한다 — 편집 영역은 항상 열려 있고, 칸을 누르면 편집 대상만 바뀐다.
-  // 적용하지 않은 이전 칸의 수정은 되돌린다. 저장된 색이 없는 기본 칸은 그 칸의 기본 값으로
-  // 구간을 만들어 편집한다(범례 칸 수는 고정이라 새 칸을 만드는 기능은 없다).
+  // 범례 칸·막대 손잡이를 눌러 편집 대상(첫 편집 행)을 바꾼다 — 적용하지 않은 이전 수정은 되돌리지 않고 그대로 두어, 여러 손잡이·상승/하락을 고친 뒤 한 번에 적용하거나 취소할 수 있다.
+  // 저장된 색이 없는 기본 칸은 그 칸의 기본 값으로 구간을 만들어 편집한다(범례 칸 수는 고정이라 새 칸을 만드는 기능은 없다). 이렇게 채운 기본 칸은 처음 상태(snapshot)에도 같이 넣어 "수정"으로 보지 않는다.
   const handleSelectColorSwatch = (percent: number, color: string) => {
     if (!colorScaleDraft || isApplyingColorEdit) return
     const base = colorEditSnapshotRef.current ?? colorScaleDraft
     colorEditSnapshotRef.current = base
     selectedColorPercentRef.current = percent
     setColorEditError(null)
-    setColorEditSessionKey(key => key + 1)
-    const existingIndex = base.thresholds.findIndex(threshold => threshold.thresholdPercent === percent)
+    const existingIndex = colorScaleDraft.thresholds.findIndex(threshold => threshold.thresholdPercent === percent)
+    const selectFirst = (index: number) => setColorEditIndices(previous => [index, ...previous.filter(item => item !== index)])
     if (existingIndex >= 0) {
-      const existing = base.thresholds[existingIndex]
-      setColorEditOriginal({ thresholdPercent: existing.thresholdPercent, color: existing.color })
-      setColorScaleDraft(base)
-      setColorEditIndices([existingIndex])
+      selectFirst(existingIndex)
       return
     }
-    setColorEditOriginal({ thresholdPercent: percent, color })
-    const nextThresholds = [...base.thresholds, { thresholdPercent: percent, color, colorLabel: null }]
-    setColorScaleDraft({ ...base, thresholds: nextThresholds })
-    setColorEditIndices([nextThresholds.length - 1])
+    const added = { thresholdPercent: percent, color, colorLabel: null }
+    colorEditSnapshotRef.current = { ...base, thresholds: [...base.thresholds, added] }
+    setColorScaleDraft({ ...colorScaleDraft, thresholds: [...colorScaleDraft.thresholds, added] })
+    selectFirst(colorScaleDraft.thresholds.length)
   }
   // 등락률 막대에서 rank번째 구간 경계를 옮긴다 — 상승 구간의 값을 바꾸면 같은 순서의 하락 구간도 같은 값의 거울(-값)로 함께 바뀐다(대칭).
   // 손잡이는 이웃 구간을 넘거나 겹치지 못해서 순서가 밀리거나 같은 값이 생기는 일이 없다. 하락 구간이 아직 없으면 기본 하락 색으로 만든다.
@@ -583,15 +576,16 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     const mirror = negativeRows[rank]
     if (percent === target.threshold.thresholdPercent && mirror?.threshold.thresholdPercent === -percent) return
     let thresholds = colorScaleDraft.thresholds.map((threshold, index) => {
-      if (index === target.index) return { ...threshold, thresholdPercent: percent }
-      if (index === mirror?.index) return { ...threshold, thresholdPercent: -percent }
+      // 손잡이를 옮기면 명도도 새 등락률에 맞춰 바뀐다(색 계열은 그대로, 회색은 그대로).
+      if (index === target.index) return { ...threshold, thresholdPercent: percent, color: colorAtPercent(threshold.color, percent) }
+      if (index === mirror?.index) return { ...threshold, thresholdPercent: -percent, color: colorAtPercent(threshold.color, percent) }
       return threshold
     })
     let mirrorIndex = mirror?.index
     if (mirrorIndex === undefined) {
       const fallback = DEFAULT_MINUS_THRESHOLDS[Math.min(rank, DEFAULT_MINUS_THRESHOLDS.length - 1)]
       mirrorIndex = thresholds.length
-      thresholds = [...thresholds, { thresholdPercent: -percent, color: fallback.color, colorLabel: fallback.colorLabel }]
+      thresholds = [...thresholds, { thresholdPercent: -percent, color: colorAtPercent(fallback.color, percent), colorLabel: fallback.colorLabel }]
     }
     setColorEditError(null)
     setColorScaleDraft({ ...colorScaleDraft, thresholds })
@@ -619,6 +613,20 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     setColorScaleDraft(prev =>
       prev ? { ...prev, thresholds: prev.thresholds.map((t, i) => (i === targetIndex ? { ...t, color, colorLabel } : t)) } : prev,
     )
+  }
+  // 상승/하락 한쪽의 색을 한 번에 바꾼다 — 구간마다 색을 따로 고르지 않고 한쪽에 색 계열 하나를 정해 순서별 명도로 칠한다(colors는 작은 구간부터).
+  // 바뀐 구간은 모두 편집 세션에 넣어 적용 때 함께 저장한다(첫 원소는 그대로라 고른 칸이 바뀌지 않는다).
+  const handleChangeColorEditSideColor = (side: 'up' | 'down', colors: string[], colorLabel: string | null) => {
+    if (!colorScaleDraft || colorEditIndices.length === 0) return
+    const rows = sortedSignRows(colorScaleDraft.thresholds, side === 'up')
+    const colorByIndex = new Map(rows.map((row, rank) => [row.index, colors[Math.min(rank, colors.length - 1)]]))
+    if (colorByIndex.size === 0) return
+    setColorEditError(null)
+    setColorScaleDraft({
+      ...colorScaleDraft,
+      thresholds: colorScaleDraft.thresholds.map((threshold, index) => (colorByIndex.has(index) ? { ...threshold, color: colorByIndex.get(index)!, colorLabel } : threshold)),
+    })
+    setColorEditIndices(previous => Array.from(new Set([...previous, ...colorByIndex.keys()])))
   }
   const handleApplyColorEdit = async () => {
     if (!colorScaleDraft || colorEditIndices.length === 0) {
@@ -696,8 +704,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   }
   const handleCancelColorEdit = () => {
     const hadSaveError = colorEditError !== null
-    // 취소하면 값이 처음으로 돌아가므로, 다시 열 때 처음 칸을 고르도록 기억해 둔 값도 처음 값으로 되돌린다.
-    if (colorEditOriginal) selectedColorPercentRef.current = colorEditOriginal.thresholdPercent
+    // 취소하면 값이 처음으로 돌아가므로, 다시 열 때 고르던 칸을 처음 값 기준으로 다시 잡는다(처음에 없던 칸이면 기본 칸을 연다).
+    selectedColorPercentRef.current = colorEditSnapshotRef.current?.thresholds[colorEditIndices[0]]?.thresholdPercent ?? null
     if (colorEditSnapshotRef.current) setColorScaleDraft(colorEditSnapshotRef.current)
     colorEditSnapshotRef.current = null
     setColorEditError(null)
@@ -869,22 +877,16 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     const rank = (up ? barPositiveRows : barNegativeRows).findIndex(row => row.index === selectedIndex)
     return { side: up ? ('up' as const) : ('down' as const), rank: rank < 0 ? null : rank }
   })()
-  // 편집한 칸(첫 행)이 처음 값과 다르거나, 함께 바뀐 거울 구간이 처음과 다르면 "적용하지 않은 수정"이 있는 것이다.
-  const snapshotThresholds = colorEditSnapshotRef.current?.thresholds
-  const mirrorChanged = colorEditIndices.slice(1).some(index => {
-    const row = colorScaleDraft?.thresholds[index]
-    const base = snapshotThresholds?.[index]
-    return !row || !base || row.thresholdPercent !== base.thresholdPercent || row.color.toLowerCase() !== base.color.toLowerCase()
-  })
+  // 처음(snapshot)과 지금 draft의 구간·색이 하나라도 다르면 "적용하지 않은 수정"이 있는 것이다(여러 손잡이·상승/하락을 고친 경우 포함).
+  const thresholdSignature = (thresholds: ColorScaleThreshold[] | undefined) =>
+    (thresholds ?? []).map(threshold => `${threshold.thresholdPercent}:${threshold.color.toLowerCase()}`).sort().join('|')
+  const colorEditHasChanges = colorEditSnapshotRef.current !== null
+    && thresholdSignature(colorEditSnapshotRef.current.thresholds) !== thresholdSignature(colorScaleDraft?.thresholds)
 
   const colorEditorPanelProps =
     colorEditThresholds.length > 0
       ? {
-          sessionKey: colorEditSessionKey,
-          hasChanges: mirrorChanged || (colorEditOriginal !== null
-            && colorEditThresholds[0] !== undefined
-            && (colorEditThresholds[0].thresholdPercent !== colorEditOriginal.thresholdPercent
-              || colorEditThresholds[0].color.toLowerCase() !== colorEditOriginal.color.toLowerCase())),
+          hasChanges: colorEditHasChanges,
           thresholds: colorEditThresholds,
           bar: {
             positive: barPositiveRows.map(row => ({ percent: row.threshold.thresholdPercent, color: row.threshold.color })),
@@ -897,6 +899,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
           onSelectRank: handleSelectColorRank,
           onSelectZero: handleSelectColorZero,
           onChangeColor: handleChangeColorEditColor,
+          onChangeSideColor: handleChangeColorEditSideColor,
           onApply: handleApplyColorEdit,
           onCancel: handleCancelColorEdit,
           isSaving: isApplyingColorEdit,

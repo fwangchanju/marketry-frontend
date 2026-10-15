@@ -1904,7 +1904,7 @@ export function SettingsColorSection({
     <div className="settings-second-color pt-5 text-white">
       {/* "색상 커스텀 모드" 토글을 별도 줄로 두지 않고, 제목 바로 우측에 스위치만 붙인다. 초기화 버튼(26px)은 위아래 여백을 -2px씩 줘서 줄 높이를 다른 항목의 제목 줄(22px)과 같게 둔다 — 그래야 메뉴를 바꿔도 제목·토글 위치가 같다. */}
       <div className="flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-[15px]">
+        <p className="flex items-center text-[15px]">
           <span className="settings-section-num">등락률 색상</span>
           <button
             type="button"
@@ -1912,9 +1912,9 @@ export function SettingsColorSection({
             data-hint="기본값으로 초기화"
             onClick={async () => { if (await appConfirm('등락률 색상을 기본값으로 초기화하시겠습니까?', { title: '색상 초기화' })) runWithFeedback(onResetColorScale) }}
             disabled={isResettingColorScale}
-            className="-my-0.5 flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:cursor-wait disabled:opacity-60"
+            className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:cursor-wait disabled:opacity-60"
           >
-            <RefreshIcon className="h-4 w-4" aria-hidden="true" />
+            <RefreshIcon className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </p>
         <div className="flex items-center gap-3">
@@ -1929,12 +1929,12 @@ export function SettingsColorSection({
           />
         </div>
       </div>
-      <SettingDescription dimmed={!colorCustomOn}>등락률 구간별 지도 색상</SettingDescription>
+      <SettingDescription dimmed={!colorCustomOn}>등락률 구간별 종목 박스 색상</SettingDescription>
       {/* 맨 위 9칸 색상바는 9칸이 설정창 폭에 들어가지 않아 지웠다(칸 선택은 아래 막대의 손잡이·0% 표식·상승/하락 선택으로 한다). 지도 하단 범례 바는 그대로다. */}
       <div className="relative">
         {colorEditorProps && (
           <div className={colorCustomOn ? '' : 'opacity-40'} inert={!colorCustomOn}>
-            <TreemapColorThresholdEditorPanel key={colorEditorProps.sessionKey} {...colorEditorProps} />
+            <TreemapColorThresholdEditorPanel {...colorEditorProps} />
           </div>
         )}
         {!colorCustomOn && colorOffNoticeVisible && (
@@ -1973,7 +1973,8 @@ export function SettingsStrongIndustryColorSection({
         />
       </p>
       <SettingDescription>업종명과 강세 업종의 색상</SettingDescription>
-      <div className="mt-[18px] flex justify-between">
+      {/* 색 동그라미 줄은 다른 슬라이더와 같은 폭(.settings-slider-control)에 양 끝을 맞춘다. 8칸이 들어가도록 동그라미는 22px이다. */}
+      <div className="settings-slider-control mt-[18px] flex justify-between">
         {STRONG_INDUSTRY_COLOR_OPTIONS.map(option => (
           <span key={option.value} className="group relative inline-flex">
             <button
@@ -1982,7 +1983,7 @@ export function SettingsStrongIndustryColorSection({
               aria-pressed={color.toLowerCase() === option.value}
               onClick={() => onChange(option.value)}
               style={{ backgroundColor: option.value }}
-              className={`h-6 w-6 shrink-0 rounded-full border-2 p-0 ${color.toLowerCase() === option.value ? 'border-white ring-1 ring-white/40' : 'border-transparent'}`}
+              className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${color.toLowerCase() === option.value ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30'}`}
             />
             <span
               role="tooltip"
@@ -2352,8 +2353,9 @@ export default function SettingsPanel({
               onToggleAvgChangeRateUseSimple={onToggleAvgChangeRateUseSimple!}
             />
           ) : null}
+          {/* 북마크 항목 한 칸(127px)과 같은 높이 안에서 글자를 세로 가운데에 둔다. 탭 위 여백(20px)은 .settings-bookmark-tab이 준다. */}
           {selectedSection.id === 'favorites' && bookmarkContext.enabled && bookmarkContext.ids.length === 0 && (
-            <p className="text-center text-xs font-medium leading-relaxed text-gray-300">
+            <p className="flex h-[127px] items-center justify-center text-center text-xs font-medium leading-relaxed text-gray-300">
               북마크한 항목이 없습니다.
             </p>
           )}
