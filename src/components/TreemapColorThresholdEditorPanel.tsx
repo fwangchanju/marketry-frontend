@@ -137,7 +137,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             role="img"
             aria-label="0% 고정"
             data-hint="0% 고정 — 색만 바꿀 수 있습니다"
-            className={`absolute left-0 top-[23px] box-border h-4 w-4 -translate-x-1/2 cursor-pointer rounded-full border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
+            className={`absolute left-0 top-[19px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
             style={{ backgroundColor: zeroColor }}
           />
           <div className={zeroSelected ? 'opacity-60' : ''}>
@@ -160,7 +160,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
                     aria-valuemax={BAR_MAX_PERCENT}
                     aria-valuenow={item.percent}
                     onKeyDown={event => handleKeyDown(event, rank)}
-                    className={`absolute top-[23px] box-border h-4 w-4 -translate-x-1/2 cursor-pointer rounded-full border bg-zinc-800 ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
+                    className={`absolute top-[19px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-zinc-800 ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
                     style={{ left }}
                   />
                 </div>
@@ -173,7 +173,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             return (
               <span
                 key={tick}
-                className={`pointer-events-none absolute top-[42px] -translate-x-1/2 whitespace-nowrap text-[11px]/4 transition-colors duration-300 ${highlighted ? 'font-medium' : ''} text-white`}
+                className={`pointer-events-none absolute top-[46px] -translate-x-1/2 whitespace-nowrap text-[11px]/4 transition-colors duration-300 ${highlighted ? 'font-medium' : ''} text-white`}
                 style={{ left: `${percentToPosition(tick) * 100}%` }}
               >
                 {tick}%
