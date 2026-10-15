@@ -2352,8 +2352,9 @@ export default function SettingsPanel({
               onToggleAvgChangeRateUseSimple={onToggleAvgChangeRateUseSimple!}
             />
           ) : null}
+          {/* 북마크 항목 한 칸(127px)과 같은 높이 안에서 글자를 세로 가운데에 둔다. 탭 위 여백(20px)은 .settings-bookmark-tab이 준다. */}
           {selectedSection.id === 'favorites' && bookmarkContext.enabled && bookmarkContext.ids.length === 0 && (
-            <p className="text-center text-xs font-medium leading-relaxed text-gray-300">
+            <p className="flex h-[127px] items-center justify-center text-center text-xs font-medium leading-relaxed text-gray-300">
               북마크한 항목이 없습니다.
             </p>
           )}
