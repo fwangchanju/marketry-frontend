@@ -3,6 +3,7 @@ import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy'
 import { toPctSigned } from '@/utils/format'
 import { resolveTreemapColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import { layoutOverviewLabel } from '@/utils/overviewLabel'
+import { useFontsVersion } from '@/utils/stockLabelFit'
 
 export interface OverviewMapItem {
   key: string
@@ -24,6 +25,7 @@ export default function OverviewMap({
   onSelect?: (name: string) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const fontsVersion = useFontsVersion()
   const [size, setSize] = useState({ width: 0, height: 0 })
 
   useLayoutEffect(() => {
@@ -55,16 +57,17 @@ export default function OverviewMap({
     <div ref={ref} className="relative min-h-0 w-full flex-1">
       {rects.map(({ item, x, y, width, height }) => {
         const background = resolveTreemapColor(item.changeRate, colorScale)
-        const showRateWanted = width >= 44 && height >= 38
-        const label = layoutOverviewLabel(item.name, width, height, showRateWanted)
+        const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion)
         const boxClassName = 'absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight'
         const boxStyle = { left: x, top: y, width, height, backgroundColor: background, color: '#ffffff' }
         const content = (
           <>
-            {/* 이름은 숨기지 않는다 — 한 줄에 안 들어가면 `/`(없으면 공백) 자리에서 두 줄로 나누고(utils/overviewLabel.ts), 두 줄도 안 들어가는 아주 작은 박스는 `…` 없이 박스 가장자리에서 그대로 잘린다. */}
-            <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>
-              {label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}
-            </span>
+            {/* 한 줄에 안 들어가면 `/`(없으면 공백) 자리에서 두 줄로 나누고, 두 줄로도 안 들어가면 이름과 등락률을 모두 그리지 않는다(utils/overviewLabel.ts). 잘린 글자나 `…`는 만들지 않는다. */}
+            {label.lines.length > 0 && (
+              <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>
+                {label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}
+              </span>
+            )}
             {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{toPctSigned(item.changeRate)}</span>}
           </>
         )
