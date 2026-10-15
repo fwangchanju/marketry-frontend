@@ -1,9 +1,11 @@
 // 종목 박스 안 글자를 박스 크기에 맞춘다. 말줄임표나 잘린 글자는 만들지 않는다.
 // 이름은 한 줄에 들어가면 그대로 두고, 안 들어가면 두 줄로 나눠(균형 있게) 보여 준다. 두 줄로도 안 들어가면 글자를 MIN_FONT(10px)까지 줄이고,
-// 그래도 안 되면 이름을 감추고 등락률만 보여 준다. 등락률도 폭에 안 들어가면 MIN_FONT까지 줄이고 그래도 안 되면 아무것도 그리지 않는다.
+// 그래도 안 되면 이름과 등락률 모두 그리지 않는다(등락률만 남기지 않는다). 설정에서 등락률만 고른 경우에만 등락률만 보여 주고, 폭에 안 들어가면 MIN_FONT까지 줄이다 안 되면 그리지 않는다.
 import { useSyncExternalStore } from 'react'
 
 export const MIN_FONT = 10
+// 이름이 한 줄에 들어가면 나누지 않는다 — 한 줄에 맞추려고 글자를 줄일 수 있는 한계. 이보다 더 줄여야 하면 두 줄로 나눈다.
+export const ONE_LINE_MIN_FONT = 11
 export const LABEL_LINE_HEIGHT = 1.25
 export const RATE_FONT_SCALE = 0.85
 // 이름 양옆 여백(px-1 = 4px씩)과 테두리(1px씩), 등락률 쪽은 테두리와 여유 1px씩.
@@ -65,7 +67,7 @@ function textWidth(text: string, size: number): number {
 const GROUP_PREFIXES = [
   '삼성', '현대', '롯데', '한화', '두산', '포스코', '한진', '효성', '코오롱', '신세계', '대한', '대우', '한솔', '동국', '동원', '동양', '세아', '금호',
   '카카오', '에코프로', '미래에셋', '키움', '유진', '대신', '교보', '메리츠', '하나', '신한', '우리', '한국', '부국', '한양', '아모레', '이수', '서울', '한미', '삼양', '삼천리', '태광',
-  '아시아나', '제주', '쌍용', '한라', '녹십자', '영원', '대웅', '일진', '가온', '한온', '한전', '고려', '보령', '일동', '동서', '종근당', '하림',
+  '아시아나', '파마', '서진', '셀트리온', '제주', '쌍용', '한라', '녹십자', '영원', '대웅', '일진', '가온', '한온', '한전', '고려', '보령', '일동', '동서', '종근당', '하림',
   '주성', '동진', '해성', '원익', '파크', '리노', '티씨', '케이씨', '피에스케이', '이오',
 ]
 const isAsciiChar = (ch: string) => /[\x21-\x7E]/.test(ch)
@@ -82,10 +84,10 @@ function groupSplitPositions(chars: string[]): number[] {
   return positions
 }
 
-// 이름 뒤에 붙는 우선주·지주사 접미어 앞에서 줄을 나눈다(삼성전자/우, 현대차/2우B, 신한/지주, 한화/홀딩스). 앞부분이 2글자 이상일 때만 접미어로 본다.
+// 이름 뒤에 붙는 우선주 표시·지주사 접미어 앞에서 줄을 나눈다(현대차/2우B, 삼성물산/우B, 신한/지주, 한화/홀딩스). 우선주는 표시가 분명한 1우B·2우B·우B만 보고, 맨 끝이 그냥 '우'인 이름(삼성전자우)은 떼지 않는다. 앞부분이 2글자 이상일 때만 접미어로 본다.
 function suffixSplitPosition(chars: string[]): number | null {
   const name = chars.join('')
-  const match = name.match(/(홀딩스|홀딩|지주회사|지주|\d?우[A-C]?)$/)
+  const match = name.match(/(홀딩스|홀딩|지주회사|지주|\d우[A-C]?|우[A-C])$/)
   if (!match) return null
   const position = Array.from(name.slice(0, name.length - match[0].length)).length
   return position >= 2 ? position : null
@@ -175,6 +177,14 @@ export function fitStockLabel({
     const { atSpaces, atMeaning, atSuffix } = splitCandidates(Array.from(name))
     const passes: Array<'suffix' | 'semantic' | 'any'> = atSuffix.length > 0 ? ['suffix', 'semantic', 'any'] : atSpaces.length + atMeaning.length > 0 ? ['semantic', 'any'] : ['any']
     const searchName = (withRate: boolean): StockLabelFit | null => {
+      // 먼저 한 줄에 맞춰 본다 — 글자를 ONE_LINE_MIN_FONT까지 줄여서라도 한 줄에 들어가면 나누지 않는다.
+      for (let size = baseFont; size >= Math.min(baseFont, ONE_LINE_MIN_FONT); size -= 0.5) {
+        const rate = withRate ? rateSizeFor(size) : null
+        const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
+        if (LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight && textWidth(name, size) <= nameAvail) {
+          return { nameLines: [name], nameSize: size, rateSize: rate }
+        }
+      }
       for (const mode of passes) {
         for (let size = baseFont; size >= MIN_FONT; size -= 0.5) {
           const rate = withRate ? rateSizeFor(size) : null
@@ -194,8 +204,8 @@ export function fitStockLabel({
     const found = (wantRate ? searchName(true) : null) ?? searchName(false)
     if (found) return found
   }
-  // 이름이 안 들어가거나 등락률만 고른 경우 — 등락률만 보여 준다(이름만 고른 경우는 아무것도 그리지 않는다).
-  if (!wantRate) return none
+  // 설정에서 등락률만 고른 경우에만 등락률만 보여 준다. 이름을 보여 주려 했는데 안 들어간 경우에는 등락률만 남기지 않고 아무것도 그리지 않는다.
+  if (!wantRate || wantName) return none
   const rate = rateSizeFor(baseFont)
   if (rate && rate * LABEL_LINE_HEIGHT <= innerHeight) return { nameLines: null, nameSize: baseFont, rateSize: rate }
   return none

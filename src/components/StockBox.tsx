@@ -38,7 +38,7 @@ interface Props {
 }
 
 function fontSizePx(width: number, height: number): number {
-  return Math.max(12, Math.min(22, Math.min(width, height) / 5))
+  return Math.max(12, Math.min(30, Math.min(width, height) / 5))
 }
 
 export default function StockBox({
