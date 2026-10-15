@@ -1766,6 +1766,12 @@ export function SettingsSectorChangeSection({
             onClick={() => onChange(option.value)}
             className={`relative z-10 min-h-[30px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'}`}
           >
+            {/* 고른 버튼은 글자 왼쪽에 체크(✓)를 단다(등락률 색상의 하락/보합/상승 버튼과 같은 표시). 글자색(currentColor)을 따라가 채움이 미끄러지는 동안에도 보인다. */}
+            {value === option.value && (
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12.5l4.5 4.5L19 7" />
+              </svg>
+            )}
             {option.label}
           </button>
         ))}
@@ -1799,6 +1805,12 @@ export function SettingsStockChangeSection({
             onClick={() => onChange(option.value)}
             className={`relative z-10 min-h-[30px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'}`}
           >
+            {/* 고른 버튼은 글자 왼쪽에 체크(✓)를 단다(등락률 색상의 하락/보합/상승 버튼과 같은 표시). 글자색(currentColor)을 따라가 채움이 미끄러지는 동안에도 보인다. */}
+            {value === option.value && (
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12.5l4.5 4.5L19 7" />
+              </svg>
+            )}
             {option.label}
           </button>
         ))}
