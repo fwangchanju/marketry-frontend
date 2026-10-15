@@ -1929,7 +1929,7 @@ export function SettingsColorSection({
           />
         </div>
       </div>
-      <SettingDescription dimmed={!colorCustomOn}>종목 박스 색상</SettingDescription>
+      <SettingDescription dimmed={!colorCustomOn}>등락률 구간별 종목 박스 색상</SettingDescription>
       {/* 맨 위 9칸 색상바는 9칸이 설정창 폭에 들어가지 않아 지웠다(칸 선택은 아래 막대의 손잡이·0% 표식·상승/하락 선택으로 한다). 지도 하단 범례 바는 그대로다. */}
       <div className="relative">
         {colorEditorProps && (
