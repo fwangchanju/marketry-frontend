@@ -116,15 +116,15 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
 
   return (
     <>
-      {/* 양 끝 손잡이·표식이 바깥으로 나가지 않도록 막대 양옆에 10px 여백을 둔다. */}
+      {/* 막대 폭은 다른 탭의 슬라이더와 같은 .settings-slider-control 폭이다(양 끝 손잡이·눈금 글자는 그 바깥으로 조금 나온다). */}
       <div
-        className="relative h-[62px] touch-none select-none px-2.5"
+        className="relative h-[62px] touch-none select-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
       >
-        <div ref={trackRef} className="relative h-full">
+        <div ref={trackRef} className="settings-slider-control relative h-full">
           <div className="absolute inset-x-0 top-[23px] h-4 rounded-full border border-white/25" style={{ background: gradient }} />
           {zeroSelected && <span className={badgeClass} style={{ left: '0%' }}>0%</span>}
           <div
@@ -265,8 +265,9 @@ export default function TreemapColorThresholdEditorPanel({
   return (
     <div className="color-editor-steps mt-4 flex flex-col gap-4 text-sm text-white">
       <div>
-        <div className="mb-2 flex items-center justify-between">
-          <p className="color-editor-step text-[13px] text-gray-300">색상</p>
+        <p className="color-editor-step mb-2 text-[13px] text-gray-300">색상</p>
+        {/* 상승/하락 선택은 제목 줄 아래 한 줄에 따로 둔다 — 제목 줄이 좁아 보이지 않게 한다. */}
+        <div className="mb-3 flex justify-end">
           {/* 어느 쪽 구간의 색을 고칠지 고른다 — 막대의 값은 같고 색만 상승(빨강 계열)·하락(파랑 계열)으로 나뉜다. */}
           <div role="group" aria-label="색을 고칠 쪽" className="flex gap-1">
             {([['up', '상승'], ['down', '하락']] as const).map(([key, label]) => (
