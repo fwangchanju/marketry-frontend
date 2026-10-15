@@ -1,5 +1,5 @@
 import { startTransition, useRef, useState } from 'react'
-import { hexToHsl, hslToHex, lightnessForPercent, resolveTreemapColor, type ColorScaleThreshold } from '@/utils/treemapColorScale'
+import { hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/treemapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
 const SATURATION = 75
@@ -21,7 +21,8 @@ const HUE_PRESETS: HuePreset[] = [
   { name: 'magenta', label: '자홍', hue: 310, colorLabel: null },
 ]
 
-// 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여준다. 실제 칸 색의 밝기는 등락률 값(lightnessForPercent)으로 정해지고 따로 고르지 않는다.
+// 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여준다. 실제 칸 색의 밝기는 구간 순서(작은 값부터)로 정해지고 따로 고르지 않는다.
+const RANK_LIGHTNESS = [16, 33, 46, 58]
 const SWATCH_LIGHTNESS = 55
 // 0% 칸을 골랐을 때는 색 줄이 회색 8단계로 바뀐다(기본 0% 회색은 명도 50). 흰 글자가 읽히도록 너무 밝은 단계는 두지 않는다.
 const ZERO_GRAY_STEPS = [20, 26, 32, 38, 44, 50, 56, 62]
@@ -64,16 +65,8 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
   const zeroSelected = side === 'zero'
   // 막대 색은 고른 쪽(상승/하락)의 구간 색을 이어서 보여 준다.
   const colored = side === 'down' ? negative : positive
-  // 막대 색은 지도 박스 색과 같은 계산(resolveTreemapColor)을 0~30%에서 촘촘히 찍어 그린다 — 최고 단계 이후의 점점 밝아지는 색도 그대로 보인다.
-  const signed = side === 'down' ? -1 : 1
-  const barConfig = {
-    thresholds: [
-      { thresholdPercent: 0, color: zeroColor, colorLabel: null },
-      ...colored.map((item, rank) => ({ thresholdPercent: signed * (positive[rank]?.percent ?? item.percent), color: item.color, colorLabel: null })),
-    ],
-  }
-  const gradientStops = Array.from({ length: 61 }, (_, step) => step / 2).map(percent => `${resolveTreemapColor(signed * percent, barConfig)} ${(percentToPosition(percent) * 100).toFixed(2)}%`)
-  const gradient = `linear-gradient(90deg, ${gradientStops.join(', ')})`
+  const lastColor = colored.at(-1)?.color ?? zeroColor
+  const gradient = `linear-gradient(90deg, ${[`${zeroColor} 0%`, ...colored.map((item, rank) => `${item.color} ${(percentToPosition(positive[rank]?.percent ?? item.percent) * 100).toFixed(2)}%`), `${lastColor} 100%`].join(', ')})`
   const sign = side === 'down' ? '-' : '+'
 
   const percentAt = (clientX: number) => {
@@ -259,8 +252,7 @@ export default function TreemapColorThresholdEditorPanel({
         onChangeColor(0, hslToHex(0, 0, Number(key.replace('gray-', ''))), GRAY_SWATCH.colorLabel)
         return
       }
-      const rows = bar.side === 'down' ? bar.negative : bar.positive
-      onChangeSideColor(bar.side, rows.map(row => paint(key, lightnessForPercent(row.percent))), colorLabel)
+      onChangeSideColor(bar.side, RANK_LIGHTNESS.map(lightness => paint(key, lightness)), colorLabel)
     })
   }
   // 반대쪽(상승↔하락)이 이미 쓰는 색 계열은 고를 수 없다 — 상승과 하락이 같은 색이 되면 구분이 안 된다. 0% 칸은 제한이 없다.

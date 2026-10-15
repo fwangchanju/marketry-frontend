@@ -24,7 +24,7 @@ export const DEFAULT_ZERO_COLOR = '#808080'
 
 // 저장된 threshold가 하나도 없는 side에 쓰는 폴백 프리셋(절댓값 기준). 1/3/5/8%p의 4개 임계값에만 threshold를 둔다.
 // 8% 초과는 별도 threshold를 추가하지 않고, 아래 resolveTreemapColor의 "최고 threshold 초과 시 clamp" 동작에 맡긴다 —
-// 8% 초과는 resolveTreemapColor가 등락률에 맞춰 최고 단계 색을 더 밝게 이어 그린다(lightnessForPercent).
+// 그래야 8~30%(실제로 흔한 구간) 전체가 flat한 최고 단계 색 그대로 유지된다.
 export const DEFAULT_PLUS_THRESHOLDS: ColorScaleThreshold[] = [
   { thresholdPercent: 1, color: '#470a0a', colorLabel: 'red' }, // 명도 16 (슬라이더 10%)
   { thresholdPercent: 3, color: '#931515', colorLabel: 'red' }, // 명도 33 (슬라이더 30%)
@@ -86,29 +86,6 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
-// 등락률(절댓값 %) → 색의 명도. 등락률이 클수록 밝아진다.
-// 기본 단계 1/3/5/8%의 명도(16/33/46/58)를 그대로 지나가고 그 위는 15%에서 68, 30%에서 70까지 이어진다(76까지 올렸더니 흰 글자가 옅은 배경에 묻혀 68로 낮췄다).
-const LIGHTNESS_ANCHORS: [number, number][] = [[0, 8], [1, 16], [3, 33], [5, 46], [8, 58], [15, 68], [30, 70]]
-export function lightnessForPercent(percent: number): number {
-  const abs = Math.abs(percent)
-  const last = LIGHTNESS_ANCHORS[LIGHTNESS_ANCHORS.length - 1]
-  if (abs >= last[0]) return last[1]
-  for (let i = 1; i < LIGHTNESS_ANCHORS.length; i++) {
-    const [x1, y1] = LIGHTNESS_ANCHORS[i]
-    if (abs <= x1) {
-      const [x0, y0] = LIGHTNESS_ANCHORS[i - 1]
-      return y0 + ((y1 - y0) * (abs - x0)) / (x1 - x0)
-    }
-  }
-  return last[1]
-}
-// 색 계열(색상·채도)은 두고 명도만 등락률에 맞춰 바꾼 색 — 최고 단계를 넘는 등락률과 손잡이를 옮겼을 때의 색에 쓴다. 회색 계열(채도가 거의 없음)은 그대로 둔다.
-export function colorAtPercent(hex: string, percent: number): string {
-  const { h, s } = hexToHsl(hex)
-  return s < 12 ? hex : hslToHex(h, s, lightnessForPercent(percent))
-}
-export const EXTREME_COLOR_PERCENT = 30
-
 // changeRate(부호 있는 등락률, %) → 실제 렌더링에 쓸 hex 색.
 export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig): string {
   const zeroColor = resolveZeroColor(config)
@@ -136,11 +113,8 @@ export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig
     }
   }
 
-  // 가장 큰 threshold를 넘으면 등락률에 맞춰 더 밝아진다(최고 단계 색보다 어두워지지는 않는다).
-  const last = thresholds[thresholds.length - 1]
-  const lastLightness = hexToHsl(last.color).l
-  const brighter = colorAtPercent(last.color, abs)
-  return hexToHsl(brighter).l > lastLightness ? brighter : last.color
+  // 가장 큰 threshold보다도 크면 그 이후는 추정하지 않고 그대로 clamp(CSS 그라데이션/D3 스케일과 동일).
+  return thresholds[thresholds.length - 1].color
 }
 
 // changeRate(부호 있는 등락률, %) → 그 부호 쪽 threshold 중 절댓값이 가장 큰 색(보간 없이 고정).
