@@ -56,13 +56,12 @@ export default function OverviewMap({
     }
   }, [popup])
 
-  const openPopup = (item: OverviewMapItem, totalValue: number, target: HTMLElement) => {
+  const openPopup = (item: OverviewMapItem, target: HTMLElement) => {
     const map = ref.current
     if (!map) return
     const rect = target.getBoundingClientRect()
     const mapRect = map.getBoundingClientRect()
     const total = (item.advancers ?? 0) + (item.decliners ?? 0) + (item.unchanged ?? 0)
-    const share = totalValue > 0 ? (item.marketValue / totalValue) * 100 : null
     setPopup({
       title: item.name,
       rows: [
@@ -70,7 +69,6 @@ export default function OverviewMap({
         ...(item.simpleAvg === undefined ? [] : [`동일 가중: ${item.simpleAvg === null ? '-' : toPctSigned(item.simpleAvg)}`]),
         ...(total > 0 ? [`등락 종목: ▲${item.advancers ?? 0} ▼${item.decliners ?? 0} ■${item.unchanged ?? 0}`] : []),
         `그룹 시총: ${toJoEokDecimal(item.marketValue / 100_000_000)}`,
-        ...(share === null ? [] : [`지도 비중: ${share.toFixed(1)}%`]),
       ],
       // 팝업은 키가 `sector:`로 시작하면 업종 배지를 붙인다.
       targetKey: `sector:${item.key}`,
@@ -105,8 +103,6 @@ export default function OverviewMap({
     }))
   })()
 
-  const totalMarketValue = items.reduce((sum, item) => sum + item.marketValue, 0)
-
   return (
     <div ref={ref} className="relative min-h-0 w-full flex-1">
       <Popup popup={popup} onExcludeSector={() => undefined} onClose={() => setPopup(null)} />
@@ -121,7 +117,7 @@ export default function OverviewMap({
         const handleContextMenu = (event: React.MouseEvent<HTMLElement>) => {
           event.preventDefault()
           event.stopPropagation()
-          openPopup(item, totalMarketValue, event.currentTarget)
+          openPopup(item, event.currentTarget)
         }
         const hint = label.lines.length === 0 ? `${item.name} ${toPctSigned(item.changeRate)}` : undefined
         const content = (
