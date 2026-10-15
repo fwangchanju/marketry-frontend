@@ -4,6 +4,8 @@
 import { useSyncExternalStore } from 'react'
 
 export const MIN_FONT = 10
+// 이름이 한 줄에 들어가면 나누지 않는다 — 한 줄에 맞추려고 글자를 줄일 수 있는 한계. 이보다 더 줄여야 하면 두 줄로 나눈다.
+export const ONE_LINE_MIN_FONT = 11
 export const LABEL_LINE_HEIGHT = 1.25
 export const RATE_FONT_SCALE = 0.85
 // 이름 양옆 여백(px-1 = 4px씩)과 테두리(1px씩), 등락률 쪽은 테두리와 여유 1px씩.
@@ -175,6 +177,14 @@ export function fitStockLabel({
     const { atSpaces, atMeaning, atSuffix } = splitCandidates(Array.from(name))
     const passes: Array<'suffix' | 'semantic' | 'any'> = atSuffix.length > 0 ? ['suffix', 'semantic', 'any'] : atSpaces.length + atMeaning.length > 0 ? ['semantic', 'any'] : ['any']
     const searchName = (withRate: boolean): StockLabelFit | null => {
+      // 먼저 한 줄에 맞춰 본다 — 글자를 ONE_LINE_MIN_FONT까지 줄여서라도 한 줄에 들어가면 나누지 않는다.
+      for (let size = baseFont; size >= Math.min(baseFont, ONE_LINE_MIN_FONT); size -= 0.5) {
+        const rate = withRate ? rateSizeFor(size) : null
+        const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
+        if (LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight && textWidth(name, size) <= nameAvail) {
+          return { nameLines: [name], nameSize: size, rateSize: rate }
+        }
+      }
       for (const mode of passes) {
         for (let size = baseFont; size >= MIN_FONT; size -= 0.5) {
           const rate = withRate ? rateSizeFor(size) : null
