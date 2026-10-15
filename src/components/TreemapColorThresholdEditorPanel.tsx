@@ -22,7 +22,8 @@ const HUE_PRESETS: HuePreset[] = [
 ]
 
 // 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여준다. 실제 칸 색의 밝기는 구간 순서(작은 값부터)로 정해지고 따로 고르지 않는다.
-const RANK_LIGHTNESS = [16, 33, 46, 58]
+// 구간 순서(작은 값부터)별 [채도, 명도] — 첫 구간은 회색에 가까운 탁한 색(채도 12·명도 40), 나머지는 채도 75에 명도 16·33·46이다.
+const RANK_STYLE: [number, number][] = [[12, 40], [SATURATION, 16], [SATURATION, 33], [SATURATION, 46]]
 const SWATCH_LIGHTNESS = 55
 // 0% 칸을 골랐을 때는 색 줄이 회색 8단계로 바뀐다(기본 0% 회색은 명도 50). 흰 글자가 읽히도록 너무 밝은 단계는 두지 않는다.
 const ZERO_GRAY_STEPS = [20, 26, 32, 38, 44, 50, 56, 62]
@@ -247,9 +248,9 @@ export default function TreemapColorThresholdEditorPanel({
   if (!threshold) return null
 
   // 색은 구간(손잡이)마다 고르지 않고 슬라이더 한쪽(상승 또는 하락) 전체에 하나를 정한다 — 구간 순서대로 16·33·46·58 밝기로 칠한다. 0% 칸을 골랐을 때만 그 칸 색을 바꾼다.
-  const paint = (hueKey: string, lightness: number) => {
+  const paint = (hueKey: string, saturation: number, lightness: number) => {
     const preset = HUE_PRESETS.find(item => item.name === hueKey)
-    return hslToHex(preset?.hue ?? 0, preset ? SATURATION : 0, lightness)
+    return hslToHex(preset?.hue ?? 0, preset ? saturation : 0, lightness)
   }
   const applySelection = (key: string) => {
     const preset = HUE_PRESETS.find(item => item.name === key)
@@ -260,7 +261,7 @@ export default function TreemapColorThresholdEditorPanel({
         onChangeColor(0, hslToHex(0, 0, Number(key.replace('gray-', ''))), GRAY_SWATCH.colorLabel)
         return
       }
-      onChangeSideColor(bar.side, RANK_LIGHTNESS.map(lightness => paint(key, lightness)), colorLabel)
+      onChangeSideColor(bar.side, RANK_STYLE.map(([saturation, lightness]) => paint(key, saturation, lightness)), colorLabel)
     })
   }
   // 반대쪽(상승↔하락)이 이미 쓰는 색 계열은 고를 수 없다 — 상승과 하락이 같은 색이 되면 구분이 안 된다. 0% 칸은 제한이 없다.
