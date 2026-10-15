@@ -250,7 +250,7 @@ export default function TreemapColorThresholdEditorPanel({
                 aria-pressed={bar.side === key}
                 onClick={() => { if (bar.side !== key) onSelectRank(bar.selectedRank ?? 0, key) }}
                 // 설정창의 다른 선택 버튼(종목 등락 방향 등)과 같은 색 — 고른 쪽은 슬라이더 선과 같은 밝은 회색에 검은 글자, 안 고른 쪽은 어두운 칩 색에 밝은 글자다.
-                className={`h-5 rounded-[5px] border-0 px-2.5 text-[11px] font-medium transition-colors ${bar.side === key ? 'bg-[var(--accent)] text-zinc-900' : 'bg-[#4b4b50] text-zinc-200 hover:text-white'}`}
+                className={`h-5 w-9 rounded-full border-0 p-0 text-[11px] font-medium transition-colors ${bar.side === key ? 'bg-[var(--accent)] text-zinc-900' : 'bg-[#4b4b50] text-zinc-200 hover:text-white'}`}
               >
                 {label}
               </button>
