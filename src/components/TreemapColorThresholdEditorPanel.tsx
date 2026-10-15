@@ -122,7 +122,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
         onPointerCancel={handlePointerEnd}
       >
         <div ref={trackRef} className="relative h-full">
-          <div className="absolute inset-x-0 top-[26px] h-2.5 rounded-full border border-white/25" style={{ background: gradient }} />
+          <div className="absolute inset-x-0 top-[23px] h-4 rounded-full border border-white/25" style={{ background: gradient }} />
           {zeroSelected && <span className={badgeClass} style={{ left: '0%' }}>0%</span>}
           <div
             data-zero
@@ -236,7 +236,24 @@ export default function TreemapColorThresholdEditorPanel({
   return (
     <div className="color-editor-steps mt-4 flex flex-col gap-4 text-sm text-white">
       <div>
-        <p className="color-editor-step mb-2 text-[13px] text-gray-300">색상</p>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="color-editor-step text-[13px] text-gray-300">색상</p>
+          {/* 어느 쪽 구간의 색을 고칠지 고른다 — 막대의 값은 같고 색만 상승(빨강 계열)·하락(파랑 계열)으로 나뉜다. */}
+          <div role="group" aria-label="색을 고칠 쪽" className="flex gap-1">
+            {([['up', '상승'], ['down', '하락']] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={bar.side === key}
+                onClick={() => { if (bar.side !== key) onSelectRank(bar.selectedRank ?? 0, key) }}
+                // 설정창의 다른 선택 버튼(종목 등락 방향 등)과 같은 색 — 고른 쪽은 슬라이더 선과 같은 밝은 회색에 검은 글자, 안 고른 쪽은 어두운 칩 색에 밝은 글자다.
+                className={`h-5 w-9 rounded-full border-0 p-0 text-[11px] font-medium transition-colors ${bar.side === key ? 'bg-[var(--accent)] text-zinc-900' : 'bg-[#4b4b50] text-zinc-200 hover:text-white'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex justify-between" role="group" aria-label="색상 선택">
           {swatches.map(swatch => (
             <span key={swatch.key} className="inline-flex">
@@ -255,23 +272,6 @@ export default function TreemapColorThresholdEditorPanel({
       </div>
 
       <div>
-        <div className="mb-1 flex items-center justify-end">
-          {/* 어느 쪽 구간의 색을 고칠지 고른다 — 막대의 값은 같고 색만 상승(빨강 계열)·하락(파랑 계열)으로 나뉜다. */}
-          <div role="group" aria-label="색을 고칠 쪽" className="flex gap-1">
-            {([['up', '상승'], ['down', '하락']] as const).map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                aria-pressed={bar.side === key}
-                onClick={() => { if (bar.side !== key) onSelectRank(bar.selectedRank ?? 0, key) }}
-                // 설정창의 다른 선택 버튼(종목 등락 방향 등)과 같은 색 — 고른 쪽은 슬라이더 선과 같은 밝은 회색에 검은 글자, 안 고른 쪽은 어두운 칩 색에 밝은 글자다.
-                className={`h-5 w-9 rounded-full border-0 p-0 text-[11px] font-medium transition-colors ${bar.side === key ? 'bg-[var(--accent)] text-zinc-900' : 'bg-[#4b4b50] text-zinc-200 hover:text-white'}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
         <ThresholdBar
           positive={bar.positive}
           negative={bar.negative}
