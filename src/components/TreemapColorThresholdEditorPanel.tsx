@@ -22,8 +22,8 @@ const HUE_PRESETS: HuePreset[] = [
 ]
 
 // 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여준다. 실제 칸 색의 밝기는 구간 순서(작은 값부터)로 정해지고 따로 고르지 않는다.
-// 구간 순서(작은 값부터)별 [채도, 명도] — 첫 구간은 회색에 가까운 탁한 색(채도 12·명도 40), 나머지는 채도 75에 명도 16·33·46이다.
-const RANK_STYLE: [number, number][] = [[12, 40], [SATURATION, 16], [SATURATION, 33], [SATURATION, 46]]
+// 구간 순서(작은 값부터)별 [채도, 명도] — 모두 채도 75에 명도 16·33·46·58이다.
+const RANK_STYLE: [number, number][] = [[SATURATION, 16], [SATURATION, 33], [SATURATION, 46], [SATURATION, 58]]
 const SWATCH_LIGHTNESS = 55
 // 0% 칸을 골랐을 때는 색 줄이 회색 8단계로 바뀐다(기본 0% 회색은 명도 50). 흰 글자가 읽히도록 너무 밝은 단계는 두지 않는다.
 const ZERO_GRAY_STEPS = [20, 26, 32, 38, 44, 50, 56, 62]
@@ -320,7 +320,7 @@ export default function TreemapColorThresholdEditorPanel({
                 // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
                 onPointerDown={event => { if (!blocked && event.button === 0) applySelection(swatch.key) }}
                 onClick={event => { if (!blocked && event.detail === 0) applySelection(swatch.key) }}
-                className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25 ring-1 ring-white/30' : selectedKey === swatch.key ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30 hover:ring-white/60'}`}
+                className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25 outline outline-1 outline-white/30' : selectedKey === swatch.key ? 'border-transparent outline outline-2 outline-offset-2 outline-white' : 'border-transparent outline outline-1 outline-white/30 hover:outline-white/60'}`}
                 style={{ backgroundColor: swatch.color }}
               />
             </span>

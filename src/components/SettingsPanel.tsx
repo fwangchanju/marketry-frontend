@@ -1992,7 +1992,7 @@ export function SettingsStrongIndustryColorSection({
               onPointerDown={event => { if (event.button === 0) pick(option.value) }}
               onClick={event => { if (event.detail === 0) pick(option.value) }}
               style={{ backgroundColor: option.value }}
-              className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${selectedColor === option.value ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30'}`}
+              className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${selectedColor === option.value ? 'border-transparent outline outline-2 outline-offset-2 outline-white' : 'border-transparent outline outline-1 outline-white/30'}`}
             />
             <span
               role="tooltip"
