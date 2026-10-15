@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import type { DepthMetric } from '@/hooks/useGlobalSettings'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import type { StockChangeFilter, SectorChangeFilter } from '@/hooks/useFilteredTreemap'
-import type { ColorScaleConfig } from '@/utils/treemapColorScale'
+import { hexToHsl, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import TreemapColorThresholdEditorPanel, { type ColorThresholdEditorProps } from '@/components/TreemapColorThresholdEditorPanel'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import { HistoryIcon, RefreshIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
@@ -1992,8 +1992,14 @@ export function SettingsStrongIndustryColorSection({
               onPointerDown={event => { if (event.button === 0) pick(option.value) }}
               onClick={event => { if (event.detail === 0) pick(option.value) }}
               style={{ backgroundColor: option.value }}
-              className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${selectedColor === option.value ? 'border-transparent outline outline-2 outline-offset-2 outline-white' : 'border-transparent outline outline-1 outline-white/30'}`}
-            />
+              className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-white/30 p-0"
+            >
+              {selectedColor === option.value && (
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 55 ? '#18181b' : '#ffffff'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12.5l4.5 4.5L19 7" />
+                </svg>
+              )}
+            </button>
             <span
               role="tooltip"
               className={`pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS} opacity-0 transition-opacity group-hover:visible group-hover:opacity-100`}

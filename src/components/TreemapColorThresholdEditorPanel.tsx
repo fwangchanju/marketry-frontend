@@ -320,9 +320,16 @@ export default function TreemapColorThresholdEditorPanel({
                 // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
                 onPointerDown={event => { if (!blocked && event.button === 0) applySelection(swatch.key) }}
                 onClick={event => { if (!blocked && event.detail === 0) applySelection(swatch.key) }}
-                className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25 outline outline-1 outline-white/30' : selectedKey === swatch.key ? 'border-transparent outline outline-2 outline-offset-2 outline-white' : 'border-transparent outline outline-1 outline-white/30 hover:outline-white/60'}`}
+                // 선택 표시는 외곽선이 아니라 동그라미 안의 체크(✓)다. 고른 칸의 외곽선만 눈에 띄게 늦게 그려지는 문제가 있어 외곽선 표시를 없앴다. 어두운 회색이 배경에 묻히지 않도록 가는 테두리만 늘 둔다(눌러도 안 바뀐다).
+                className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-white/30 p-0 ${blocked ? 'cursor-not-allowed opacity-25' : ''}`}
                 style={{ backgroundColor: swatch.color }}
-              />
+              >
+                {selectedKey === swatch.key && !blocked && (
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(swatch.color).l > 55 ? '#18181b' : '#ffffff'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12.5l4.5 4.5L19 7" />
+                  </svg>
+                )}
+              </button>
             </span>
             )
           })}
