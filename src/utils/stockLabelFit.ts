@@ -67,7 +67,7 @@ function textWidth(text: string, size: number): number {
 const GROUP_PREFIXES = [
   '삼성', '현대', '롯데', '한화', '두산', '포스코', '한진', '효성', '코오롱', '신세계', '대한', '대우', '한솔', '동국', '동원', '동양', '세아', '금호',
   '카카오', '에코프로', '미래에셋', '키움', '유진', '대신', '교보', '메리츠', '하나', '신한', '우리', '한국', '부국', '한양', '아모레', '이수', '서울', '한미', '삼양', '삼천리', '태광',
-  '아시아나', '파마', '서진', '셀트리온', '제주', '쌍용', '한라', '녹십자', '영원', '대웅', '일진', '가온', '한온', '한전', '고려', '보령', '일동', '동서', '종근당', '하림',
+  '아시아나', '파마', '서진', '셀트리온', '경동', '비에이치', '제주', '쌍용', '한라', '녹십자', '영원', '대웅', '일진', '가온', '한온', '한전', '고려', '보령', '일동', '동서', '종근당', '하림',
   '주성', '동진', '해성', '원익', '파크', '리노', '티씨', '케이씨', '피에스케이', '이오',
 ]
 const isAsciiChar = (ch: string) => /[\x21-\x7E]/.test(ch)
@@ -82,6 +82,42 @@ function groupSplitPositions(chars: string[]): number[] {
     if (rest.startsWith(prefix) && Array.from(rest).length > length) positions.push(lead + length)
   }
   return positions
+}
+
+// 이름 끝에 붙는 흔한 기업·업종 단어 — 이 단어 앞에서 줄을 나눈다(인제니아/테라퓨틱스, 넥슨/게임즈, 선익/시스템). 회사마다 일일이 적지 않아도 되게 하는 목록이다.
+// 앞부분이 2글자 이상일 때만 쓰고, 이름 끝과 맞는 가장 긴 단어 하나만 본다. 글자 수 차이 제한은 그룹명 뒤와 같다.
+const DESCRIPTOR_WORDS = [
+  '테라퓨틱스', '노믹스', '게임즈', '데이타', '데이터', '네오룩스', '시스템즈', '시스템', '솔루션즈', '솔루션', '테크놀로지', '인더스트리즈', '인더스트리',
+  '엔터테인먼트', '엔터', '네트웍스', '글로벌', '인터내셔널', '코퍼레이션', '컴퍼니', '바이오', '제약', '약품', '파마', '헬스케어', '메디칼', '메디컬', '사이언스',
+  '증권', '소프트웨어', '소프트', '정보통신', '일렉트릭', '에너지', '머티리얼즈', '머티리얼', '로보틱스', '디스플레이', '반도체', '엔지니어링', '이엔씨',
+].sort((a, b) => b.length - a.length)
+
+function descriptorSplitPosition(chars: string[]): number | null {
+  const name = chars.join('')
+  const word = DESCRIPTOR_WORDS.find(candidate => name.endsWith(candidate))
+  if (!word) return null
+  const position = Array.from(name.slice(0, name.length - word.length)).length
+  return position >= 2 ? position : null
+}
+
+// 알파벳을 한글로 읽어 쓴 사명(비에이치=BH, 케이씨=KC, 엔씨=NC)의 글자 이름. 이름 앞쪽에 이런 글자가 2개 이상 이어지면 한 묶음으로 보고 묶음 가운데는 나누지 않는다.
+const LETTER_NAMES = [
+  '더블유', '에이치', '에이', '에프', '에스', '제이', '케이', '아이', '제트', '엑스', '와이', '브이', '아르',
+  '엘', '엠', '엔', '비', '씨', '디', '이', '지', '피', '티', '유', '큐', '알', '오',
+].sort((a, b) => b.length - a.length)
+
+// 이름 맨 앞에서부터 한글 알파벳 이름이 이어지는 만큼 읽어, 각 글자가 끝나는 자리(글자 수)를 돌려준다. 글자가 2개 미만이면 null이다(이스케, 에이스침대 같은 일반 이름을 건드리지 않으려는 것).
+function letterClusterBoundaries(chars: string[]): number[] | null {
+  const name = chars.join('')
+  const boundaries: number[] = []
+  let at = 0
+  while (at < name.length) {
+    const letter = LETTER_NAMES.find(candidate => name.startsWith(candidate, at))
+    if (!letter) break
+    at += letter.length
+    boundaries.push(Array.from(name.slice(0, at)).length)
+  }
+  return boundaries.length >= 2 ? boundaries : null
 }
 
 // 이름 뒤에 붙는 우선주 표시·지주사 접미어 앞에서 줄을 나눈다(현대차/2우B, 삼성물산/우B, 신한/지주, 한화/홀딩스). 우선주는 표시가 분명한 1우B·2우B·우B만 보고, 맨 끝이 그냥 '우'인 이름(삼성전자우)은 떼지 않는다. 앞부분이 2글자 이상일 때만 접미어로 본다.
@@ -101,14 +137,22 @@ const MAX_WORD_SPLIT_DIFF = 3
 // atSpaces: 공백. atMeaning: 영문·한글 경계(영어/한글, 한글/영어: LG/이노텍, BNK/금융)와 그룹명 뒤(한화/비전). 공백과 그룹명 뒤는 두 줄의 글자 수 차이가 MAX_WORD_SPLIT_DIFF 이하인 자리만 두고, 영문·한글 경계는 차이와 상관없이 둔다.
 // atSuffix: 우선주·지주사 접미어 앞. all: 아무 자리.
 function splitCandidates(chars: string[]) {
-  const all = Array.from({ length: Math.max(0, chars.length - 1) }, (_, k) => k + 1).filter(i => !(isAsciiChar(chars[i - 1]) && isAsciiChar(chars[i])))
+  const cluster = letterClusterBoundaries(chars)
+  const clusterEnd = cluster ? cluster[cluster.length - 1] : 0
+  // 영문·숫자·기호 덩어리 안과 한글 알파벳 이름 한 글자(에이치, 케이 등) 안에서는 나누지 않는다.
+  const all = Array.from({ length: Math.max(0, chars.length - 1) }, (_, k) => k + 1)
+    .filter(i => !(isAsciiChar(chars[i - 1]) && isAsciiChar(chars[i])))
+    .filter(i => !(cluster && i < clusterEnd && !cluster.includes(i)))
   const lengthDiff = (i: number) => Math.abs(
     Array.from(chars.slice(0, i).join('').trim()).length - Array.from(chars.slice(i).join('').trim()).length,
   )
   const closeEnough = (positions: number[]) => positions.filter(i => lengthDiff(i) <= MAX_WORD_SPLIT_DIFF)
   const atSpaces = closeEnough(all.filter(i => chars[i] === ' ' || chars[i - 1] === ' '))
   const atScriptEdge = all.filter(i => chars[i] !== ' ' && chars[i - 1] !== ' ' && isAsciiChar(chars[i - 1]) !== isAsciiChar(chars[i]))
-  const atMeaning = Array.from(new Set([...atScriptEdge, ...closeEnough(groupSplitPositions(chars).filter(i => all.includes(i)))])).sort((a, b) => a - b)
+  // 한글 알파벳 묶음 끝(케이씨/텍, 엔씨/소프트)과 끝 단어 앞(넥슨/게임즈)도 그룹명 뒤처럼 글자 수 차이가 3 이하일 때 쓴다.
+  const clusterSplit = cluster && clusterEnd < chars.length ? [clusterEnd] : []
+  const descriptorAt = descriptorSplitPosition(chars)
+  const atMeaning = Array.from(new Set([...atScriptEdge, ...closeEnough([...groupSplitPositions(chars), ...clusterSplit, ...(descriptorAt === null ? [] : [descriptorAt])].filter(i => all.includes(i)))])).sort((a, b) => a - b)
   const suffixAt = suffixSplitPosition(chars)
   const atSuffix = suffixAt !== null && all.includes(suffixAt) ? [suffixAt] : []
   return { all, atSpaces, atMeaning, atSuffix }
