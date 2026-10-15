@@ -111,7 +111,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             data-zero
             role="img"
             aria-label="0% 고정"
-            data-hint="0% 고정 — 색만 바꿀 수 있습니다"
+            data-hint="0% 고정"
             className={`absolute left-0 top-[19px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
             style={{ backgroundColor: zeroColor }}
           />
