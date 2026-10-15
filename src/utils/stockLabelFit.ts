@@ -65,7 +65,7 @@ function textWidth(text: string, size: number): number {
 const GROUP_PREFIXES = [
   '삼성', '현대', '롯데', '한화', '두산', '포스코', '한진', '효성', '코오롱', '신세계', '대한', '대우', '한솔', '동국', '동원', '동양', '세아', '금호',
   '카카오', '에코프로', '미래에셋', '키움', '유진', '대신', '교보', '메리츠', '하나', '신한', '우리', '한국', '부국', '한양', '아모레', '이수', '서울', '한미', '삼양', '삼천리', '태광',
-  '아시아나', '제주', '쌍용', '한라', '녹십자', '영원', '대웅', '일진', '가온', '한온', '한전', '고려', '보령', '일동', '동서', '종근당', '하림',
+  '아시아나', '파마', '제주', '쌍용', '한라', '녹십자', '영원', '대웅', '일진', '가온', '한온', '한전', '고려', '보령', '일동', '동서', '종근당', '하림',
   '주성', '동진', '해성', '원익', '파크', '리노', '티씨', '케이씨', '피에스케이', '이오',
 ]
 const isAsciiChar = (ch: string) => /[\x21-\x7E]/.test(ch)
@@ -82,10 +82,10 @@ function groupSplitPositions(chars: string[]): number[] {
   return positions
 }
 
-// 이름 뒤에 붙는 우선주·지주사 접미어 앞에서 줄을 나눈다(삼성전자/우, 현대차/2우B, 신한/지주, 한화/홀딩스). 앞부분이 2글자 이상일 때만 접미어로 본다.
+// 이름 뒤에 붙는 우선주 표시·지주사 접미어 앞에서 줄을 나눈다(현대차/2우B, 삼성물산/우B, 신한/지주, 한화/홀딩스). 우선주는 표시가 분명한 1우B·2우B·우B만 보고, 맨 끝이 그냥 '우'인 이름(삼성전자우)은 떼지 않는다. 앞부분이 2글자 이상일 때만 접미어로 본다.
 function suffixSplitPosition(chars: string[]): number | null {
   const name = chars.join('')
-  const match = name.match(/(홀딩스|홀딩|지주회사|지주|\d?우[A-C]?)$/)
+  const match = name.match(/(홀딩스|홀딩|지주회사|지주|\d우[A-C]?|우[A-C])$/)
   if (!match) return null
   const position = Array.from(name.slice(0, name.length - match[0].length)).length
   return position >= 2 ? position : null
