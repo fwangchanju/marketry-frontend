@@ -1961,7 +1961,14 @@ export function SettingsStrongIndustryColorSection({
   onChange: (color: string) => void
 }) {
   const bookmark = useContext(SettingsBookmarkContext)
+  // 색을 고르면 지도 전체가 다시 그려져 선택 링이 늦게 보이므로, 링은 누른 즉시 따로 보여 주고 지도 색 반영은 한 프레임 뒤로 미룬다(이 값은 외부 저장소라 startTransition으로는 미뤄지지 않는다).
+  const [pendingColor, setPendingColor] = useState<{ value: string; base: string } | null>(null)
   if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('strongColor')) return null
+  const selectedColor = pendingColor && pendingColor.base === color.toLowerCase() ? pendingColor.value : color.toLowerCase()
+  const pick = (value: string) => {
+    setPendingColor({ value, base: color.toLowerCase() })
+    requestAnimationFrame(() => setTimeout(() => onChange(value), 0))
+  }
   return (
     <div className={`settings-first-strong-color text-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'strongColor') : 'pt-5'}`}>
       <p className="flex items-center text-[15px]">
@@ -1980,10 +1987,12 @@ export function SettingsStrongIndustryColorSection({
             <button
               type="button"
               aria-label={`${option.label} 색상 선택`}
-              aria-pressed={color.toLowerCase() === option.value}
-              onClick={() => onChange(option.value)}
+              aria-pressed={selectedColor === option.value}
+              // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
+              onPointerDown={event => { if (event.button === 0) pick(option.value) }}
+              onClick={event => { if (event.detail === 0) pick(option.value) }}
               style={{ backgroundColor: option.value }}
-              className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${color.toLowerCase() === option.value ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30'}`}
+              className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${selectedColor === option.value ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30'}`}
             />
             <span
               role="tooltip"
