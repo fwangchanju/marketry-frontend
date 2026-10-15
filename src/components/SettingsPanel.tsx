@@ -1940,7 +1940,8 @@ export function SettingsColorSection({
         {!colorCustomOn && colorOffNoticeVisible && (
           <span
             role="status"
-            className={`pointer-events-none absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}
+            // 하락/보합/상승 버튼 줄 한가운데(버튼 높이 26px의 절반)에 둔다 — 막대의 선택 배지와 눈금 글자를 가리지 않는다.
+            className={`pointer-events-none absolute left-1/2 top-[13px] z-50 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}
           >
             기본 색상이 적용됩니다.
           </span>

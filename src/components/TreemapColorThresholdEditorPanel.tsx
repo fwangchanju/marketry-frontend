@@ -1,52 +1,13 @@
-import { startTransition, useRef, useState } from 'react'
-import { hexToHsl, hslToHex, resolveTreemapColor, type ColorScaleThreshold } from '@/utils/treemapColorScale'
+import { useRef } from 'react'
+import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
-const SATURATION = 75
-
-interface HuePreset {
-  name: string
-  label: string
-  hue: number
-  colorLabel: string | null
-}
-
-const HUE_PRESETS: HuePreset[] = [
-  { name: 'red', label: '빨강', hue: 0, colorLabel: 'red' },
-  { name: 'orange', label: '주황', hue: 28, colorLabel: 'orange' },
-  { name: 'yellow', label: '노랑', hue: 50, colorLabel: 'yellow' },
-  { name: 'green', label: '초록', hue: 142, colorLabel: 'green' },
-  { name: 'blue', label: '파랑', hue: 217, colorLabel: 'blue' },
-  { name: 'purple', label: '보라', hue: 271, colorLabel: 'purple' },
-  { name: 'magenta', label: '자홍', hue: 310, colorLabel: null },
-]
-
-// 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여준다. 실제 칸 색의 밝기는 구간 순서(작은 값부터)로 정해지고 따로 고르지 않는다.
-// 구간 순서(작은 값부터)별 [채도, 명도] — 모두 채도 75에 명도 16·33·46·58이다.
-const RANK_STYLE: [number, number][] = [[SATURATION, 16], [SATURATION, 33], [SATURATION, 46], [SATURATION, 58]]
-const SWATCH_LIGHTNESS = 55
-// 0% 칸을 골랐을 때는 색 줄이 회색 8단계로 바뀐다(기본 0% 회색은 명도 50). 흰 글자가 읽히도록 너무 밝은 단계는 두지 않는다.
-const ZERO_GRAY_STEPS = [20, 26, 32, 38, 44, 50, 56, 62]
-const grayStepKey = (lightness: number) => `gray-${lightness}`
-const nearestGrayStep = (hex: string) => ZERO_GRAY_STEPS.reduce((best, step) => (Math.abs(step - hexToHsl(hex).l) < Math.abs(best - hexToHsl(hex).l) ? step : best))
-const GRAY_KEY = 'gray'
-const GRAY_SWATCH = { key: GRAY_KEY, label: '회색', colorLabel: 'gray' as string | null }
-
-// 저장된 hex가 어느 색 계열인지 역산해서 편집 시작 시 선택 상태를 맞춘다(밝기는 구간 순서로 정해지므로 읽지 않는다).
-function inferSelection(hex: string): string {
-  const { h, s: saturation } = hexToHsl(hex)
-  if (saturation < 12) return GRAY_KEY
-  const distance = (a: number, b: number) => Math.min(Math.abs(a - b), 360 - Math.abs(a - b))
-  const nearest = HUE_PRESETS.reduce((best, preset) => (distance(preset.hue, h) < distance(best.hue, h) ? preset : best))
-  return nearest.name
-}
+// 색은 고르는 것이 아니라 정해져 있다 — 하락은 파랑, 보합(0%)은 회색, 상승은 빨강이고 구간 순서대로 명도가 올라간다(treemapColorScale.fixedRankColor).
+// 버튼에는 그 색 계열의 대표색(상승·하락은 명도 46)을 쓴다.
+const CHIP_COLOR = { down: '#1d61cd', zero: '#808080', up: '#cd1d1d' } as const
+const CHIP_LABEL = { down: '하락', zero: '보합', up: '상승' } as const
 
 type BarSide = 'up' | 'down' | 'zero'
-
-// 한쪽(상승 또는 하락)이 어느 색 계열인지는 그쪽에서 가장 선명한(채도가 높은) 색으로 읽는다 — 첫 구간은 회색에 가까운 탁한 색이라 그 색으로 읽으면 회색으로 잘못 읽힌다.
-function dominantColor(rows: { color: string }[]): string | undefined {
-  return rows.reduce<string | undefined>((best, row) => (best === undefined || hexToHsl(row.color).s > hexToHsl(best).s ? row.color : best), undefined)
-}
 
 interface ThresholdBarProps {
   // 상승·하락 구간의 경계와 색(작은 값부터, 하락은 절댓값) — 막대의 손잡이 하나가 구간 하나다. 하락 값은 상승 값의 거울이다.
@@ -150,7 +111,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             data-zero
             role="img"
             aria-label="0% 고정"
-            data-hint="0% 고정 — 색만 바꿀 수 있습니다"
+            data-hint="0% 고정"
             className={`absolute left-0 top-[19px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
             style={{ backgroundColor: zeroColor }}
           />
@@ -203,8 +164,6 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
 export interface ColorThresholdEditorProps {
   // 적용하지 않은 수정이 있을 때만 적용/취소 버튼을 보여준다.
   hasChanges: boolean
-  // 이번 세션에서 편집 중인 threshold들 — 첫 행이 지금 고른 칸이고(색 편집 대상), 나머지는 막대로 함께 바뀐 거울 구간이다.
-  thresholds: ColorScaleThreshold[]
   // 등락률 막대 — 상승 구간의 경계(작은 값부터)와 고른 칸의 순서.
   bar: {
     positive: { percent: number; color: string }[]
@@ -216,128 +175,55 @@ export interface ColorThresholdEditorProps {
   onChangeRankPercent: (rank: number, percent: number) => void
   onSelectRank: (rank: number, side: 'up' | 'down') => void
   onSelectZero: () => void
-  onChangeColor: (rowIndex: number, color: string, colorLabel: string | null) => void
-  // 상승/하락 한쪽의 모든 구간 색을 한 번에 바꾼다(colors는 작은 구간부터 순서별 명도로 칠한 값).
-  onChangeSideColor: (side: 'up' | 'down', colors: string[], colorLabel: string | null) => void
   onApply: () => void
   onCancel: () => void
   isSaving: boolean
   errorMessage: string | null
 }
 
-// 범례 아래에서 편집하는 색상 추가/수정 패널. 색상칸을 고르면 지도에 즉시 반영되고,
-// 적용 시 서버에 저장된다. 취소 시에는 부모가 세션 시작 전 값으로 되돌린다.
+// 범례 아래에서 편집하는 등락률 구간 패널. 하락/보합/상승 버튼은 지도 범례와 같은 순서·색이고(색은 정해져 있어 고르지 않는다),
+// 어느 쪽 구간을 편집할지 정한다. 막대 값은 지도에 즉시 반영되고 적용 시 서버에 저장된다. 취소 시에는 부모가 세션 시작 전 값으로 되돌린다.
 export default function TreemapColorThresholdEditorPanel({
-  thresholds,
   bar,
   onChangeRankPercent,
   onSelectRank,
   onSelectZero,
-  onChangeColor,
-  onChangeSideColor,
   onApply,
   onCancel,
   isSaving,
   errorMessage,
   hasChanges,
 }: ColorThresholdEditorProps) {
-  const threshold = thresholds[0]
-  // 선택 표시는 편집 중인 쪽의 색에서 읽는다 — 상승/하락은 그쪽 첫 구간 색의 계열, 0% 칸은 가장 가까운 회색 단계.
-  const sideColor = dominantColor(bar.side === 'down' ? bar.negative : bar.positive)
-  const derivedKey = bar.side === 'zero'
-    ? grayStepKey(nearestGrayStep(bar.zeroColor))
-    : (sideColor ?? threshold?.color) ? inferSelection((sideColor ?? threshold?.color)!) : GRAY_KEY
-  // 색을 고르면 지도 전체가 다시 그려져 흰 링이 늦게 보이므로, 링은 누른 즉시 따로 보여 주고 지도 색 반영은 뒤로 미룬다. 지도가 따라오면(derivedKey가 바뀌면) 실제 값을 쓴다.
-  const [pending, setPending] = useState<{ key: string; side: BarSide; rank: number | null; base: string } | null>(null)
-  const selectedKey = pending && pending.side === bar.side && pending.rank === bar.selectedRank && pending.base === derivedKey ? pending.key : derivedKey
-  if (!threshold) return null
-
-  // 색은 구간(손잡이)마다 고르지 않고 슬라이더 한쪽(상승 또는 하락) 전체에 하나를 정한다 — 구간 순서대로 16·33·46·58 밝기로 칠한다. 0% 칸을 골랐을 때만 그 칸 색을 바꾼다.
-  const paint = (hueKey: string, saturation: number, lightness: number) => {
-    const preset = HUE_PRESETS.find(item => item.name === hueKey)
-    return hslToHex(preset?.hue ?? 0, preset ? saturation : 0, lightness)
-  }
-  const applySelection = (key: string) => {
-    const preset = HUE_PRESETS.find(item => item.name === key)
-    const colorLabel = preset ? preset.colorLabel : GRAY_SWATCH.colorLabel
-    setPending({ key, side: bar.side, rank: bar.selectedRank, base: derivedKey })
-    startTransition(() => {
-      if (bar.side === 'zero') {
-        onChangeColor(0, hslToHex(0, 0, Number(key.replace('gray-', ''))), GRAY_SWATCH.colorLabel)
-        return
-      }
-      onChangeSideColor(bar.side, RANK_STYLE.map(([saturation, lightness]) => paint(key, saturation, lightness)), colorLabel)
-    })
-  }
-  // 반대쪽(상승↔하락)이 이미 쓰는 색 계열은 고를 수 없다 — 상승과 하락이 같은 색이 되면 구분이 안 된다. 0% 칸은 제한이 없다.
-  const otherSideColor = bar.side === 'up' ? dominantColor(bar.negative) : bar.side === 'down' ? dominantColor(bar.positive) : undefined
-  const otherSideKey = otherSideColor ? inferSelection(otherSideColor) : null
-  const otherSideLabel = bar.side === 'up' ? '하락' : '상승'
-  // 같은 8칸 자리에 상승/하락을 편집할 때는 회색+색 계열 7개(회색은 막힘), 0% 칸을 편집할 때는 명도가 다른 회색 8단계를 보여 준다.
-  const zeroMode = bar.side === 'zero'
-  const swatches = zeroMode
-    ? ZERO_GRAY_STEPS.map(step => ({ key: grayStepKey(step), label: `회색 명도 ${step}`, color: hslToHex(0, 0, step) }))
-    : [
-        { key: GRAY_SWATCH.key, label: GRAY_SWATCH.label, color: hslToHex(0, 0, SWATCH_LIGHTNESS) },
-        ...HUE_PRESETS.map(preset => ({ key: preset.name, label: preset.label, color: hslToHex(preset.hue, SATURATION, SWATCH_LIGHTNESS) })),
-      ]
-
   return (
-    <div className="color-editor-steps mt-4 flex flex-col gap-4 text-sm text-white">
+    <div className="mt-4 flex flex-col gap-4 text-sm text-white">
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <p className="color-editor-step pl-[19px] text-[13px] text-gray-300">색상</p>
-          {/* 어느 쪽 구간의 색을 고칠지 고른다 — 막대의 값은 같고 색만 상승(빨강 계열)·하락(파랑 계열)으로 나뉜다. */}
-          <div role="group" aria-label="색을 고칠 쪽" className="flex gap-1">
-            {([['up', '상승'], ['down', '하락']] as const).map(([key, label]) => (
+        {/* 하락 / 보합 / 상승 — 지도 범례와 같은 순서·색. 선택 표시는 외곽선 대신 체크(✓)와 선명도(안 고른 쪽은 흐리게)로 한다. 폭은 아래 막대와 같다. */}
+        <div role="group" aria-label="편집할 구간" className="settings-slider-control grid grid-cols-3 gap-1">
+          {(['down', 'zero', 'up'] as const).map(key => {
+            const selected = bar.side === key
+            return (
               <button
                 key={key}
                 type="button"
-                aria-pressed={bar.side === key}
-                onClick={() => { if (bar.side !== key) onSelectRank(bar.selectedRank ?? 0, key) }}
-                // 설정창의 다른 선택 버튼(종목 등락 방향 등)과 같은 색 — 고른 쪽은 슬라이더 선과 같은 밝은 회색에 검은 글자, 안 고른 쪽은 어두운 칩 색에 밝은 글자다.
-                className={`h-5 w-9 rounded-full border-0 p-0 text-[11px] font-medium transition-colors ${bar.side === key ? 'bg-[var(--accent)] text-zinc-900' : 'bg-[#4b4b50] text-zinc-200 hover:text-white'}`}
+                aria-pressed={selected}
+                onClick={() => {
+                  if (selected) return
+                  if (key === 'zero') onSelectZero()
+                  else onSelectRank(bar.selectedRank ?? 0, key)
+                }}
+                className={`flex h-[26px] items-center justify-center gap-1 rounded-[5px] border border-white/25 p-0 text-[12px] font-bold text-white ${selected ? '' : 'opacity-50 hover:opacity-80'}`}
+                style={{ backgroundColor: CHIP_COLOR[key] }}
               >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* 색 동그라미 줄은 아래 막대와 같은 폭(.settings-slider-control)에 양 끝을 맞춘다. 8칸이 들어가도록 동그라미는 22px이다. */}
-        <div className="settings-slider-control flex justify-between" role="group" aria-label="색상 선택">
-          {swatches.map(swatch => {
-            // 회색은 0% 칸 전용이라 상승/하락 편집 중에는 막고, 반대쪽이 쓰는 색 계열도 막는다.
-            const grayBlocked = !zeroMode && swatch.key === GRAY_KEY
-            const blocked = grayBlocked || (swatch.key === otherSideKey && selectedKey !== swatch.key)
-            return (
-            <span key={swatch.key} className="inline-flex">
-              <button
-                type="button"
-                aria-label={swatch.label}
-                data-hint={grayBlocked ? '회색은 0% 칸에서만 고를 수 있습니다' : blocked ? `${swatch.label} — ${otherSideLabel}에서 사용 중` : swatch.label}
-                aria-pressed={selectedKey === swatch.key}
-                aria-disabled={blocked}
-                // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
-                onPointerDown={event => { if (!blocked && event.button === 0) applySelection(swatch.key) }}
-                onClick={event => { if (!blocked && event.detail === 0) applySelection(swatch.key) }}
-                // 선택 표시는 외곽선이 아니라 동그라미 안의 체크(✓)다. 고른 칸의 외곽선만 눈에 띄게 늦게 그려지는 문제가 있어 외곽선 표시를 없앴다. 어두운 회색이 배경에 묻히지 않도록 가는 테두리만 늘 둔다(눌러도 안 바뀐다).
-                className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-white/30 p-0 ${blocked ? 'cursor-not-allowed opacity-25' : ''}`}
-                style={{ backgroundColor: swatch.color }}
-              >
-                {selectedKey === swatch.key && !blocked && (
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(swatch.color).l > 55 ? '#18181b' : '#ffffff'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                {selected && (
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12.5l4.5 4.5L19 7" />
                   </svg>
                 )}
+                {CHIP_LABEL[key]}
               </button>
-            </span>
             )
           })}
         </div>
-      </div>
-
-      <div>
-        <p className="color-editor-step mb-1 pl-[19px] text-[13px] text-gray-300">등락률</p>
         <ThresholdBar
           positive={bar.positive}
           negative={bar.negative}

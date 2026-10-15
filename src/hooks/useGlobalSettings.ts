@@ -32,6 +32,7 @@ import { useMarketValueTierRange } from './useMarketValueTierRange'
 import { registerExcludedSector, unregisterExcludedSector } from '@/api/treemap'
 import {
   createDefaultColorScale,
+  fixedRankColor,
   DEFAULT_MINUS_THRESHOLDS,
   DEFAULT_ZERO_COLOR,
   resolveLegendSwatches,
@@ -585,6 +586,14 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
       mirrorIndex = thresholds.length
       thresholds = [...thresholds, { thresholdPercent: -percent, color: fallback.color, colorLabel: fallback.colorLabel }]
     }
+    // 색은 정해져 있다 — 상승은 빨강·하락은 파랑의 순서별 명도로 맞춘다(전에 저장된 다른 색도 손잡이를 옮기면 정해진 색이 된다).
+    const recolored = thresholds.map(threshold => threshold)
+    for (const side of ['up', 'down'] as const) {
+      sortedSignRows(recolored, side === 'up').forEach((row, order) => {
+        recolored[row.index] = { ...recolored[row.index], ...fixedRankColor(side, order) }
+      })
+    }
+    thresholds = recolored
     setColorEditError(null)
     setColorScaleDraft({ ...colorScaleDraft, thresholds })
     setColorEditIndices(previous => Array.from(new Set([...previous, target.index, mirrorIndex])))
@@ -603,28 +612,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     if (!colorScaleDraft) return
     const zero = colorScaleDraft.thresholds.find(threshold => threshold.thresholdPercent === 0)
     handleSelectColorSwatch(0, zero?.color ?? DEFAULT_ZERO_COLOR)
-  }
-  const handleChangeColorEditColor = (rowIndex: number, color: string, colorLabel: string | null) => {
-    const targetIndex = colorEditIndices[rowIndex]
-    if (targetIndex === undefined) return
-    setColorEditError(null)
-    setColorScaleDraft(prev =>
-      prev ? { ...prev, thresholds: prev.thresholds.map((t, i) => (i === targetIndex ? { ...t, color, colorLabel } : t)) } : prev,
-    )
-  }
-  // 상승/하락 한쪽의 색을 한 번에 바꾼다 — 구간마다 색을 따로 고르지 않고 한쪽에 색 계열 하나를 정해 순서별 명도로 칠한다(colors는 작은 구간부터).
-  // 바뀐 구간은 모두 편집 세션에 넣어 적용 때 함께 저장한다(첫 원소는 그대로라 고른 칸이 바뀌지 않는다).
-  const handleChangeColorEditSideColor = (side: 'up' | 'down', colors: string[], colorLabel: string | null) => {
-    if (!colorScaleDraft || colorEditIndices.length === 0) return
-    const rows = sortedSignRows(colorScaleDraft.thresholds, side === 'up')
-    const colorByIndex = new Map(rows.map((row, rank) => [row.index, colors[Math.min(rank, colors.length - 1)]]))
-    if (colorByIndex.size === 0) return
-    setColorEditError(null)
-    setColorScaleDraft({
-      ...colorScaleDraft,
-      thresholds: colorScaleDraft.thresholds.map((threshold, index) => (colorByIndex.has(index) ? { ...threshold, color: colorByIndex.get(index)!, colorLabel } : threshold)),
-    })
-    setColorEditIndices(previous => Array.from(new Set([...previous, ...colorByIndex.keys()])))
   }
   const handleApplyColorEdit = async () => {
     if (!colorScaleDraft || colorEditIndices.length === 0) {
@@ -724,7 +711,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 편집 영역을 항상 열어두기 위해, 편집 중인 칸이 없으면(처음, 적용/취소 직후) 마지막으로 보던 칸을 다시 연다.
   useEffect(() => {
     if (!colorCustomOn || !colorScaleDraft || colorEditIndices.length > 0 || isApplyingColorEdit) return
-    // 처음에는 가장 큰 상승 칸(기본 +15%)을 편집 대상으로 연다.
+    // 처음에는 가장 큰 상승 칸(기본 +12%)을 편집 대상으로 연다.
     const swatch = legendSwatches.find(item => Number.parseFloat(item.label) === selectedColorPercentRef.current)
       ?? legendSwatches.at(-1)
       ?? legendSwatches[0]
@@ -885,7 +872,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     colorEditThresholds.length > 0
       ? {
           hasChanges: colorEditHasChanges,
-          thresholds: colorEditThresholds,
           bar: {
             positive: barPositiveRows.map(row => ({ percent: row.threshold.thresholdPercent, color: row.threshold.color })),
             negative: barNegativeRows.map(row => ({ percent: -row.threshold.thresholdPercent, color: row.threshold.color })),
@@ -896,8 +882,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
           onChangeRankPercent: handleChangeColorEditRankPercent,
           onSelectRank: handleSelectColorRank,
           onSelectZero: handleSelectColorZero,
-          onChangeColor: handleChangeColorEditColor,
-          onChangeSideColor: handleChangeColorEditSideColor,
           onApply: handleApplyColorEdit,
           onCancel: handleCancelColorEdit,
           isSaving: isApplyingColorEdit,

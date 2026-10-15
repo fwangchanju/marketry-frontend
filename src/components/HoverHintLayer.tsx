@@ -8,7 +8,8 @@ const SHOW_DELAY_MS = 150
 const GAP = 8
 const EDGE = 8
 
-type Hint = { text: string; rect: DOMRect }
+// bounds는 설정창 안 요소일 때 그 설정창의 영역이다 — 설명이 설정창 바깥으로 나가지 않게 가로를 이 안에 둔다.
+type Hint = { text: string; rect: DOMRect; bounds: DOMRect | null }
 
 function findHintElement(x: number, y: number): HTMLElement | null {
   // 마우스 이벤트를 받지 않는 비활성 버튼에도 설명이 떠야 해서 좌표로 요소를 찾는다.
@@ -35,7 +36,7 @@ export default function HoverHintLayer() {
       current = element
       const text = element.dataset.hint
       if (!text) return
-      timer = window.setTimeout(() => setHint({ text, rect: element.getBoundingClientRect() }), delay)
+      timer = window.setTimeout(() => setHint({ text, rect: element.getBoundingClientRect(), bounds: element.closest('[data-settings-panel]')?.getBoundingClientRect() ?? null }), delay)
     }
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -74,8 +75,10 @@ export default function HoverHintLayer() {
   useLayoutEffect(() => {
     if (!hint || !bubbleRef.current) return
     const { width, height } = bubbleRef.current.getBoundingClientRect()
-    const { rect } = hint
-    const left = Math.min(Math.max(rect.left + rect.width / 2 - width / 2, EDGE), window.innerWidth - width - EDGE)
+    const { rect, bounds } = hint
+    const minLeft = (bounds?.left ?? 0) + EDGE
+    const maxLeft = Math.min(bounds?.right ?? window.innerWidth, window.innerWidth) - width - EDGE
+    const left = Math.max(Math.min(rect.left + rect.width / 2 - width / 2, maxLeft), minLeft)
     const below = rect.bottom + GAP
     const top = below + height + EDGE > window.innerHeight ? Math.max(rect.top - GAP - height, EDGE) : below
     setPosition({ left, top })
@@ -86,7 +89,7 @@ export default function HoverHintLayer() {
     <div
       ref={bubbleRef}
       role="tooltip"
-      style={{ left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? 'visible' : 'hidden' }}
+      style={{ left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? 'visible' : 'hidden', maxWidth: hint.bounds ? hint.bounds.width - EDGE * 2 : undefined }}
       className={`pointer-events-none fixed z-[200] w-max max-w-xs whitespace-pre-line ${HINT_BUBBLE_CLASS}`}
     >
       {hint.text}
