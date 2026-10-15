@@ -1,6 +1,6 @@
 // 종목 박스 안 글자를 박스 크기에 맞춘다. 말줄임표나 잘린 글자는 만들지 않는다.
 // 이름은 한 줄에 들어가면 그대로 두고, 안 들어가면 두 줄로 나눠(균형 있게) 보여 준다. 두 줄로도 안 들어가면 글자를 MIN_FONT(10px)까지 줄이고,
-// 그래도 안 되면 이름을 감추고 등락률만 보여 준다. 등락률도 폭에 안 들어가면 MIN_FONT까지 줄이고 그래도 안 되면 아무것도 그리지 않는다.
+// 그래도 안 되면 이름과 등락률 모두 그리지 않는다(등락률만 남기지 않는다). 설정에서 등락률만 고른 경우에만 등락률만 보여 주고, 폭에 안 들어가면 MIN_FONT까지 줄이다 안 되면 그리지 않는다.
 import { useSyncExternalStore } from 'react'
 
 export const MIN_FONT = 10
@@ -204,8 +204,8 @@ export function fitStockLabel({
     const found = (wantRate ? searchName(true) : null) ?? searchName(false)
     if (found) return found
   }
-  // 이름이 안 들어가거나 등락률만 고른 경우 — 등락률만 보여 준다(이름만 고른 경우는 아무것도 그리지 않는다).
-  if (!wantRate) return none
+  // 설정에서 등락률만 고른 경우에만 등락률만 보여 준다. 이름을 보여 주려 했는데 안 들어간 경우에는 등락률만 남기지 않고 아무것도 그리지 않는다.
+  if (!wantRate || wantName) return none
   const rate = rateSizeFor(baseFont)
   if (rate && rate * LABEL_LINE_HEIGHT <= innerHeight) return { nameLines: null, nameSize: baseFont, rateSize: rate }
   return none
