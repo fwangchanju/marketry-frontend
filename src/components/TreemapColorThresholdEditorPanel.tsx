@@ -22,8 +22,8 @@ const HUE_PRESETS: HuePreset[] = [
 ]
 
 // 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여준다. 실제 칸 색의 밝기는 구간 순서(작은 값부터)로 정해지고 따로 고르지 않는다.
-// 구간 순서(작은 값부터)별 [채도, 명도] — 첫 구간은 회색에 가까운 탁한 색(채도 12·명도 40), 나머지는 채도 75에 명도 16·33·46이다.
-const RANK_STYLE: [number, number][] = [[12, 40], [SATURATION, 16], [SATURATION, 33], [SATURATION, 46]]
+// 구간 순서(작은 값부터)별 [채도, 명도] — 모두 채도 75에 명도 16·33·46·58이다.
+const RANK_STYLE: [number, number][] = [[SATURATION, 16], [SATURATION, 33], [SATURATION, 46], [SATURATION, 58]]
 const SWATCH_LIGHTNESS = 55
 // 0% 칸을 골랐을 때는 색 줄이 회색 8단계로 바뀐다(기본 0% 회색은 명도 50). 흰 글자가 읽히도록 너무 밝은 단계는 두지 않는다.
 const ZERO_GRAY_STEPS = [20, 26, 32, 38, 44, 50, 56, 62]
@@ -42,6 +42,11 @@ function inferSelection(hex: string): string {
 }
 
 type BarSide = 'up' | 'down' | 'zero'
+
+// 한쪽(상승 또는 하락)이 어느 색 계열인지는 그쪽에서 가장 선명한(채도가 높은) 색으로 읽는다 — 첫 구간은 회색에 가까운 탁한 색이라 그 색으로 읽으면 회색으로 잘못 읽힌다.
+function dominantColor(rows: { color: string }[]): string | undefined {
+  return rows.reduce<string | undefined>((best, row) => (best === undefined || hexToHsl(row.color).s > hexToHsl(best).s ? row.color : best), undefined)
+}
 
 interface ThresholdBarProps {
   // 상승·하락 구간의 경계와 색(작은 값부터, 하락은 절댓값) — 막대의 손잡이 하나가 구간 하나다. 하락 값은 상승 값의 거울이다.
@@ -238,7 +243,7 @@ export default function TreemapColorThresholdEditorPanel({
 }: ColorThresholdEditorProps) {
   const threshold = thresholds[0]
   // 선택 표시는 편집 중인 쪽의 색에서 읽는다 — 상승/하락은 그쪽 첫 구간 색의 계열, 0% 칸은 가장 가까운 회색 단계.
-  const sideColor = bar.side === 'down' ? bar.negative[0]?.color : bar.positive[0]?.color
+  const sideColor = dominantColor(bar.side === 'down' ? bar.negative : bar.positive)
   const derivedKey = bar.side === 'zero'
     ? grayStepKey(nearestGrayStep(bar.zeroColor))
     : (sideColor ?? threshold?.color) ? inferSelection((sideColor ?? threshold?.color)!) : GRAY_KEY
@@ -265,7 +270,7 @@ export default function TreemapColorThresholdEditorPanel({
     })
   }
   // 반대쪽(상승↔하락)이 이미 쓰는 색 계열은 고를 수 없다 — 상승과 하락이 같은 색이 되면 구분이 안 된다. 0% 칸은 제한이 없다.
-  const otherSideColor = bar.side === 'up' ? bar.negative[0]?.color : bar.side === 'down' ? bar.positive[0]?.color : undefined
+  const otherSideColor = bar.side === 'up' ? dominantColor(bar.negative) : bar.side === 'down' ? dominantColor(bar.positive) : undefined
   const otherSideKey = otherSideColor ? inferSelection(otherSideColor) : null
   const otherSideLabel = bar.side === 'up' ? '하락' : '상승'
   // 같은 8칸 자리에 상승/하락을 편집할 때는 회색+색 계열 7개(회색은 막힘), 0% 칸을 편집할 때는 명도가 다른 회색 8단계를 보여 준다.
@@ -315,9 +320,16 @@ export default function TreemapColorThresholdEditorPanel({
                 // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
                 onPointerDown={event => { if (!blocked && event.button === 0) applySelection(swatch.key) }}
                 onClick={event => { if (!blocked && event.detail === 0) applySelection(swatch.key) }}
-                className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25 ring-1 ring-white/30' : selectedKey === swatch.key ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30 hover:ring-white/60'}`}
+                // 선택 표시는 외곽선이 아니라 동그라미 안의 체크(✓)다. 고른 칸의 외곽선만 눈에 띄게 늦게 그려지는 문제가 있어 외곽선 표시를 없앴다. 어두운 회색이 배경에 묻히지 않도록 가는 테두리만 늘 둔다(눌러도 안 바뀐다).
+                className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-white/30 p-0 ${blocked ? 'cursor-not-allowed opacity-25' : ''}`}
                 style={{ backgroundColor: swatch.color }}
-              />
+              >
+                {selectedKey === swatch.key && !blocked && (
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(swatch.color).l > 55 ? '#18181b' : '#ffffff'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12.5l4.5 4.5L19 7" />
+                  </svg>
+                )}
+              </button>
             </span>
             )
           })}
