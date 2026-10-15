@@ -24,7 +24,10 @@ const HUE_PRESETS: HuePreset[] = [
 // 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여준다. 실제 칸 색의 밝기는 구간 순서(작은 값부터)로 정해지고 따로 고르지 않는다.
 const SWATCH_LIGHTNESS = 55
 const RANK_LIGHTNESS = [16, 33, 46, 58]
-const ZERO_LIGHTNESS = 50
+// 0% 칸을 골랐을 때는 색 줄이 회색 8단계로 바뀐다(기본 0% 회색은 명도 50). 흰 글자가 읽히도록 너무 밝은 단계는 두지 않는다.
+const ZERO_GRAY_STEPS = [20, 26, 32, 38, 44, 50, 56, 62]
+const grayStepKey = (lightness: number) => `gray-${lightness}`
+const nearestGrayStep = (hex: string) => ZERO_GRAY_STEPS.reduce((best, step) => (Math.abs(step - hexToHsl(hex).l) < Math.abs(best - hexToHsl(hex).l) ? step : best))
 const GRAY_KEY = 'gray'
 const GRAY_SWATCH = { key: GRAY_KEY, label: '회색', colorLabel: 'gray' as string | null }
 
@@ -224,7 +227,8 @@ export default function TreemapColorThresholdEditorPanel({
   const threshold = thresholds[0]
   // 색은 상승/하락 한쪽에 계열 하나를 정한다 — 처음 선택 표시는 그쪽 첫 구간의 색에서 읽는다(0% 칸은 그 칸 색).
   const [selectedKey, setSelectedKey] = useState(() => {
-    const sideColor = bar.side === 'down' ? bar.negative[0]?.color : bar.side === 'up' ? bar.positive[0]?.color : undefined
+    if (bar.side === 'zero') return grayStepKey(nearestGrayStep(bar.zeroColor))
+    const sideColor = bar.side === 'down' ? bar.negative[0]?.color : bar.positive[0]?.color
     const color = sideColor ?? threshold?.color
     return color ? inferSelection(color) : GRAY_KEY
   })
@@ -240,7 +244,7 @@ export default function TreemapColorThresholdEditorPanel({
     const preset = HUE_PRESETS.find(item => item.name === key)
     const colorLabel = preset ? preset.colorLabel : GRAY_SWATCH.colorLabel
     if (bar.side === 'zero') {
-      onChangeColor(0, paint(key, ZERO_LIGHTNESS), colorLabel)
+      onChangeColor(0, hslToHex(0, 0, Number(key.replace('gray-', ''))), GRAY_SWATCH.colorLabel)
       return
     }
     onChangeSideColor(bar.side, RANK_LIGHTNESS.map(lightness => paint(key, lightness)), colorLabel)
@@ -249,10 +253,14 @@ export default function TreemapColorThresholdEditorPanel({
   const otherSideColor = bar.side === 'up' ? bar.negative[0]?.color : bar.side === 'down' ? bar.positive[0]?.color : undefined
   const otherSideKey = otherSideColor ? inferSelection(otherSideColor) : null
   const otherSideLabel = bar.side === 'up' ? '하락' : '상승'
-  const swatches = [
-    { key: GRAY_SWATCH.key, label: GRAY_SWATCH.label, color: hslToHex(0, 0, SWATCH_LIGHTNESS) },
-    ...HUE_PRESETS.map(preset => ({ key: preset.name, label: preset.label, color: hslToHex(preset.hue, SATURATION, SWATCH_LIGHTNESS) })),
-  ]
+  // 같은 8칸 자리에 상승/하락을 편집할 때는 회색+색 계열 7개(회색은 막힘), 0% 칸을 편집할 때는 명도가 다른 회색 8단계를 보여 준다.
+  const zeroMode = bar.side === 'zero'
+  const swatches = zeroMode
+    ? ZERO_GRAY_STEPS.map(step => ({ key: grayStepKey(step), label: `회색 명도 ${step}`, color: hslToHex(0, 0, step) }))
+    : [
+        { key: GRAY_SWATCH.key, label: GRAY_SWATCH.label, color: hslToHex(0, 0, SWATCH_LIGHTNESS) },
+        ...HUE_PRESETS.map(preset => ({ key: preset.name, label: preset.label, color: hslToHex(preset.hue, SATURATION, SWATCH_LIGHTNESS) })),
+      ]
 
   return (
     <div className="color-editor-steps mt-4 flex flex-col gap-4 text-sm text-white">
@@ -277,13 +285,15 @@ export default function TreemapColorThresholdEditorPanel({
         </div>
         <div className="flex justify-between" role="group" aria-label="색상 선택">
           {swatches.map(swatch => {
-            const blocked = swatch.key === otherSideKey && selectedKey !== swatch.key
+            // 회색은 0% 칸 전용이라 상승/하락 편집 중에는 막고, 반대쪽이 쓰는 색 계열도 막는다.
+            const grayBlocked = !zeroMode && swatch.key === GRAY_KEY
+            const blocked = grayBlocked || (swatch.key === otherSideKey && selectedKey !== swatch.key)
             return (
             <span key={swatch.key} className="inline-flex">
               <button
                 type="button"
                 aria-label={swatch.label}
-                data-hint={blocked ? `${swatch.label} — ${otherSideLabel}에서 사용 중` : swatch.label}
+                data-hint={grayBlocked ? '회색은 0% 칸에서만 고를 수 있습니다' : blocked ? `${swatch.label} — ${otherSideLabel}에서 사용 중` : swatch.label}
                 aria-pressed={selectedKey === swatch.key}
                 aria-disabled={blocked}
                 onClick={() => { if (!blocked) applySelection(swatch.key) }}
