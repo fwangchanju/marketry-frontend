@@ -50,6 +50,13 @@ export function createDefaultColorScale(): ColorScaleConfig {
   }
 }
 
+// 상승(빨강, 색상 0)·하락(파랑, 색상 217)의 정해진 색 — 채도 75에 구간 순서(작은 값부터)대로 명도 16·33·46·58이다. 기본 색과 같고, 등락률 설정에서 손잡이를 옮기면 이 색으로 맞춘다.
+const FIXED_RANK_LIGHTNESS = [16, 33, 46, 58]
+export function fixedRankColor(side: 'up' | 'down', rank: number): { color: string; colorLabel: string } {
+  const lightness = FIXED_RANK_LIGHTNESS[Math.min(Math.max(rank, 0), FIXED_RANK_LIGHTNESS.length - 1)]
+  return { color: hslToHex(side === 'up' ? 0 : 217, 75, lightness), colorLabel: side === 'up' ? 'red' : 'blue' }
+}
+
 function hexToRgb(hex: string): [number, number, number] {
   const clean = hex.replace('#', '')
   return [parseInt(clean.slice(0, 2), 16), parseInt(clean.slice(2, 4), 16), parseInt(clean.slice(4, 6), 16)]
