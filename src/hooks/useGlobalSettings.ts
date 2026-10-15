@@ -31,6 +31,7 @@ import {
 import { useMarketValueTierRange } from './useMarketValueTierRange'
 import { registerExcludedSector, unregisterExcludedSector } from '@/api/treemap'
 import {
+  colorAtPercent,
   createDefaultColorScale,
   DEFAULT_MINUS_THRESHOLDS,
   DEFAULT_ZERO_COLOR,
@@ -575,15 +576,16 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     const mirror = negativeRows[rank]
     if (percent === target.threshold.thresholdPercent && mirror?.threshold.thresholdPercent === -percent) return
     let thresholds = colorScaleDraft.thresholds.map((threshold, index) => {
-      if (index === target.index) return { ...threshold, thresholdPercent: percent }
-      if (index === mirror?.index) return { ...threshold, thresholdPercent: -percent }
+      // 손잡이를 옮기면 명도도 새 등락률에 맞춰 바뀐다(색 계열은 그대로, 회색은 그대로).
+      if (index === target.index) return { ...threshold, thresholdPercent: percent, color: colorAtPercent(threshold.color, percent) }
+      if (index === mirror?.index) return { ...threshold, thresholdPercent: -percent, color: colorAtPercent(threshold.color, percent) }
       return threshold
     })
     let mirrorIndex = mirror?.index
     if (mirrorIndex === undefined) {
       const fallback = DEFAULT_MINUS_THRESHOLDS[Math.min(rank, DEFAULT_MINUS_THRESHOLDS.length - 1)]
       mirrorIndex = thresholds.length
-      thresholds = [...thresholds, { thresholdPercent: -percent, color: fallback.color, colorLabel: fallback.colorLabel }]
+      thresholds = [...thresholds, { thresholdPercent: -percent, color: colorAtPercent(fallback.color, percent), colorLabel: fallback.colorLabel }]
     }
     setColorEditError(null)
     setColorScaleDraft({ ...colorScaleDraft, thresholds })
