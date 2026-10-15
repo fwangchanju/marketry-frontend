@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { startTransition, useRef, useState } from 'react'
 import { hexToHsl, hslToHex, lightnessForPercent, resolveTreemapColor, type ColorScaleThreshold } from '@/utils/treemapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
@@ -235,11 +235,14 @@ export default function TreemapColorThresholdEditorPanel({
   hasChanges,
 }: ColorThresholdEditorProps) {
   const threshold = thresholds[0]
-  // 선택 표시는 편집 중인 쪽의 색에서 바로 읽는다 — 상승/하락은 그쪽 첫 구간 색의 계열, 0% 칸은 가장 가까운 회색 단계.
+  // 선택 표시는 편집 중인 쪽의 색에서 읽는다 — 상승/하락은 그쪽 첫 구간 색의 계열, 0% 칸은 가장 가까운 회색 단계.
   const sideColor = bar.side === 'down' ? bar.negative[0]?.color : bar.positive[0]?.color
-  const selectedKey = bar.side === 'zero'
+  const derivedKey = bar.side === 'zero'
     ? grayStepKey(nearestGrayStep(bar.zeroColor))
     : (sideColor ?? threshold?.color) ? inferSelection((sideColor ?? threshold?.color)!) : GRAY_KEY
+  // 색을 고르면 지도 전체가 다시 그려져 흰 링이 늦게 보이므로, 링은 누른 즉시 따로 보여 주고 지도 색 반영은 뒤로 미룬다. 지도가 따라오면(derivedKey가 바뀌면) 실제 값을 쓴다.
+  const [pending, setPending] = useState<{ key: string; side: BarSide; rank: number | null; base: string } | null>(null)
+  const selectedKey = pending && pending.side === bar.side && pending.rank === bar.selectedRank && pending.base === derivedKey ? pending.key : derivedKey
   if (!threshold) return null
 
   // 색은 구간(손잡이)마다 고르지 않고 슬라이더 한쪽(상승 또는 하락) 전체에 하나를 정한다 — 구간 순서대로 16·33·46·58 밝기로 칠한다. 0% 칸을 골랐을 때만 그 칸 색을 바꾼다.
@@ -250,12 +253,15 @@ export default function TreemapColorThresholdEditorPanel({
   const applySelection = (key: string) => {
     const preset = HUE_PRESETS.find(item => item.name === key)
     const colorLabel = preset ? preset.colorLabel : GRAY_SWATCH.colorLabel
-    if (bar.side === 'zero') {
-      onChangeColor(0, hslToHex(0, 0, Number(key.replace('gray-', ''))), GRAY_SWATCH.colorLabel)
-      return
-    }
-    const rows = bar.side === 'down' ? bar.negative : bar.positive
-    onChangeSideColor(bar.side, rows.map(row => paint(key, lightnessForPercent(row.percent))), colorLabel)
+    setPending({ key, side: bar.side, rank: bar.selectedRank, base: derivedKey })
+    startTransition(() => {
+      if (bar.side === 'zero') {
+        onChangeColor(0, hslToHex(0, 0, Number(key.replace('gray-', ''))), GRAY_SWATCH.colorLabel)
+        return
+      }
+      const rows = bar.side === 'down' ? bar.negative : bar.positive
+      onChangeSideColor(bar.side, rows.map(row => paint(key, lightnessForPercent(row.percent))), colorLabel)
+    })
   }
   // 반대쪽(상승↔하락)이 이미 쓰는 색 계열은 고를 수 없다 — 상승과 하락이 같은 색이 되면 구분이 안 된다. 0% 칸은 제한이 없다.
   const otherSideColor = bar.side === 'up' ? bar.negative[0]?.color : bar.side === 'down' ? bar.positive[0]?.color : undefined
