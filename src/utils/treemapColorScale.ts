@@ -86,6 +86,15 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
+// 최고 단계 색은 그 이후 한 색으로 이어지다가, 15%를 넘어 18%까지 가는 구간에서만 더 선명하고 살짝 밝은 색으로 한 번 더 바뀐다(채도 100·명도 +6).
+// 최고 단계 자체가 15% 이상이면 그 값부터 3%p 사이에 바뀐다.
+const EXTREME_START_PERCENT = 15
+const EXTREME_SPAN_PERCENT = 3
+function extremeColorOf(hex: string): string {
+  const { h, s, l } = hexToHsl(hex)
+  return s < 12 ? hex : hslToHex(h, 100, Math.min(80, l + 6))
+}
+
 // changeRate(부호 있는 등락률, %) → 실제 렌더링에 쓸 hex 색.
 export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig): string {
   const zeroColor = resolveZeroColor(config)
@@ -113,8 +122,11 @@ export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig
     }
   }
 
-  // 가장 큰 threshold보다도 크면 그 이후는 추정하지 않고 그대로 clamp(CSS 그라데이션/D3 스케일과 동일).
-  return thresholds[thresholds.length - 1].color
+  // 가장 큰 threshold를 넘어도 15%까지는 그 색 그대로(clamp)이고, 15~18%에서 한 번 더 선명한 색으로 바뀐 뒤 그대로 이어진다.
+  const last = thresholds[thresholds.length - 1]
+  const start = Math.max(Math.abs(last.thresholdPercent), EXTREME_START_PERCENT)
+  if (abs <= start) return last.color
+  return lerpColor(last.color, extremeColorOf(last.color), Math.min(1, (abs - start) / EXTREME_SPAN_PERCENT))
 }
 
 // changeRate(부호 있는 등락률, %) → 그 부호 쪽 threshold 중 절댓값이 가장 큰 색(보간 없이 고정).

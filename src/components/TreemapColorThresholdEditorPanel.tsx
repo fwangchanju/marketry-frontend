@@ -1,5 +1,5 @@
 import { startTransition, useRef, useState } from 'react'
-import { hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/treemapColorScale'
+import { hexToHsl, hslToHex, resolveTreemapColor, type ColorScaleThreshold } from '@/utils/treemapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
 const SATURATION = 75
@@ -65,8 +65,16 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
   const zeroSelected = side === 'zero'
   // 막대 색은 고른 쪽(상승/하락)의 구간 색을 이어서 보여 준다.
   const colored = side === 'down' ? negative : positive
-  const lastColor = colored.at(-1)?.color ?? zeroColor
-  const gradient = `linear-gradient(90deg, ${[`${zeroColor} 0%`, ...colored.map((item, rank) => `${item.color} ${(percentToPosition(positive[rank]?.percent ?? item.percent) * 100).toFixed(2)}%`), `${lastColor} 100%`].join(', ')})`
+  // 막대 색은 지도 박스 색과 같은 계산(resolveTreemapColor)을 0~30%에서 촘촘히 찍어 그린다 — 15~18%에서 한 번 더 선명해지는 색도 그대로 보인다.
+  const signed = side === 'down' ? -1 : 1
+  const barConfig = {
+    thresholds: [
+      { thresholdPercent: 0, color: zeroColor, colorLabel: null },
+      ...colored.map((item, rank) => ({ thresholdPercent: signed * (positive[rank]?.percent ?? item.percent), color: item.color, colorLabel: null })),
+    ],
+  }
+  const gradientStops = Array.from({ length: 61 }, (_, step) => step / 2).map(percent => `${resolveTreemapColor(signed * percent, barConfig)} ${(percentToPosition(percent) * 100).toFixed(2)}%`)
+  const gradient = `linear-gradient(90deg, ${gradientStops.join(', ')})`
   const sign = side === 'down' ? '-' : '+'
 
   const percentAt = (clientX: number) => {
