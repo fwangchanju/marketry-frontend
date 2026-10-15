@@ -197,6 +197,8 @@ export interface ColorThresholdEditorProps {
   onSelectRank: (rank: number, side: 'up' | 'down') => void
   onSelectZero: () => void
   onChangeColor: (rowIndex: number, color: string, colorLabel: string | null) => void
+  // 상승/하락 한쪽의 모든 구간 색을 한 번에 바꾼다(colors는 작은 구간부터 순서별 명도로 칠한 값).
+  onChangeSideColor: (side: 'up' | 'down', colors: string[], colorLabel: string | null) => void
   onApply: () => void
   onCancel: () => void
   isSaving: boolean
@@ -212,6 +214,7 @@ export default function TreemapColorThresholdEditorPanel({
   onSelectRank,
   onSelectZero,
   onChangeColor,
+  onChangeSideColor,
   onApply,
   onCancel,
   isSaving,
@@ -219,14 +222,28 @@ export default function TreemapColorThresholdEditorPanel({
   hasChanges,
 }: ColorThresholdEditorProps) {
   const threshold = thresholds[0]
-  const [selectedKey, setSelectedKey] = useState(() => (threshold ? inferSelection(threshold.color) : GRAY_KEY))
+  // 색은 상승/하락 한쪽에 계열 하나를 정한다 — 처음 선택 표시는 그쪽 첫 구간의 색에서 읽는다(0% 칸은 그 칸 색).
+  const [selectedKey, setSelectedKey] = useState(() => {
+    const sideColor = bar.side === 'down' ? bar.negative[0]?.color : bar.side === 'up' ? bar.positive[0]?.color : undefined
+    const color = sideColor ?? threshold?.color
+    return color ? inferSelection(color) : GRAY_KEY
+  })
   if (!threshold) return null
 
-  const lightness = bar.side === 'zero' ? ZERO_LIGHTNESS : RANK_LIGHTNESS[Math.min(bar.selectedRank ?? 0, RANK_LIGHTNESS.length - 1)]
+  // 색은 구간(손잡이)마다 고르지 않고 슬라이더 한쪽(상승 또는 하락) 전체에 하나를 정한다 — 구간 순서대로 16·33·46·58 밝기로 칠한다. 0% 칸을 골랐을 때만 그 칸 색을 바꾼다.
+  const paint = (hueKey: string, lightness: number) => {
+    const preset = HUE_PRESETS.find(item => item.name === hueKey)
+    return hslToHex(preset?.hue ?? 0, preset ? SATURATION : 0, lightness)
+  }
   const applySelection = (key: string) => {
     setSelectedKey(key)
     const preset = HUE_PRESETS.find(item => item.name === key)
-    onChangeColor(0, hslToHex(preset?.hue ?? 0, preset ? SATURATION : 0, lightness), preset ? preset.colorLabel : GRAY_SWATCH.colorLabel)
+    const colorLabel = preset ? preset.colorLabel : GRAY_SWATCH.colorLabel
+    if (bar.side === 'zero') {
+      onChangeColor(0, paint(key, ZERO_LIGHTNESS), colorLabel)
+      return
+    }
+    onChangeSideColor(bar.side, RANK_LIGHTNESS.map(lightness => paint(key, lightness)), colorLabel)
   }
   const swatches = [
     { key: GRAY_SWATCH.key, label: GRAY_SWATCH.label, color: hslToHex(0, 0, SWATCH_LIGHTNESS) },

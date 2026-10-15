@@ -620,6 +620,20 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
       prev ? { ...prev, thresholds: prev.thresholds.map((t, i) => (i === targetIndex ? { ...t, color, colorLabel } : t)) } : prev,
     )
   }
+  // 상승/하락 한쪽의 색을 한 번에 바꾼다 — 구간마다 색을 따로 고르지 않고 한쪽에 색 계열 하나를 정해 순서별 명도로 칠한다(colors는 작은 구간부터).
+  // 바뀐 구간은 모두 편집 세션에 넣어 적용 때 함께 저장한다(첫 원소는 그대로라 고른 칸이 바뀌지 않는다).
+  const handleChangeColorEditSideColor = (side: 'up' | 'down', colors: string[], colorLabel: string | null) => {
+    if (!colorScaleDraft || colorEditIndices.length === 0) return
+    const rows = sortedSignRows(colorScaleDraft.thresholds, side === 'up')
+    const colorByIndex = new Map(rows.map((row, rank) => [row.index, colors[Math.min(rank, colors.length - 1)]]))
+    if (colorByIndex.size === 0) return
+    setColorEditError(null)
+    setColorScaleDraft({
+      ...colorScaleDraft,
+      thresholds: colorScaleDraft.thresholds.map((threshold, index) => (colorByIndex.has(index) ? { ...threshold, color: colorByIndex.get(index)!, colorLabel } : threshold)),
+    })
+    setColorEditIndices(previous => Array.from(new Set([...previous, ...colorByIndex.keys()])))
+  }
   const handleApplyColorEdit = async () => {
     if (!colorScaleDraft || colorEditIndices.length === 0) {
       colorEditSnapshotRef.current = null
@@ -897,6 +911,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
           onSelectRank: handleSelectColorRank,
           onSelectZero: handleSelectColorZero,
           onChangeColor: handleChangeColorEditColor,
+          onChangeSideColor: handleChangeColorEditSideColor,
           onApply: handleApplyColorEdit,
           onCancel: handleCancelColorEdit,
           isSaving: isApplyingColorEdit,
