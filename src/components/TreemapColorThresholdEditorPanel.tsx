@@ -161,12 +161,12 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             })}
           </div>
           {BAR_TICKS.map(tick => {
-            // 다른 슬라이더 아래 눈금 글자와 같은 스타일 — 평소 회색 13px, 고른 값과 같은 눈금은 흰색 굵은 글씨다.
+            // 눈금 글자는 다른 슬라이더 아래 글자처럼 11px 흰색이고, 고른 값과 같은 눈금은 굵은 글씨(500)로 강조한다. 어두운 회색은 읽기 어려워 쓰지 않는다.
             const highlighted = zeroSelected ? tick === 0 : tick === positive[selectedRank ?? -1]?.percent
             return (
               <span
                 key={tick}
-                className={`pointer-events-none absolute top-[42px] -translate-x-1/2 whitespace-nowrap text-[13px]/4 transition-colors duration-300 ${highlighted ? 'font-medium text-white' : 'text-gray-400'}`}
+                className={`pointer-events-none absolute top-[42px] -translate-x-1/2 whitespace-nowrap text-[11px]/4 transition-colors duration-300 ${highlighted ? 'font-medium' : ''} text-white`}
                 style={{ left: `${percentToPosition(tick) * 100}%` }}
               >
                 {tick}%
@@ -175,10 +175,6 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
           })}
         </div>
       </div>
-      {/* 한 줄로 짧게 — 두 줄로 넘어가면 아래 항목들이 밀린다. */}
-      <p className="mt-0.5 whitespace-nowrap text-[11px] leading-snug text-gray-400">
-        {zeroSelected ? '0%는 고정, 색만 바꿀 수 있습니다.' : '하락률은 대칭값으로 자동 적용'}
-      </p>
     </>
   )
 }
