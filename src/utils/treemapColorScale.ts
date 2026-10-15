@@ -93,10 +93,10 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
-// 상한가·하한가 부근(25~30%)에서만 나타나는 포인트 색 — 핫핑크(상승)·청록(하락)이다. 최고 단계 색에서 25%부터 서서히 바뀌어 30%에서 완전히 이 색이 된다.
+// 큰 등락률(20~25%)에서만 나타나는 포인트 색 — 핫핑크(상승)·청록(하락)이다. 최고 단계 색에서 20%부터 서서히 바뀌어 25%에서 완전히 이 색이 된다.
 // 빨강·파랑과 색상 차이가 크고 흰 글자가 그대로 읽힌다(밝은 포인트 색을 쓰면 isLightColor가 글자를 어둡게 바꾼다).
-const POINT_START_PERCENT = 25
-const POINT_END_PERCENT = 30
+const POINT_START_PERCENT = 20
+const POINT_END_PERCENT = 25
 const POINT_COLOR_UP = '#ff3d8b'
 const POINT_COLOR_DOWN = '#12b8a6'
 
@@ -136,7 +136,7 @@ export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig
     }
   }
 
-  // 가장 큰 threshold보다도 크면 25%까지는 그 색 그대로(clamp)이고, 25~30%에서만 포인트 색(분홍/하늘)으로 바뀐다.
+  // 가장 큰 threshold보다도 크면 20%까지는 그 색 그대로(clamp)이고, 20~25%에서만 포인트 색(핫핑크/청록)으로 바뀐다.
   const last = thresholds[thresholds.length - 1]
   const start = Math.max(Math.abs(last.thresholdPercent), POINT_START_PERCENT)
   if (abs <= start || start >= POINT_END_PERCENT) return last.color
