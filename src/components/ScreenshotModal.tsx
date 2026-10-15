@@ -88,8 +88,9 @@ export default function ScreenshotModal({
           않는다. 이미지는 화면(폭 95vw, 높이 85dvh에서 버튼 줄을 뺀 만큼) 안에서 비율을 유지한 채 최대한
           크게 그린다. 스크린샷 전(스피너)에는 임시 크기 칸으로 자리를 잡는다. */}
       <div
-        className="flex max-w-[calc(100vw-2rem)] flex-col rounded-md border border-gray-500 bg-[#363639]"
+        className="flex max-w-[calc(100vw-2rem)] select-none flex-col rounded-md border border-gray-500 bg-[#363639]"
         onClick={e => e.stopPropagation()}
+        onDragStart={e => e.preventDefault()}
       >
         {/* 설정창 헤더와 같은 모양 — 왼쪽 제목, 오른쪽 ✕, 아래 구분선. */}
         <div className="flex shrink-0 items-center border-b border-gray-500 p-4">
@@ -112,6 +113,7 @@ export default function ScreenshotModal({
           <img
             src={previewSrc}
             alt="마켓맵 미리보기"
+            draggable={false}
             onLoad={e => setPreviewRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
             style={fitWidth ? { width: fitWidth } : undefined}
             className="block h-auto max-w-full self-center"
