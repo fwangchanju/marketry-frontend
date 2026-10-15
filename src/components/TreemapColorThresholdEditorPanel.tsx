@@ -43,6 +43,11 @@ function inferSelection(hex: string): string {
 
 type BarSide = 'up' | 'down' | 'zero'
 
+// 한쪽(상승 또는 하락)이 어느 색 계열인지는 그쪽에서 가장 선명한(채도가 높은) 색으로 읽는다 — 첫 구간은 회색에 가까운 탁한 색이라 그 색으로 읽으면 회색으로 잘못 읽힌다.
+function dominantColor(rows: { color: string }[]): string | undefined {
+  return rows.reduce<string | undefined>((best, row) => (best === undefined || hexToHsl(row.color).s > hexToHsl(best).s ? row.color : best), undefined)
+}
+
 interface ThresholdBarProps {
   // 상승·하락 구간의 경계와 색(작은 값부터, 하락은 절댓값) — 막대의 손잡이 하나가 구간 하나다. 하락 값은 상승 값의 거울이다.
   positive: { percent: number; color: string }[]
@@ -238,7 +243,7 @@ export default function TreemapColorThresholdEditorPanel({
 }: ColorThresholdEditorProps) {
   const threshold = thresholds[0]
   // 선택 표시는 편집 중인 쪽의 색에서 읽는다 — 상승/하락은 그쪽 첫 구간 색의 계열, 0% 칸은 가장 가까운 회색 단계.
-  const sideColor = bar.side === 'down' ? bar.negative[0]?.color : bar.positive[0]?.color
+  const sideColor = dominantColor(bar.side === 'down' ? bar.negative : bar.positive)
   const derivedKey = bar.side === 'zero'
     ? grayStepKey(nearestGrayStep(bar.zeroColor))
     : (sideColor ?? threshold?.color) ? inferSelection((sideColor ?? threshold?.color)!) : GRAY_KEY
@@ -265,7 +270,7 @@ export default function TreemapColorThresholdEditorPanel({
     })
   }
   // 반대쪽(상승↔하락)이 이미 쓰는 색 계열은 고를 수 없다 — 상승과 하락이 같은 색이 되면 구분이 안 된다. 0% 칸은 제한이 없다.
-  const otherSideColor = bar.side === 'up' ? bar.negative[0]?.color : bar.side === 'down' ? bar.positive[0]?.color : undefined
+  const otherSideColor = bar.side === 'up' ? dominantColor(bar.negative) : bar.side === 'down' ? dominantColor(bar.positive) : undefined
   const otherSideKey = otherSideColor ? inferSelection(otherSideColor) : null
   const otherSideLabel = bar.side === 'up' ? '하락' : '상승'
   // 같은 8칸 자리에 상승/하락을 편집할 때는 회색+색 계열 7개(회색은 막힘), 0% 칸을 편집할 때는 명도가 다른 회색 8단계를 보여 준다.
