@@ -33,7 +33,7 @@ export default function OverviewMap({
   const ref = useRef<HTMLDivElement>(null)
   const fontsVersion = useFontsVersion()
   const [size, setSize] = useState({ width: 0, height: 0 })
-  // 우클릭 팝업 — 지도 페이지처럼 박스 가장자리에 붙고, 떠 있는 동안 그 박스는 마우스를 올린 색으로 고정한다. 팝업 밖을 누르거나 Esc를 누르면 닫힌다.
+  // 마우스를 올리면 뜨는 업종 팝업 — 지도가 작아서 우클릭 대신 올리는 것만으로 보이게 한다. 지도 페이지의 "마우스 올리면 팝업" 방식과 같이 커서 근처에 놓이고 커서를 따라 움직이며, 박스를 벗어나면 닫힌다.
   const [popup, setPopup] = useState<PopupState | null>(null)
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function OverviewMap({
     }
   }, [popup])
 
-  const openPopup = (item: OverviewMapItem, target: HTMLElement) => {
+  const openPopup = (item: OverviewMapItem, target: HTMLElement, pointer: { x: number; y: number }) => {
     const map = ref.current
     if (!map) return
     const rect = target.getBoundingClientRect()
@@ -70,9 +70,10 @@ export default function OverviewMap({
         ...(total > 0 ? [`등락 종목: ▲${item.advancers ?? 0} ▼${item.decliners ?? 0} ■${item.unchanged ?? 0}`] : []),
         `그룹 시총: ${toJoEokDecimal(item.marketValue / 100_000_000)}`,
       ],
-      // 팝업은 키가 `sector:`로 시작하면 업종 배지를 붙인다.
+      // 팝업은 키가 `sector:`로 시작하면 업종 배지를 붙인다. tooltip이면 마우스 이벤트를 받지 않고 pointer 근처에서 커서를 따라간다.
       targetKey: `sector:${item.key}`,
-      tooltip: false,
+      tooltip: true,
+      pointer,
       anchorRect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
       mapBounds: { left: mapRect.left, right: mapRect.right, top: mapRect.top, bottom: mapRect.bottom },
     })
@@ -110,16 +111,12 @@ export default function OverviewMap({
         const background = resolveTreemapColor(item.changeRate, colorScale)
         const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion)
         const isPinned = popup?.targetKey === `sector:${item.key}`
-        // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box). 팝업이 떠 있는 동안에도 같은 모양을 유지한다.
+        // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box).
         const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`
         const boxStyle = { left: x, top: y, width, height, backgroundColor: background, color: '#ffffff', '--treemap-base-color': background } as React.CSSProperties
-        // 우클릭하면 업종 정보 팝업을 연다. 이름이 안 들어가 빠진 박스는 올리면 이름과 등락률이 뜬다.
-        const handleContextMenu = (event: React.MouseEvent<HTMLElement>) => {
-          event.preventDefault()
-          event.stopPropagation()
-          openPopup(item, event.currentTarget)
-        }
-        const hint = label.lines.length === 0 ? `${item.name} ${toPctSigned(item.changeRate)}` : undefined
+        // 마우스를 올리면 업종 정보 팝업을 열고 박스를 벗어나면 닫는다(이름이 안 들어가 빠진 박스도 여기서 이름과 등락률을 본다).
+        const handlePointerEnter = (event: React.PointerEvent<HTMLElement>) => openPopup(item, event.currentTarget, { x: event.clientX, y: event.clientY })
+        const handlePointerLeave = () => setPopup(previous => (previous?.targetKey === `sector:${item.key}` ? null : previous))
         const content = (
           <>
             {/* 한 줄에 안 들어가면 `/`(없으면 공백) 자리에서 두 줄로 나누고, 두 줄로도 안 들어가면 이름과 등락률을 모두 그리지 않는다(utils/overviewLabel.ts). 잘린 글자나 `…`는 만들지 않는다. */}
@@ -133,11 +130,11 @@ export default function OverviewMap({
         )
         // onSelect가 없으면 눌러서 이동하지 않는 그냥 박스다(홈 시장 요약 지도).
         return onSelect ? (
-          <button key={item.key} type="button" aria-label={item.name} data-hint={hint} onClick={() => onSelect(item.name)} onContextMenu={handleContextMenu} className={boxClassName} style={boxStyle}>
+          <button key={item.key} type="button" aria-label={item.name} onClick={() => onSelect(item.name)} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} className={boxClassName} style={boxStyle}>
             {content}
           </button>
         ) : (
-          <div key={item.key} role="img" aria-label={`${item.name} ${toPctSigned(item.changeRate)}`} data-hint={hint} onContextMenu={handleContextMenu} className={boxClassName} style={boxStyle}>
+          <div key={item.key} role="img" aria-label={`${item.name} ${toPctSigned(item.changeRate)}`} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} className={boxClassName} style={boxStyle}>
             {content}
           </div>
         )
