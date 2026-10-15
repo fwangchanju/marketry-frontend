@@ -1996,7 +1996,7 @@ export function SettingsStrongIndustryColorSection({
               className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-white/30 p-0"
             >
               {selectedColor === option.value && (
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 55 ? '#18181b' : '#ffffff'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? '#18181b' : '#ffffff'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12.5l4.5 4.5L19 7" />
                 </svg>
               )}
