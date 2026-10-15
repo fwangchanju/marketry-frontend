@@ -84,6 +84,22 @@ function groupSplitPositions(chars: string[]): number[] {
   return positions
 }
 
+// 이름 끝에 붙는 흔한 기업·업종 단어 — 이 단어 앞에서 줄을 나눈다(인제니아/테라퓨틱스, 넥슨/게임즈, 선익/시스템). 회사마다 일일이 적지 않아도 되게 하는 목록이다.
+// 앞부분이 2글자 이상일 때만 쓰고, 이름 끝과 맞는 가장 긴 단어 하나만 본다. 글자 수 차이 제한은 그룹명 뒤와 같다.
+const DESCRIPTOR_WORDS = [
+  '테라퓨틱스', '노믹스', '게임즈', '데이타', '데이터', '네오룩스', '시스템즈', '시스템', '솔루션즈', '솔루션', '테크놀로지', '인더스트리즈', '인더스트리',
+  '엔터테인먼트', '엔터', '네트웍스', '글로벌', '인터내셔널', '코퍼레이션', '컴퍼니', '바이오', '제약', '약품', '파마', '헬스케어', '메디칼', '메디컬', '사이언스',
+  '증권', '소프트웨어', '소프트', '정보통신', '일렉트릭', '에너지', '머티리얼즈', '머티리얼', '로보틱스', '디스플레이', '반도체', '엔지니어링', '이엔씨',
+].sort((a, b) => b.length - a.length)
+
+function descriptorSplitPosition(chars: string[]): number | null {
+  const name = chars.join('')
+  const word = DESCRIPTOR_WORDS.find(candidate => name.endsWith(candidate))
+  if (!word) return null
+  const position = Array.from(name.slice(0, name.length - word.length)).length
+  return position >= 2 ? position : null
+}
+
 // 알파벳을 한글로 읽어 쓴 사명(비에이치=BH, 케이씨=KC, 엔씨=NC)의 글자 이름. 이름 앞쪽에 이런 글자가 2개 이상 이어지면 한 묶음으로 보고 묶음 가운데는 나누지 않는다.
 const LETTER_NAMES = [
   '더블유', '에이치', '에이', '에프', '에스', '제이', '케이', '아이', '제트', '엑스', '와이', '브이', '아르',
@@ -133,9 +149,10 @@ function splitCandidates(chars: string[]) {
   const closeEnough = (positions: number[]) => positions.filter(i => lengthDiff(i) <= MAX_WORD_SPLIT_DIFF)
   const atSpaces = closeEnough(all.filter(i => chars[i] === ' ' || chars[i - 1] === ' '))
   const atScriptEdge = all.filter(i => chars[i] !== ' ' && chars[i - 1] !== ' ' && isAsciiChar(chars[i - 1]) !== isAsciiChar(chars[i]))
-  // 한글 알파벳 묶음 끝(케이씨/텍, 엔씨/소프트)도 그룹명 뒤처럼 글자 수 차이가 3 이하일 때 쓴다.
+  // 한글 알파벳 묶음 끝(케이씨/텍, 엔씨/소프트)과 끝 단어 앞(넥슨/게임즈)도 그룹명 뒤처럼 글자 수 차이가 3 이하일 때 쓴다.
   const clusterSplit = cluster && clusterEnd < chars.length ? [clusterEnd] : []
-  const atMeaning = Array.from(new Set([...atScriptEdge, ...closeEnough([...groupSplitPositions(chars), ...clusterSplit].filter(i => all.includes(i)))])).sort((a, b) => a - b)
+  const descriptorAt = descriptorSplitPosition(chars)
+  const atMeaning = Array.from(new Set([...atScriptEdge, ...closeEnough([...groupSplitPositions(chars), ...clusterSplit, ...(descriptorAt === null ? [] : [descriptorAt])].filter(i => all.includes(i)))])).sort((a, b) => a - b)
   const suffixAt = suffixSplitPosition(chars)
   const atSuffix = suffixAt !== null && all.includes(suffixAt) ? [suffixAt] : []
   return { all, atSpaces, atMeaning, atSuffix }
