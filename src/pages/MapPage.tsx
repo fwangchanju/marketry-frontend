@@ -595,7 +595,7 @@ export default function MapPage() {
                   <section
                     role="status"
                     aria-labelledby="nxt-notice-title"
-                    className={`${HINT_BUBBLE_COLOR_CLASS} ${POPUP_SIZE_CLASS} pointer-events-auto`}
+                    className={`${HINT_BUBBLE_COLOR_CLASS} ${POPUP_SIZE_CLASS} pointer-events-auto select-none`}
                   >
                     <h2 id="nxt-notice-title" className="flex items-center text-base font-bold text-black"><PopupKindBadge kind="안내" />{nxtOnlyWindow.fromMinutes < 12 * 60 ? '프리 마켓' : '애프터 마켓'}</h2>
                     <p className="mt-3 break-keep text-sm leading-relaxed text-black">

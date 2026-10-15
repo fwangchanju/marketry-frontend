@@ -35,8 +35,9 @@ export default function LoginModal({ returnTo, hideMessage = false, onClose }: P
         style={mainAreaRect ? { left: mainAreaRect.left, top: mainAreaRect.top, width: mainAreaRect.width, height: mainAreaRect.height } : undefined}
       >
       <div
-        className="w-[calc(100%-2rem)] max-w-sm border border-gray-700 bg-[var(--surface)] p-6"
+        className="w-[calc(100%-2rem)] max-w-sm select-none border border-gray-700 bg-[var(--surface)] p-6"
         onClick={e => e.stopPropagation()}
+        onDragStart={e => e.preventDefault()}
       >
         <p className="text-lg font-bold text-white">로그인</p>
         {!hideMessage && (
