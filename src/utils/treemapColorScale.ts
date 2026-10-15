@@ -1,3 +1,5 @@
+import { accentColor } from '@/utils/accentPalette'
+
 // 마켓맵 종목 박스/범례가 공유하는 등락률 컬러 스케일 계산.
 // 박스 색칠(StockBox)과 범례 스와치(MapPage) 양쪽이 반드시 이 모듈만 거치도록 해서,
 // 예전처럼 두 곳이 서로 다른 하드코딩 배열을 들고 있다가 실제 값이 어긋나는 문제를 구조적으로 막는다.
@@ -93,6 +95,22 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
+// 상한가·하한가 부근(25~30%)에서만 나타나는 포인트 색 — 4-1) 강조 색상 팔레트의 분홍(상승)·하늘(하락)이다. 최고 단계 색에서 25%부터 서서히 바뀌어 30%에서 완전히 이 색이 된다.
+// 둘 다 밝은 색이라 그 박스의 글자는 어둡게 써야 한다(isLightColor).
+const POINT_START_PERCENT = 25
+const POINT_END_PERCENT = 30
+const POINT_COLOR_UP = accentColor('분홍')
+const POINT_COLOR_DOWN = accentColor('하늘')
+
+// 밝은 배경이면 true — 흰 글자가 읽히지 않으므로 어두운 글자를 쓴다(상대 휘도 0.4 초과).
+export function isLightColor(hex: string): boolean {
+  const [r, g, b] = hexToRgb(hex).map(value => {
+    const channel = value / 255
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4
+}
+
 // changeRate(부호 있는 등락률, %) → 실제 렌더링에 쓸 hex 색.
 export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig): string {
   const zeroColor = resolveZeroColor(config)
@@ -120,8 +138,12 @@ export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig
     }
   }
 
-  // 가장 큰 threshold보다도 크면 그 이후는 추정하지 않고 그대로 clamp(CSS 그라데이션/D3 스케일과 동일).
-  return thresholds[thresholds.length - 1].color
+  // 가장 큰 threshold보다도 크면 25%까지는 그 색 그대로(clamp)이고, 25~30%에서만 포인트 색(분홍/하늘)으로 바뀐다.
+  const last = thresholds[thresholds.length - 1]
+  const start = Math.max(Math.abs(last.thresholdPercent), POINT_START_PERCENT)
+  if (abs <= start || start >= POINT_END_PERCENT) return last.color
+  const t = Math.min(1, (abs - start) / (POINT_END_PERCENT - start))
+  return lerpColor(last.color, changeRate > 0 ? POINT_COLOR_UP : POINT_COLOR_DOWN, t)
 }
 
 // changeRate(부호 있는 등락률, %) → 그 부호 쪽 threshold 중 절댓값이 가장 큰 색(보간 없이 고정).
