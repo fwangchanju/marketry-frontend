@@ -1,5 +1,3 @@
-import { accentColor } from '@/utils/accentPalette'
-
 // 마켓맵 종목 박스/범례가 공유하는 등락률 컬러 스케일 계산.
 // 박스 색칠(StockBox)과 범례 스와치(MapPage) 양쪽이 반드시 이 모듈만 거치도록 해서,
 // 예전처럼 두 곳이 서로 다른 하드코딩 배열을 들고 있다가 실제 값이 어긋나는 문제를 구조적으로 막는다.
@@ -95,12 +93,12 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
-// 상한가·하한가 부근(25~30%)에서만 나타나는 포인트 색 — 4-1) 강조 색상 팔레트의 분홍(상승)·하늘(하락)이다. 최고 단계 색에서 25%부터 서서히 바뀌어 30%에서 완전히 이 색이 된다.
-// 둘 다 밝은 색이라 그 박스의 글자는 어둡게 써야 한다(isLightColor).
+// 상한가·하한가 부근(25~30%)에서만 나타나는 포인트 색 — 핫핑크(상승)·청록(하락)이다. 최고 단계 색에서 25%부터 서서히 바뀌어 30%에서 완전히 이 색이 된다.
+// 빨강·파랑과 색상 차이가 크고 흰 글자가 그대로 읽힌다(밝은 포인트 색을 쓰면 isLightColor가 글자를 어둡게 바꾼다).
 const POINT_START_PERCENT = 25
 const POINT_END_PERCENT = 30
-const POINT_COLOR_UP = accentColor('분홍')
-const POINT_COLOR_DOWN = accentColor('하늘')
+const POINT_COLOR_UP = '#ff3d8b'
+const POINT_COLOR_DOWN = '#12b8a6'
 
 // 밝은 배경이면 true — 흰 글자가 읽히지 않으므로 어두운 글자를 쓴다(상대 휘도 0.4 초과).
 export function isLightColor(hex: string): boolean {
