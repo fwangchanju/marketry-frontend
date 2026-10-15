@@ -8,6 +8,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import type { SectorItem, StockSectorListItem } from '@/types/api'
 import { toCount, toJoEokDecimal, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { findAliasConflict } from '@/utils/aliasConflict'
 import { buildUploadPlan, pathKey, readClassificationFile } from '@/utils/classificationUpload'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
@@ -1082,6 +1083,12 @@ export default function AdminStockTable({
 
   const handleUpdateAlias = useCallback(
     (stockCode: string, alias: string | null) => {
+      // 다른 종목의 이름이나 약칭과 같은 약칭은 저장하지 않는다 — 지도에서 서로 다른 종목이 같은 이름으로 보여 오해를 낳는다.
+      const conflict = alias === null ? null : findAliasConflict(itemsRef.current, stockCode, alias)
+      if (conflict) {
+        void appAlert(`"${alias}"은(는) 다른 종목과 겹치는 약칭이라 저장하지 않았습니다.\n겹치는 종목: ${conflict}`, { adminOnly: true, title: '약칭 저장' })
+        return
+      }
       updateAlias.mutate({ stockCode, alias })
     },
     [updateAlias],
