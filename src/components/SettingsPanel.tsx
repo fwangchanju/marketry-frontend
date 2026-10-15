@@ -1904,7 +1904,7 @@ export function SettingsColorSection({
     <div className="settings-second-color pt-5 text-white">
       {/* "색상 커스텀 모드" 토글을 별도 줄로 두지 않고, 제목 바로 우측에 스위치만 붙인다. 초기화 버튼(26px)은 위아래 여백을 -2px씩 줘서 줄 높이를 다른 항목의 제목 줄(22px)과 같게 둔다 — 그래야 메뉴를 바꿔도 제목·토글 위치가 같다. */}
       <div className="flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-[15px]">
+        <p className="flex items-center text-[15px]">
           <span className="settings-section-num">등락률 색상</span>
           <button
             type="button"
@@ -1912,9 +1912,9 @@ export function SettingsColorSection({
             data-hint="기본값으로 초기화"
             onClick={async () => { if (await appConfirm('등락률 색상을 기본값으로 초기화하시겠습니까?', { title: '색상 초기화' })) runWithFeedback(onResetColorScale) }}
             disabled={isResettingColorScale}
-            className="-my-0.5 flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:cursor-wait disabled:opacity-60"
+            className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:cursor-wait disabled:opacity-60"
           >
-            <RefreshIcon className="h-4 w-4" aria-hidden="true" />
+            <RefreshIcon className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </p>
         <div className="flex items-center gap-3">

@@ -272,6 +272,7 @@ export default function TreemapColorThresholdEditorPanel({
       </div>
 
       <div>
+        <p className="color-editor-step mb-1 text-[13px] text-gray-300">등락률</p>
         <ThresholdBar
           positive={bar.positive}
           negative={bar.negative}
