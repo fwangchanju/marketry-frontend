@@ -16,29 +16,29 @@ export interface ColorScaleConfig {
   thresholds: ColorScaleThreshold[]
 }
 
-// 기본 색상 규칙 — 파랑(음수)과 빨강(양수)은 같은 채도(75)와 같은 명도를 쓰고, 명도는 변동률에 따라 일정하게 오른다(1%=16, 3%=33, 5%=46,
-// 8%=58 — 색상 편집기 명도 슬라이더의 10%/30%/45%/60% 위치). 0%는 색상 편집기의 첫 색인 회색(채도 0)이고 명도는 슬라이더 정가운데(50)다. 색상은 색상 편집기의 파랑(217)·빨강(0) 프리셋과 같다.
+// 기본 색상 규칙 — 파랑(음수)과 빨강(양수)은 같은 채도(75)와 같은 명도를 쓰고, 명도는 구간 순서대로 오른다(첫 구간=16, 둘째=33, 셋째=46,
+// 넷째=58 — 기본 구간은 2/5/8/15%이고 — 색상 편집기 명도 슬라이더의 10%/30%/45%/60% 위치). 0%는 색상 편집기의 첫 색인 회색(채도 0)이고 명도는 슬라이더 정가운데(50)다. 색상은 색상 편집기의 파랑(217)·빨강(0) 프리셋과 같다.
 // 범례는 하락 4칸 + 0% + 상승 4칸의 9칸이다.
 // 0%일 때 색 — 저장된 threshold가 없으면 이 값으로 폴백.
 export const DEFAULT_ZERO_COLOR = '#808080'
 
-// 저장된 threshold가 하나도 없는 side에 쓰는 폴백 프리셋(절댓값 기준). 1/3/5/8%p의 4개 임계값에만 threshold를 둔다.
-// 8% 초과는 별도 threshold를 추가하지 않고, 아래 resolveTreemapColor의 "최고 threshold 초과 시 clamp" 동작에 맡긴다 —
-// 그래야 8~30%(실제로 흔한 구간) 전체가 flat한 최고 단계 색 그대로 유지된다.
+// 저장된 threshold가 하나도 없는 side에 쓰는 폴백 프리셋(절댓값 기준). 2/5/8/15%p의 4개 임계값에만 threshold를 둔다.
+// 15% 초과는 별도 threshold를 추가하지 않고, 아래 resolveTreemapColor의 "최고 threshold 초과 시 clamp" 동작에 맡긴다 —
+// 그래야 15~30% 전체가 flat한 최고 단계 색 그대로 유지된다.
 export const DEFAULT_PLUS_THRESHOLDS: ColorScaleThreshold[] = [
-  { thresholdPercent: 1, color: '#470a0a', colorLabel: 'red' }, // 명도 16 (슬라이더 10%)
-  { thresholdPercent: 3, color: '#931515', colorLabel: 'red' }, // 명도 33 (슬라이더 30%)
-  { thresholdPercent: 5, color: '#cd1d1d', colorLabel: 'red' }, // 명도 46 (슬라이더 45%)
-  { thresholdPercent: 8, color: '#e44444', colorLabel: 'red' }, // 명도 58 (슬라이더 60%)
+  { thresholdPercent: 2, color: '#470a0a', colorLabel: 'red' }, // 명도 16 (슬라이더 10%)
+  { thresholdPercent: 5, color: '#931515', colorLabel: 'red' }, // 명도 33 (슬라이더 30%)
+  { thresholdPercent: 8, color: '#cd1d1d', colorLabel: 'red' }, // 명도 46 (슬라이더 45%)
+  { thresholdPercent: 15, color: '#e44444', colorLabel: 'red' }, // 명도 58 (슬라이더 60%)
 ]
 export const DEFAULT_MINUS_THRESHOLDS: ColorScaleThreshold[] = [
-  { thresholdPercent: 1, color: '#0a2247', colorLabel: 'blue' }, // 명도 16 (슬라이더 10%)
-  { thresholdPercent: 3, color: '#154593', colorLabel: 'blue' }, // 명도 33 (슬라이더 30%)
-  { thresholdPercent: 5, color: '#1d61cd', colorLabel: 'blue' }, // 명도 46 (슬라이더 45%)
-  { thresholdPercent: 8, color: '#4481e4', colorLabel: 'blue' }, // 명도 58 (슬라이더 60%)
+  { thresholdPercent: 2, color: '#0a2247', colorLabel: 'blue' }, // 명도 16 (슬라이더 10%)
+  { thresholdPercent: 5, color: '#154593', colorLabel: 'blue' }, // 명도 33 (슬라이더 30%)
+  { thresholdPercent: 8, color: '#1d61cd', colorLabel: 'blue' }, // 명도 46 (슬라이더 45%)
+  { thresholdPercent: 15, color: '#4481e4', colorLabel: 'blue' }, // 명도 58 (슬라이더 60%)
 ]
 
-// 저장된 구간이 하나도 없을 때 draft를 채우는 초기값 — 위 기본 프리셋을 부호 있는 실제 구간(-8/-5/-3/-1, +1/+3/+5/+8)으로
+// 저장된 구간이 하나도 없을 때 draft를 채우는 초기값 — 위 기본 프리셋을 부호 있는 실제 구간(-15/-8/-5/-2, +2/+5/+8/+15)으로
 // 펼친 것이다. 대체값으로만 두면 편집 영역이 한 칸을 열 때 그 부호에 구간이 하나만 생겨서 나머지 기본 칸이 범례에서
 // 사라진다(9칸이 줄어듦). 색 계산은 대체값과 같은 구간이라 지도 모양은 그대로다.
 export function createDefaultColorScale(): ColorScaleConfig {
@@ -86,15 +86,6 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
-// 최고 단계 색은 그 이후 한 색으로 이어지다가, 15%를 넘어 18%까지 가는 구간에서만 더 선명하고 살짝 밝은 색으로 한 번 더 바뀐다(채도 100·명도 +6).
-// 최고 단계 자체가 15% 이상이면 그 값부터 3%p 사이에 바뀐다.
-const EXTREME_START_PERCENT = 15
-const EXTREME_SPAN_PERCENT = 3
-function extremeColorOf(hex: string): string {
-  const { h, s, l } = hexToHsl(hex)
-  return s < 12 ? hex : hslToHex(h, 100, Math.min(80, l + 6))
-}
-
 // changeRate(부호 있는 등락률, %) → 실제 렌더링에 쓸 hex 색.
 export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig): string {
   const zeroColor = resolveZeroColor(config)
@@ -122,11 +113,8 @@ export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig
     }
   }
 
-  // 가장 큰 threshold를 넘어도 15%까지는 그 색 그대로(clamp)이고, 15~18%에서 한 번 더 선명한 색으로 바뀐 뒤 그대로 이어진다.
-  const last = thresholds[thresholds.length - 1]
-  const start = Math.max(Math.abs(last.thresholdPercent), EXTREME_START_PERCENT)
-  if (abs <= start) return last.color
-  return lerpColor(last.color, extremeColorOf(last.color), Math.min(1, (abs - start) / EXTREME_SPAN_PERCENT))
+  // 가장 큰 threshold보다도 크면 그 이후는 추정하지 않고 그대로 clamp(CSS 그라데이션/D3 스케일과 동일).
+  return thresholds[thresholds.length - 1].color
 }
 
 // changeRate(부호 있는 등락률, %) → 그 부호 쪽 threshold 중 절댓값이 가장 큰 색(보간 없이 고정).

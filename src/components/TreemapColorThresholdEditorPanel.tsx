@@ -65,7 +65,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
   const zeroSelected = side === 'zero'
   // 막대 색은 고른 쪽(상승/하락)의 구간 색을 이어서 보여 준다.
   const colored = side === 'down' ? negative : positive
-  // 막대 색은 지도 박스 색과 같은 계산(resolveTreemapColor)을 0~30%에서 촘촘히 찍어 그린다 — 15~18%에서 한 번 더 선명해지는 색도 그대로 보인다.
+  // 막대 색은 지도 박스 색과 같은 계산(resolveTreemapColor)을 0~30%에서 촘촘히 찍어 그린다.
   const signed = side === 'down' ? -1 : 1
   const barConfig = {
     thresholds: [
