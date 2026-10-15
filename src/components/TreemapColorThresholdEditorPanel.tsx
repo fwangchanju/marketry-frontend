@@ -21,21 +21,20 @@ const HUE_PRESETS: HuePreset[] = [
   { name: 'magenta', label: '자홍', hue: 310, colorLabel: null },
 ]
 
-// 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여주고, 밝기는 아래 슬라이더로 정한다.
+// 색상 줄에는 어두운 배경에서도 잘 보이는 중간 밝기의 대표색만 보여준다. 실제 칸 색의 밝기는 구간 순서(작은 값부터)로 정해지고 따로 고르지 않는다.
 const SWATCH_LIGHTNESS = 55
-const MIN_LIGHTNESS = 8
-const MAX_LIGHTNESS = 92
+const RANK_LIGHTNESS = [16, 33, 46, 58]
+const ZERO_LIGHTNESS = 50
 const GRAY_KEY = 'gray'
 const GRAY_SWATCH = { key: GRAY_KEY, label: '회색', colorLabel: 'gray' as string | null }
 
-// 저장된 hex가 어느 색 계열/밝기인지 역산해서 편집 시작 시 선택 상태를 맞춘다.
-function inferSelection(hex: string): { key: string; lightness: number } {
-  const { h, s: saturation, l } = hexToHsl(hex)
-  const lightness = Math.round(Math.min(MAX_LIGHTNESS, Math.max(MIN_LIGHTNESS, l)))
-  if (saturation < 12) return { key: GRAY_KEY, lightness }
+// 저장된 hex가 어느 색 계열인지 역산해서 편집 시작 시 선택 상태를 맞춘다(밝기는 구간 순서로 정해지므로 읽지 않는다).
+function inferSelection(hex: string): string {
+  const { h, s: saturation } = hexToHsl(hex)
+  if (saturation < 12) return GRAY_KEY
   const distance = (a: number, b: number) => Math.min(Math.abs(a - b), 360 - Math.abs(a - b))
   const nearest = HUE_PRESETS.reduce((best, preset) => (distance(preset.hue, h) < distance(best.hue, h) ? preset : best))
-  return { key: nearest.name, lightness }
+  return nearest.name
 }
 
 type BarSide = 'up' | 'down' | 'zero'
@@ -220,14 +219,12 @@ export default function TreemapColorThresholdEditorPanel({
   hasChanges,
 }: ColorThresholdEditorProps) {
   const threshold = thresholds[0]
-  const [selection, setSelection] = useState(() => (threshold ? inferSelection(threshold.color) : { key: GRAY_KEY, lightness: 50 }))
+  const [selectedKey, setSelectedKey] = useState(() => (threshold ? inferSelection(threshold.color) : GRAY_KEY))
   if (!threshold) return null
 
-  const selectedPreset = HUE_PRESETS.find(preset => preset.name === selection.key)
-  const hue = selectedPreset?.hue ?? 0
-  const saturation = selectedPreset ? SATURATION : 0
-  const applySelection = (key: string, lightness: number) => {
-    setSelection({ key, lightness })
+  const lightness = bar.side === 'zero' ? ZERO_LIGHTNESS : RANK_LIGHTNESS[Math.min(bar.selectedRank ?? 0, RANK_LIGHTNESS.length - 1)]
+  const applySelection = (key: string) => {
+    setSelectedKey(key)
     const preset = HUE_PRESETS.find(item => item.name === key)
     onChangeColor(0, hslToHex(preset?.hue ?? 0, preset ? SATURATION : 0, lightness), preset ? preset.colorLabel : GRAY_SWATCH.colorLabel)
   }
@@ -239,8 +236,7 @@ export default function TreemapColorThresholdEditorPanel({
   return (
     <div className="color-editor-steps mt-4 flex flex-col gap-4 text-sm text-white">
       <div>
-        <div className="mb-1 flex items-center justify-between">
-          <p className="color-editor-step text-[13px] text-gray-300">등락률</p>
+        <div className="mb-1 flex items-center justify-end">
           {/* 어느 쪽 구간의 색을 고칠지 고른다 — 막대의 값은 같고 색만 상승(빨강 계열)·하락(파랑 계열)으로 나뉜다. */}
           <div role="group" aria-label="색을 고칠 쪽" className="flex gap-1">
             {([['up', '상승'], ['down', '하락']] as const).map(([key, label]) => (
@@ -278,31 +274,14 @@ export default function TreemapColorThresholdEditorPanel({
                 type="button"
                 aria-label={swatch.label}
                 data-hint={swatch.label}
-                aria-pressed={selection.key === swatch.key}
-                onClick={() => applySelection(swatch.key, selection.lightness)}
-                className={`h-6 w-6 shrink-0 rounded-full border-2 p-0 ${selection.key === swatch.key ? 'border-white ring-1 ring-white/40' : 'border-transparent hover:border-white/60'}`}
+                aria-pressed={selectedKey === swatch.key}
+                onClick={() => applySelection(swatch.key)}
+                className={`h-6 w-6 shrink-0 rounded-full border-2 p-0 ${selectedKey === swatch.key ? 'border-white ring-1 ring-white/40' : 'border-transparent hover:border-white/60'}`}
                 style={{ backgroundColor: swatch.color }}
               />
             </span>
           ))}
         </div>
-      </div>
-
-      <div>
-        <p className="color-editor-step mb-2 text-[13px] text-gray-300">명도</p>
-        <input
-          type="range"
-          min={MIN_LIGHTNESS}
-          max={MAX_LIGHTNESS}
-          step={1}
-          value={selection.lightness}
-          aria-label="명도"
-          onChange={e => applySelection(selection.key, Number(e.target.value))}
-          style={{
-            background: `linear-gradient(to right, hsl(${hue} ${saturation}% ${MIN_LIGHTNESS}%), hsl(${hue} ${saturation}% 50%), hsl(${hue} ${saturation}% ${MAX_LIGHTNESS}%))`,
-          }}
-          className="h-2 w-full cursor-pointer appearance-none rounded-full border border-gray-600 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-zinc-200 [&::-moz-range-thumb]:bg-zinc-800 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-zinc-200 [&::-webkit-slider-thumb]:bg-zinc-800"
-        />
       </div>
 
       {errorMessage && (
