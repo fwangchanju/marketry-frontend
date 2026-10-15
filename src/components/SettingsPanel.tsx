@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import type { DepthMetric } from '@/hooks/useGlobalSettings'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import type { StockChangeFilter, SectorChangeFilter } from '@/hooks/useFilteredTreemap'
-import type { ColorScaleConfig, LegendSwatch } from '@/utils/treemapColorScale'
+import type { ColorScaleConfig } from '@/utils/treemapColorScale'
 import TreemapColorThresholdEditorPanel, { type ColorThresholdEditorProps } from '@/components/TreemapColorThresholdEditorPanel'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import { HistoryIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
@@ -1871,10 +1871,8 @@ export function SettingsColorSection({
   colorScaleDraft,
   colorCustomOn,
   onChangeColorCustomOn,
-  onSelectColorSwatch,
   onResetColorScale,
   isResettingColorScale,
-  legendSwatches,
   colorEditorProps,
 }: {
   isCustom: boolean
@@ -1886,13 +1884,8 @@ export function SettingsColorSection({
   // 껐다 켜도 draft에 저장해둔 값은 건드리지 않는다.
   colorCustomOn: boolean
   onChangeColorCustomOn: (on: boolean) => void
-  // 범례 색상칸의 수정/삭제 메뉴를 제공하고, 편집기는 바로 아래에 표시한다.
-  onSelectColorSwatch: (percent: number, color: string) => void
   onResetColorScale: () => void
   isResettingColorScale: boolean
-  // 지도 상단 바에 있던 범례를 이 섹션으로 옮겨왔다. 평소에는 박스와 같은 resolver 결과를 쓰고,
-  // 편집 중 새로 빈 부호의 fallback 칸만 잠시 숨긴다(useGlobalSettings에서 계산).
-  legendSwatches: LegendSwatch[]
   colorEditorProps?: ColorThresholdEditorProps | null
 }) {
   // 색상 설정은 비로그인에게도 보인다 — 기본 색상(공개 /map/scale)으로 시작해서 바꿀 수 있고, 비로그인의
@@ -1906,9 +1899,6 @@ export function SettingsColorSection({
     return () => window.clearTimeout(timer)
   }, [colorOffNoticeVisible])
   if (colorScaleDraft === null) return null
-
-  // 편집 중인 구간의 범례 칸을 강조해서, 아래 편집 영역이 어느 칸의 것인지 바로 보이게 한다.
-  const editingPercent = colorEditorProps?.thresholds[0]?.thresholdPercent
 
   return (
     <div className="settings-second-color pt-5 text-white">
@@ -1938,41 +1928,22 @@ export function SettingsColorSection({
         </div>
       </div>
       <SettingDescription dimmed={!colorCustomOn}>등락률 구간별 지도 색상</SettingDescription>
-      <div className="relative mt-[18px]">
-      <div className={`flex flex-col gap-1 text-sm ${colorCustomOn ? '' : 'pointer-events-none opacity-40'}`}>
-        {/* 저장된 색상은 바로 편집하고, 기본 색상은 같은 위치에 새 설정을 만들어 편집한다. */}
-        <div className="grid w-full gap-0.5" style={{ gridTemplateColumns: `repeat(${legendSwatches.length}, minmax(0, 1fr))` }}>
-          {legendSwatches.map(({ label, color }) => {
-            const percent = Number.parseFloat(label)
-            return (
-              <button
-                key={label}
-                type="button"
-                aria-label={`${label} 색상 수정`}
-                onClick={() => onSelectColorSwatch(percent, color)}
-                style={{ backgroundColor: color }}
-                className={`flex h-6 w-full min-w-0 items-center justify-center border p-0 text-white ${percent === editingPercent ? 'border-white ring-1 ring-white/40' : 'border-transparent'}`}
-              >
-                <span className={`font-bold leading-none whitespace-nowrap ${legendSwatches.length > 7 ? 'text-[11px]' : 'text-xs'}`}>{label}</span>
-              </button>
-            )
-          })}
-        </div>
+      {/* 맨 위 9칸 색상바는 9칸이 설정창 폭에 들어가지 않아 지웠다(칸 선택은 아래 막대의 손잡이·0% 표식·상승/하락 선택으로 한다). 지도 하단 범례 바는 그대로다. */}
+      <div className="relative">
+        {colorEditorProps && (
+          <div className={colorCustomOn ? '' : 'opacity-40'} inert={!colorCustomOn}>
+            <TreemapColorThresholdEditorPanel key={colorEditorProps.sessionKey} {...colorEditorProps} />
+          </div>
+        )}
+        {!colorCustomOn && colorOffNoticeVisible && (
+          <span
+            role="status"
+            className={`pointer-events-none absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}
+          >
+            기본 색상이 적용됩니다.
+          </span>
+        )}
       </div>
-      {!colorCustomOn && colorOffNoticeVisible && (
-        <span
-          role="status"
-          className={`pointer-events-none absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}
-        >
-          기본 색상이 적용됩니다.
-        </span>
-      )}
-      </div>
-      {colorEditorProps && (
-        <div className={colorCustomOn ? '' : 'opacity-40'} inert={!colorCustomOn}>
-          <TreemapColorThresholdEditorPanel key={colorEditorProps.sessionKey} {...colorEditorProps} />
-        </div>
-      )}
     </div>
   )
 }

@@ -600,11 +600,17 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     if (selectedIndex === target.index) selectedColorPercentRef.current = percent
     else if (selectedIndex === mirrorIndex) selectedColorPercentRef.current = -percent
   }
-  // 등락률 막대의 손잡이를 눌러 그 순서의 구간(상승 쪽)을 편집 대상으로 고른다 — 범례 칸을 누르는 것과 같다(적용하지 않은 수정은 되돌린다).
-  const handleSelectColorRank = (rank: number) => {
+  // 등락률 막대에서 손잡이(그 순서의 구간)나 0% 표식을 눌러 편집 대상을 고른다 — 이전의 범례 칸을 누르는 것과 같다(적용하지 않은 수정은 되돌린다).
+  // side는 상승/하락 중 어느 쪽 구간의 색을 편집할지 정한다. 막대의 값은 상승 기준이고 하락은 같은 값의 거울이다.
+  const handleSelectColorRank = (rank: number, side: 'up' | 'down') => {
     if (!colorScaleDraft) return
-    const row = sortedSignRows(colorScaleDraft.thresholds, true)[rank]
+    const row = sortedSignRows(colorScaleDraft.thresholds, side === 'up')[rank]
     if (row) handleSelectColorSwatch(row.threshold.thresholdPercent, row.threshold.color)
+  }
+  const handleSelectColorZero = () => {
+    if (!colorScaleDraft) return
+    const zero = colorScaleDraft.thresholds.find(threshold => threshold.thresholdPercent === 0)
+    handleSelectColorSwatch(0, zero?.color ?? DEFAULT_ZERO_COLOR)
   }
   const handleChangeColorEditColor = (rowIndex: number, color: string, colorLabel: string | null) => {
     const targetIndex = colorEditIndices[rowIndex]
@@ -852,12 +858,16 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   }
 
   const barPositiveRows = colorScaleDraft ? sortedSignRows(colorScaleDraft.thresholds, true) : []
-  const selectedBarRank = (() => {
+  const barNegativeRows = colorScaleDraft ? sortedSignRows(colorScaleDraft.thresholds, false) : []
+  // 편집 중인 칸이 상승/하락/0% 중 어디인지와, 상승·하락 구간 중 몇 번째인지(0%면 null).
+  const selectedBar = (() => {
     const selectedIndex = colorEditIndices[0]
     const selectedThreshold = colorScaleDraft?.thresholds[selectedIndex]
-    if (!colorScaleDraft || !selectedThreshold || selectedThreshold.thresholdPercent === 0) return null
-    const rank = sortedSignRows(colorScaleDraft.thresholds, selectedThreshold.thresholdPercent > 0).findIndex(row => row.index === selectedIndex)
-    return rank < 0 ? null : rank
+    if (!colorScaleDraft || !selectedThreshold) return { side: 'zero' as const, rank: null }
+    if (selectedThreshold.thresholdPercent === 0) return { side: 'zero' as const, rank: null }
+    const up = selectedThreshold.thresholdPercent > 0
+    const rank = (up ? barPositiveRows : barNegativeRows).findIndex(row => row.index === selectedIndex)
+    return { side: up ? ('up' as const) : ('down' as const), rank: rank < 0 ? null : rank }
   })()
   // 편집한 칸(첫 행)이 처음 값과 다르거나, 함께 바뀐 거울 구간이 처음과 다르면 "적용하지 않은 수정"이 있는 것이다.
   const snapshotThresholds = colorEditSnapshotRef.current?.thresholds
@@ -878,11 +888,14 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
           thresholds: colorEditThresholds,
           bar: {
             positive: barPositiveRows.map(row => ({ percent: row.threshold.thresholdPercent, color: row.threshold.color })),
-            selectedRank: selectedBarRank,
+            negative: barNegativeRows.map(row => ({ percent: -row.threshold.thresholdPercent, color: row.threshold.color })),
+            side: selectedBar.side,
+            selectedRank: selectedBar.rank,
             zeroColor: colorScaleDraft?.thresholds.find(threshold => threshold.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR,
           },
           onChangeRankPercent: handleChangeColorEditRankPercent,
           onSelectRank: handleSelectColorRank,
+          onSelectZero: handleSelectColorZero,
           onChangeColor: handleChangeColorEditColor,
           onApply: handleApplyColorEdit,
           onCancel: handleCancelColorEdit,

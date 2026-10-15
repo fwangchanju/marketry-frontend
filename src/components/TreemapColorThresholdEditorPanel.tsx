@@ -38,24 +38,33 @@ function inferSelection(hex: string): { key: string; lightness: number } {
   return { key: nearest.name, lightness }
 }
 
+type BarSide = 'up' | 'down' | 'zero'
+
 interface ThresholdBarProps {
-  // 상승 구간의 경계(작은 값부터)와 구간 색 — 막대의 손잡이 하나가 구간 하나다.
+  // 상승·하락 구간의 경계와 색(작은 값부터, 하락은 절댓값) — 막대의 손잡이 하나가 구간 하나다. 하락 값은 상승 값의 거울이다.
   positive: { percent: number; color: string }[]
-  // 편집 중인 칸이 몇 번째 구간인지(하락 칸이면 같은 순서의 상승 손잡이). 0% 칸이면 null이다.
+  negative: { percent: number; color: string }[]
+  // 편집 중인 칸이 상승/하락/0% 중 어디인지와 몇 번째 구간인지(0% 칸이면 null).
+  side: BarSide
   selectedRank: number | null
   zeroColor: string
   onChangeRankPercent: (rank: number, percent: number) => void
-  onSelectRank: (rank: number) => void
+  onSelectRank: (rank: number, side: 'up' | 'down') => void
+  onSelectZero: () => void
 }
 
 // 등락률 막대 — 0~30%를 제곱근 눈금으로 그리고 손잡이를 끌어 구간 경계를 정한다(손잡이는 이웃을 넘지 못하고 정수로 움직인다).
-// 하락 구간은 같은 값의 거울로 자동 적용된다. 선택하지 않은 손잡이를 누르면 그 구간을 고르고, 선택한 손잡이는 끌거나 ←→ 키로 1씩 옮긴다.
-function ThresholdBar({ positive, selectedRank, zeroColor, onChangeRankPercent, onSelectRank }: ThresholdBarProps) {
+// 왼쪽 끝의 0% 표식은 움직이지 않고 누르면 0% 칸의 색을 고른다. 하락 구간은 같은 값의 거울로 자동 적용된다.
+// 선택하지 않은 손잡이를 누르면 그 구간을 고르고, 선택한 손잡이는 끌거나 ←→ 키로 1씩 옮긴다.
+function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onChangeRankPercent, onSelectRank, onSelectZero }: ThresholdBarProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef(false)
-  const locked = selectedRank === null
-  const lastColor = positive.at(-1)?.color ?? zeroColor
-  const gradient = `linear-gradient(90deg, ${[`${zeroColor} 0%`, ...positive.map(item => `${item.color} ${(percentToPosition(item.percent) * 100).toFixed(2)}%`), `${lastColor} 100%`].join(', ')})`
+  const zeroSelected = side === 'zero'
+  // 막대 색은 고른 쪽(상승/하락)의 구간 색을 이어서 보여 준다.
+  const colored = side === 'down' ? negative : positive
+  const lastColor = colored.at(-1)?.color ?? zeroColor
+  const gradient = `linear-gradient(90deg, ${[`${zeroColor} 0%`, ...colored.map((item, rank) => `${item.color} ${(percentToPosition(positive[rank]?.percent ?? item.percent) * 100).toFixed(2)}%`), `${lastColor} 100%`].join(', ')})`
+  const sign = side === 'down' ? '-' : '+'
 
   const percentAt = (clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect()
@@ -68,13 +77,18 @@ function ThresholdBar({ positive, selectedRank, zeroColor, onChangeRankPercent, 
   }
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    const handle = (event.target as HTMLElement).closest<HTMLElement>('[data-rank]')
-    if (handle && Number(handle.dataset.rank) !== selectedRank) {
-      // 다른 손잡이를 누르면 그 구간을 고른다(끌기는 고른 다음부터 시작한다).
-      onSelectRank(Number(handle.dataset.rank))
+    const target = event.target as HTMLElement
+    if (target.closest('[data-zero]')) {
+      if (!zeroSelected) onSelectZero()
       return
     }
-    if (locked) return
+    const handle = target.closest<HTMLElement>('[data-rank]')
+    if (handle && (zeroSelected || Number(handle.dataset.rank) !== selectedRank)) {
+      // 다른 손잡이를 누르면 그 구간을 고른다(끌기는 고른 다음부터 시작한다). 0% 칸에서는 상승 쪽으로 고른다.
+      onSelectRank(Number(handle.dataset.rank), side === 'down' ? 'down' : 'up')
+      return
+    }
+    if (zeroSelected) return
     draggingRef.current = true
     event.currentTarget.setPointerCapture(event.pointerId)
     moveTo(event.clientX)
@@ -96,58 +110,74 @@ function ThresholdBar({ positive, selectedRank, zeroColor, onChangeRankPercent, 
     onChangeRankPercent(rank, target)
   }
   const edgeAligned = (position: number) => Math.min(Math.max(position, 0.06), 0.94) * 100
+  const badgeClass = 'absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1.5 text-xs font-bold leading-[18px] text-black'
 
   return (
     <>
+      {/* 양 끝 손잡이·표식이 바깥으로 나가지 않도록 막대 양옆에 10px 여백을 둔다. */}
       <div
-        ref={trackRef}
-        className={`relative h-[62px] touch-none select-none ${locked ? 'opacity-50' : ''}`}
+        className="relative h-[62px] touch-none select-none px-2.5"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
       >
-        <div className="absolute inset-x-0 top-[26px] h-2.5 rounded-full border border-white/25" style={{ background: gradient }} />
-        {positive.map((item, rank) => {
-          const selected = rank === selectedRank
-          const left = `${percentToPosition(item.percent) * 100}%`
-          return (
-            <div key={rank}>
-              {selected && (
-                <span
-                  className="absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1.5 text-xs font-bold leading-[18px] text-black"
-                  style={{ left: `${edgeAligned(percentToPosition(item.percent))}%` }}
-                >
-                  +{item.percent}%
-                </span>
-              )}
-              <div
-                data-rank={rank}
-                role="slider"
-                tabIndex={selected ? 0 : -1}
-                aria-label={`+${item.percent}% 구간 경계`}
-                aria-valuemin={BAR_MIN_PERCENT}
-                aria-valuemax={BAR_MAX_PERCENT}
-                aria-valuenow={item.percent}
-                onKeyDown={event => handleKeyDown(event, rank)}
-                className={`absolute top-[21px] h-5 w-5 -translate-x-1/2 cursor-pointer rounded-full border-2 bg-white shadow ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-gray-500 hover:border-gray-300'}`}
-                style={{ left }}
-              />
-            </div>
-          )
-        })}
-        {BAR_TICKS.map((tick, index) => (
-          <span
-            key={tick}
-            className={`pointer-events-none absolute top-[44px] text-[10px] text-gray-500 ${index === 0 ? '' : index === BAR_TICKS.length - 1 ? '-translate-x-full' : '-translate-x-1/2'}`}
-            style={{ left: `${percentToPosition(tick) * 100}%` }}
-          >
-            {tick}%
-          </span>
-        ))}
+        <div ref={trackRef} className="relative h-full">
+          <div className="absolute inset-x-0 top-[26px] h-2.5 rounded-full border border-white/25" style={{ background: gradient }} />
+          {zeroSelected && <span className={badgeClass} style={{ left: '0%' }}>0%</span>}
+          <div
+            data-zero
+            role="img"
+            aria-label="0% 고정"
+            data-hint="0% 고정 — 색만 바꿀 수 있습니다"
+            className={`absolute left-0 top-[23px] box-border h-4 w-4 -translate-x-1/2 cursor-pointer rounded-full border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
+            style={{ backgroundColor: zeroColor }}
+          />
+          <div className={zeroSelected ? 'opacity-60' : ''}>
+            {positive.map((item, rank) => {
+              const selected = !zeroSelected && rank === selectedRank
+              const left = `${percentToPosition(item.percent) * 100}%`
+              return (
+                <div key={rank}>
+                  {selected && (
+                    <span className={badgeClass} style={{ left: `${edgeAligned(percentToPosition(item.percent))}%` }}>
+                      {sign}{item.percent}%
+                    </span>
+                  )}
+                  <div
+                    data-rank={rank}
+                    role="slider"
+                    tabIndex={selected ? 0 : -1}
+                    aria-label={`${sign}${item.percent}% 구간 경계`}
+                    aria-valuemin={BAR_MIN_PERCENT}
+                    aria-valuemax={BAR_MAX_PERCENT}
+                    aria-valuenow={item.percent}
+                    onKeyDown={event => handleKeyDown(event, rank)}
+                    className={`absolute top-[23px] box-border h-4 w-4 -translate-x-1/2 cursor-pointer rounded-full border bg-zinc-800 ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
+                    style={{ left }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+          {BAR_TICKS.map(tick => {
+            // 다른 슬라이더 아래 눈금 글자와 같은 스타일 — 평소 회색 13px, 고른 값과 같은 눈금은 흰색 굵은 글씨다.
+            const highlighted = zeroSelected ? tick === 0 : tick === positive[selectedRank ?? -1]?.percent
+            return (
+              <span
+                key={tick}
+                className={`pointer-events-none absolute top-[42px] -translate-x-1/2 whitespace-nowrap text-[13px]/4 transition-colors duration-300 ${highlighted ? 'font-medium text-white' : 'text-gray-400'}`}
+                style={{ left: `${percentToPosition(tick) * 100}%` }}
+              >
+                {tick}%
+              </span>
+            )
+          })}
+        </div>
       </div>
-      <p className="mt-0.5 text-[11px] leading-snug text-gray-400">
-        {locked ? '0% 구간은 색만 바꿀 수 있습니다.' : `하락도 같은 값으로 자동 적용 (${positive.map(item => `-${item.percent}%`).join(' / ')})`}
+      {/* 한 줄로 짧게 — 두 줄로 넘어가면 아래 항목들이 밀린다. */}
+      <p className="mt-0.5 whitespace-nowrap text-[11px] leading-snug text-gray-400">
+        {zeroSelected ? '0%는 고정, 색만 바꿀 수 있습니다.' : '하락률은 대칭값으로 자동 적용'}
       </p>
     </>
   )
@@ -161,9 +191,16 @@ export interface ColorThresholdEditorProps {
   // 이번 세션에서 편집 중인 threshold들 — 첫 행이 지금 고른 칸이고(색 편집 대상), 나머지는 막대로 함께 바뀐 거울 구간이다.
   thresholds: ColorScaleThreshold[]
   // 등락률 막대 — 상승 구간의 경계(작은 값부터)와 고른 칸의 순서.
-  bar: { positive: { percent: number; color: string }[]; selectedRank: number | null; zeroColor: string }
+  bar: {
+    positive: { percent: number; color: string }[]
+    negative: { percent: number; color: string }[]
+    side: 'up' | 'down' | 'zero'
+    selectedRank: number | null
+    zeroColor: string
+  }
   onChangeRankPercent: (rank: number, percent: number) => void
-  onSelectRank: (rank: number) => void
+  onSelectRank: (rank: number, side: 'up' | 'down') => void
+  onSelectZero: () => void
   onChangeColor: (rowIndex: number, color: string, colorLabel: string | null) => void
   onApply: () => void
   onCancel: () => void
@@ -178,6 +215,7 @@ export default function TreemapColorThresholdEditorPanel({
   bar,
   onChangeRankPercent,
   onSelectRank,
+  onSelectZero,
   onChangeColor,
   onApply,
   onCancel,
@@ -205,13 +243,33 @@ export default function TreemapColorThresholdEditorPanel({
   return (
     <div className="color-editor-steps mt-4 flex flex-col gap-4 text-sm text-white">
       <div>
-        <p className="color-editor-step mb-1 text-[13px] text-gray-300">등락률</p>
+        <div className="mb-1 flex items-center justify-between">
+          <p className="color-editor-step text-[13px] text-gray-300">등락률</p>
+          {/* 어느 쪽 구간의 색을 고칠지 고른다 — 막대의 값은 같고 색만 상승(빨강 계열)·하락(파랑 계열)으로 나뉜다. */}
+          <div role="group" aria-label="색을 고칠 쪽" className="flex gap-1">
+            {([['up', '상승'], ['down', '하락']] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={bar.side === key}
+                onClick={() => { if (bar.side !== key) onSelectRank(bar.selectedRank ?? 0, key) }}
+                // 설정창의 다른 선택 버튼(종목 등락 방향 등)과 같은 색 — 고른 쪽은 슬라이더 선과 같은 밝은 회색에 검은 글자, 안 고른 쪽은 어두운 칩 색에 밝은 글자다.
+                className={`h-5 rounded-[5px] border-0 px-2.5 text-[11px] font-medium transition-colors ${bar.side === key ? 'bg-[var(--accent)] text-zinc-900' : 'bg-[#4b4b50] text-zinc-200 hover:text-white'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         <ThresholdBar
           positive={bar.positive}
+          negative={bar.negative}
+          side={bar.side}
           selectedRank={bar.selectedRank}
           zeroColor={bar.zeroColor}
           onChangeRankPercent={onChangeRankPercent}
           onSelectRank={onSelectRank}
+          onSelectZero={onSelectZero}
         />
       </div>
 
@@ -247,7 +305,7 @@ export default function TreemapColorThresholdEditorPanel({
           style={{
             background: `linear-gradient(to right, hsl(${hue} ${saturation}% ${MIN_LIGHTNESS}%), hsl(${hue} ${saturation}% 50%), hsl(${hue} ${saturation}% ${MAX_LIGHTNESS}%))`,
           }}
-          className="h-2 w-full cursor-pointer appearance-none rounded-full border border-gray-600 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-zinc-900 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-zinc-900"
+          className="h-2 w-full cursor-pointer appearance-none rounded-full border border-gray-600 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-zinc-200 [&::-moz-range-thumb]:bg-zinc-800 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-zinc-200 [&::-webkit-slider-thumb]:bg-zinc-800"
         />
       </div>
 
