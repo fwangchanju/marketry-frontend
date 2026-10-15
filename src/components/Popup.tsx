@@ -171,7 +171,7 @@ function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
       <div
         ref={elRef}
         data-treemap-popup
-        className={`invisible fixed z-[9999] w-max break-words border border-[#7a6d55] px-2 py-1 text-left text-base text-black shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        className={`invisible fixed z-[9999] w-max select-none break-words border border-[#7a6d55] px-2 py-1 text-left text-base text-black shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
         style={{ maxWidth, backgroundColor: POPUP_BACKGROUND }}
       >
         <div className="flex items-center justify-between gap-3 font-bold">
