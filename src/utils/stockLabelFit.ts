@@ -81,9 +81,18 @@ function groupSplitPositions(chars: string[]): number[] {
   return positions
 }
 
+// 이름 뒤에 붙는 우선주·지주사 접미어 앞에서 줄을 나눈다(삼성전자/우, 현대차/2우B, 신한/지주, 한화/홀딩스). 앞부분이 2글자 이상일 때만 접미어로 본다.
+function suffixSplitPosition(chars: string[]): number | null {
+  const name = chars.join('')
+  const match = name.match(/(홀딩스|홀딩|지주회사|지주|\d?우[A-C]?)$/)
+  if (!match) return null
+  const position = Array.from(name.slice(0, name.length - match[0].length)).length
+  return position >= 2 ? position : null
+}
+
 // 두 줄로 나눌 자리를 고른다. 순서는 (1) 공백 (2) 영문·숫자·기호와 한글의 경계(LG/이노텍, BNK/금융)와 그룹명 뒤(한화/비전) 중 균형이 좋은 자리 (3) 긴 줄이 가장 짧아지는 자리.
 // 폭이 같으면 윗줄이 더 긴 쪽을 고른다(테크/윙). 영문·숫자·기호 한 덩어리(E1, OCI, F&F) 안에서는 줄을 나누지 않는다. 앞 단계 자리가 폭에 안 들어가면 다음 단계로 넘어간다.
-function splitTwoLines(name: string, size: number, avail: number, semanticOnly: boolean): [string, string] | null {
+function splitTwoLines(name: string, size: number, avail: number, mode: 'suffix' | 'semantic' | 'any'): [string, string] | null {
   const chars = Array.from(name)
   const bestSplit = (positions: number[]): { lines: [string, string]; max: number } | null => {
     let best: { lines: [string, string]; max: number } | null = null
@@ -101,7 +110,10 @@ function splitTwoLines(name: string, size: number, avail: number, semanticOnly: 
   const atSpaces = all.filter(i => chars[i] === ' ' || chars[i - 1] === ' ')
   const atScriptEdge = all.filter(i => chars[i] !== ' ' && chars[i - 1] !== ' ' && isWord(chars[i - 1]) !== isWord(chars[i]))
   const atMeaning = Array.from(new Set([...atScriptEdge, ...groupSplitPositions(chars).filter(i => all.includes(i))])).sort((a, b) => a - b)
-  for (const positions of semanticOnly ? [atSpaces, atMeaning] : [atSpaces, atMeaning, all]) {
+  const suffixAt = suffixSplitPosition(chars)
+  const atSuffix = suffixAt !== null && all.includes(suffixAt) ? [suffixAt] : []
+  const stages = mode === 'suffix' ? [atSpaces, atSuffix] : mode === 'semantic' ? [atSpaces, atSuffix, atMeaning] : [atSpaces, atSuffix, atMeaning, all]
+  for (const positions of stages) {
     const found = bestSplit(positions)
     if (found && found.max <= avail) return found.lines
   }
@@ -150,9 +162,10 @@ export function fitStockLabel({
   }
   const none: StockLabelFit = { nameLines: null, nameSize: baseFont, rateSize: null }
   if (wantName) {
-    // 뜻이 갈리는 자리(공백, 영문·한글 경계)가 있는 이름은 글자를 줄여서라도 그 자리에서 나눈다. 그래도 안 되면 아무 자리에서나 나눈다.
-    const passes = hasSemanticSplit(name) ? [true, false] : [false]
-    for (const semanticOnly of passes) {
+    // 접미어(우선주 우·지주·홀딩스)가 있으면 그 앞에서, 뜻이 갈리는 자리(공백, 영문·한글 경계, 그룹명 뒤)가 있으면 그 자리에서 글자를 줄여서라도 나눈다. 그래도 안 되면 아무 자리에서나 나눈다.
+    const chars = Array.from(name)
+    const passes: Array<'suffix' | 'semantic' | 'any'> = suffixSplitPosition(chars) !== null ? ['suffix', 'semantic', 'any'] : hasSemanticSplit(name) ? ['semantic', 'any'] : ['any']
+    for (const mode of passes) {
       for (let size = baseFont; size >= MIN_FONT; size -= 0.5) {
         const rate = wantRate ? rateSizeFor(size) : null
         const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
@@ -160,7 +173,7 @@ export function fitStockLabel({
           return { nameLines: [name], nameSize: size, rateSize: rate }
         }
         if (2 * LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight) {
-          const lines = splitTwoLines(name, size, nameAvail, semanticOnly)
+          const lines = splitTwoLines(name, size, nameAvail, mode)
           if (lines) return { nameLines: lines, nameSize: size, rateSize: rate }
         }
       }
