@@ -325,7 +325,7 @@ export default function TreemapColorThresholdEditorPanel({
                 style={{ backgroundColor: swatch.color }}
               >
                 {selectedKey === swatch.key && !blocked && (
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(swatch.color).l > 45 ? '#18181b' : '#ffffff'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(swatch.color).l > 55 ? '#18181b' : '#ffffff'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12.5l4.5 4.5L19 7" />
                   </svg>
                 )}
