@@ -1,9 +1,10 @@
-import type { CSSProperties } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import type { PopupContent } from './Popup'
 import type { TreemapItem } from '@/types/api'
 import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
 import { resolveTreemapColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
+import { LABEL_LINE_HEIGHT, fitStockLabel, useFontsVersion } from '@/utils/stockLabelFit'
 
 interface Props {
   item: TreemapItem
@@ -36,10 +37,6 @@ interface Props {
   ancestorPath: string
 }
 
-// 글자 줄 높이 배율(leading-tight)과 등락률 글자가 종목명보다 작은 비율 — 아래 높이 계산과 화면 모양이 같은 값을 쓴다.
-const LABEL_LINE_HEIGHT = 1.25
-const RATE_FONT_SCALE = 0.85
-
 function fontSizePx(width: number, height: number): number {
   return Math.max(12, Math.min(22, Math.min(width, height) / 5))
 }
@@ -62,17 +59,20 @@ export default function StockBox({
   ancestorPath,
 }: Props) {
   const fontSize = fontSizePx(width, height)
-  // 박스가 납작하면 글자가 위아래로 잘려 보이므로 높이에 들어가는 만큼만 보여준다 — 두 줄이 들어가면 둘 다, 한 줄만 들어가면 종목명(종목명 없이 등락률만
-  // 고른 경우는 등락률), 한 줄도 안 들어가면 아무것도 그리지 않는다. 줄 높이는 leading-tight(1.25)이고 테두리 위아래 1px씩을 뺀다.
-  const innerHeight = height - 2
-  const nameLineHeight = fontSize * LABEL_LINE_HEIGHT
-  const rateLineHeight = fontSize * RATE_FONT_SCALE * LABEL_LINE_HEIGHT
+  // 글자는 박스 크기에 맞춘다(utils/stockLabelFit.ts) — 종목명은 한 줄에 들어가면 그대로, 안 들어가면 두 줄로 나누고, 그래도 안 되면 글자를 9px까지 줄이고,
+  // 그래도 안 되면 종목명을 감추고 등락률만 보여 준다. 말줄임표나 잘린 글자는 만들지 않는다. 종목명만 고른 경우에 이름이 안 들어가면 아무것도 그리지 않는다.
   const wantName = stockLabelMode !== 'rateOnly'
   const wantRate = stockLabelMode !== 'nameOnly'
-  const fitsBoth = nameLineHeight + rateLineHeight <= innerHeight
-  const showName = wantName && (nameLineHeight <= innerHeight)
-  const showRate = wantRate && (wantName ? fitsBoth : rateLineHeight <= innerHeight)
-  const showLabel = stockLabelMode !== 'off' && areaPercent >= labelMinAreaPercent && (showName || showRate)
+  const fontsVersion = useFontsVersion()
+  const name = item.alias ?? item.stockName
+  const rateText = toPctSigned(item.changeRate, decimalPlaces)
+  const fit = useMemo(
+    () => fitStockLabel({ name, rateText, width, height, baseFont: fontSize, wantName, wantRate }),
+    // fontsVersion은 글꼴이 늦게 로드돼 글자 폭이 달라졌을 때 다시 계산하려는 값이다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [name, rateText, width, height, fontSize, wantName, wantRate, fontsVersion],
+  )
+  const showLabel = stockLabelMode !== 'off' && areaPercent >= labelMinAreaPercent && (fit.nameLines !== null || fit.rateSize !== null)
   const backgroundColor = resolveTreemapColor(item.changeRate, colorScale)
   const stockKey = `stock:${ancestorPath}\u0000${item.stockCode}`
   // 팝업이 이 종목을 대상으로 떠 있는 동안 hover 모양을 고정해서 보여준다(index.css의 .is-pinned).
@@ -115,14 +115,16 @@ export default function StockBox({
     >
       {showLabel && (
         <>
-          {showName && (
-            <span className="w-full overflow-hidden text-clip whitespace-nowrap px-1 text-center leading-tight" style={{ fontSize }}>
-              {item.alias ?? item.stockName}
+          {fit.nameLines && (
+            <span className="w-full px-1 text-center" style={{ fontSize: fit.nameSize, lineHeight: LABEL_LINE_HEIGHT }}>
+              {fit.nameLines.map(line => (
+                <span key={line} className="block whitespace-nowrap">{line}</span>
+              ))}
             </span>
           )}
-          {showRate && (
-            <span className="tabular-nums text-center leading-tight" style={{ fontSize: fontSize * RATE_FONT_SCALE }}>
-              {toPctSigned(item.changeRate, decimalPlaces)}
+          {fit.rateSize !== null && (
+            <span className="tabular-nums text-center" style={{ fontSize: fit.rateSize, lineHeight: LABEL_LINE_HEIGHT }}>
+              {rateText}
             </span>
           )}
         </>
