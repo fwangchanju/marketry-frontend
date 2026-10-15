@@ -1,9 +1,9 @@
 // 종목 박스 안 글자를 박스 크기에 맞춘다. 말줄임표나 잘린 글자는 만들지 않는다.
-// 이름은 한 줄에 들어가면 그대로 두고, 안 들어가면 두 줄로 나눠(균형 있게) 보여 준다. 두 줄로도 안 들어가면 글자를 MIN_FONT(8px)까지 줄이고,
+// 이름은 한 줄에 들어가면 그대로 두고, 안 들어가면 두 줄로 나눠(균형 있게) 보여 준다. 두 줄로도 안 들어가면 글자를 MIN_FONT(9px)까지 줄이고,
 // 그래도 안 되면 이름을 감추고 등락률만 보여 준다. 등락률도 폭에 안 들어가면 MIN_FONT까지 줄이고 그래도 안 되면 아무것도 그리지 않는다.
 import { useSyncExternalStore } from 'react'
 
-export const MIN_FONT = 8
+export const MIN_FONT = 9
 export const LABEL_LINE_HEIGHT = 1.25
 export const RATE_FONT_SCALE = 0.85
 // 이름 양옆 여백(px-1 = 4px씩)과 테두리(1px씩), 등락률 쪽은 테두리와 여유 1px씩.
