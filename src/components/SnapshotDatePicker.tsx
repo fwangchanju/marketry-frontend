@@ -498,7 +498,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-gray-500 pb-2 text-[13px]">
             <span>
               {onSelectRange && (
-                <span role="radiogroup" aria-label="선택 방식" className="inline-flex rounded-lg bg-[var(--panel-gray)] p-0.5">
+                <span role="radiogroup" aria-label="선택 방식" className="inline-flex bg-[var(--panel-gray)] p-0.5">
                   {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
                     <button
                       key={label}

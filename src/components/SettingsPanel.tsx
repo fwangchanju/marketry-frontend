@@ -838,7 +838,7 @@ export function SettingsSectorStockScopeSection({
         <span className="settings-plain-title">집계 대상 종목</span>
       </span>
       <SettingDescription>업종 평균에 넣을 종목</SettingDescription>
-      <div role="radiogroup" aria-label="집계 대상 종목" className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 rounded-lg bg-[var(--accent)] p-[3px]">
+      <div role="radiogroup" aria-label="집계 대상 종목" className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 bg-[var(--accent)] p-[3px]">
         <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === scope)} className="rounded-[5px] bg-zinc-800" />
         {options.map(option => {
           const selected = scope === option.value
@@ -933,7 +933,7 @@ export function SettingsAverageModeSection({
       </div>
       <div className={enabled ? '' : 'opacity-40'}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
-        <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 rounded-lg bg-[var(--accent)] p-[3px]">
+        <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 bg-[var(--accent)] p-[3px]">
           <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] bg-zinc-800" />
           {options.map(option => {
             const selected = avgChangeRateUseSimple === option.value
@@ -1033,7 +1033,7 @@ function SettingsTaxonomySelector({
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
         {TAXONOMY_SELECT_TITLE}
       </p>
-      <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 rounded-lg bg-[var(--accent)] p-[3px]">
+      <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 bg-[var(--accent)] p-[3px]">
         <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] bg-cyan-700" />
         {options.map(option => (
           <button
@@ -1101,7 +1101,7 @@ function SettingsAverageModeSelector({
         <span className="settings-section-num">등락률 평균</span>
         <SettingHelpBubble label="등락률 평균" description={"업종 등락률 계산에 적용할\n평균 방식을 선택합니다."} />
       </p>
-      <div role="radiogroup" aria-label="등락률 평균" className="relative mt-3 grid grid-cols-2 rounded-lg bg-[var(--accent)] p-[3px]">
+      <div role="radiogroup" aria-label="등락률 평균" className="relative mt-3 grid grid-cols-2 bg-[var(--accent)] p-[3px]">
         <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] bg-zinc-800" />
         {options.map(option => (
           <button
@@ -1334,7 +1334,7 @@ export function SettingsSectorLevelSection({
                 />
               </div>
               <SettingDescription dimmed={!depthMetricEnabled}>업종 항목에 표시할 지표</SettingDescription>
-              <div role="radiogroup" aria-label="표시 지표" className={`relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-4 rounded-lg bg-[var(--accent)] p-[3px] ${depthMetricEnabled ? '' : 'opacity-40'}`}>
+              <div role="radiogroup" aria-label="표시 지표" className={`relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-4 bg-[var(--accent)] p-[3px] ${depthMetricEnabled ? '' : 'opacity-40'}`}>
                 <SlidingHighlight count={GROUP_TAB_METRIC_OPTIONS.length} index={GROUP_TAB_METRIC_OPTIONS.findIndex(option => option.key === activeDepthMetric)} className="rounded-[5px] bg-zinc-800" />
                 {GROUP_TAB_METRIC_OPTIONS.map(option => {
                   const selected = activeDepthMetric === option.key
@@ -1484,7 +1484,7 @@ export function SettingsSectorLevelSection({
             <div
               role="radiogroup"
               aria-label="박스 내 표기"
-              className={`relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 rounded-lg bg-[var(--accent)] p-[3px] ${stockLabelEnabled ? '' : 'opacity-40'}`}
+              className={`relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 bg-[var(--accent)] p-[3px] ${stockLabelEnabled ? '' : 'opacity-40'}`}
             >
               <SlidingHighlight count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="rounded-[5px] bg-zinc-800" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
@@ -1607,7 +1607,7 @@ export function SettingsSectorLevelSection({
               <div
                 role="radiogroup"
                 aria-label="종목 정보 여는 방식"
-                className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-2 rounded-lg bg-[var(--accent)] p-[3px]"
+                className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-2 bg-[var(--accent)] p-[3px]"
               >
                 <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[5px] bg-zinc-800" />
                 {[
@@ -1755,7 +1755,7 @@ export function SettingsSectorChangeSection({
         ariaLabel="업종 등락 방향 업종 단계"
         className="mt-2 justify-center"
       />
-      <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative mt-2 grid max-w-[16rem] settings-control-inset grid-cols-3 rounded-lg bg-[var(--accent)] p-[3px]">
+      <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative mt-2 grid max-w-[16rem] settings-control-inset grid-cols-3 bg-[var(--accent)] p-[3px]">
         <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[5px] bg-zinc-800" />
         {DIRECTION_OPTIONS.map(option => (
           <button
@@ -1788,7 +1788,7 @@ export function SettingsStockChangeSection({
         <SettingTitle bookmarkId="stockChange">종목 등락 방향</SettingTitle>
       </p>
       <SettingDescription>상승·하락 종목만 표시</SettingDescription>
-      <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-3 rounded-lg bg-[var(--accent)] p-[3px]">
+      <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-3 bg-[var(--accent)] p-[3px]">
         <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[5px] bg-zinc-800" />
         {DIRECTION_OPTIONS.map(option => (
           <button
