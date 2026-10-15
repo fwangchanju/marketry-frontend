@@ -1934,7 +1934,7 @@ export function SettingsColorSection({
       <div className="relative">
         {colorEditorProps && (
           <div className={colorCustomOn ? '' : 'opacity-40'} inert={!colorCustomOn}>
-            <TreemapColorThresholdEditorPanel key={colorEditorProps.sessionKey} {...colorEditorProps} />
+            <TreemapColorThresholdEditorPanel {...colorEditorProps} />
           </div>
         )}
         {!colorCustomOn && colorOffNoticeVisible && (

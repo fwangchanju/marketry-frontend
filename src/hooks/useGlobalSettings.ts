@@ -494,8 +494,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // draft가 어느 로그인 상태의 값으로 시드됐는지 — 로그인/로그아웃으로 바뀌면 새 서버 값으로 다시 시드한다.
   const [colorScaleDraftOwner, setColorScaleDraftOwner] = useState<boolean | null>(null)
   const [colorEditError, setColorEditError] = useState<string | null>(null)
-  // 편집 대상이 바뀔 때마다 올려서 편집 영역의 입력칸/슬라이더 로컬 상태를 새로 시작하게 한다.
-  const [colorEditSessionKey, setColorEditSessionKey] = useState(0)
   // 편집 영역이 항상 열려 있으므로, 적용/취소 뒤에 같은 칸을 다시 편집 대상으로 잡기 위해 기억해 둔다.
   const selectedColorPercentRef = useRef<number | null>(null)
   if (colorScaleServerData && (colorScaleDraft === null || colorScaleDraftOwner !== isLoggedIn)) {
@@ -554,7 +552,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     colorEditSnapshotRef.current = base
     selectedColorPercentRef.current = percent
     setColorEditError(null)
-    setColorEditSessionKey(key => key + 1)
     const existingIndex = colorScaleDraft.thresholds.findIndex(threshold => threshold.thresholdPercent === percent)
     const selectFirst = (index: number) => setColorEditIndices(previous => [index, ...previous.filter(item => item !== index)])
     if (existingIndex >= 0) {
@@ -887,7 +884,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const colorEditorPanelProps =
     colorEditThresholds.length > 0
       ? {
-          sessionKey: colorEditSessionKey,
           hasChanges: colorEditHasChanges,
           thresholds: colorEditThresholds,
           bar: {

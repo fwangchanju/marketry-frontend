@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/treemapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
@@ -60,7 +60,8 @@ interface ThresholdBarProps {
 // 선택하지 않은 손잡이를 누르면 그 구간을 고르고, 선택한 손잡이는 끌거나 ←→ 키로 1씩 옮긴다.
 function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onChangeRankPercent, onSelectRank, onSelectZero }: ThresholdBarProps) {
   const trackRef = useRef<HTMLDivElement>(null)
-  const draggingRef = useRef(false)
+  // 끌고 있는 손잡이의 순서 — 선택하지 않은 손잡이를 눌러도 같은 클릭에서 바로 끌 수 있도록, 고른 칸이 아니라 누른 손잡이를 따라 움직인다.
+  const draggingRankRef = useRef<number | null>(null)
   const zeroSelected = side === 'zero'
   // 막대 색은 고른 쪽(상승/하락)의 구간 색을 이어서 보여 준다.
   const colored = side === 'down' ? negative : positive
@@ -72,10 +73,10 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
     const rect = trackRef.current?.getBoundingClientRect()
     return rect && rect.width > 0 ? positionToPercent((clientX - rect.left) / rect.width) : null
   }
-  const moveTo = (clientX: number) => {
-    if (selectedRank === null) return
+  const moveTo = (clientX: number, rank: number | null) => {
+    if (rank === null) return
     const percent = percentAt(clientX)
-    if (percent !== null) onChangeRankPercent(selectedRank, percent)
+    if (percent !== null) onChangeRankPercent(rank, percent)
   }
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -85,21 +86,25 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
       return
     }
     const handle = target.closest<HTMLElement>('[data-rank]')
-    if (handle && (zeroSelected || Number(handle.dataset.rank) !== selectedRank)) {
-      // 다른 손잡이를 누르면 그 구간을 고른다(끌기는 고른 다음부터 시작한다). 0% 칸에서는 상승 쪽으로 고른다.
-      onSelectRank(Number(handle.dataset.rank), side === 'down' ? 'down' : 'up')
+    if (handle) {
+      // 손잡이를 누르면 그 구간을 고르고(0% 칸에서는 상승 쪽), 같은 클릭에서 바로 끌 수 있다. 누른 자리에서는 움직이지 않고 끌기 시작할 때부터 따라간다.
+      const rank = Number(handle.dataset.rank)
+      if (zeroSelected || rank !== selectedRank) onSelectRank(rank, side === 'down' ? 'down' : 'up')
+      draggingRankRef.current = rank
+      event.currentTarget.setPointerCapture(event.pointerId)
       return
     }
     if (zeroSelected) return
-    draggingRef.current = true
+    // 막대의 빈 곳을 누르면 고른 손잡이가 그 자리로 오고 이어서 끌 수 있다.
+    draggingRankRef.current = selectedRank
     event.currentTarget.setPointerCapture(event.pointerId)
-    moveTo(event.clientX)
+    moveTo(event.clientX, selectedRank)
   }
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (draggingRef.current) moveTo(event.clientX)
+    if (draggingRankRef.current !== null) moveTo(event.clientX, draggingRankRef.current)
   }
   const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    draggingRef.current = false
+    draggingRankRef.current = null
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
   }
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, rank: number) => {
@@ -182,8 +187,6 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
 }
 
 export interface ColorThresholdEditorProps {
-  // 편집 대상 칸이 바뀔 때마다 달라지는 값 — 부모가 key로 써서 입력 상태를 새로 시작하게 한다.
-  sessionKey: number
   // 적용하지 않은 수정이 있을 때만 적용/취소 버튼을 보여준다.
   hasChanges: boolean
   // 이번 세션에서 편집 중인 threshold들 — 첫 행이 지금 고른 칸이고(색 편집 대상), 나머지는 막대로 함께 바뀐 거울 구간이다.
@@ -225,13 +228,11 @@ export default function TreemapColorThresholdEditorPanel({
   hasChanges,
 }: ColorThresholdEditorProps) {
   const threshold = thresholds[0]
-  // 색은 상승/하락 한쪽에 계열 하나를 정한다 — 처음 선택 표시는 그쪽 첫 구간의 색에서 읽는다(0% 칸은 그 칸 색).
-  const [selectedKey, setSelectedKey] = useState(() => {
-    if (bar.side === 'zero') return grayStepKey(nearestGrayStep(bar.zeroColor))
-    const sideColor = bar.side === 'down' ? bar.negative[0]?.color : bar.positive[0]?.color
-    const color = sideColor ?? threshold?.color
-    return color ? inferSelection(color) : GRAY_KEY
-  })
+  // 선택 표시는 편집 중인 쪽의 색에서 바로 읽는다 — 상승/하락은 그쪽 첫 구간 색의 계열, 0% 칸은 가장 가까운 회색 단계.
+  const sideColor = bar.side === 'down' ? bar.negative[0]?.color : bar.positive[0]?.color
+  const selectedKey = bar.side === 'zero'
+    ? grayStepKey(nearestGrayStep(bar.zeroColor))
+    : (sideColor ?? threshold?.color) ? inferSelection((sideColor ?? threshold?.color)!) : GRAY_KEY
   if (!threshold) return null
 
   // 색은 구간(손잡이)마다 고르지 않고 슬라이더 한쪽(상승 또는 하락) 전체에 하나를 정한다 — 구간 순서대로 16·33·46·58 밝기로 칠한다. 0% 칸을 골랐을 때만 그 칸 색을 바꾼다.
@@ -240,7 +241,6 @@ export default function TreemapColorThresholdEditorPanel({
     return hslToHex(preset?.hue ?? 0, preset ? SATURATION : 0, lightness)
   }
   const applySelection = (key: string) => {
-    setSelectedKey(key)
     const preset = HUE_PRESETS.find(item => item.name === key)
     const colorLabel = preset ? preset.colorLabel : GRAY_SWATCH.colorLabel
     if (bar.side === 'zero') {
