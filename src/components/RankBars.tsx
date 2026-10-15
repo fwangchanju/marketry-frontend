@@ -7,7 +7,7 @@ import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig 
 const FONT_HEIGHT_RATIO = 0.38 // 줄 높이에 대한 글자 크기 비율
 const FONT_WIDTH_DIVISOR = 15 // 틀 폭 ÷ 이 값을 넘게 키우지 않는다(글자만 커져 막대 칸이 사라지는 것을 막는다)
 const FONT_MIN = 10
-const FONT_MAX = 20
+const FONT_MAX = 18
 const NAME_WIDTH_EM = 6.6 // 항목명 칸 폭(글자 크기의 배수)
 const VALUE_WIDTH_EM = 4 // 숫자 칸 폭(글자 크기의 배수)
 const BAR_HEIGHT_RATIO = 0.6 // 줄 높이에 대한 막대 높이 비율
