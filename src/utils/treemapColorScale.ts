@@ -86,9 +86,9 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
-// 등락률(절댓값 %) → 색의 명도. 등락률이 클수록 밝아지고, 같은 구간 폭이면 큰 쪽이 더 크게 밝아진다(8%→15%는 +18).
-// 기본 단계 1/3/5/8%의 명도(16/33/46/58)를 그대로 지나가고 그 위는 15%에서 76, 30%에서 80까지 이어진다(흰 글자가 읽히도록 더 올리지 않는다).
-const LIGHTNESS_ANCHORS: [number, number][] = [[0, 8], [1, 16], [3, 33], [5, 46], [8, 58], [15, 76], [30, 80]]
+// 등락률(절댓값 %) → 색의 명도. 등락률이 클수록 밝아진다.
+// 기본 단계 1/3/5/8%의 명도(16/33/46/58)를 그대로 지나가고 그 위는 15%에서 68, 30%에서 70까지 이어진다(76까지 올렸더니 흰 글자가 옅은 배경에 묻혀 68로 낮췄다).
+const LIGHTNESS_ANCHORS: [number, number][] = [[0, 8], [1, 16], [3, 33], [5, 46], [8, 58], [15, 68], [30, 70]]
 export function lightnessForPercent(percent: number): number {
   const abs = Math.abs(percent)
   const last = LIGHTNESS_ANCHORS[LIGHTNESS_ANCHORS.length - 1]
