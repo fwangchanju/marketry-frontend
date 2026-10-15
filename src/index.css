@@ -656,6 +656,21 @@ a { color: var(--accent-light); text-decoration: none; }
     box-shadow: inset 0 0 0 999px rgb(255 255 255 / 35%);
   }
 
+  /* 홈 시장 지도(OverviewMap) 박스 — 지도 페이지의 종목 박스와 같은 마우스 올림 모양(흰 막 35% + 밝은 안쪽 테두리 2px)이다.
+     박스 크기·글자 자리가 흔들리지 않도록 테두리는 border가 아니라 box-shadow로 그린다. 우클릭 팝업이 떠 있는 동안(.is-pinned)에도 같은 모양을 유지한다. */
+  .overview-map-box {
+    transition: box-shadow 0.1s ease-out;
+  }
+
+  .overview-map-box:hover,
+  .overview-map-box:focus-visible,
+  .overview-map-box.is-pinned {
+    transition: none;
+    box-shadow:
+      inset 0 0 0 2px color-mix(in srgb, var(--treemap-base-color) 58%, white),
+      inset 0 0 0 999px rgb(255 255 255 / 35%);
+  }
+
   /* 종목과 같은 이유로(위 .treemap-stock 주석 참고) 헤더도 hover와 "팝업이 뜬 채 고정"을 같은
      정의로 묶는다 — 마우스가 팝업 쪽으로 옮겨가 헤더에서 벗어나도(:hover가 자연히 꺼져도) 섹터가
      계속 hover된 것처럼 보이게 한다. .treemap-sector-box.is-pinned > .treemap-sector-header가
@@ -708,6 +723,7 @@ a { color: var(--accent-light); text-decoration: none; }
 
   @media (prefers-reduced-motion: reduce) {
     .treemap-stock,
+    .overview-map-box,
     .treemap-sector-hover-overlay {
       transition: none;
     }

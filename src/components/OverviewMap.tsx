@@ -1,24 +1,23 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy'
-import { toPctSigned } from '@/utils/format'
+import { toJoEokDecimal, toPctSigned } from '@/utils/format'
 import { resolveTreemapColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
+import { layoutOverviewLabel } from '@/utils/overviewLabel'
+import { useFontsVersion } from '@/utils/stockLabelFit'
+import Popup, { type PopupState } from '@/components/Popup'
 
 export interface OverviewMapItem {
   key: string
   name: string
   // 박스 크기를 정하는 시가총액
   marketValue: number
-  // 박스 색과 글자로 쓰는 업종 등락률(%)
+  // 박스 색과 글자로 쓰는 업종 등락률(%) — 시총 가중 평균이다.
   changeRate: number
-}
-
-// 박스 크기(가로·세로의 기하평균)에 맞춰 글자 크기를 정한다 — 작은 박스는 12px 아래로 내려가지 않고, 큰 박스일수록 커진다(가장 큰 박스는 약 28px).
-function nameFontSize(width: number, height: number, name: string): number {
-  const span = Math.sqrt(width * height)
-  const bySize = Math.round(12 + 16 * Math.sqrt(Math.min(Math.max((span - 70) / 294, 0), 1)))
-  // 좁고 긴 박스에서 이름이 가장자리에 붙지 않게, 이름이 폭에 들어가는 크기를 넘지 않는다(12px 아래로는 내리지 않는다).
-  const byWidth = Math.floor((width - 8) / Math.max(name.length, 1))
-  return Math.max(12, Math.min(bySize, byWidth))
+  // 우클릭 팝업에 쓰는 값(지도 페이지의 업종 팝업과 같다): 동일 가중 평균(%)과 오른·내린·보합 종목 수.
+  simpleAvg?: number | null
+  advancers?: number
+  decliners?: number
+  unchanged?: number
 }
 
 // 홈 화면용 약식 지도 — 종목 없이 업종 하나가 박스 하나다. 박스 안에는 업종명과 등락률만 적는다.
@@ -32,7 +31,53 @@ export default function OverviewMap({
   onSelect?: (name: string) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const fontsVersion = useFontsVersion()
   const [size, setSize] = useState({ width: 0, height: 0 })
+  // 마우스를 올리면 뜨는 업종 팝업 — 지도가 작아서 우클릭 대신 올리는 것만으로 보이게 한다. 지도 페이지의 "마우스 올리면 팝업" 방식과 같이 커서 근처에 놓이고 커서를 따라 움직이며, 박스를 벗어나면 닫힌다.
+  const [popup, setPopup] = useState<PopupState | null>(null)
+
+  useEffect(() => {
+    if (!popup) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest('[data-treemap-popup]')) return
+      setPopup(null)
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setPopup(null)
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [popup])
+
+  const openPopup = (item: OverviewMapItem, target: HTMLElement, pointer: { x: number; y: number }) => {
+    const map = ref.current
+    if (!map) return
+    const rect = target.getBoundingClientRect()
+    const mapRect = map.getBoundingClientRect()
+    const total = (item.advancers ?? 0) + (item.decliners ?? 0) + (item.unchanged ?? 0)
+    setPopup({
+      title: item.name,
+      rows: [
+        `시총 가중: ${toPctSigned(item.changeRate)}`,
+        ...(item.simpleAvg === undefined ? [] : [`동일 가중: ${item.simpleAvg === null ? '-' : toPctSigned(item.simpleAvg)}`]),
+        ...(total > 0 ? [`등락 종목: ▲${item.advancers ?? 0} ▼${item.decliners ?? 0} ■${item.unchanged ?? 0}`] : []),
+        `그룹 시총: ${toJoEokDecimal(item.marketValue / 100_000_000)}`,
+      ],
+      // 팝업은 키가 `sector:`로 시작하면 업종 배지를 붙인다. tooltip이면 마우스 이벤트를 받지 않고 pointer 근처에서 커서를 따라간다.
+      targetKey: `sector:${item.key}`,
+      tooltip: true,
+      pointer,
+      anchorRect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
+      mapBounds: { left: mapRect.left, right: mapRect.right, top: mapRect.top, bottom: mapRect.bottom },
+    })
+  }
 
   useLayoutEffect(() => {
     const element = ref.current
@@ -61,26 +106,35 @@ export default function OverviewMap({
 
   return (
     <div ref={ref} className="relative min-h-0 w-full flex-1">
+      <Popup popup={popup} onExcludeSector={() => undefined} onClose={() => setPopup(null)} />
       {rects.map(({ item, x, y, width, height }) => {
         const background = resolveTreemapColor(item.changeRate, colorScale)
-        const showRate = width >= 44 && height >= 38
-        const nameSize = nameFontSize(width, height, item.name)
-        const boxClassName = 'absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight'
-        const boxStyle = { left: x, top: y, width, height, backgroundColor: background, color: '#ffffff' }
+        const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion)
+        const isPinned = popup?.targetKey === `sector:${item.key}`
+        // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box).
+        const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`
+        const boxStyle = { left: x, top: y, width, height, backgroundColor: background, color: '#ffffff', '--treemap-base-color': background } as React.CSSProperties
+        // 마우스를 올리면 업종 정보 팝업을 열고 박스를 벗어나면 닫는다(이름이 안 들어가 빠진 박스도 여기서 이름과 등락률을 본다).
+        const handlePointerEnter = (event: React.PointerEvent<HTMLElement>) => openPopup(item, event.currentTarget, { x: event.clientX, y: event.clientY })
+        const handlePointerLeave = () => setPopup(previous => (previous?.targetKey === `sector:${item.key}` ? null : previous))
         const content = (
           <>
-            {/* 이름은 줄이거나 숨기지 않고 전부 넣는다 — 박스보다 길면 `…` 없이 박스 가장자리에서 그대로 잘린다. */}
-            <span className="max-w-full overflow-hidden whitespace-nowrap font-medium" style={{ fontSize: nameSize }}>{item.name}</span>
-            {showRate && <span className="tabular-nums" style={{ fontSize: Math.max(12, Math.round(nameSize * 0.7)) }}>{toPctSigned(item.changeRate)}</span>}
+            {/* 한 줄에 안 들어가면 `/`(없으면 공백) 자리에서 두 줄로 나누고, 두 줄로도 안 들어가면 이름과 등락률을 모두 그리지 않는다(utils/overviewLabel.ts). 잘린 글자나 `…`는 만들지 않는다. */}
+            {label.lines.length > 0 && (
+              <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>
+                {label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}
+              </span>
+            )}
+            {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{toPctSigned(item.changeRate)}</span>}
           </>
         )
         // onSelect가 없으면 눌러서 이동하지 않는 그냥 박스다(홈 시장 요약 지도).
         return onSelect ? (
-          <button key={item.key} type="button" aria-label={item.name} onClick={() => onSelect(item.name)} className={`${boxClassName} hover:brightness-125`} style={boxStyle}>
+          <button key={item.key} type="button" aria-label={item.name} onClick={() => onSelect(item.name)} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} className={boxClassName} style={boxStyle}>
             {content}
           </button>
         ) : (
-          <div key={item.key} role="img" aria-label={`${item.name} ${toPctSigned(item.changeRate)}`} className={boxClassName} style={boxStyle}>
+          <div key={item.key} role="img" aria-label={`${item.name} ${toPctSigned(item.changeRate)}`} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} className={boxClassName} style={boxStyle}>
             {content}
           </div>
         )

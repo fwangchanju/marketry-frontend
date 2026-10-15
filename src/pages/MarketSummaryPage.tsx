@@ -114,7 +114,19 @@ export default function MarketSummaryPage() {
     for (const { node, pathKey } of collectAtDepth(data?.items ?? [], effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
       const average = computeSectorAverage(node, excludedMarketValueTiers)
       if (average.weightedAvg === null) continue
-      items.push({ key: pathKey, name: node.sectorName, marketValue: node.totalMarketValue, changeRate: average.weightedAvg })
+      const nodeItems = collectItems(node)
+      const advancers = nodeItems.filter(candidate => candidate.changeRate > 0).length
+      const decliners = nodeItems.filter(candidate => candidate.changeRate < 0).length
+      items.push({
+        key: pathKey,
+        name: node.sectorName,
+        marketValue: node.totalMarketValue,
+        changeRate: average.weightedAvg,
+        simpleAvg: average.simpleAvg,
+        advancers,
+        decliners,
+        unchanged: nodeItems.length - advancers - decliners,
+      })
     }
     const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
     // 그룹 페이지처럼 코스피·코스닥 지수 등락률을 강조 색 참조 막대로 값 순서 자리에 끼운다.
