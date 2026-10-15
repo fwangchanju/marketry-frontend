@@ -1973,7 +1973,8 @@ export function SettingsStrongIndustryColorSection({
         />
       </p>
       <SettingDescription>업종명과 강세 업종의 색상</SettingDescription>
-      <div className="mt-[18px] flex justify-between">
+      {/* 색 동그라미 줄은 다른 슬라이더와 같은 폭(.settings-slider-control)에 양 끝을 맞춘다. 8칸이 들어가도록 동그라미는 22px이다. */}
+      <div className="settings-slider-control mt-[18px] flex justify-between">
         {STRONG_INDUSTRY_COLOR_OPTIONS.map(option => (
           <span key={option.value} className="group relative inline-flex">
             <button
@@ -1982,7 +1983,7 @@ export function SettingsStrongIndustryColorSection({
               aria-pressed={color.toLowerCase() === option.value}
               onClick={() => onChange(option.value)}
               style={{ backgroundColor: option.value }}
-              className={`h-6 w-6 shrink-0 rounded-full border-2 p-0 ${color.toLowerCase() === option.value ? 'border-white ring-1 ring-white/40' : 'border-transparent'}`}
+              className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${color.toLowerCase() === option.value ? 'border-white ring-1 ring-white/40' : 'border-transparent'}`}
             />
             <span
               role="tooltip"

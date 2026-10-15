@@ -266,7 +266,7 @@ export default function TreemapColorThresholdEditorPanel({
     <div className="color-editor-steps mt-4 flex flex-col gap-4 text-sm text-white">
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <p className="color-editor-step text-[13px] text-gray-300">색상</p>
+          <p className="color-editor-step pl-[19px] text-[13px] text-gray-300">색상</p>
           {/* 어느 쪽 구간의 색을 고칠지 고른다 — 막대의 값은 같고 색만 상승(빨강 계열)·하락(파랑 계열)으로 나뉜다. */}
           <div role="group" aria-label="색을 고칠 쪽" className="flex gap-1">
             {([['up', '상승'], ['down', '하락']] as const).map(([key, label]) => (
@@ -283,7 +283,8 @@ export default function TreemapColorThresholdEditorPanel({
             ))}
           </div>
         </div>
-        <div className="flex justify-between" role="group" aria-label="색상 선택">
+        {/* 색 동그라미 줄은 아래 막대와 같은 폭(.settings-slider-control)에 양 끝을 맞춘다. 8칸이 들어가도록 동그라미는 22px이다. */}
+        <div className="settings-slider-control flex justify-between" role="group" aria-label="색상 선택">
           {swatches.map(swatch => {
             // 회색은 0% 칸 전용이라 상승/하락 편집 중에는 막고, 반대쪽이 쓰는 색 계열도 막는다.
             const grayBlocked = !zeroMode && swatch.key === GRAY_KEY
@@ -297,7 +298,7 @@ export default function TreemapColorThresholdEditorPanel({
                 aria-pressed={selectedKey === swatch.key}
                 aria-disabled={blocked}
                 onClick={() => { if (!blocked) applySelection(swatch.key) }}
-                className={`h-6 w-6 shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25' : selectedKey === swatch.key ? 'border-white ring-1 ring-white/40' : 'border-transparent hover:border-white/60'}`}
+                className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25' : selectedKey === swatch.key ? 'border-white ring-1 ring-white/40' : 'border-transparent hover:border-white/60'}`}
                 style={{ backgroundColor: swatch.color }}
               />
             </span>
@@ -307,7 +308,7 @@ export default function TreemapColorThresholdEditorPanel({
       </div>
 
       <div>
-        <p className="color-editor-step mb-1 text-[13px] text-gray-300">등락률</p>
+        <p className="color-editor-step mb-1 pl-[19px] text-[13px] text-gray-300">등락률</p>
         <ThresholdBar
           positive={bar.positive}
           negative={bar.negative}
