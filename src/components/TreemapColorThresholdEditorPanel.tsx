@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/treemapColorScale'
 
 const SATURATION = 75
@@ -26,6 +26,8 @@ const SWATCH_SIZE_PX = 24
 const SWATCH_COUNT = 8
 // 등락률 줄의 입력칸과 색상 칸의 너비 — 아래 색상 줄 맨 오른쪽 두 동그라미의 바깥 두 끝선에 맞춘 값이다(둘이 같은 너비).
 const THRESHOLD_BOX_WIDTH = `calc(${SWATCH_SIZE_PX * 2}px + (100% - ${SWATCH_SIZE_PX * SWATCH_COUNT}px) / ${SWATCH_COUNT - 1})`
+// 잘못 입력했을 때 이유 문구를 보여 주는 시간.
+const THRESHOLD_ERROR_MS = 4000
 const SWATCH_LIGHTNESS = 55
 const MIN_LIGHTNESS = 8
 const MAX_LIGHTNESS = 92
@@ -55,17 +57,41 @@ function ThresholdRow({ threshold, locked, onChangeThreshold }: ThresholdRowProp
   const savedText = () => String(threshold.thresholdPercent)
   const [text, setText] = useState(savedText)
 
+  // 잘못 입력해 원래 값으로 되돌릴 때 이유를 입력칸 아래에 몇 초 보여 준다(말없이 되돌아가면 왜 안 되는지 알 수 없다).
+  const [error, setError] = useState<string | null>(null)
+  const errorTimerRef = useRef<number | null>(null)
+  const clearErrorTimer = () => {
+    if (errorTimerRef.current !== null) window.clearTimeout(errorTimerRef.current)
+    errorTimerRef.current = null
+  }
+  useEffect(() => clearErrorTimer, [])
+  const showError = (message: string) => {
+    clearErrorTimer()
+    setError(message)
+    errorTimerRef.current = window.setTimeout(() => setError(null), THRESHOLD_ERROR_MS)
+  }
+
   const commit = () => {
     const value = Number(text)
     // 빈 입력, 정수가 아닌 값, 범위(±30) 밖의 값은 확정하지 않는다. 0%는 0% 칸에서만 쓸 수 있어서 다른 칸에는 입력할 수 없다.
-    if (text.trim() === '' || !Number.isInteger(value) || Math.abs(value) > 30 || value === 0) {
+    const reason =
+      text.trim() === '' ? '값을 입력해 주세요.'
+      : !Number.isInteger(value) ? '정수만 입력할 수 있습니다.'
+      : Math.abs(value) > 30 ? '-30~30 사이로 입력해 주세요.'
+      : value === 0 ? '0%는 0% 칸에서만 쓸 수 있습니다.'
+      : null
+    if (reason) {
       setText(savedText())
+      showError(reason)
       return
     }
+    clearErrorTimer()
+    setError(null)
     onChangeThreshold(value)
   }
 
   return (
+    <>
     <div className="flex items-center gap-1.5">
       <input
         type="number"
@@ -75,11 +101,11 @@ function ThresholdRow({ threshold, locked, onChangeThreshold }: ThresholdRowProp
         placeholder="예: 5, -3"
         value={text}
         disabled={locked}
-        onChange={e => setText(e.target.value)}
+        onChange={e => { setText(e.target.value); if (error) { clearErrorTimer(); setError(null) } }}
         onBlur={commit}
         onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
         style={{ width: THRESHOLD_BOX_WIDTH }}
-        className="h-7 shrink-0 rounded border border-gray-600 bg-zinc-700 px-2 text-right text-sm text-white outline-none [appearance:textfield] focus:placeholder:text-transparent focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className={`h-7 shrink-0 rounded border ${error ? 'border-red-400' : 'border-gray-600'} bg-zinc-700 px-2 text-right text-sm text-white outline-none [appearance:textfield] focus:placeholder:text-transparent focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
       />
       <span className="text-[13px] text-gray-400">%</span>
       {/* 색상 칸 — 아래 색상 줄 맨 오른쪽 두 동그라미(24px, 사이 간격은 8칸을 양끝 맞춤으로 나눈 값)의 바깥 두 끝선에 이 칸의 양 끝을 맞춘다. 입력칸과 같은 너비다. */}
@@ -88,6 +114,11 @@ function ThresholdRow({ threshold, locked, onChangeThreshold }: ThresholdRowProp
         style={{ backgroundColor: threshold.color, width: THRESHOLD_BOX_WIDTH }}
       />
     </div>
+    {/* 입력 규칙 안내 — 평소에는 규칙을 보여 주고, 잘못 입력해 되돌아갔을 때는 이유를 붉은 글씨로 몇 초 보여 준다. */}
+    <p className={`mt-1.5 text-[11px] leading-snug ${error ? 'text-red-400' : 'text-gray-400'}`} role={error ? 'alert' : undefined}>
+      {error ?? (locked ? '0% 구간은 색만 바꿀 수 있습니다.' : '정수만 입력 (-30~30, 0 제외)')}
+    </p>
+    </>
   )
 }
 
