@@ -306,7 +306,7 @@ export default function TreemapColorThresholdEditorPanel({
                 aria-pressed={selectedKey === swatch.key}
                 aria-disabled={blocked}
                 onClick={() => { if (!blocked) applySelection(swatch.key) }}
-                className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25' : selectedKey === swatch.key ? 'border-white ring-1 ring-white/40' : 'border-transparent hover:border-white/60'}`}
+                className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25 ring-1 ring-white/30' : selectedKey === swatch.key ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30 hover:ring-white/60'}`}
                 style={{ backgroundColor: swatch.color }}
               />
             </span>

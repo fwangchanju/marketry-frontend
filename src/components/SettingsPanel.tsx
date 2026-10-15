@@ -1983,7 +1983,7 @@ export function SettingsStrongIndustryColorSection({
               aria-pressed={color.toLowerCase() === option.value}
               onClick={() => onChange(option.value)}
               style={{ backgroundColor: option.value }}
-              className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${color.toLowerCase() === option.value ? 'border-white ring-1 ring-white/40' : 'border-transparent'}`}
+              className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${color.toLowerCase() === option.value ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30'}`}
             />
             <span
               role="tooltip"
