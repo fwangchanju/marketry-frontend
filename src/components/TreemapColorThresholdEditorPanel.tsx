@@ -245,6 +245,10 @@ export default function TreemapColorThresholdEditorPanel({
     }
     onChangeSideColor(bar.side, RANK_LIGHTNESS.map(lightness => paint(key, lightness)), colorLabel)
   }
+  // 반대쪽(상승↔하락)이 이미 쓰는 색 계열은 고를 수 없다 — 상승과 하락이 같은 색이 되면 구분이 안 된다. 0% 칸은 제한이 없다.
+  const otherSideColor = bar.side === 'up' ? bar.negative[0]?.color : bar.side === 'down' ? bar.positive[0]?.color : undefined
+  const otherSideKey = otherSideColor ? inferSelection(otherSideColor) : null
+  const otherSideLabel = bar.side === 'up' ? '하락' : '상승'
   const swatches = [
     { key: GRAY_SWATCH.key, label: GRAY_SWATCH.label, color: hslToHex(0, 0, SWATCH_LIGHTNESS) },
     ...HUE_PRESETS.map(preset => ({ key: preset.name, label: preset.label, color: hslToHex(preset.hue, SATURATION, SWATCH_LIGHTNESS) })),
@@ -272,19 +276,23 @@ export default function TreemapColorThresholdEditorPanel({
           </div>
         </div>
         <div className="flex justify-between" role="group" aria-label="색상 선택">
-          {swatches.map(swatch => (
+          {swatches.map(swatch => {
+            const blocked = swatch.key === otherSideKey && selectedKey !== swatch.key
+            return (
             <span key={swatch.key} className="inline-flex">
               <button
                 type="button"
                 aria-label={swatch.label}
-                data-hint={swatch.label}
+                data-hint={blocked ? `${swatch.label} — ${otherSideLabel}에서 사용 중` : swatch.label}
                 aria-pressed={selectedKey === swatch.key}
-                onClick={() => applySelection(swatch.key)}
-                className={`h-6 w-6 shrink-0 rounded-full border-2 p-0 ${selectedKey === swatch.key ? 'border-white ring-1 ring-white/40' : 'border-transparent hover:border-white/60'}`}
+                aria-disabled={blocked}
+                onClick={() => { if (!blocked) applySelection(swatch.key) }}
+                className={`h-6 w-6 shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25' : selectedKey === swatch.key ? 'border-white ring-1 ring-white/40' : 'border-transparent hover:border-white/60'}`}
                 style={{ backgroundColor: swatch.color }}
               />
             </span>
-          ))}
+            )
+          })}
         </div>
       </div>
 
