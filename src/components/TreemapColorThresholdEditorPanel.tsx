@@ -311,7 +311,9 @@ export default function TreemapColorThresholdEditorPanel({
                 data-hint={grayBlocked ? '회색은 0% 칸에서만 고를 수 있습니다' : blocked ? `${swatch.label} — ${otherSideLabel}에서 사용 중` : swatch.label}
                 aria-pressed={selectedKey === swatch.key}
                 aria-disabled={blocked}
-                onClick={() => { if (!blocked) applySelection(swatch.key) }}
+                // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
+                onPointerDown={event => { if (!blocked && event.button === 0) applySelection(swatch.key) }}
+                onClick={event => { if (!blocked && event.detail === 0) applySelection(swatch.key) }}
                 className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${blocked ? 'cursor-not-allowed border-transparent opacity-25 ring-1 ring-white/30' : selectedKey === swatch.key ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30 hover:ring-white/60'}`}
                 style={{ backgroundColor: swatch.color }}
               />

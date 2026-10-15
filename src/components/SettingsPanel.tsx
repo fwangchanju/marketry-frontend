@@ -1965,6 +1965,10 @@ export function SettingsStrongIndustryColorSection({
   const [pendingColor, setPendingColor] = useState<{ value: string; base: string } | null>(null)
   if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('strongColor')) return null
   const selectedColor = pendingColor && pendingColor.base === color.toLowerCase() ? pendingColor.value : color.toLowerCase()
+  const pick = (value: string) => {
+    setPendingColor({ value, base: color.toLowerCase() })
+    requestAnimationFrame(() => setTimeout(() => onChange(value), 0))
+  }
   return (
     <div className={`settings-first-strong-color text-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'strongColor') : 'pt-5'}`}>
       <p className="flex items-center text-[15px]">
@@ -1984,7 +1988,9 @@ export function SettingsStrongIndustryColorSection({
               type="button"
               aria-label={`${option.label} 색상 선택`}
               aria-pressed={selectedColor === option.value}
-              onClick={() => { setPendingColor({ value: option.value, base: color.toLowerCase() }); requestAnimationFrame(() => setTimeout(() => onChange(option.value), 0)) }}
+              // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
+              onPointerDown={event => { if (event.button === 0) pick(option.value) }}
+              onClick={event => { if (event.detail === 0) pick(option.value) }}
               style={{ backgroundColor: option.value }}
               className={`h-[22px] w-[22px] shrink-0 rounded-full border-2 p-0 ${selectedColor === option.value ? 'border-transparent ring-2 ring-white ring-offset-2 ring-offset-[#363639]' : 'border-transparent ring-1 ring-white/30'}`}
             />
