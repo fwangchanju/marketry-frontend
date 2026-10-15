@@ -90,8 +90,29 @@ function suffixSplitPosition(chars: string[]): number | null {
   return position >= 2 ? position : null
 }
 
-// 두 줄로 나눌 자리를 고른다. 순서는 (1) 공백 (2) 영문·숫자·기호와 한글의 경계(LG/이노텍, BNK/금융)와 그룹명 뒤(한화/비전) 중 균형이 좋은 자리 (3) 긴 줄이 가장 짧아지는 자리.
-// 폭이 같으면 윗줄이 더 긴 쪽을 고른다(테크/윙). 영문·숫자·기호 한 덩어리(E1, OCI, F&F) 안에서는 줄을 나누지 않는다. 앞 단계 자리가 폭에 안 들어가면 다음 단계로 넘어간다.
+// 공백이나 그룹명 뒤에서 나눴을 때 두 줄의 글자 수 차이가 이만큼 이하면 그 자리를 쓴다. 차이가 더 크면 균형 있게 나눈다(롯데에너지/머티리얼즈).
+// 우선주·지주사 접미어(삼성전자/우, 신한/지주)는 글자 수 차이와 상관없이 접미어 앞에서 나눈다.
+const MAX_WORD_SPLIT_DIFF = 3
+
+// 두 줄로 나눌 자리 후보. 영문·숫자·기호 한 덩어리(E1, OCI, F&F) 안에서는 나누지 않는다.
+// atSpaces: 공백. atMeaning: 영문·한글 경계(영어/한글, 한글/영어: LG/이노텍, BNK/금융)와 그룹명 뒤(한화/비전). 공백과 그룹명 뒤는 두 줄의 글자 수 차이가 MAX_WORD_SPLIT_DIFF 이하인 자리만 두고, 영문·한글 경계는 차이와 상관없이 둔다.
+// atSuffix: 우선주·지주사 접미어 앞. all: 아무 자리.
+function splitCandidates(chars: string[]) {
+  const all = Array.from({ length: Math.max(0, chars.length - 1) }, (_, k) => k + 1).filter(i => !(isAsciiChar(chars[i - 1]) && isAsciiChar(chars[i])))
+  const lengthDiff = (i: number) => Math.abs(
+    Array.from(chars.slice(0, i).join('').trim()).length - Array.from(chars.slice(i).join('').trim()).length,
+  )
+  const closeEnough = (positions: number[]) => positions.filter(i => lengthDiff(i) <= MAX_WORD_SPLIT_DIFF)
+  const atSpaces = closeEnough(all.filter(i => chars[i] === ' ' || chars[i - 1] === ' '))
+  const atScriptEdge = all.filter(i => chars[i] !== ' ' && chars[i - 1] !== ' ' && isAsciiChar(chars[i - 1]) !== isAsciiChar(chars[i]))
+  const atMeaning = Array.from(new Set([...atScriptEdge, ...closeEnough(groupSplitPositions(chars).filter(i => all.includes(i)))])).sort((a, b) => a - b)
+  const suffixAt = suffixSplitPosition(chars)
+  const atSuffix = suffixAt !== null && all.includes(suffixAt) ? [suffixAt] : []
+  return { all, atSpaces, atMeaning, atSuffix }
+}
+
+// 두 줄로 나눌 자리를 고른다. 순서는 (1) 공백 (2) 접미어(우·지주·홀딩스) (3) 영문·한글 경계와 그룹명 뒤 (4) 긴 줄이 가장 짧아지는 아무 자리.
+// 폭이 같으면 윗줄이 더 긴 쪽을 고른다(테크/윙). 앞 단계 자리가 폭에 안 들어가면 다음 단계로 넘어간다.
 function splitTwoLines(name: string, size: number, avail: number, mode: 'suffix' | 'semantic' | 'any'): [string, string] | null {
   const chars = Array.from(name)
   const bestSplit = (positions: number[]): { lines: [string, string]; max: number } | null => {
@@ -105,26 +126,13 @@ function splitTwoLines(name: string, size: number, avail: number, mode: 'suffix'
     }
     return best
   }
-  const isWord = isAsciiChar
-  const all = Array.from({ length: Math.max(0, chars.length - 1) }, (_, k) => k + 1).filter(i => !(isWord(chars[i - 1]) && isWord(chars[i])))
-  const atSpaces = all.filter(i => chars[i] === ' ' || chars[i - 1] === ' ')
-  const atScriptEdge = all.filter(i => chars[i] !== ' ' && chars[i - 1] !== ' ' && isWord(chars[i - 1]) !== isWord(chars[i]))
-  const atMeaning = Array.from(new Set([...atScriptEdge, ...groupSplitPositions(chars).filter(i => all.includes(i))])).sort((a, b) => a - b)
-  const suffixAt = suffixSplitPosition(chars)
-  const atSuffix = suffixAt !== null && all.includes(suffixAt) ? [suffixAt] : []
+  const { all, atSpaces, atMeaning, atSuffix } = splitCandidates(chars)
   const stages = mode === 'suffix' ? [atSpaces, atSuffix] : mode === 'semantic' ? [atSpaces, atSuffix, atMeaning] : [atSpaces, atSuffix, atMeaning, all]
   for (const positions of stages) {
     const found = bestSplit(positions)
     if (found && found.max <= avail) return found.lines
   }
   return null
-}
-
-// 공백, 영문·한글 경계, 그룹명 뒤처럼 뜻이 갈리는 자리가 있는 이름인지(DB손해보험, LG이노텍, 한화비전).
-function hasSemanticSplit(name: string): boolean {
-  const chars = Array.from(name)
-  if (groupSplitPositions(chars).length > 0) return true
-  return chars.some((ch, i) => i > 0 && (ch === ' ' || chars[i - 1] === ' ' || isAsciiChar(ch) !== isAsciiChar(chars[i - 1])))
 }
 
 export interface StockLabelFit {
@@ -163,21 +171,27 @@ export function fitStockLabel({
   const none: StockLabelFit = { nameLines: null, nameSize: baseFont, rateSize: null }
   if (wantName) {
     // 접미어(우선주 우·지주·홀딩스)가 있으면 그 앞에서, 뜻이 갈리는 자리(공백, 영문·한글 경계, 그룹명 뒤)가 있으면 그 자리에서 글자를 줄여서라도 나눈다. 그래도 안 되면 아무 자리에서나 나눈다.
-    const chars = Array.from(name)
-    const passes: Array<'suffix' | 'semantic' | 'any'> = suffixSplitPosition(chars) !== null ? ['suffix', 'semantic', 'any'] : hasSemanticSplit(name) ? ['semantic', 'any'] : ['any']
-    for (const mode of passes) {
-      for (let size = baseFont; size >= MIN_FONT; size -= 0.5) {
-        const rate = wantRate ? rateSizeFor(size) : null
-        const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
-        if (LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight && textWidth(name, size) <= nameAvail) {
-          return { nameLines: [name], nameSize: size, rateSize: rate }
-        }
-        if (2 * LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight) {
-          const lines = splitTwoLines(name, size, nameAvail, mode)
-          if (lines) return { nameLines: lines, nameSize: size, rateSize: rate }
+    const { atSpaces, atMeaning, atSuffix } = splitCandidates(Array.from(name))
+    const passes: Array<'suffix' | 'semantic' | 'any'> = atSuffix.length > 0 ? ['suffix', 'semantic', 'any'] : atSpaces.length + atMeaning.length > 0 ? ['semantic', 'any'] : ['any']
+    const searchName = (withRate: boolean): StockLabelFit | null => {
+      for (const mode of passes) {
+        for (let size = baseFont; size >= MIN_FONT; size -= 0.5) {
+          const rate = withRate ? rateSizeFor(size) : null
+          const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
+          if (LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight && textWidth(name, size) <= nameAvail) {
+            return { nameLines: [name], nameSize: size, rateSize: rate }
+          }
+          if (2 * LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight) {
+            const lines = splitTwoLines(name, size, nameAvail, mode)
+            if (lines) return { nameLines: lines, nameSize: size, rateSize: rate }
+          }
         }
       }
+      return null
     }
+    // 종목명과 등락률 중 하나만 들어가면 종목명이 먼저다 — 둘이 함께 안 들어가면 등락률을 빼고 이름만 보여 준다.
+    const found = (wantRate ? searchName(true) : null) ?? searchName(false)
+    if (found) return found
   }
   // 이름이 안 들어가거나 등락률만 고른 경우 — 등락률만 보여 준다(이름만 고른 경우는 아무것도 그리지 않는다).
   if (!wantRate) return none
