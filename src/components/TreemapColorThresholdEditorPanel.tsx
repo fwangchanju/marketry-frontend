@@ -197,7 +197,7 @@ export default function TreemapColorThresholdEditorPanel({
   return (
     <div className="mt-4 flex flex-col gap-4 text-sm text-white">
       <div>
-        {/* 하락 / 보합 / 상승 — 지도 범례와 같은 순서·색. 선택 표시는 외곽선 대신 체크(✓)와 선명도(안 고른 쪽은 흐리게)로 한다. 폭은 아래 막대와 같다. */}
+        {/* 하락 / 보합 / 상승 — 지도 범례와 같은 순서·색. 선택 표시는 선명도로 한다(고른 쪽은 선명하게, 안 고른 쪽은 흐리게). 외곽선은 사용자 화면에서 늦게 그려져 쓰지 않는다. 폭은 아래 막대와 같다. */}
         <div role="group" aria-label="편집할 구간" className="settings-slider-control grid grid-cols-3 gap-1">
           {(['down', 'zero', 'up'] as const).map(key => {
             const selected = bar.side === key
@@ -214,11 +214,6 @@ export default function TreemapColorThresholdEditorPanel({
                 className={`flex h-[26px] items-center justify-center gap-1 rounded-[5px] border border-white/25 p-0 text-[12px] font-bold text-white ${selected ? '' : 'opacity-50 hover:opacity-80'}`}
                 style={{ backgroundColor: CHIP_COLOR[key] }}
               >
-                {selected && (
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12.5l4.5 4.5L19 7" />
-                  </svg>
-                )}
                 {CHIP_LABEL[key]}
               </button>
             )
