@@ -24,7 +24,7 @@ export const DEFAULT_ZERO_COLOR = '#808080'
 
 // 저장된 threshold가 하나도 없는 side에 쓰는 폴백 프리셋(절댓값 기준). 1/3/5/8%p의 4개 임계값에만 threshold를 둔다.
 // 8% 초과는 별도 threshold를 추가하지 않고, 아래 resolveTreemapColor의 "최고 threshold 초과 시 clamp" 동작에 맡긴다 —
-// 그래야 8~30%(실제로 흔한 구간) 전체가 flat한 최고 단계 색 그대로 유지된다.
+// 8% 초과는 resolveTreemapColor가 30%까지 최고 단계 색을 조금씩 밝게 이어 그린다.
 export const DEFAULT_PLUS_THRESHOLDS: ColorScaleThreshold[] = [
   { thresholdPercent: 1, color: '#470a0a', colorLabel: 'red' }, // 명도 16 (슬라이더 10%)
   { thresholdPercent: 3, color: '#931515', colorLabel: 'red' }, // 명도 33 (슬라이더 30%)
@@ -86,6 +86,14 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
+// 최고 단계 threshold를 넘는 큰 등락률(예: 8% → 30%)에서도 색이 변하도록, 30%에서는 최고 단계 색보다 명도를 이만큼 올린 색이 된다.
+export const EXTREME_COLOR_PERCENT = 30
+const EXTREME_LIGHTEN = 14
+export function extremeColorOf(hex: string): string {
+  const { h, s, l } = hexToHsl(hex)
+  return hslToHex(h, s, Math.min(88, l + EXTREME_LIGHTEN))
+}
+
 // changeRate(부호 있는 등락률, %) → 실제 렌더링에 쓸 hex 색.
 export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig): string {
   const zeroColor = resolveZeroColor(config)
@@ -113,8 +121,12 @@ export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig
     }
   }
 
-  // 가장 큰 threshold보다도 크면 그 이후는 추정하지 않고 그대로 clamp(CSS 그라데이션/D3 스케일과 동일).
-  return thresholds[thresholds.length - 1].color
+  // 가장 큰 threshold를 넘으면 30%까지 색이 조금씩 더 밝아진다(최고 단계 색 → extremeColorOf). 30% 이상은 그 색 그대로다.
+  const last = thresholds[thresholds.length - 1]
+  const lastAbs = Math.abs(last.thresholdPercent)
+  if (lastAbs >= EXTREME_COLOR_PERCENT) return last.color
+  const t = Math.min(1, (abs - lastAbs) / (EXTREME_COLOR_PERCENT - lastAbs))
+  return lerpColor(last.color, extremeColorOf(last.color), t)
 }
 
 // changeRate(부호 있는 등락률, %) → 그 부호 쪽 threshold 중 절댓값이 가장 큰 색(보간 없이 고정).

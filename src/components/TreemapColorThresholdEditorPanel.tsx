@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/treemapColorScale'
+import { extremeColorOf, hexToHsl, hslToHex, type ColorScaleThreshold } from '@/utils/treemapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
 const SATURATION = 75
@@ -66,7 +66,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
   // 막대 색은 고른 쪽(상승/하락)의 구간 색을 이어서 보여 준다.
   const colored = side === 'down' ? negative : positive
   const lastColor = colored.at(-1)?.color ?? zeroColor
-  const gradient = `linear-gradient(90deg, ${[`${zeroColor} 0%`, ...colored.map((item, rank) => `${item.color} ${(percentToPosition(positive[rank]?.percent ?? item.percent) * 100).toFixed(2)}%`), `${lastColor} 100%`].join(', ')})`
+  const gradient = `linear-gradient(90deg, ${[`${zeroColor} 0%`, ...colored.map((item, rank) => `${item.color} ${(percentToPosition(positive[rank]?.percent ?? item.percent) * 100).toFixed(2)}%`), `${extremeColorOf(lastColor)} 100%`].join(', ')})`
   const sign = side === 'down' ? '-' : '+'
 
   const percentAt = (clientX: number) => {
@@ -117,7 +117,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
     onChangeRankPercent(rank, target)
   }
   const edgeAligned = (position: number) => Math.min(Math.max(position, 0.06), 0.94) * 100
-  const badgeClass = 'absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1.5 text-xs font-bold leading-[18px] text-black'
+  const badgeClass = 'absolute -top-1 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1.5 text-xs font-bold leading-[18px] text-black'
 
   return (
     <>
@@ -130,7 +130,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
         onPointerCancel={handlePointerEnd}
       >
         <div ref={trackRef} className="settings-slider-control relative h-full">
-          <div className="absolute inset-x-0 top-[23px] h-4 rounded-full border border-white/25" style={{ background: gradient }} />
+          <div className="absolute inset-x-0 top-[23px] h-4 border border-white/25" style={{ background: gradient }} />
           {zeroSelected && <span className={badgeClass} style={{ left: '0%' }}>0%</span>}
           <div
             data-zero
