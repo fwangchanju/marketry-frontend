@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChangeRateChoice } from '@/api/treemap'
 import { accentColor } from '@/utils/accentPalette'
 import { type TradingSession } from '@/utils/tradingWindow'
 import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
+import { SlidingHighlight } from '@/components/SlidingHighlight'
 
 // 시간대 말머리 앞 점의 색 — 설정창 4-1) 강조 색상 기준으로 프리 마켓은 연노랑,
 // 메인 마켓은 형광, 애프터 마켓은 연보라, 마켓 종료은 연회색이다.
@@ -118,18 +119,8 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
     { value: 'daily' as const, label: '누적', help: '애프터 마켓 누적\n(전일 종가 대비 현재가)', locked: false },
     { value: 'afterHours' as const, label: '별도', help: '애프터 마켓 별도\n(당일 종가 대비 현재가)', locked: !selectable },
   ]
-  // 선택 칸의 색 채움은 버튼 뒤의 알약 하나가 옆으로 미끄러져 옮긴다.
-  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const [highlight, setHighlight] = useState<{ left: number; width: number } | null>(null)
+  // 설정창 선택 버튼과 같은 모양 — 틀 없이 직각 직각 칩 3개(간격 3px)이고, 선택 칸의 색 채움이 칩 사이를 미끄러진다.
   const selectedIndex = options.findIndex(option => option.value === basis)
-  useLayoutEffect(() => {
-    const button = buttonRefs.current[selectedIndex]
-    if (!visible || !button) return
-    setHighlight(previous =>
-      previous?.left === button.offsetLeft && previous.width === button.offsetWidth
-        ? previous
-        : { left: button.offsetLeft, width: button.offsetWidth })
-  }, [visible, selectedIndex])
 
   return (
     <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
@@ -138,20 +129,10 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
       {visible && <div
         role="radiogroup"
         aria-label="등락률 기준"
-        className="relative inline-flex h-6 w-[120px] shrink-0 items-center overflow-visible bg-zinc-800 p-0.5"
+        className="relative grid h-6 w-[120px] shrink-0 grid-cols-3 gap-[3px] overflow-visible"
       >
-        {highlight && (
-          <span
-            aria-hidden="true"
-            className="absolute bottom-0.5 top-0.5 transition-[left,width] duration-[500ms] ease-out"
-            style={{
-              left: highlight.left,
-              width: highlight.width,
-              backgroundColor: SESSION_DOT_COLOR['애프터 마켓'],
-            }}
-          />
-        )}
-        {options.map((option, index) => (
+        <SlidingHighlight count={options.length} index={selectedIndex} gap={3} square fillColor={SESSION_DOT_COLOR['애프터 마켓']} />
+        {options.map(option => (
           // disabled를 쓰지 않는다 — 비활성 버튼은 마우스 이벤트가 없어서 잠긴 별도의 설명을 볼 수 없다. 잠긴 동안은 값만 안 바꾼다.
           <button
             key={option.value}
@@ -159,16 +140,13 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
             role="radio"
             aria-checked={basis === option.value}
             aria-disabled={option.locked}
-            ref={element => {
-              buttonRefs.current[index] = element
-            }}
             onClick={() => {
               if (!option.locked && basis !== option.value) onChange(option.value)
             }}
             // 설명은 공용 툴팁(HoverHintLayer)이 띄운다 — 잠긴 별도도 aria-disabled라 올리면 설명이 보인다.
             data-hint={option.help}
             // 안 선택 글자는 옆 거래 세션 글자(text-gray-400)와 같은 회색이다. 잠긴 별도는 흐리게 해서 잠긴 것을 알아보게 한다.
-            className={`relative z-10 h-5 min-w-0 flex-1 border-0 bg-transparent px-0 text-[13px] font-semibold leading-none transition-colors duration-[500ms] ${
+            className={`relative z-10 h-6 min-w-0 border-0 bg-transparent px-0 text-[13px] font-semibold leading-none transition-colors duration-[500ms] ${
               basis === option.value
                 ? 'text-gray-900'
                 : option.locked
