@@ -7,7 +7,6 @@ import PopupKindBadge from '@/components/PopupKindBadge'
 import SettingsPanel, {
   SettingsPanelGroup,
   SettingsMarketValueSection,
-  SettingsSectorChangeSection,
   SettingsStockChangeSection,
   SettingsSectorLevelSection,
   SettingsExcludeSection,
@@ -190,9 +189,6 @@ export default function MapPage() {
     rootNodes,
     filteredRootNodes,
     sectorChangeFilter,
-    onChangeSectorChangeFilter,
-    sectorChangeDepth,
-    onChangeSectorChangeDepth,
     stockChangeFilter,
     onChangeStockChangeFilter,
     maxDepth,
@@ -739,20 +735,6 @@ export default function MapPage() {
             >
               <SettingsPanelGroup section="composition">
                 <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
-                <SettingsSectorChangeSection
-                  value={sectorChangeFilter}
-                  onChange={value => {
-                    onChangeSectorChangeFilter(value)
-                    reset()
-                  }}
-                  depth={sectorChangeDepth}
-                  onChangeDepth={depth => {
-                    onChangeSectorChangeDepth(depth)
-                    reset()
-                  }}
-                  maxSelectableDepth={Math.max(1, settingsModalProps.topPickMaxSelectableDepth)}
-                  noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
-                />
                 <SettingsStockChangeSection
                   value={stockChangeFilter}
                   onChange={value => {
@@ -771,20 +753,6 @@ export default function MapPage() {
               {/* 북마크 탭 — 원래 탭의 항목을 같은 순서로 다시 그리고, 북마크한 항목만 보인다. */}
               <SettingsPanelGroup section="favorites">
                 <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
-                <SettingsSectorChangeSection
-                  value={sectorChangeFilter}
-                  onChange={value => {
-                    onChangeSectorChangeFilter(value)
-                    reset()
-                  }}
-                  depth={sectorChangeDepth}
-                  onChangeDepth={depth => {
-                    onChangeSectorChangeDepth(depth)
-                    reset()
-                  }}
-                  maxSelectableDepth={Math.max(1, settingsModalProps.topPickMaxSelectableDepth)}
-                  noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
-                />
                 <SettingsStockChangeSection
                   value={stockChangeFilter}
                   onChange={value => {

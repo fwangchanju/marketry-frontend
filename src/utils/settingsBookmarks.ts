@@ -2,14 +2,14 @@
 // 항목을 없애거나 이름을 바꾸면 서버에 저장된 북마크 id가 가리킬 곳을 잃으므로, 읽을 때 알려진 id만 남긴다(isSettingsBookmarkId).
 export type SettingsBookmarkId =
   | 'depthLevel' | 'depthMetric' | 'depthRange' | 'topPick'
-  | 'marketValueRange' | 'sectorChange' | 'stockChange' | 'excludeSector'
-  | 'boxSize' | 'boxLabel' | 'textThreshold' | 'decimalPlaces'
+  | 'marketValueRange' | 'stockChange' | 'excludeSector'
+  | 'boxSize' | 'boxLabel' | 'decimalPlaces'
   | 'strongColor'
 
 export const BOOKMARK_ORDER: readonly SettingsBookmarkId[] = [
-  'marketValueRange', 'sectorChange', 'stockChange', 'excludeSector',
+  'marketValueRange', 'stockChange', 'excludeSector',
   'depthLevel', 'depthMetric', 'depthRange', 'topPick',
-  'boxSize', 'boxLabel', 'textThreshold', 'decimalPlaces',
+  'boxSize', 'boxLabel', 'decimalPlaces',
   'strongColor',
 ]
 
