@@ -24,7 +24,7 @@ import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 export type { SettingsBookmarkId }
-export type SettingsPanelSectionId = 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors'
+export type SettingsPanelSectionId = 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminMoved'
 
 interface SettingsPanelGroupProps {
   section: SettingsPanelSectionId
@@ -217,6 +217,9 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'stockDisplay', label: '종목 박스', icon: 'stock-display' },
   { id: 'colors', label: '색상', icon: 'colors' },
   { id: 'favorites', label: '북마크', icon: 'favorites' },
+  // 관리자 페이지 전용 탭 — 맨 뒤에 붙여서 위 탭 번호(1~5)는 그대로다.
+  { id: 'adminOps', label: '운영', icon: 'admin-ops' },
+  { id: 'adminMoved', label: '이관', icon: 'admin-moved' },
 ]
 
 // 탭 제목에는 숫자를 표시하지 않지만 북마크와 안내 말풍선에는 원래 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
@@ -343,19 +346,19 @@ const GROUP_TAB_METRIC_OPTIONS: { key: DepthMetric; label: string }[] = [
 const STOCK_LABEL_MODE_LABELS = ['종목명', '등락률', '모두']
 
 // 등락률 소수점 슬라이더 라벨 — 인덱스 그대로 소수점 자릿수(toPctSigned의 decimalPlaces 인자, 0=정수).
-const DECIMAL_PLACES_LABELS = ['정수', '1자리', '2자리']
+const DECIMAL_PLACES_LABELS = ['0%', '0.0%', '0.00%']
 
-// 범위 슬라이더 핸들 안의 화살표. 유니코드 화살표는 16px 안에서 뭉개져서 SVG로 그린다.
+// 범위 슬라이더 핸들 안의 화살표. 업종 분류 세로 손잡이(StairChevron)의 꺽쇠를 옆으로 눕힌 모양이다.
 function ChevronGlyph({ direction, outward = false }: { direction: 'left' | 'right'; outward?: boolean }) {
-  // outward: 핸들(원) 안에서 꺽쇠를 바깥쪽(왼쪽 화살표는 왼쪽, 오른쪽 화살표는 오른쪽)으로 1px 옮긴다.
-  const shift = outward ? (direction === 'left' ? '-translate-x-px' : 'translate-x-px') : ''
+  // outward: 핸들(원) 안에서 꺽쇠를 바깥쪽(왼쪽 화살표는 왼쪽, 오른쪽 화살표는 오른쪽)으로 2px 옮긴다.
+  const shift = outward ? (direction === 'left' ? '-translate-x-[2px]' : 'translate-x-[2px]') : ''
   return (
-    <svg viewBox="0 0 8 12" className={`h-2.5 w-2 shrink-0 ${shift}`} aria-hidden="true">
+    <svg viewBox="0 0 6 10" className={`h-2 shrink-0 ${shift}`} aria-hidden="true">
       <path
-        d={direction === 'left' ? 'M6 1 2 6l4 5' : 'M2 1l4 5-4 5'}
+        d={direction === 'left' ? 'M5 1 1 5l4 4' : 'M1 1l4 4-4 4'}
         fill="none"
         stroke="currentColor"
-        strokeWidth={2}
+        strokeWidth={1.4}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -366,9 +369,9 @@ function ChevronGlyph({ direction, outward = false }: { direction: 'left' | 'rig
 // 설정창이 열리고 닫힐 때의 애니메이션 길이(ms) — index.css의 settings-panel-* 애니메이션 시간(0.25s)과 같아야 한다.
 const SIDEBAR_ANIMATION_MS = 250
 
-// 핸들 크기는 SingleValueSlider(네이티브 range thumb, 16px)와 맞춘다.
+// 업종 분류 세로 손잡이와 같은 모양(청록 외곽선, 고른 칸 바탕색)이다.
 const RANGE_HANDLE_CLASS =
-  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center box-border rounded-full border border-zinc-200 bg-zinc-800 text-white touch-none'
+  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center box-border rounded-full border border-[#12b8a6] bg-[#20635d] text-white touch-none'
 
 // 섹션 전체가 막혔을 때의 안내 말풍선은 섹션 아래 끝이 아니라 마우스 커서 바로 옆에 띄운다 —
 // 섹션이 높아도 안내가 컨트롤에서 멀어지지 않는다. x·y는 마우스의 화면 좌표이고, bounds는 말풍선이 나가면 안 되는 설정창의 화면 위치다.
@@ -432,10 +435,10 @@ const stairCenterOf = (index: number) => index * (STAIR_ROW + STAIR_GAP) + STAIR
 const stairRawIndex = (rect: DOMRect, clientY: number) => Math.round((clientY - rect.top - STAIR_ROW / 2) / (STAIR_ROW + STAIR_GAP))
 const stairHeight = (count: number) => count * STAIR_ROW + (count - 1) * STAIR_GAP
 
-function StairChevron({ direction }: { direction: 'up' | 'down' }) {
+function StairChevron({ direction, className = '' }: { direction: 'up' | 'down'; className?: string }) {
   return (
-    <svg viewBox="0 0 10 6" className="w-[5px] group-hover:w-2">
-      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="#06302b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 10 6" className={`w-2 ${className}`}>
+      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -605,7 +608,7 @@ function DepthStairSelect({
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
             else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
           }}
-          className={`${STAIR_HANDLE_BASE} h-4 w-3 flex-col gap-[3px] border-[#12b8a6] bg-[#12b8a6] group-hover:h-6 group-hover:w-[18px] group-hover:gap-[5px] focus-visible:h-6 focus-visible:w-[18px]`}
+          className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[#12b8a6] bg-[#20635d]`}
           style={{ top: stairCenterOf(depth - 1) }}
         >
           <StairChevron direction="up" />
@@ -676,7 +679,7 @@ function DepthStairRange({
     else onChange(minIndex, Math.max(minIndex, Math.min(maxIndex + delta, maxSelectableIndex)))
   }
   const handleStyle = (index: number) => ({ top: stairCenterOf(index) })
-  const singleClass = `${STAIR_HANDLE_BASE} h-[14px] w-3 border-[#12b8a6] bg-[#12b8a6] group-hover:h-5 group-hover:w-4`
+  const singleClass = `${STAIR_HANDLE_BASE} size-3 border-[#12b8a6] bg-[#20635d]`
   return (
     <div
       role="group"
@@ -718,7 +721,7 @@ function DepthStairRange({
               if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') handleKeys('min')(e)
               else handleKeys('max')(e)
             }}
-            className={`${STAIR_HANDLE_BASE} h-4 w-3 flex-col gap-[3px] border-[#12b8a6] bg-[#12b8a6] group-hover:h-6 group-hover:w-[18px] group-hover:gap-[5px] focus-visible:h-6 focus-visible:w-[18px]`}
+            className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[#12b8a6] bg-[#20635d]`}
             style={handleStyle(minIndex)}
           >
             <StairChevron direction="up" />
@@ -727,10 +730,10 @@ function DepthStairRange({
         ) : (
           <>
             <span role="slider" tabIndex={disabled ? -1 : 0} aria-disabled={disabled || undefined} aria-label="지표 표시 시작 단계" aria-valuetext={labels[minIndex]} onKeyDown={handleKeys('min')} className={`${singleClass} z-10`} style={handleStyle(minIndex)}>
-              <StairChevron direction="up" />
+              <StairChevron direction="up" className="-translate-y-[2px]" />
             </span>
             <span role="slider" tabIndex={disabled ? -1 : 0} aria-disabled={disabled || undefined} aria-label="지표 표시 끝 단계" aria-valuetext={labels[maxIndex]} onKeyDown={handleKeys('max')} className={`${singleClass} z-20`} style={handleStyle(maxIndex)}>
-              <StairChevron direction="down" />
+              <StairChevron direction="down" className="translate-y-[2px]" />
             </span>
           </>
         )}
@@ -925,17 +928,28 @@ function RangeSlider({
         className={`relative h-4 w-full ${disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
         onPointerDown={startDrag}
       >
-        <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded bg-gray-600" />
+        <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#4b5563]" />
         <div
-          className="absolute top-1/2 h-1 -translate-y-1/2 rounded bg-[var(--accent)]"
+          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#cdd2dc]"
           style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, width: `calc(${maxPct - minPct}% - ${(maxPct - minPct) * 0.16}px)`, transition: slideTransition }}
         />
+        {/* 눈금마다 점 하나(업종 분류 세로 트랙과 같은 점) — 선택할 수 없는 눈금의 점은 흐리다. */}
+        {Array.from({ length: sliderSteps + 1 }, (_, index) => {
+          const pct = (index / sliderSteps) * 100
+          return (
+            <span
+              key={index}
+              className="pointer-events-none absolute top-1/2 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#6b7280]"
+              style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)`, opacity: index > selectableMaxIndex ? 0.2 : 1 }}
+            />
+          )
+        })}
         {/* 두 핸들이 같은 칸에 모이면 원 두 개가 겹쳐 화살표가 뭉개진다. 그때는 바깥으로 벌어지는
             화살표 둘을 담은 알약 하나로 그려서, 모여 있어도 양방향으로 벌릴 수 있는 핸들임이 보이게 한다. */}
         {minPct === maxPct ? (
           <div
             aria-label={`${minAriaLabel} / ${maxAriaLabel}`}
-            className={`${RANGE_HANDLE_CLASS} z-10 w-7 justify-between px-1`}
+            className={`${RANGE_HANDLE_CLASS} z-10 w-7 gap-2`}
             style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, transition: slideTransition }}
           >
             <ChevronGlyph direction="left" />
@@ -1058,19 +1072,32 @@ function SingleRangeInput({
   const [isDragging, setIsDragging] = useState(false)
   const slide = `${isDragging ? 150 : 300}ms ease-out`
   const barTransition = smooth ? `width ${slide}` : undefined
+  const dotCount = Math.round((max - min) / step) + 1
   return (
     <div className={`relative h-4 ${disabled ? 'opacity-40' : ''}`}>
-      <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded bg-gray-600" />
+      <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#4b5563]" />
       <span
         aria-hidden="true"
-        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded bg-[var(--accent)]"
+        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#cdd2dc]"
         style={{ width: `calc(${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
       />
+      {/* 칸으로 끊어 고르는 슬라이더(smooth)는 눈금마다 점 하나 — 업종 분류 세로 트랙과 같은 점이다. 값이 이어지는 슬라이더는 점을 두지 않는다. */}
+      {smooth && Array.from({ length: dotCount }, (_unused, index) => {
+        const dotPct = dotCount > 1 ? (index / (dotCount - 1)) * 100 : 0
+        return (
+          <span
+            key={index}
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#6b7280]"
+            style={{ left: `calc(8px + ${dotPct}% - ${dotPct * 0.16}px)` }}
+          />
+        )
+      })}
       {/* 눈에 보이는 손잡이 — 아래 input의 기본 손잡이는 투명하게 두고, 이 손잡이가 값 위치로 미끄러진다. */}
       {smooth && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-200 bg-zinc-800"
+          className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#12b8a6] bg-[#20635d]"
           style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)`, transition: `left ${slide}` }}
         />
       )}
@@ -1693,6 +1720,7 @@ export function SettingsSectorLevelSection({
                 onChange={onChangeActiveDepthMetric}
                 ariaLabel="업종 지표"
                 badge="업종"
+                outlinedChevron
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
                 className={`mt-4 max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-40'}`}
               />
@@ -1789,6 +1817,7 @@ export function SettingsSectorLevelSection({
                     ariaLabel="상위 업종 강조 개수"
                     disabled={isTopPickDisabled || !topPickEnabled}
                     compact
+                    outlinedChevron
                     className={`mt-1 w-[52px] shrink-0 ${topPickEnabled ? '' : 'opacity-40'}`}
                   />
                 </div>
