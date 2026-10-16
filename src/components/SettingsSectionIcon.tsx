@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type SettingsSectionIconName = 'favorites' | 'composition' | 'industry' | 'stock-display' | 'colors'
+export type SettingsSectionIconName = 'favorites' | 'composition' | 'industry' | 'stock-display' | 'colors' | 'admin-ops' | 'admin-moved'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
@@ -49,6 +49,20 @@ const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
     </>
   ),
   favorites: <path d="M18 7v14l-6-4l-6 4v-14a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4" />,
+  // 관리자 페이지 탭 — 운영은 Tabler settings(톱니), 이관은 Lucide archive(보관함) 모양이다.
+  'admin-ops': (
+    <>
+      <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  'admin-moved': (
+    <>
+      <rect x="2" y="3" width="20" height="5" rx="1" />
+      <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+      <path d="M10 12h4" />
+    </>
+  ),
 }
 
 // 30px로 그릴 때 선 1.1이 화면에서 약 1.35px로 보여 상단 영역 아이콘의 굵기(docs/ui-areas.md "아이콘 규칙")와 같다.

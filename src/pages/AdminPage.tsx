@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
-import SettingsPanel from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import MarketryPublishControls from '@/components/MarketryPublishControls'
 import Spinner from '@/components/Spinner'
 import { useSession } from '@/hooks/useSession'
@@ -11,6 +11,8 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
 import { isLocalSignupEnabled } from '@/utils/localDevLogin'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
+
+const ADMIN_SECTIONS = ['adminOps', 'adminMoved'] as const
 
 // 관리자 전용 페이지 — 모든 사용자가 보는 MARKETRY 맵을 바꾸는 작업을 일반 작업 화면(Custom)과 떨어뜨려 둔다.
 // 다른 페이지처럼 가운데 메인 영역과 옆의 설정창으로 나뉘고, 작업은 설정창에서 한다. 메인 영역에는 로딩 때 보이는 로고 원만 둔다.
@@ -71,8 +73,11 @@ export default function AdminPage() {
                 onOpenChange={setIsSettingsOpen}
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
-                plainContent={
-                  <>
+                sectionOrder={ADMIN_SECTIONS}
+              >
+                {/* 운영 탭 — 탭 안 항목은 탭 없는 설정창(그룹·커스텀)과 같은 모양이라 settings-plain-content로 감싼다(번호는 이 탭 안에서 1부터). */}
+                <SettingsPanelGroup section="adminOps">
+                  <div className="settings-plain-content">
                     <div className="h-[127px] text-sm">
                       <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">MARKETRY 분류</h2>
                       <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">내 분류를 MARKETRY 분류로 커밋·롤백</p>
@@ -101,9 +106,15 @@ export default function AdminPage() {
                         </div>
                       </div>
                     )}
-                  </>
-                }
-              />
+                  </div>
+                </SettingsPanelGroup>
+                {/* 이관 탭 — 일반 설정창에서 안 쓰는 항목을 옮겨 올 자리다. */}
+                <SettingsPanelGroup section="adminMoved">
+                  <p className="flex h-[127px] items-center justify-center text-center text-xs font-medium leading-relaxed text-gray-300">
+                    아직 옮겨진 항목이 없습니다.
+                  </p>
+                </SettingsPanelGroup>
+              </SettingsPanel>
             </div>
           )}
         </div>
