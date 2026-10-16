@@ -191,7 +191,7 @@ export default function ProfilePage() {
               {/* 캡처 창·설정창 제목처럼 제목 앞에 청록 막대를 둔다. */}
               <h2 className="font-roboto-latin mb-4 flex h-7 items-center text-lg font-bold leading-none">
                 <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
-                계정 정보
+                Account
               </h2>
               <div className={ITEM_CLASS}>
                 <p className="text-sm text-gray-300">이메일</p>
