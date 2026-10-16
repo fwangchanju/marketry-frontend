@@ -25,10 +25,12 @@ interface Props<K extends string> {
   badge?: string
   // 설명 글자 줄 높이에 맞춘 작은 크기(개수 선택처럼 한 줄 옆에 붙는 용도).
   compact?: boolean
+  // 꺽쇠를 고른 칸과 같은 색 조합으로 그린다(안쪽 짙은 청록 + 청록 외곽선).
+  outlinedChevron?: boolean
   className?: string
 }
 
-export default function SettingsDropdown<K extends string>({ options, value, onChange, ariaLabel, disabled = false, badge, compact = false, className = '' }: Props<K>) {
+export default function SettingsDropdown<K extends string>({ options, value, onChange, ariaLabel, disabled = false, badge, compact = false, outlinedChevron = false, className = '' }: Props<K>) {
   const [isOpen, setIsOpen] = useState(false)
   const [indent, setIndent] = useState(0)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -56,7 +58,14 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
       >
         {badge && <span ref={badgeRef} className="whitespace-nowrap rounded-[3px] bg-black/35 px-1.5 text-[12px] font-bold leading-[18px]">{badge}</span>}
         <span className={`truncate ${badge ? 'ml-2.5 mr-auto' : ''}`}>{selected?.label}</span>
-        <ChevronDownIcon strokeWidth={3.5} className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 text-[#12b8a6] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        {outlinedChevron ? (
+          <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+            <polyline points="6 9 12 15 18 9" stroke="#12b8a6" strokeWidth={7} />
+            <polyline points="6 9 12 15 18 9" stroke="#20635d" strokeWidth={3} />
+          </svg>
+        ) : (
+          <ChevronDownIcon strokeWidth={3.5} className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 text-[#12b8a6] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        )}
       </button>
       {isOpen && position && (
         <div

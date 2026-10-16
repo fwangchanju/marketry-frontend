@@ -432,10 +432,10 @@ const stairCenterOf = (index: number) => index * (STAIR_ROW + STAIR_GAP) + STAIR
 const stairRawIndex = (rect: DOMRect, clientY: number) => Math.round((clientY - rect.top - STAIR_ROW / 2) / (STAIR_ROW + STAIR_GAP))
 const stairHeight = (count: number) => count * STAIR_ROW + (count - 1) * STAIR_GAP
 
-function StairChevron({ direction }: { direction: 'up' | 'down' }) {
+function StairChevron({ direction, className = '' }: { direction: 'up' | 'down'; className?: string }) {
   return (
-    <svg viewBox="0 0 10 6" className="w-[5px] group-hover:w-2">
-      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="#06302b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 10 6" className={`w-2 ${className}`}>
+      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -605,7 +605,7 @@ function DepthStairSelect({
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
             else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
           }}
-          className={`${STAIR_HANDLE_BASE} h-4 w-3 flex-col gap-[3px] border-[#12b8a6] bg-[#12b8a6] group-hover:h-6 group-hover:w-[18px] group-hover:gap-[5px] focus-visible:h-6 focus-visible:w-[18px]`}
+          className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[#12b8a6] bg-[#20635d]`}
           style={{ top: stairCenterOf(depth - 1) }}
         >
           <StairChevron direction="up" />
@@ -676,7 +676,7 @@ function DepthStairRange({
     else onChange(minIndex, Math.max(minIndex, Math.min(maxIndex + delta, maxSelectableIndex)))
   }
   const handleStyle = (index: number) => ({ top: stairCenterOf(index) })
-  const singleClass = `${STAIR_HANDLE_BASE} h-[14px] w-3 border-[#12b8a6] bg-[#12b8a6] group-hover:h-5 group-hover:w-4`
+  const singleClass = `${STAIR_HANDLE_BASE} size-3 border-[#12b8a6] bg-[#20635d]`
   return (
     <div
       role="group"
@@ -718,7 +718,7 @@ function DepthStairRange({
               if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') handleKeys('min')(e)
               else handleKeys('max')(e)
             }}
-            className={`${STAIR_HANDLE_BASE} h-4 w-3 flex-col gap-[3px] border-[#12b8a6] bg-[#12b8a6] group-hover:h-6 group-hover:w-[18px] group-hover:gap-[5px] focus-visible:h-6 focus-visible:w-[18px]`}
+            className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[#12b8a6] bg-[#20635d]`}
             style={handleStyle(minIndex)}
           >
             <StairChevron direction="up" />
@@ -727,10 +727,10 @@ function DepthStairRange({
         ) : (
           <>
             <span role="slider" tabIndex={disabled ? -1 : 0} aria-disabled={disabled || undefined} aria-label="지표 표시 시작 단계" aria-valuetext={labels[minIndex]} onKeyDown={handleKeys('min')} className={`${singleClass} z-10`} style={handleStyle(minIndex)}>
-              <StairChevron direction="up" />
+              <StairChevron direction="up" className="-translate-y-[2px]" />
             </span>
             <span role="slider" tabIndex={disabled ? -1 : 0} aria-disabled={disabled || undefined} aria-label="지표 표시 끝 단계" aria-valuetext={labels[maxIndex]} onKeyDown={handleKeys('max')} className={`${singleClass} z-20`} style={handleStyle(maxIndex)}>
-              <StairChevron direction="down" />
+              <StairChevron direction="down" className="translate-y-[2px]" />
             </span>
           </>
         )}
@@ -1693,6 +1693,7 @@ export function SettingsSectorLevelSection({
                 onChange={onChangeActiveDepthMetric}
                 ariaLabel="업종 지표"
                 badge="업종"
+                outlinedChevron
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
                 className={`mt-4 max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-40'}`}
               />
@@ -1789,6 +1790,7 @@ export function SettingsSectorLevelSection({
                     ariaLabel="상위 업종 강조 개수"
                     disabled={isTopPickDisabled || !topPickEnabled}
                     compact
+                    outlinedChevron
                     className={`mt-1 w-[52px] shrink-0 ${topPickEnabled ? '' : 'opacity-40'}`}
                   />
                 </div>
