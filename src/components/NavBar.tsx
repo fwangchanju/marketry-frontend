@@ -88,7 +88,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           aria-label={isProfileMenuOpen ? '계정 메뉴 닫기' : '계정 메뉴 열기'}
           aria-expanded={isProfileMenuOpen}
           onClick={() => setIsProfileMenuOpen(open => !open)}
-          className="relative -top-[2.5px] mr-0.5 size-[38px] overflow-hidden rounded-[12%] border-0 bg-transparent p-0 ring-[0.5px] ring-[var(--brand)] hover:ring-cyan-300 focus-visible:outline-none focus-visible:ring-[var(--accent)]"
+          className="relative -top-[2.5px] mr-0.5 size-[38px] overflow-hidden rounded-[12%] border-0 bg-transparent p-0 ring-2 ring-transparent hover:ring-zinc-400 focus-visible:outline-none focus-visible:ring-[var(--accent)]"
         >
           <ProfileAvatar className="size-full object-cover" />
         </button>
