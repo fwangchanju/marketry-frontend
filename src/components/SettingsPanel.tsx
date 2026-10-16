@@ -2038,6 +2038,8 @@ interface Props {
   taxonomyAtBottom?: boolean
   // Basis 줄이 없는 페이지(관리자)에서 좌우 이동 탭을 다른 페이지와 같은 높이에 둔다.
   fixedSideTab?: boolean
+  // 설정창 헤더 오른쪽 끝에 놓을 표시(관리자 페이지의 경고 표시 등).
+  headerRight?: ReactNode
   // 하단 Basis 선택 아래에 표시할 종목 분류 최종 변경 시각(지도 상단 표기와 같은 형식).
   snapshotTime?: string | null
   // 사이드바 열림 상태는 페이지가 관리한다.
@@ -2083,6 +2085,7 @@ export default function SettingsPanel({
   sectionOrder,
   taxonomyAtBottom = false,
   fixedSideTab = false,
+  headerRight,
   snapshotTime,
   taxonomySection = 'industry',
   isOpen,
@@ -2313,6 +2316,7 @@ export default function SettingsPanel({
           )}
         </div>
         {preferenceActions}
+        {headerRight && <div className="-mr-[3px] ml-auto flex shrink-0 items-center">{headerRight}</div>}
       </div>
       {availableSections.length > 0 && (
       <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-gray-500 bg-[#363639] px-1">
