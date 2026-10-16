@@ -179,7 +179,7 @@ export default function ProfilePage() {
     <div className="min-h-screen text-white">
       <NavBar />
       <NavSubBar />
-      <main className="mx-auto w-full max-w-2xl px-4 py-10">
+      <main className="mx-auto w-full max-w-md px-4 py-10">
         <section className="rounded-lg border border-gray-700 bg-zinc-800 p-6">
           {isError ? (
             // 다른 화면의 불러오기 실패와 같은 오류 원(문구와 "다시 시도")으로 보여 준다.
@@ -188,7 +188,11 @@ export default function ProfilePage() {
             </div>
           ) : session?.authenticated ? (
             <>
-              <h2 className="mb-4 text-lg font-semibold">계정 정보</h2>
+              {/* 캡처 창·설정창 제목처럼 제목 앞에 청록 막대를 둔다. */}
+              <h2 className="font-roboto-latin mb-4 flex h-7 items-center text-lg font-bold leading-none">
+                <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
+                계정 정보
+              </h2>
               <div className={ITEM_CLASS}>
                 <p className="text-sm text-gray-300">이메일</p>
                 {/* 구글 로고는 색을 바꾸지 않고 흰 칸 위에 그대로 둔다(로그인 창과 같은 모양). 로그인이 구글 계정이라 이메일이 구글 주소임을 알려 준다. */}
