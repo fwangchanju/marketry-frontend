@@ -849,7 +849,7 @@ export function SettingsSectorStockScopeSection({
               role="radio"
               aria-checked={selected}
               onClick={() => onChange(option.value)}
-              className={`relative z-10 min-h-[30px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+              className={`relative z-10 min-h-[26px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
                 selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
               }`}
             >
@@ -945,7 +945,7 @@ export function SettingsAverageModeSection({
                 aria-checked={selected}
                 onClick={() => onChange(option.value)}
                 disabled={!enabled}
-                className={`relative z-10 min-h-[30px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+                className={`relative z-10 min-h-[26px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
                   selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
                 }`}
               >
@@ -1042,7 +1042,7 @@ function SettingsTaxonomySelector({
             role="radio"
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
-            className={`relative z-10 min-h-[34px] rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-sm font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+            className={`relative z-10 min-h-[26px] rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-sm font-medium whitespace-nowrap transition-colors duration-[500ms] ${
               isSelected(option.key) ? 'text-white' : 'text-zinc-200 hover:text-white'
             }`}
           >
@@ -1110,7 +1110,7 @@ function SettingsAverageModeSelector({
             role="radio"
             aria-checked={avgChangeRateUseSimple === option.value}
             onClick={() => avgChangeRateUseSimple !== option.value && onToggleAvgChangeRateUseSimple()}
-            className={`relative z-10 min-h-[34px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+            className={`relative z-10 min-h-[26px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
               avgChangeRateUseSimple === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
             }`}
           >
@@ -1622,7 +1622,7 @@ export function SettingsSectorLevelSection({
                       role="radio"
                       aria-checked={selected}
                       onClick={() => onChangeStockPopupOnHover(option.onHover)}
-                      className={`relative z-10 min-h-[30px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
+                      className={`relative z-10 min-h-[26px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
                       selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
                     }`}
                     >
@@ -1764,7 +1764,7 @@ export function SettingsSectorChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[30px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'}`}
+            className={`relative z-10 min-h-[26px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'}`}
           >
             {option.label}
           </button>
@@ -1797,7 +1797,7 @@ export function SettingsStockChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[30px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'}`}
+            className={`relative z-10 min-h-[26px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'}`}
           >
             {option.label}
           </button>

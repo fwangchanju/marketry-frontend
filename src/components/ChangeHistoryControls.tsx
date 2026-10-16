@@ -101,7 +101,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
     const label = isUndo ? '실행 취소' : '다시 실행'
     return (
       <>
-        <div className={`flex min-h-[34px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px]/4 font-medium ${isEmpty ? 'bg-[#4b4b50] opacity-50' : 'bg-[var(--accent)]'}`}>
+        <div className={`flex min-h-[26px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px]/4 font-medium ${isEmpty ? 'bg-[#4b4b50] opacity-50' : 'bg-[var(--accent)]'}`}>
           <button
             type="button"
             onClick={() => {
