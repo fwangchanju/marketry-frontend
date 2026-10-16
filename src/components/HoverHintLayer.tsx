@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 
-// 마우스를 올리거나 키보드로 오면 뜨는 설명을 한 곳에서 그린다 — 요소에 data-hint="설명"만 달면 된다(브라우저 기본 title 툴팁 대신 쓴다).
+// 마우스를 올리거나 키보드로 오면 뜨는 설명을 한 곳에서 그린다 — 요소에 data-hint="설명"만 달면 된다(**굵게**로 감싼 글자는 굵게 그린다. 커서 말풍선의 항목명 굵은 글씨와 맞추려는 것이다)(브라우저 기본 title 툴팁 대신 쓴다).
 // 규칙은 docs/ui-areas.md "마우스 올림". 앱에 한 번만 둔다.
 const SHOW_DELAY_MS = 150
 const GAP = 8
@@ -92,7 +92,7 @@ export default function HoverHintLayer() {
       style={{ left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? 'visible' : 'hidden', maxWidth: hint.bounds ? hint.bounds.width - EDGE * 2 : undefined }}
       className={`pointer-events-none fixed z-[200] w-max max-w-xs whitespace-pre-line ${HINT_BUBBLE_CLASS}`}
     >
-      {hint.text}
+      {hint.text.split(/\*\*(.+?)\*\*/).map((part, index) => (index % 2 === 1 ? <span key={index} className="font-bold">{part}</span> : part))}
     </div>,
     document.body,
   )

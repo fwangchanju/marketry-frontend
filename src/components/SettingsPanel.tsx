@@ -1719,7 +1719,7 @@ export function SettingsSectorLevelSection({
                 labels={depthMetricLabels}
                 maxSelectableIndex={depthMetricMaxSelectableIndex}
                 valueLabel={GROUP_TAB_METRIC_OPTIONS.find(option => option.key === activeDepthMetric)?.label}
-                blockedHint={`${settingNumber('depthLevel')}) 업종 분류 깊이에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
+                blockedHint={`**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
                 onChange={onChangeDepthMetricRange}
                 disabled={isDepthMetricRangeDisabled}
               />
@@ -1781,7 +1781,7 @@ export function SettingsSectorLevelSection({
                       maxSelectableIndex={Math.min(topPickMaxSelectableDepth, selectableDepth) - 1}
                       blockedHint={label => selectableDepth < depthLabelCount
                         ? `현재 ${label} 데이터가 없어\n비활성화되어 있습니다.`
-                        : `${settingNumber('depthLevel')}) 업종 분류 깊이에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
+                        : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
                       selectedIndex={topPickDepth}
                       onPick={onChangeTopPickDepth}
                       railWidth={0}
