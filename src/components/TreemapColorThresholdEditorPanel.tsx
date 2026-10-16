@@ -3,8 +3,6 @@ import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
 // 색은 고르는 것이 아니라 정해져 있다 — 하락은 파랑, 보합(0%)은 회색, 상승은 빨강이고 구간 순서대로 명도가 올라간다(treemapColorScale.fixedRankColor).
-// 버튼에는 그 색 계열의 대표색(상승·하락은 명도 46)을 쓴다.
-const CHIP_COLOR = { down: '#1d61cd', zero: '#808080', up: '#cd1d1d' } as const
 const CHIP_LABEL = { down: '하락', zero: '보합', up: '상승' } as const
 
 type BarSide = 'up' | 'down' | 'zero'
@@ -92,27 +90,28 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
     onChangeRankPercent(rank, target)
   }
   const edgeAligned = (position: number) => Math.min(Math.max(position, 0.06), 0.94) * 100
-  const badgeClass = 'absolute -top-1 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1.5 text-xs font-bold leading-[18px] text-black'
+  // 값 말풍선은 눈금 글자와 같은 줄·같은 크기(11px)로 그 위에 포개서 보여 준다(고른 값이 눈금과 같으면 그 눈금 글자를 덮는다).
+  const badgeClass = 'absolute top-[35px] z-10 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1 text-[11px] font-medium leading-4 tabular-nums text-black'
 
   return (
     <>
       {/* 막대 폭은 다른 탭의 슬라이더와 같은 .settings-slider-control 폭이다(양 끝 손잡이·눈금 글자는 그 바깥으로 조금 나온다). */}
       <div
-        className="relative h-[62px] touch-none select-none"
+        className="relative h-[51px] touch-none select-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
       >
         <div ref={trackRef} className="settings-slider-control relative h-full">
-          <div className="absolute inset-x-0 top-[23px] h-4 border border-white/25" style={{ background: gradient }} />
+          <div className="absolute inset-x-0 top-[12px] h-4 border border-white/25" style={{ background: gradient }} />
           {zeroSelected && <span className={badgeClass} style={{ left: '0%' }}>0%</span>}
           <div
             data-zero
             role="img"
             aria-label="0% 고정"
             data-hint="0% 고정"
-            className={`absolute left-0 top-[19px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
+            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
             style={{ backgroundColor: zeroColor }}
           />
           <div className={zeroSelected ? 'opacity-60' : ''}>
@@ -135,7 +134,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
                     aria-valuemax={BAR_MAX_PERCENT}
                     aria-valuenow={item.percent}
                     onKeyDown={event => handleKeyDown(event, rank)}
-                    className={`absolute top-[19px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-zinc-800 ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
+                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-zinc-800 ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
                     style={{ left }}
                   />
                 </div>
@@ -148,7 +147,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             return (
               <span
                 key={tick}
-                className={`pointer-events-none absolute top-[46px] -translate-x-1/2 whitespace-nowrap text-[11px]/4 transition-colors duration-300 ${highlighted ? 'font-medium' : ''} text-white`}
+                className={`pointer-events-none absolute top-[35px] -translate-x-1/2 whitespace-nowrap text-[11px]/4 transition-colors duration-300 ${highlighted ? 'font-medium' : ''} text-white`}
                 style={{ left: `${percentToPosition(tick) * 100}%` }}
               >
                 {tick}%
@@ -195,24 +194,24 @@ export default function TreemapColorThresholdEditorPanel({
   hasChanges,
 }: ColorThresholdEditorProps) {
   return (
-    <div className="mt-4 flex flex-col gap-4 text-sm text-white">
+    <div className="mt-2 flex flex-col gap-4 text-sm text-white">
       <div>
-        {/* 하락 / 보합 / 상승 — 지도 범례와 같은 순서·색. 선택 표시는 선명도로 한다(고른 쪽은 선명하게, 안 고른 쪽은 흐리게). 외곽선은 사용자 화면에서 늦게 그려져 쓰지 않는다. 폭은 아래 막대와 같다. */}
-        <div role="group" aria-label="편집할 구간" className="settings-slider-control grid grid-cols-3 gap-1">
-          {(['down', 'zero', 'up'] as const).map(key => {
+        {/* 상승 / 보합 / 하락 — 업종 단계(대분류·중분류·소분류)처럼 글자만 있는 선택이고, 고른 것은 흰색, 안 고른 것은 회색이다. 색은 아래 막대가 보여 준다. */}
+        <div role="radiogroup" aria-label="편집할 구간" className="settings-slider-control flex flex-row items-center justify-center gap-3 whitespace-nowrap text-[13px]/4">
+          {(['up', 'zero', 'down'] as const).map(key => {
             const selected = bar.side === key
             return (
               <button
                 key={key}
                 type="button"
-                aria-pressed={selected}
+                role="radio"
+                aria-checked={selected}
                 onClick={() => {
                   if (selected) return
                   if (key === 'zero') onSelectZero()
                   else onSelectRank(bar.selectedRank ?? 0, key)
                 }}
-                className={`flex h-7 items-center justify-center gap-1 rounded-[5px] border border-white/25 p-0 text-[12px] font-bold text-white ${selected ? '' : 'opacity-50 hover:opacity-80'}`}
-                style={{ backgroundColor: CHIP_COLOR[key] }}
+                className={`border-0 bg-transparent p-0 text-[13px]/4 ${selected ? 'text-white' : 'text-gray-400 hover:text-white'}`}
               >
                 {CHIP_LABEL[key]}
               </button>
