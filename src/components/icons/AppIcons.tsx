@@ -82,6 +82,27 @@ export function RefreshIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 // 지도 위쪽 이동 경로의 "되돌아가기" 표시와 2-4 제외 업종 목록이 같은 모양을 쓴다.
+// 자물쇠 — 관리자 전용 표시에 쓴다. 선 굵기는 설정창 헤더의 다른 아이콘(되돌리기·저장)과 같은 1.6이다.
+export function LockIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  )
+}
+
+// git 커밋 모양 — 세로선 가운데에 원이 있는 모양. 버전 하나를 확정한다는 뜻이다.
+export function CommitIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v6" />
+      <path d="M12 16v6" />
+    </svg>
+  )
+}
+
 export function ReturnArrowIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>

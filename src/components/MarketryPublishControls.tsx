@@ -10,10 +10,11 @@ import { treemapKeys } from '@/hooks/queryKeys'
 import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { CommitIcon, HistoryIcon } from '@/components/icons/AppIcons'
 
-// 검정 바탕에 빨간 테두리·글자 — 아래 롤백 목록(검정 바탕, 빨간 테두리)과 같은 모양이고, 올리면 빨간 바탕에 흰 글자가 된다.
+// 커스텀 설정창의 다운로드·업로드 버튼과 같은 회색 칩(마우스를 올리면 강조색이 은은하게 비친다). 위험 작업이라는 표시는 설정창 헤더의 ADMIN 경고가 맡는다.
 const BUTTON_CLASS =
-  'h-7 w-full whitespace-nowrap rounded-md border border-[#ff4d2e] bg-black px-2 text-[13px] font-medium text-[#ff6a4d] transition-colors enabled:hover:[background-image:linear-gradient(rgb(255_77_46/0.3),rgb(255_77_46/0.3))] disabled:cursor-not-allowed disabled:opacity-50'
+  'settings-chip-hover flex h-7 w-full items-center justify-center gap-1 whitespace-nowrap rounded-[5px] border-0 bg-[#4b4b50] px-2 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40'
 
 // "MARKETRY 2026-10-08 14:30"에서 앞의 이름을 뺀 날짜·시간만 — 안내 문구에서 이름이 겹쳐 보이지 않게 한다.
 function toDateTimeLabel(label: string) {
@@ -53,18 +54,18 @@ export default function MarketryPublishControls() {
 
   const handlePublish = async () => {
     const confirmed = await appConfirm(
-      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n내 분류를 서버에 업데이트하시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`,
-      { adminOnly: true, title: 'MARKETRY 업데이트' },
+      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n내 분류를 MARKETRY 분류로 커밋하시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`,
+      { adminOnly: true, title: 'MARKETRY 커밋' },
     )
     if (!confirmed) return
-    setBusyMessage('MARKETRY를 업데이트 중입니다.')
+    setBusyMessage('MARKETRY를 커밋 중입니다.')
     try {
       const published = await publishMarketry(createPublicationLabel(new Date()))
       setVersions(null)
       await refreshMaps()
-      appAlert(`[${toDateTimeLabel(published.label)}]\nMARKETRY 업데이트가 완료되었습니다.`, { title: '업데이트 완료' })
+      appAlert(`[${toDateTimeLabel(published.label)}]\nMARKETRY 커밋이 완료되었습니다.`, { title: '커밋 완료' })
     } catch {
-      appAlert('MARKETRY에 올리지 못했습니다.', { title: '업데이트 실패' })
+      appAlert('MARKETRY에 올리지 못했습니다.', { title: '커밋 실패' })
     } finally {
       setBusyMessage(null)
     }
@@ -86,7 +87,7 @@ export default function MarketryPublishControls() {
   }
 
   const handleRestore = async (version: MarketryPublication) => {
-    const confirmed = await appConfirm(`[${toDateTimeLabel(version.label)}]\nMARKETRY 맵을 되돌리시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
+    const confirmed = await appConfirm(`[${toDateTimeLabel(version.label)}]\nMARKETRY 분류를 되돌리시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
     if (!confirmed) return
     setBusyMessage('MARKETRY를 롤백 중입니다.')
     try {
@@ -103,12 +104,13 @@ export default function MarketryPublishControls() {
 
   return (
     <div ref={rootRef} className="relative grid w-full grid-cols-2 gap-[6px]">
-      <span className="col-span-2 inline-flex h-7 items-center justify-center rounded-md border border-[#ff4d2e] bg-[#ff4d2e] px-2 text-[13px] font-medium text-white">⚠ ADMIN</span>
       <button type="button" onClick={handlePublish} disabled={isBusy} className={BUTTON_CLASS}>
-        UPDATE
+        <CommitIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-300" />
+        커밋
       </button>
       <button type="button" onClick={handleToggleVersions} disabled={isBusy} className={BUTTON_CLASS}>
-        ROLLBACK
+        <HistoryIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-300" />
+        롤백
       </button>
       {/* 올리거나 되돌리는 동안 화면 전체를 가리고 큰 로딩을 보여준다 — 오래 걸려도 "진행 중"임을 알 수 있고, 그 사이 다른 곳을 누르지 못한다. */}
       {isBusy && (

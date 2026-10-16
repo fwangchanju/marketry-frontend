@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import MarketryLogo from '@/components/MarketryLogo'
 
 interface Props {
@@ -16,9 +16,11 @@ interface Props {
   message?: string
   // true면 돌지도 숫자도 세지도 않는 로고 원을 그린다 — 불러오는 일이 없는 화면(관리자 페이지)의 메인 영역에 로고만 보여 줄 때 쓴다.
   still?: boolean
+  // still일 때 로딩 원의 경과 시간 숫자가 있던 자리(로고 아래)에 놓을 내용 — 관리자 페이지의 경고 아이콘.
+  stillContent?: ReactNode
 }
 
-export default function Spinner({ className, showElapsed = false, showLogo = false, errorMessage, onRetry, message, still = false }: Props) {
+export default function Spinner({ className, showElapsed = false, showLogo = false, errorMessage, onRetry, message, still = false, stillContent }: Props) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
   useEffect(() => {
@@ -31,11 +33,14 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   // 로딩·오류 화면의 모든 크기(테두리·로고·글자·버튼 여백)는 원 너비에 대한 비율이다. 메인 영역의 큰 원(320px)을 기준으로 정했고,
   // 달력처럼 작은 원도 같은 비율로 줄어 로고·문구·숫자·버튼의 배치가 어느 크기에서나 같다.
   if (still) {
+    // 로딩 원과 같은 3줄 격자(빈 칸 / 로고 / 아래 칸)라 로고가 원의 가운데에 오고, 아래 칸 내용은 경과 시간 숫자가 있던 바로 그 자리에 놓인다.
     return (
       <div aria-hidden="true" className={`@container relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
         <div className="absolute inset-0 rounded-full border-[1.9cqw] border-gray-600" />
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
+          <div />
           <MarketryLogo className="h-auto w-[84%]" />
+          <div className="flex flex-col items-center justify-center pb-[14cqw]">{stillContent}</div>
         </div>
       </div>
     )

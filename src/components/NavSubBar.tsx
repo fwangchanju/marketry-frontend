@@ -75,8 +75,11 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
     if (to === '/custom/stock') return location.pathname.startsWith('/custom')
     return location.pathname === to
   }
-  const linkClassName = (to: string) =>
-    `${FONT_NAV_TAB} whitespace-nowrap ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-gray-400 hover:text-white'}`
+  // Admin 메뉴만 빨강이다(모두에게 영향을 주는 작업이 있는 관리자 전용 페이지) — 지금 보는 중일 때는 더 밝은 빨강이다.
+  const linkClassName = (to: string) => {
+    if (to === ADMIN_LINK.to) return `${FONT_NAV_TAB} whitespace-nowrap ${isLinkActive(to) ? 'text-[#ff6a4d]' : 'text-[#ff4d2e] hover:text-[#ff6a4d]'}`
+    return `${FONT_NAV_TAB} whitespace-nowrap ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-gray-400 hover:text-white'}`
+  }
 
   const open = (to: string) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
