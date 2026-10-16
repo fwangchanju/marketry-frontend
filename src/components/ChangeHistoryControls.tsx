@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
 
-// 설정창 "변경 내역" 항목 — 되돌리기·다시 적용 두 칸과 변경 내역 목록. 종목 화면과 업종 화면이 같이 쓴다.
+// 설정창 "변경 내역" 항목 — 실행 취소·다시 실행 두 칸과 변경 내역 목록. 종목 화면과 업종 화면이 같이 쓴다.
 // 목록은 두 칸을 묶은 줄과 같은 왼쪽 끝·폭으로 펼쳐지고, 줄을 고르면 맨 위(다음 차례)부터 그 줄까지 순서대로 처리한다.
 
 // 목록 한 번에 보이는 줄 수(넘으면 스크롤) — 줄 높이 24px × 15줄.
@@ -41,7 +41,7 @@ function HistoryListPopup<T extends { id: string }>({
   const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false)
   // 마우스를 올린 줄까지 위에서부터 모두 강조해서, 누르면 어디까지 처리되는지 바로 보이게 한다.
   const [hoverIndex, setHoverIndex] = useState(-1)
-  const actionLabel = direction === 'undo' ? '실행취소' : '다시실행'
+  const actionLabel = direction === 'undo' ? '실행 취소' : '다시 실행'
 
   if (!isOpen || !position) return null
 
@@ -74,7 +74,7 @@ function HistoryListPopup<T extends { id: string }>({
                 onPick(action.id)
                 setIsOpen(false)
               }}
-              data-hint={`여기까지 ${index + 1}단계 ${actionLabel}`}
+              data-hint={`${index + 1}단계 ${direction === 'undo' ? '실행 취소' : '다시 실행'}`}
               className={`flex w-full items-center gap-2 whitespace-nowrap rounded-none border-0 px-2 py-1 text-left text-sm font-normal text-white ${index > 0 ? 'border-t border-t-white/30' : ''} ${index <= hoverIndex ? 'bg-[var(--brand)]/20 border-white/25!' : 'bg-transparent'}`}
             >
               <span className="w-6 shrink-0 text-right text-xs tabular-nums text-gray-400">{direction === 'undo' ? '-' : '+'}{index + 1}</span>
@@ -98,10 +98,10 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
     const isListOpen = isUndo ? isUndoListOpen : isRedoListOpen
     const setListOpen = isUndo ? setIsUndoListOpen : setIsRedoListOpen
     const isEmpty = stack.length === 0
-    const label = isUndo ? '되돌리기' : '다시 적용'
+    const label = isUndo ? '실행 취소' : '다시 실행'
     return (
       <>
-        <div className={`flex h-7 min-w-0 items-stretch overflow-hidden rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium ${isEmpty ? 'opacity-50' : ''}`}>
+        <div className={`flex min-h-[28px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px]/4 font-medium ${isEmpty ? 'bg-[#4b4b50] opacity-50' : 'bg-[var(--accent)]'}`}>
           <button
             type="button"
             onClick={() => {
@@ -110,9 +110,9 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
               setListOpen(prev => !prev)
             }}
             disabled={isEmpty}
-            className={`flex w-5 shrink-0 items-center justify-center border-0 border-r border-gray-600 bg-transparent p-0 text-gray-300 hover:bg-white/10 disabled:cursor-not-allowed disabled:hover:bg-transparent ${isListOpen ? '!bg-white/10 !text-white' : ''}`}
-            data-hint={`${isUndo ? '실행취소' : '다시실행'} 목록`}
-            aria-label={`${isUndo ? '실행취소' : '다시실행'} 목록`}
+            className={`flex w-5 shrink-0 items-center justify-center border-0 border-r bg-transparent p-0 hover:bg-black/10 disabled:cursor-not-allowed disabled:hover:bg-transparent ${isEmpty ? 'border-white/15 text-zinc-200' : 'border-black/15 text-zinc-900'} ${isListOpen ? '!bg-black/10' : ''}`}
+            data-hint={`${label} 목록`}
+            aria-label={`${label} 목록`}
           >
             <ChevronDownIcon className="h-3.5 w-3.5" />
           </button>
@@ -120,9 +120,9 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
             type="button"
             onClick={isUndo ? onUndo : onRedo}
             disabled={isEmpty}
-            className="flex min-w-0 flex-1 items-center justify-center gap-1 border-0 bg-transparent px-1.5 text-xs font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            data-hint={`${isUndo ? '실행취소' : '다시실행'} (${isUndo ? 'Ctrl+Z' : 'Ctrl+Y'})`}
-            aria-label={isUndo ? '실행취소' : '다시실행'}
+            className={`flex min-w-0 flex-1 items-center justify-center gap-1 border-0 bg-transparent px-1.5 text-[13px]/4 font-medium hover:bg-black/10 disabled:cursor-not-allowed disabled:hover:bg-transparent ${isEmpty ? 'text-zinc-200' : 'text-zinc-900'}`}
+            data-hint={`${label} (${isUndo ? 'Ctrl+Z' : 'Ctrl+Y'})`}
+            aria-label={label}
           >
             <span className="truncate">{label}{isEmpty ? '' : ` (${stack.length})`}</span>
           </button>
@@ -141,9 +141,9 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
   }
 
   return (
-    <div className="max-w-[16rem]">
-      <p className="settings-description m-0 mt-1 text-xs font-medium text-gray-300">변경 내역 되돌리기·다시 적용</p>
-      <div ref={rowRef} className="mt-4 grid grid-cols-2 gap-2">
+    <div>
+      <p className="settings-description m-0 mt-1 text-xs font-medium text-gray-300">변경 내역 실행 취소·다시 실행</p>
+      <div ref={rowRef} className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
         {pill('undo')}
         {pill('redo')}
       </div>

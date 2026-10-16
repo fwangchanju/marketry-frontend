@@ -192,7 +192,7 @@ type UndoableActionInput =
 // id는 실행취소/다시실행 "목록"에서 스택 순서와 무관하게 특정 항목 하나를 골라 가리키기 위한
 // 프론트 전용 식별자 — 백엔드 요청엔 실리지 않는다.
 type UndoableAction = UndoableActionInput & { id: string }
-const UNDO_STACK_LIMIT = 50
+const UNDO_STACK_LIMIT = 10
 
 // 실행취소/다시실행 목록에 보여줄 한 줄 설명 — "종목명: 이전 섹터 → 이후 섹터" 형태로,
 // 지금 undo 목록에 있든 redo 목록에 있든(즉 아직 실행 전이든 이미 되돌린 뒤든) 항상 같은 문구를 쓴다.
@@ -611,7 +611,7 @@ function BulkAssignButton({
         type="button"
         onClick={handleClick}
         aria-disabled={isIdle}
-        className={`flex h-6 w-full items-center justify-center whitespace-nowrap rounded border bg-transparent px-1.5 text-sm transition-colors ${
+        className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded border bg-transparent px-1.5 text-[13px] font-medium transition-colors ${
           isIdle ? 'cursor-not-allowed border-gray-700 text-gray-600' : 'border-[var(--brand)]/60 text-[var(--brand)] hover:bg-white/10'
         }`}
       >
@@ -1606,14 +1606,14 @@ export default function AdminStockTable({
         historyContainer,
       )}
       {excelContainer && createPortal(
-        <div>
+        <div className="h-[127px]">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">간편 업종 분류</h2>
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">파일 다운 받아서 AI로 분류 후 업로드</p>
-          <div className="mt-4 grid max-w-[16rem] grid-cols-2 gap-2">
+          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
             <button
               type="button"
               onClick={handleExportExcel}
-              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium text-white hover:bg-white/10"
+              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-[13px] font-medium text-white hover:bg-white/10"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
@@ -1624,7 +1624,7 @@ export default function AdminStockTable({
               type="button"
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
-              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-[13px] font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >
@@ -1652,7 +1652,7 @@ export default function AdminStockTable({
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">
             {selectedStockCodes.size > 0 ? `선택한 종목 ${selectedStockCodes.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택하세요'}
           </p>
-          <div className="mt-4 grid max-w-[16rem] grid-cols-3 gap-2">
+          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
             <BulkAssignButton count={selectedStockCodes.size} options={bulkParentOptions} onAssign={handleBulkAssignParent} label="대분류" title="대분류 일괄 변경" orderMode={bulkOrderMode} />
             <BulkAssignButton
               count={selectedStockCodes.size}
