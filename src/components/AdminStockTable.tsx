@@ -192,7 +192,7 @@ type UndoableActionInput =
 // id는 실행취소/다시실행 "목록"에서 스택 순서와 무관하게 특정 항목 하나를 골라 가리키기 위한
 // 프론트 전용 식별자 — 백엔드 요청엔 실리지 않는다.
 type UndoableAction = UndoableActionInput & { id: string }
-const UNDO_STACK_LIMIT = 10
+const UNDO_STACK_LIMIT = 9
 
 // 실행취소/다시실행 목록에 보여줄 한 줄 설명 — "종목명: 이전 섹터 → 이후 섹터" 형태로,
 // 지금 undo 목록에 있든 redo 목록에 있든(즉 아직 실행 전이든 이미 되돌린 뒤든) 항상 같은 문구를 쓴다.
@@ -611,8 +611,8 @@ function BulkAssignButton({
         type="button"
         onClick={handleClick}
         aria-disabled={isIdle}
-        className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded border bg-transparent px-1.5 text-[13px] font-medium transition-colors ${
-          isIdle ? 'cursor-not-allowed border-gray-700 text-gray-600' : 'border-[var(--brand)]/60 text-[var(--brand)] hover:bg-white/10'
+        className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded-[5px] border-0 px-1.5 text-[13px] font-medium transition-colors ${
+          isIdle ? 'cursor-not-allowed bg-[#4b4b50] text-zinc-200 opacity-50' : 'bg-[var(--accent)] text-zinc-900 hover:brightness-110'
         }`}
       >
         {label}
@@ -1613,22 +1613,22 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={handleExportExcel}
-              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-[13px] font-medium text-white hover:bg-white/10"
+              className="flex h-7 items-center justify-center gap-1 rounded-[5px] border-0 bg-[var(--accent)] text-[13px] font-medium text-zinc-900 hover:brightness-110"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
-              <DownloadIcon className="h-4 w-4 text-gray-400" />
+              <DownloadIcon className="h-4 w-4 text-zinc-700" />
               다운로드
             </button>
             <button
               type="button"
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
-              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-[13px] font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-7 items-center justify-center gap-1 rounded-[5px] border-0 bg-[var(--accent)] text-[13px] font-medium text-zinc-900 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >
-              <UploadIcon className="h-4 w-4 text-gray-400" />
+              <UploadIcon className="h-4 w-4 text-zinc-700" />
               {isUploading ? '처리 중…' : '업로드'}
             </button>
             <input
