@@ -611,8 +611,8 @@ function BulkAssignButton({
         type="button"
         onClick={handleClick}
         aria-disabled={isIdle}
-        className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded border bg-transparent px-1.5 text-[13px] font-medium transition-colors ${
-          isIdle ? 'cursor-not-allowed border-gray-700 text-gray-600' : 'border-[var(--brand)]/60 text-[var(--brand)] hover:bg-white/10'
+        className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded-[5px] border-0 px-1.5 text-[13px] font-medium transition-colors ${
+          isIdle ? 'cursor-not-allowed bg-[#4b4b50] text-zinc-200 opacity-50' : 'bg-[var(--accent)] text-zinc-900 hover:brightness-110'
         }`}
       >
         {label}
@@ -1613,22 +1613,22 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={handleExportExcel}
-              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-[13px] font-medium text-white hover:bg-white/10"
+              className="flex h-7 items-center justify-center gap-1 rounded-[5px] border-0 bg-[var(--accent)] text-[13px] font-medium text-zinc-900 hover:brightness-110"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
-              <DownloadIcon className="h-4 w-4 text-gray-400" />
+              <DownloadIcon className="h-4 w-4 text-zinc-700" />
               다운로드
             </button>
             <button
               type="button"
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
-              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-[13px] font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-7 items-center justify-center gap-1 rounded-[5px] border-0 bg-[var(--accent)] text-[13px] font-medium text-zinc-900 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >
-              <UploadIcon className="h-4 w-4 text-gray-400" />
+              <UploadIcon className="h-4 w-4 text-zinc-700" />
               {isUploading ? '처리 중…' : '업로드'}
             </button>
             <input
