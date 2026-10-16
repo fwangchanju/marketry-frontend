@@ -8,6 +8,7 @@ import type { StockChangeFilter, SectorChangeFilter } from '@/hooks/useFilteredT
 import { hexToHsl, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import TreemapColorThresholdEditorPanel, { type ColorThresholdEditorProps } from '@/components/TreemapColorThresholdEditorPanel'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
+import SettingsDropdown from '@/components/SettingsDropdown'
 import { HistoryIcon, RefreshIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import type { MarketValueTierItem } from '@/types/api'
 import { FONT_BAR_TIME_SHAPE } from '@/components/FontStyle'
@@ -218,14 +219,34 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'favorites', label: '북마크', icon: 'favorites' },
 ]
 
-// 탭 제목에는 숫자를 표시하지 않지만 북마크에는 원래 설정 위치를 표기한다.
-// 탭 순서를 바꾸면 이 번호와 BOOKMARK_ORDER, 북마크 그룹의 렌더 순서도 함께 바꾼다.
-const SETTINGS_SECTION_NUMBERS: Record<SettingsPanelSectionId, number> = {
-  composition: 1,
-  industry: 2,
-  stockDisplay: 3,
-  colors: 4,
-  favorites: 5,
+// 탭 제목에는 숫자를 표시하지 않지만 북마크와 안내 말풍선에는 원래 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
+// 탭 번호는 SETTINGS_SECTIONS 순서에서, 항목 번호는 SETTING_ITEM_POSITIONS의 탭 안 순서에서 만들어서
+// 탭 순서나 항목 순서를 바꾸면 북마크와 말풍선의 번호가 함께 바뀐다(BOOKMARK_ORDER와 북마크 그룹의 렌더 순서는 따로 바꾼다).
+const SETTINGS_SECTION_NUMBERS = Object.fromEntries(
+  SETTINGS_SECTIONS.map((section, index) => [section.id, index + 1]),
+) as Record<SettingsPanelSectionId, number>
+
+// 각 탭 안에서 항목이 놓인 순서(1부터).
+const SETTING_ITEM_POSITIONS: Partial<Record<SettingsBookmarkId, { section: SettingsPanelSectionId; item: number }>> = {
+  marketValueRange: { section: 'composition', item: 1 },
+  sectorChange: { section: 'composition', item: 2 },
+  stockChange: { section: 'composition', item: 3 },
+  excludeSector: { section: 'composition', item: 4 },
+  depthLevel: { section: 'industry', item: 1 },
+  depthMetric: { section: 'industry', item: 2 },
+  depthRange: { section: 'industry', item: 3 },
+  topPick: { section: 'industry', item: 4 },
+  boxSize: { section: 'stockDisplay', item: 1 },
+  boxLabel: { section: 'stockDisplay', item: 2 },
+  textThreshold: { section: 'stockDisplay', item: 3 },
+  decimalPlaces: { section: 'stockDisplay', item: 4 },
+  strongColor: { section: 'colors', item: 1 },
+}
+
+// "2-1" 같은 설정 위치 번호.
+const settingNumber = (id: SettingsBookmarkId) => {
+  const position = SETTING_ITEM_POSITIONS[id]
+  return position ? `${SETTINGS_SECTION_NUMBERS[position.section]}-${position.item}` : ''
 }
 
 interface ExcludedSector {
@@ -308,10 +329,10 @@ const TOP_PICK_COUNT_LABELS = ['1개', '2개', '3개']
 
 // 그룹 탭에는 이 중 하나만 표시한다.
 const GROUP_TAB_METRIC_OPTIONS: { key: DepthMetric; label: string }[] = [
-  { key: 'weightedAvgChangeRate', label: '시총 가중' },
-  { key: 'simpleAvgChangeRate', label: '동일 가중' },
-  { key: 'upDownCount', label: '등락 종목' },
-  { key: 'marketValue', label: '그룹 시총' },
+  { key: 'weightedAvgChangeRate', label: '시총 가중 등락률' },
+  { key: 'simpleAvgChangeRate', label: '동일 가중 등락률' },
+  { key: 'upDownCount', label: '상승/하락 종목 수' },
+  { key: 'marketValue', label: '그룹 시가총액 합' },
 ]
 
 // 박스 내 표기 방식은 라디오형 세그먼트 컨트롤로 표시한다.
@@ -395,9 +416,96 @@ function CursorHintBubble({ hint, children }: { hint: CursorHint; children: Reac
   )
 }
 
-// 업종 분류 깊이 — 대분류·중분류(▸)·소분류(▸▸)를 계단식으로 쌓고 꺾인 선으로 잇는다. 칸과 배지는 고르는 버튼이 아니라 현재 깊이를 보여 주는 표시이고,
-// 오른쪽 세로 트랙의 손잡이(︿﹀, 평소엔 작고 올리면 커진다)를 끌거나 트랙을 눌러 깊이를 바꾼다. 손잡이가 닿은 칸까지(위 칸 포함) 배경이 강조색으로 바뀌어 겹침이 보인다.
-// 칸 18px(지도 대분류 헤더 높이와 같다)·간격 3px라 3단계가 항목 안(제목 위에서 아래 구분선까지 115px)에 들어간다.
+// 계단식 업종 칸(업종 분류 깊이·표시 위치가 같이 쓴다) — 대분류·중분류(▸)·소분류(▸▸)를 지도 업종 헤더 모양(칸 18px, 간격 3px)으로 쌓고 꺾인 선으로 잇는다.
+// 칸과 배지는 고르는 버튼이 아니라 상태 표시이고, 고르는 건 오른쪽 세로 트랙(STAIR_RAIL 폭)의 손잡이가 맡는다.
+// 3단계가 항목 안(제목 위에서 아래 구분선까지 115px)에 들어간다.
+const STAIR_ROW = 18
+const STAIR_GAP = 3
+const STAIR_STEP = 14
+const STAIR_RAIL = 16
+const stairCenterOf = (index: number) => index * (STAIR_ROW + STAIR_GAP) + STAIR_ROW / 2
+// 세로 트랙 위 포인터 높이에서 가리키는 칸 번호(범위 밖이면 그대로 둔다 — 선택할 수 없는 칸을 가리키는지 알아내는 데 쓴다).
+const stairRawIndex = (rect: DOMRect, clientY: number) => Math.round((clientY - rect.top - STAIR_ROW / 2) / (STAIR_ROW + STAIR_GAP))
+const stairHeight = (count: number) => count * STAIR_ROW + (count - 1) * STAIR_GAP
+
+function StairChevron({ direction }: { direction: 'up' | 'down' }) {
+  return (
+    <svg viewBox="0 0 10 6" className="w-[5px] group-hover:w-2">
+      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="#06302b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// litFrom~litTo(포함)의 칸은 배경이 강조색으로 켜지고 나머지는 흐려진다. 선택할 수 없는 칸(maxSelectableIndex 아래)은 더 흐리고 blockedHint(말풍선)를 단다.
+function StairRows({
+  labels,
+  litFrom,
+  litTo,
+  maxSelectableIndex,
+  blockedHint,
+  valueLabel,
+}: {
+  labels: string[]
+  litFrom: number
+  litTo: number
+  maxSelectableIndex: number
+  blockedHint: (label: string) => string
+  // 켜진 칸의 배지 옆에 덧붙이는 값 글자(표시 위치에서 고른 지표 이름).
+  valueLabel?: string
+}) {
+  return (
+    <>
+      {labels.map((label, index) => {
+        const blocked = index > maxSelectableIndex
+        const lit = index >= litFrom && index <= litTo
+        const top = index * (STAIR_ROW + STAIR_GAP)
+        const left = index * STAIR_STEP
+        const mark = index === 0 ? null : index === 1 ? '▸ ' : (
+          <>
+            <span style={{ letterSpacing: '-0.15em', paddingRight: '0.15em' }}>{'▸'.repeat(index)}</span>{' '}
+          </>
+        )
+        return (
+          <Fragment key={label}>
+            {index > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute rounded-bl-[3px] border-0 border-b-[1.5px] border-l-[1.5px] border-solid border-gray-500"
+                style={{ left: left - STAIR_STEP + 8, top: top - STAIR_GAP, width: STAIR_STEP - 8, height: STAIR_GAP + STAIR_ROW / 2 }}
+              />
+            )}
+            <div
+              data-hint={blocked ? blockedHint(label) : undefined}
+              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-white transition-[background-color,opacity] ${lit ? 'bg-[var(--accent)]/45' : 'bg-[#4b4b50]'}`}
+              style={{ left, top, width: `calc(100% - ${left + STAIR_RAIL}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
+            >
+              <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-black/35' : 'bg-white/15'}`}>
+                {mark}{label}
+              </span>
+              {valueLabel && lit && !blocked && <span className="ml-2.5 truncate text-[13px] font-medium">{valueLabel}</span>}
+            </div>
+          </Fragment>
+        )
+      })}
+    </>
+  )
+}
+
+// 트랙 위 점(칸마다 하나) — 선택할 수 없는 칸의 점은 흐리다.
+function StairDots({ count, maxSelectableIndex }: { count: number; maxSelectableIndex: number }) {
+  return (
+    <>
+      {Array.from({ length: count }, (_, index) => (
+        <span key={index} className="pointer-events-none absolute left-[4px] h-2 w-2 rounded-full bg-[#6b7280]" style={{ top: stairCenterOf(index) - 4, opacity: index > maxSelectableIndex ? 0.2 : 1 }} />
+      ))}
+    </>
+  )
+}
+
+const STAIR_HANDLE_BASE =
+  'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-[top,width,height,gap] duration-100'
+
+// 업종 분류 깊이 — 손잡이 하나(︿﹀ 알약, 평소엔 작고 올리면 커진다)를 끌거나 트랙을 눌러 깊이를 바꾼다. 손잡이가 닿은 칸까지(위 칸 포함) 켜져서 겹침이 보인다.
 function DepthStairSelect({
   depth,
   labels,
@@ -411,17 +519,20 @@ function DepthStairSelect({
   disabled?: boolean
   maxSelectableIndex: number
 }) {
-  const ROW = 18
-  const GAP = 3
-  const STEP = 14
-  const RAIL = 16
   const last = labels.length - 1
-  const centerOf = (index: number) => index * (ROW + GAP) + ROW / 2
   const railRef = useRef<HTMLDivElement>(null)
+  // 선택할 수 없는 깊은 칸 높이에 포인터가 있으면 트랙에 이유 말풍선을 단다(손잡이를 그쪽으로 끌어도 안 움직이는 이유).
+  const [railHint, setRailHint] = useState<string | undefined>()
+  const updateHint = (clientY: number) => {
+    const rect = railRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const raw = stairRawIndex(rect, clientY)
+    setRailHint(raw > maxSelectableIndex && raw <= last ? `현재 ${labels[raw]} 데이터가 없어\n비활성화되어 있습니다.` : undefined)
+  }
   const pickByPointer = (clientY: number) => {
     const rect = railRef.current?.getBoundingClientRect()
     if (!rect) return
-    const raw = Math.round((clientY - rect.top - ROW / 2) / (ROW + GAP))
+    const raw = stairRawIndex(rect, clientY)
     const next = Math.max(0, Math.min(maxSelectableIndex, raw))
     if (next !== depth - 1) onChange(next)
   }
@@ -431,56 +542,34 @@ function DepthStairSelect({
       aria-label="업종 분류 깊이"
       aria-disabled={disabled || undefined}
       className={`relative ${disabled ? 'pointer-events-none' : ''}`}
-      style={{ height: labels.length * ROW + last * GAP }}
+      style={{ height: stairHeight(labels.length) }}
     >
-      {labels.map((label, index) => {
-        const blocked = index > maxSelectableIndex
-        const lit = index < depth
-        const top = index * (ROW + GAP)
-        const left = index * STEP
-        const mark = index === 0 ? null : index === 1 ? '▸ ' : (
-          <>
-            <span style={{ letterSpacing: '-0.15em', paddingRight: '0.15em' }}>{'▸'.repeat(index)}</span>{' '}
-          </>
-        )
-        return (
-          <Fragment key={label}>
-            {index > 0 && (
-              <span
-                aria-hidden="true"
-                className="absolute rounded-bl-[3px] border-0 border-b-[1.5px] border-l-[1.5px] border-solid border-gray-500"
-                style={{ left: left - STEP + 8, top: top - GAP, width: STEP - 8, height: GAP + ROW / 2 }}
-              />
-            )}
-            <div
-              data-hint={blocked ? `현재 ${label} 데이터가 없어\n비활성화되어 있습니다.` : undefined}
-              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-white transition-[background-color,opacity] ${lit ? 'bg-[var(--accent)]/45' : 'bg-[#4b4b50]'}`}
-              style={{ left, top, width: `calc(100% - ${left + RAIL}px)`, height: ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
-            >
-              <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-black/35' : 'bg-white/15'}`}>
-                {mark}{label}
-              </span>
-            </div>
-          </Fragment>
-        )
-      })}
+      <StairRows
+        labels={labels}
+        litFrom={0}
+        litTo={depth - 1}
+        maxSelectableIndex={maxSelectableIndex}
+        blockedHint={label => `현재 ${label} 데이터가 없어\n비활성화되어 있습니다.`}
+      />
       <div
         ref={railRef}
+        data-hint={railHint}
         className="group absolute right-0 top-0 h-full cursor-pointer touch-none"
-        style={{ width: RAIL }}
+        style={{ width: STAIR_RAIL }}
         onPointerDown={e => {
           e.currentTarget.setPointerCapture(e.pointerId)
+          updateHint(e.clientY)
           pickByPointer(e.clientY)
         }}
         onPointerMove={e => {
+          updateHint(e.clientY)
           if (e.currentTarget.hasPointerCapture(e.pointerId)) pickByPointer(e.clientY)
         }}
+        onPointerLeave={() => setRailHint(undefined)}
       >
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: centerOf(0), height: centerOf(last) - centerOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#cdd2dc] transition-[height]" style={{ top: centerOf(0), height: centerOf(depth - 1) - centerOf(0) }} />
-        {labels.map((label, index) => (
-          <span key={label} className="pointer-events-none absolute left-[4px] h-2 w-2 rounded-full bg-[#6b7280]" style={{ top: centerOf(index) - 4, opacity: index > maxSelectableIndex ? 0.2 : 1 }} />
-        ))}
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#cdd2dc] transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
+        <StairDots count={labels.length} maxSelectableIndex={maxSelectableIndex} />
         <span
           role="slider"
           tabIndex={0}
@@ -494,12 +583,137 @@ function DepthStairSelect({
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
             else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
           }}
-          className="absolute left-1/2 flex h-4 w-3 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[1px] rounded-full border border-white bg-[#222] transition-[top,width,height] duration-100 group-hover:h-6 group-hover:w-[18px] focus-visible:h-6 focus-visible:w-[18px]"
-          style={{ top: centerOf(depth - 1) }}
+          className={`${STAIR_HANDLE_BASE} h-4 w-3 flex-col gap-[3px] border-[#12b8a6] bg-[#12b8a6] group-hover:h-6 group-hover:w-[18px] group-hover:gap-[5px] focus-visible:h-6 focus-visible:w-[18px]`}
+          style={{ top: stairCenterOf(depth - 1) }}
         >
-          <svg viewBox="0 0 10 6" className="w-[5px] group-hover:w-2"><path d="M1 5l4-4 4 4" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          <svg viewBox="0 0 10 6" className="w-[5px] group-hover:w-2"><path d="M1 1l4 4 4-4" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <StairChevron direction="up" />
+          <StairChevron direction="down" />
         </span>
+      </div>
+    </div>
+  )
+}
+
+// 표시 위치 — 업종 분류 깊이와 같은 계단 칸에 손잡이 둘(위 ︿ = 시작 단계, 아래 ﹀ = 끝 단계)을 둔다. 두 손잡이 사이(포함)의 칸이 켜진다.
+// 두 손잡이가 같은 칸에 모이면 ︿﹀가 함께 든 알약 하나로 그리고, 그때는 처음 움직이는 방향(위/아래)으로 어느 쪽을 잡았는지 정한다.
+function DepthStairRange({
+  minIndex,
+  maxIndex,
+  labels,
+  onChange,
+  disabled = false,
+  disabledHint,
+  maxSelectableIndex,
+  blockedHint,
+  valueLabel,
+}: {
+  minIndex: number
+  maxIndex: number
+  labels: string[]
+  onChange: (minIndex: number, maxIndex: number) => void
+  disabled?: boolean
+  // 막혀 있을 때 컨트롤 위에 올리면 보이는 이유(없으면 말풍선 없음).
+  disabledHint?: string
+  maxSelectableIndex: number
+  blockedHint: string
+  // 켜진 칸마다 배지 옆에 보이는 값(2-2) 표시 지표에서 고른 이름).
+  valueLabel?: string
+}) {
+  const last = labels.length - 1
+  const railRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<'min' | 'max' | null>(null)
+  const [railHint, setRailHint] = useState<string | undefined>()
+  const updateHint = (clientY: number) => {
+    const rect = railRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const raw = stairRawIndex(rect, clientY)
+    setRailHint(raw > maxSelectableIndex && raw <= last ? blockedHint : undefined)
+  }
+  const indexFromPointer = (clientY: number) => {
+    const rect = railRef.current?.getBoundingClientRect()
+    if (!rect) return minIndex
+    const raw = stairRawIndex(rect, clientY)
+    return Math.max(0, Math.min(maxSelectableIndex, raw))
+  }
+  const apply = (index: number) => {
+    let which = dragRef.current
+    if (!which) {
+      if (index < minIndex) which = 'min'
+      else if (index > maxIndex) which = 'max'
+      else return
+      if (minIndex === maxIndex) dragRef.current = which
+    }
+    if (which === 'min') onChange(Math.min(index, maxIndex), maxIndex)
+    else onChange(minIndex, Math.max(index, minIndex))
+  }
+  const merged = minIndex === maxIndex
+  const handleKeys = (which: 'min' | 'max') => (e: React.KeyboardEvent) => {
+    const delta = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : 0
+    if (!delta) return
+    e.preventDefault()
+    if (which === 'min') onChange(Math.max(0, Math.min(minIndex + delta, maxIndex)), maxIndex)
+    else onChange(minIndex, Math.max(minIndex, Math.min(maxIndex + delta, maxSelectableIndex)))
+  }
+  const handleStyle = (index: number) => ({ top: stairCenterOf(index) })
+  const singleClass = `${STAIR_HANDLE_BASE} h-[14px] w-3 border-[#12b8a6] bg-[#12b8a6] group-hover:h-5 group-hover:w-4`
+  return (
+    <div
+      role="group"
+      aria-label="표시 위치"
+      aria-disabled={disabled || undefined}
+      data-hint={disabled ? disabledHint : undefined}
+      className={`relative ${disabled ? 'cursor-not-allowed' : ''}`}
+      style={{ height: stairHeight(labels.length) }}
+    >
+      <StairRows labels={labels} litFrom={minIndex} litTo={maxIndex} maxSelectableIndex={maxSelectableIndex} blockedHint={() => blockedHint} valueLabel={valueLabel} />
+      <div
+        ref={railRef}
+        data-hint={railHint}
+        className={`group absolute right-0 top-0 h-full touch-none ${disabled ? 'pointer-events-none' : 'cursor-pointer'}`}
+        style={{ width: STAIR_RAIL }}
+        onPointerDown={e => {
+          e.currentTarget.setPointerCapture(e.pointerId)
+          updateHint(e.clientY)
+          const index = indexFromPointer(e.clientY)
+          dragRef.current = minIndex === maxIndex ? null : index <= (minIndex + maxIndex) / 2 ? 'min' : 'max'
+          apply(index)
+        }}
+        onPointerMove={e => {
+          updateHint(e.clientY)
+          if (e.currentTarget.hasPointerCapture(e.pointerId)) apply(indexFromPointer(e.clientY))
+        }}
+        onPointerLeave={() => setRailHint(undefined)}
+        onPointerUp={() => { dragRef.current = null }}
+      >
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#cdd2dc] transition-[top,height]" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
+        <StairDots count={labels.length} maxSelectableIndex={maxSelectableIndex} />
+        {merged ? (
+          <span
+            role="slider"
+            tabIndex={0}
+            aria-label="표시 위치"
+            aria-valuetext={labels[minIndex]}
+            onKeyDown={e => {
+              if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') handleKeys('min')(e)
+              else handleKeys('max')(e)
+            }}
+            className={`${STAIR_HANDLE_BASE} h-4 w-3 flex-col gap-[3px] border-[#12b8a6] bg-[#12b8a6] group-hover:h-6 group-hover:w-[18px] group-hover:gap-[5px] focus-visible:h-6 focus-visible:w-[18px]`}
+            style={handleStyle(minIndex)}
+          >
+            <StairChevron direction="up" />
+            <StairChevron direction="down" />
+          </span>
+        ) : (
+          <>
+            <span role="slider" tabIndex={0} aria-label="최소 표시 뎁스" aria-valuetext={labels[minIndex]} onKeyDown={handleKeys('min')} className={`${singleClass} z-10`} style={handleStyle(minIndex)}>
+              <StairChevron direction="up" />
+            </span>
+            <span role="slider" tabIndex={0} aria-label="최대 표시 뎁스" aria-valuetext={labels[maxIndex]} onKeyDown={handleKeys('max')} className={`${singleClass} z-20`} style={handleStyle(maxIndex)}>
+              <StairChevron direction="down" />
+            </span>
+          </>
+        )}
       </div>
     </div>
   )
@@ -570,7 +784,7 @@ function DepthTextSelect({
           {noDataLimited ? (
             <>현재 {blockedLabel} 데이터가 없어<br />비활성화되어 있습니다.</>
           ) : (
-            <><span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span>에서<br />더 깊은 업종 단계를 선택하면<br />활성화됩니다.</>
+            <><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthLevel')}) 업종 분류 깊이</span>에서<br />더 깊은 업종 단계를 선택하면<br />활성화됩니다.</>
           )}
         </CursorHintBubble>
       )}
@@ -1382,7 +1596,6 @@ export function SettingsSectorLevelSection({
   const isTopPickDisabled = !sectorLevelEnabled
   const depthMetricLabels = Array.from({ length: depthLabelCount }, (_, index) => DEPTH_LABELS[index] ?? `${index + 1}차 분류`)
   // 레벨 값은 1=대분류, 2=중분류, 3=소분류. 슬라이더 인덱스와 1만큼 차이 난다.
-  const depthMetricSliderSteps = Math.max(depthLabelCount - 1, 1)
   // 선택값은 저장한 범위를 그대로 유지하되, 현재 업종 단계를 넘는 부분만 화면에서 잘라 보여준다.
   const depthMetricSliderMinIndex = Math.min(depthMetricMinIndex, depthMetricMaxSelectableIndex)
   const depthMetricSliderMaxIndex = Math.min(depthMetricMaxIndex, depthMetricMaxSelectableIndex)
@@ -1403,11 +1616,6 @@ export function SettingsSectorLevelSection({
     ...(showStockDisplay && showDecimalPlaces ? (['decimalPlaces'] as const) : []),
   ]
   if (inBookmarkTab && bookmarkableIds.every(hideItem)) return null
-  const depthMetricRangeDisabledReason = !sectorLevelEnabled
-    ? <><span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.</>
-    : !depthMetricEnabled
-      ? <><span className="inline-block whitespace-nowrap font-bold">2-2) 표시 지표</span> 토글을 켜면<br />활성화됩니다.</>
-      : null
 
   return (
     <div className="text-white">
@@ -1453,30 +1661,15 @@ export function SettingsSectorLevelSection({
                 />
               </div>
               <SettingDescription dimmed={!depthMetricEnabled}>업종 항목에 표시할 지표</SettingDescription>
-              <div role="radiogroup" aria-label="표시 지표" className={`relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-4 gap-[6px] ${depthMetricEnabled ? '' : 'opacity-40'}`}>
-                <SlidingHighlight count={GROUP_TAB_METRIC_OPTIONS.length} index={GROUP_TAB_METRIC_OPTIONS.findIndex(option => option.key === activeDepthMetric)} className="rounded-[5px] bg-[var(--accent)]" />
-                {GROUP_TAB_METRIC_OPTIONS.map(option => {
-                  const selected = activeDepthMetric === option.key
-                  return (
-                  <button
-                    key={option.key}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => onChangeActiveDepthMetric(option.key)}
-                    disabled={isDepthMetricDisabled || !depthMetricEnabled}
-                    aria-label={option.label}
-                    className={`relative z-10 min-h-[38px] rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] disabled:cursor-not-allowed ${
-                      selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
-                    }`}
-                  >
-                    <span className="flex flex-col items-center">
-                      {option.label.split(' ').map(line => <span key={line}>{line}</span>)}
-                    </span>
-                  </button>
-                  )
-                })}
-              </div>
+              <SettingsDropdown
+                options={GROUP_TAB_METRIC_OPTIONS}
+                value={activeDepthMetric}
+                onChange={onChangeActiveDepthMetric}
+                ariaLabel="표시 지표"
+                badge="업종명"
+                disabled={isDepthMetricDisabled || !depthMetricEnabled}
+                className={`mt-4 max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-40'}`}
+              />
             </div>
             {isDepthMetricDisabled && (
               <div
@@ -1492,7 +1685,7 @@ export function SettingsSectorLevelSection({
             )}
             {isDepthMetricDisabled && depthMetricSectionHint && (
               <CursorHintBubble hint={depthMetricSectionHint}>
-                <span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.
+                <span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthLevel')}) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.
               </CursorHintBubble>
             )}
           </div>
@@ -1506,17 +1699,15 @@ export function SettingsSectorLevelSection({
             <div className={isDepthMetricRangeDisabled ? 'opacity-40' : ''}>
               <SettingDescription>지표를 나타낼 업종 단계</SettingDescription>
             </div>
-            <div className="settings-slider-control mt-[18px]">
-              <RangeSlider
+            <div className={`settings-control-inset mt-[6px] ${isDepthMetricRangeDisabled ? 'opacity-40' : ''}`}>
+              <DepthStairRange
                 minIndex={depthMetricSliderMinIndex}
                 maxIndex={depthMetricSliderMaxIndex}
-                steps={depthMetricSliderSteps}
                 labels={depthMetricLabels}
-                minAriaLabel="최소 표시 뎁스"
-                maxAriaLabel="최대 표시 뎁스"
                 maxSelectableIndex={depthMetricMaxSelectableIndex}
-                limitReason={<><span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span>에서<br />더 깊은 업종 단계를 선택하면<br />활성화됩니다.</>}
-                disabledReason={depthMetricRangeDisabledReason}
+                valueLabel={GROUP_TAB_METRIC_OPTIONS.find(option => option.key === activeDepthMetric)?.label}
+                blockedHint={`${settingNumber('depthLevel')}) 업종 분류 깊이에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
+                disabledHint={!sectorLevelEnabled ? `${settingNumber('depthLevel')}) 업종 분류 깊이 토글을 켜면\n활성화됩니다.` : !depthMetricEnabled ? `${settingNumber('depthMetric')}) 표시 지표 토글을 켜면\n활성화됩니다.` : undefined}
                 onChange={onChangeDepthMetricRange}
                 disabled={isDepthMetricRangeDisabled}
               />
@@ -1573,7 +1764,7 @@ export function SettingsSectorLevelSection({
               )}
               {isTopPickDisabled && topPickSectionHint && (
                 <CursorHintBubble hint={topPickSectionHint}>
-                  <span className="inline-block whitespace-nowrap font-bold">2-1) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.
+                  <span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthLevel')}) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.
                 </CursorHintBubble>
               )}
             </div>
@@ -1674,7 +1865,7 @@ export function SettingsSectorLevelSection({
             </div>
             {!stockLabelEnabled && textThresholdHint && (
               <CursorHintBubble hint={textThresholdHint}>
-                <span className="inline-block whitespace-nowrap font-bold">3-2) 박스 내 표기</span> 토글을 켜면<br />활성화됩니다.
+                <span className="inline-block whitespace-nowrap font-bold">{settingNumber('boxLabel')}) 박스 내 표기</span> 토글을 켜면<br />활성화됩니다.
               </CursorHintBubble>
             )}
           </div>
@@ -1708,9 +1899,9 @@ export function SettingsSectorLevelSection({
               {isDecimalPlacesDisabled && decimalPlacesHint && (
                 <CursorHintBubble hint={decimalPlacesHint}>
                   {!stockLabelEnabled ? (
-                    <><span className="inline-block whitespace-nowrap font-bold">3-2) 박스 내 표기</span> 토글을 켜면<br />활성화됩니다.</>
+                    <><span className="inline-block whitespace-nowrap font-bold">{settingNumber('boxLabel')}) 박스 내 표기</span> 토글을 켜면<br />활성화됩니다.</>
                   ) : (
-                    <><span className="inline-block whitespace-nowrap font-bold">3-2) 박스 내 표기</span>에서<br />등락률 또는 종목명+등락률을 선택하면<br />활성화됩니다.</>
+                    <><span className="inline-block whitespace-nowrap font-bold">{settingNumber('boxLabel')}) 박스 내 표기</span>에서<br />등락률 또는 종목명+등락률을 선택하면<br />활성화됩니다.</>
                   )}
                 </CursorHintBubble>
               )}
@@ -2096,7 +2287,7 @@ export function SettingsStrongIndustryColorSection({
         <SettingHelpBubble
           bookmarkId="strongColor"
           label="강조 색상"
-          description={<>지도 내 업종명(대분류)과<br /><span className="inline-block whitespace-nowrap font-bold">2-4) 강세 표시</span>의 색상을 설정합니다.</>}
+          description={<>지도 내 업종명(대분류)과<br /><span className="inline-block whitespace-nowrap font-bold">{settingNumber('topPick')}) 강세 표시</span>의 색상을 설정합니다.</>}
         />
       </p>
       <SettingDescription>업종명과 강세 업종의 색상</SettingDescription>
@@ -2309,27 +2500,14 @@ export default function SettingsPanel({
   const isNonScrollingSection = !taxonomyAtBottom && (selectedSection?.id === 'industry' || selectedSection?.id === 'colors')
 
   // 북마크 탭에는 원래 위치 번호(탭 번호-항목 번호)를 보여준다. 항목 번호는 각 탭에서 항상 고정된 자리다.
-  const sourceTabNumber = (id: SettingsPanelSectionId) => SETTINGS_SECTION_NUMBERS[id]
   const bookmarkContext: SettingsBookmarkContextValue = {
     enabled: Boolean(onToggleBookmark),
     mode: selectedSection?.id === 'favorites' ? 'bookmark' : 'source',
     ids: bookmarks ?? [],
     firstId: BOOKMARK_ORDER.find(id => (bookmarks ?? []).includes(id)),
-    numbers: {
-      depthLevel: `${sourceTabNumber('industry')}-1`,
-      depthMetric: `${sourceTabNumber('industry')}-2`,
-      depthRange: `${sourceTabNumber('industry')}-3`,
-      topPick: `${sourceTabNumber('industry')}-4`,
-      marketValueRange: `${sourceTabNumber('composition')}-1`,
-      sectorChange: `${sourceTabNumber('composition')}-2`,
-      stockChange: `${sourceTabNumber('composition')}-3`,
-      excludeSector: `${sourceTabNumber('composition')}-4`,
-      boxSize: `${sourceTabNumber('stockDisplay')}-1`,
-      boxLabel: `${sourceTabNumber('stockDisplay')}-2`,
-      textThreshold: `${sourceTabNumber('stockDisplay')}-3`,
-      decimalPlaces: `${sourceTabNumber('stockDisplay')}-4`,
-      strongColor: `${sourceTabNumber('colors')}-1`,
-    },
+    numbers: Object.fromEntries(
+      (Object.keys(SETTING_ITEM_POSITIONS) as SettingsBookmarkId[]).map(id => [id, settingNumber(id)]),
+    ),
     onToggle: id => onToggleBookmark?.(id),
   }
 
