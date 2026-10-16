@@ -63,11 +63,11 @@ function isInDepthRange(range: [number, number] | null, depth: number): boolean 
 }
 
 // 절대 depth(트리 기준 실제 단계) → 배경/글자색. 배열 끝을 넘으면 마지막 값을 반복한다.
+// 업종 헤더는 종목 박스와 눈에 띄게 구별되도록 모든 단계가 같은 진한 푸른색 바탕에 아래 얇은 선이 있다(단계는 이름 칩·글자 크기로 구분한다). 최상위(0단계)만 글자가 강조색이다.
+// (Tailwind는 클래스 이름을 글자 그대로 찾아서 만들기 때문에 색과 선 클래스는 문자열을 합치지 않고 그대로 적는다.)
 const SECTOR_HEADER_STYLES = [
-  { background: 'bg-black', baseColor: '#000000', text: 'text-[var(--accent)]', border: 'border-0' },
-  { background: 'bg-[#333333]', baseColor: '#333333', text: 'text-white', border: 'border-0' },
-  { background: 'bg-[#4d4d4d]', baseColor: '#4d4d4d', text: 'text-white', border: 'border-0' },
-  { background: 'bg-[#666666]', baseColor: '#666666', text: 'text-white', border: 'border-0' },
+  { background: 'bg-[#1e2a3a]', baseColor: '#1e2a3a', text: 'text-[var(--accent)]', border: 'border-0 border-b border-b-white/35' },
+  { background: 'bg-[#1e2a3a]', baseColor: '#1e2a3a', text: 'text-white', border: 'border-0 border-b border-b-white/35' },
 ]
 
 function sectorHeaderStyle(depth: number) {
@@ -138,11 +138,15 @@ export default function SectorBox({
   ].filter((part): part is string => part !== null)
   const headerSuffix = headerParts.length > 0 ? `${TAB_GAP}${headerParts.join(TAB_GAP)}` : ''
   const absoluteDepth = depthOffset + depth
+  // 강세 업종(채워진 라임 헤더)은 지금 모양 그대로 두고, 나머지 헤더는 업종 이름에 옅은 배경 칩을 씌워 종목 박스와 구별한다(2단계는 앞의 └ 표시를 유지).
   const displaySectorName = absoluteDepth === 2
     ? `└ ${sector.sectorName}`
     : absoluteDepth === 1
       ? `· ${sector.sectorName}`
       : sector.sectorName
+  const nameChipBackground = absoluteDepth === 0
+    ? `color-mix(in srgb, ${strongIndustryColor} 22%, transparent)`
+    : 'rgb(255 255 255 / 20%)'
   const headerStyle = isTopPick
     ? {
         background: 'bg-[var(--accent)]',
@@ -237,7 +241,12 @@ export default function SectorBox({
             } as CSSProperties}
             className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header' : ''} absolute top-0 z-[2] flex items-center overflow-hidden truncate px-1 text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
           >
-            {displaySectorName}
+            {isTopPick ? displaySectorName : (
+              <>
+                {absoluteDepth === 2 && '└ '}
+                <span className="rounded-[3px] px-1" style={{ background: nameChipBackground, lineHeight: 1.25 }}>{sector.sectorName}</span>
+              </>
+            )}
             {headerSuffix && <span className="font-normal tabular-nums">{headerSuffix}</span>}
           </button>
         </>
