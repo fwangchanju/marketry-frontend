@@ -98,7 +98,7 @@ function resolveZeroColor(config: ColorScaleConfig): string {
 const POINT_START_PERCENT = 20
 const POINT_END_PERCENT = 25
 const POINT_COLOR_UP = '#ff3d8b'
-const POINT_COLOR_DOWN = '#8b5cf6'
+const POINT_COLOR_DOWN = '#5865f2'
 
 // 밝은 배경이면 true — 흰 글자가 읽히지 않으므로 어두운 글자를 쓴다(상대 휘도 0.4 초과).
 export function isLightColor(hex: string): boolean {
