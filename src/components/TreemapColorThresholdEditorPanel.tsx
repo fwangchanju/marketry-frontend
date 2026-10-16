@@ -236,12 +236,12 @@ export default function TreemapColorThresholdEditorPanel({
       )}
 
       {(hasChanges || isSaving) && (
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="settings-slider-control flex shrink-0 items-center gap-[6px]">
           <button
             type="button"
             onClick={onApply}
             disabled={isSaving}
-            className="flex-1 rounded border border-cyan-700 bg-cyan-700 px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-cyan-600 hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-60"
+            className="h-7 flex-1 rounded-[5px] border border-cyan-700 bg-cyan-700 px-3 py-0 text-[13px] font-medium text-white transition-colors hover:border-cyan-600 hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-60"
           >
             {isSaving ? '적용 중...' : '적용'}
           </button>
@@ -249,7 +249,7 @@ export default function TreemapColorThresholdEditorPanel({
             type="button"
             onClick={onCancel}
             disabled={isSaving}
-            className="flex-1 rounded border border-zinc-600 bg-zinc-600 px-3 py-1.5 text-[13px] text-white transition-colors hover:border-zinc-500 hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-60"
+            className="h-7 flex-1 rounded-[5px] border border-zinc-600 bg-zinc-600 px-3 py-0 text-[13px] font-medium text-white transition-colors hover:border-zinc-500 hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-60"
           >
             취소
           </button>
