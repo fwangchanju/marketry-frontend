@@ -515,10 +515,24 @@ a { color: var(--accent-light); text-decoration: none; }
   border-top: 1px solid rgb(255 255 255 / 12%);
 }
 
-/* 그룹 페이지처럼 탭 없이 항목만 쌓는 설정 본문의 항목 이름 앞에는 점 하나를 붙인다(지도 설정창의 "· 커스텀 모드"와 같은 모양). */
+/* 탭 없이 항목만 쌓는 설정 본문(그룹·커스텀)의 항목 이름 앞에는 지도 설정창처럼 1) 2) 3) 번호를 붙인다. 번호는 화면에 보이는 순서대로 자동으로 매겨진다.
+   번호 칸 폭은 설명 문구 들여쓰기(19px)와 같다. 항목이 하나뿐인 홈 설정창도 1)을 붙인다. */
+.settings-plain-content {
+  counter-reset: settings-plain;
+}
 .settings-plain-content .settings-plain-title::before {
-  content: "· ";
+  counter-increment: settings-plain;
+  content: counter(settings-plain) ") ";
+  display: inline-block;
+  width: 19px;
+  font-variant-numeric: tabular-nums;
   white-space: pre;
+}
+[data-settings-panel][data-page-label="Home"] .settings-plain-content .settings-plain-title::before {
+  counter-increment: none;
+  content: "· ";
+  display: inline;
+  width: auto;
 }
 
 /* 북마크 탭 — 각 항목을 같은 높이로 쌓고, 항목 사이에 구분선을 둔다. */
