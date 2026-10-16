@@ -1548,14 +1548,14 @@ export function SettingsSectorLevelSection({
                   description={"기준 퍼센트는 지도 전체 면적 대비\n종목 박스 면적입니다."}
                 />
               </span>
-              <span className="text-gray-400">{boxLabelMinAreaPercent.toFixed(2)}%</span>
+              <span className="text-gray-400">{boxLabelMinAreaPercent.toFixed(3)}%</span>
             </div>
             <SettingDescription>작은 박스의 글자를 숨기는 기준</SettingDescription>
             <div className="settings-slider-control mt-[18px]">
               <SingleRangeInput
                 min={0.01}
                 max={0.3}
-                step={0.01}
+                step={0.001}
                 value={boxLabelMinAreaPercent}
                 smooth={false}
                 ariaLabel="텍스트 표시 기준"
