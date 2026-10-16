@@ -211,7 +211,7 @@ export default function TreemapColorThresholdEditorPanel({
                   if (key === 'zero') onSelectZero()
                   else onSelectRank(bar.selectedRank ?? 0, key)
                 }}
-                className={`flex h-[26px] items-center justify-center gap-1 rounded-[5px] border border-white/25 p-0 text-[12px] font-bold text-white ${selected ? '' : 'opacity-50 hover:opacity-80'}`}
+                className={`flex h-7 items-center justify-center gap-1 rounded-[5px] border border-white/25 p-0 text-[12px] font-bold text-white ${selected ? '' : 'opacity-50 hover:opacity-80'}`}
                 style={{ backgroundColor: CHIP_COLOR[key] }}
               >
                 {CHIP_LABEL[key]}

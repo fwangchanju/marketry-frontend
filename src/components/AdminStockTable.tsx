@@ -611,7 +611,7 @@ function BulkAssignButton({
         type="button"
         onClick={handleClick}
         aria-disabled={isIdle}
-        className={`flex h-6 w-full items-center justify-center whitespace-nowrap rounded border bg-transparent px-1.5 text-sm transition-colors ${
+        className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded border bg-transparent px-1.5 text-[13px] font-medium transition-colors ${
           isIdle ? 'cursor-not-allowed border-gray-700 text-gray-600' : 'border-[var(--brand)]/60 text-[var(--brand)] hover:bg-white/10'
         }`}
       >
@@ -1613,7 +1613,7 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={handleExportExcel}
-              className="flex h-[26px] items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium text-white hover:bg-white/10"
+              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-[13px] font-medium text-white hover:bg-white/10"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
@@ -1624,7 +1624,7 @@ export default function AdminStockTable({
               type="button"
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
-              className="flex h-[26px] items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-xs font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-7 items-center justify-center gap-1 rounded-md border border-gray-600 bg-zinc-700 text-[13px] font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >
