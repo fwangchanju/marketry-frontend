@@ -1609,7 +1609,7 @@ export default function AdminStockTable({
         <div className="h-[127px]">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">간편 업종 분류</h2>
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">파일 다운 받아서 AI로 분류 후 업로드</p>
-          <div className="mt-4 grid max-w-[16rem] grid-cols-2 gap-2">
+          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
             <button
               type="button"
               onClick={handleExportExcel}
@@ -1652,7 +1652,7 @@ export default function AdminStockTable({
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">
             {selectedStockCodes.size > 0 ? `선택한 종목 ${selectedStockCodes.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택하세요'}
           </p>
-          <div className="mt-4 grid max-w-[16rem] grid-cols-3 gap-2">
+          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
             <BulkAssignButton count={selectedStockCodes.size} options={bulkParentOptions} onAssign={handleBulkAssignParent} label="대분류" title="대분류 일괄 변경" orderMode={bulkOrderMode} />
             <BulkAssignButton
               count={selectedStockCodes.size}

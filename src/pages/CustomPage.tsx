@@ -321,7 +321,7 @@ export default function CustomPage() {
                   {session?.role === 'ADMIN' && (
                     <div className="h-[127px] text-sm">
                       <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">관리자</h2>
-                      <div className="max-w-[16rem]">
+                      <div className="max-w-[16rem] settings-control-inset">
                         <MarketryPublishControls />
                       </div>
                     </div>
