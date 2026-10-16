@@ -27,6 +27,7 @@ export function markSessionAnonymous() {
     role: null,
     nickname: null,
     profileImageVersion: null,
+    nicknameChangeableAt: null,
   })
 }
 

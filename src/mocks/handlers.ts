@@ -11,6 +11,7 @@ const anonymousSession = () =>
     role: null,
     nickname: null,
     profileImageVersion: null,
+    nicknameChangeableAt: null,
   })
 const authenticatedSession = () =>
   HttpResponse.json({
@@ -20,12 +21,14 @@ const authenticatedSession = () =>
     role: data.mockAuth.role,
     nickname: data.mockProfile.nickname,
     profileImageVersion: data.mockProfile.imageVersion,
+    nicknameChangeableAt: null,
   })
 const profileResponse = () =>
   HttpResponse.json({
     nickname: data.mockProfile.nickname,
     hasImage: data.mockProfile.image !== null,
     imageVersion: data.mockProfile.imageVersion,
+    nicknameChangeableAt: null,
   })
 
 export const handlers = [
@@ -39,6 +42,7 @@ export const handlers = [
   })),
   // ── 프로필(닉네임·사진) ───────────────────────────────────────────────
   http.get('/api/profile', () => profileResponse()),
+  http.get('/api/profile/nickname/availability', () => HttpResponse.json({ available: true })),
   http.put('/api/profile/nickname', async ({ request }) => {
     const body = (await request.json()) as { nickname?: string }
     data.mockProfile.nickname = body.nickname?.trim() || null

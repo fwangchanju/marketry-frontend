@@ -1,5 +1,10 @@
 import client from './client'
-import { ProfileResponseSchema } from '@/types/api'
+import { NicknameAvailabilityResponseSchema, ProfileResponseSchema } from '@/types/api'
+
+export const checkNicknameAvailability = (nickname: string) =>
+  client
+    .get('/profile/nickname/availability', { params: { nickname } })
+    .then(r => NicknameAvailabilityResponseSchema.parse(r.data))
 
 export const updateNickname = (nickname: string) =>
   client.put('/profile/nickname', { nickname }).then(r => ProfileResponseSchema.parse(r.data))
