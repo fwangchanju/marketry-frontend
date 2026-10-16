@@ -325,7 +325,11 @@ function ToggleSwitch({
 const DEPTH_LABELS = ['대분류', '중분류', '소분류']
 
 // 활성화는 제목 오른쪽 토글, 슬라이더는 표시할 개수만 선택한다.
-const TOP_PICK_COUNT_LABELS = ['1개', '2개', '3개']
+const TOP_PICK_COUNT_OPTIONS: { key: '1' | '2' | '3'; label: string }[] = [
+  { key: '1', label: '1개' },
+  { key: '2', label: '2개' },
+  { key: '3', label: '3개' },
+]
 
 // 그룹 탭에는 이 중 하나만 표시한다.
 const GROUP_TAB_METRIC_OPTIONS: { key: DepthMetric; label: string }[] = [
@@ -444,6 +448,9 @@ function StairRows({
   maxSelectableIndex,
   blockedHint,
   valueLabel,
+  selectedIndex,
+  onPick,
+  railWidth = STAIR_RAIL,
 }: {
   labels: string[]
   litFrom: number
@@ -452,6 +459,10 @@ function StairRows({
   blockedHint: (label: string) => string
   // 켜진 칸의 배지 옆에 덧붙이는 값 글자(표시 위치에서 고른 지표 이름).
   valueLabel?: string
+  // 칸을 눌러 하나만 고르는 모드(강세 표시): 고른 칸에 청록 프레임이 쳐지고, 선택할 수 없는 칸은 눌러도 안 된다.
+  selectedIndex?: number
+  onPick?: (index: number) => void
+  railWidth?: number
 }) {
   return (
     <>
@@ -476,8 +487,14 @@ function StairRows({
             )}
             <div
               data-hint={blocked ? blockedHint(label) : undefined}
-              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-white transition-[background-color,opacity] ${lit ? 'bg-[var(--accent)]/45' : 'bg-[#4b4b50]'}`}
-              style={{ left, top, width: `calc(100% - ${left + STAIR_RAIL}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
+              role={onPick ? 'radio' : undefined}
+              aria-checked={onPick ? selectedIndex === index : undefined}
+              aria-disabled={onPick && blocked ? true : undefined}
+              tabIndex={onPick && !blocked ? 0 : undefined}
+              onClick={onPick && !blocked ? () => onPick(index) : undefined}
+              onKeyDown={onPick && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
+              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-[#12b8a6]/40' : lit ? 'bg-[var(--accent)]/45' : 'bg-[#4b4b50]'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-[#12b8a6]' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
+              style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
               <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-black/35' : 'bg-white/15'}`}>
                 {mark}{label}
@@ -522,12 +539,13 @@ function DepthStairSelect({
   const last = labels.length - 1
   const railRef = useRef<HTMLDivElement>(null)
   // 선택할 수 없는 깊은 칸 높이에 포인터가 있으면 트랙에 이유 말풍선을 단다(손잡이를 그쪽으로 끌어도 안 움직이는 이유).
-  const [railHint, setRailHint] = useState<string | undefined>()
+  // 말풍선은 같은 마우스 움직임에서 곧바로 떠야 하므로(상태로 두면 다음 움직임에야 반영된다) data-hint를 DOM에 바로 쓴다.
   const updateHint = (clientY: number) => {
-    const rect = railRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const raw = stairRawIndex(rect, clientY)
-    setRailHint(raw > maxSelectableIndex && raw <= last ? `현재 ${labels[raw]} 데이터가 없어\n비활성화되어 있습니다.` : undefined)
+    const rail = railRef.current
+    if (!rail) return
+    const raw = stairRawIndex(rail.getBoundingClientRect(), clientY)
+    if (raw > maxSelectableIndex && raw <= last) rail.dataset.hint = `현재 ${labels[raw]} 데이터가 없어\n비활성화되어 있습니다.`
+    else delete rail.dataset.hint
   }
   const pickByPointer = (clientY: number) => {
     const rect = railRef.current?.getBoundingClientRect()
@@ -553,7 +571,6 @@ function DepthStairSelect({
       />
       <div
         ref={railRef}
-        data-hint={railHint}
         className="group absolute right-0 top-0 h-full cursor-pointer touch-none"
         style={{ width: STAIR_RAIL }}
         onPointerDown={e => {
@@ -565,7 +582,7 @@ function DepthStairSelect({
           updateHint(e.clientY)
           if (e.currentTarget.hasPointerCapture(e.pointerId)) pickByPointer(e.clientY)
         }}
-        onPointerLeave={() => setRailHint(undefined)}
+        onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#cdd2dc] transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
@@ -602,7 +619,6 @@ function DepthStairRange({
   labels,
   onChange,
   disabled = false,
-  disabledHint,
   maxSelectableIndex,
   blockedHint,
   valueLabel,
@@ -612,8 +628,6 @@ function DepthStairRange({
   labels: string[]
   onChange: (minIndex: number, maxIndex: number) => void
   disabled?: boolean
-  // 막혀 있을 때 컨트롤 위에 올리면 보이는 이유(없으면 말풍선 없음).
-  disabledHint?: string
   maxSelectableIndex: number
   blockedHint: string
   // 켜진 칸마다 배지 옆에 보이는 값(2-2) 표시 지표에서 고른 이름).
@@ -622,12 +636,12 @@ function DepthStairRange({
   const last = labels.length - 1
   const railRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<'min' | 'max' | null>(null)
-  const [railHint, setRailHint] = useState<string | undefined>()
   const updateHint = (clientY: number) => {
-    const rect = railRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const raw = stairRawIndex(rect, clientY)
-    setRailHint(raw > maxSelectableIndex && raw <= last ? blockedHint : undefined)
+    const rail = railRef.current
+    if (!rail) return
+    const raw = stairRawIndex(rail.getBoundingClientRect(), clientY)
+    if (raw > maxSelectableIndex && raw <= last) rail.dataset.hint = blockedHint
+    else delete rail.dataset.hint
   }
   const indexFromPointer = (clientY: number) => {
     const rect = railRef.current?.getBoundingClientRect()
@@ -661,14 +675,12 @@ function DepthStairRange({
       role="group"
       aria-label="표시 위치"
       aria-disabled={disabled || undefined}
-      data-hint={disabled ? disabledHint : undefined}
       className={`relative ${disabled ? 'cursor-not-allowed' : ''}`}
       style={{ height: stairHeight(labels.length) }}
     >
       <StairRows labels={labels} litFrom={minIndex} litTo={maxIndex} maxSelectableIndex={maxSelectableIndex} blockedHint={() => blockedHint} valueLabel={valueLabel} />
       <div
         ref={railRef}
-        data-hint={railHint}
         className={`group absolute right-0 top-0 h-full touch-none ${disabled ? 'pointer-events-none' : 'cursor-pointer'}`}
         style={{ width: STAIR_RAIL }}
         onPointerDown={e => {
@@ -682,7 +694,7 @@ function DepthStairRange({
           updateHint(e.clientY)
           if (e.currentTarget.hasPointerCapture(e.pointerId)) apply(indexFromPointer(e.clientY))
         }}
-        onPointerLeave={() => setRailHint(undefined)}
+        onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
         onPointerUp={() => { dragRef.current = null }}
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
@@ -1602,6 +1614,7 @@ export function SettingsSectorLevelSection({
   const isDepthMetricRangeDisabled = isDepthMetricDisabled || !depthMetricEnabled
   const isDecimalPlacesDisabled = !stockLabelEnabled || stockLabelModeIndex === 1
   const [depthMetricSectionHint, setDepthMetricSectionHint] = useState<CursorHint | null>(null)
+  const [depthRangeSectionHint, setDepthRangeSectionHint] = useState<CursorHint | null>(null)
   const [topPickSectionHint, setTopPickSectionHint] = useState<CursorHint | null>(null)
   const [textThresholdHint, setTextThresholdHint] = useState<CursorHint | null>(null)
   const [decimalPlacesHint, setDecimalPlacesHint] = useState<CursorHint | null>(null)
@@ -1666,7 +1679,7 @@ export function SettingsSectorLevelSection({
                 value={activeDepthMetric}
                 onChange={onChangeActiveDepthMetric}
                 ariaLabel="표시 지표"
-                badge="업종명"
+                badge="업종"
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
                 className={`mt-4 max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-40'}`}
               />
@@ -1691,7 +1704,7 @@ export function SettingsSectorLevelSection({
           </div>
           <div
             aria-disabled={isDepthMetricRangeDisabled}
-            className={`settings-third-depth-range text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthRange')} ${isDepthMetricRangeDisabled ? 'cursor-not-allowed' : ''}`}
+            className={`settings-third-depth-range relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthRange')} ${isDepthMetricRangeDisabled ? 'cursor-not-allowed' : ''}`}
           >
             <span className={`flex items-center text-left text-[15px] text-white ${isDepthMetricRangeDisabled ? 'opacity-40' : ''}`}>
               <SettingTitle bookmarkId="depthRange">표시 위치</SettingTitle>
@@ -1707,11 +1720,29 @@ export function SettingsSectorLevelSection({
                 maxSelectableIndex={depthMetricMaxSelectableIndex}
                 valueLabel={GROUP_TAB_METRIC_OPTIONS.find(option => option.key === activeDepthMetric)?.label}
                 blockedHint={`${settingNumber('depthLevel')}) 업종 분류 깊이에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
-                disabledHint={!sectorLevelEnabled ? `${settingNumber('depthLevel')}) 업종 분류 깊이 토글을 켜면\n활성화됩니다.` : !depthMetricEnabled ? `${settingNumber('depthMetric')}) 표시 지표 토글을 켜면\n활성화됩니다.` : undefined}
                 onChange={onChangeDepthMetricRange}
                 disabled={isDepthMetricRangeDisabled}
               />
             </div>
+            {isDepthMetricRangeDisabled && (
+              <div
+                className="absolute inset-0 z-10 cursor-not-allowed"
+                onPointerEnter={e => setDepthRangeSectionHint(cursorHintFrom(e))}
+                onPointerMove={e => setDepthRangeSectionHint(cursorHintFrom(e))}
+                onPointerLeave={() => setDepthRangeSectionHint(null)}
+                onPointerDown={e => {
+                  e.preventDefault()
+                  setDepthRangeSectionHint(cursorHintFrom(e))
+                }}
+              />
+            )}
+            {isDepthMetricRangeDisabled && depthRangeSectionHint && (
+              <CursorHintBubble hint={depthRangeSectionHint}>
+                {!sectorLevelEnabled
+                  ? <><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthLevel')}) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.</>
+                  : <><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthMetric')}) 표시 지표</span> 토글을 켜면<br />활성화됩니다.</>}
+              </CursorHintBubble>
+            )}
           </div>
           {showTopPick && (
             <div className={`settings-fourth-top-pick relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('topPick')}`}>
@@ -1729,25 +1760,33 @@ export function SettingsSectorLevelSection({
                     disabled={isTopPickDisabled}
                   />
                 </div>
-                <SettingDescription dimmed={!topPickEnabled}>등락률이 높은 업종을 강조</SettingDescription>
-                <DepthTextSelect
-                  depth={topPickDepth}
-                  onChange={onChangeTopPickDepth}
-                  maxSelectableDepth={Math.min(topPickMaxSelectableDepth, selectableDepth)}
-                  noDataLimited={selectableDepth < depthLabelCount}
-                  ariaLabel="강세 표시 업종 단계"
-                  disabled={isTopPickDisabled || !topPickEnabled}
-                  className={`mt-2 justify-center ${topPickEnabled ? '' : 'opacity-40'}`}
-                />
-                <div className={`settings-slider-control mt-2 ${topPickEnabled ? '' : 'opacity-40'}`}>
-                  <SingleValueSlider
-                    index={topPickCount - 1}
-                    labels={TOP_PICK_COUNT_LABELS}
+                <div className="flex max-w-[16rem] items-center justify-between">
+                  <SettingDescription dimmed={!topPickEnabled}>등락률이 높은 업종을 강조</SettingDescription>
+                  <SettingsDropdown
+                    options={TOP_PICK_COUNT_OPTIONS}
+                    value={String(topPickCount) as '1' | '2' | '3'}
+                    onChange={key => onChangeTopPickCount(Number(key))}
                     ariaLabel="강세 표시 개수"
-                    onChange={index => onChangeTopPickCount(index + 1)}
                     disabled={isTopPickDisabled || !topPickEnabled}
-                    labelsAtTrackEnds
+                    compact
+                    className={`mt-1 w-[52px] shrink-0 ${topPickEnabled ? '' : 'opacity-40'}`}
                   />
+                </div>
+                <div className={`settings-control-inset mt-[6px] ${topPickEnabled ? '' : 'opacity-40'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
+                  <div role="radiogroup" aria-label="강세 표시 업종 단계" className="relative" style={{ height: stairHeight(depthLabelCount) }}>
+                    <StairRows
+                      labels={depthMetricLabels}
+                      litFrom={0}
+                      litTo={depthLabelCount - 1}
+                      maxSelectableIndex={Math.min(topPickMaxSelectableDepth, selectableDepth) - 1}
+                      blockedHint={label => selectableDepth < depthLabelCount
+                        ? `현재 ${label} 데이터가 없어\n비활성화되어 있습니다.`
+                        : `${settingNumber('depthLevel')}) 업종 분류 깊이에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
+                      selectedIndex={topPickDepth}
+                      onPick={onChangeTopPickDepth}
+                      railWidth={0}
+                    />
+                  </div>
                 </div>
               </div>
               {isTopPickDisabled && (
