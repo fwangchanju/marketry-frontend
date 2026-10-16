@@ -63,11 +63,11 @@ function isInDepthRange(range: [number, number] | null, depth: number): boolean 
 }
 
 // 절대 depth(트리 기준 실제 단계) → 배경/글자색. 배열 끝을 넘으면 마지막 값을 반복한다.
-// 업종 헤더는 종목 박스와 눈에 띄게 구별되도록 모든 단계가 같은 진한 푸른색 바탕에 아래 얇은 선이 있다(단계는 이름 칩·글자 크기로 구분한다). 최상위(0단계)만 글자가 강조색이다.
-// (Tailwind는 클래스 이름을 글자 그대로 찾아서 만들기 때문에 색과 선 클래스는 문자열을 합치지 않고 그대로 적는다.)
 const SECTOR_HEADER_STYLES = [
-  { background: 'bg-[#1e2a3a]', baseColor: '#1e2a3a', text: 'text-[var(--accent)]', border: 'border-0 border-b border-b-white/35' },
-  { background: 'bg-[#1e2a3a]', baseColor: '#1e2a3a', text: 'text-white', border: 'border-0 border-b border-b-white/35' },
+  { background: 'bg-black', baseColor: '#000000', text: 'text-[var(--accent)]', border: 'border-0' },
+  { background: 'bg-[#333333]', baseColor: '#333333', text: 'text-white', border: 'border-0' },
+  { background: 'bg-[#4d4d4d]', baseColor: '#4d4d4d', text: 'text-white', border: 'border-0' },
+  { background: 'bg-[#666666]', baseColor: '#666666', text: 'text-white', border: 'border-0' },
 ]
 
 function sectorHeaderStyle(depth: number) {
@@ -138,15 +138,17 @@ export default function SectorBox({
   ].filter((part): part is string => part !== null)
   const headerSuffix = headerParts.length > 0 ? `${TAB_GAP}${headerParts.join(TAB_GAP)}` : ''
   const absoluteDepth = depthOffset + depth
-  // 강세 업종(채워진 라임 헤더)은 지금 모양 그대로 두고, 나머지 헤더는 업종 이름에 옅은 배경 칩을 씌워 종목 박스와 구별한다(2단계는 앞의 └ 표시를 유지).
-  const displaySectorName = absoluteDepth === 2
-    ? `└ ${sector.sectorName}`
+  // 강세 업종(채워진 라임 헤더)은 지금 모양 그대로 두고, 나머지 헤더는 헤더 색은 그대로 둔 채 앞의 표시(1단계 ▸, 2단계 ▸▸)와 업종 이름을 함께 옅은 배경 칩에 담아 종목 박스와 구별한다.
+  // 앞 표시: 1단계 ▸, 2단계 ▸▸. 화살표 둘은 사이를 좁혀(글자 간격 -0.15em, 끝에서 같은 만큼 되돌림) 한 덩어리로 보이게 한다.
+  const depthMark = absoluteDepth === 2
+    ? <><span style={{ letterSpacing: '-0.15em', paddingRight: '0.15em' }}>▸▸</span>{' '}</>
     : absoluteDepth === 1
-      ? `· ${sector.sectorName}`
-      : sector.sectorName
-  const nameChipBackground = absoluteDepth === 0
-    ? `color-mix(in srgb, ${strongIndustryColor} 22%, transparent)`
-    : 'rgb(255 255 255 / 20%)'
+      ? '▸ '
+      : null
+  // 배지 색: 흰색을 단계가 깊어질수록 진하게 쓴다(대분류 18%, 중분류 24%, 소분류 이하 30%). 헤더 바탕이 단계별로 조금씩만 밝아져서 같은 투명도로는 단계 차이가 작게 보인다.
+  // 강조 색상(라임)은 강세 업종 헤더를 가리키는 색이라 배지에는 쓰지 않는다 — 배지가 라임이면 강세 업종과 구별이 약해진다.
+  const nameChipAlpha = [18, 24, 30][Math.min(absoluteDepth, 2)]
+  const nameChipBackground = `rgb(255 255 255 / ${nameChipAlpha}%)`
   const headerStyle = isTopPick
     ? {
         background: 'bg-[var(--accent)]',
@@ -239,15 +241,20 @@ export default function SectorBox({
               width: `calc(100% - ${PADDING * 2}px)`,
               ...(isTopPick ? { backgroundColor: strongIndustryColor, color: '#111827' } : absoluteDepth === 0 ? { color: strongIndustryColor } : {}),
             } as CSSProperties}
-            className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header' : ''} absolute top-0 z-[2] flex items-center overflow-hidden truncate px-1 text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
+            className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header' : ''} absolute top-0 z-[2] flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
           >
-            {isTopPick ? displaySectorName : (
+            {isTopPick ? (
               <>
-                {absoluteDepth === 2 && '└ '}
-                <span className="rounded-[3px] px-1" style={{ background: nameChipBackground, lineHeight: 1.25 }}>{sector.sectorName}</span>
+                {depthMark}{sector.sectorName}
+                {headerSuffix && <span className="text-[0.9em] font-normal tabular-nums">{headerSuffix}</span>}
               </>
+            ) : (
+              // 업종 배지: 앞 표시·업종 이름·등락률(헤더에 보이는 값)을 한 배지에 담는다.
+              <span className="rounded-[3px] px-1" style={{ background: nameChipBackground, lineHeight: 1.25 }}>
+                {depthMark}{sector.sectorName}
+                {headerSuffix && <span className="text-[0.9em] font-normal tabular-nums">{headerSuffix}</span>}
+              </span>
             )}
-            {headerSuffix && <span className="font-normal tabular-nums">{headerSuffix}</span>}
           </button>
         </>
       )}
