@@ -850,7 +850,7 @@ export function SettingsSectorStockScopeSection({
               aria-checked={selected}
               onClick={() => onChange(option.value)}
               className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
+                selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
               }`}
             >
               {option.label}
@@ -946,7 +946,7 @@ export function SettingsAverageModeSection({
                 onClick={() => onChange(option.value)}
                 disabled={!enabled}
                 className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                  selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
+                  selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
                 }`}
               >
                 {option.label}
@@ -1043,7 +1043,7 @@ function SettingsTaxonomySelector({
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
             className={`relative z-10 min-h-[34px] rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-sm font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-              isSelected(option.key) ? 'text-white' : 'text-zinc-200 hover:text-white'
+              isSelected(option.key) ? 'text-white' : 'text-zinc-200 hover:text-white settings-chip-hover'
             }`}
           >
             {option.label}
@@ -1111,7 +1111,7 @@ function SettingsAverageModeSelector({
             aria-checked={avgChangeRateUseSimple === option.value}
             onClick={() => avgChangeRateUseSimple !== option.value && onToggleAvgChangeRateUseSimple()}
             className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-              avgChangeRateUseSimple === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
+              avgChangeRateUseSimple === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
             }`}
           >
             {option.label}
@@ -1348,7 +1348,7 @@ export function SettingsSectorLevelSection({
                     disabled={isDepthMetricDisabled || !depthMetricEnabled}
                     aria-label={option.label}
                     className={`relative z-10 min-h-[38px] rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] disabled:cursor-not-allowed ${
-                      selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
+                      selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
                     }`}
                   >
                     <span className="flex flex-col items-center">
@@ -1499,7 +1499,7 @@ export function SettingsSectorLevelSection({
                     disabled={!stockLabelEnabled}
                     onClick={() => onChangeStockLabelModeIndex(value)}
                     className={`relative z-10 min-h-[38px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
-                      selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
+                      selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
                     }`}
                   >
                     {label === '모두' ? (
@@ -1623,7 +1623,7 @@ export function SettingsSectorLevelSection({
                       aria-checked={selected}
                       onClick={() => onChangeStockPopupOnHover(option.onHover)}
                       className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
-                      selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'
+                      selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
                     }`}
                     >
                       {option.label}
@@ -1764,7 +1764,7 @@ export function SettingsSectorChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'}`}
+            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -1797,7 +1797,7 @@ export function SettingsStockChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white'}`}
+            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -1853,7 +1853,7 @@ export function SettingsExcludeSection({
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
                 data-hint="맵에 다시 표시"
-                className="flex h-7 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-white transition-colors hover:bg-white/35"
+                className="flex h-7 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-white transition-colors hover:bg-[var(--accent)]/30"
               >
                 <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
