@@ -138,7 +138,7 @@ export default function SectorBox({
   ].filter((part): part is string => part !== null)
   const headerSuffix = headerParts.length > 0 ? `${TAB_GAP}${headerParts.join(TAB_GAP)}` : ''
   const absoluteDepth = depthOffset + depth
-  // 강세 업종(채워진 라임 헤더)은 지금 모양 그대로 두고, 나머지 헤더는 헤더 색은 그대로 둔 채 앞의 표시(1단계 ▸, 2단계 ▸▸)와 업종 이름을 함께 옅은 배경 칩에 담아 종목 박스와 구별한다.
+  // 강세 업종(채워진 라임 헤더)은 지금 모양 그대로 두고, 나머지 헤더는 헤더 색은 그대로 둔 채 앞의 표시(1단계 ▸, 2단계 ▸▸)와 업종명을 함께 옅은 배경 칩에 담아 종목 박스와 구별한다.
   // 앞 표시: 1단계 ▸, 2단계 ▸▸. 화살표 둘은 사이를 좁혀(글자 간격 -0.15em, 끝에서 같은 만큼 되돌림) 한 덩어리로 보이게 한다.
   const depthMark = absoluteDepth === 2
     ? <><span style={{ letterSpacing: '-0.15em', paddingRight: '0.15em' }}>▸▸</span>{' '}</>
@@ -199,7 +199,7 @@ export default function SectorBox({
               하위 헤더보다 높다. 선택한 섹터 자신의 헤더는 활성 상태에서 CSS가 31로 올려 기존
               헤더 hover 표기를 유지한다. */}
           <div className="treemap-sector-hover-overlay absolute inset-0 z-[30] pointer-events-none" aria-hidden="true" />
-          {/* 업종 헤더(SectorHeader) — 업종 박스 맨 위 제목. 업종 이름과 등락률 같은 수치를 한 줄로 보여 준다. */}
+          {/* 업종 헤더(SectorHeader) — 업종 박스 맨 위 제목. 업종명과 등락률 같은 수치를 한 줄로 보여 준다. */}
           <button
             type="button"
             onMouseDown={e => {
@@ -249,7 +249,7 @@ export default function SectorBox({
                 {headerSuffix && <span className="text-[0.9em] font-normal tabular-nums">{headerSuffix}</span>}
               </>
             ) : (
-              // 업종 배지: 앞 표시·업종 이름·등락률(헤더에 보이는 값)을 한 배지에 담는다.
+              // 업종 배지: 앞 표시·업종명·등락률(헤더에 보이는 값)을 한 배지에 담는다.
               <span className="rounded-[3px] px-1" style={{ background: nameChipBackground, lineHeight: 1.25 }}>
                 {depthMark}{sector.sectorName}
                 {headerSuffix && <span className="text-[0.9em] font-normal tabular-nums">{headerSuffix}</span>}

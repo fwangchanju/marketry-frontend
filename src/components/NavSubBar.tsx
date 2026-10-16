@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
 import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
-import { useSession } from '@/hooks/useSession'
 
 interface MenuOption {
   label: string
@@ -33,9 +32,6 @@ const CUSTOM_LINK: MenuLink = {
   ],
 }
 
-// 관리자 계정에만 보인다 — MARKETRY 맵 업데이트·롤백처럼 모두에게 영향을 주는 작업은 이 페이지에서 한다.
-const ADMIN_LINK: MenuLink = { to: '/admin', label: 'Admin' }
-
 // 목록이 닫히기 전에 커서가 메뉴 글자에서 목록으로 건너갈 시간(ms).
 const CLOSE_DELAY_MS = 120
 
@@ -50,8 +46,7 @@ interface Props {
 export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { data: session } = useSession()
-  const links = [...BASE_LINKS, CUSTOM_LINK, ...(session?.authenticated && session.role === 'ADMIN' ? [ADMIN_LINK] : [])]
+  const links = [...BASE_LINKS, CUSTOM_LINK]
   const [openTo, setOpenTo] = useState<string | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const barRef = useRef<HTMLDivElement>(null)
@@ -75,11 +70,8 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
     if (to === '/custom/stock') return location.pathname.startsWith('/custom')
     return location.pathname === to
   }
-  // Admin 메뉴만 빨강이다(모두에게 영향을 주는 작업이 있는 관리자 전용 페이지) — 지금 보는 중일 때는 더 밝은 빨강이다.
-  const linkClassName = (to: string) => {
-    if (to === ADMIN_LINK.to) return `${FONT_NAV_TAB} whitespace-nowrap ${isLinkActive(to) ? 'text-[#ff6a4d]' : 'text-[#ff4d2e] hover:text-[#ff6a4d]'}`
-    return `${FONT_NAV_TAB} whitespace-nowrap ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-gray-400 hover:text-white'}`
-  }
+  const linkClassName = (to: string) =>
+    `${FONT_NAV_TAB} whitespace-nowrap ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-gray-400 hover:text-white'}`
 
   const open = (to: string) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
