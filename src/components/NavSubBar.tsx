@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
 import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
+import { useSession } from '@/hooks/useSession'
 
 interface MenuOption {
   label: string
@@ -32,6 +33,9 @@ const CUSTOM_LINK: MenuLink = {
   ],
 }
 
+// 관리자 계정에만 보인다 — MARKETRY 맵 업데이트·롤백처럼 모두에게 영향을 주는 작업은 이 페이지에서 한다.
+const ADMIN_LINK: MenuLink = { to: '/admin', label: 'Admin' }
+
 // 목록이 닫히기 전에 커서가 메뉴 글자에서 목록으로 건너갈 시간(ms).
 const CLOSE_DELAY_MS = 120
 
@@ -46,7 +50,8 @@ interface Props {
 export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   const location = useLocation()
   const navigate = useNavigate()
-  const links = [...BASE_LINKS, CUSTOM_LINK]
+  const { data: session } = useSession()
+  const links = [...BASE_LINKS, CUSTOM_LINK, ...(session?.authenticated && session.role === 'ADMIN' ? [ADMIN_LINK] : [])]
   const [openTo, setOpenTo] = useState<string | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const barRef = useRef<HTMLDivElement>(null)

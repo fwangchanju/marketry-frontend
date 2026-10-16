@@ -44,10 +44,21 @@ function SettingDescription({ children, dimmed = false }: { children: ReactNode;
 
 // 좌우 이동 탭을 "Basis" 줄 높이로 옮기고, 그 줄 위에 구분선이 있으면(아래쪽 Basis) 탭을 그 선까지 키운 뒤 아래도 같은 길이만큼 대칭으로
 // 키운다. 그릴 때마다 재는 값이라 상태가 아니라 DOM에 바로 쓴다(상태로 두면 다시 그리기가 이어진다). 해당 줄이 없으면 가운데·기본 크기로 둔다.
-function alignSideTab(outerElement: HTMLElement | null, tab: HTMLElement | null) {
+// Basis 줄이 없는 페이지(관리자)에서 좌우 이동 탭을 다른 페이지(Basis 줄에 맞춘 자리)와 같은 곳에 두는 값 — 설정창 아래 끝에서 66px 위, 높이 50px.
+const SIDE_TAB_FROM_BOTTOM = 66
+const SIDE_TAB_HEIGHT = 50
+
+function alignSideTab(outerElement: HTMLElement | null, tab: HTMLElement | null, fixedLikeBasis = false) {
   if (!outerElement || !tab) return
   const outer = outerElement.getBoundingClientRect()
   const title = outerElement.querySelector('[data-map-select-title]')?.getBoundingClientRect()
+  if (!title && fixedLikeBasis) {
+    // 탭은 style.top이 탭의 가운데 줄(위에서 -50% 이동)이라, 탭의 아래 끝이 설정창 아래 끝에서 66px 위에 오도록 가운데 줄을 구한다.
+    const parentTop = (tab.offsetParent as HTMLElement | null)?.getBoundingClientRect().top ?? outer.top
+    tab.style.top = `${Math.round(outer.bottom - SIDE_TAB_FROM_BOTTOM - SIDE_TAB_HEIGHT / 2 - parentTop)}px`
+    tab.style.height = `${SIDE_TAB_HEIGHT}px`
+    return
+  }
   const topLine = outerElement.querySelector('[data-map-select-top-line]')?.getBoundingClientRect()
   const center = title ? title.top + title.height / 2 : null
   tab.style.top = center === null ? '' : `${Math.round(center - outer.top)}px`
@@ -2025,6 +2036,8 @@ interface Props {
   plainContent?: ReactNode
   sectionOrder?: readonly SettingsPanelSectionId[]
   taxonomyAtBottom?: boolean
+  // Basis 줄이 없는 페이지(관리자)에서 좌우 이동 탭을 다른 페이지와 같은 높이에 둔다.
+  fixedSideTab?: boolean
   // 하단 Basis 선택 아래에 표시할 종목 분류 최종 변경 시각(지도 상단 표기와 같은 형식).
   snapshotTime?: string | null
   // 사이드바 열림 상태는 페이지가 관리한다.
@@ -2069,6 +2082,7 @@ export default function SettingsPanel({
   showPreferenceActions = true,
   sectionOrder,
   taxonomyAtBottom = false,
+  fixedSideTab = false,
   snapshotTime,
   taxonomySection = 'industry',
   isOpen,
@@ -2123,12 +2137,12 @@ export default function SettingsPanel({
   // 설정창 안 내용(분류 선택 줄의 위치, 창 높이)이 바뀔 수 있어 그릴 때마다 다시 잰다. 전체화면처럼 다시 그리지 않고 크기만 바뀌는 경우는
   // 크기 변화를 지켜보다가 다시 잰다.
   useLayoutEffect(() => {
-    alignSideTab(outerRef.current, sideTabRef.current)
+    alignSideTab(outerRef.current, sideTabRef.current, fixedSideTab)
   })
   useEffect(() => {
     const outer = outerRef.current
     if (!outer) return
-    const realign = () => alignSideTab(outerRef.current, sideTabRef.current)
+    const realign = () => alignSideTab(outerRef.current, sideTabRef.current, fixedSideTab)
     const observer = new ResizeObserver(realign)
     observer.observe(outer)
     window.addEventListener('resize', realign)

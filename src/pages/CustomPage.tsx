@@ -9,7 +9,6 @@ import AdminStockTable from '@/components/AdminStockTable'
 import Spinner from '@/components/Spinner'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel from '@/components/SettingsPanel'
-import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
@@ -40,7 +39,7 @@ export default function CustomPage() {
   // 분류 시트 — 내 분류(mine)만 편집할 수 있다. ?sheet=krx는 읽기 전용 KRX 시트, ?sheet=marketry는 올린
   // MARKETRY를 읽기 전용으로 보여준다(MARKETRY는 내 분류에서 올려서 바꾼다).
   // 예전 주소(?sheet=nxt)는 KRX 시트에서 "NXT 종목만 보기"를 켠 상태로 연다.
-  const { data: session, isLoading: isSessionLoading } = useSession()
+  const { isLoading: isSessionLoading } = useSession()
   const isLoggedIn = useIsLoggedIn()
   const { requireLogin } = useLoginGate()
   // 로그인 여부가 확정된 비로그인 — 세션을 확인하는 동안은 아직 모르므로 내 분류 선택을 그대로 둔다.
@@ -317,16 +316,7 @@ export default function CustomPage() {
               onRequestLogin={() => requireLogin(pathname)}
               plainContent={!isReadOnlySheet ? (
                 <>
-                  {/* 관리자만 — 내 분류를 MARKETRY로 올리고 이전 버전으로 되돌린다. 그룹 페이지처럼 항목 높이는 127px로 고정하고(제목 간격 127px) 사이에 구분선이 그어진다. */}
-                  {session?.role === 'ADMIN' && (
-                    <div className="h-[127px] text-sm">
-                      <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">관리자</h2>
-                      <div className="max-w-[16rem] settings-control-inset">
-                        <MarketryPublishControls />
-                      </div>
-                    </div>
-                  )}
-                  {/* 종목 화면은 위에서부터 관리자 → 간편 업종 분류 → 변경 내역 순서다. */}
+                  {/* 종목 화면은 위에서부터 간편 업종 분류 → 변경 내역 → 일괄 변경 순서다(관리자 기능은 Admin 페이지로 옮겼다). */}
                   {mode === 'stock' && <div ref={setStockExcelTarget} className="h-[127px]" />}
                   <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'h-[127px]' : undefined} />
                   {mode === 'stock' && <div ref={setStockBulkTarget} />}

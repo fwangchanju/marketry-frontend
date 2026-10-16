@@ -6,6 +6,7 @@ import GroupPage from './pages/GroupPage'
 import CustomPage from './pages/CustomPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import ProfilePage from './pages/ProfilePage'
+import AdminPage from './pages/AdminPage'
 import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
 import HoverHintLayer from './components/HoverHintLayer'
@@ -93,6 +94,8 @@ export default function App() {
               있어야 하고, 세션/시세 등 데이터 API를 호출하지 않는 순수 정적 페이지다. */}
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          {/* 관리자 전용 — 관리자가 아니면 페이지 안에서 홈으로 보낸다. */}
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </LoginGateProvider>

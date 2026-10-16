@@ -14,9 +14,11 @@ interface Props {
   onRetry?: () => void
   // showElapsed 로딩에서 로고 위쪽에 따로 보여 줄 안내 문구 — 없으면 문구 없이 로고와 경과 시간(숫자)만 보인다.
   message?: string
+  // true면 돌지도 숫자도 세지도 않는 로고 원을 그린다 — 불러오는 일이 없는 화면(관리자 페이지)의 메인 영역에 로고만 보여 줄 때 쓴다.
+  still?: boolean
 }
 
-export default function Spinner({ className, showElapsed = false, showLogo = false, errorMessage, onRetry, message }: Props) {
+export default function Spinner({ className, showElapsed = false, showLogo = false, errorMessage, onRetry, message, still = false }: Props) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
   useEffect(() => {
@@ -28,6 +30,17 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
 
   // 로딩·오류 화면의 모든 크기(테두리·로고·글자·버튼 여백)는 원 너비에 대한 비율이다. 메인 영역의 큰 원(320px)을 기준으로 정했고,
   // 달력처럼 작은 원도 같은 비율로 줄어 로고·문구·숫자·버튼의 배치가 어느 크기에서나 같다.
+  if (still) {
+    return (
+      <div aria-hidden="true" className={`@container relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
+        <div className="absolute inset-0 rounded-full border-[1.9cqw] border-gray-600" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <MarketryLogo className="h-auto w-[84%]" />
+        </div>
+      </div>
+    )
+  }
+
   if (errorMessage) {
     return (
       <div role="alert" aria-label={errorMessage} className={`@container relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
