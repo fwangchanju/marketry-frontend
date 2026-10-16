@@ -236,6 +236,8 @@ export const AuthSessionResponseSchema = z.object({
   // 프로필 닉네임과 사진 버전(없으면 null). 옛 응답에는 필드가 없을 수 있어 nullish로 받는다.
   nickname: z.string().nullish(),
   profileImageVersion: z.number().nullish(),
+  // 닉네임을 다시 바꿀 수 있게 되는 시각(epoch 밀리초) — 지금 바꿀 수 있으면 null. 옛 응답에는 없을 수 있다.
+  nicknameChangeableAt: z.number().nullish(),
 })
 export type AuthSessionResponse = z.infer<typeof AuthSessionResponseSchema>
 
@@ -244,6 +246,12 @@ export const ProfileResponseSchema = z.object({
   nickname: z.string().nullable(),
   hasImage: z.boolean(),
   imageVersion: z.number().nullable(),
+  nicknameChangeableAt: z.number().nullish(),
+})
+
+// GET /profile/nickname/availability 응답 — 다른 사용자가 쓰지 않으면 true(내 닉네임과 같아도 true).
+export const NicknameAvailabilityResponseSchema = z.object({
+  available: z.boolean(),
 })
 
 // GET/PUT /custom/preferences — 사용자가 바꾼 값만 담는 sparse JSON. 값 형태가 키마다 달라 값 자체는
