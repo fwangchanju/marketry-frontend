@@ -602,6 +602,13 @@ export default function MapPage() {
                       {nxtOnlyWindow.label.replace(/ /g, '')}에는 NXT 거래 가능 종목만 표시됩니다.
                       <br />
                       <span className="text-gray-600">최대 {toCount(nxtStockTotal)}종목이며, 설정에 따라 다를 수 있습니다.</span>
+                      {/* 애프터 마켓에서만 — 정규장이 끝난 뒤라 메인 마켓 종가를 따로 볼 수 있다고 알린다(프리 마켓에서는 보이지 않는다). */}
+                      {nxtOnlyWindow.fromMinutes >= 12 * 60 && (
+                        <>
+                          <br />
+                          <span className="text-gray-600">메인 마켓 종가는 상단 종가 버튼으로 확인하세요.</span>
+                        </>
+                      )}
                     </p>
                     <div className="mt-auto flex justify-end pt-3">
                       <button
