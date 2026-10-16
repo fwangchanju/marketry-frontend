@@ -192,7 +192,7 @@ type UndoableActionInput =
 // id는 실행취소/다시실행 "목록"에서 스택 순서와 무관하게 특정 항목 하나를 골라 가리키기 위한
 // 프론트 전용 식별자 — 백엔드 요청엔 실리지 않는다.
 type UndoableAction = UndoableActionInput & { id: string }
-const UNDO_STACK_LIMIT = 50
+const UNDO_STACK_LIMIT = 10
 
 // 실행취소/다시실행 목록에 보여줄 한 줄 설명 — "종목명: 이전 섹터 → 이후 섹터" 형태로,
 // 지금 undo 목록에 있든 redo 목록에 있든(즉 아직 실행 전이든 이미 되돌린 뒤든) 항상 같은 문구를 쓴다.
@@ -1606,7 +1606,7 @@ export default function AdminStockTable({
         historyContainer,
       )}
       {excelContainer && createPortal(
-        <div>
+        <div className="h-[127px]">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">간편 업종 분류</h2>
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">파일 다운 받아서 AI로 분류 후 업로드</p>
           <div className="mt-4 grid max-w-[16rem] grid-cols-2 gap-2">

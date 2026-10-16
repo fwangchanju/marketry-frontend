@@ -848,7 +848,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     {settingsActionsTarget && createPortal(
       <>
       {/* 업종 추가가 먼저, 아래 업종 재배치와는 구분선으로 나눈다 — 구분선은 그룹 페이지 설정창과 같은 모양이다. */}
-      <section aria-label="업종 추가">
+      <section aria-label="업종 추가" className="h-[127px]">
         <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">업종 추가</h2>
         <div className="flex min-w-0 items-center gap-2">
           <SectorNameInput
@@ -862,7 +862,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           />
         </div>
       </section>
-      <section aria-label="업종 재배치" className="relative mt-6 mb-6 before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-[rgb(255_255_255/12%)] before:content-['']">
+      <section aria-label="업종 재배치" className="relative h-[127px] before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-[rgb(255_255_255/12%)] before:content-['']">
         <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">업종 재배치</h2>
         <div className="mb-3 rounded-md border border-gray-600 bg-zinc-700 px-2 py-1.5 text-sm text-white">
           <div className="flex items-start gap-1">
@@ -902,7 +902,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         </div>
       </section>
       {/* 변경 내역 — 종목 화면과 같은 부품이다. */}
-      <section aria-label="변경 내역" className="relative mt-6 mb-6 before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-[rgb(255_255_255/12%)] before:content-['']">
+      <section aria-label="변경 내역" className="relative before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-[rgb(255_255_255/12%)] before:content-['']">
         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">변경 내역</h2>
         <ChangeHistoryControls
           undoStack={undoStack}

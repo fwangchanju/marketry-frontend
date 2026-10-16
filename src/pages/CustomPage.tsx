@@ -327,9 +327,9 @@ export default function CustomPage() {
                     </div>
                   )}
                   {/* 종목 화면은 위에서부터 관리자 → 간편 업종 분류 → 변경 내역 순서다. */}
-                  {mode === 'stock' && <div ref={setStockExcelTarget} />}
-                  <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'mt-6' : undefined} />
-                  {mode === 'stock' && <div ref={setStockBulkTarget} className="mt-6" />}
+                  {mode === 'stock' && <div ref={setStockExcelTarget} className="h-[127px]" />}
+                  <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'h-[127px]' : undefined} />
+                  {mode === 'stock' && <div ref={setStockBulkTarget} />}
                 </>
               ) : (
                 // 마켓트리·거래소 화면은 읽기 전용이라 설정할 항목이 없다 — 그 사실만 알린다.
