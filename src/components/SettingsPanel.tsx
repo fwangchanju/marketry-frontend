@@ -395,6 +395,116 @@ function CursorHintBubble({ hint, children }: { hint: CursorHint; children: Reac
   )
 }
 
+// 업종 분류 깊이 — 대분류·중분류(▸)·소분류(▸▸)를 계단식으로 쌓고 꺾인 선으로 잇는다. 칸과 배지는 고르는 버튼이 아니라 현재 깊이를 보여 주는 표시이고,
+// 오른쪽 세로 트랙의 손잡이(︿﹀, 평소엔 작고 올리면 커진다)를 끌거나 트랙을 눌러 깊이를 바꾼다. 손잡이가 닿은 칸까지(위 칸 포함) 배경이 강조색으로 바뀌어 겹침이 보인다.
+// 칸 18px(지도 대분류 헤더 높이와 같다)·간격 3px라 3단계가 항목 안(제목 위에서 아래 구분선까지 115px)에 들어간다.
+function DepthStairSelect({
+  depth,
+  labels,
+  onChange,
+  disabled = false,
+  maxSelectableIndex,
+}: {
+  depth: number
+  labels: string[]
+  onChange: (index: number) => void
+  disabled?: boolean
+  maxSelectableIndex: number
+}) {
+  const ROW = 18
+  const GAP = 3
+  const STEP = 14
+  const RAIL = 16
+  const last = labels.length - 1
+  const centerOf = (index: number) => index * (ROW + GAP) + ROW / 2
+  const railRef = useRef<HTMLDivElement>(null)
+  const pickByPointer = (clientY: number) => {
+    const rect = railRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const raw = Math.round((clientY - rect.top - ROW / 2) / (ROW + GAP))
+    const next = Math.max(0, Math.min(maxSelectableIndex, raw))
+    if (next !== depth - 1) onChange(next)
+  }
+  return (
+    <div
+      role="group"
+      aria-label="업종 분류 깊이"
+      aria-disabled={disabled || undefined}
+      className={`relative ${disabled ? 'pointer-events-none' : ''}`}
+      style={{ height: labels.length * ROW + last * GAP }}
+    >
+      {labels.map((label, index) => {
+        const blocked = index > maxSelectableIndex
+        const lit = index < depth
+        const top = index * (ROW + GAP)
+        const left = index * STEP
+        const mark = index === 0 ? null : index === 1 ? '▸ ' : (
+          <>
+            <span style={{ letterSpacing: '-0.15em', paddingRight: '0.15em' }}>{'▸'.repeat(index)}</span>{' '}
+          </>
+        )
+        return (
+          <Fragment key={label}>
+            {index > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute rounded-bl-[3px] border-0 border-b-[1.5px] border-l-[1.5px] border-solid border-gray-500"
+                style={{ left: left - STEP + 8, top: top - GAP, width: STEP - 8, height: GAP + ROW / 2 }}
+              />
+            )}
+            <div
+              data-hint={blocked ? `현재 ${label} 데이터가 없어\n비활성화되어 있습니다.` : undefined}
+              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-white transition-[background-color,opacity] ${lit ? 'bg-[var(--accent)]/45' : 'bg-[#4b4b50]'}`}
+              style={{ left, top, width: `calc(100% - ${left + RAIL}px)`, height: ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
+            >
+              <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-black/35' : 'bg-white/15'}`}>
+                {mark}{label}
+              </span>
+            </div>
+          </Fragment>
+        )
+      })}
+      <div
+        ref={railRef}
+        className="group absolute right-0 top-0 h-full cursor-pointer touch-none"
+        style={{ width: RAIL }}
+        onPointerDown={e => {
+          e.currentTarget.setPointerCapture(e.pointerId)
+          pickByPointer(e.clientY)
+        }}
+        onPointerMove={e => {
+          if (e.currentTarget.hasPointerCapture(e.pointerId)) pickByPointer(e.clientY)
+        }}
+      >
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: centerOf(0), height: centerOf(last) - centerOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#cdd2dc] transition-[height]" style={{ top: centerOf(0), height: centerOf(depth - 1) - centerOf(0) }} />
+        {labels.map((label, index) => (
+          <span key={label} className="pointer-events-none absolute left-[4px] h-2 w-2 rounded-full bg-[#6b7280]" style={{ top: centerOf(index) - 4, opacity: index > maxSelectableIndex ? 0.2 : 1 }} />
+        ))}
+        <span
+          role="slider"
+          tabIndex={0}
+          aria-label="업종 분류 깊이"
+          aria-orientation="vertical"
+          aria-valuemin={1}
+          aria-valuemax={maxSelectableIndex + 1}
+          aria-valuenow={depth}
+          aria-valuetext={labels[depth - 1]}
+          onKeyDown={e => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
+            else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
+          }}
+          className="absolute left-1/2 flex h-4 w-3 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[1px] rounded-full border border-white bg-[#222] transition-[top,width,height] duration-100 group-hover:h-6 group-hover:w-[18px] focus-visible:h-6 focus-visible:w-[18px]"
+          style={{ top: centerOf(depth - 1) }}
+        >
+          <svg viewBox="0 0 10 6" className="w-[5px] group-hover:w-2"><path d="M1 5l4-4 4 4" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <svg viewBox="0 0 10 6" className="w-[5px] group-hover:w-2"><path d="M1 1l4 4 4-4" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 깊이(2-1)보다 깊거나 분류에 없는 단계는 비활성이고,
 // 올리거나 누르면 이유를 커서 옆 말풍선으로 알려준다.
 function DepthTextSelect({
@@ -1317,15 +1427,13 @@ export function SettingsSectorLevelSection({
               />
             </div>
             <SettingDescription dimmed={!sectorLevelEnabled}>지도에 표시할 업종 분류의 깊이</SettingDescription>
-            <div className={`settings-slider-control mt-[18px] ${sectorLevelEnabled ? '' : 'opacity-40'}`}>
-              <SingleValueSlider
-                index={depthValue - 1}
+            <div className={`settings-control-inset mt-[6px] ${sectorLevelEnabled ? '' : 'opacity-40'}`}>
+              <DepthStairSelect
+                depth={depthValue}
                 labels={depthMetricLabels}
-                ariaLabel="업종 분류 깊이"
                 onChange={index => onChangeMaxDepth(index + 1)}
                 disabled={!sectorLevelEnabled}
                 maxSelectableIndex={selectableDepth - 1}
-                blockedReason={label => <>현재 {label} 데이터가 없어<br />비활성화되어 있습니다.</>}
               />
             </div>
           </div>
