@@ -1608,7 +1608,7 @@ export default function AdminStockTable({
       {excelContainer && createPortal(
         <div className="h-[127px]">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">간편 업종 분류</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">파일 다운 받아서 AI로 분류 후 업로드</p>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">다운받아서 AI로 간편 분류 추천</p>
           <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
             <button
               type="button"
