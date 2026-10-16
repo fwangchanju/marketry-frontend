@@ -40,7 +40,8 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
   }
   const gradientStops = Array.from({ length: 61 }, (_, step) => step / 2).map(percent => `${resolveTreemapColor(signed * percent, barConfig)} ${(percentToPosition(percent) * 100).toFixed(2)}%`)
   const gradient = `linear-gradient(90deg, ${gradientStops.join(', ')})`
-  const sign = side === 'down' ? '-' : '+'
+  // 하락 부호는 하이픈(-)이 아니라 수학 빼기 기호(−)로 쓴다 — 하이픈은 +보다 좁아서 상승·하락 배지의 폭이 달라졌다(+12% 38.7px, -12% 36.5px, −12% 38.7px).
+  const sign = side === 'down' ? '\u2212' : '+'
 
   const percentAt = (clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect()
