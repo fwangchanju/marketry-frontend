@@ -83,7 +83,7 @@ type SectorHistoryAction =
   | { id: string; type: 'rename'; sectorId: number; before: string; after: string }
   | { id: string; type: 'reorder'; parentId: number | null; beforeIds: number[]; afterIds: number[] }
 type SectorHistoryInput = SectorHistoryAction extends infer A ? (A extends { id: string } ? Omit<A, 'id'> : never) : never
-const SECTOR_HISTORY_LIMIT = 50
+const SECTOR_HISTORY_LIMIT = 9
 
 function DraggableSectorHandle({
   sectorId,
