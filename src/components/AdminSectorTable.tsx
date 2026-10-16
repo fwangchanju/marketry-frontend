@@ -42,7 +42,7 @@ const ADD_CHILD_MAX_PARENT_DEPTH = 1
 // 표시되고, 이름을 고칠 때만 제한이 걸린다.
 const MAX_SECTOR_NAME_LENGTH = 12
 
-// 업종 이름 입력칸 — 글자 수 상한에 닿으면 칸 아래에 이유를 알려 준다(상한을 넘는 글자는 조용히 잘리므로).
+// 업종명 입력칸 — 글자 수 상한에 닿으면 칸 아래에 이유를 알려 준다(상한을 넘는 글자는 조용히 잘리므로).
 function SectorNameInput({ wrapperClassName = '', onChange, onFocus, onBlur, ...props }: ComponentProps<'input'> & { wrapperClassName?: string }) {
   const [focused, setFocused] = useState(false)
   const atLimit = typeof props.value === 'string' && props.value.length >= MAX_SECTOR_NAME_LENGTH
@@ -577,7 +577,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 }}
                 placeholder={`${row.depth === 1 ? '중분류' : '소분류'} 추가`}
                 data-hint={`${chainLabel} 하위 업종 추가`}
-                aria-label={`${chainLabel} 하위 업종 이름`}
+                aria-label={`${chainLabel} 하위 업종명`}
                 className="h-7 w-40 rounded-md border-0 bg-[#3b3b3b] px-2 text-sm font-medium text-white outline-none focus:placeholder:text-transparent placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
               />
             </div>
@@ -856,8 +856,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
-            placeholder="업종 이름 입력 후 Enter"
-            aria-label="최상위 업종 이름"
+            placeholder="업종명 입력 후 Enter"
+            aria-label="최상위 업종명"
             className="h-9 min-w-0 flex-1 rounded-[5px] border border-transparent bg-[#4b4b50] px-2 text-xs text-white outline-none focus:placeholder:text-transparent placeholder:text-gray-400 focus:border-[var(--brand)]"
           />
         </div>

@@ -2,7 +2,7 @@ import type { TreemapSectorNode } from '@/types/api'
 
 export interface DepthEntry {
   node: TreemapSectorNode
-  // 위에서부터 이어 붙인 이름 — 비교 시점과 짝을 맞출 때 쓴다. 업종 이름은 한 분류 안에서 겹치지 않지만(거래소는 이름으로 묶고, 내 분류·MARKETRY는 DB가 막는다) 경로로 구분해 둔다.
+  // 위에서부터 이어 붙인 이름 — 비교 시점과 짝을 맞출 때 쓴다. 업종명은 한 분류 안에서 겹치지 않지만(거래소는 이름으로 묶고, 내 분류·MARKETRY는 DB가 막는다) 경로로 구분해 둔다.
   pathKey: string
 }
 

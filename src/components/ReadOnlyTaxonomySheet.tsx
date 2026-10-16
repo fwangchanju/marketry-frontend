@@ -132,7 +132,7 @@ interface SectorRow {
   stocks: TreemapResponse['items'][number]['items']
 }
 
-// 종목 표는 대·중·소분류에 직접 배정된 종목을 모두 읽되, 각 종목의 배정 업종 이름을 유지한다.
+// 종목 표는 대·중·소분류에 직접 배정된 종목을 모두 읽되, 각 종목의 배정 업종명을 유지한다.
 function collectSectorRows(nodes: TreemapResponse['items'], parentPath: string[] = []): SectorRow[] {
   return nodes.flatMap(node => {
     const sectorPath = [...parentPath, node.sectorName]
@@ -285,7 +285,7 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
     selectedNames,
     setSelectedNames,
   )
-  // 체크박스는 업종 이름 앞 빈 자리(왼쪽 여백 72px 안)에 겹쳐 두고, 종목 표의 체크박스 칸(29px)처럼 그 오른쪽에 세로 구분선을 긋는다 — 세 칸 폭과 이름 시작 위치는 그대로다.
+  // 체크박스는 업종명 앞 빈 자리(왼쪽 여백 72px 안)에 겹쳐 두고, 종목 표의 체크박스 칸(29px)처럼 그 오른쪽에 세로 구분선을 긋는다 — 세 칸 폭과 이름 시작 위치는 그대로다.
   const CHECKBOX_CLASS = 'thin-check absolute top-1/2 m-0 -translate-y-1/2'
   // 종목 표의 체크박스 칸(29px) 가운데에 오게 한다.
   const checkboxStyle = { left: `round(down, calc((${CHECKBOX_COLUMN_WIDTH} - 1em) / 2), 1px)` }
@@ -343,7 +343,7 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
                 {...rowProps(index)}
                 className={`cursor-pointer text-gray-400 ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/28 [&>td]:border-white/25!' : '[&:hover>td]:bg-[var(--brand)]/20 [&:hover>td]:border-white/25!'}`}
               >
-                {/* 업종 이름 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 손잡이 24px + 4px + 번호 칸 28px + 8px = 72px. */}
+                {/* 업종명 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 손잡이 24px + 4px + 번호 칸 28px + 8px = 72px. */}
                 <td className={`${BODY_CELL} relative truncate text-left !pl-[72px]`}>
                   <input
                     type="checkbox"

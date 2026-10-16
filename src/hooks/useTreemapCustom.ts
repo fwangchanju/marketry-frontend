@@ -69,7 +69,7 @@ export function useCreateSector() {
 export function useRenameSector() {
   const queryClient = useQueryClient()
   return useMutation({
-    meta: { failure: '업종 이름을 바꾸지 못했습니다.' },
+    meta: { failure: '업종명을 바꾸지 못했습니다.' },
     mutationFn: ({ id, name }: { id: number; name: string }) => renameSector(id, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })

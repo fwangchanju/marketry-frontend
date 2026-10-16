@@ -65,7 +65,18 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       <div className="flex items-center gap-3">
       {hideAccount ? null : (
       // 비로그인의 사람 모양 칸과 로그인한 프로필 사진 칸은 크기와 자리가 같아서, 로그인 상태가 바뀌어도 오른쪽 위 모양이 달라지지 않는다.
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+      {!isLoading && session?.authenticated && session.role === 'ADMIN' && (
+        <Link
+          to="/admin"
+          aria-label="관리자 페이지"
+          aria-current={pathname === '/admin' ? 'page' : undefined}
+          data-hint="관리자 페이지"
+          className={`relative -top-[2.5px] inline-flex h-6 shrink-0 items-center rounded-md border px-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6a4d] ${pathname === '/admin' ? 'border-[#ff6a4d] bg-[#ff4d2e]/20 text-[#ff6a4d]' : 'border-[#ff4d2e]/50 bg-[#ff4d2e]/10 text-[#ff4d2e] hover:border-[#ff6a4d] hover:bg-[#ff4d2e]/20 hover:text-[#ff6a4d]'}`}
+        >
+          Admin
+        </Link>
+      )}
       {isLoading ? (
         // 세션 확인 중에는 로그인 버튼도 프로필 아이콘도 아닌 빈 틀만 둔다 — 새로고침 직후 잠깐 로그인한 모양이 비쳤다가 로그아웃 모양으로 바뀌는 깜빡임을 막는다. 크기와 자리는 둘과 같다.
         <div aria-hidden="true" className="relative -top-[2.5px] mr-0.5 size-[38px] rounded-[12%] bg-zinc-800" />
