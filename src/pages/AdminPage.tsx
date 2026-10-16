@@ -8,6 +8,8 @@ import MarketryPublishControls from '@/components/MarketryPublishControls'
 import Spinner from '@/components/Spinner'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
+import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
+import { isLocalSignupEnabled } from '@/utils/localDevLogin'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 
 // 관리자 전용 페이지 — 모든 사용자가 보는 MARKETRY 맵을 바꾸는 작업을 일반 작업 화면(Custom)과 떨어뜨려 둔다.
@@ -20,6 +22,7 @@ export default function AdminPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+  const testMember = useTestMemberToggle()
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
@@ -63,12 +66,35 @@ export default function AdminPage() {
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
                 plainContent={
-                  <div className="h-[127px] text-sm">
-                    <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">맵 서버 업로드</h2>
-                    <div className="max-w-[16rem] settings-control-inset">
-                      <MarketryPublishControls />
+                  <>
+                    <div className="h-[127px] text-sm">
+                      <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">맵 서버 업로드</h2>
+                      <div className="max-w-[16rem] settings-control-inset">
+                        <MarketryPublishControls />
+                      </div>
                     </div>
-                  </div>
+                    {/* 로컬 개발 전용 — 운영 화면에는 나오지 않는다. 누르면 로컬 DB에 새 USER 계정(테스트 회원)으로 바꾼다. 돌아오는 버튼은 계정 메뉴에 있다(테스트 회원은 관리자가 아니라 이 페이지에 못 들어온다). */}
+                    {isLocalSignupEnabled() && (
+                      <div className="text-sm">
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">테스트 회원</h2>
+                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">
+                          {testMember.isTestMember ? '지금 테스트 회원입니다' : '로컬 DB의 새 일반 계정으로 전환'}
+                        </p>
+                        <div className="mt-4 max-w-[16rem] settings-control-inset">
+                          <button
+                            type="button"
+                            onClick={testMember.toggle}
+                            disabled={testMember.isPending}
+                            data-hint="누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다. 돌아올 때는 오른쪽 위 계정 메뉴를 쓰세요."
+                            className="settings-chip-hover h-7 w-full rounded-[5px] border-0 bg-[#4b4b50] text-[13px] font-medium text-white disabled:cursor-wait disabled:opacity-40"
+                          >
+                            {testMember.isPending ? '전환 중…' : '테스트 회원으로 전환'}
+                          </button>
+                          {testMember.error && <p role="alert" className="mt-1.5 text-xs text-red-400">{testMember.error}</p>}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 }
               />
             </div>
