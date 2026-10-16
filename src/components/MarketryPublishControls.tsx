@@ -13,7 +13,7 @@ import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 // 검정 바탕에 빨간 테두리·글자 — 아래 롤백 목록(검정 바탕, 빨간 테두리)과 같은 모양이고, 올리면 빨간 바탕에 흰 글자가 된다.
 const BUTTON_CLASS =
-  'h-7 w-full whitespace-nowrap rounded-md border border-[#ff4d2e] bg-black px-2 text-[13px] font-medium text-[#ff6a4d] transition-colors hover:bg-[#ff4d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-50'
+  'h-7 w-full whitespace-nowrap rounded-md border border-[#ff4d2e] bg-black px-2 text-[13px] font-medium text-[#ff6a4d] transition-colors enabled:hover:[background-image:linear-gradient(rgb(255_77_46/0.3),rgb(255_77_46/0.3))] disabled:cursor-not-allowed disabled:opacity-50'
 
 // "MARKETRY 2026-10-08 14:30"에서 앞의 이름을 뺀 날짜·시간만 — 안내 문구에서 이름이 겹쳐 보이지 않게 한다.
 function toDateTimeLabel(label: string) {

@@ -120,10 +120,10 @@ function letterClusterBoundaries(chars: string[]): number[] | null {
   return boundaries.length >= 2 ? boundaries : null
 }
 
-// 이름 뒤에 붙는 우선주 표시·지주사 접미어 앞에서 줄을 나눈다(현대차/2우B, 삼성물산/우B, 신한/지주, 한화/홀딩스). 우선주는 표시가 분명한 1우B·2우B·우B만 보고, 맨 끝이 그냥 '우'인 이름(삼성전자우)은 떼지 않는다. 앞부분이 2글자 이상일 때만 접미어로 본다.
+// 이름 뒤에 붙는 우선주 표시·지주사 접미어 앞에서 줄을 나눈다(현대차/2우B, 삼성물산/우B, 신한/지주, 한화/홀딩스, 한국금융/지주우). 우선주는 표시가 분명한 1우B·2우B·우B만 보고, 맨 끝이 그냥 '우'인 이름(삼성전자우)은 떼지 않는다. 앞부분이 2글자 이상일 때만 접미어로 본다.
 function suffixSplitPosition(chars: string[]): number | null {
   const name = chars.join('')
-  const match = name.match(/(홀딩스|홀딩|지주회사|지주|\d우[A-C]?|우[A-C])$/)
+  const match = name.match(/((?:홀딩스|홀딩|지주회사|지주)우?|\d우[A-C]?|우[A-C])$/)
   if (!match) return null
   const position = Array.from(name.slice(0, name.length - match[0].length)).length
   return position >= 2 ? position : null

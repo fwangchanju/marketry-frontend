@@ -194,7 +194,7 @@ type UndoableActionInput =
 type UndoableAction = UndoableActionInput & { id: string }
 const UNDO_STACK_LIMIT = 9
 
-// 실행취소/다시실행 목록에 보여줄 한 줄 설명 — "종목명: 이전 섹터 → 이후 섹터" 형태로,
+// 실행취소/다시실행 목록에 보여줄 한 줄 설명 — "종목명" 줄과 "[이전 섹터] → [이후 섹터]" 줄 두 줄로,
 // 지금 undo 목록에 있든 redo 목록에 있든(즉 아직 실행 전이든 이미 되돌린 뒤든) 항상 같은 문구를 쓴다.
 function describeUndoableAction(
   action: UndoableAction,
@@ -204,9 +204,9 @@ function describeUndoableAction(
   const sectorLabel = (id: number) => sectorOptionsById.get(id)?.name ?? '(알 수 없음)'
   if (action.type === 'sector') {
     const stockName = items.find(item => item.stockCode === action.stockCode)?.stockName ?? action.stockCode
-    return `${stockName}: ${sectorLabel(action.before)} → ${sectorLabel(action.after)} 변경`
+    return `${stockName}\n[${sectorLabel(action.before)}] → [${sectorLabel(action.after)}]`
   }
-  return `${action.entries.length}개 종목 → ${action.sectorName} 변경`
+  return `${action.entries.length}개 종목\n→ [${action.sectorName}]`
 }
 
 // 종목 응답엔 sectorId(실제 배정된 섹터, 뎁스 무관)만 있어서, 대분류/중분류/소분류 3칸에 어떻게
@@ -612,7 +612,7 @@ function BulkAssignButton({
         onClick={handleClick}
         aria-disabled={isIdle}
         className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded-[5px] border-0 px-1.5 text-[13px] font-medium transition-colors ${
-          isIdle ? 'cursor-not-allowed bg-[#4b4b50] text-zinc-200 opacity-50' : 'bg-[var(--accent)] text-zinc-900 hover:brightness-110'
+          isIdle ? 'cursor-not-allowed bg-[#4b4b50] text-zinc-200 opacity-40' : 'settings-chip-hover bg-[#4b4b50] text-white'
         }`}
       >
         {label}
@@ -1608,27 +1608,27 @@ export default function AdminStockTable({
       {excelContainer && createPortal(
         <div className="h-[127px]">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">간편 업종 분류</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">파일 다운 받아서 AI로 분류 후 업로드</p>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">다운받아서 AI로 간편 분류 추천</p>
           <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
             <button
               type="button"
               onClick={handleExportExcel}
-              className="flex h-7 items-center justify-center gap-1 rounded-[5px] border-0 bg-[var(--accent)] text-[13px] font-medium text-zinc-900 hover:brightness-110"
+              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[#4b4b50] text-[13px] font-medium text-white"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
-              <DownloadIcon className="h-4 w-4 text-zinc-700" />
+              <DownloadIcon className="h-4 w-4 text-gray-300" />
               다운로드
             </button>
             <button
               type="button"
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
-              className="flex h-7 items-center justify-center gap-1 rounded-[5px] border-0 bg-[var(--accent)] text-[13px] font-medium text-zinc-900 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[#4b4b50] text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >
-              <UploadIcon className="h-4 w-4 text-zinc-700" />
+              <UploadIcon className="h-4 w-4 text-gray-300" />
               {isUploading ? '처리 중…' : '업로드'}
             </button>
             <input

@@ -735,3 +735,8 @@ a { color: var(--accent-light); text-decoration: none; }
 :is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar { width: 6px; }
 :is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar-track { background: rgb(255 255 255 / 8%); border-radius: 3px; }
 :is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 40%); border-radius: 3px; }
+
+/* 설정창 회색 칩(선택 버튼의 안 고른 칸, 실행 버튼, 목록 줄)에 마우스를 올리면 강조색을 30%만 얹어 은은하게 밝힌다. 비활성 버튼에는 적용하지 않는다. */
+.settings-chip-hover:not(:disabled):hover {
+  background-image: linear-gradient(color-mix(in srgb, var(--accent) 30%, transparent), color-mix(in srgb, var(--accent) 30%, transparent));
+}
