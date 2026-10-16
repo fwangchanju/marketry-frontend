@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
 import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
+import { useSession } from '@/hooks/useSession'
 
 interface MenuOption {
   label: string
@@ -47,6 +48,10 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   const location = useLocation()
   const navigate = useNavigate()
   const links = [...BASE_LINKS, CUSTOM_LINK]
+  // 관리자 계정에만 보이는 Admin 메뉴 — 다른 메뉴와 같은 글자 모양이고 색만 빨강이다.
+  const { data: session, isLoading: isSessionLoading } = useSession()
+  const isAdmin = !isSessionLoading && session?.authenticated === true && session.role === 'ADMIN'
+  const isAdminActive = location.pathname === '/admin'
   const [openTo, setOpenTo] = useState<string | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const barRef = useRef<HTMLDivElement>(null)
@@ -142,6 +147,17 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
             )}
           </div>
         ))}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            aria-label="관리자 페이지"
+            aria-current={isAdminActive ? 'page' : undefined}
+            data-hint="관리자 페이지"
+            className={`${FONT_NAV_TAB} whitespace-nowrap text-[#ff4d2e] transition-colors hover:text-[#ff6a4d] ${isAdminActive ? '' : 'opacity-70 hover:opacity-100'}`}
+          >
+            Admin
+          </Link>
+        )}
       </div>
       {actions && <div className="flex items-center">{actions}</div>}
     </div>

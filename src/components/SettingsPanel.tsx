@@ -219,7 +219,7 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'favorites', label: '북마크', icon: 'favorites' },
   // 관리자 페이지 전용 탭 — 맨 뒤에 붙여서 위 탭 번호(1~5)는 그대로다.
   { id: 'adminOps', label: '운영', icon: 'admin-ops' },
-  { id: 'adminMoved', label: '이관', icon: 'admin-moved' },
+  { id: 'adminMoved', label: '보관', icon: 'admin-moved' },
 ]
 
 // 탭 제목에는 숫자를 표시하지 않지만 북마크와 안내 말풍선에는 원래 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
@@ -232,17 +232,15 @@ const SETTINGS_SECTION_NUMBERS = Object.fromEntries(
 // 각 탭 안에서 항목이 놓인 순서(1부터).
 const SETTING_ITEM_POSITIONS: Partial<Record<SettingsBookmarkId, { section: SettingsPanelSectionId; item: number }>> = {
   marketValueRange: { section: 'composition', item: 1 },
-  sectorChange: { section: 'composition', item: 2 },
-  stockChange: { section: 'composition', item: 3 },
-  excludeSector: { section: 'composition', item: 4 },
+  stockChange: { section: 'composition', item: 2 },
+  excludeSector: { section: 'composition', item: 3 },
   depthLevel: { section: 'industry', item: 1 },
   depthMetric: { section: 'industry', item: 2 },
   depthRange: { section: 'industry', item: 3 },
   topPick: { section: 'industry', item: 4 },
   boxSize: { section: 'stockDisplay', item: 1 },
   boxLabel: { section: 'stockDisplay', item: 2 },
-  textThreshold: { section: 'stockDisplay', item: 3 },
-  decimalPlaces: { section: 'stockDisplay', item: 4 },
+  decimalPlaces: { section: 'stockDisplay', item: 3 },
   strongColor: { section: 'colors', item: 1 },
 }
 
@@ -513,17 +511,6 @@ function StairRows({
   )
 }
 
-// 트랙 위 점(칸마다 하나) — 선택할 수 없는 칸의 점은 흐리다.
-function StairDots({ count, maxSelectableIndex }: { count: number; maxSelectableIndex: number }) {
-  return (
-    <>
-      {Array.from({ length: count }, (_, index) => (
-        <span key={index} className="pointer-events-none absolute left-[4px] h-2 w-2 rounded-full bg-[#6b7280]" style={{ top: stairCenterOf(index) - 4, opacity: index > maxSelectableIndex ? 0.2 : 1 }} />
-      ))}
-    </>
-  )
-}
-
 const STAIR_HANDLE_BASE =
   'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-[top,width,height,gap] duration-100'
 
@@ -577,7 +564,7 @@ function DepthStairSelect({
       />
       <div
         ref={railRef}
-        className="group absolute right-0 top-0 h-full cursor-pointer touch-none"
+        className="group absolute -right-[15px] top-0 h-full cursor-pointer touch-none"
         style={{ width: STAIR_RAIL }}
         onPointerDown={e => {
           e.currentTarget.setPointerCapture(e.pointerId)
@@ -592,7 +579,6 @@ function DepthStairSelect({
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#cdd2dc] transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
-        <StairDots count={labels.length} maxSelectableIndex={maxSelectableIndex} />
         <span
           role="slider"
           tabIndex={disabled ? -1 : 0}
@@ -691,7 +677,7 @@ function DepthStairRange({
       <StairRows labels={labels} litFrom={minIndex} litTo={maxIndex} maxSelectableIndex={maxSelectableIndex} blockedHint={() => blockedHint} valueLabel={valueLabel} />
       <div
         ref={railRef}
-        className={`group absolute right-0 top-0 h-full touch-none ${disabled ? 'pointer-events-none' : 'cursor-pointer'}`}
+        className={`group absolute -right-[15px] top-0 h-full touch-none ${disabled ? 'pointer-events-none' : 'cursor-pointer'}`}
         style={{ width: STAIR_RAIL }}
         onPointerDown={e => {
           e.currentTarget.setPointerCapture(e.pointerId)
@@ -709,7 +695,6 @@ function DepthStairRange({
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#cdd2dc] transition-[top,height]" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
-        <StairDots count={labels.length} maxSelectableIndex={maxSelectableIndex} />
         {merged ? (
           <span
             role="slider"
@@ -933,17 +918,6 @@ function RangeSlider({
           className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#cdd2dc]"
           style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, width: `calc(${maxPct - minPct}% - ${(maxPct - minPct) * 0.16}px)`, transition: slideTransition }}
         />
-        {/* 눈금마다 점 하나(업종 분류 세로 트랙과 같은 점) — 선택할 수 없는 눈금의 점은 흐리다. */}
-        {Array.from({ length: sliderSteps + 1 }, (_, index) => {
-          const pct = (index / sliderSteps) * 100
-          return (
-            <span
-              key={index}
-              className="pointer-events-none absolute top-1/2 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#6b7280]"
-              style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)`, opacity: index > selectableMaxIndex ? 0.2 : 1 }}
-            />
-          )
-        })}
         {/* 두 핸들이 같은 칸에 모이면 원 두 개가 겹쳐 화살표가 뭉개진다. 그때는 바깥으로 벌어지는
             화살표 둘을 담은 알약 하나로 그려서, 모여 있어도 양방향으로 벌릴 수 있는 핸들임이 보이게 한다. */}
         {minPct === maxPct ? (
@@ -1072,7 +1046,6 @@ function SingleRangeInput({
   const [isDragging, setIsDragging] = useState(false)
   const slide = `${isDragging ? 150 : 300}ms ease-out`
   const barTransition = smooth ? `width ${slide}` : undefined
-  const dotCount = Math.round((max - min) / step) + 1
   return (
     <div className={`relative h-4 ${disabled ? 'opacity-40' : ''}`}>
       <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#4b5563]" />
@@ -1081,18 +1054,6 @@ function SingleRangeInput({
         className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#cdd2dc]"
         style={{ width: `calc(${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
       />
-      {/* 칸으로 끊어 고르는 슬라이더(smooth)는 눈금마다 점 하나 — 업종 분류 세로 트랙과 같은 점이다. 값이 이어지는 슬라이더는 점을 두지 않는다. */}
-      {smooth && Array.from({ length: dotCount }, (_unused, index) => {
-        const dotPct = dotCount > 1 ? (index / (dotCount - 1)) * 100 : 0
-        return (
-          <span
-            key={index}
-            aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#6b7280]"
-            style={{ left: `calc(8px + ${dotPct}% - ${dotPct * 0.16}px)` }}
-          />
-        )
-      })}
       {/* 눈에 보이는 손잡이 — 아래 input의 기본 손잡이는 투명하게 두고, 이 손잡이가 값 위치로 미끄러진다. */}
       {smooth && (
         <span
@@ -1565,8 +1526,6 @@ export function SettingsSectorLevelSection({
   stockLabelEnabled,
   onToggleStockLabel,
   onChangeStockLabelModeIndex,
-  boxLabelMinAreaPercent,
-  onChangeBoxLabelMinAreaPercent,
   decimalPlacesIndex,
   onChangeDecimalPlacesIndex,
   stockPopupOnHover,
@@ -1613,8 +1572,6 @@ export function SettingsSectorLevelSection({
   onToggleStockLabel: () => void
   onChangeStockLabelModeIndex: (index: number) => void
   // 종목 박스가 전체 트리맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다.
-  boxLabelMinAreaPercent: number
-  onChangeBoxLabelMinAreaPercent: (value: number) => void
   // 등락률(%) 표시 소수점 자릿수(0=정수, 1=소수 1자리, 2=소수 2자리).
   decimalPlacesIndex: number
   onChangeDecimalPlacesIndex: (index: number) => void
@@ -1651,7 +1608,6 @@ export function SettingsSectorLevelSection({
   const [depthMetricSectionHint, setDepthMetricSectionHint] = useState<CursorHint | null>(null)
   const [depthRangeSectionHint, setDepthRangeSectionHint] = useState<CursorHint | null>(null)
   const [topPickSectionHint, setTopPickSectionHint] = useState<CursorHint | null>(null)
-  const [textThresholdHint, setTextThresholdHint] = useState<CursorHint | null>(null)
   const [decimalPlacesHint, setDecimalPlacesHint] = useState<CursorHint | null>(null)
   const bookmark = useContext(SettingsBookmarkContext)
   const inBookmarkTab = bookmark.mode === 'bookmark'
@@ -1660,7 +1616,7 @@ export function SettingsSectorLevelSection({
   const bookmarkableIds: SettingsBookmarkId[] = [
     ...(showTaxonomy ? (['depthLevel', 'depthMetric', 'depthRange'] as const) : []),
     ...(showTaxonomy && showTopPick ? (['topPick'] as const) : []),
-    ...(showStockDisplay ? (['boxLabel', 'textThreshold'] as const) : []),
+    ...(showStockDisplay ? (['boxLabel'] as const) : []),
     ...(showStockDisplay && showDecimalPlaces ? (['decimalPlaces'] as const) : []),
   ]
   if (inBookmarkTab && bookmarkableIds.every(hideItem)) return null
@@ -1818,7 +1774,7 @@ export function SettingsSectorLevelSection({
                     disabled={isTopPickDisabled || !topPickEnabled}
                     compact
                     outlinedChevron
-                    className={`mt-1 w-[52px] shrink-0 ${topPickEnabled ? '' : 'opacity-40'}`}
+                    className={`mr-[35px] mt-1 w-[42px] shrink-0 ${topPickEnabled ? '' : 'opacity-40'}`}
                   />
                 </div>
                 <div className={`settings-control-inset mt-[6px] ${topPickEnabled ? '' : 'opacity-40'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
@@ -1834,7 +1790,6 @@ export function SettingsSectorLevelSection({
                       selectedIndex={topPickDepth}
                       onPick={onChangeTopPickDepth}
                       disabled={isTopPickDisabled || !topPickEnabled}
-                      railWidth={0}
                     />
                   </div>
                 </div>
@@ -1860,7 +1815,7 @@ export function SettingsSectorLevelSection({
           )}
         </div>
       </div>}
-      {/* 종목 박스 탭의 박스 크기 다음에 종목 표기, 텍스트 표시 기준, 등락률 소수점을
+      {/* 종목 박스 탭의 박스 크기 다음에 종목 표기, 등락률 소수점을
           같은 번호 위계로 이어서 표시한다. */}
       {showStockDisplay && <div className={showTaxonomy ? 'mt-6 pt-8' : 'pt-0'}>
         <div>
@@ -1911,52 +1866,6 @@ export function SettingsSectorLevelSection({
                 )
               })}
             </div>
-          </div>
-          <div
-            aria-disabled={!stockLabelEnabled || undefined}
-              className={`settings-third-text-threshold relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('textThreshold')} ${stockLabelEnabled ? '' : 'cursor-not-allowed'}`}
-            onPointerEnter={!stockLabelEnabled ? e => setTextThresholdHint(cursorHintFrom(e)) : undefined}
-            onPointerMove={!stockLabelEnabled ? e => setTextThresholdHint(cursorHintFrom(e)) : undefined}
-            onPointerLeave={() => setTextThresholdHint(null)}
-            onPointerDown={!stockLabelEnabled ? e => {
-              e.preventDefault()
-              setTextThresholdHint(cursorHintFrom(e))
-            } : undefined}
-          >
-            <div className={stockLabelEnabled ? '' : 'opacity-40'}>
-            {/* 퍼센티지 값은 우측 끝에 옅은 회색으로 — 그 값이 없다고 치면 라벨만 가운데 정렬된 것처럼
-                보이도록, 라벨을 flex-1로 남는 공간에서 가운데 정렬한다("업종 단계" + N/M 배지와
-                동일한 패턴). 값 변경은 아래 슬라이더로만 한다. */}
-            <div className="flex max-w-[16rem] items-center justify-between">
-              <span className="flex items-center text-left text-[15px] text-white">
-                <SettingTitle bookmarkId="textThreshold" help>텍스트 표시 기준</SettingTitle>
-                <SettingHelpBubble
-                  bookmarkId="textThreshold"
-                  label="텍스트 표시 기준"
-                  description={"기준 퍼센트는 지도 전체 면적 대비\n종목 박스 면적입니다."}
-                />
-              </span>
-              <span className="text-gray-400">{boxLabelMinAreaPercent.toFixed(3)}%</span>
-            </div>
-            <SettingDescription>작은 박스의 글자를 숨기는 기준</SettingDescription>
-            <div className="settings-slider-control mt-[18px]">
-              <SingleRangeInput
-                min={0.01}
-                max={0.3}
-                step={0.001}
-                value={boxLabelMinAreaPercent}
-                smooth={false}
-                ariaLabel="텍스트 표시 기준"
-                onChange={onChangeBoxLabelMinAreaPercent}
-                disabled={!stockLabelEnabled}
-              />
-            </div>
-            </div>
-            {!stockLabelEnabled && textThresholdHint && (
-              <CursorHintBubble hint={textThresholdHint}>
-                <span className="inline-block whitespace-nowrap font-bold">{settingNumber('boxLabel')}) 박스 내 표기</span> 토글을 켜면<br />활성화됩니다.
-              </CursorHintBubble>
-            )}
           </div>
           {showDecimalPlaces && (
             <div
@@ -2044,6 +1953,25 @@ function toWonLabel(won: number): string {
   return `${(won / 1e8).toLocaleString('ko-KR')}억`
 }
 
+// 관리자 페이지 보관 탭의 "텍스트 표시 기준" — 지도 설정창 종목 박스 탭에서 옮겨 왔다. 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
+export function SettingsTextThresholdSection({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  return (
+    <div className="h-[127px] text-sm">
+      <div className="flex max-w-[16rem] items-center justify-between">
+        <span className="flex items-center text-left text-[15px] text-white">
+          <span className="settings-plain-title">텍스트 표시 기준</span>
+          <SettingHelpBubble label="텍스트 표시 기준" description={"기준 퍼센트는 지도 전체 면적 대비\n종목 박스 면적입니다."} />
+        </span>
+        <span className="text-gray-400">{value.toFixed(3)}%</span>
+      </div>
+      <SettingDescription>작은 박스의 글자를 숨기는 기준</SettingDescription>
+      <div className="settings-slider-control mt-[18px]">
+        <SingleRangeInput min={0.01} max={0.3} step={0.001} value={value} smooth={false} ariaLabel="텍스트 표시 기준" onChange={onChange} />
+      </div>
+    </div>
+  )
+}
+
 export function SettingsMarketValueSection({
   tiers,
   tierRangeMinIndex,
@@ -2122,6 +2050,8 @@ const DIRECTION_OPTIONS: { value: StockChangeFilter; label: string }[] = [
   { value: 'falling', label: '하락' },
 ]
 
+// 관리자 페이지 보관 탭의 "업종 등락 방향" — 지도 설정창 종목 구성 탭에서 옮겨 왔다. 항목 높이 127px, 제목 번호는 settings-plain-content가 매긴다.
+// 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsSectorChangeSection({
   value,
   onChange,
@@ -2138,12 +2068,10 @@ export function SettingsSectorChangeSection({
   // 분류에 하위 단계 데이터가 없어 막힌 경우(KRX·NXT) — 안내 문구가 달라진다.
   noDataLimited?: boolean
 }) {
-  const bookmark = useContext(SettingsBookmarkContext)
-
   return (
-    <div className={`settings-second-sector-change text-white ${bookmark.mode === 'bookmark' ? '' : 'mt-4 pt-6'} ${bookmarkItemClass(bookmark, 'sectorChange')}`}>
+    <div className="settings-second-sector-change h-[127px] text-sm text-white">
       <p className="flex items-center text-[15px]">
-        <SettingTitle bookmarkId="sectorChange">업종 등락 방향</SettingTitle>
+        <span className="settings-plain-title">업종 등락 방향</span>
       </p>
       <SettingDescription>상승·하락 업종만 표시</SettingDescription>
       <DepthTextSelect

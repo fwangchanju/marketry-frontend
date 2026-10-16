@@ -26,21 +26,22 @@ export interface SettingDefaults {
   // 1-1 시가총액 범위: 'all'은 모든 구간, 'excludeDefaultTiers'는 기본 제외 구간(소형주)을 뺀다,
   // 'topTwoTiers'는 시가총액이 큰 두 구간(초대형주+대형주)만, 'topThreeTiers'는 큰 세 구간(중형주까지)을 보여준다
   tierRange: 'all' | 'excludeDefaultTiers' | 'topTwoTiers' | 'topThreeTiers'
-  // 1-2 / 1-3 등락 방향 필터('all' | 'rising' | 'falling')와 1-2의 업종 단계(0=대분류)
+  // 업종 등락 방향 필터('all' | 'rising' | 'falling')와 그 업종 단계(0=대분류) — 관리자 페이지 보관 탭으로 옮김(서버에 저장하지 않고 브라우저에만 둔다)
+  // 1-2 종목 등락 방향 필터
   sectorChangeFilter: 'all' | 'rising' | 'falling'
   sectorChangeDepth: number
   stockChangeFilter: 'all' | 'rising' | 'falling'
-  // 1-4 제외 업종 변경 사용 여부
+  // 1-3 제외 업종 변경 사용 여부
   sectorFilterEnabled: boolean
   // 3-1 박스 크기: 시가총액 반영 비율(0=동일 크기 ~ 100=시가총액 비례)
   boxSizeMarketCapRatio: number
   // 3-2 박스 내 표기: 0=끄기, 1=종목명, 2=등락률, 3=종목명+등락률
   stockLabelModeIndex: number
-  // 3-3 텍스트 표시 기준: 전체 면적 대비 박스 면적 비율(%)
+  // 텍스트 표시 기준(관리자 페이지 보관 탭으로 옮김 — 서버에 저장하지 않고 브라우저에만 둔다): 전체 면적 대비 박스 면적 비율(%)
   boxLabelMinAreaPercent: number
-  // 3-4 등락률 소수점: 0=정수, 1=1자리, 2=2자리
+  // 3-3 등락률 소수점: 0=정수, 1=1자리, 2=2자리
   decimalPlacesIndex: number
-  // 3-5 종목 정보 팝업: true면 커서를 올릴 때, false면 우클릭으로 연다
+  // 3-4 종목 정보 팝업: true면 커서를 올릴 때, false면 우클릭으로 연다
   stockPopupOnHover: boolean
   // 4-1 강조 색상
   strongIndustryColor: string
@@ -68,8 +69,8 @@ export const MEMBER_DEFAULTS: SettingDefaults = {
   sectorFilterEnabled: true,
   boxSizeMarketCapRatio: 45, // 3-1 45%
   stockLabelModeIndex: 3,
-  boxLabelMinAreaPercent: 0.01, // 3-3 0.01%
-  decimalPlacesIndex: 1, // 3-4 1자리
+  boxLabelMinAreaPercent: 0.01, // 보관 탭 텍스트 표시 기준 0.01%
+  decimalPlacesIndex: 1, // 3-3 1자리
   stockPopupOnHover: false,
   strongIndustryColor: '#c6ff00', // 4-1 형광
   colorCustomOn: true,
