@@ -484,7 +484,7 @@ function StairRows({
             {index > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute rounded-bl-[3px] border-0 border-b-[1.5px] border-l-[1.5px] border-solid border-ui-border"
+                className="absolute rounded-bl-[3px] border-0 border-b-2 border-l-2 border-solid border-ui-border"
                 style={{ left: left - STAIR_STEP + 8, top: top - STAIR_GAP, width: STAIR_STEP - 8, height: STAIR_GAP + STAIR_ROW / 2 }}
               />
             )}
@@ -1059,7 +1059,7 @@ function SingleRangeInput({
   const barTransition = smooth ? `width ${slide}` : undefined
   return (
     <div className={`relative h-4 ${disabled ? 'opacity-35' : ''}`}>
-      <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
+      <span aria-hidden="true" data-slider-track className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
       <span
         aria-hidden="true"
         className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
@@ -1670,18 +1670,18 @@ export function SettingsSectorLevelSection({
               />
               {/* 업종 지표 버튼이 지도에서 종목 상자 위(업종 머리글)에 놓인다는 것을 보여 주는 가짜 상자 — 누를 수 없는 그림이라 회색 선으로만 그린다. */}
               <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-[16rem] ${depthMetricEnabled ? '' : 'opacity-35'}`}>
-                <div className="relative h-[62px] rounded-b-[5px] border-x border-b border-ui-control">
-                  <span className="absolute inset-y-0 left-[42%] border-l border-ui-control" />
-                  <span className="absolute left-[42%] right-0 top-1/2 border-t border-ui-control" />
-                  <span className="absolute left-0 top-[58%] w-[42%] border-t border-ui-control" />
-                  <span className="absolute bottom-0 left-[20%] top-[58%] border-l border-ui-control" />
-                  <span className="absolute left-[70%] top-0 h-1/2 border-l border-ui-control" />
-                  <span className="absolute left-[70%] right-0 top-1/4 border-t border-ui-control" />
-                  <span className="absolute left-[85%] top-0 h-1/4 border-l border-ui-control" />
-                  <span className="absolute left-[85%] top-1/4 h-1/4 border-l border-ui-control" />
-                  <span className="absolute bottom-0 left-[64%] top-1/2 border-l border-ui-control" />
-                  <span className="absolute bottom-0 left-[84%] top-1/2 border-l border-ui-control" />
-                  <span className="absolute left-[64%] right-0 top-[75%] border-t border-ui-control" />
+                <div className="relative h-[62px] rounded-b-[5px] border-x-2 border-b-2 border-ui-control">
+                  <span className="absolute inset-y-0 left-[42%] border-l-2 border-ui-control" />
+                  <span className="absolute left-[42%] right-0 top-1/2 border-t-2 border-ui-control" />
+                  <span className="absolute left-0 top-[58%] w-[42%] border-t-2 border-ui-control" />
+                  <span className="absolute bottom-0 left-[20%] top-[58%] border-l-2 border-ui-control" />
+                  <span className="absolute left-[70%] top-0 h-1/2 border-l-2 border-ui-control" />
+                  <span className="absolute left-[70%] right-0 top-1/4 border-t-2 border-ui-control" />
+                  <span className="absolute left-[85%] top-0 h-1/4 border-l-2 border-ui-control" />
+                  <span className="absolute left-[85%] top-1/4 h-1/4 border-l-2 border-ui-control" />
+                  <span className="absolute bottom-0 left-[64%] top-1/2 border-l-2 border-ui-control" />
+                  <span className="absolute bottom-0 left-[79%] top-1/2 border-l-2 border-ui-control" />
+                  <span className="absolute left-[64%] right-0 top-[75%] border-t-2 border-ui-control" />
                 </div>
               </div>
             </div>
@@ -1774,9 +1774,9 @@ export function SettingsSectorLevelSection({
               <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[5px] bg-ui-control pl-[2.5px]">
                 <span className="whitespace-nowrap rounded-[3px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
               </div>
-              <div className="flex h-[62px] items-center rounded-b-[5px] border-x border-b border-ui-control px-2">
-            <div role="radiogroup" aria-label="박스 내 표기" className="relative grid w-full grid-cols-3 gap-[6px]">
-              <SlidingHighlight count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="rounded-[5px] border border-brand bg-brand-surface" />
+              <div className="h-[62px] px-px pb-px pt-[2px]">
+            <div role="radiogroup" aria-label="박스 내 표기" className="relative grid h-full w-full grid-cols-3 gap-[2px]">
+              <SlidingHighlight square bottomRadius={5} gap={2} count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="border border-brand bg-brand-surface" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
                 const value = index + 1
                 const selected = stockLabelModeIndex === value
@@ -1788,7 +1788,7 @@ export function SettingsSectorLevelSection({
                     aria-checked={selected}
                     disabled={!stockLabelEnabled}
                     onClick={() => onChangeStockLabelModeIndex(value)}
-                    className={`relative z-10 min-h-[38px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
+                    className={`relative z-10 h-full rounded-none ${index === 0 ? 'rounded-bl-[5px]' : index === STOCK_LABEL_MODE_LABELS.length - 1 ? 'rounded-br-[5px]' : ''} border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
                       selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
                     }`}
                   >
@@ -1822,15 +1822,31 @@ export function SettingsSectorLevelSection({
                 <SettingTitle bookmarkId="decimalPlaces">등락률 소수점</SettingTitle>
               </span>
               <SettingDescription>종목 등락률의 소수점 자릿수</SettingDescription>
-              <div className="settings-slider-control mt-[35px]">
-                <SingleValueSlider
-                  index={decimalPlacesIndex}
-                  labels={DECIMAL_PLACES_LABELS}
-                  alignDecimalPoint
-                  ariaLabel="등락률 소수점 자릿수"
-                  onChange={onChangeDecimalPlacesIndex}
-                  disabled={isDecimalPlacesDisabled}
-                />
+              {/* 3-2)와 같은 가짜 종목 상자 — 세 칸이 0·1·2자리 눈금이고, 슬라이더 손잡이가 각 칸 가운데에 멈춘다. */}
+              <div className="settings-control-inset mt-[9.5px] max-w-[16rem]">
+                <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[5px] bg-ui-control pl-[2.5px]">
+                  <span className="whitespace-nowrap rounded-[3px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
+                </div>
+                <div className="relative h-[62px]">
+                  <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 top-[2px] grid grid-cols-3 gap-[2px]">
+                    <span className="rounded-bl-[5px] bg-ui-control" />
+                    <span className="bg-ui-control" />
+                    <span className="rounded-br-[5px] bg-ui-control" />
+                  </div>
+                  <div
+                    className="absolute top-[13px] [&_[data-slider-track]]:bg-ui-background"
+                    style={{ left: 'calc((100% - 4px) / 6 - 8px)', width: 'calc((100% - 4px) * 2 / 3 + 4px + 16px)' }}
+                  >
+                    <SingleValueSlider
+                      index={decimalPlacesIndex}
+                      labels={DECIMAL_PLACES_LABELS}
+                      alignDecimalPoint
+                      ariaLabel="등락률 소수점 자릿수"
+                      onChange={onChangeDecimalPlacesIndex}
+                      disabled={isDecimalPlacesDisabled}
+                    />
+                  </div>
+                </div>
               </div>
               </div>
               {isDecimalPlacesDisabled && decimalPlacesHint && (
@@ -2312,7 +2328,7 @@ export function SettingsColorSection({
       </div>
       <SettingDescription dimmed={!colorCustomOn}>등락률 구간별 종목 박스 색상</SettingDescription>
       {/* 맨 위 9칸 색상바는 9칸이 설정창 폭에 들어가지 않아 지웠다(칸 선택은 아래 막대의 손잡이·0% 표식·상승/하락 선택으로 한다). 지도 하단 범례 바는 그대로다. */}
-      <div className="relative mt-[19.5px]">
+      <div className="relative mt-[11.5px]">
         {colorEditorProps && (
           <div className={colorCustomOn ? '' : 'opacity-35'} inert={!colorCustomOn}>
             <TreemapColorThresholdEditorPanel {...colorEditorProps} />

@@ -58,7 +58,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
           setBadgeWidth(badgeRef.current ? badgeRef.current.offsetWidth : 0)
           setIsOpen(open => !open)
         }}
-        className={`flex w-full items-center justify-between rounded-[5px] border-0 ${badge ? 'bg-ui-control' : 'bg-[var(--accent)]/50'} ${badge ? 'pl-[2.5px] pr-2.5' : compact ? 'pl-1.5 pr-1' : 'px-2.5'} text-left ${compact ? 'text-xs' : 'text-[13px]'} font-medium text-ui-white disabled:cursor-not-allowed`}
+        className={`flex w-full items-center justify-between rounded-[5px] border-0 bg-ui-control ${badge ? 'pl-[2.5px] pr-2.5' : compact ? 'pl-1.5 pr-1' : 'px-2.5'} text-left ${compact ? 'text-xs' : 'text-[13px]'} font-medium text-ui-white disabled:cursor-not-allowed`}
         style={{ height: compact ? COMPACT_HEIGHT : ROW_HEIGHT }}
       >
         {badge && <span ref={badgeRef} className="whitespace-nowrap rounded-[3px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">{badge}</span>}

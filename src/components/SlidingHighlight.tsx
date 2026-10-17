@@ -14,6 +14,7 @@ export function SlidingHighlight({
   gap = 6,
   fillColor,
   square = false,
+  bottomRadius = 0,
 }: {
   count: number
   index: number
@@ -21,9 +22,12 @@ export function SlidingHighlight({
   gap?: number
   fillColor?: string
   square?: boolean
+  // 직각 칩 묶음에서 맨 왼쪽 칸의 왼쪽 아래와 맨 오른쪽 칸의 오른쪽 아래만 둥글게 한다(px).
+  bottomRadius?: number
 }) {
   const cell = `(100% - ${gap * (count - 1)}px) / ${count}`
   const leftOf = (i: number) => `calc((${cell}) * ${i} + ${gap * i}px)`
+  const cornerStyle = (i: number) => (bottomRadius > 0 ? { borderBottomLeftRadius: i === 0 ? bottomRadius : 0, borderBottomRightRadius: i === count - 1 ? bottomRadius : 0 } : {})
   return (
     <>
       {Array.from({ length: count }, (_, i) => (
@@ -31,14 +35,14 @@ export function SlidingHighlight({
           key={i}
           aria-hidden="true"
           className={`pointer-events-none absolute z-0 ${square ? '' : 'rounded-[5px]'}`}
-          style={{ top: 0, bottom: 0, left: leftOf(i), width: `calc(${cell})`, backgroundColor: CHIP_COLOR }}
+          style={{ top: 0, bottom: 0, left: leftOf(i), width: `calc(${cell})`, backgroundColor: CHIP_COLOR, ...cornerStyle(i) }}
         />
       ))}
       {index >= 0 && (
         <span
           aria-hidden="true"
           className={`pointer-events-none absolute z-[1] transition-[left] duration-[500ms] ease-out ${className ?? ''}`}
-          style={{ top: 0, bottom: 0, left: leftOf(index), width: `calc(${cell})`, backgroundColor: fillColor }}
+          style={{ top: 0, bottom: 0, left: leftOf(index), width: `calc(${cell})`, backgroundColor: fillColor, ...cornerStyle(index) }}
         />
       )}
     </>
