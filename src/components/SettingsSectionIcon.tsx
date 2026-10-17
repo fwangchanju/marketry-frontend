@@ -1,15 +1,22 @@
 import type { ReactNode } from 'react'
 
-export type SettingsSectionIconName = 'favorites' | 'composition' | 'industry' | 'stock-display' | 'colors' | 'admin-ops' | 'admin-moved'
+export type SettingsSectionIconName = 'favorites' | 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'admin-ops' | 'admin-moved'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
   className?: string
+  strokeWidth?: number
 }
 
 // 설정창 메뉴 줄의 아이콘 — 상단 영역 아이콘과 같은 선 아이콘이다(24×24 격자, 선 끝·꺾임 둥글게).
 // 업종 분류·색상은 Lucide(network·palette), 종목 구성·종목 박스·북마크는 Tabler(chart-treemap·text-size·bookmark) 모양이다.
 const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
+  'equal-size': (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2.25" />
+      <path d="M12 3v18M3 12h18" />
+    </>
+  ),
   composition: (
     <>
       <path d="M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12" />
@@ -66,14 +73,14 @@ const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
 
 // 30px로 그릴 때 선 1.1이 화면에서 약 1.35px로 보여 상단 영역 아이콘의 굵기(docs/ui-areas.md "아이콘 규칙")와 같다.
 // 크기를 바꾸면 선 값도 `굵기 × 24 ÷ 크기`로 맞춰야 한다.
-export default function SettingsSectionIcon({ icon, className = 'h-[30px] w-[30px]' }: SettingsSectionIconProps) {
+export default function SettingsSectionIcon({ icon, className = 'h-[30px] w-[30px]', strokeWidth = 1.1 }: SettingsSectionIconProps) {
   return (
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.1}
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={`shrink-0 ${className}`}
