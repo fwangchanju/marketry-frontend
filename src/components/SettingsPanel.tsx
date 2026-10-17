@@ -1840,7 +1840,6 @@ export function SettingsSectorLevelSection({
                     <SingleValueSlider
                       index={decimalPlacesIndex}
                       labels={DECIMAL_PLACES_LABELS}
-                      alignDecimalPoint
                       ariaLabel="등락률 소수점 자릿수"
                       onChange={onChangeDecimalPlacesIndex}
                       disabled={isDecimalPlacesDisabled}
