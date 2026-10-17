@@ -33,7 +33,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ghcr.io/fwangchanju/market-monitor-assets:latest
+          tags: ghcr.io/fwangchanju/marketry-assets:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
