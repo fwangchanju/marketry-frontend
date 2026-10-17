@@ -137,7 +137,7 @@ export default function RankColumns({
           </div>
         </div>
       </div>
-      <div className="relative shrink-0 border-t border-ui-white/25" style={{ height: NAME_BAND_HEIGHT }}>
+      <div className="relative shrink-0 border-t border-ui-white/20" style={{ height: NAME_BAND_HEIGHT }}>
         <div className="absolute inset-0 grid" style={columnsStyle}>
           {items.map(item => {
             const indexMarket = item.isReference ? INDEX_MARKET_BY_KEY[item.key] : undefined

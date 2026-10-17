@@ -613,7 +613,7 @@ function BulkAssignButton({
         onClick={handleClick}
         aria-disabled={isIdle}
         className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded-[5px] border-0 px-1.5 text-[13px] font-medium transition-colors ${
-          isIdle ? 'cursor-not-allowed bg-[var(--ui-control)] text-ui-white opacity-40' : 'settings-chip-hover bg-[var(--ui-control)] text-ui-white'
+          isIdle ? 'cursor-not-allowed bg-[var(--ui-control)] text-ui-white opacity-35' : 'settings-chip-hover bg-[var(--ui-control)] text-ui-white'
         }`}
       >
         {label}
@@ -788,8 +788,8 @@ const AdminStockRow = memo(function AdminStockRow({
   // 호버는 20%, 선택은 28%로 칠해 서로 구분하고, 선택 + 호버면 한 단계 더 진하게(38%) 칠한다. 읽기 전용 표(ReadOnlyTaxonomySheet)와 같은 값이다.
   const rowHoverClass = isSelected
     ? isRowHovered
-      ? 'bg-[var(--brand)]/38 border-ui-white/25!'
-      : 'bg-[var(--brand)]/28 border-ui-white/25!'
+      ? 'bg-[var(--brand)]/35 border-ui-white/20!'
+      : 'bg-[var(--brand)]/35 border-ui-white/20!'
     : isRowHovered || editingCells.size > 0
       ? 'bg-[var(--brand)]/20'
       : ''
@@ -1629,7 +1629,7 @@ export default function AdminStockTable({
               type="button"
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
-              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >
@@ -1693,7 +1693,7 @@ export default function AdminStockTable({
         {isSelectionHintOpen && <SelectionHintBubble onClose={() => setIsSelectionHintOpen(false)} />}
         <div ref={scrollContainerRef} className="relative h-full overflow-auto scrollbar-thin">
           {/* 표 글자는 드래그해도 파랗게 선택되지 않게 한다(줄 드래그 선택과 겹치기 때문). 입력창 안의 글자는 그대로 선택할 수 있다. */}
-          <table style={{ minWidth: stockTableMinWidthPx(columnKeys) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [&_input]:select-text [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/15 [&_th]:border-b-0 [&_th]:py-1">
+          <table style={{ minWidth: stockTableMinWidthPx(columnKeys) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [&_input]:select-text [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
           <StockTableColGroup keys={columnKeys} />
           <thead className="sticky top-0 z-10">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>

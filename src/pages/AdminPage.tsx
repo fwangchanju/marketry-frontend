@@ -106,7 +106,7 @@ export default function AdminPage() {
                             onClick={testMember.toggle}
                             disabled={testMember.isPending}
                             data-hint="누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다. 돌아올 때는 오른쪽 위 계정 메뉴를 쓰세요."
-                            className="settings-chip-hover h-7 w-full rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-wait disabled:opacity-40"
+                            className="settings-chip-hover h-7 w-full rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-wait disabled:opacity-35"
                           >
                             {testMember.isPending ? '전환 중…' : '테스트 회원으로 전환'}
                           </button>

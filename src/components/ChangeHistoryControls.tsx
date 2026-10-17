@@ -75,7 +75,7 @@ function HistoryListPopup<T extends { id: string }>({
                 setIsOpen(false)
               }}
               data-hint={`${index + 1}단계 ${direction === 'undo' ? '실행 취소' : '다시 실행'}`}
-              className={`flex w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-2 py-1.5 text-left text-[13px] font-medium ${index > 0 ? 'border-t border-t-white/30' : ''} ${index <= hoverIndex ? 'bg-[var(--accent)]/30 text-ui-white' : 'bg-transparent text-ui-white'}`}
+              className={`flex w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-2 py-1.5 text-left text-[13px] font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white'}`}
             >
               <span className={`w-4 shrink-0 text-right text-xs tabular-nums ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-muted'}`}>{direction === 'undo' ? '-' : '+'}{index + 1}</span>
               <span className="flex min-w-0 flex-col">
@@ -105,7 +105,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
     const label = isUndo ? '실행 취소' : '다시 실행'
     return (
       <>
-        <div className={`flex min-h-[28px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px]/4 font-medium bg-[var(--ui-control)] text-ui-white ${isEmpty ? 'opacity-40' : ''}`}>
+        <div className={`flex min-h-[28px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px]/4 font-medium bg-[var(--ui-control)] text-ui-white ${isEmpty ? 'opacity-35' : ''}`}>
           <button
             type="button"
             onClick={() => {
@@ -114,7 +114,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
               setListOpen(prev => !prev)
             }}
             disabled={isEmpty}
-            className={`flex w-5 shrink-0 items-center justify-center settings-chip-hover border-0 border-r border-ui-white/15 bg-transparent p-0 text-ui-white disabled:cursor-not-allowed ${isListOpen ? '!bg-[var(--accent)]/30' : ''}`}
+            className={`flex w-5 shrink-0 items-center justify-center settings-chip-hover border-0 border-r border-ui-white/20 bg-transparent p-0 text-ui-white disabled:cursor-not-allowed ${isListOpen ? '!bg-[var(--accent)]/35' : ''}`}
             data-hint={`${label} 목록`}
             aria-label={`${label} 목록`}
           >

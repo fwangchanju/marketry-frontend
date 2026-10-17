@@ -64,10 +64,10 @@ function isInDepthRange(range: [number, number] | null, depth: number): boolean 
 
 // 절대 depth(트리 기준 실제 단계) → 배경/글자색. 배열 끝을 넘으면 마지막 값을 반복한다.
 const SECTOR_HEADER_STYLES = [
-  { background: 'bg-black', baseColor: '#000000', text: 'text-[var(--accent)]', border: 'border-0' },
-  { background: 'bg-[#333333]', baseColor: '#333333', text: 'text-white', border: 'border-0' },
-  { background: 'bg-[#4d4d4d]', baseColor: '#4d4d4d', text: 'text-white', border: 'border-0' },
-  { background: 'bg-[#666666]', baseColor: '#666666', text: 'text-white', border: 'border-0' },
+  { background: 'bg-ui-background', baseColor: 'var(--ui-background)', text: 'text-[var(--accent)]', border: 'border-0' },
+  { background: 'bg-ui-panel', baseColor: 'var(--ui-panel)', text: 'text-ui-white', border: 'border-0' },
+  { background: 'bg-ui-control', baseColor: 'var(--ui-control)', text: 'text-ui-white', border: 'border-0' },
+  { background: 'bg-ui-control-hover', baseColor: 'var(--ui-control-hover)', text: 'text-ui-white', border: 'border-0' },
 ]
 
 function sectorHeaderStyle(depth: number) {
@@ -239,7 +239,7 @@ export default function SectorBox({
               fontSize: sectorHeaderFontSize(depth),
               left: PADDING,
               width: `calc(100% - ${PADDING * 2}px)`,
-              ...(isTopPick ? { backgroundColor: strongIndustryColor, color: '#111827' } : absoluteDepth === 0 ? { color: strongIndustryColor } : {}),
+              ...(isTopPick ? { backgroundColor: strongIndustryColor, color: 'var(--ui-surface)' } : absoluteDepth === 0 ? { color: strongIndustryColor } : {}),
             } as CSSProperties}
             className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header' : ''} absolute top-0 z-[2] flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
           >

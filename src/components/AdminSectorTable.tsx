@@ -99,7 +99,7 @@ function DraggableSectorHandle({
     data: { sectorId, parentId },
     disabled: !enabled,
   })
-  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 touch-none items-center justify-center border-0 bg-transparent text-ui-muted hover:text-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-40 ${isDragging ? 'opacity-30' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
+  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 touch-none items-center justify-center border-0 bg-transparent text-ui-muted hover:text-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-35 ${isDragging ? 'opacity-30' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
 }
 
 // 끄는 중 마우스의 세로 위치 — 손잡이를 열 안으로 가두는 제한(keepInColumnVertically) 때문에 손잡이 위치는 맨 위·맨 아래에서 멈추므로,
@@ -139,7 +139,7 @@ function DraggableNumberBadge({ sectorId, parentId, onPress, onClickBadge, child
       onClick={onClickBadge}
       type="button"
       data-hint="끌어서 다른 업종 하위로 이동"
-      className={`${NUMBER_BADGE_CLASS} cursor-grab touch-none ${isDragging ? 'opacity-40' : ''}`}
+      className={`${NUMBER_BADGE_CLASS} cursor-grab touch-none ${isDragging ? 'opacity-35' : ''}`}
     >
       {children}
     </button>
@@ -150,7 +150,7 @@ function DraggableNumberBadge({ sectorId, parentId, onPress, onClickBadge, child
 function RootDropHeader({ className, isActive, isOver, children }: { className: string; isActive: boolean; isOver: boolean; children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id: 'sector-drop-root', data: { root: true } })
   return (
-    <div ref={setNodeRef} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/45' : ''}`}>
+    <div ref={setNodeRef} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/50' : ''}`}>
       {children}
       {isActive && (
         <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-5 -translate-y-1/2 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[18px] ${isOver ? 'bg-[var(--brand)] text-ui-background' : 'bg-transparent text-[var(--brand)]'}`}>
@@ -608,14 +608,14 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       <DroppableSectorRow
         key={sector.id}
         sectorId={sector.id}
-        className={`group ${isRenaming ? '' : 'cursor-pointer'} ${draggedSector?.id === sector.id ? (isMoveDrag ? 'opacity-40' : 'invisible') : ''} ${highlightedId === sector.id ? 'animate-row-blink' : ''}`}
+        className={`group ${isRenaming ? '' : 'cursor-pointer'} ${draggedSector?.id === sector.id ? (isMoveDrag ? 'opacity-35' : 'invisible') : ''} ${highlightedId === sector.id ? 'animate-row-blink' : ''}`}
         style={draggedSector && !isMoveDrag ? { transform: `translateY(${shiftById.get(sector.id) ?? 0}px)`, transition: 'transform 150ms ease' } : undefined}
         onClick={event => {
           if (isRenaming || (event.target as HTMLElement).closest('[data-no-row-select]')) return
           selectSector()
         }}
       >
-        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/45 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/35 group-hover:bg-[var(--brand)]/50' : movedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/30' : 'group-hover:bg-[var(--brand)]/10'} ${movedSectorId === sector.id ? 'shadow-[inset_3px_0_0_var(--brand)]' : ''}`} style={{ paddingLeft: `${sector.depth * 20 + 8}px` }}>
+        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/35 group-hover:bg-[var(--brand)]/50' : movedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'} ${movedSectorId === sector.id ? 'shadow-[inset_3px_0_0_var(--brand)]' : ''}`} style={{ paddingLeft: `${sector.depth * 20 + 8}px` }}>
           <div className="flex items-center gap-2">
             <div className="flex min-w-0 flex-1 items-center">
               <DraggableSectorHandle sectorId={sector.id} parentId={sector.parentId} enabled />
@@ -791,7 +791,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           {(['대분류', '중분류', '소분류'] as const).map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">
               {(() => {
-                const headerClass = `flex h-7 shrink-0 items-center justify-center gap-2 bg-[var(--ui-panel)] text-sm font-bold ${index < 2 ? 'border-r border-ui-white/15' : ''} ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`
+                const headerClass = `flex h-7 shrink-0 items-center justify-center gap-2 bg-[var(--ui-panel)] text-sm font-bold ${index < 2 ? 'border-r border-ui-white/20' : ''} ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`
                 const headerContent = (
                   <>
                     {label} ({toCount(sectorCounts[index])})
@@ -862,7 +862,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           />
         </div>
       </section>
-      <section aria-label="업종 재배치" className="relative h-[127px] before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-ui-white/12 before:content-['']">
+      <section aria-label="업종 재배치" className="relative h-[127px] before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-ui-white/10 before:content-['']">
         <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 재배치</h2>
         <div className="mb-3 max-w-[16rem] settings-control-inset rounded-[5px] bg-[var(--ui-control)] px-2 py-1.5 text-sm text-ui-white">
           <div className="flex items-start gap-1">
@@ -881,7 +881,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
               ))}
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              <button type="button" data-hint="다른 업종 하위로 이동" aria-label="다른 업종 하위로 이동" disabled={!selectedSector} onClick={() => selectedSector && setMovingSectorId(selectedSector.id)} className={`${ICON_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-40`}><span aria-hidden="true" className="text-sm leading-none">↪</span></button>
+              <button type="button" data-hint="다른 업종 하위로 이동" aria-label="다른 업종 하위로 이동" disabled={!selectedSector} onClick={() => selectedSector && setMovingSectorId(selectedSector.id)} className={`${ICON_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-35`}><span aria-hidden="true" className="text-sm leading-none">↪</span></button>
               {movingSector && (
                 <button type="button" onClick={cancelMove} className="h-6 rounded-md border border-ui-border bg-ui-panel px-2 text-xs font-medium text-ui-white hover:bg-ui-white/10">이동 취소</button>
               )}
@@ -902,7 +902,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         </div>
       </section>
       {/* 변경 내역 — 종목 화면과 같은 부품이다. */}
-      <section aria-label="변경 내역" className="relative before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-ui-white/12 before:content-['']">
+      <section aria-label="변경 내역" className="relative before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-ui-white/10 before:content-['']">
         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">변경 내역</h2>
         <ChangeHistoryControls
           undoStack={undoStack}

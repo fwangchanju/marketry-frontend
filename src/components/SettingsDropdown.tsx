@@ -53,7 +53,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
           setIndent(badgeRef.current ? badgeRef.current.offsetWidth + 5 : 0)
           setIsOpen(open => !open)
         }}
-        className={`flex w-full items-center justify-between rounded-[5px] border-0 bg-[var(--accent)]/45 ${badge ? 'pl-[5px] pr-2.5' : compact ? 'pl-1.5 pr-1' : 'px-2.5'} text-left ${compact ? 'text-xs' : 'text-[13px]'} font-medium text-ui-white disabled:cursor-not-allowed`}
+        className={`flex w-full items-center justify-between rounded-[5px] border-0 bg-[var(--accent)]/50 ${badge ? 'pl-[5px] pr-2.5' : compact ? 'pl-1.5 pr-1' : 'px-2.5'} text-left ${compact ? 'text-xs' : 'text-[13px]'} font-medium text-ui-white disabled:cursor-not-allowed`}
         style={{ height: compact ? COMPACT_HEIGHT : ROW_HEIGHT }}
       >
         {badge && <span ref={badgeRef} className="whitespace-nowrap rounded-[3px] bg-ui-background/35 px-1.5 text-[12px] font-bold leading-[18px]">{badge}</span>}
@@ -92,7 +92,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
                 onChange(option.key)
                 setIsOpen(false)
               }}
-              className={`settings-chip-hover flex w-full items-center justify-between rounded-none border-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-[13px]'} text-left font-medium text-ui-white ${index > 0 ? 'border-t border-t-white/30' : ''} ${option.key === value ? 'bg-ui-white/15' : 'bg-transparent'}`}
+              className={`settings-chip-hover flex w-full items-center justify-between rounded-none border-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-[13px]'} text-left font-medium text-ui-white ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${option.key === value ? 'bg-ui-white/20' : 'bg-transparent'}`}
               style={{ height: compact ? COMPACT_ROW_HEIGHT : ROW_HEIGHT }}
             >
               <span className="truncate">{option.label}</span>

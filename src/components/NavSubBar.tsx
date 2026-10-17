@@ -123,7 +123,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
               {link.label}
             </Link>
             {link.options && openTo === link.to && (
-              <div className="absolute left-0 top-full z-50 w-32 rounded-lg border border-ui-border bg-[var(--ui-panel)] p-[3px] text-ui-white shadow-lg shadow-ui-background/60">
+              <div className="absolute left-0 top-full z-50 w-32 rounded-lg border border-ui-border bg-[var(--ui-panel)] p-[3px] text-ui-white shadow-lg shadow-ui-background/70">
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
