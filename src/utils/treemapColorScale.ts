@@ -16,7 +16,7 @@ export interface ColorScaleConfig {
   thresholds: ColorScaleThreshold[]
 }
 
-// 기본 색상 규칙 — 파랑(음수)과 빨강(양수)은 같은 채도(60)와 같은 명도를 쓰고, 명도는 구간 순서대로 16·33·46·58로 오른다(기본 구간은 2/5/8/15%, 하락 파랑 228°·채도 60에 맞춰 상승 빨강도 채도 60).
+// 기본 색상 규칙 — 파랑(음수)과 빨강(양수)은 같은 채도(60)와 같은 명도를 쓰고, 명도는 구간 순서대로 16·33·46·64로 오른다(기본 구간은 2/5/8/15%, 하락 파랑 228°·채도 60에 맞춰 상승 빨강도 채도 60).
 // 0%는 색상 편집기의 첫 색인 회색(채도 0)이고 설정창 바탕(`--ui-panel`)과 같은 값이다(0%에서 첫 단계로 갈 때 밝기가 꺾이지 않게 첫 단계 명도 16보다 살짝 밝게 두고, 색 가짓수를 늘리지 않으려고 새 회색을 만들지 않는다). 색상은 색상 편집기의 파랑(215)·빨강(0) 프리셋과 같다.
 // 범례는 하락 4칸 + 0% + 상승 4칸의 9칸이다.
 // 0%일 때 색 — 저장된 threshold가 없으면 이 값으로 폴백.
@@ -29,13 +29,13 @@ export const DEFAULT_PLUS_THRESHOLDS: ColorScaleThreshold[] = [
   { thresholdPercent: 2, color: '#411010', colorLabel: 'red' }, // 명도 16
   { thresholdPercent: 5, color: '#872222', colorLabel: 'red' }, // 명도 33
   { thresholdPercent: 8, color: '#bc2f2f', colorLabel: 'red' }, // 명도 46
-  { thresholdPercent: 15, color: '#d45454', colorLabel: 'red' }, // 명도 58
+  { thresholdPercent: 15, color: '#da6c6c', colorLabel: 'red' }, // 명도 64
 ]
 export const DEFAULT_MINUS_THRESHOLDS: ColorScaleThreshold[] = [
   { thresholdPercent: 2, color: '#101a41', colorLabel: 'blue' }, // 명도 16
   { thresholdPercent: 5, color: '#223687', colorLabel: 'blue' }, // 명도 33
   { thresholdPercent: 8, color: '#2f4bbc', colorLabel: 'blue' }, // 명도 46
-  { thresholdPercent: 15, color: '#546dd4', colorLabel: 'blue' }, // 명도 58
+  { thresholdPercent: 15, color: '#6c82da', colorLabel: 'blue' }, // 명도 64
 ]
 
 // 저장된 구간이 하나도 없을 때 draft를 채우는 초기값 — 위 기본 프리셋을 부호 있는 실제 구간(-12/-8/-5/-2, +2/+5/+8/+12)으로
@@ -50,8 +50,8 @@ export function createDefaultColorScale(): ColorScaleConfig {
   }
 }
 
-// 상승(빨강, 색상 0)·하락(파랑, 색상 228·채도 60)의 정해진 색 — 상승·하락 모두 채도 60에 구간 순서(작은 값부터)대로 명도 16·33·46·58이다. 기본 색과 같고, 등락률 설정에서 손잡이를 옮기면 이 색으로 맞춘다.
-const FIXED_RANK_LIGHTNESS = [16, 33, 46, 58]
+// 상승(빨강, 색상 0)·하락(파랑, 색상 228·채도 60)의 정해진 색 — 상승·하락 모두 채도 60에 구간 순서(작은 값부터)대로 명도 16·33·46·64이다. 기본 색과 같고, 등락률 설정에서 손잡이를 옮기면 이 색으로 맞춘다.
+const FIXED_RANK_LIGHTNESS = [16, 33, 46, 64]
 export function fixedRankColor(side: 'up' | 'down', rank: number): { color: string; colorLabel: string } {
   const lightness = FIXED_RANK_LIGHTNESS[Math.min(Math.max(rank, 0), FIXED_RANK_LIGHTNESS.length - 1)]
   return { color: hslToHex(side === 'up' ? 0 : 228, 60, lightness), colorLabel: side === 'up' ? 'red' : 'blue' }

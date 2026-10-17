@@ -117,15 +117,14 @@
 } */
 
 :root {
-  /* UI 기본 원색 14개. 지도·그래프 데이터 팔레트는 별도 관리한다. */
+  /* UI 기본 원색 13개. 지도·그래프 데이터 팔레트는 별도 관리한다. */
   --brand: #12b8a6;
   --brand-surface: #20635d;
-  --secondary: #46597d;
-  --secondary-soft: #798bb2;
+  --sub-yellow: #e6d04a;
+  --sub-purple: #b39ddb;
   --ui-background: #0a0a0a;
   --ui-surface: #1a1a1a;
   --ui-panel: #2a2a2a;
-  --ui-border: #4b5563;
   --ui-text: #e2e4ef;
   --ui-muted: #9ca3af;
   --ui-white: #ffffff;
@@ -137,6 +136,8 @@
 
   /* 상호작용·선택 상태는 원색을 추가하지 않고 혼합해서 만든다. */
   --ui-control: color-mix(in srgb, var(--ui-panel) 80%, var(--ui-white));
+  /* 테두리는 따로 원색을 두지 않고 컨트롤 단계와 같은 회색을 쓴다(이전 #4b5563을 합쳤다). */
+  --ui-border: var(--ui-control);
   --ui-control-hover: color-mix(in srgb, var(--ui-panel) 65%, var(--ui-white));
   --ui-selection: color-mix(in srgb, var(--ui-white) 80%, var(--ui-panel));
   --status-error-text: color-mix(in srgb, var(--status-error) 80%, var(--ui-white));

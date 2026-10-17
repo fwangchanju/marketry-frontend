@@ -87,7 +87,7 @@ export default function RankBars({
               ) : (
                 <>
                   <div
-                    className="absolute left-0 top-0 h-full rounded-sm"
+                    className="absolute left-0 top-0 h-full rounded-sm border border-ui-control"
                     style={{
                       width: `calc((100% - ${valueWidth}px) * ${Math.abs(item.value) / axisMax})`,
                       backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
