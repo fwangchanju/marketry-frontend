@@ -19,7 +19,6 @@ import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
 import { ClockIcon } from '@/components/icons/AppIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
-import ClosingPriceLabel from '@/components/ClosingPriceLabel'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
@@ -342,17 +341,11 @@ export default function GroupPage() {
                     {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                   </SnapshotDatePicker>
                   </ToolbarChip>
-                  {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
-                    ? rangeExcludedStocks.length > 0 && (
+                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && rangeExcludedStocks.length > 0 && (
                       <ToolbarChip bare tone="text-ui-muted">
                         <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
                       </ToolbarChip>
-                    )
-                    : (
-                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
-                        <ClosingPriceLabel viewedSnapshotTime={displayNow?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
-                      </ToolbarChip>
-                    ))}
+                  )}
                   {isPastSnapshot === false && (
                     <ToolbarChip bare tone="text-ui-white">
                       <PageRefreshButton

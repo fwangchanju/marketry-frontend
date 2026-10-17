@@ -123,7 +123,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
               {link.label}
             </Link>
             {link.options && openTo === link.to && (
-              <div className="absolute left-0 top-full z-50 w-32 rounded-lg bg-[var(--panel-gray)] p-[3px] shadow-lg shadow-ui-background/60">
+              <div className="absolute left-0 top-full z-50 w-32 rounded-lg border border-ui-border bg-[var(--ui-panel)] p-[3px] text-ui-white shadow-lg shadow-ui-background/60">
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
@@ -135,7 +135,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
                         aria-selected={isCurrent}
                         onClick={() => handleSelect(option)}
                         className={`font-roboto-latin block h-[30px] w-full rounded-[5px] border-0 px-2.5 text-left text-sm font-medium transition-colors ${
-                          isCurrent ? 'bg-[var(--brand-surface)] text-ui-white' : 'bg-transparent text-ui-surface hover:bg-ui-white/50 hover:text-ui-background'
+                          isCurrent ? 'bg-[var(--brand-surface)] text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'
                         }`}
                       >
                         {option.label}

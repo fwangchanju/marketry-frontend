@@ -300,8 +300,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   // 기간 고르기 — 시작일·종료일 대기 값.
   const [draftStart, setDraftStart] = useState<PickedDay | null>(null)
   const [draftEnd, setDraftEnd] = useState<PickedDay | null>(null)
-  // 하루 달력의 달, 기간 달력의 왼쪽 달(오른쪽은 그 다음 달).
-  const [singleMonth, setSingleMonth] = useState<ShownMonth>(() => toShownMonth(new Date().toISOString()))
+  // 하루·기간 달력의 왼쪽 달(오른쪽은 그 다음 달). 두 모드가 같은 달 데이터 캐시를 공유한다.
   const [rangeLeftMonth, setRangeLeftMonth] = useState<ShownMonth>(() => toShownMonth(new Date().toISOString()))
 
   useEffect(() => {
@@ -343,7 +342,6 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       setIsOpen(false)
       return
     }
-    setSingleMonth(toShownMonth(anchorDate ?? new Date().toISOString()))
     prepareRange()
     setIsRangeMode(isViewingRange)
     setIsOpen(true)
@@ -353,24 +351,36 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     if (toRange === isRangeMode) return
     setDraftDay(null)
     if (toRange) prepareRange()
-    else setSingleMonth(toShownMonth(anchorDate ?? new Date().toISOString()))
+    else {
+      const anchorMonth = toShownMonth(anchorDate ?? new Date().toISOString())
+      const wantedLeft = addMonths(anchorMonth, -1)
+      const latestLeft = liveDate === null ? null : addMonths(toShownMonth(liveDate), -1)
+      setRangeLeftMonth(latestLeft !== null && toMonthKey(wantedLeft) > toMonthKey(latestLeft) ? latestLeft : wantedLeft)
+    }
     setIsRangeMode(toRange)
   }
 
   const isRangeCalendar = isRangeMode && onSelectRange !== undefined
-  // 기간 달력은 두 달을 나란히 두므로 달마다 원이 돌지 않게 여기서 로딩을 합쳐 원 하나만 가운데에 그린다(달력 안의 조회와 같은 키라 요청은 늘지 않는다).
-  const rangeLeftDays = useSnapshotDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen && isRangeCalendar, retry: 1 })
-  const rangeRightDays = useSnapshotDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen && isRangeCalendar, retry: 1 })
-  const isRangeLoading = rangeLeftDays.isLoading || rangeRightDays.isLoading
-  const isRangeError = !isRangeLoading && (rangeLeftDays.isError || rangeRightDays.isError)
+  const displayRangeStart = isOpen && isRangeCalendar ? draftStart?.date ?? null : isViewingRange ? rangeStartDate : null
+  const displayRangeEnd = isOpen && isRangeCalendar ? draftEnd?.date ?? null : isViewingRange ? viewedSnapshotTime?.slice(0, 10) ?? null : null
+  const { data: displayRangeGap } = useTradingDayGap(displayRangeStart, displayRangeEnd)
+  const displayDayDate = isOpen && !isRangeCalendar
+    ? draftDay?.date ?? (isPast && !isViewingRange ? anchorDate : null)
+    : isPast && !isViewingRange ? viewedSnapshotTime?.slice(0, 10) ?? null : null
+  const { data: displayDayGap } = useTradingDayGap(displayDayDate, displayDayDate !== null ? liveDate : null)
+  const tradingDayBadge = isRangeCalendar
+    ? displayRangeGap !== undefined ? `${displayRangeGap + 1}거래일` : null
+    : displayDayDate !== null && displayDayGap !== undefined ? `${displayDayGap} 거래일 전` : null
+  // 두 모드가 같은 두 달의 요청을 공유하고, 로딩·오류 표시는 두 달 위에 하나만 둔다.
+  const rangeLeftDays = useSnapshotDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen, retry: 1 })
+  const rangeRightDays = useSnapshotDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen, retry: 1 })
+  const isCalendarLoading = rangeLeftDays.isLoading || rangeRightDays.isLoading
+  const isCalendarError = !isCalendarLoading && (rangeLeftDays.isError || rangeRightDays.isError)
   // 오류 화면의 "다시 시도"는 실패한 달만 다시 받는다.
   const retryRange = () => {
     if (rangeLeftDays.isError) void rangeLeftDays.refetch()
     if (rangeRightDays.isError) void rangeRightDays.refetch()
   }
-  // 고른 기간의 거래일 수 — 시작일을 포함해 종료일까지 센다(시작일 하루 전 종가가 기준이라 시작일 하루도 기간에 든다). 시작일·종료일을 둘 다 고르기 전이나 아직 못 받았으면 비운다.
-  const { data: rangeGap } = useTradingDayGap(isRangeCalendar ? (draftStart?.date ?? null) : null, isRangeCalendar ? (draftEnd?.date ?? null) : null)
-  const rangeDayCount = rangeGap !== undefined && draftStart !== null && draftEnd !== null ? `${rangeGap + 1}거래일` : null
   // 실시간 지도가 있는 달보다 뒤로는 갈 수 없다.
   const isMonthWithinLive = (month: ShownMonth) => liveDate === null || toMonthKey(month) <= liveDate.slice(0, 7)
 
@@ -438,7 +448,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       setRangeLeftMonth(addMonths(toShownMonth(liveDate), -1))
     } else {
       setDraftDay({ date: liveDate, snapshotTime: null })
-      setSingleMonth(toShownMonth(liveDate))
+      setRangeLeftMonth(addMonths(toShownMonth(liveDate), -1))
     }
   }
 
@@ -464,7 +474,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     <button
       type="button"
       onClick={pickToday}
-      className="shrink-0 rounded-lg border-0 bg-ui-control px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
+      className="flex h-6 shrink-0 items-center justify-center rounded-lg border-0 bg-ui-control px-2.5 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
     >
       최근일
     </button>
@@ -494,11 +504,11 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           aria-label="날짜 선택 달력"
           className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
-          {/* 위쪽 줄: 왼쪽에 하루/기간 스위치, 오른쪽 끝에 실시간·최근일을 나란히 둔다(하루·기간 모드가 같은 배치). 고른 기간의 거래일 수는 아래쪽 줄의 종료일 오른쪽에 적는다. */}
+          {/* 위쪽 줄: 왼쪽에 하루/기간 스위치, 오른쪽 끝에 실시간·최근일을 나란히 둔다(하루·기간 모드가 같은 배치). 거래일 수는 툴바의 날짜 옆에 둔다. */}
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-ui-border pb-2 text-[13px]">
             <span>
               {onSelectRange && (
-                <span role="radiogroup" aria-label="선택 방식" className="inline-flex bg-[var(--panel-gray)] p-0.5">
+                <span role="radiogroup" aria-label="선택 방식" className="inline-flex h-6 items-center bg-[var(--panel-gray)] p-0.5">
                   {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
                     <button
                       key={label}
@@ -506,7 +516,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                       role="radio"
                       aria-checked={isRangeMode === rangeValue}
                       onClick={() => switchMode(rangeValue)}
-                      className={`rounded-md border-0 px-2 py-1 text-[13px] font-semibold leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-ui-surface text-ui-white' : 'bg-transparent text-ui-surface hover:text-ui-background'}`}
+                      className={`flex h-5 items-center rounded-md border-0 px-2 text-[13px] font-semibold leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-ui-surface text-ui-white' : 'bg-transparent text-ui-surface hover:text-ui-background'}`}
                     >
                       {label}
                     </button>
@@ -522,10 +532,10 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           {isRangeCalendar ? (
             <>
               <div className="relative flex gap-4">
-                {(isRangeLoading || isRangeError) && (
-                  // 월 이름·요일 줄까지 덮고 가운데에 원 하나만 둔다. 두 달 중 하나라도 못 받으면 오류 원 하나를 둔다. 로딩과 오류의 원 크기는 같다.
+                {(isCalendarLoading || isCalendarError) && (
+                  // 월 이름·요일 줄까지 덮고 가운데에 원 하나만 둔다. 어느 한 달이라도 못 받으면 오류 원 하나를 둔다.
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--ui-panel)]">
-                    {isRangeLoading ? (
+                    {isCalendarLoading ? (
                       <Spinner showElapsed className={CALENDAR_SPINNER_CLASS} />
                     ) : (
                       <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className={CALENDAR_SPINNER_CLASS} />
@@ -564,7 +574,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 />
               </div>
               <div className="mt-1 flex items-center justify-between gap-3 border-t border-ui-border pt-2 text-[13px]">
-                {/* 시작일 ~ 종료일과 그 오른쪽의 거래일 수는 왼쪽부터 차례로 적고, 초기화와 적용은 오른쪽 끝에 붙여 놓는다. */}
+                {/* 시작일 ~ 종료일은 왼쪽에, 초기화와 적용은 오른쪽 끝에 둔다. */}
                 <span className="flex items-center gap-2">
                   <span className="flex items-center gap-2">
                     <span className="font-semibold text-[var(--accent)]">시작일</span>
@@ -575,8 +585,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                     <span className="font-semibold text-[var(--accent)]">종료일</span>
                     {draftEnd && <span className="text-ui-white">{toSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
                   </span>
-                  {/* 고른 기간의 길이라 한눈에 보이게 분류 배지의 "분류" 칸과 같은 짙은 청록 배지로 둔다. */}
-                  {rangeDayCount !== null && <span className="rounded bg-[var(--brand-surface)] px-1.5 py-0.5 font-semibold leading-none text-ui-white">{rangeDayCount}</span>}
+                  {tradingDayBadge !== null && <span className="rounded bg-[var(--brand-surface)] px-1.5 py-0.5 font-semibold text-ui-white">{tradingDayBadge}</span>}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
@@ -590,24 +599,53 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
             </>
           ) : (
             <>
-              <MonthGrid
-                market={market}
-                month={singleMonth}
-                onMoveMonth={delta => setSingleMonth(month => addMonths(month, delta))}
-                onSetMonth={setSingleMonth}
-                isMonthAllowed={isMonthWithinLive}
-                liveDate={liveDate}
-                isSelectable={(date, hasClosingMap) => date === liveDate || hasClosingMap}
-                // 하루 달력은 날짜 하나를 새로 고르는 화면이라, 기간을 보는 중이어도 그 기간의 띠나 시작일·종료일 표시를 보여 주지 않는다.
-                isSelected={date => (draftDay ? date === draftDay.date : rangeStartDate === null && date === anchorDate)}
-                bandStart={null}
-                bandEnd={null}
-                onPick={pickSingleDay}
-              />
-              <div className="mt-1 flex w-60 items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]">
+              <div className="relative flex gap-4">
+                {(isCalendarLoading || isCalendarError) && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--ui-panel)]">
+                    {isCalendarLoading ? (
+                      <Spinner showElapsed className={CALENDAR_SPINNER_CLASS} />
+                    ) : (
+                      <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retryRange} className={CALENDAR_SPINNER_CLASS} />
+                    )}
+                  </div>
+                )}
+                <MonthGrid
+                  market={market}
+                  showSpinner={false}
+                  month={rangeLeftMonth}
+                  onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
+                  onSetMonth={setRangeLeftMonth}
+                  isMonthAllowed={month => isMonthWithinLive(addMonths(month, 1))}
+                  showNextButton={false}
+                  liveDate={liveDate}
+                  isSelectable={(date, hasClosingMap) => date === liveDate || hasClosingMap}
+                  // 하루 달력에는 날짜 하나만 선택하므로 기간 범위 표시는 쓰지 않는다.
+                  isSelected={date => (draftDay ? date === draftDay.date : rangeStartDate === null && date === anchorDate)}
+                  bandStart={null}
+                  bandEnd={null}
+                  onPick={pickSingleDay}
+                />
+                <MonthGrid
+                  market={market}
+                  showSpinner={false}
+                  month={addMonths(rangeLeftMonth, 1)}
+                  onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
+                  onSetMonth={month => setRangeLeftMonth(addMonths(month, -1))}
+                  isMonthAllowed={isMonthWithinLive}
+                  showPrevButton={false}
+                  liveDate={liveDate}
+                  isSelectable={(date, hasClosingMap) => date === liveDate || hasClosingMap}
+                  isSelected={date => (draftDay ? date === draftDay.date : rangeStartDate === null && date === anchorDate)}
+                  bandStart={null}
+                  bandEnd={null}
+                  onPick={pickSingleDay}
+                />
+              </div>
+              <div className="mt-1 flex w-[31rem] items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]">
                 <span className="flex items-center gap-2">
                   <span className="font-semibold text-[var(--accent)]">날짜</span>
                   {draftDay && <span className="text-ui-white">{dayLabel}</span>}
+                  {tradingDayBadge !== null && <span className="rounded bg-[var(--brand-surface)] px-1.5 py-0.5 font-semibold text-ui-white">{tradingDayBadge}</span>}
                 </span>
                 <button type="button" disabled={draftDay === null} onClick={applyDay} className={APPLY_BUTTON_CLASS}>
                   적용

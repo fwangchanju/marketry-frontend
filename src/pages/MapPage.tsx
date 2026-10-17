@@ -44,7 +44,6 @@ import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/sc
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
-import ClosingPriceLabel from '@/components/ClosingPriceLabel'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import ToolbarChip from '@/components/ToolbarChip'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
@@ -545,17 +544,11 @@ export default function MapPage() {
                     {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                   </SnapshotDatePicker>
                   </ToolbarChip>
-                  {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
-                    ? rangeExcludedStocks.length > 0 && (
+                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && rangeExcludedStocks.length > 0 && (
                       <ToolbarChip bare tone="text-ui-muted">
                         <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
                       </ToolbarChip>
-                    )
-                    : (
-                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
-                        <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
-                      </ToolbarChip>
-                    ))}
+                  )}
                   {isPastSnapshot === false && (
                     <ToolbarChip bare tone="text-ui-white">
                       <PageRefreshButton

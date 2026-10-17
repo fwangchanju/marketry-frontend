@@ -52,9 +52,9 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   }, [isProfileMenuOpen])
 
   // 계정 메뉴가 열려 있는 동안만 헤더를 아래 줄(아이콘 줄, z-30)보다 위에 둔다 — 안 그러면 메뉴 위쪽이 그 줄에 가려진다.
-// 메뉴가 열려 있는 동안은 헤더 배경을 위쪽 53px만 칠한다 — 헤더(64px)가 아래 메뉴 줄의 글자 윗부분(53px부터 시작)을 덮어서 글자가 잘려 보이던 것을 막는다. 그 아래 구간은 메뉴 줄 자신의 배경(같은 색)이 칠한다.
+// 프로필 메뉴는 헤더 아래에 펼쳐지고, 열려 있는 동안 헤더가 페이지 메뉴 위에 표시된다.
   return (
-    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40 bg-[linear-gradient(to_bottom,var(--ui-surface)_53px,transparent_53px)]' : 'z-20 bg-ui-surface'}`}>
+    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40' : 'z-20'} bg-ui-surface`}>
       <Link
         to="/"
         aria-label="홈으로 이동: 지도 전체 종목"
@@ -93,7 +93,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           <ProfileAvatar className="size-full object-cover" />
         </button>
         {isProfileMenuOpen && (
-          <div className="absolute right-full top-[10.5px] z-30 mr-2 w-64 overflow-hidden rounded-md border border-ui-border bg-[var(--panel-gray)] pb-2 text-ui-surface shadow-2xl shadow-ui-background/60">
+          <div className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pb-2 text-ui-white shadow-2xl shadow-ui-background/60">
             {isLoading ? (
               <p className="px-4 py-3 text-sm text-ui-muted">계정 확인 중...</p>
             ) : session?.authenticated ? (
@@ -105,12 +105,13 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                     <p className="mt-1 truncate text-ui-muted">{session.email || `사용자 ${session.userId}`}</p>
                   </div>
                 </div>
-                {/* 메뉴는 설정창 위에 겹쳐도 구분되도록 밝은 틀로 두고, 프로필·로그아웃은 설정창 선택 칸과 같은 검정 버튼 두 개를 나란히 놓고, 개발 전용 항목만 청록이다. */}
+                {/* 마켓 메뉴와 같은 상태색 규칙: 기본은 팝업 바탕, 호버는 옅은 회색, 현재 페이지는 청록 포인트다. */}
                 <div className="flex gap-[6px] px-3 pb-1 pt-2.5">
                   <Link
                     to="/profile"
                     onClick={() => setIsProfileMenuOpen(false)}
-                    className="flex h-7 flex-1 items-center justify-center rounded-[5px] bg-ui-surface text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-panel focus:bg-ui-panel"
+                    aria-current={pathname === '/profile' ? 'page' : undefined}
+                    className={`flex h-7 flex-1 items-center justify-center rounded-[5px] border text-[13px] font-medium text-ui-white transition-colors ${pathname === '/profile' ? 'border-[var(--brand)] bg-[var(--brand-surface)]' : 'border-ui-border bg-transparent hover:bg-ui-white/10 focus:bg-ui-white/10'}`}
                   >
                     프로필
                   </Link>
@@ -121,7 +122,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                       logout.mutate()
                     }}
                     disabled={logout.isPending}
-                    className="h-7 flex-1 rounded-[5px] border-0 bg-ui-surface text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-panel focus:bg-ui-panel disabled:opacity-50"
+                    className="h-7 flex-1 rounded-[5px] border border-ui-border bg-transparent text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-white/10 focus:bg-ui-white/10 disabled:opacity-50"
                   >
                     로그아웃
                   </button>
