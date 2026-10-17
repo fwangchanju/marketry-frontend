@@ -434,6 +434,11 @@ a { color: var(--accent-light); text-decoration: none; }
   margin-right: auto;
 }
 
+/* 개수 드롭다운의 오른쪽 끝을 공통 조작 영역과 맞춘다. */
+.settings-top-pick-count-row {
+  padding-right: max(19px, calc((100% - 16rem) / 2));
+}
+
 .settings-panel-tab-content .settings-section-bullet::before,
 .settings-panel-tab-content .settings-subsection-num::before {
   counter-increment: none;
@@ -460,17 +465,23 @@ a { color: var(--accent-light); text-decoration: none; }
 /* 지도 설정 탭마다 1) 2) 3) 4) 5) 제목을 같은 높이에서 시작한다. 내용 높이를 재서 맞추면 글꼴이나 항목 내용이 바뀔 때마다
    소수점 단위로 어긋나서, 항목마다 높이를 고정(127px = 가장 높은 항목 103px + 여백 24px)해 위치가 내용과 무관하게
    정해지게 한다. 제목은 탭 내용 상단 기준 20/147/274/401/528px에서 시작한다. 첫 항목은 위 여백(20px)을 포함해 147px.
-   마지막 항목(강세 표시, 제외 업종, 등락률 색상, 종목 정보 팝업)은 길어도 시작 위치만 맞으면 돼서 높이를 고정하지 않는다.
+   마지막 항목(제외 업종, 등락률 색상)은 길어도 시작 위치만 맞으면 돼서 높이를 고정하지 않는다.
    북마크 탭은 자체 간격 규칙을 쓴다. 항목 내용이 103px를 넘게 바뀌면 이 값을 다시 정해야 한다. */
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-sector-change, .settings-third-stock-change, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places) {
   height: 127px;
+}
+
+/* 개수 선택과 업종 단계가 함께 있어 다음 항목까지 충분한 여백을 둔다. */
+.settings-panel-tab-content[data-align-second-heading] .settings-second-top-pick {
+  min-height: 151px;
+  padding-bottom: 24px;
 }
 
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-market-value, .settings-first-stock-size, .settings-first-strong-color) {
   height: 147px;
 }
 
-.settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color) {
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color) {
   margin-top: 0;
   padding-top: 0;
   border-color: transparent;
@@ -483,11 +494,11 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 
 /* 항목 구분선 — 각 탭의 두 번째 이후 항목 제목 위에 긋는다. */
-.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color) {
+.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color) {
   position: relative;
 }
 
-.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color)::before {
+.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color)::before {
   content: "";
   display: none;
   position: absolute;
@@ -497,7 +508,7 @@ a { color: var(--accent-light); text-decoration: none; }
   border-top: 1px solid rgb(255 255 255 / 12%);
 }
 
-.settings-panel-tab-content[data-align-second-heading] :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-fourth-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-fifth-stock-popup, .settings-second-color)::before {
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color)::before {
   display: block;
 }
 

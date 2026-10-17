@@ -12,6 +12,7 @@ import SettingsPanel, {
   SettingsExcludeSection,
   SettingsColorSection,
   SettingsStrongIndustryColorSection,
+  SettingsTopPickSection,
   SettingsStockSizeSelector,
   type SettingsBookmarkId,
   type SettingsPanelSectionId,
@@ -745,7 +746,7 @@ export default function MapPage() {
                 <SettingsExcludeSection {...settingsModalProps} afterStockChange />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="industry">
-                <SettingsSectorLevelSection {...settingsModalProps} showTopPick showStockDisplay={false} />
+                <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="stockDisplay">
                 <SettingsSectorLevelSection {...settingsModalProps} showTaxonomy={false} showDecimalPlaces />
@@ -761,17 +762,19 @@ export default function MapPage() {
                   }}
                 />
                 <SettingsExcludeSection {...settingsModalProps} afterStockChange />
-                <SettingsSectorLevelSection {...settingsModalProps} showTopPick showStockDisplay={false} />
+                <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
                 <SettingsStockSizeSelector marketCapRatio={boxSizeMarketCapRatio} onChangeMarketCapRatio={onChangeBoxSizeMarketCapRatio} />
                 <SettingsSectorLevelSection {...settingsModalProps} showTaxonomy={false} showDecimalPlaces />
                 {strongIndustryColor && onChangeStrongIndustryColor && (
                   <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
                 )}
+                <SettingsTopPickSection {...settingsModalProps} />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="colors">
                 {strongIndustryColor && onChangeStrongIndustryColor && (
                   <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
                 )}
+                <SettingsTopPickSection {...settingsModalProps} />
                 <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
               </SettingsPanelGroup>
             </SettingsPanel>

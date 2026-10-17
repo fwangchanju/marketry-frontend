@@ -219,7 +219,7 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'favorites', label: '북마크', icon: 'favorites' },
   // 관리자 페이지 전용 탭 — 맨 뒤에 붙여서 위 탭 번호(1~5)는 그대로다.
   { id: 'adminOps', label: '운영', icon: 'admin-ops' },
-  { id: 'adminMoved', label: '보관', icon: 'admin-moved' },
+  { id: 'adminMoved', label: '미사용', icon: 'admin-moved' },
 ]
 
 // 탭 제목에는 숫자를 표시하지 않지만 북마크와 안내 말풍선에는 원래 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
@@ -237,11 +237,11 @@ const SETTING_ITEM_POSITIONS: Partial<Record<SettingsBookmarkId, { section: Sett
   depthLevel: { section: 'industry', item: 1 },
   depthMetric: { section: 'industry', item: 2 },
   depthRange: { section: 'industry', item: 3 },
-  topPick: { section: 'industry', item: 4 },
   boxSize: { section: 'stockDisplay', item: 1 },
   boxLabel: { section: 'stockDisplay', item: 2 },
   decimalPlaces: { section: 'stockDisplay', item: 3 },
   strongColor: { section: 'colors', item: 1 },
+  topPick: { section: 'colors', item: 2 },
 }
 
 // "2-1" 같은 설정 위치 번호.
@@ -979,6 +979,7 @@ function SliderTickLabels({
   labels,
   steps,
   inset = true,
+  alignDecimalPoint = false,
   highlightedIndex,
   highlightedRange,
   blockedFromIndex,
@@ -987,6 +988,8 @@ function SliderTickLabels({
   labels: string[]
   steps: number
   inset?: boolean
+  // 소수점이 있는 라벨은 점의 중심을 눈금에 맞춘다.
+  alignDecimalPoint?: boolean
   highlightedIndex?: number
   highlightedRange?: [number, number]
   blockedFromIndex?: number
@@ -995,6 +998,7 @@ function SliderTickLabels({
   return (
     <div className={`relative mt-1 h-4 text-[13px]/4 text-gray-400 ${inset ? 'mx-2' : ''}`}>
       {labels.map((label, index) => {
+        const decimalIndex = alignDecimalPoint ? label.indexOf('.') : -1
         const blocked = blockedFromIndex !== undefined && index >= blockedFromIndex
         const highlighted = highlightedIndex === index || (
           highlightedRange !== undefined && index >= highlightedRange[0] && index <= highlightedRange[1]
@@ -1010,7 +1014,13 @@ function SliderTickLabels({
             onPointerLeave={blocked ? () => onBlockedHintChange?.(false) : undefined}
             onPointerDown={blocked ? () => onBlockedHintChange?.(true, index) : undefined}
           >
-            {label}
+            {decimalIndex >= 0 ? (
+              <>
+                <span className="absolute right-full">{label.slice(0, decimalIndex)}</span>
+                .
+                <span className="absolute left-full">{label.slice(decimalIndex + 1)}</span>
+              </>
+            ) : label}
           </span>
         )
       })}
@@ -1093,6 +1103,7 @@ function SingleValueSlider({
   maxSelectableIndex,
   blockedReason,
   labelsAtTrackEnds = false,
+  alignDecimalPoint = false,
 }: {
   index: number
   labels: string[]
@@ -1101,6 +1112,7 @@ function SingleValueSlider({
   disabled?: boolean
   // true면 양 끝 눈금 글자를 손잡이 중심이 아니라 슬라이더 줄의 양끝에 가운데 맞춘다(상위 업종 강조 개수).
   labelsAtTrackEnds?: boolean
+  alignDecimalPoint?: boolean
   // 눈금은 전부 보여주되, 이 인덱스를 넘는 칸은 고를 수 없고 blockedReason을 말풍선으로 알려준다.
   maxSelectableIndex?: number
   blockedReason?: (blockedLabel: string) => ReactNode
@@ -1139,6 +1151,7 @@ function SingleValueSlider({
         labels={labels}
         steps={steps}
         inset={!labelsAtTrackEnds}
+        alignDecimalPoint={alignDecimalPoint}
         highlightedIndex={index}
         blockedFromIndex={isCapped ? selectableMax + 1 : undefined}
         onBlockedHintChange={isCapped ? (visible, blocked) => {
@@ -1515,22 +1528,12 @@ export function SettingsSectorLevelSection({
   depthMetricMinIndex,
   depthMetricMaxIndex,
   onChangeDepthMetricRange,
-  topPickDepth,
-  topPickCount,
-  topPickEnabled,
-  onToggleTopPick,
-  topPickMaxSelectableDepth,
-  onChangeTopPickDepth,
-  onChangeTopPickCount,
   stockLabelModeIndex,
   stockLabelEnabled,
   onToggleStockLabel,
   onChangeStockLabelModeIndex,
   decimalPlacesIndex,
   onChangeDecimalPlacesIndex,
-  stockPopupOnHover,
-  onChangeStockPopupOnHover,
-  showTopPick = false,
   showDecimalPlaces = false,
   showDivider = false,
   showTaxonomy = true,
@@ -1558,14 +1561,6 @@ export function SettingsSectorLevelSection({
   depthMetricMinIndex: number
   depthMetricMaxIndex: number
   onChangeDepthMetricRange: (minIndex: number, maxIndex: number) => void
-  // 선호 업종의 절대 depth/상위 N개 — 지도 페이지에서만 showTopPick으로 노출한다.
-  topPickDepth: number
-  topPickCount: number
-  topPickEnabled: boolean
-  onToggleTopPick: () => void
-  topPickMaxSelectableDepth: number
-  onChangeTopPickDepth: (depth: number) => void
-  onChangeTopPickCount: (count: number) => void
   // 종목 박스에 이름만(1)/등락률만(2)/둘 다(3) 보여줄지. 표시 여부는 별도 토글로 제어한다.
   stockLabelModeIndex: number
   stockLabelEnabled: boolean
@@ -1575,11 +1570,6 @@ export function SettingsSectorLevelSection({
   // 등락률(%) 표시 소수점 자릿수(0=정수, 1=소수 1자리, 2=소수 2자리).
   decimalPlacesIndex: number
   onChangeDecimalPlacesIndex: (index: number) => void
-  // 종목 정보 팝업을 우클릭(false)으로 띄울지, 마우스를 올릴 때(true) 띄울지. 업종 정보는 항상 우클릭.
-  stockPopupOnHover: boolean
-  onChangeStockPopupOnHover: (onHover: boolean) => void
-  // true면 지도 페이지에만 선호 업종 설정을 추가한다.
-  showTopPick?: boolean
   // true면 "종목 박스" 그룹에 "등락률 소수점" 슬라이더를 같이 그린다 — 지도 페이지에서 실제로 트리맵
   // 등락률(%) 표시에 쓰이는 설정이라 지도 페이지에서만 켠다(섹터는 그래프 자체 소수점 포맷을 따로
   // 쓰므로 기본 false로 숨긴다).
@@ -1597,7 +1587,6 @@ export function SettingsSectorLevelSection({
   const depthValue = Math.min(maxDepth ?? depthLabelCount, selectableDepth)
   const depthMetricMaxSelectableIndex = Math.max(0, Math.min(selectableDepth, maxDepth ?? selectableDepth) - 1)
   const isDepthMetricDisabled = !sectorLevelEnabled
-  const isTopPickDisabled = !sectorLevelEnabled
   const depthMetricLabels = Array.from({ length: depthLabelCount }, (_, index) => DEPTH_LABELS[index] ?? `${index + 1}차 분류`)
   // 레벨 값은 1=대분류, 2=중분류, 3=소분류. 슬라이더 인덱스와 1만큼 차이 난다.
   // 선택값은 저장한 범위를 그대로 유지하되, 현재 업종 단계를 넘는 부분만 화면에서 잘라 보여준다.
@@ -1607,7 +1596,6 @@ export function SettingsSectorLevelSection({
   const isDecimalPlacesDisabled = !stockLabelEnabled || stockLabelModeIndex === 1
   const [depthMetricSectionHint, setDepthMetricSectionHint] = useState<CursorHint | null>(null)
   const [depthRangeSectionHint, setDepthRangeSectionHint] = useState<CursorHint | null>(null)
-  const [topPickSectionHint, setTopPickSectionHint] = useState<CursorHint | null>(null)
   const [decimalPlacesHint, setDecimalPlacesHint] = useState<CursorHint | null>(null)
   const bookmark = useContext(SettingsBookmarkContext)
   const inBookmarkTab = bookmark.mode === 'bookmark'
@@ -1615,7 +1603,6 @@ export function SettingsSectorLevelSection({
   const itemClass = (id: SettingsBookmarkId) => bookmarkItemClass(bookmark, id)
   const bookmarkableIds: SettingsBookmarkId[] = [
     ...(showTaxonomy ? (['depthLevel', 'depthMetric', 'depthRange'] as const) : []),
-    ...(showTaxonomy && showTopPick ? (['topPick'] as const) : []),
     ...(showStockDisplay ? (['boxLabel'] as const) : []),
     ...(showStockDisplay && showDecimalPlaces ? (['decimalPlaces'] as const) : []),
   ]
@@ -1743,76 +1730,6 @@ export function SettingsSectorLevelSection({
               </CursorHintBubble>
             )}
           </div>
-          {showTopPick && (
-            <div className={`settings-fourth-top-pick relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('topPick')}`}>
-              <div className={isTopPickDisabled ? 'opacity-40' : ''}>
-                <div className="flex max-w-[16rem] items-center justify-between">
-                  <span className="flex items-center text-left text-white">
-                    <SettingTitle bookmarkId="topPick" className="text-[15px]" help>상위 업종 강조</SettingTitle>
-                    <SettingHelpBubble
-                      bookmarkId="topPick"
-                      label="상위 업종 강조"
-                      description={<><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthMetric')}) 업종 지표</span>에서<br />동일 가중 등락률을 선택하면<br />동일 가중 등락률로,<br />나머지 지표를 선택하면<br />시총 가중 등락률로 순위를 매깁니다.</>}
-                    />
-                  </span>
-                  <ToggleSwitch
-                    checked={topPickEnabled}
-                    onChange={onToggleTopPick}
-                    label="상위 업종 강조 사용"
-                    hideLabel
-                    compact
-                    disabled={isTopPickDisabled}
-                  />
-                </div>
-                <div className="flex max-w-[16rem] items-center justify-between">
-                  <SettingDescription dimmed={!topPickEnabled}>등락률 상위 업종을 강조</SettingDescription>
-                  <SettingsDropdown
-                    options={TOP_PICK_COUNT_OPTIONS}
-                    value={String(topPickCount) as '1' | '2' | '3'}
-                    onChange={key => onChangeTopPickCount(Number(key))}
-                    ariaLabel="상위 업종 강조 개수"
-                    disabled={isTopPickDisabled || !topPickEnabled}
-                    compact
-                    outlinedChevron
-                    className={`mr-[35px] mt-1 w-[42px] shrink-0 ${topPickEnabled ? '' : 'opacity-40'}`}
-                  />
-                </div>
-                <div className={`settings-control-inset mt-[6px] ${topPickEnabled ? '' : 'opacity-40'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
-                  <div role="radiogroup" aria-label="상위 업종 강조 단계" className="relative" style={{ height: stairHeight(depthLabelCount) }}>
-                    <StairRows
-                      labels={depthMetricLabels}
-                      litFrom={0}
-                      litTo={depthLabelCount - 1}
-                      maxSelectableIndex={Math.min(topPickMaxSelectableDepth, selectableDepth) - 1}
-                      blockedHint={label => selectableDepth < depthLabelCount
-                        ? `현재 분류에는\n${label} 단계가 없습니다.`
-                        : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
-                      selectedIndex={topPickDepth}
-                      onPick={onChangeTopPickDepth}
-                      disabled={isTopPickDisabled || !topPickEnabled}
-                    />
-                  </div>
-                </div>
-              </div>
-              {isTopPickDisabled && (
-                <div
-                  className="absolute inset-0 z-10 cursor-not-allowed"
-                  onPointerEnter={e => setTopPickSectionHint(cursorHintFrom(e))}
-                  onPointerMove={e => setTopPickSectionHint(cursorHintFrom(e))}
-                  onPointerLeave={() => setTopPickSectionHint(null)}
-                  onPointerDown={e => {
-                    e.preventDefault()
-                    setTopPickSectionHint(cursorHintFrom(e))
-                  }}
-                />
-              )}
-              {isTopPickDisabled && topPickSectionHint && (
-                <CursorHintBubble hint={topPickSectionHint}>
-                  <span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthLevel')}) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.
-                </CursorHintBubble>
-              )}
-            </div>
-          )}
         </div>
       </div>}
       {/* 종목 박스 탭의 박스 크기 다음에 종목 표기, 등락률 소수점을
@@ -1888,6 +1805,7 @@ export function SettingsSectorLevelSection({
                 <SingleValueSlider
                   index={decimalPlacesIndex}
                   labels={DECIMAL_PLACES_LABELS}
+                  alignDecimalPoint
                   ariaLabel="등락률 소수점 자릿수"
                   onChange={onChangeDecimalPlacesIndex}
                   disabled={isDecimalPlacesDisabled}
@@ -1905,44 +1823,54 @@ export function SettingsSectorLevelSection({
               )}
             </div>
           )}
-          {showDecimalPlaces && !inBookmarkTab && (
-            <div className="settings-fifth-stock-popup mt-6 text-sm">
-              <span className="flex max-w-[16rem] items-center text-left text-[15px] text-white">
-                <span className="settings-section-num">종목 정보</span>
-                <SettingHelpBubble label="종목 정보" description={"업종 정보는 우클릭으로만\n열 수 있습니다."} />
-              </span>
-              <SettingDescription>종목 정보를 여는 방식</SettingDescription>
-              <div
-                role="radiogroup"
-                aria-label="종목 정보 여는 방식"
-                className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]"
-              >
-                <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[5px] bg-[var(--accent)]" />
-                {[
-                  { label: '우클릭', onHover: false },
-                  { label: '마우스 올리기', onHover: true },
-                ].map(option => {
-                  const selected = stockPopupOnHover === option.onHover
-                  return (
-                    <button
-                      key={option.label}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => onChangeStockPopupOnHover(option.onHover)}
-                      className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
-                      selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
-                    }`}
-                    >
-                      {option.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>}
+    </div>
+  )
+}
+
+// 관리자 페이지 미사용 탭으로 옮긴 종목 정보 설정. 기존 설정 키와 지도 동작은 유지한다.
+export function SettingsStockPopupSection({
+  stockPopupOnHover,
+  onChangeStockPopupOnHover,
+}: {
+  stockPopupOnHover: boolean
+  onChangeStockPopupOnHover: (onHover: boolean) => void
+}) {
+  return (
+    <div className="text-sm text-white">
+      <span className="flex max-w-[16rem] items-center text-left text-[15px] text-white">
+        <span className="settings-plain-title">종목 정보</span>
+        <SettingHelpBubble label="종목 정보" description={"업종 정보는 우클릭으로만\n열 수 있습니다."} />
+      </span>
+      <SettingDescription>종목 정보를 여는 방식</SettingDescription>
+      <div
+        role="radiogroup"
+        aria-label="종목 정보 여는 방식"
+        className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]"
+      >
+        <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[5px] bg-[var(--accent)]" />
+        {[
+          { label: '우클릭', onHover: false },
+          { label: '마우스 올리기', onHover: true },
+        ].map(option => {
+          const selected = stockPopupOnHover === option.onHover
+          return (
+            <button
+              key={option.label}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChangeStockPopupOnHover(option.onHover)}
+              className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
+              selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
+            }`}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -1953,7 +1881,7 @@ function toWonLabel(won: number): string {
   return `${(won / 1e8).toLocaleString('ko-KR')}억`
 }
 
-// 관리자 페이지 보관 탭의 "텍스트 표시 기준" — 지도 설정창 종목 박스 탭에서 옮겨 왔다. 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
+// 관리자 페이지 미사용 탭의 "텍스트 표시 기준" — 지도 설정창 종목 박스 탭에서 옮겨 왔다. 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsTextThresholdSection({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
     <div className="h-[127px] text-sm">
@@ -2050,7 +1978,7 @@ const DIRECTION_OPTIONS: { value: StockChangeFilter; label: string }[] = [
   { value: 'falling', label: '하락' },
 ]
 
-// 관리자 페이지 보관 탭의 "업종 등락 방향" — 지도 설정창 종목 구성 탭에서 옮겨 왔다. 항목 높이 127px, 제목 번호는 settings-plain-content가 매긴다.
+// 관리자 페이지 미사용 탭의 "업종 등락 방향" — 지도 설정창 종목 구성 탭에서 옮겨 왔다. 항목 높이 127px, 제목 번호는 settings-plain-content가 매긴다.
 // 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsSectorChangeSection({
   value,
@@ -2192,6 +2120,111 @@ export function SettingsExcludeSection({
   )
 }
 
+export function SettingsTopPickSection({
+  sectorLevelEnabled,
+  availableMaxDepth,
+  taxonomy,
+  topPickDepth,
+  topPickCount,
+  topPickEnabled,
+  onToggleTopPick,
+  topPickMaxSelectableDepth,
+  onChangeTopPickDepth,
+  onChangeTopPickCount,
+}: {
+  sectorLevelEnabled: boolean
+  availableMaxDepth: number
+  taxonomy?: TaxonomyKey
+  topPickDepth: number
+  topPickCount: number
+  topPickEnabled: boolean
+  onToggleTopPick: () => void
+  topPickMaxSelectableDepth: number
+  onChangeTopPickDepth: (depth: number) => void
+  onChangeTopPickCount: (count: number) => void
+}) {
+  const depthLabelCount = Math.max(availableMaxDepth, DEPTH_LABELS.length)
+  const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : depthLabelCount
+  const depthMetricLabels = Array.from({ length: depthLabelCount }, (_, index) => DEPTH_LABELS[index] ?? `${index + 1}차 분류`)
+  const isTopPickDisabled = !sectorLevelEnabled
+  const [topPickSectionHint, setTopPickSectionHint] = useState<CursorHint | null>(null)
+  const bookmark = useContext(SettingsBookmarkContext)
+  const inBookmarkTab = bookmark.mode === 'bookmark'
+  if (inBookmarkTab && !bookmark.ids.includes('topPick')) return null
+
+  return (
+    <div className={`settings-second-top-pick relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${bookmarkItemClass(bookmark, 'topPick')}`}>
+      <div className={isTopPickDisabled ? 'opacity-40' : ''}>
+        <div className="flex max-w-[16rem] items-center justify-between">
+          <span className="flex items-center text-left text-white">
+            <SettingTitle bookmarkId="topPick" className="text-[15px]" help>상위 업종 강조</SettingTitle>
+            <SettingHelpBubble
+              bookmarkId="topPick"
+              label="상위 업종 강조"
+              description={<><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthMetric')}) 업종 지표</span>에서<br />동일 가중 등락률을 선택하면<br />동일 가중 등락률로,<br />나머지 지표를 선택하면<br />시총 가중 등락률로 순위를 매깁니다.</>}
+            />
+          </span>
+          <ToggleSwitch
+            checked={topPickEnabled}
+            onChange={onToggleTopPick}
+            label="상위 업종 강조 사용"
+            hideLabel
+            compact
+            disabled={isTopPickDisabled}
+          />
+        </div>
+        <div className="settings-top-pick-count-row flex items-center justify-between">
+          <SettingDescription dimmed={!topPickEnabled}>등락률 상위 업종을 강조</SettingDescription>
+          <SettingsDropdown
+            options={TOP_PICK_COUNT_OPTIONS}
+            value={String(topPickCount) as '1' | '2' | '3'}
+            onChange={key => onChangeTopPickCount(Number(key))}
+            ariaLabel="상위 업종 강조 개수"
+            disabled={isTopPickDisabled || !topPickEnabled}
+            compact
+            outlinedChevron
+            className={`mt-1 w-[42px] shrink-0 ${topPickEnabled ? '' : 'opacity-40'}`}
+          />
+        </div>
+        <div className={`settings-slider-control mt-[6px] ${topPickEnabled ? '' : 'opacity-40'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
+          <div role="radiogroup" aria-label="상위 업종 강조 단계" className="relative" style={{ height: stairHeight(depthLabelCount) }}>
+            <StairRows
+              railWidth={0}
+              labels={depthMetricLabels}
+              litFrom={0}
+              litTo={depthLabelCount - 1}
+              maxSelectableIndex={Math.min(topPickMaxSelectableDepth, selectableDepth) - 1}
+              blockedHint={label => selectableDepth < depthLabelCount
+                ? `현재 분류에는\n${label} 단계가 없습니다.`
+                : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
+              selectedIndex={topPickDepth}
+              onPick={onChangeTopPickDepth}
+              disabled={isTopPickDisabled || !topPickEnabled}
+            />
+          </div>
+        </div>
+      </div>
+      {isTopPickDisabled && (
+        <div
+          className="absolute inset-0 z-10 cursor-not-allowed"
+          onPointerEnter={e => setTopPickSectionHint(cursorHintFrom(e))}
+          onPointerMove={e => setTopPickSectionHint(cursorHintFrom(e))}
+          onPointerLeave={() => setTopPickSectionHint(null)}
+          onPointerDown={e => {
+            e.preventDefault()
+            setTopPickSectionHint(cursorHintFrom(e))
+          }}
+        />
+      )}
+      {isTopPickDisabled && topPickSectionHint && (
+        <CursorHintBubble hint={topPickSectionHint}>
+          <span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthLevel')}) 업종 분류 깊이</span> 토글을 켜면<br />활성화됩니다.
+        </CursorHintBubble>
+      )}
+    </div>
+  )
+}
+
 const COLOR_OFF_NOTICE_MS = 2000
 
 export function SettingsColorSection({
@@ -2228,7 +2261,7 @@ export function SettingsColorSection({
   if (colorScaleDraft === null) return null
 
   return (
-    <div className="settings-second-color pt-5 text-white">
+    <div className="settings-third-color pt-5 text-white">
       {/* "색상 커스텀 모드" 토글을 별도 줄로 두지 않고, 제목 바로 우측에 스위치만 붙인다. 초기화 버튼(26px)은 위아래 여백을 -2px씩 줘서 줄 높이를 다른 항목의 제목 줄(22px)과 같게 둔다 — 그래야 메뉴를 바꿔도 제목·토글 위치가 같다. */}
       <div className="flex items-center justify-between">
         <p className="flex items-center text-[15px]">
