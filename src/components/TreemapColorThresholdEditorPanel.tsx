@@ -112,7 +112,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             role="img"
             aria-label="0% 고정"
             data-hint="0% 고정"
-            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-brand ring-[3px] ring-brand/35' : 'border-ui-border hover:border-ui-white'}`}
+            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-panel ${zeroSelected ? 'border-brand ring-[3px] ring-brand/35' : 'border-ui-control hover:border-ui-white'}`}
             style={{ backgroundColor: zeroColor }}
           />
           <div className={zeroSelected ? 'opacity-70' : ''}>
@@ -135,7 +135,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
                     aria-valuemax={BAR_MAX_PERCENT}
                     aria-valuenow={item.percent}
                     onKeyDown={event => handleKeyDown(event, rank)}
-                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-surface ${selected ? 'border-brand ring-[3px] ring-brand/35' : 'border-ui-border hover:border-ui-white'}`}
+                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-panel ${selected ? 'border-brand ring-[3px] ring-brand/35' : 'border-ui-control hover:border-ui-white'}`}
                     style={{ left }}
                   />
                 </div>
@@ -198,9 +198,11 @@ export default function TreemapColorThresholdEditorPanel({
     <div className="mt-2 flex flex-col gap-4 text-sm text-ui-white">
       <div>
         {/* 상승 / 보합 / 하락 — 업종 단계(대분류·중분류·소분류)처럼 글자만 있는 선택이고, 고른 것은 흰색, 안 고른 것은 회색이다. 색은 아래 막대가 보여 준다. */}
-        <div role="radiogroup" aria-label="편집할 구간" className="settings-slider-control flex flex-row items-center justify-center gap-3 whitespace-nowrap text-[13px]/4">
+        <div role="radiogroup" aria-label="편집할 구간" className="settings-slider-control flex flex-row items-center justify-center gap-1.5 whitespace-nowrap text-[13px]/4">
           {(['up', 'zero', 'down'] as const).map(key => {
             const selected = bar.side === key
+            // 배지 색은 지도 범례의 +2%(상승)·0%(보합)·-2%(하락) 칸과 같다.
+            const badgeColor = key === 'up' ? bar.positive[0]?.color : key === 'down' ? bar.negative[0]?.color : bar.zeroColor
             return (
               <button
                 key={key}
@@ -212,23 +214,26 @@ export default function TreemapColorThresholdEditorPanel({
                   if (key === 'zero') onSelectZero()
                   else onSelectRank(bar.selectedRank ?? 0, key)
                 }}
-                className={`border-0 bg-transparent p-0 text-[13px]/4 ${selected ? 'text-ui-white' : 'text-ui-muted hover:text-ui-white'}`}
+                style={{ backgroundColor: badgeColor }}
+                className={`box-border rounded-[3px] border border-solid border-ui-control px-[7px] py-0 text-[13px] font-light leading-[18px] ${selected ? 'text-ui-white' : 'text-ui-muted hover:text-ui-white'}`}
               >
                 {CHIP_LABEL[key]}
               </button>
             )
           })}
         </div>
-        <ThresholdBar
-          positive={bar.positive}
-          negative={bar.negative}
-          side={bar.side}
-          selectedRank={bar.selectedRank}
-          zeroColor={bar.zeroColor}
-          onChangeRankPercent={onChangeRankPercent}
-          onSelectRank={onSelectRank}
-          onSelectZero={onSelectZero}
+        <div className="mt-[6px]">
+          <ThresholdBar
+            positive={bar.positive}
+            negative={bar.negative}
+            side={bar.side}
+            selectedRank={bar.selectedRank}
+            zeroColor={bar.zeroColor}
+            onChangeRankPercent={onChangeRankPercent}
+            onSelectRank={onSelectRank}
+            onSelectZero={onSelectZero}
         />
+        </div>
       </div>
 
       {errorMessage && (
