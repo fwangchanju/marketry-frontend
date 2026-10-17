@@ -117,7 +117,7 @@
 } */
 
 :root {
-  /* UI 기본 원색 13개. 지도·그래프 데이터 팔레트는 별도 관리한다. */
+  /* UI 기본 원색 11개. 지도·그래프 데이터 팔레트는 별도 관리한다. */
   --brand: #12b8a6;
   --brand-surface: #20635d;
   --sub-yellow: #e6d04a;
@@ -125,11 +125,9 @@
   --ui-background: #0a0a0a;
   --ui-surface: #1a1a1a;
   --ui-panel: #2a2a2a;
-  --ui-text: #e2e4ef;
   --ui-muted: #9ca3af;
   --ui-white: #ffffff;
   --ui-popup: #fff8e7;
-  --ui-popup-border: #7a6d55;
   --status-error: #c47b5a;
   --status-warning: var(--status-error-ink);
   --status-success: var(--brand);
@@ -138,6 +136,10 @@
   --ui-control: color-mix(in srgb, var(--ui-panel) 80%, var(--ui-white));
   /* 테두리는 따로 원색을 두지 않고 컨트롤 단계와 같은 회색을 쓴다(이전 #4b5563을 합쳤다). */
   --ui-border: var(--ui-control);
+  /* 본문 글자는 흰색에 설정창 회색을 12% 섞은 밝은 회색이다(이전 #e2e4ef 원색을 합쳤다). */
+  --ui-text: color-mix(in srgb, var(--ui-white) 88%, var(--ui-panel));
+  /* 크림 팝업 테두리는 크림 45% + 메인 바탕 55%를 섞은 회갈색이다(이전 #7a6d55 원색을 합쳤다). */
+  --ui-popup-border: color-mix(in srgb, var(--ui-popup) 45%, var(--ui-background));
   --ui-control-hover: color-mix(in srgb, var(--ui-panel) 65%, var(--ui-white));
   --ui-selection: color-mix(in srgb, var(--ui-white) 80%, var(--ui-panel));
   --status-error-text: color-mix(in srgb, var(--status-error) 80%, var(--ui-white));
