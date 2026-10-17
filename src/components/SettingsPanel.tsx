@@ -312,10 +312,10 @@ function ToggleSwitch({
         aria-label={label}
         onClick={onChange}
         disabled={disabled}
-        className={`relative h-2.5 w-6 shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
+        className={`relative h-2 w-6 shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
       >
         <span
-          className={`absolute top-1/2 left-0 box-border h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-ui-border bg-ui-surface transition-transform duration-[500ms] ease-out ${checked ? 'translate-x-2.5' : 'translate-x-0'}`}
+          className={`absolute top-1/2 left-0 box-border h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 ${checked ? 'border-ui-control' : 'border-ui-control-hover'} bg-ui-panel transition-transform duration-[500ms] ease-out ${checked ? 'translate-x-2.5' : 'translate-x-0'}`}
         />
       </button>
     </div>
@@ -578,7 +578,7 @@ function DepthStairSelect({
         onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-selection transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
         <span
           role="slider"
           tabIndex={disabled ? -1 : 0}
@@ -694,7 +694,7 @@ function DepthStairRange({
         onPointerUp={() => { dragRef.current = null }}
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-selection transition-[top,height]" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[top,height]" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
         {merged ? (
           <span
             role="slider"
@@ -915,7 +915,7 @@ function RangeSlider({
       >
         <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
         <div
-          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-selection"
+          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
           style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, width: `calc(${maxPct - minPct}% - ${(maxPct - minPct) * 0.16}px)`, transition: slideTransition }}
         />
         {/* 두 핸들이 같은 칸에 모이면 원 두 개가 겹쳐 화살표가 뭉개진다. 그때는 바깥으로 벌어지는
@@ -1061,7 +1061,7 @@ function SingleRangeInput({
       <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
       <span
         aria-hidden="true"
-        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-selection"
+        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
         style={{ width: `calc(${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
       />
       {/* 눈에 보이는 손잡이 — 아래 input의 기본 손잡이는 투명하게 두고, 이 손잡이가 값 위치로 미끄러진다. */}
