@@ -35,7 +35,7 @@ export default function AdminPage() {
   const testMember = useTestMemberToggle()
 
   return (
-    <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
       <NavBar />
       <NavSubBar
         actions={
@@ -51,18 +51,18 @@ export default function AdminPage() {
         }
       />
       <div className="flex min-h-0 flex-1">
-        <div ref={settingsRowRef} className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-black text-white">
-          <div data-main-area className="relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-black text-white">
+        <div ref={settingsRowRef} className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+          <div data-main-area className="relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-ui-background text-ui-white">
             {isLoading ? (
               <Spinner showElapsed />
             ) : !isAdmin ? (
-              <div className="text-center text-sm text-gray-300">
+              <div className="text-center text-sm text-ui-text">
                 <p>관리자만 볼 수 있는 페이지입니다.</p>
                 <Link to="/home" className="mt-4 inline-block text-[var(--accent)] underline">홈으로</Link>
               </div>
             ) : (
               // 다른 페이지가 불러오는 동안 보여 주는 것과 같은 로고 원이지만, 돌지도 숫자를 세지도 않는다. 숫자가 있던 자리(로고 아래)에는 확인창 제목에 붙는 것과 같은 빨간 ⚠를 둔다.
-              <Spinner still stillContent={<span aria-hidden="true" className="text-[11cqw] leading-none text-[#ff4d2e]">⚠</span>} />
+              <Spinner still stillContent={<span aria-hidden="true" className="text-[11cqw] leading-none text-[var(--status-error)]">⚠</span>} />
             )}
           </div>
           {isAdmin && (
@@ -73,7 +73,7 @@ export default function AdminPage() {
                 fixedSideTab
                 headerRight={
                   // 지도 설정창 헤더 오른쪽의 아이콘(되돌리기·저장)과 같은 칸 크기(24px)·아이콘 크기(20px)·자리다. 빨간 경고 아이콘만 둔다.
-                  <span aria-label="관리자 전용" data-hint="관리자 전용" className="flex h-6 w-6 items-center justify-center text-[#ff4d2e]">
+                  <span aria-label="관리자 전용" data-hint="관리자 전용" className="flex h-6 w-6 items-center justify-center text-[var(--status-error)]">
                     <span aria-hidden="true" className="text-[18px] leading-none">⚠</span>
                   </span>
                 }
@@ -87,8 +87,8 @@ export default function AdminPage() {
                 <SettingsPanelGroup section="adminOps">
                   <div className="settings-plain-content pt-5">
                     <div className="h-[127px] text-sm">
-                      <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">MARKETRY 분류</h2>
-                      <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">내 분류를 MARKETRY 분류로 커밋·롤백</p>
+                      <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
+                      <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-text">내 분류를 MARKETRY 분류로 커밋·롤백</p>
                       <div className="mt-4 max-w-[16rem] settings-control-inset">
                         <MarketryPublishControls />
                       </div>
@@ -96,8 +96,8 @@ export default function AdminPage() {
                     {/* 로컬 개발 전용 — 운영 화면에는 나오지 않는다. 누르면 로컬 DB에 새 USER 계정(테스트 회원)으로 바꾼다. 돌아오는 버튼은 계정 메뉴에 있다(테스트 회원은 관리자가 아니라 이 페이지에 못 들어온다). */}
                     {isLocalSignupEnabled() && (
                       <div className="text-sm">
-                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">테스트 회원 (로컬 전용)</h2>
-                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">테스트 회원 (로컬 전용)</h2>
+                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-text">
                           {testMember.isTestMember ? '지금 테스트 회원입니다' : '로컬 DB의 새 일반 계정으로 전환'}
                         </p>
                         <div className="mt-4 max-w-[16rem] settings-control-inset">
@@ -106,11 +106,11 @@ export default function AdminPage() {
                             onClick={testMember.toggle}
                             disabled={testMember.isPending}
                             data-hint="누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다. 돌아올 때는 오른쪽 위 계정 메뉴를 쓰세요."
-                            className="settings-chip-hover h-7 w-full rounded-[5px] border-0 bg-[#4b4b50] text-[13px] font-medium text-white disabled:cursor-wait disabled:opacity-40"
+                            className="settings-chip-hover h-7 w-full rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-wait disabled:opacity-40"
                           >
                             {testMember.isPending ? '전환 중…' : '테스트 회원으로 전환'}
                           </button>
-                          {testMember.error && <p role="alert" className="mt-1.5 text-xs text-red-400">{testMember.error}</p>}
+                          {testMember.error && <p role="alert" className="mt-1.5 text-xs text-status-error-text">{testMember.error}</p>}
                         </div>
                       </div>
                     )}

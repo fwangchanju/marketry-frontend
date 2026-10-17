@@ -27,8 +27,9 @@ export function captureRegionRect(el: HTMLElement, selector: string): { x: numbe
 const isCapturable = (node: Node) => !(node instanceof Element && node.hasAttribute('data-capture-ignore'))
 
 // 찍을 영역 자체에 불투명한 배경색이 있으면 그 색을 찍기 바탕으로 쓴다. 바탕색 옵션이 영역의 배경색을 덮어써서, 홈처럼 영역이 검정인데
-// 바탕색이 다르면 배경이 없는 줄(아래 줄)만 다른 색으로 찍히기 때문이다. 배경이 없으면 기본 바탕색(#0f1117)을 쓴다.
-const DEFAULT_CAPTURE_BACKGROUND = '#0f1117'
+// 바탕색이 다르면 배경이 없는 줄(아래 줄)만 다른 색으로 찍히기 때문이다. 배경이 없으면 기본 바탕색(#000000)을 쓴다.
+// 캡처 라이브러리에는 CSS 변수 대신 실제 픽셀 색을 전달한다.
+const DEFAULT_CAPTURE_BACKGROUND = '#000000'
 
 function captureBackgroundColor(el: HTMLElement): string {
   const color = getComputedStyle(el).backgroundColor

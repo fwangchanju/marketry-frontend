@@ -55,7 +55,7 @@ const POPUP_GAP = 2
 // 커서 이동 팝업과 마우스 사이의 간격(오른쪽·아래).
 const POINTER_GAP = 14
 const POPUP_MARGIN = 8
-const POPUP_BACKGROUND = '#fff8e7'
+const POPUP_BACKGROUND = 'var(--ui-popup)'
 
 interface PointerBounds {
   minLeft: number
@@ -171,7 +171,7 @@ function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
       <div
         ref={elRef}
         data-treemap-popup
-        className={`invisible fixed z-[9999] w-max select-none break-words border border-[#7a6d55] px-2 py-1 text-left text-base text-black shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        className={`invisible fixed z-[9999] w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
         style={{ maxWidth, backgroundColor: POPUP_BACKGROUND }}
       >
         <div className="flex items-center justify-between gap-3 font-bold">
@@ -184,7 +184,7 @@ function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
               type="button"
               aria-label={`${excludeSector.name} 제외`}
               data-hint="업종 제외"
-              className="flex h-6 w-6 items-center justify-center rounded-md border-0 bg-[var(--panel-gray)] p-0 text-zinc-800 outline-none transition-colors hover:bg-zinc-400"
+              className="flex h-6 w-6 items-center justify-center rounded-md border-0 bg-[var(--panel-gray)] p-0 text-ui-surface outline-none transition-colors hover:bg-ui-control-hover"
               onClick={async () => {
                 // 확인 창이 뜨는 동안 우클릭 팝업은 먼저 닫는다(두 창이 겹쳐 보이지 않게).
                 onClose()

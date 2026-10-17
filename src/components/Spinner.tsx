@@ -36,7 +36,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
     // 로딩 원과 같은 3줄 격자(빈 칸 / 로고 / 아래 칸)라 로고가 원의 가운데에 오고, 아래 칸 내용은 경과 시간 숫자가 있던 바로 그 자리에 놓인다.
     return (
       <div aria-hidden="true" className={`@container relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
-        <div className="absolute inset-0 rounded-full border-[1.9cqw] border-gray-600" />
+        <div className="absolute inset-0 rounded-full border-[1.9cqw] border-ui-border" />
         <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
           <div />
           <MarketryLogo className="h-auto w-[84%]" />
@@ -49,7 +49,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   if (errorMessage) {
     return (
       <div role="alert" aria-label={errorMessage} className={`@container relative ${className ?? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]'}`}>
-        <div className="absolute inset-0 rounded-full border-[1.9cqw] border-gray-600" />
+        <div className="absolute inset-0 rounded-full border-[1.9cqw] border-ui-border" />
         <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
           <div />
           <MarketryLogo className="h-auto w-[84%]" />
@@ -61,12 +61,12 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
               <button
                 type="button"
                 onClick={onRetry}
-                className="whitespace-nowrap rounded border-0 bg-cyan-700 px-[2.6cqw] py-[0.8cqw] text-[4.25cqw] font-bold text-white transition-colors hover:bg-cyan-600"
+                className="whitespace-nowrap rounded border-0 bg-[var(--brand-surface)] px-[2.6cqw] py-[0.8cqw] text-[4.25cqw] font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)]"
               >
                 다시 시도
               </button>
             ) : (
-              <span className="text-center text-[5.5cqw] leading-tight text-white">{errorMessage}</span>
+              <span className="text-center text-[5.5cqw] leading-tight text-ui-white">{errorMessage}</span>
             )}
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   }
 
   if (!showElapsed && !showLogo) {
-    return <div className={`animate-spin rounded-full border-2 border-gray-600 border-t-[var(--brand)] ${className ?? 'h-8 w-8'}`} />
+    return <div className={`animate-spin rounded-full border-2 border-ui-border border-t-[var(--brand)] ${className ?? 'h-8 w-8'}`} />
   }
 
   // 시간을 보여주는 로딩은 화면 한가운데에서 오래 보게 되므로 원을 아주 크게(작은 화면에서는 화면 짧은 변의 60%까지) 그린다.
@@ -85,15 +85,15 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
   // 설정창(showLogo만 준 경우)도 같은 비율로 같은 모양을 그린다. 원이 아주 작으면(수십 px) 글자가 읽히지 않으므로 그런 곳은 로고 없는 작은 링(옵션 없음)을 쓴다.
   return (
     <div role="status" aria-label={showElapsed ? '데이터를 불러오는 중입니다.' : '설정 처리 중'} className={`@container relative ${className ?? (showElapsed ? 'h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]' : 'h-24 w-24')}`}>
-      <div aria-hidden="true" className={`absolute inset-0 animate-spin rounded-full border-gray-600 border-t-[var(--brand)] border-[1.9cqw]`} />
+      <div aria-hidden="true" className={`absolute inset-0 animate-spin rounded-full border-ui-border border-t-[var(--brand)] border-[1.9cqw]`} />
       <div className="absolute inset-0 grid grid-rows-[1fr_auto_1fr] justify-items-center">
         <div />
         <MarketryLogo className={`h-auto ${message ? 'w-[72%]' : 'w-[84%]'}`} />
         {/* pb-[14cqw]로 숫자를 칸 한가운데보다 조금 위에 둔다. 오류 화면의 문구와 같은 값이라 숫자와 문구가 같은 높이에 온다. */}
         <div className="flex flex-col items-center justify-center gap-1 pb-[14cqw]">
-          {message && <span className={`leading-tight text-gray-300 text-[5.5cqw]`}>{message}</span>}
+          {message && <span className={`leading-tight text-ui-text text-[5.5cqw]`}>{message}</span>}
           {/* 숫자 크기는 원 너비에 비례한다(큰 원 기준 5.5%). */}
-          <span className={`min-h-[1em] leading-none tabular-nums text-gray-300 text-[5.5cqw]`}>{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
+          <span className={`min-h-[1em] leading-none tabular-nums text-ui-text text-[5.5cqw]`}>{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
         </div>
       </div>
     </div>

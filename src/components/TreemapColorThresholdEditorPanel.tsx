@@ -92,7 +92,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
   }
   const edgeAligned = (position: number) => Math.min(Math.max(position, 0.06), 0.94) * 100
   // 값 말풍선은 눈금 글자와 같은 줄·같은 크기(11px)로 그 위에 포개서 보여 준다(고른 값이 눈금과 같으면 그 눈금 글자를 덮는다).
-  const badgeClass = 'absolute top-[35px] z-10 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1 text-[11px] font-medium leading-4 tabular-nums text-black'
+  const badgeClass = 'absolute top-[35px] z-10 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1 text-[11px] font-medium leading-4 tabular-nums text-ui-background'
 
   return (
     <>
@@ -105,14 +105,14 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
         onPointerCancel={handlePointerEnd}
       >
         <div ref={trackRef} className="settings-slider-control relative h-full">
-          <div className="absolute inset-x-0 top-[12px] h-4 border border-white/25" style={{ background: gradient }} />
+          <div className="absolute inset-x-0 top-[12px] h-4 border border-ui-white/25" style={{ background: gradient }} />
           {zeroSelected && <span className={badgeClass} style={{ left: '0%' }}>0%</span>}
           <div
             data-zero
             role="img"
             aria-label="0% 고정"
             data-hint="0% 고정"
-            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
+            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-ui-border hover:border-ui-white'}`}
             style={{ backgroundColor: zeroColor }}
           />
           <div className={zeroSelected ? 'opacity-60' : ''}>
@@ -135,7 +135,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
                     aria-valuemax={BAR_MAX_PERCENT}
                     aria-valuenow={item.percent}
                     onKeyDown={event => handleKeyDown(event, rank)}
-                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-zinc-800 ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-zinc-200 hover:border-white'}`}
+                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-surface ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-ui-border hover:border-ui-white'}`}
                     style={{ left }}
                   />
                 </div>
@@ -148,7 +148,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             return (
               <span
                 key={tick}
-                className={`pointer-events-none absolute top-[35px] -translate-x-1/2 whitespace-nowrap text-[11px]/4 transition-colors duration-300 ${highlighted ? 'font-medium' : ''} text-white`}
+                className={`pointer-events-none absolute top-[35px] -translate-x-1/2 whitespace-nowrap text-[11px]/4 transition-colors duration-300 ${highlighted ? 'font-medium' : ''} text-ui-white`}
                 style={{ left: `${percentToPosition(tick) * 100}%` }}
               >
                 {tick}%
@@ -195,7 +195,7 @@ export default function TreemapColorThresholdEditorPanel({
   hasChanges,
 }: ColorThresholdEditorProps) {
   return (
-    <div className="mt-2 flex flex-col gap-4 text-sm text-white">
+    <div className="mt-2 flex flex-col gap-4 text-sm text-ui-white">
       <div>
         {/* 상승 / 보합 / 하락 — 업종 단계(대분류·중분류·소분류)처럼 글자만 있는 선택이고, 고른 것은 흰색, 안 고른 것은 회색이다. 색은 아래 막대가 보여 준다. */}
         <div role="radiogroup" aria-label="편집할 구간" className="settings-slider-control flex flex-row items-center justify-center gap-3 whitespace-nowrap text-[13px]/4">
@@ -212,7 +212,7 @@ export default function TreemapColorThresholdEditorPanel({
                   if (key === 'zero') onSelectZero()
                   else onSelectRank(bar.selectedRank ?? 0, key)
                 }}
-                className={`border-0 bg-transparent p-0 text-[13px]/4 ${selected ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                className={`border-0 bg-transparent p-0 text-[13px]/4 ${selected ? 'text-ui-white' : 'text-ui-muted hover:text-ui-white'}`}
               >
                 {CHIP_LABEL[key]}
               </button>
@@ -232,7 +232,7 @@ export default function TreemapColorThresholdEditorPanel({
       </div>
 
       {errorMessage && (
-        <p role="alert" className="text-[13px] text-red-400">{errorMessage}</p>
+        <p role="alert" className="text-[13px] text-status-error-text">{errorMessage}</p>
       )}
 
       {(hasChanges || isSaving) && (
@@ -241,7 +241,7 @@ export default function TreemapColorThresholdEditorPanel({
             type="button"
             onClick={onApply}
             disabled={isSaving}
-            className="h-7 flex-1 rounded-[5px] border border-cyan-700 bg-cyan-700 px-3 py-0 text-[13px] font-medium text-white transition-colors hover:border-cyan-600 hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-60"
+            className="h-7 flex-1 rounded-[5px] border border-[var(--brand-surface)] bg-[var(--brand-surface)] px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-[var(--brand-surface-hover)] hover:bg-[var(--brand-surface-hover)] disabled:cursor-wait disabled:opacity-60"
           >
             {isSaving ? '적용 중...' : '적용'}
           </button>
@@ -249,7 +249,7 @@ export default function TreemapColorThresholdEditorPanel({
             type="button"
             onClick={onCancel}
             disabled={isSaving}
-            className="h-7 flex-1 rounded-[5px] border border-zinc-600 bg-zinc-600 px-3 py-0 text-[13px] font-medium text-white transition-colors hover:border-zinc-500 hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-60"
+            className="h-7 flex-1 rounded-[5px] border border-ui-border bg-ui-control px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-ui-border hover:bg-ui-control-hover disabled:cursor-wait disabled:opacity-60"
           >
             취소
           </button>

@@ -214,7 +214,7 @@ export default function CustomPage() {
   const isPageLoading = isSessionLoading || (isLoggedIn && isSectorsLoading)
 
   return (
-    <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
       <NavBar />
       <NavSubBar actions={actions} />
       {/* 좌측 사이드바(종목/섹터 전환 + 버전관리 저장) 삭제 — 종목/섹터 전환은 NavSubBar의
@@ -222,7 +222,7 @@ export default function CustomPage() {
           위치 재검토가 더 필요해서 일단 뺐다 — 다시 넣을 땐 이 컴포넌트를 재사용하면 된다. */}
       <div className="flex min-h-0 flex-1">
         {/* 공유 스크린샷(screenshotRef)는 [세 번째 바+본문] 열만 찍는다 — 설정 사이드바는 스크린샷에 넣지 않는다. */}
-        <div ref={settingsRowRef} className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-black text-white">
+        <div ref={settingsRowRef} className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서 창을 좁혀도 사이드바(w-80)가 항상 같은
               폭을 유지하게 한다(지도/섹터/요약 페이지와 동일). */}
           <div
@@ -231,15 +231,15 @@ export default function CustomPage() {
               setEmptyMessageArea(node)
             }}
             data-main-area
-            className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white"
+            className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white"
           >
-            <div className="mt-[5.25px] mb-[5.25px] flex h-7 w-full shrink-0 items-center justify-between bg-black/70 pl-[7px] pr-[7px] text-sm font-bold text-white">
+            <div className="mt-[5.25px] mb-[5.25px] flex h-7 w-full shrink-0 items-center justify-between bg-ui-background/70 pl-[7px] pr-[7px] text-sm font-bold text-ui-white">
               <div className="flex h-full shrink-0 items-center gap-2">
                 <ToolbarModeText page="CUSTOM" label={mode === 'stock' ? 'STOCK' : 'SECTOR'} />
               </div>
               {/* 검색창(과 필터 초기화) — 종목·업종 표가 모두 이 노드로 포털링해서 그린다. */}
               <div ref={setToolbarContainer} className="ml-1 flex h-full min-h-0 min-w-0 flex-1 items-center" />
-              <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-gray-400`}>
+              <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}>
                 <TaxonomyBadge taxonomy={sheet} />
               </div>
             </div>
@@ -324,7 +324,7 @@ export default function CustomPage() {
               ) : (
                 // 마켓트리·거래소 화면은 읽기 전용이라 설정할 항목이 없다 — 그 사실만 알린다.
                 <div className="text-sm">
-                  <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">읽기 전용(쓰기 불가)</h2>
+                  <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">읽기 전용(쓰기 불가)</h2>
                 </div>
               )}
               taxonomyAtBottom

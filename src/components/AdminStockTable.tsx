@@ -114,7 +114,7 @@ const alignClass = (align: 'center' | 'left' | 'right') =>
   align === 'right' ? 'text-right pr-4' : align === 'left' ? 'text-left pl-4' : 'text-center'
 
 const MARKET_LABEL: Record<'KOSPI' | 'KOSDAQ', string> = { KOSPI: '코스피', KOSDAQ: '코스닥' }
-const marketColorClass = (market: 'KOSPI' | 'KOSDAQ') => (market === 'KOSPI' ? 'text-gray-400' : 'text-[var(--brand)]')
+const marketColorClass = (market: 'KOSPI' | 'KOSDAQ') => (market === 'KOSPI' ? 'text-ui-muted' : 'text-[var(--brand)]')
 
 // 화면에 실제로 표시되는 값 기준으로 정렬하는 열 — 정렬 판정을 이 값으로 통일해서 화면과 어긋나지 않게 한다.
 type DisplaySortKey = 'market' | 'originCategoryName' | 'parentSectorName' | 'midSectorName' | 'subSectorName'
@@ -367,7 +367,7 @@ function SectorSearchPopup({
         left: position.left,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
       }}
-      className="z-50 w-56 rounded-md border border-gray-500 bg-[#363639] py-2 text-sm font-normal text-white shadow-xl"
+      className="z-50 w-56 rounded-md border border-ui-border bg-[var(--ui-panel)] py-2 text-sm font-normal text-ui-white shadow-xl"
       onClick={e => e.stopPropagation()}
     >
       {title && <div className="px-3 pb-2 text-xs font-bold text-[var(--brand)]">{title}</div>}
@@ -381,14 +381,14 @@ function SectorSearchPopup({
           onKeyDown={e => (e.key === 'Escape' ? onEscape() : search.handleArrowsAndEnter(e, onSelect))}
           placeholder="업종 검색"
           aria-label="업종 검색"
-          className="h-7 w-full rounded border border-gray-600 bg-zinc-700 px-2 text-sm text-white outline-none focus:placeholder:text-transparent focus:border-[var(--brand)]"
+          className="h-7 w-full rounded border border-ui-border bg-ui-panel px-2 text-sm text-ui-white outline-none focus:placeholder:text-transparent focus:border-[var(--brand)]"
         />
-        {contextLabel && <p className="m-0 mt-1.5 truncate text-xs font-medium text-gray-300">{contextLabel}</p>}
+        {contextLabel && <p className="m-0 mt-1.5 truncate text-xs font-medium text-ui-text">{contextLabel}</p>}
       </div>
       {title && orderMode && <SectorOrderToggle label={title} value={orderMode.value} onChange={orderMode.onChange} />}
       <div className="overflow-y-auto scrollbar-thin" style={{ maxHeight: FILTER_LIST_MAX_HEIGHT }}>
         {search.matches.length === 0 ? (
-          <p className="m-0 px-3 py-1 text-gray-400">검색 결과가 없습니다.</p>
+          <p className="m-0 px-3 py-1 text-ui-muted">검색 결과가 없습니다.</p>
         ) : (
           search.matches.map((opt, index) => (
             <button
@@ -400,8 +400,8 @@ function SectorSearchPopup({
               type="button"
               onClick={() => onSelect(opt.id)}
               onMouseEnter={() => search.setHighlightedIndex(index)}
-              className={`block w-full truncate rounded-none border-0 px-3 py-1 text-left text-sm font-normal text-white shadow-none outline-none ${
-                index === search.highlightedIndex ? 'bg-white/10 text-[var(--brand)]' : 'bg-transparent'
+              className={`block w-full truncate rounded-none border-0 px-3 py-1 text-left text-sm font-normal text-ui-white shadow-none outline-none ${
+                index === search.highlightedIndex ? 'bg-ui-white/10 text-[var(--brand)]' : 'bg-transparent'
               }`}
             >
               {isSingleLevel ? opt.name : opt.label}
@@ -493,7 +493,7 @@ function AdminStockSectorCell({
     <td
       ref={cellRef}
       data-no-row-select
-      className={`truncate pl-2 text-left ${disabled ? 'cursor-default text-gray-500' : 'cursor-pointer'} ${
+      className={`truncate pl-2 text-left ${disabled ? 'cursor-default text-ui-muted' : 'cursor-pointer'} ${
         isHighlighted ? 'bg-[var(--brand)]/35' : rowHoverClass
       }`}
       onMouseEnter={onHoverStart}
@@ -613,7 +613,7 @@ function BulkAssignButton({
         onClick={handleClick}
         aria-disabled={isIdle}
         className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded-[5px] border-0 px-1.5 text-[13px] font-medium transition-colors ${
-          isIdle ? 'cursor-not-allowed bg-[#4b4b50] text-zinc-200 opacity-40' : 'settings-chip-hover bg-[#4b4b50] text-white'
+          isIdle ? 'cursor-not-allowed bg-[var(--ui-control)] text-ui-white opacity-40' : 'settings-chip-hover bg-[var(--ui-control)] text-ui-white'
         }`}
       >
         {label}
@@ -701,7 +701,7 @@ function AdminAliasCell({
             if (e.key === 'Enter') submit()
             if (e.key === 'Escape') stopEdit()
           }}
-          className="nes-input is-dark h-5 w-full rounded-md border-0 bg-[#3b3b3b] px-1 text-left text-sm text-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
+          className="nes-input is-dark h-5 w-full rounded-md border-0 bg-[var(--ui-panel)] px-1 text-left text-sm text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
         />
       </td>
     )
@@ -709,7 +709,7 @@ function AdminAliasCell({
 
   return (
     <td
-      className={`cursor-pointer truncate pl-2 text-left text-white ${isHighlighted ? 'bg-[var(--brand)]/35' : rowHoverClass}`}
+      className={`cursor-pointer truncate pl-2 text-left text-ui-white ${isHighlighted ? 'bg-[var(--brand)]/35' : rowHoverClass}`}
       data-no-row-select
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
@@ -788,8 +788,8 @@ const AdminStockRow = memo(function AdminStockRow({
   // 호버는 20%, 선택은 28%로 칠해 서로 구분하고, 선택 + 호버면 한 단계 더 진하게(38%) 칠한다. 읽기 전용 표(ReadOnlyTaxonomySheet)와 같은 값이다.
   const rowHoverClass = isSelected
     ? isRowHovered
-      ? 'bg-[var(--brand)]/38 border-white/25!'
-      : 'bg-[var(--brand)]/28 border-white/25!'
+      ? 'bg-[var(--brand)]/38 border-ui-white/25!'
+      : 'bg-[var(--brand)]/28 border-ui-white/25!'
     : isRowHovered || editingCells.size > 0
       ? 'bg-[var(--brand)]/20'
       : ''
@@ -843,7 +843,7 @@ const AdminStockRow = memo(function AdminStockRow({
         {/* 상태 변경은 줄 클릭(handleRowClick)에서 하므로 onChange는 비워 둔다 — 제어되는 체크박스에 필요한 자리표시다. */}
         <input type="checkbox" className="mx-auto my-0 block thin-check" checked={isSelected} onChange={() => {}} />
       </td>
-      <td className={`${alignClass('center')} text-gray-400 ${rowHoverClass}`}>{item.stockCode}</td>
+      <td className={`${alignClass('center')} text-ui-muted ${rowHoverClass}`}>{item.stockCode}</td>
       <td className={`truncate pl-2 text-left ${marketColorClass(item.market)} ${rowHoverClass}`}>{item.stockName}</td>
       {!showAlias && <td className={`pl-2 text-left ${rowHoverClass}`} />}
       {showAlias && (
@@ -857,13 +857,13 @@ const AdminStockRow = memo(function AdminStockRow({
           onEditingChange={editing => setCellEditing('alias', editing)}
         />
       )}
-      <td className={`${alignClass('right')} text-gray-400 ${rowHoverClass}`}>
+      <td className={`${alignClass('right')} text-ui-muted ${rowHoverClass}`}>
         {item.totalMarketValue != null ? toJoEokDecimal(item.totalMarketValue / 100_000_000) : '-'}
       </td>
-      <td className={`text-center text-gray-400 ${rowHoverClass}`}>{item.marketValueTier || '-'}</td>
+      <td className={`text-center text-ui-muted ${rowHoverClass}`}>{item.marketValueTier || '-'}</td>
       <td className={`text-center ${marketColorClass(item.market)} ${rowHoverClass}`}>{MARKET_LABEL[item.market]}</td>
-      <td className={`text-center ${isNxt ? 'text-gray-400' : 'text-gray-500'} ${rowHoverClass}`}>{isNxt ? 'O' : '-'}</td>
-      <td className={`truncate pl-2 text-left text-gray-400 ${rowHoverClass}`}>{item.industryName ?? '-'}</td>
+      <td className={`text-center ${isNxt ? 'text-ui-muted' : 'text-ui-muted'} ${rowHoverClass}`}>{isNxt ? 'O' : '-'}</td>
+      <td className={`truncate pl-2 text-left text-ui-muted ${rowHoverClass}`}>{item.industryName ?? '-'}</td>
       <AdminStockSectorCell
         value={chain.rootName}
         options={parentSectorOptions}
@@ -1587,7 +1587,7 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={columnFilters.clearAll}
-              className="flex h-6 items-center whitespace-nowrap rounded border border-gray-600 bg-transparent px-2 text-sm font-normal text-gray-300 transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+              className="flex h-6 items-center whitespace-nowrap rounded border border-ui-border bg-transparent px-2 text-sm font-normal text-ui-text transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
             >
               필터 초기화
             </button>
@@ -1605,35 +1605,35 @@ export default function AdminStockTable({
       {toolbarContainer && createPortal(toolbar, toolbarContainer)}
       {historyContainer && createPortal(
         <div>
-          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">변경 내역</h2>
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">변경 내역</h2>
           {historyControls}
         </div>,
         historyContainer,
       )}
       {excelContainer && createPortal(
         <div className="h-[127px]">
-          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">간편 업종 분류</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">다운받아서 AI로 간편 분류 추천</p>
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">간편 업종 분류</h2>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-text">다운받아서 AI로 간편 분류 추천</p>
           <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
             <button
               type="button"
               onClick={handleExportExcel}
-              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[#4b4b50] text-[13px] font-medium text-white"
+              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
-              <DownloadIcon className="h-4 w-4 text-gray-300" />
+              <DownloadIcon className="h-4 w-4 text-ui-text" />
               다운로드
             </button>
             <button
               type="button"
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
-              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[#4b4b50] text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-40"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >
-              <UploadIcon className="h-4 w-4 text-gray-300" />
+              <UploadIcon className="h-4 w-4 text-ui-text" />
               {isUploading ? '처리 중…' : '업로드'}
             </button>
             <input
@@ -1653,8 +1653,8 @@ export default function AdminStockTable({
       )}
       {bulkContainer && createPortal(
         <div>
-          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">일괄 변경</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-gray-300">
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일괄 변경</h2>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-text">
             {selectedStockCodes.size > 0 ? `선택한 종목 ${selectedStockCodes.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택하세요'}
           </p>
           <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
@@ -1689,16 +1689,16 @@ export default function AdminStockTable({
           {isLoading ? <Spinner showElapsed /> : <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} />}
         </div>
       ) : (
-      <div className="relative min-h-0 flex-1 border border-slate-700">
+      <div className="relative min-h-0 flex-1 border border-ui-border">
         {isSelectionHintOpen && <SelectionHintBubble onClose={() => setIsSelectionHintOpen(false)} />}
         <div ref={scrollContainerRef} className="relative h-full overflow-auto scrollbar-thin">
           {/* 표 글자는 드래그해도 파랗게 선택되지 않게 한다(줄 드래그 선택과 겹치기 때문). 입력창 안의 글자는 그대로 선택할 수 있다. */}
-          <table style={{ minWidth: stockTableMinWidthPx(columnKeys) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [&_input]:select-text [border-collapse:separate] [border-spacing:0] [&_td]:border-slate-700 [&_td]:py-1 [&_th]:border-white/15 [&_th]:border-b-0 [&_th]:py-1">
+          <table style={{ minWidth: stockTableMinWidthPx(columnKeys) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [&_input]:select-text [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/15 [&_th]:border-b-0 [&_th]:py-1">
           <StockTableColGroup keys={columnKeys} />
           <thead className="sticky top-0 z-10">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th
-                className="cursor-pointer bg-[#2b3a4f] px-0 text-center font-bold text-slate-100"
+                className="cursor-pointer bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white"
                 style={CHECKBOX_CELL_STYLE}
                 onClick={e => {
                   // 체크박스 자신을 클릭한 경우는 onChange가 이미 처리하므로 여기서 중복 토글하지 않는다.
@@ -1737,7 +1737,7 @@ export default function AdminStockTable({
                   <th
                     key={col.key}
                     data-column-key={col.key}
-                    className="cursor-pointer whitespace-nowrap bg-[#2b3a4f] text-center align-middle font-bold text-slate-100"
+                    className="cursor-pointer whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white"
                     data-hint={col.key === 'alias' && isAdmin ? '약칭은 운영자만 관리할 수 있습니다.' : undefined}
                     onClick={() => handleSort(col.key)}
                   >

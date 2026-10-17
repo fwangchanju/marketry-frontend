@@ -71,7 +71,7 @@ function SectorNameInput({ wrapperClassName = '', onChange, onFocus, onBlur, ...
 
 // 상단바 우측 아이콘(NavBarPageActions)과 같은 모양 — 회색 아이콘, hover 때 강조색.
 const ICON_BUTTON_CLASS =
-  'flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-gray-400 outline-none hover:text-[var(--brand)]'
+  'flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none hover:text-[var(--brand)]'
 
 type Row =
   | { type: 'sector'; item: SectorItem; siblingIndex: number }
@@ -99,7 +99,7 @@ function DraggableSectorHandle({
     data: { sectorId, parentId },
     disabled: !enabled,
   })
-  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 touch-none items-center justify-center border-0 bg-transparent text-gray-400 hover:text-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-40 ${isDragging ? 'opacity-30' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
+  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 touch-none items-center justify-center border-0 bg-transparent text-ui-muted hover:text-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-40 ${isDragging ? 'opacity-30' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
 }
 
 // 끄는 중 마우스의 세로 위치 — 손잡이를 열 안으로 가두는 제한(keepInColumnVertically) 때문에 손잡이 위치는 맨 위·맨 아래에서 멈추므로,
@@ -120,7 +120,7 @@ const keepInColumnVertically: Modifier = ({ transform, active, draggingNodeRect,
 }
 
 // 번호 칸 — 업종은 끌어서 다른 업종 위에 놓으면 그 안으로 이동한다(순서 바꾸기는 왼쪽 ⠿ 손잡이).
-const NUMBER_BADGE_CLASS = 'mr-2 inline-flex h-5 w-8 shrink-0 items-center justify-end rounded-sm border border-gray-400 bg-zinc-700 p-0 pr-1 text-sm leading-none font-bold text-gray-300 tabular-nums'
+const NUMBER_BADGE_CLASS = 'mr-2 inline-flex h-5 w-8 shrink-0 items-center justify-end rounded-sm border border-ui-border bg-ui-panel p-0 pr-1 text-sm leading-none font-bold text-ui-text tabular-nums'
 
 function DraggableNumberBadge({ sectorId, parentId, onPress, onClickBadge, children }: { sectorId: number; parentId: number | null; onPress: () => void; onClickBadge: () => void; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -153,7 +153,7 @@ function RootDropHeader({ className, isActive, isOver, children }: { className: 
     <div ref={setNodeRef} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/45' : ''}`}>
       {children}
       {isActive && (
-        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-5 -translate-y-1/2 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[18px] ${isOver ? 'bg-[var(--brand)] text-black' : 'bg-transparent text-[var(--brand)]'}`}>
+        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-5 -translate-y-1/2 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[18px] ${isOver ? 'bg-[var(--brand)] text-ui-background' : 'bg-transparent text-[var(--brand)]'}`}>
           여기 (최상위)
         </span>
       )}
@@ -578,7 +578,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 placeholder={`${row.depth === 1 ? '중분류' : '소분류'} 추가`}
                 data-hint={`${chainLabel} 하위 업종 추가`}
                 aria-label={`${chainLabel} 하위 업종명`}
-                className="h-7 w-40 rounded-md border-0 bg-[#3b3b3b] px-2 text-sm font-medium text-white outline-none focus:placeholder:text-transparent placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
+                className="h-7 w-40 rounded-md border-0 bg-[var(--ui-panel)] px-2 text-sm font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
               />
             </div>
           </td>
@@ -637,15 +637,15 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   <button
                     type="button"
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
-                    className="truncate border-0 bg-transparent p-0 text-left text-sm text-white"
+                    className="truncate border-0 bg-transparent p-0 text-left text-sm text-ui-white"
                   >
                     {sector.name}
                   </button>
                   {movedSectorId === sector.id && (
-                    <span className="ml-2 shrink-0 rounded-sm bg-[var(--brand)] px-1 text-[11px] font-bold leading-4 text-black">방금 이동</span>
+                    <span className="ml-2 shrink-0 rounded-sm bg-[var(--brand)] px-1 text-[11px] font-bold leading-4 text-ui-background">방금 이동</span>
                   )}
                   {(childCountByParent.get(sector.id) ?? 0) > 0 && (
-                    <span className="ml-1 shrink-0 text-sm text-gray-400">({toCount(childCountByParent.get(sector.id) ?? 0)})</span>
+                    <span className="ml-1 shrink-0 text-sm text-ui-muted">({toCount(childCountByParent.get(sector.id) ?? 0)})</span>
                   )}
                   {movingSector && moveTargetIds.has(sector.id) && (
                     <button
@@ -653,7 +653,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                       data-no-row-select
                       data-hint={`[${movingSector.name}] 업종을 [${sector.name}] 하위로 이동`}
                       onClick={() => void confirmMove(sector)}
-                      className="ml-auto mr-2 h-6 shrink-0 rounded border border-[var(--brand)] bg-transparent px-2 text-xs font-bold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-black"
+                      className="ml-auto mr-2 h-6 shrink-0 rounded border border-[var(--brand)] bg-transparent px-2 text-xs font-bold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-ui-background"
                     >
                       여기
                     </button>
@@ -662,7 +662,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   {isMoveDrag && isMoveDropTarget(draggedSector, sector) && (
                     <span
                       aria-hidden="true"
-                      className={`pointer-events-none ml-auto mr-2 h-6 shrink-0 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[22px] ${moveOverId === sector.id ? 'bg-[var(--brand)] text-black' : 'bg-transparent text-[var(--brand)]'}`}
+                      className={`pointer-events-none ml-auto mr-2 h-6 shrink-0 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[22px] ${moveOverId === sector.id ? 'bg-[var(--brand)] text-ui-background' : 'bg-transparent text-[var(--brand)]'}`}
                     >
                       여기
                     </span>
@@ -671,11 +671,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   {selectedSectorId === sector.id && !movingSector && !isMoveDrag && (
                     <span className="ml-auto flex shrink-0 items-center gap-0.5 pl-2 pr-2">
                       {sector.depth <= ADD_CHILD_MAX_PARENT_DEPTH && (
-                        <button type="button" data-no-row-select data-hint="하위 업종 추가" aria-label={`${sector.name} 하위 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none hover:text-[var(--brand)]">
+                        <button type="button" data-no-row-select data-hint="하위 업종 추가" aria-label={`${sector.name} 하위 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
                           <PlusIcon className="h-4 w-4" />
                         </button>
                       )}
-                      <button type="button" data-no-row-select data-hint="이름 변경" aria-label={`${sector.name} 이름 변경`} onClick={() => startRename(sector)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none hover:text-[var(--brand)]">
+                      <button type="button" data-no-row-select data-hint="이름 변경" aria-label={`${sector.name} 이름 변경`} onClick={() => startRename(sector)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
                         <EditIcon className="h-4 w-4" />
                       </button>
                       <button
@@ -690,7 +690,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                           }
                           remove(sector.id, sector.name)
                         }}
-                        className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none hover:text-red-500"
+                        className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-status-error-text"
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
@@ -787,11 +787,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           />,
           toolbarContainer,
         )}
-        <div className="relative grid min-h-0 flex-1 grid-cols-3 overflow-hidden border border-slate-700 select-none [&_input]:select-text">
+        <div className="relative grid min-h-0 flex-1 grid-cols-3 overflow-hidden border border-ui-border select-none [&_input]:select-text">
           {(['대분류', '중분류', '소분류'] as const).map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">
               {(() => {
-                const headerClass = `flex h-7 shrink-0 items-center justify-center gap-2 bg-[#2b3a4f] text-sm font-bold ${index < 2 ? 'border-r border-white/15' : ''} ${index === activeColumn ? 'text-[var(--brand)]' : 'text-slate-100'}`
+                const headerClass = `flex h-7 shrink-0 items-center justify-center gap-2 bg-[var(--ui-panel)] text-sm font-bold ${index < 2 ? 'border-r border-ui-white/15' : ''} ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`
                 const headerContent = (
                   <>
                     {label} ({toCount(sectorCounts[index])})
@@ -804,8 +804,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   <div className={headerClass}>{headerContent}</div>
                 )
               })()}
-              <div className={`min-h-0 flex-1 overflow-auto scrollbar-hide ${index < 2 ? 'border-r border-slate-700' : ''}`}>
-                <table className="nes-table is-dark custom-page-table custom-sector-table w-full text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-slate-700 [&_td]:border-r-0"><tbody>{columnRows[index].map(renderRow)}</tbody></table>
+              <div className={`min-h-0 flex-1 overflow-auto scrollbar-hide ${index < 2 ? 'border-r border-ui-border' : ''}`}>
+                <table className="nes-table is-dark custom-page-table custom-sector-table w-full text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><tbody>{columnRows[index].map(renderRow)}</tbody></table>
               </div>
             </div>
           ))}
@@ -818,9 +818,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       {(badgeHint || (draggedSector && !isMoveDrag)) && createPortal(
         <div role="status" style={{ position: 'fixed', top: hintPosition?.y ?? '50%', left: hintPosition?.x ?? '50%', transform: 'translate(-50%, -50%)' }} className={`z-[100] whitespace-nowrap ${HINT_BUBBLE_CLASS}`}>
           {badgeHint ? (
-            <><b className="text-red-600">드래그 앤 드랍</b>을 통해 선택한 하위 항목으로 보낼 수 있습니다.</>
+            <><b className="text-status-error-ink">드래그 앤 드랍</b>을 통해 선택한 하위 항목으로 보낼 수 있습니다.</>
           ) : (
-            <><b className="text-red-600">위·아래</b>로만 이동할 수 있어요.</>
+            <><b className="text-status-error-ink">위·아래</b>로만 이동할 수 있어요.</>
           )}
         </div>,
         document.body,
@@ -834,12 +834,12 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           return (
             <div
               style={{ width: draggedRow?.width, marginLeft: draggedRow?.offsetX, paddingLeft: `${draggedSector.depth * 20 + 8}px` }}
-              className="flex items-center border-y-2 border-[var(--brand)] bg-[#1d4a57] py-0.5 text-sm text-white shadow-xl"
+              className="flex items-center border-y-2 border-[var(--brand)] bg-[var(--brand-surface)] py-0.5 text-sm text-ui-white shadow-xl"
             >
-              <span aria-hidden="true" className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center text-xl leading-none text-gray-300">⠿</span>
-              <span aria-hidden="true" className="mr-2 inline-flex h-5 w-8 shrink-0 items-center justify-end pr-1 rounded-sm border border-gray-400 bg-zinc-700 text-sm leading-none font-bold text-gray-300 tabular-nums">{number}</span>
+              <span aria-hidden="true" className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center text-xl leading-none text-ui-text">⠿</span>
+              <span aria-hidden="true" className="mr-2 inline-flex h-5 w-8 shrink-0 items-center justify-end pr-1 rounded-sm border border-ui-border bg-ui-panel text-sm leading-none font-bold text-ui-text tabular-nums">{number}</span>
               <span className="truncate">{draggedSector.name}</span>
-              {childCount > 0 && <span className="ml-1 shrink-0 text-gray-300">({toCount(childCount)})</span>}
+              {childCount > 0 && <span className="ml-1 shrink-0 text-ui-text">({toCount(childCount)})</span>}
             </div>
           )
         })()}
@@ -849,7 +849,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       <>
       {/* 업종 추가가 먼저, 아래 업종 재배치와는 구분선으로 나눈다 — 구분선은 그룹 페이지 설정창과 같은 모양이다. */}
       <section aria-label="업종 추가" className="h-[127px]">
-        <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">업종 추가</h2>
+        <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 추가</h2>
         <div className="flex min-w-0 max-w-[16rem] settings-control-inset items-center gap-2">
           <SectorNameInput
             wrapperClassName="flex min-w-0 flex-1"
@@ -858,21 +858,21 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
             placeholder="업종명 입력 후 Enter"
             aria-label="최상위 업종명"
-            className="h-9 min-w-0 flex-1 rounded-[5px] border border-transparent bg-[#4b4b50] px-2 text-xs text-white outline-none focus:placeholder:text-transparent placeholder:text-gray-400 focus:border-[var(--brand)]"
+            className="h-9 min-w-0 flex-1 rounded-[5px] border border-transparent bg-[var(--ui-control)] px-2 text-xs text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-muted focus:border-[var(--brand)]"
           />
         </div>
       </section>
-      <section aria-label="업종 재배치" className="relative h-[127px] before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-[rgb(255_255_255/12%)] before:content-['']">
-        <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-white">업종 재배치</h2>
-        <div className="mb-3 max-w-[16rem] settings-control-inset rounded-[5px] bg-[#4b4b50] px-2 py-1.5 text-sm text-white">
+      <section aria-label="업종 재배치" className="relative h-[127px] before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-ui-white/12 before:content-['']">
+        <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 재배치</h2>
+        <div className="mb-3 max-w-[16rem] settings-control-inset rounded-[5px] bg-[var(--ui-control)] px-2 py-1.5 text-sm text-ui-white">
           <div className="flex items-start gap-1">
             {/* 대분류 > 중분류 > 소분류를 한 줄에 이어 보여 주고, 길어서 넘치면 자동으로 다음 줄로 이어진다. */}
             <div className="min-w-0 flex-1 py-0.5 text-xs font-medium leading-5">
-              {!selectedSector && <span className="text-gray-400">업종을 선택하세요</span>}
+              {!selectedSector && <span className="text-ui-muted">업종을 선택하세요</span>}
               {selectedSector && getSectorPath(selectedSector).split(SECTOR_PATH_SEPARATOR).map((name, index) => (
                 <span key={index} className="break-all">
                   {index > 0 && (
-                    <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-0.5 inline h-3.5 w-3.5 align-text-bottom text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-0.5 inline h-3.5 w-3.5 align-text-bottom text-ui-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 6 15 12 9 18" />
                     </svg>
                   )}
@@ -883,17 +883,17 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             <div className="flex shrink-0 items-center gap-1">
               <button type="button" data-hint="다른 업종 하위로 이동" aria-label="다른 업종 하위로 이동" disabled={!selectedSector} onClick={() => selectedSector && setMovingSectorId(selectedSector.id)} className={`${ICON_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-40`}><span aria-hidden="true" className="text-sm leading-none">↪</span></button>
               {movingSector && (
-                <button type="button" onClick={cancelMove} className="h-6 rounded-md border border-gray-600 bg-zinc-700 px-2 text-xs font-medium text-white hover:bg-white/10">이동 취소</button>
+                <button type="button" onClick={cancelMove} className="h-6 rounded-md border border-ui-border bg-ui-panel px-2 text-xs font-medium text-ui-white hover:bg-ui-white/10">이동 취소</button>
               )}
             </div>
           </div>
           {movingSector && (
             <div className={`mt-2 p-2 text-xs leading-relaxed ${HINT_BUBBLE_COLOR_CLASS}`}>
               <p>
-                <b>{movingSector.name}</b>을(를) 옮길 상위 업종 줄 오른쪽의 <b className="text-red-600">여기</b> 버튼을 누르세요. 줄을 눌러 펼치면 다른 업종도 찾을 수 있습니다.
+                <b>{movingSector.name}</b>을(를) 옮길 상위 업종 줄 오른쪽의 <b className="text-status-error-ink">여기</b> 버튼을 누르세요. 줄을 눌러 펼치면 다른 업종도 찾을 수 있습니다.
               </p>
               {movingSector.parentId !== null && (
-                <button type="button" onClick={() => void confirmMove(null)} className="mt-2 h-7 rounded-md border border-[#7a6d55] bg-transparent px-2 text-xs font-medium text-black hover:bg-black/10">
+                <button type="button" onClick={() => void confirmMove(null)} className="mt-2 h-7 rounded-md border border-[var(--ui-popup-border)] bg-transparent px-2 text-xs font-medium text-ui-background hover:bg-ui-background/10">
                   최상위로 이동
                 </button>
               )}
@@ -902,8 +902,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         </div>
       </section>
       {/* 변경 내역 — 종목 화면과 같은 부품이다. */}
-      <section aria-label="변경 내역" className="relative before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-[rgb(255_255_255/12%)] before:content-['']">
-        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-white">변경 내역</h2>
+      <section aria-label="변경 내역" className="relative before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-ui-white/12 before:content-['']">
+        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">변경 내역</h2>
         <ChangeHistoryControls
           undoStack={undoStack}
           redoStack={redoStack}

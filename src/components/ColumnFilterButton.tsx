@@ -25,8 +25,8 @@ export function SectorOrderToggle({ label, value, onChange, compact = false }: {
           aria-checked={value === option}
           onClick={() => onChange(option)}
           className={compact
-            ? `whitespace-nowrap border-0 bg-transparent p-0 text-xs font-medium ${value === option ? 'text-[var(--brand)]' : 'text-gray-300 hover:text-white'}`
-            : `h-6 flex-1 rounded border p-0 text-xs font-medium leading-none shadow-none outline-none focus:outline-none focus-visible:outline-none ${value === option ? 'border-[var(--brand)] bg-transparent text-[var(--brand)]' : 'border-gray-600 bg-transparent text-gray-300 hover:text-[var(--brand)]'}`}
+            ? `whitespace-nowrap border-0 bg-transparent p-0 text-xs font-medium ${value === option ? 'text-[var(--brand)]' : 'text-ui-text hover:text-ui-white'}`
+            : `h-6 flex-1 rounded border p-0 text-xs font-medium leading-none shadow-none outline-none focus:outline-none focus-visible:outline-none ${value === option ? 'border-[var(--brand)] bg-transparent text-[var(--brand)]' : 'border-ui-border bg-transparent text-ui-text hover:text-[var(--brand)]'}`}
         >
           {text}
         </button>
@@ -136,7 +136,7 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
           setQuery('')
           setIsOpen(open => !open)
         }}
-        className={`flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-colors hover:text-[var(--brand)] ${isActive || isOpen ? 'text-[var(--brand)]' : 'text-slate-500'}`}
+        className={`flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-colors hover:text-[var(--brand)] ${isActive || isOpen ? 'text-[var(--brand)]' : 'text-ui-muted'}`}
       >
         <FunnelIcon className="h-3.5 w-3.5" />
       </button>
@@ -146,17 +146,17 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
           role="dialog"
           aria-label={`${label} 필터`}
           style={{ position: 'fixed', top: position.top, left: position.left, width: POPUP_WIDTH_PX }}
-          className="column-filter-popup z-50 rounded-md border border-gray-500 bg-[#363639] py-2 text-sm font-normal text-white shadow-xl"
+          className="column-filter-popup z-50 rounded-md border border-ui-border bg-[var(--ui-panel)] py-2 text-sm font-normal text-ui-white shadow-xl"
           // 머리글(정렬 칸) 위에 떠 있어도 안의 누름이 정렬로 이어지지 않게 한다.
           onClick={event => event.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-3 pb-2 text-xs text-gray-400">
-            <span className="shrink-0 rounded bg-cyan-700 px-1.5 py-[3px] text-[11px] font-semibold leading-none text-white">{label}</span>
+          <div className="flex items-center justify-between px-3 pb-2 text-xs text-ui-muted">
+            <span className="shrink-0 rounded bg-[var(--brand-surface)] px-1.5 py-[3px] text-[11px] font-semibold leading-none text-ui-white">{label}</span>
             {orderMode ? (
               <SectorOrderToggle label={label} value={orderMode.value} onChange={orderMode.onChange} compact />
             ) : <span className="flex gap-3">
-              <button type="button" className="border-0 bg-transparent p-0 text-xs font-medium text-gray-300 hover:text-[var(--brand)]" onClick={onSelectAll}>전체 선택</button>
-              <button type="button" className="border-0 bg-transparent p-0 text-xs font-medium text-gray-300 hover:text-[var(--brand)]" onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
+              <button type="button" className="border-0 bg-transparent p-0 text-xs font-medium text-ui-text hover:text-[var(--brand)]" onClick={onSelectAll}>전체 선택</button>
+              <button type="button" className="border-0 bg-transparent p-0 text-xs font-medium text-ui-text hover:text-[var(--brand)]" onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
             </span>}
           </div>
           {sortedOptions.length >= SEARCH_MIN_OPTIONS && (
@@ -168,21 +168,21 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
                 placeholder="검색"
                 aria-label={`${label} 검색`}
                 autoFocus
-                className="h-7 w-full rounded border border-gray-600 bg-zinc-700 px-2 text-sm text-white outline-none focus:placeholder:text-transparent focus:border-[var(--brand)]"
+                className="h-7 w-full rounded border border-ui-border bg-ui-panel px-2 text-sm text-ui-white outline-none focus:placeholder:text-transparent focus:border-[var(--brand)]"
               />
             </div>
           )}
           {orderMode && (
             <div className="flex gap-1 px-3 pb-2">
-              <button type="button" className="h-6 flex-1 rounded border border-gray-600 bg-transparent p-0 text-xs font-medium text-gray-300 hover:text-white" onClick={onSelectAll}>전체 선택</button>
-              <button type="button" className="h-6 flex-1 rounded border border-gray-600 bg-transparent p-0 text-xs font-medium text-gray-300 hover:text-white" onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
+              <button type="button" className="h-6 flex-1 rounded border border-ui-border bg-transparent p-0 text-xs font-medium text-ui-text hover:text-ui-white" onClick={onSelectAll}>전체 선택</button>
+              <button type="button" className="h-6 flex-1 rounded border border-ui-border bg-transparent p-0 text-xs font-medium text-ui-text hover:text-ui-white" onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
             </div>
           )}
           <ul className="column-filter-options m-0 max-h-64 list-none overflow-y-scroll p-0">
-            {shownOptions.length === 0 && <li className="px-3 py-1 text-gray-400">검색 결과가 없습니다.</li>}
+            {shownOptions.length === 0 && <li className="px-3 py-1 text-ui-muted">검색 결과가 없습니다.</li>}
             {shownOptions.map(value => (
               <li key={value}>
-                <label data-hint={hintOf?.(value)} className="flex cursor-pointer items-center gap-2 px-3 py-1 hover:bg-white/10">
+                <label data-hint={hintOf?.(value)} className="flex cursor-pointer items-center gap-2 px-3 py-1 hover:bg-ui-white/10">
                   <input type="checkbox" className="thin-check shrink-0" checked={!excluded.has(value)} onChange={() => toggleOption(value)} />
                   <span className="min-w-0 truncate">{labelOf(value)}</span>
                 </label>

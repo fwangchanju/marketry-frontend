@@ -22,7 +22,7 @@ export function TradingSessionIndicator({ session: sessionOverride }: { session?
   const currentSession = useTradingSession()
   const session = sessionOverride ?? currentSession
   return (
-    <span className={`${FONT_BAR_TIME} flex items-center text-white`}>
+    <span className={`${FONT_BAR_TIME} flex items-center text-ui-white`}>
       <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[session] }} />
       {/* 칩 폭은 지금 시간대 이름에 맞춘다 — 애프터 마켓일 때만 그만큼 넓어진다. */}
       <span>{session}</span>
@@ -69,7 +69,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           aria-expanded={isOpen}
           aria-haspopup="dialog"
           onClick={() => setIsOpen(open => !open)}
-          className={`flex h-6 items-center border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-[#838385] focus-visible:bg-[#838385] ${isOpen ? 'bg-[#838385]' : 'bg-transparent'}`}
+          className={`flex h-6 items-center border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-[var(--ui-control-hover)] focus-visible:bg-[var(--ui-control-hover)] ${isOpen ? 'bg-[var(--ui-control-hover)]' : 'bg-transparent'}`}
         >
           <TradingSessionIndicator session={sessionOverride} />
         </button>
@@ -78,9 +78,9 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
         <div
           role="dialog"
           aria-label="시장 시간대 안내"
-          className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-gray-500 bg-[#363639] p-2 text-sm font-normal tracking-normal text-white shadow-xl"
+          className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
-          <p className="mb-1.5 px-1 text-xs font-medium text-gray-300">시장 시간대 (한국 시간)</p>
+          <p className="mb-1.5 px-1 text-xs font-medium text-ui-text">시장 시간대 (한국 시간)</p>
           {SESSION_GUIDE.map(row => (
             <div key={row.session} className="flex items-center justify-between gap-6 px-2 py-1">
               <span className="flex items-center">
@@ -131,7 +131,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
         aria-label="등락률 기준"
         className="relative grid h-6 w-[120px] shrink-0 grid-cols-3 gap-[3px] overflow-visible"
       >
-        <SlidingHighlight count={options.length} index={selectedIndex} gap={3} square fillColor={SESSION_DOT_COLOR['애프터 마켓']} />
+        <SlidingHighlight count={options.length} index={selectedIndex} gap={3} square fillColor="var(--ui-selection)" />
         {options.map(option => (
           // disabled를 쓰지 않는다 — 비활성 버튼은 마우스 이벤트가 없어서 잠긴 별도의 설명을 볼 수 없다. 잠긴 동안은 값만 안 바꾼다.
           <button
@@ -145,13 +145,13 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
             }}
             // 설명은 공용 툴팁(HoverHintLayer)이 띄운다 — 잠긴 별도도 aria-disabled라 올리면 설명이 보인다.
             data-hint={option.help}
-            // 안 선택 글자는 옆 거래 세션 글자(text-gray-400)와 같은 회색이다. 잠긴 별도는 흐리게 해서 잠긴 것을 알아보게 한다.
+            // 안 선택 글자는 옆 거래 세션 글자(text-ui-muted)와 같은 회색이다. 잠긴 별도는 흐리게 해서 잠긴 것을 알아보게 한다.
             className={`relative z-10 h-6 min-w-0 border-0 bg-transparent px-0 text-[13px] font-semibold leading-none transition-colors duration-[500ms] ${
               basis === option.value
-                ? 'text-gray-900'
+                ? 'text-ui-surface'
                 : option.locked
-                  ? 'cursor-not-allowed text-gray-400 opacity-40'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'cursor-not-allowed text-ui-muted opacity-40'
+                  : 'text-ui-muted hover:text-ui-white'
             }`}
           >
             {option.label}

@@ -11,7 +11,7 @@ import { isLocalSignupEnabled } from '@/utils/localDevLogin'
 // 모든 페이지에서 항상 똑같이 고정되는 최상단 바 — 홈 이동과 로그인 상태/프로필 메뉴를 담당한다.
 // 로그인 버튼은 NavSubBar 우측 "일괄변경"류 accent 버튼(nes-btn + var(--accent))과 같은 톤을 쓰고,
 // 로그인한 사용자는 우측 아바타에서 계정 메뉴를 연다.
-// 등락률 전용 색(--stock-up/--stock-down/--negative, 즉 red/blue 계열)은 쓰지 않는다.
+// 오류에는 UI 상태색을 쓰고 등락률 데이터색과 구분한다.
 // hideAccount가 true면 오른쪽의 로그인 버튼/프로필 아이콘을 숨기고 로고만 보여준다(비로그인이 프로필 페이지에 들어왔을 때).
 export default function NavBar({ hideAccount = false }: { hideAccount?: boolean }) {
   const { data: session, isLoading } = useSession()
@@ -54,7 +54,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   // 계정 메뉴가 열려 있는 동안만 헤더를 아래 줄(아이콘 줄, z-30)보다 위에 둔다 — 안 그러면 메뉴 위쪽이 그 줄에 가려진다.
 // 메뉴가 열려 있는 동안은 헤더 배경을 위쪽 53px만 칠한다 — 헤더(64px)가 아래 메뉴 줄의 글자 윗부분(53px부터 시작)을 덮어서 글자가 잘려 보이던 것을 막는다. 그 아래 구간은 메뉴 줄 자신의 배경(같은 색)이 칠한다.
   return (
-    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40 bg-[linear-gradient(to_bottom,#18181b_53px,transparent_53px)]' : 'z-20 bg-zinc-900'}`}>
+    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40 bg-[linear-gradient(to_bottom,var(--ui-surface)_53px,transparent_53px)]' : 'z-20 bg-ui-surface'}`}>
       <Link
         to="/"
         aria-label="홈으로 이동: 지도 전체 종목"
@@ -68,7 +68,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       <div className="flex items-center justify-end gap-3">
       {isLoading ? (
         // 세션 확인 중에는 로그인 버튼도 프로필 아이콘도 아닌 빈 틀만 둔다 — 새로고침 직후 잠깐 로그인한 모양이 비쳤다가 로그아웃 모양으로 바뀌는 깜빡임을 막는다. 크기와 자리는 둘과 같다.
-        <div aria-hidden="true" className="relative -top-[2.5px] mr-0.5 size-[38px] rounded-[12%] bg-zinc-800" />
+        <div aria-hidden="true" className="relative -top-[2.5px] mr-0.5 size-[38px] rounded-[12%] bg-ui-surface" />
       ) : isLoggedOut ? (
         // 비로그인은 프로필 사진 자리에 사람 모양 칸을 보여주고, 누르면 바로 로그인 창이 열린다.
         <button
@@ -76,7 +76,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           aria-label="로그인"
           data-hint="로그인"
           onClick={() => requireLogin(`${pathname}${search}${hash}`, { hideMessage: true })}
-          className="relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center rounded-[12%] border-0 bg-zinc-600 p-0 text-gray-300 transition-colors hover:bg-zinc-500"
+          className="relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center rounded-[12%] border-0 bg-ui-control p-0 text-ui-text transition-colors hover:bg-ui-control-hover"
         >
           <UserIcon aria-hidden="true" strokeWidth={1.25} className="size-[26px]" />
         </button>
@@ -88,21 +88,21 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           aria-label={isProfileMenuOpen ? '계정 메뉴 닫기' : '계정 메뉴 열기'}
           aria-expanded={isProfileMenuOpen}
           onClick={() => setIsProfileMenuOpen(open => !open)}
-          className="relative -top-[2.5px] mr-0.5 size-[38px] overflow-hidden rounded-[12%] border-0 bg-transparent p-0 ring-2 ring-transparent hover:ring-zinc-400 focus-visible:outline-none focus-visible:ring-[var(--accent)]"
+          className="relative -top-[2.5px] mr-0.5 size-[38px] overflow-hidden rounded-[12%] border-0 bg-transparent p-0 ring-2 ring-transparent hover:ring-ui-border focus-visible:outline-none focus-visible:ring-[var(--accent)]"
         >
           <ProfileAvatar className="size-full object-cover" />
         </button>
         {isProfileMenuOpen && (
-          <div className="absolute right-full top-[10.5px] z-30 mr-2 w-64 overflow-hidden rounded-md border border-zinc-400 bg-[var(--panel-gray)] pb-2 text-zinc-900 shadow-2xl shadow-black/60">
+          <div className="absolute right-full top-[10.5px] z-30 mr-2 w-64 overflow-hidden rounded-md border border-ui-border bg-[var(--panel-gray)] pb-2 text-ui-surface shadow-2xl shadow-ui-background/60">
             {isLoading ? (
-              <p className="px-4 py-3 text-sm text-zinc-600">계정 확인 중...</p>
+              <p className="px-4 py-3 text-sm text-ui-muted">계정 확인 중...</p>
             ) : session?.authenticated ? (
               <>
-                <div className="flex items-center gap-3 border-b border-zinc-400 px-4 py-3 text-sm">
+                <div className="flex items-center gap-3 border-b border-ui-border px-4 py-3 text-sm">
                   <ProfileAvatar className="size-10 shrink-0 object-cover" />
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{session.nickname || '내 계정'}</p>
-                    <p className="mt-1 truncate text-zinc-600">{session.email || `사용자 ${session.userId}`}</p>
+                    <p className="mt-1 truncate text-ui-muted">{session.email || `사용자 ${session.userId}`}</p>
                   </div>
                 </div>
                 {/* 메뉴는 설정창 위에 겹쳐도 구분되도록 밝은 틀로 두고, 프로필·로그아웃은 설정창 선택 칸과 같은 검정 버튼 두 개를 나란히 놓고, 개발 전용 항목만 청록이다. */}
@@ -110,7 +110,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                   <Link
                     to="/profile"
                     onClick={() => setIsProfileMenuOpen(false)}
-                    className="flex h-7 flex-1 items-center justify-center rounded-[5px] bg-zinc-800 text-[13px] font-medium text-white transition-colors hover:bg-zinc-700 focus:bg-zinc-700"
+                    className="flex h-7 flex-1 items-center justify-center rounded-[5px] bg-ui-surface text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-panel focus:bg-ui-panel"
                   >
                     프로필
                   </Link>
@@ -121,25 +121,25 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                       logout.mutate()
                     }}
                     disabled={logout.isPending}
-                    className="h-7 flex-1 rounded-[5px] border-0 bg-zinc-800 text-[13px] font-medium text-white transition-colors hover:bg-zinc-700 focus:bg-zinc-700 disabled:opacity-50"
+                    className="h-7 flex-1 rounded-[5px] border-0 bg-ui-surface text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-panel focus:bg-ui-panel disabled:opacity-50"
                   >
                     로그아웃
                   </button>
                 </div>
                 {/* 로컬 개발 전용 — 테스트 회원일 때만 보이며, 누르면 로그아웃 없이 원래 계정으로 돌아온다(테스트 회원으로 바꾸는 버튼은 Admin 설정창에 있다). 운영 화면에는 나오지 않는다. */}
                 {isLocalSignupEnabled() && isTestMember && (
-                  <div className="mx-3 mt-2 border-t border-zinc-400 pt-2">
+                  <div className="mx-3 mt-2 border-t border-ui-border pt-2">
                     <button
                       type="button"
                       onClick={handleToggleTestMember}
                       disabled={isLoading || isDevSignupPending}
                       aria-pressed={isTestMember}
                       data-hint={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다.'}
-                      className="h-7 w-full rounded-[5px] border-0 bg-cyan-700 text-[13px] font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+                      className="h-7 w-full rounded-[5px] border-0 bg-[var(--brand-surface)] text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)] disabled:opacity-50"
                     >
                       {isDevSignupPending ? '전환 중…' : '개발 · 원래 계정으로 돌아가기'}
                     </button>
-                    {devSignupError && <p role="alert" className="mt-1.5 text-xs text-red-700">{devSignupError}</p>}
+                    {devSignupError && <p role="alert" className="mt-1.5 text-xs text-status-error-ink">{devSignupError}</p>}
                   </div>
                 )}
               </>

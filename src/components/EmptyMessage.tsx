@@ -7,7 +7,7 @@ import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
 export const EMPTY_DATA_MESSAGE = '표시할 데이터가 없습니다.'
 export const EMPTY_SEARCH_MESSAGE = '검색 결과가 없습니다.'
 
-const MESSAGE_CLASS = 'pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center whitespace-pre-line px-6 text-center text-xl text-gray-300'
+const MESSAGE_CLASS = 'pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center whitespace-pre-line px-6 text-center text-xl text-ui-text'
 
 export default function EmptyMessage({ message, topClass = 'top-8' }: { message: string; topClass?: string }) {
   const area = useContext(EmptyMessageAreaContext)

@@ -65,7 +65,7 @@ export default function RankBars({
         const isEllipsis = item.hiddenCount !== undefined
         const selectable = onSelectSector !== undefined && !item.isReference && !isEllipsis
         const nameClassName = 'shrink-0 truncate text-right font-bold'
-        const nameColor = item.isReference ? highlightColor : isEllipsis ? '#9ca3af' : '#ffffff'
+        const nameColor = item.isReference ? highlightColor : isEllipsis ? 'var(--ui-muted)' : 'var(--ui-white)'
         return (
           <div key={item.key} className="flex min-h-0 flex-1 items-center gap-2">
             {selectable ? (
@@ -73,7 +73,7 @@ export default function RankBars({
                 type="button"
                 aria-label={item.sectorName}
                 onClick={() => onSelectSector(item.sectorName)}
-                className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 hover:bg-white/35`}
+                className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 hover:bg-ui-white/35`}
                 style={{ color: nameColor, width: nameWidth }}
               >
                 {item.sectorName}
@@ -83,7 +83,7 @@ export default function RankBars({
             )}
             <div className="relative min-w-0 flex-1" style={{ height: barHeight }}>
               {isEllipsis ? (
-                <span aria-hidden="true" className="absolute left-0 top-1/2 -translate-y-1/2 leading-none text-gray-400">⋯</span>
+                <span aria-hidden="true" className="absolute left-0 top-1/2 -translate-y-1/2 leading-none text-ui-muted">⋯</span>
               ) : (
                 <>
                   <div

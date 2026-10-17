@@ -363,7 +363,7 @@ export default function Treemap({
     // 이어진다. overflow-hidden으로 이 삐져나옴 자체를 화면에서 잘라내 루프의 시작을 막는다.
     <div
       ref={containerRef}
-      className={`relative isolate w-full overflow-hidden bg-black ${heightClassName} ${suppressSectorHoverBorder ? 'treemap-suppress-sector-border' : ''}`}
+      className={`relative isolate w-full overflow-hidden bg-ui-background ${heightClassName} ${suppressSectorHoverBorder ? 'treemap-suppress-sector-border' : ''}`}
       onPointerMove={() => {
         if (suppressSectorHoverBorder && !ghost) setSuppressSectorHoverBorder(false)
       }}
@@ -406,7 +406,7 @@ export default function Treemap({
           ))}
         </div>
       )}
-      {dim && <div className="pointer-events-none absolute inset-0 bg-black" style={{ zIndex: dim.zIndex, ...dim.style }} />}
+      {dim && <div className="pointer-events-none absolute inset-0 bg-ui-background" style={{ zIndex: dim.zIndex, ...dim.style }} />}
       <div className="absolute inset-0" style={{ transformOrigin: '0 0', ...zoomStyle }}>
         {startHighlight && (
           <div

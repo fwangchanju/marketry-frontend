@@ -293,7 +293,7 @@ export default function GroupPage() {
   const activeChart = showDeltaGraph ? charts.delta : charts.current
 
   return (
-    <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
       <NavBar />
       <NavSubBar
         actions={
@@ -314,20 +314,20 @@ export default function GroupPage() {
         {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
         <div
           ref={settingsRowRef}
-          className="relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-black text-white"
+          className="relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white"
         >
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
               항상 같은 폭을 유지하게 한다(지도 페이지와 동일) — 내부 그래프가 넘치면 이 컬럼
               안에서만 처리된다. */}
-          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black text-white">
+          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="GROUP" label={MARKET_LABEL[market]} />
                 {/* 로딩 원이나 오류 문구가 보이는 동안에도 시계·시간대·누적/별도·분류명을 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                   <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
-                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
+                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                   <SnapshotDatePicker
                     market={market}
                     viewedSnapshotTime={displayNow?.snapshotTime ?? null}
@@ -344,17 +344,17 @@ export default function GroupPage() {
                   </ToolbarChip>
                   {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
                     ? rangeExcludedStocks.length > 0 && (
-                      <ToolbarChip bare tone="text-gray-400">
+                      <ToolbarChip bare tone="text-ui-muted">
                         <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
                       </ToolbarChip>
                     )
                     : (
-                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
+                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                         <ClosingPriceLabel viewedSnapshotTime={displayNow?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
                       </ToolbarChip>
                     ))}
                   {isPastSnapshot === false && (
-                    <ToolbarChip bare tone="text-white">
+                    <ToolbarChip bare tone="text-ui-white">
                       <PageRefreshButton
                         cell
                         onRefresh={refetchTreemap}
@@ -375,7 +375,7 @@ export default function GroupPage() {
                   </>
               </div>
               {/* 지도 페이지와 동일하게 맨 오른쪽 끝에 프로필(사진이 끝, 글자는 그 왼쪽)을 둔다. */}
-              <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-gray-400`}>{modeStatusText}</div>
+              <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>{modeStatusText}</div>
             </Toolbar>
             {/* 지도/어드민 페이지와 동일하게 본문이 화면을 꽉 채우는 형태 — 가운데 정렬/폭 제한을 없애서
                 설정 사이드바가 열려도 본문이 밀리는 게 자연스럽게 느껴지도록 한다(밀림 자체는 다른
@@ -407,7 +407,7 @@ export default function GroupPage() {
                 <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-auto pb-[19.5px]">
                   <div
                     className="mt-[25px] flex w-full shrink-0 items-center justify-center font-bold whitespace-nowrap"
-                    style={{ fontSize: 22, color: '#ffffff' }}
+                    style={{ fontSize: 22, color: 'var(--ui-white)' }}
                   >
                     <span className="inline-flex items-center leading-none font-bold">
                       <span>
@@ -415,11 +415,11 @@ export default function GroupPage() {
                         <span className="font-light">({showDeltaGraph ? '%p' : '%'})</span>
                       </span>
                       {/* 지금 보는 업종 분류 단계는 제목 옆 배지로 따로 보여 준다(분류 배지의 "분류" 칸과 같은 짙은 청록). */}
-                      <span className="ml-2.5 rounded bg-cyan-700 px-2 py-1 text-sm leading-none font-semibold text-white">{GROUP_DEPTH_NAMES[effectiveDepth - 1]}</span>
+                      <span className="ml-2.5 rounded bg-[var(--brand-surface)] px-2 py-1 text-sm leading-none font-semibold text-ui-white">{GROUP_DEPTH_NAMES[effectiveDepth - 1]}</span>
                     </span>
                   </div>
                   {/* 숫자가 왜곡될 수 있음을 알리는 주의 문구 — 제목보다 덜 눈에 띄게 "-" 표시와 함께 작게 둔다(설정창 설명과 같은 모양). */}
-                  <p className="mt-1.5 mb-[19.5px] flex w-full shrink-0 items-center justify-center gap-1.5 text-[13px] font-medium leading-5 whitespace-nowrap text-gray-400">
+                  <p className="mt-1.5 mb-[19.5px] flex w-full shrink-0 items-center justify-center gap-1.5 text-[13px] font-medium leading-5 whitespace-nowrap text-ui-muted">
                     <span aria-hidden="true">-</span>
                     그룹에 포함된 종목이 적을수록 왜곡이 커질 수 있습니다.
                   </p>

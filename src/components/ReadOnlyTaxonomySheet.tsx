@@ -35,17 +35,17 @@ function CenteredRightNumber({ value }: { value: number }) {
 // 이 시트가 따라 바뀌지 않도록 색은 전부 여기 모아 두었다. 시트 색을 바꿀 때도 여기만 고치면 된다.
 // Tailwind는 완성된 클래스 이름만 인식하므로, 클래스를 문자열로 조립하지 말고 아래처럼 통째로 적는다.
 const COLOR = {
-  headerBg: 'bg-[#2b3a4f]',
-  headerText: 'text-slate-100',
-  rowDivider: 'border-slate-700',
+  headerBg: 'bg-[var(--ui-panel)]',
+  headerText: 'text-ui-white',
+  rowDivider: 'border-ui-border',
   sortActive: 'text-[var(--brand)]',
-  sortInactive: 'text-slate-500',
-  sortHover: 'hover:text-slate-300',
+  sortInactive: 'text-ui-muted',
+  sortHover: 'hover:text-ui-text',
 } as const
 
 // 열 사이 세로 구분선 — 마지막 열 오른쪽에는 긋지 않는다. 머리글은 밝은 선, 본문은 어두운 선이다.
 const TABLE_CLASS =
-  'w-full border-separate border-spacing-0 [&_th:not(:last-child)]:border-r [&_th:not(:last-child)]:border-white/15 [&_td:not(:last-child)]:border-r [&_td:not(:last-child)]:border-slate-700'
+  'w-full border-separate border-spacing-0 [&_th:not(:last-child)]:border-r [&_th:not(:last-child)]:border-ui-white/15 [&_td:not(:last-child)]:border-r [&_td:not(:last-child)]:border-ui-border'
 
 type SortDirection = 'asc' | 'desc'
 
@@ -93,7 +93,7 @@ const BODY_CELL = `border-b ${COLOR.rowDivider} px-3 py-1 text-sm`
 // 종목 표 한 행의 예상 높이(글줄 20 + 위아래 여백 8 + 아래 선 1) — 실제 높이는 렌더 뒤에 다시 잰다.
 const STOCK_ROW_HEIGHT = 29
 // align-middle: 머리글 글자(화살표 묶음의 가운데)가 왼쪽 체크박스와 같은 높이에 오게 한다.
-const STOCK_HEADER_CELL = 'whitespace-nowrap bg-[#2b3a4f] text-center align-middle font-bold text-slate-100'
+const STOCK_HEADER_CELL = 'whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white'
 const STOCK_BODY_CELL = 'text-sm'
 // 맨 왼쪽 체크박스 칸 — MARKETRY 종목 표(AdminStockTable)와 같은 폭(체크박스 20px + 좌우 4.5px씩)이다.
 const CHECKBOX_COLUMN_WIDTH = '29px'
@@ -185,7 +185,7 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
     ? 'NXT 거래 종목이 아직 없습니다.\n평일 오전 7시 종목 정보 동기화 뒤에 표시됩니다.'
     : EMPTY_DATA_MESSAGE
   const nxtOnlyToggle = source === 'KRX' && (
-    <label className="flex cursor-pointer items-center gap-1.5 text-sm text-white">
+    <label className="flex cursor-pointer items-center gap-1.5 text-sm text-ui-white">
       <input
         type="checkbox"
         className="thin-check m-0"
@@ -235,8 +235,8 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
         className={`nes-input is-dark text-sm font-normal focus:placeholder:text-transparent ${
           // 윗줄 검색창은 표 안의 약칭 입력창과 같은 색(모서리는 직사각형으로 툴바 칩과 같다)이고, 높이는 왼쪽 제목 박스(24px)와 같다.
           inline
-            ? 'h-6 w-[15.5rem] !rounded-none !border-0 !bg-[#3b3b3b] text-white outline-none placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]'
-            : `focus:outline-1 focus:outline-offset-0 focus:outline-white ${settingsLayout ? 'h-8 w-full' : 'h-7 w-[15.5rem]'}`
+            ? 'h-6 w-[15.5rem] !rounded-none !border-0 !bg-[var(--ui-panel)] text-ui-white outline-none placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]'
+            : `focus:outline-1 focus:outline-offset-0 focus:outline-ui-white ${settingsLayout ? 'h-8 w-full' : 'h-7 w-[15.5rem]'}`
         }`}
         // 안내 문구와 입력 글자가 위 드롭박스의 글자와 같은 선에서 시작하게 한다: 드롭박스 안쪽 여백(0.5rem)에서
         // 이 입력창의 테두리(1px)만큼 뺀다. 유틸리티 클래스는 nes.css보다 약해서 인라인으로 준다.
@@ -245,7 +245,7 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
       {afterInput && <div className="ml-2 flex shrink-0 items-center gap-3">{afterInput}</div>}
       {/* 개수는 위 헤더의 "읽기 전용"과 같은 위치에서 시작한다: 드롭박스 둘(15.5rem) + 간격(0.5rem) + "읽기 전용"의 왼쪽 여백(0.75rem)
           = 16.75rem이고, 검색창이 15.5rem이므로 사이에 1.25rem을 둔다. */}
-      {countLabel && <span className={settingsLayout ? 'text-xs text-gray-400' : 'ml-5 text-sm text-gray-400'}>{countLabel}</span>}
+      {countLabel && <span className={settingsLayout ? 'text-xs text-ui-muted' : 'ml-5 text-sm text-ui-muted'}>{countLabel}</span>}
       {extra && <div className="ml-auto flex items-center">{extra}</div>}
     </div>
   )
@@ -308,13 +308,13 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
             checked={isAllVisibleSelected}
             onChange={toggleSelectAllVisible}
           />
-          <span aria-hidden="true" className={dividerClass('bg-white/15')} style={dividerStyle} />
+          <span aria-hidden="true" className={dividerClass('bg-ui-white/15')} style={dividerStyle} />
         </>
       ) : undefined}
     />
   )
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col text-white">
+    <div className="relative flex min-h-0 flex-1 flex-col text-ui-white">
       {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
       {toolbarContainer && createPortal(
         <SearchBar
@@ -327,7 +327,7 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
         />,
         toolbarContainer,
       )}
-      <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-y-auto border border-slate-700">
+      <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-y-auto border border-ui-border">
         {/* 업종·업종 시가총액·종목 수 세 칸을 같은 폭(삼등분)으로 나눈다 — MARKETRY 업종 화면의 대·중·소분류 칸과 같은 모양이다. */}
         <table className={`${TABLE_CLASS} table-fixed select-none`}>
           <thead>
@@ -342,7 +342,7 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
               <tr
                 key={row.name}
                 {...rowProps(index)}
-                className={`cursor-pointer text-gray-400 ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/28 [&>td]:border-white/25!' : '[&:hover>td]:bg-[var(--brand)]/20 [&:hover>td]:border-white/25!'}`}
+                className={`cursor-pointer text-ui-muted ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/28 [&>td]:border-ui-white/25!' : '[&:hover>td]:bg-[var(--brand)]/20 [&:hover>td]:border-ui-white/25!'}`}
               >
                 {/* 업종명 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 손잡이 24px + 4px + 번호 칸 28px + 8px = 72px. */}
                 <td className={`${BODY_CELL} relative truncate text-left !pl-[72px]`}>
@@ -354,12 +354,12 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
                     checked={selectedNames.has(row.name)}
                     onChange={() => {}}
                   />
-                  <span aria-hidden="true" className={dividerClass('bg-slate-700')} style={dividerStyle} />
+                  <span aria-hidden="true" className={dividerClass('bg-ui-panel')} style={dividerStyle} />
                   {row.name}
                 </td>
                 {/* 종목 표와 같은 시가총액 표기('137조 2,762억' 대신 '137.3조')와 오른쪽 정렬이다. */}
                 {/* 업종명 왼쪽 여백과 같은 72px를 시가총액 오른쪽에 둔다. */}
-                <td className={`${BODY_CELL} text-right !pr-[72px] text-gray-400`}>{toJoEokDecimal(row.marketValue / 100_000_000)}</td>
+                <td className={`${BODY_CELL} text-right !pr-[72px] text-ui-muted`}>{toJoEokDecimal(row.marketValue / 100_000_000)}</td>
                 <td className={BODY_CELL}>
                   <CenteredRightNumber value={row.stockCount} />
                 </td>
@@ -518,7 +518,7 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
                 <button
                   type="button"
                   onClick={filters.clearAll}
-                  className="flex h-6 items-center whitespace-nowrap rounded border border-gray-600 bg-transparent px-2 text-sm font-normal text-gray-300 transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                  className="flex h-6 items-center whitespace-nowrap rounded border border-ui-border bg-transparent px-2 text-sm font-normal text-ui-text transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
                 >
                   필터 초기화
                 </button>
@@ -529,15 +529,15 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
         />,
         toolbarContainer,
       )}
-      <div className="relative min-h-0 flex-1 border border-slate-700">
+      <div className="relative min-h-0 flex-1 border border-ui-border">
       {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
       <div ref={scrollContainerRef} className="relative h-full overflow-auto scrollbar-thin">
         {/* 내 분류와 같은 표·테두리·스크롤 규칙을 쓴다. 마지막 열은 남는 폭을 받아 KRX의 NXT가 대·중·소분류 합계 폭과 일치한다. */}
-        <table className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-slate-700 [&_td]:py-1 [&_th]:border-white/15 [&_th]:border-b-0 [&_th]:py-1" style={{ minWidth: stockTableMinWidthPx(STOCK_COLUMN_KEYS) }}>
+        <table className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/15 [&_th]:border-b-0 [&_th]:py-1" style={{ minWidth: stockTableMinWidthPx(STOCK_COLUMN_KEYS) }}>
           <StockTableColGroup keys={STOCK_COLUMN_KEYS} />
           <thead className="sticky top-0 z-10">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
-              <th className="cursor-pointer bg-[#2b3a4f] px-0 text-center font-bold text-slate-100" style={CHECKBOX_CELL_STYLE} onClick={toggleSelectAllVisible}>
+              <th className="cursor-pointer bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white" style={CHECKBOX_CELL_STYLE} onClick={toggleSelectAllVisible}>
                 <input
                   type="checkbox"
                   aria-label="보이는 종목 전체 선택"
@@ -570,7 +570,7 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
               const row = visibleRows[virtualRow.index]
               const isKosdaq = row.market === 'KOSDAQ'
               return (
-                <tr key={row.stockCode} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} {...rowProps(virtualRow.index)} className={`cursor-pointer text-gray-400 ${selectedCodes.has(row.stockCode) ? '[&>td]:bg-[var(--brand)]/28 [&>td]:border-white/25!' : '[&:hover>td]:bg-[var(--brand)]/20 [&:hover>td]:border-white/25!'}`}>
+                <tr key={row.stockCode} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} {...rowProps(virtualRow.index)} className={`cursor-pointer text-ui-muted ${selectedCodes.has(row.stockCode) ? '[&>td]:bg-[var(--brand)]/28 [&>td]:border-ui-white/25!' : '[&:hover>td]:bg-[var(--brand)]/20 [&:hover>td]:border-ui-white/25!'}`}>
                   <td className={`${STOCK_BODY_CELL} text-center`} style={CHECKBOX_CELL_STYLE}>
                     <input
                       type="checkbox"
@@ -584,12 +584,12 @@ function StockTable({ showHierarchy, sectors, emptyMessage, nxtStockCodes, stock
                   <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2 ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>{row.stockName}</td>
                   <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{row.alias ?? '-'}</td>
                   {/* MARKETRY 종목 표와 같은 표기('1,613.6조')와 오른쪽 정렬이다. */}
-                  <td className={`${STOCK_BODY_CELL} text-right !pr-4 text-gray-400`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>
+                  <td className={`${STOCK_BODY_CELL} text-right !pr-4 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>
                   <td className={`${STOCK_BODY_CELL} text-center`}>{row.sizeTier || '-'}</td>
                   <td className={`${STOCK_BODY_CELL} text-center ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>
                     {row.market ? MARKET_LABEL[row.market] : '-'}
                   </td>
-                  <td className={`${STOCK_BODY_CELL} text-center ${!row.nxt ? 'text-gray-500' : ''}`}>{row.nxt ? 'O' : '-'}</td>
+                  <td className={`${STOCK_BODY_CELL} text-center ${!row.nxt ? 'text-ui-muted' : ''}`}>{row.nxt ? 'O' : '-'}</td>
                   {/* 글자 시작 위치는 칸 왼쪽에서 8px로, 종목 표의 다른 글자 칸과 같다. */}
                   <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{showHierarchy ? row.industryName : row.sectorName}</td>
                   {[row.parentSector, row.midSector, row.subSector].map((name, index) => (

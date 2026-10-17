@@ -5,7 +5,7 @@
 // 밝은 회색 큰 둥근 틀은 쓰지 않는다 — 웨일의 GPU 가속에서 둥근 큰 틀의 양 끝 안쪽에 가는 세로선이 비쳤다.
 // 칸 사이 구분선은 두지 않는다 — 칩 사이 간격과 선택 칸의 색 채움으로 칸을 구분한다.
 // 채움은 칸 폭의 배수만큼 `left`로 옮기므로 크기를 재지 않는다.
-const CHIP_COLOR = '#4b4b50'
+const CHIP_COLOR = 'var(--ui-control)'
 
 export function SlidingHighlight({
   count,
