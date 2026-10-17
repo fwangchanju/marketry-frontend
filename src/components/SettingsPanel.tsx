@@ -2108,7 +2108,7 @@ export function SettingsExcludeSection({
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
                 data-hint="맵에 다시 표시"
-                className="flex h-7 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-ui-white transition-colors hover:bg-[var(--accent)]/35"
+                className="flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-ui-white transition-colors hover:bg-[var(--accent)]/35"
               >
                 <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
@@ -2173,7 +2173,7 @@ export function SettingsTopPickSection({
             disabled={isTopPickDisabled}
           />
         </div>
-        <div className="settings-top-pick-count-row flex items-center justify-between">
+        <div className="settings-top-pick-count-row flex items-start justify-between">
           <SettingDescription dimmed={!topPickEnabled}>등락률 상위 업종을 강조</SettingDescription>
           <SettingsDropdown
             options={TOP_PICK_COUNT_OPTIONS}

@@ -519,7 +519,7 @@ a { color: var(--accent-light); text-decoration: none; }
 /* 제외 업종은 항목 높이를 유지하고 목록만 내부에서 스크롤한다. */
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-fourth-exclude, .settings-second-exclude) {
   height: 160px;
-  padding-bottom: 24px;
+  padding-bottom: 18px;
 }
 
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-fourth-exclude, .settings-second-exclude) > div {
