@@ -17,6 +17,9 @@
   --color-ui-control: var(--ui-control);
   --color-ui-control-hover: var(--ui-control-hover);
   --color-ui-selection: var(--ui-selection);
+  --color-brand: var(--brand);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-surface-hover: var(--brand-surface-hover);
   --color-status-error: var(--status-error);
   --color-status-error-text: var(--status-error-text);
   --color-status-error-ink: var(--status-error-ink);
@@ -119,9 +122,9 @@
   --brand-surface: #20635d;
   --secondary: #46597d;
   --secondary-soft: #798bb2;
-  --ui-background: #000000;
-  --ui-surface: #0f1414;
-  --ui-panel: #212828;
+  --ui-background: #0a0a0a;
+  --ui-surface: #1a1a1a;
+  --ui-panel: #2a2a2a;
   --ui-border: #4b5563;
   --ui-text: #e2e4ef;
   --ui-muted: #9ca3af;

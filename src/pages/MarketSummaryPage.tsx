@@ -13,7 +13,6 @@ import Toolbar from '@/components/Toolbar'
 import ToolbarChip from '@/components/ToolbarChip'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
-import ClosingPriceLabel from '@/components/ClosingPriceLabel'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
@@ -227,17 +226,11 @@ export default function MarketSummaryPage() {
                   {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                 </SnapshotDatePicker>
               </ToolbarChip>
-              {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
-                ? rangeExcludedStocks.length > 0 && (
+              {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && rangeExcludedStocks.length > 0 && (
                   <ToolbarChip bare tone="text-ui-muted">
                     <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
                   </ToolbarChip>
-                )
-                : (
-                  <ToolbarChip tone="text-[var(--brand)]">
-                    <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
-                  </ToolbarChip>
-                ))}
+              )}
               {isPastSnapshot === false && (
                 <ToolbarChip bare tone="text-ui-white">
                   <PageRefreshButton
