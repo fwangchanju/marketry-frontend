@@ -81,6 +81,20 @@ function SettingHelpBubble({ label, description, bookmarkId }: { label: string; 
   const tooltipRef = useRef<HTMLSpanElement>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ left: 8, top: 8 })
 
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      event.stopPropagation()
+      setIsOpen(false)
+    }
+
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  }, [isOpen])
+
   useLayoutEffect(() => {
     if (!isOpen) return
 
@@ -815,6 +829,7 @@ function RangeSlider({
   maxSelectableIndex,
   limitReason,
   disabledReason,
+  labelsAbove = false,
 }: {
   minIndex: number
   maxIndex: number
@@ -828,6 +843,7 @@ function RangeSlider({
   maxSelectableIndex?: number
   limitReason?: ReactNode
   disabledReason?: ReactNode
+  labelsAbove?: boolean
 }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [limitHintVisible, setLimitHintVisible] = useState(false)
@@ -901,7 +917,7 @@ function RangeSlider({
 
   return (
     <div
-      className="relative isolate"
+      className={`relative isolate ${labelsAbove ? 'flex flex-col' : ''}`}
       onPointerEnter={e => {
         setHintPos(cursorHintFrom(e))
         if (disabled && disabledReason) setLimitHintVisible(true)
@@ -953,7 +969,7 @@ function RangeSlider({
           />
         )}
       </div>
-      <div className={disabled ? 'opacity-35' : ''}>
+      <div className={`${labelsAbove ? 'order-first mb-1' : ''} ${disabled ? 'opacity-35' : ''}`}>
         <SliderTickLabels
           labels={labels}
           steps={labelSteps}
@@ -1495,10 +1511,19 @@ export function SettingsStockSizeSelector({
           <SettingTitle bookmarkId="boxSize" help className="text-[15px]">박스 크기</SettingTitle>
           <SettingHelpBubble bookmarkId="boxSize" label="박스 크기" description={"박스 면적은 시가총액^(비율÷100)으로 계산합니다.\n0%는 모든 종목을 같은 크기로 표시합니다.\n50%는 시가총액의 제곱근 비율로 표시합니다.\n100%는 시가총액에 비례해 표시합니다."} />
         </div>
-        <span className="text-sm text-ui-muted">{marketCapRatio}%</span>
       </div>
       <SettingDescription>시가총액이 박스 크기에 반영되는 정도</SettingDescription>
-      <div className="settings-slider-control mt-[35px]">
+      <div className="settings-slider-control mt-1">
+        <div className="mb-2 flex items-center justify-between text-ui-muted">
+          <div className="flex flex-col items-center gap-1">
+            <SettingsSectionIcon icon="equal-size" className="relative -left-[6.225px] h-[48px] w-[48px] origin-top-left scale-[1.15]" strokeWidth={0.587} />
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <div className="relative -right-[6.225px] flex h-[48px] w-[48px] origin-top-right scale-[1.15] items-center justify-center">
+              <SettingsSectionIcon icon="composition" className="h-[54px] w-[54px]" strokeWidth={0.522} />
+            </div>
+          </div>
+        </div>
         <SingleRangeInput
           min={0}
           max={100}
@@ -1509,7 +1534,10 @@ export function SettingsStockSizeSelector({
           ariaValueText={`${marketCapRatio}%`}
           onChange={onChangeMarketCapRatio}
         />
-        <SliderTickLabels labels={['동일 크기', '시총 비례']} steps={1} inset />
+        <div className="mt-1 flex justify-between text-[13px]/4 text-ui-muted">
+          <span>동일</span>
+          <span>비례</span>
+        </div>
       </div>
     </div>
   )
@@ -1955,29 +1983,31 @@ export function SettingsMarketValueSection({
   // false로 꺼서 이중 구분선을 피한다.
   showDivider?: boolean
 }) {
-  // tiers/tierRangeMinIndex·MaxIndex는 오름차순(소형주→초대형주) 기준을 그대로 유지하고, 화면에
-  // 그릴 때만 좌우를 뒤집는다(초대형주가 왼쪽) — 저장값/다른 화면(섹터 랭킹)과 공유하는 인덱스
-  // 의미는 안 바뀐다.
+  // 저장된 구간 인덱스와 화면 모두 작은 시가총액부터 큰 시가총액 순서다.
   const bookmark = useContext(SettingsBookmarkContext)
   if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('marketValueRange')) return null
   const itemClass = bookmarkItemClass(bookmark, 'marketValueRange')
   const tierSteps = Math.max(tiers.length - 1, 1)
-  const tierDisplayLabels = [...tiers].reverse().map(tier => tier.label)
-  // 큰 등급부터 "등급: 이상 ~ 미만" 한 줄씩 — 구간 경계는 서버가 정한 등급별 하한값(thresholdValue)이고, 위 등급의 하한이 이 등급의 상한이다.
+  const tierDisplayLabels = tiers.map(tier => tier.label)
+  // 화면과 같은 작은 등급부터 표시한다. 다음 등급의 하한이 현재 등급의 상한이다.
   const tierRangeLines =
     tiers.length === 0
       ? null
-      : [...tiers]
-          .reverse()
-          .map((tier, index, descending) => {
-            const upper = index === 0 ? null : descending[index - 1].thresholdValue
+      : tiers
+          .map((tier, index) => {
+            const upper = tiers[index + 1]?.thresholdValue ?? null
             const lower = tier.thresholdValue
             const range = lower === 0 ? `${toWonLabel(upper ?? 0)} 미만` : upper === null ? `${toWonLabel(lower)} 이상` : `${toWonLabel(lower)} 이상 ~ ${toWonLabel(upper)} 미만`
             return `${tier.label}: ${range}`
           })
           .join('\n')
-  const tierDisplayMinIndex = tierSteps - tierRangeMaxIndex
-  const tierDisplayMaxIndex = tierSteps - tierRangeMinIndex
+  const selectedLower = tiers[tierRangeMinIndex]?.thresholdValue
+  const selectedUpper = tiers[tierRangeMaxIndex + 1]?.thresholdValue
+  const selectedRangeLabel = selectedLower === undefined ? ''
+    : selectedLower === 0 && selectedUpper === undefined ? '전체 시가총액'
+    : selectedLower === 0 ? `${toWonLabel(selectedUpper!)} 미만`
+    : selectedUpper === undefined ? `${toWonLabel(selectedLower)} 이상`
+    : `${toWonLabel(selectedLower)} 이상 ~ ${toWonLabel(selectedUpper)} 미만`
 
   return (
     <div className={`settings-market-value text-ui-white ${itemClass} ${bookmark.mode === 'bookmark' ? '' : showDivider ? 'mt-6 pt-8' : 'pt-3'}`}>
@@ -1988,20 +2018,26 @@ export function SettingsMarketValueSection({
         <BookmarkButton id="marketValueRange" label="시가총액 범위" />
       </p>
       <SettingDescription>지도에 포함할 종목의 시총 구간</SettingDescription>
-      <div className="settings-subsection-list mt-[35px] text-sm">
+      <div className="settings-subsection-list mt-[19px] text-sm">
         <div className="settings-slider-control">
           <RangeSlider
-            minIndex={tierDisplayMinIndex}
-            maxIndex={tierDisplayMaxIndex}
+            minIndex={tierRangeMinIndex}
+            maxIndex={tierRangeMaxIndex}
             steps={tierSteps}
             labels={tierDisplayLabels}
+            labelsAbove
             minAriaLabel="최소 시가총액 구간"
             maxAriaLabel="최대 시가총액 구간"
-            onChange={(newDisplayMin, newDisplayMax) => {
-              onChangeTierRange(tierSteps - newDisplayMax, tierSteps - newDisplayMin)
-            }}
+            onChange={onChangeTierRange}
             disabled={tiers.length === 0}
           />
+          <p className="mt-2 flex min-h-[22px] justify-center text-[13px]/4 text-ui-white" aria-live="polite" aria-atomic="true">
+            {selectedRangeLabel && (
+              <span className="rounded-[5px] border border-ui-border bg-ui-control px-1.5 py-0.5">
+                {selectedRangeLabel}
+              </span>
+            )}
+          </p>
         </div>
       </div>
     </div>
@@ -2717,7 +2753,11 @@ export default function SettingsPanel({
                   selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
-                <SettingsSectionIcon icon={section.icon} />
+                <SettingsSectionIcon
+                  icon={section.icon}
+                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''}`}
+                  strokeWidth={section.icon === 'industry' ? 1.22 : 1.1}
+                />
                 <span className="max-w-full truncate font-bold">{section.label}</span>
                 <span
                   aria-hidden="true"
