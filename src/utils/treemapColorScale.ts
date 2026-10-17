@@ -17,7 +17,7 @@ export interface ColorScaleConfig {
 }
 
 // 기본 색상 규칙 — 파랑(음수)과 빨강(양수)은 같은 채도(75)와 같은 명도를 쓰고, 명도는 구간 순서대로 16·33·46·58로 오른다(기본 구간은 2/5/8/12%).
-// 0%는 색상 편집기의 첫 색인 회색(채도 0)이고 명도는 50이다. 색상은 색상 편집기의 파랑(217)·빨강(0) 프리셋과 같다.
+// 0%는 색상 편집기의 첫 색인 회색(채도 0)이고 명도는 50이다. 색상은 색상 편집기의 파랑(215)·빨강(0) 프리셋과 같다.
 // 범례는 하락 4칸 + 0% + 상승 4칸의 9칸이다.
 // 0%일 때 색 — 저장된 threshold가 없으면 이 값으로 폴백.
 export const DEFAULT_ZERO_COLOR = '#808080'
@@ -32,10 +32,10 @@ export const DEFAULT_PLUS_THRESHOLDS: ColorScaleThreshold[] = [
   { thresholdPercent: 12, color: '#e44444', colorLabel: 'red' }, // 명도 58
 ]
 export const DEFAULT_MINUS_THRESHOLDS: ColorScaleThreshold[] = [
-  { thresholdPercent: 2, color: '#0a2247', colorLabel: 'blue' }, // 명도 16
-  { thresholdPercent: 5, color: '#154593', colorLabel: 'blue' }, // 명도 33
-  { thresholdPercent: 8, color: '#1d61cd', colorLabel: 'blue' }, // 명도 46
-  { thresholdPercent: 12, color: '#4481e4', colorLabel: 'blue' }, // 명도 58
+  { thresholdPercent: 2, color: '#12253f', colorLabel: 'blue' }, // 명도 16
+  { thresholdPercent: 5, color: '#264c82', colorLabel: 'blue' }, // 명도 33
+  { thresholdPercent: 8, color: '#356bb6', colorLabel: 'blue' }, // 명도 46
+  { thresholdPercent: 12, color: '#598acf', colorLabel: 'blue' }, // 명도 58
 ]
 
 // 저장된 구간이 하나도 없을 때 draft를 채우는 초기값 — 위 기본 프리셋을 부호 있는 실제 구간(-12/-8/-5/-2, +2/+5/+8/+12)으로
@@ -50,11 +50,11 @@ export function createDefaultColorScale(): ColorScaleConfig {
   }
 }
 
-// 상승(빨강, 색상 0)·하락(파랑, 색상 217)의 정해진 색 — 채도 75에 구간 순서(작은 값부터)대로 명도 16·33·46·58이다. 기본 색과 같고, 등락률 설정에서 손잡이를 옮기면 이 색으로 맞춘다.
+// 상승(빨강, 색상 0)·하락(파랑, 색상 215·채도 55)의 정해진 색 — 상승은 채도 75에 구간 순서(작은 값부터)대로 명도 16·33·46·58이다. 기본 색과 같고, 등락률 설정에서 손잡이를 옮기면 이 색으로 맞춘다.
 const FIXED_RANK_LIGHTNESS = [16, 33, 46, 58]
 export function fixedRankColor(side: 'up' | 'down', rank: number): { color: string; colorLabel: string } {
   const lightness = FIXED_RANK_LIGHTNESS[Math.min(Math.max(rank, 0), FIXED_RANK_LIGHTNESS.length - 1)]
-  return { color: hslToHex(side === 'up' ? 0 : 217, 75, lightness), colorLabel: side === 'up' ? 'red' : 'blue' }
+  return { color: hslToHex(side === 'up' ? 0 : 215, side === 'up' ? 75 : 55, lightness), colorLabel: side === 'up' ? 'red' : 'blue' }
 }
 
 function hexToRgb(hex: string): [number, number, number] {
