@@ -132,21 +132,21 @@
   --status-warning: var(--status-error-ink);
   --status-success: var(--brand);
 
-  /* 상호작용·선택 상태는 원색을 추가하지 않고 혼합해서 만든다. */
-  --ui-control: color-mix(in srgb, var(--ui-panel) 80%, var(--ui-white));
-  /* 테두리는 따로 원색을 두지 않고 컨트롤 단계와 같은 회색을 쓴다(이전 #4b5563을 합쳤다). */
+  /* 무채색 단계 — 검정 계열(background·surface·panel)은 위 원색이고, 흰 계열은 설정창 회색(panel)에 흰색을 퍼센트 단계(20·35·90)로 섞어 만든다.
+     같은 색이 다른 이름으로 필요하면 별칭으로만 둔다(새 값을 만들지 않는다). */
+  --ui-control: color-mix(in srgb, var(--ui-panel) 80%, var(--ui-white)); /* 흰 20 — 버튼·칸 기본, 테두리 */
+  --ui-control-hover: color-mix(in srgb, var(--ui-panel) 65%, var(--ui-white)); /* 흰 35 — 마우스 올림 */
+  --ui-text: color-mix(in srgb, var(--ui-white) 90%, var(--ui-panel)); /* 흰 90 — 본문 글자, 선택된 회색 칸 */
   --ui-border: var(--ui-control);
-  /* 본문 글자는 흰색에 설정창 회색을 12% 섞은 밝은 회색이다(이전 #e2e4ef 원색을 합쳤다). */
-  --ui-text: color-mix(in srgb, var(--ui-white) 88%, var(--ui-panel));
-  /* 크림 팝업 테두리는 크림 45% + 메인 바탕 55%를 섞은 회갈색이다(이전 #7a6d55 원색을 합쳤다). */
-  --ui-popup-border: color-mix(in srgb, var(--ui-popup) 45%, var(--ui-background));
-  --ui-control-hover: color-mix(in srgb, var(--ui-panel) 65%, var(--ui-white));
-  --ui-selection: color-mix(in srgb, var(--ui-white) 80%, var(--ui-panel));
-  --status-error-text: color-mix(in srgb, var(--status-error) 80%, var(--ui-white));
-  --status-error-ink: color-mix(in srgb, var(--status-error) 70%, var(--ui-background));
-  --status-error-hover: color-mix(in srgb, var(--status-error) 80%, var(--ui-background));
+  --ui-selection: var(--ui-text);
+  --ui-popup-border: var(--ui-control);
+
+  /* 브랜드·상태 파생 — 청록은 올림 한 가지, 테라코타는 진한 바탕(ink)·글자(text) 두 가지만 섞어 만든다. */
   --brand-surface-hover: color-mix(in srgb, var(--brand-surface) 80%, var(--brand));
-  --brand-surface-dark: color-mix(in srgb, var(--brand-surface) 80%, var(--ui-background));
+  --brand-surface-dark: var(--brand-surface);
+  --status-error-ink: color-mix(in srgb, var(--status-error) 65%, var(--ui-background));
+  --status-error-text: color-mix(in srgb, var(--status-error) 80%, var(--ui-white));
+  --status-error-hover: var(--status-error);
 
   /* 기존 컴포넌트가 쓰는 역할별 별칭. 설정창의 accent는 선택 회색을 상속한다. */
   --bg: var(--ui-background);
@@ -154,7 +154,7 @@
   --text: var(--ui-text);
   --panel-gray: var(--ui-selection);
   --accent: var(--brand);
-  --accent-hover: color-mix(in srgb, var(--brand) 80%, var(--brand-surface));
+  --accent-hover: var(--brand-surface-hover);
   --accent-light: var(--accent);
   /* 위 @font-face 주석 참고 — Pretendard에 없는 문자(글리프 자체가 없는 경우)만 Noto Sans KR로
      폴백된다. */
@@ -320,7 +320,7 @@ a { color: var(--accent-light); text-decoration: none; }
 /* 텍스트는 그대로 두고 배경색만 깜빡이는 강조 효과 (animate-pulse는 opacity라 글자까지 흐려짐) */
 @keyframes row-blink {
   0%, 100% { background-color: transparent; }
-  50% { background-color: color-mix(in srgb, var(--brand) 30%, transparent); }
+  50% { background-color: color-mix(in srgb, var(--brand) 35%, transparent); }
 }
 .animate-row-blink { animation: row-blink 1s ease-in-out infinite; }
 
@@ -569,7 +569,7 @@ a { color: var(--accent-light); text-decoration: none; }
   top: -12px;
   left: 0;
   right: 0;
-  border-top: 1px solid color-mix(in srgb, var(--ui-white) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ui-white) 10%, transparent);
 }
 
 /* 그룹 페이지처럼 탭 없이 항목만 쌓는 설정 본문 — 첫 항목을 뺀 각 항목 위에 구분선을 둔다. */
@@ -583,7 +583,7 @@ a { color: var(--accent-light); text-decoration: none; }
   top: -12px;
   left: 0;
   right: 0;
-  border-top: 1px solid color-mix(in srgb, var(--ui-white) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ui-white) 10%, transparent);
 }
 
 /* 모든 페이지와 탭은 마지막 항목 아래에도 같은 구분선을 둔다.
@@ -592,7 +592,7 @@ a { color: var(--accent-light); text-decoration: none; }
   content: "";
   display: block;
   margin-top: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--ui-white) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ui-white) 10%, transparent);
 }
 
 /* 높이가 정해진 맵 항목은 남겨 둔 하단 여백의 가운데에 선을 맞춘다. */
@@ -646,7 +646,7 @@ a { color: var(--accent-light); text-decoration: none; }
   top: -12px;
   left: 0;
   right: 0;
-  border-top: 1px solid color-mix(in srgb, var(--ui-white) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ui-white) 10%, transparent);
 }
 
 .settings-bookmark-tab .settings-bookmark-first::before {
@@ -847,10 +847,10 @@ a { color: var(--accent-light); text-decoration: none; }
 /* 설정창과 열 필터의 스크롤 영역(탭 내용 전체, 제외 업종 목록, 필터 선택 목록) — 맥 기본 스크롤바는 스크롤할 때만 보여서 내용이 잘린 것처럼 보인다. 가는 스크롤바를 항상 보이게 한다.
    브라우저를 확대하면 탭 내용도 넘쳐서 스크롤이 생긴다. */
 :is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar { width: 6px; }
-:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar-track { background: color-mix(in srgb, var(--ui-white) 8%, transparent); border-radius: 3px; }
-:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ui-white) 40%, transparent); border-radius: 3px; }
+:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar-track { background: color-mix(in srgb, var(--ui-white) 10%, transparent); border-radius: 3px; }
+:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ui-white) 35%, transparent); border-radius: 3px; }
 
 /* 설정창 회색 칩(선택 버튼의 안 고른 칸, 실행 버튼, 목록 줄)에 마우스를 올리면 강조색을 30%만 얹어 은은하게 밝힌다. 비활성 버튼에는 적용하지 않는다. */
 .settings-chip-hover:not(:disabled):hover {
-  background-image: linear-gradient(color-mix(in srgb, var(--accent) 30%, transparent), color-mix(in srgb, var(--accent) 30%, transparent));
+  background-image: linear-gradient(color-mix(in srgb, var(--accent) 35%, transparent), color-mix(in srgb, var(--accent) 35%, transparent));
 }

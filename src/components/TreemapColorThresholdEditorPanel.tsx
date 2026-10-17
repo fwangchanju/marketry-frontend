@@ -105,7 +105,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
         onPointerCancel={handlePointerEnd}
       >
         <div ref={trackRef} className="settings-slider-control relative h-full">
-          <div className="absolute inset-x-0 top-[12px] h-4 border border-ui-white/25" style={{ background: gradient }} />
+          <div className="absolute inset-x-0 top-[12px] h-4 border border-ui-white/20" style={{ background: gradient }} />
           {zeroSelected && <span className={badgeClass} style={{ left: '0%' }}>0%</span>}
           <div
             data-zero
@@ -115,7 +115,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-ui-border hover:border-ui-white'}`}
             style={{ backgroundColor: zeroColor }}
           />
-          <div className={zeroSelected ? 'opacity-60' : ''}>
+          <div className={zeroSelected ? 'opacity-70' : ''}>
             {positive.map((item, rank) => {
               const selected = !zeroSelected && rank === selectedRank
               const left = `${percentToPosition(item.percent) * 100}%`
@@ -241,7 +241,7 @@ export default function TreemapColorThresholdEditorPanel({
             type="button"
             onClick={onApply}
             disabled={isSaving}
-            className="h-7 flex-1 rounded-[5px] border border-[var(--brand-surface)] bg-[var(--brand-surface)] px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-[var(--brand-surface-hover)] hover:bg-[var(--brand-surface-hover)] disabled:cursor-wait disabled:opacity-60"
+            className="h-7 flex-1 rounded-[5px] border border-[var(--brand-surface)] bg-[var(--brand-surface)] px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-[var(--brand-surface-hover)] hover:bg-[var(--brand-surface-hover)] disabled:cursor-wait disabled:opacity-70"
           >
             {isSaving ? '적용 중...' : '적용'}
           </button>
@@ -249,7 +249,7 @@ export default function TreemapColorThresholdEditorPanel({
             type="button"
             onClick={onCancel}
             disabled={isSaving}
-            className="h-7 flex-1 rounded-[5px] border border-ui-border bg-ui-control px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-ui-border hover:bg-ui-control-hover disabled:cursor-wait disabled:opacity-60"
+            className="h-7 flex-1 rounded-[5px] border border-ui-border bg-ui-control px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-ui-border hover:bg-ui-control-hover disabled:cursor-wait disabled:opacity-70"
           >
             취소
           </button>

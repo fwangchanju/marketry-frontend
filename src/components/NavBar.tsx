@@ -93,7 +93,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           <ProfileAvatar className="size-full object-cover" />
         </button>
         {isProfileMenuOpen && (
-          <div className="absolute right-0 top-full z-30 w-64 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pb-2 text-ui-white shadow-2xl shadow-ui-background/60">
+          <div className="absolute right-0 top-full z-30 w-64 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pb-2 text-ui-white shadow-2xl shadow-ui-background/70">
             {isLoading ? (
               <p className="px-4 py-3 text-sm text-ui-muted">계정 확인 중...</p>
             ) : session?.authenticated ? (

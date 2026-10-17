@@ -5,7 +5,7 @@ export default function ToolbarModeText({ page, label }: { page: string; label: 
   return (
     <div className="font-roboto-latin relative mr-1 shrink-0">
       <span className="absolute -top-[5px] left-1.5 z-10 bg-ui-background px-1 text-[9px] leading-none font-bold tracking-[0.12em] text-[var(--brand)]">{page}</span>
-      <div className="flex h-6 w-[7.5rem] items-center justify-center border border-[var(--brand)]/45 bg-[var(--brand-surface)] px-1 text-[15px] leading-none font-bold whitespace-nowrap tabular-nums text-ui-white">
+      <div className="flex h-6 w-[7.5rem] items-center justify-center border border-[var(--brand)]/50 bg-[var(--brand-surface)] px-1 text-[15px] leading-none font-bold whitespace-nowrap tabular-nums text-ui-white">
         <span className="px-[3px]">{label}</span>
       </div>
     </div>

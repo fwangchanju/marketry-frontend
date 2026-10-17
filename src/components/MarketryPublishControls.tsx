@@ -14,7 +14,7 @@ import { CommitIcon, HistoryIcon } from '@/components/icons/AppIcons'
 
 // 커스텀 설정창의 다운로드·업로드 버튼과 같은 회색 칩(마우스를 올리면 강조색이 은은하게 비친다). 위험 작업이라는 표시는 설정창 헤더의 ADMIN 경고가 맡는다.
 const BUTTON_CLASS =
-  'settings-chip-hover flex h-7 w-full items-center justify-center gap-1 whitespace-nowrap rounded-[5px] border-0 bg-[var(--ui-control)] px-2 text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-40'
+  'settings-chip-hover flex h-7 w-full items-center justify-center gap-1 whitespace-nowrap rounded-[5px] border-0 bg-[var(--ui-control)] px-2 text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35'
 
 // "MARKETRY 2026-10-08 14:30"에서 앞의 이름을 뺀 날짜·시간만 — 안내 문구에서 이름이 겹쳐 보이지 않게 한다.
 function toDateTimeLabel(label: string) {

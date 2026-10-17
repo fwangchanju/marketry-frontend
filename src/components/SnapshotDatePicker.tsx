@@ -176,8 +176,6 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
               const hasClosingMap = closingTimeByDate.has(date)
               const selectable = isSelectable(date, hasClosingMap, hasPreviousDay(date))
               const selected = isSelected(date)
-              // 이미 지나간 날인데 지도가 없는 날(주말·휴장일 등)은 빨간 숫자로 알린다. 불러오는 중이거나 아직 오지 않은 날은 회색 그대로.
-              const isMissing = selectable === false && hasClosingMap === false && isLoading === false && isError === false && liveDate !== null && date <= liveDate
               // 기간 띠 — 시작일은 오른쪽 절반, 종료일은 왼쪽 절반, 그 사이 날은 칸 전체를 칠한다. 줄이 바뀌는 곳(일요일·1일 / 토요일·말일)은 끝을 둥글게 한다.
               const hasBand = bandStart !== null && bandEnd !== null && bandStart < bandEnd && date >= bandStart && date <= bandEnd
               const weekday = (firstWeekday + day - 1) % 7
@@ -195,7 +193,7 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
                         ? 'bg-brand-surface font-semibold text-ui-white'
                         : selectable
                           ? 'bg-transparent text-ui-white hover:bg-ui-control'
-                          : `cursor-not-allowed bg-transparent ${isMissing ? 'text-status-error-text/70' : 'text-ui-muted'}`
+                          : 'cursor-not-allowed bg-transparent text-ui-muted'
                     }`}
                   >
                     {day}
@@ -278,10 +276,10 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
 const CALENDAR_SPINNER_CLASS = 'h-[14.5rem] w-[14.5rem]'
 
 const APPLY_BUTTON_CLASS =
-  'shrink-0 rounded border-0 bg-brand-surface px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-brand-surface'
+  'shrink-0 rounded border-0 bg-brand-surface px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-surface'
 
 const RESET_BUTTON_CLASS =
-  'shrink-0 rounded border-0 bg-ui-control px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-ui-control'
+  'shrink-0 rounded border-0 bg-ui-control px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
 
 // 달력 아이콘을 누르면 아래로 달력 창이 뜬다. 데이터가 있는 날짜(종가 지도가 있는 날과 오늘)만 누를 수 있다.
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.

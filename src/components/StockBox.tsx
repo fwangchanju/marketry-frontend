@@ -102,7 +102,7 @@ export default function StockBox({
         height,
         backgroundColor,
         // 상한가·하한가 부근의 포인트 색(분홍/하늘)처럼 밝은 배경에서는 흰 글자가 안 읽혀 어두운 글자를 쓴다.
-        color: isLightColor(backgroundColor) ? '#18181b' : undefined,
+        color: isLightColor(backgroundColor) ? 'var(--ui-surface)' : undefined,
         '--treemap-base-color': backgroundColor,
       } as CSSProperties}
       onContextMenu={e => {
@@ -113,7 +113,7 @@ export default function StockBox({
       }}
       onPointerEnter={stockPopupOnHover ? e => openStockPopup(e.currentTarget, true, { x: e.clientX, y: e.clientY }) : undefined}
       onPointerLeave={stockPopupOnHover ? () => onClosePopup(stockKey) : undefined}
-      className={`treemap-stock flex flex-col items-center justify-center overflow-hidden border border-black/40 text-white ${isPinned ? 'is-pinned' : ''}`}
+      className={`treemap-stock flex flex-col items-center justify-center overflow-hidden border border-ui-background/35 text-white ${isPinned ? 'is-pinned' : ''}`}
     >
       {showLabel && (
         <>

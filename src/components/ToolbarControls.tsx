@@ -150,7 +150,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
               basis === option.value
                 ? 'text-ui-surface'
                 : option.locked
-                  ? 'cursor-not-allowed text-ui-muted opacity-40'
+                  ? 'cursor-not-allowed text-ui-muted opacity-35'
                   : 'text-ui-muted hover:text-ui-white'
             }`}
           >

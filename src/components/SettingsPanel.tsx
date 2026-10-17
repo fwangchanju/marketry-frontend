@@ -40,7 +40,7 @@ export function SettingsPanelGroup({ children }: SettingsPanelGroupProps) {
 // 한 줄(16px) + 위 간격(4px)이라 높이를 20px로 계산해서 index.css의 탭 정렬 값을 맞춘다.
 // dimmed: 그 항목의 토글이 꺼져 있을 때 제목 줄만 밝게 두고 설명과 조작부를 함께 옅게 한다(조작부는 호출부가 옅게 한다).
 function SettingDescription({ children, dimmed = false }: { children: ReactNode; dimmed?: boolean }) {
-  return <p className={`settings-description mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-text ${dimmed ? 'opacity-40' : ''}`}>{children}</p>
+  return <p className={`settings-description mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-text ${dimmed ? 'opacity-35' : ''}`}>{children}</p>
 }
 
 // 좌우 이동 탭을 "Basis" 줄 높이로 옮기고, 그 줄 위에 구분선이 있으면(아래쪽 Basis) 탭을 그 선까지 키운 뒤 아래도 같은 길이만큼 대칭으로
@@ -292,7 +292,7 @@ function ToggleSwitch({
 }) {
   // 라벨(+보조 콘텐츠)은 왼쪽에 모으고, 스위치는 justify-between으로 항상 이 줄의 우측 끝에 붙인다.
   return (
-    <div className={`flex items-center justify-between gap-2 ${disabled ? 'opacity-40' : ''}`}>
+    <div className={`flex items-center justify-between gap-2 ${disabled ? 'opacity-35' : ''}`}>
       {!hideLabel && (
         <span className="flex min-w-0 items-center gap-2">
           <span
@@ -496,10 +496,10 @@ function StairRows({
               tabIndex={onPick && !disabled && !blocked ? 0 : undefined}
               onClick={onPick && !disabled && !blocked ? () => onPick(index) : undefined}
               onKeyDown={onPick && !disabled && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
-              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-[var(--brand)]/40' : lit ? 'bg-[var(--accent)]/45' : 'bg-[var(--ui-control)]'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-[var(--brand)]' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
+              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-[var(--brand)]/35' : lit ? 'bg-[var(--accent)]/50' : 'bg-[var(--ui-control)]'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-[var(--brand)]' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
               style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
-              <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-ui-background/35' : 'bg-ui-white/15'}`}>
+              <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-ui-background/35' : 'bg-ui-white/20'}`}>
                 {mark}{label}
               </span>
               {valueLabel && lit && !blocked && <span className="ml-2.5 truncate text-[13px] font-medium">{valueLabel}</span>}
@@ -910,7 +910,7 @@ function RangeSlider({
     >
       <div
         ref={trackRef}
-        className={`relative h-4 w-full ${disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
+        className={`relative h-4 w-full ${disabled ? 'cursor-not-allowed opacity-35' : 'cursor-pointer'}`}
         onPointerDown={startDrag}
       >
         <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-border)]" />
@@ -952,7 +952,7 @@ function RangeSlider({
           />
         )}
       </div>
-      <div className={disabled ? 'opacity-40' : ''}>
+      <div className={disabled ? 'opacity-35' : ''}>
         <SliderTickLabels
           labels={labels}
           steps={labelSteps}
@@ -1057,7 +1057,7 @@ function SingleRangeInput({
   const slide = `${isDragging ? 150 : 300}ms ease-out`
   const barTransition = smooth ? `width ${slide}` : undefined
   return (
-    <div className={`relative h-4 ${disabled ? 'opacity-40' : ''}`}>
+    <div className={`relative h-4 ${disabled ? 'opacity-35' : ''}`}>
       <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-border)]" />
       <span
         aria-hidden="true"
@@ -1287,7 +1287,7 @@ export function SettingsAverageModeSection({
         <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준</span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
       </div>
-      <div className={enabled ? '' : 'opacity-40'}>
+      <div className={enabled ? '' : 'opacity-35'}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
         <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
           <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] bg-[var(--accent)]" />
@@ -1346,7 +1346,7 @@ export function SettingsBeforeMinutesSection({
         </span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="비교 그래프" hideLabel disabled={disabled} />
       </div>
-      <div className={enabled ? '' : 'opacity-40'}>
+      <div className={enabled ? '' : 'opacity-35'}>
         <SettingDescription>현재 등락률과 비교할 시점</SettingDescription>
         <div className="settings-slider-control mt-[18px]">
           <SingleValueSlider
@@ -1631,7 +1631,7 @@ export function SettingsSectorLevelSection({
               />
             </div>
             <SettingDescription dimmed={!sectorLevelEnabled}>선택한 단계까지 업종을 세분화해 표시</SettingDescription>
-            <div className={`settings-control-inset mt-[6px] ${sectorLevelEnabled ? '' : 'opacity-40'}`}>
+            <div className={`settings-control-inset mt-[6px] ${sectorLevelEnabled ? '' : 'opacity-35'}`}>
               <DepthStairSelect
                 depth={depthValue}
                 labels={depthMetricLabels}
@@ -1642,7 +1642,7 @@ export function SettingsSectorLevelSection({
             </div>
           </div>
           <div className={`settings-second-depth-metric relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthMetric')}`}>
-            <div className={isDepthMetricDisabled ? 'opacity-40' : ''}>
+            <div className={isDepthMetricDisabled ? 'opacity-35' : ''}>
               <div className="flex max-w-[16rem] items-center justify-between">
                 <span className="flex items-center text-left text-ui-white">
                   <SettingTitle bookmarkId="depthMetric" className="text-[15px]">업종 지표</SettingTitle>
@@ -1665,7 +1665,7 @@ export function SettingsSectorLevelSection({
                 badge="업종"
                 outlinedChevron
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
-                className={`mt-4 max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-40'}`}
+                className={`mt-4 max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-35'}`}
               />
             </div>
             {isDepthMetricDisabled && (
@@ -1690,13 +1690,13 @@ export function SettingsSectorLevelSection({
             aria-disabled={isDepthMetricRangeDisabled}
             className={`settings-third-depth-range relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthRange')} ${isDepthMetricRangeDisabled ? 'cursor-not-allowed' : ''}`}
           >
-            <span className={`flex items-center text-left text-[15px] text-ui-white ${isDepthMetricRangeDisabled ? 'opacity-40' : ''}`}>
+            <span className={`flex items-center text-left text-[15px] text-ui-white ${isDepthMetricRangeDisabled ? 'opacity-35' : ''}`}>
               <SettingTitle bookmarkId="depthRange">지표 표시 단계</SettingTitle>
             </span>
-            <div className={isDepthMetricRangeDisabled ? 'opacity-40' : ''}>
+            <div className={isDepthMetricRangeDisabled ? 'opacity-35' : ''}>
               <SettingDescription>지표를 표시할 업종 단계 범위</SettingDescription>
             </div>
-            <div className={`settings-control-inset mt-[6px] ${isDepthMetricRangeDisabled ? 'opacity-40' : ''}`}>
+            <div className={`settings-control-inset mt-[6px] ${isDepthMetricRangeDisabled ? 'opacity-35' : ''}`}>
               <DepthStairRange
                 minIndex={depthMetricSliderMinIndex}
                 maxIndex={depthMetricSliderMaxIndex}
@@ -1749,13 +1749,13 @@ export function SettingsSectorLevelSection({
                 compact
               />
             </div>
-            <div className={stockLabelEnabled ? '' : 'opacity-40'}>
+            <div className={stockLabelEnabled ? '' : 'opacity-35'}>
               <SettingDescription>박스 안에 표시할 내용</SettingDescription>
             </div>
             <div
               role="radiogroup"
               aria-label="박스 내 표기"
-              className={`relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px] ${stockLabelEnabled ? '' : 'opacity-40'}`}
+              className={`relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px] ${stockLabelEnabled ? '' : 'opacity-35'}`}
             >
               <SlidingHighlight count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="rounded-[5px] bg-[var(--accent)]" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
@@ -1796,7 +1796,7 @@ export function SettingsSectorLevelSection({
                 setDecimalPlacesHint(cursorHintFrom(e))
               } : undefined}
             >
-              <div className={isDecimalPlacesDisabled ? 'opacity-40' : ''}>
+              <div className={isDecimalPlacesDisabled ? 'opacity-35' : ''}>
               <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
                 <SettingTitle bookmarkId="decimalPlaces">등락률 소수점</SettingTitle>
               </span>
@@ -2095,7 +2095,7 @@ export function SettingsExcludeSection({
         <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
         <div
           inert={!sectorFilterEnabled}
-          className={`settings-control-inset settings-exclude-list mt-2 flex flex-col gap-1 overflow-y-auto ${sectorFilterEnabled ? '' : 'opacity-40'} ${bookmark.mode === 'bookmark' ? 'max-h-14' : 'max-h-40'}`}
+          className={`settings-control-inset settings-exclude-list mt-2 flex flex-col gap-1 overflow-y-auto ${sectorFilterEnabled ? '' : 'opacity-35'} ${bookmark.mode === 'bookmark' ? 'max-h-14' : 'max-h-40'}`}
         >
             {excludedSectors.map(sector => (
               // 지도 위쪽 이동 경로의 되돌아가기 버튼과 같은 모양 — 이름 앞에 되돌아가기 표시가 붙은 한 버튼이다.
@@ -2108,7 +2108,7 @@ export function SettingsExcludeSection({
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
                 data-hint="맵에 다시 표시"
-                className="flex h-7 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-ui-white transition-colors hover:bg-[var(--accent)]/30"
+                className="flex h-7 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-ui-white transition-colors hover:bg-[var(--accent)]/35"
               >
                 <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
@@ -2154,7 +2154,7 @@ export function SettingsTopPickSection({
 
   return (
     <div className={`settings-second-top-pick relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${bookmarkItemClass(bookmark, 'topPick')}`}>
-      <div className={isTopPickDisabled ? 'opacity-40' : ''}>
+      <div className={isTopPickDisabled ? 'opacity-35' : ''}>
         <div className="flex max-w-[16rem] items-center justify-between">
           <span className="flex items-center text-left text-ui-white">
             <SettingTitle bookmarkId="topPick" className="text-[15px]" help>상위 업종 강조</SettingTitle>
@@ -2183,10 +2183,10 @@ export function SettingsTopPickSection({
             disabled={isTopPickDisabled || !topPickEnabled}
             compact
             outlinedChevron
-            className={`mt-1 w-[42px] shrink-0 ${topPickEnabled ? '' : 'opacity-40'}`}
+            className={`mt-1 w-[42px] shrink-0 ${topPickEnabled ? '' : 'opacity-35'}`}
           />
         </div>
-        <div className={`settings-slider-control mt-[6px] ${topPickEnabled ? '' : 'opacity-40'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
+        <div className={`settings-slider-control mt-[6px] ${topPickEnabled ? '' : 'opacity-35'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
           <div role="radiogroup" aria-label="상위 업종 강조 단계" className="relative" style={{ height: stairHeight(depthLabelCount) }}>
             <StairRows
               railWidth={0}
@@ -2272,7 +2272,7 @@ export function SettingsColorSection({
             data-hint="기본값으로 초기화"
             onClick={async () => { if (await appConfirm('등락률 색상을 기본값으로 초기화하시겠습니까?', { title: '색상 초기화' })) runWithFeedback(onResetColorScale) }}
             disabled={isResettingColorScale}
-            className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:cursor-wait disabled:opacity-60"
+            className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:cursor-wait disabled:opacity-70"
           >
             <RefreshIcon className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -2293,7 +2293,7 @@ export function SettingsColorSection({
       {/* 맨 위 9칸 색상바는 9칸이 설정창 폭에 들어가지 않아 지웠다(칸 선택은 아래 막대의 손잡이·0% 표식·상승/하락 선택으로 한다). 지도 하단 범례 바는 그대로다. */}
       <div className="relative">
         {colorEditorProps && (
-          <div className={colorCustomOn ? '' : 'opacity-40'} inert={!colorCustomOn}>
+          <div className={colorCustomOn ? '' : 'opacity-35'} inert={!colorCustomOn}>
             <TreemapColorThresholdEditorPanel {...colorEditorProps} />
           </div>
         )}
@@ -2353,7 +2353,7 @@ export function SettingsStrongIndustryColorSection({
               onPointerDown={event => { if (event.button === 0) pick(option.value) }}
               onClick={event => { if (event.detail === 0) pick(option.value) }}
               style={{ backgroundColor: option.value }}
-              className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/30 p-0"
+              className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/35 p-0"
             >
               {selectedColor === option.value && (
                 <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? 'var(--ui-surface)' : 'var(--ui-white)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2706,7 +2706,7 @@ export default function SettingsPanel({
           data-align-second-heading={(taxonomyAtBottom && selectedSection.id !== 'favorites') || undefined}
           aria-busy={waitingForPreferences || undefined}
           inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-40 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'favorites' ? 'settings-bookmark-tab' : ''} ${
+          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'favorites' ? 'settings-bookmark-tab' : ''} ${
             isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
           }`}
         >
