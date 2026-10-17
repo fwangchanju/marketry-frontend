@@ -93,12 +93,12 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
-// 큰 등락률(20~25%)에서만 나타나는 포인트 색 — 장미(상승)·푸른 보라(하락)이다. 최고 단계 색에서 20%부터 서서히 바뀌어 25%에서 완전히 이 색이 된다.
-// 빨강·파랑과 색상 차이가 크고 흰 글자가 그대로 읽힌다(밝은 포인트 색을 쓰면 isLightColor가 글자를 어둡게 바꾼다).
+// 큰 등락률(20~25%)에서만 나타나는 포인트 색 — 장미(상승)·브랜드 서브의 짙은 슬레이트 블루(하락)이다.
+// 최고 단계 색에서 20%부터 서서히 바뀌어 25%에서 완전히 이 색이 되며, 하락 극단 구간에서도 흰 글자 대비를 유지한다.
 const POINT_START_PERCENT = 20
 const POINT_END_PERCENT = 25
 const POINT_COLOR_UP = '#e11d6a'
-const POINT_COLOR_DOWN = '#5865f2'
+const POINT_COLOR_DOWN = '#46597d'
 
 // 밝은 배경이면 true — 흰 글자가 읽히지 않으므로 어두운 글자를 쓴다(상대 휘도 0.4 초과).
 export function isLightColor(hex: string): boolean {
