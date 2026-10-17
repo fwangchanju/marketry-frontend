@@ -2637,7 +2637,8 @@ export default function SettingsPanel({
       className="relative tabular-nums select-none flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-gray-500 bg-[#363639]"
       style={{ '--accent': 'var(--panel-gray)', '--accent-hover': '#f3f4f6', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
     >
-      <div className="flex shrink-0 items-center border-b border-gray-500 px-4 py-2">
+      {/* 지도 최상단 종목 박스에 맞춘 헤더 높이를 유지하고 내용은 세로 중앙에 둔다. */}
+      <div className="flex shrink-0 items-center border-b border-gray-500 px-4 py-[10.25px]">
         <div className="flex min-w-0 items-center gap-2">
           <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-white">
             {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Group에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
