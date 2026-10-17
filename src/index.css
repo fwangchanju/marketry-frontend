@@ -790,11 +790,20 @@ a { color: var(--accent-light); text-decoration: none; }
   }
 }
 
-/* 설정창 스크롤 영역(탭 내용 전체, 제외 업종 목록) — 맥 기본 스크롤바는 스크롤할 때만 보여서 내용이 잘린 것처럼 보인다. 가는 스크롤바를 항상 보이게 한다.
+/* 필터는 body 포털에 떠서 #root의 공통 포커스 정리가 닿지 않는다. */
+.column-filter-popup button:focus,
+.column-filter-popup button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.column-filter-options { scrollbar-gutter: stable; }
+
+/* 설정창과 열 필터의 스크롤 영역(탭 내용 전체, 제외 업종 목록, 필터 선택 목록) — 맥 기본 스크롤바는 스크롤할 때만 보여서 내용이 잘린 것처럼 보인다. 가는 스크롤바를 항상 보이게 한다.
    브라우저를 확대하면 탭 내용도 넘쳐서 스크롤이 생긴다. */
-:is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar { width: 6px; }
-:is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar-track { background: rgb(255 255 255 / 8%); border-radius: 3px; }
-:is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 40%); border-radius: 3px; }
+:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar { width: 6px; }
+:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar-track { background: rgb(255 255 255 / 8%); border-radius: 3px; }
+:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 40%); border-radius: 3px; }
 
 /* 설정창 회색 칩(선택 버튼의 안 고른 칸, 실행 버튼, 목록 줄)에 마우스를 올리면 강조색을 30%만 얹어 은은하게 밝힌다. 비활성 버튼에는 적용하지 않는다. */
 .settings-chip-hover:not(:disabled):hover {
