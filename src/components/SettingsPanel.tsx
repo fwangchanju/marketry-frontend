@@ -556,6 +556,7 @@ function DepthStairSelect({
       style={{ height: stairHeight(labels.length) }}
     >
       <StairRows
+        railWidth={0}
         labels={labels}
         litFrom={0}
         litTo={depth - 1}
@@ -564,7 +565,7 @@ function DepthStairSelect({
       />
       <div
         ref={railRef}
-        className="group absolute -right-[25px] top-0 h-full cursor-pointer touch-none"
+        className="group absolute -right-[20px] top-0 h-full cursor-pointer touch-none"
         style={{ width: STAIR_RAIL }}
         onPointerDown={e => {
           e.currentTarget.setPointerCapture(e.pointerId)
@@ -674,10 +675,10 @@ function DepthStairRange({
       className={`relative ${disabled ? 'cursor-not-allowed' : ''}`}
       style={{ height: stairHeight(labels.length) }}
     >
-      <StairRows labels={labels} litFrom={minIndex} litTo={maxIndex} maxSelectableIndex={maxSelectableIndex} blockedHint={() => blockedHint} valueLabel={valueLabel} />
+      <StairRows railWidth={0} labels={labels} litFrom={minIndex} litTo={maxIndex} maxSelectableIndex={maxSelectableIndex} blockedHint={() => blockedHint} valueLabel={valueLabel} />
       <div
         ref={railRef}
-        className={`group absolute -right-[25px] top-0 h-full touch-none ${disabled ? 'pointer-events-none' : 'cursor-pointer'}`}
+        className={`group absolute -right-[20px] top-0 h-full touch-none ${disabled ? 'pointer-events-none' : 'cursor-pointer'}`}
         style={{ width: STAIR_RAIL }}
         onPointerDown={e => {
           e.currentTarget.setPointerCapture(e.pointerId)
@@ -913,7 +914,7 @@ function RangeSlider({
         className={`relative h-4 w-full ${disabled ? 'cursor-not-allowed opacity-35' : 'cursor-pointer'}`}
         onPointerDown={startDrag}
       >
-        <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
+        <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
         <div
           className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
           style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, width: `calc(${maxPct - minPct}% - ${(maxPct - minPct) * 0.16}px)`, transition: slideTransition }}
@@ -1058,11 +1059,11 @@ function SingleRangeInput({
   const barTransition = smooth ? `width ${slide}` : undefined
   return (
     <div className={`relative h-4 ${disabled ? 'opacity-35' : ''}`}>
-      <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
+      <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
       <span
         aria-hidden="true"
-        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
-        style={{ width: `calc(${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
+        className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
+        style={{ width: `calc(8px + ${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
       />
       {/* 눈에 보이는 손잡이 — 아래 input의 기본 손잡이는 투명하게 두고, 이 손잡이가 값 위치로 미끄러진다. */}
       {smooth && (
@@ -1665,10 +1666,10 @@ export function SettingsSectorLevelSection({
                 badge="업종명"
                 outlinedChevron
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
-                className={`mt-[9.5px] max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-35'}`}
+                className={`mt-[9.5px] max-w-[16rem] settings-control-inset ${depthMetricEnabled ? '' : 'opacity-35'}`}
               />
               {/* 업종 지표 버튼이 지도에서 종목 상자 위(업종 머리글)에 놓인다는 것을 보여 주는 가짜 상자 — 누를 수 없는 그림이라 회색 선으로만 그린다. */}
-              <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-[16rem] pr-4 ${depthMetricEnabled ? '' : 'opacity-35'}`}>
+              <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-[16rem] ${depthMetricEnabled ? '' : 'opacity-35'}`}>
                 <div className="relative h-[62px] rounded-b-[5px] border-x border-b border-ui-control">
                   <span className="absolute inset-y-0 left-[42%] border-l border-ui-control" />
                   <span className="absolute left-[42%] right-0 top-1/2 border-t border-ui-control" />

@@ -464,24 +464,24 @@ a { color: var(--accent-light); text-decoration: none; }
   content: "- ";
 }
 
-/* 슬라이더·선택 버튼 같은 조작 요소는 설명 앞의 "- " 위치(설명 들여쓰기와 같은 폭)에서 시작하고,
-   오른쪽도 같은 폭만큼 줄여 좌우 대칭으로 맞춘다. */
+/* 슬라이더·선택 버튼 같은 조작 요소(버튼 영역)는 설명 앞의 "- " 위치(왼쪽 19px)에서 시작하고, 오른쪽 끝은 우측 토글의
+   왼쪽 끝선(18px 남김)에 맞춰 폭을 211px로 통일한다(사이드 버튼은 이 영역 오른쪽 바깥에 놓는다). */
 .settings-panel-tab-content .settings-control-inset {
   margin-left: 19px;
-  margin-right: 19px;
+  margin-right: 18px;
 }
 
 /* 설정 탭과 북마크 탭에서 모든 슬라이더 트랙의 실제 폭을 같게 유지한다. */
 .settings-panel-tab-content .settings-slider-control,
 .settings-bookmark-tab .settings-slider-control {
-  width: min(16rem, calc(100% - 38px));
-  margin-left: auto;
-  margin-right: auto;
+  width: min(16rem, calc(100% - 37px));
+  margin-left: 19px;
+  margin-right: 0;
 }
 
 /* 개수 드롭다운의 오른쪽 끝을 공통 조작 영역과 맞춘다. */
 .settings-top-pick-count-row {
-  padding-right: max(19px, calc((100% - 16rem) / 2));
+  padding-right: 18px;
 }
 
 .settings-panel-tab-content .settings-section-bullet::before,
