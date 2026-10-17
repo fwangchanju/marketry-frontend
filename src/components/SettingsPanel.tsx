@@ -40,7 +40,7 @@ export function SettingsPanelGroup({ children }: SettingsPanelGroupProps) {
 // 한 줄(16px) + 위 간격(4px)이라 높이를 20px로 계산해서 index.css의 탭 정렬 값을 맞춘다.
 // dimmed: 그 항목의 토글이 꺼져 있을 때 제목 줄만 밝게 두고 설명과 조작부를 함께 옅게 한다(조작부는 호출부가 옅게 한다).
 function SettingDescription({ children, dimmed = false }: { children: ReactNode; dimmed?: boolean }) {
-  return <p className={`settings-description mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-text ${dimmed ? 'opacity-35' : ''}`}>{children}</p>
+  return <p className={`settings-description mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-muted ${dimmed ? 'opacity-35' : ''}`}>{children}</p>
 }
 
 // 좌우 이동 탭을 "Basis" 줄 높이로 옮기고, 그 줄 위에 구분선이 있으면(아래쪽 Basis) 탭을 그 선까지 키운 뒤 아래도 같은 길이만큼 대칭으로
@@ -123,7 +123,7 @@ function SettingHelpBubble({ label, description, bookmarkId }: { label: string; 
         onBlur={event => {
           if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)) setIsOpen(false)
         }}
-        className="inline-flex h-4 w-4 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
+        className="inline-flex h-4 w-4 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-brand focus-visible:text-brand focus-visible:outline focus-visible:outline-1"
       >
         <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="8" cy="8" r="6.35" />
@@ -189,7 +189,7 @@ function BookmarkButton({ id, label }: { id: SettingsBookmarkId; label: string }
       aria-pressed={active}
       data-hint={active ? '북마크 해제' : '북마크 추가'}
       onClick={() => onToggle(id)}
-      className={`ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 ${active ? 'text-[var(--brand)]' : 'text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)]'}`}
+      className={`ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 ${active ? 'text-brand' : 'text-ui-muted hover:text-brand focus-visible:text-brand'}`}
     >
       {/* 설정창 메뉴 줄의 북마크 아이콘(SettingsSectionIcon)과 같은 모양이다. 14px에서 선 2.1이 화면에서 약 1.2px로 보인다. */}
       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
@@ -312,10 +312,10 @@ function ToggleSwitch({
         aria-label={label}
         onClick={onChange}
         disabled={disabled}
-        className={`relative h-2.5 w-6 shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
+        className={`relative h-2 w-6 shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
       >
         <span
-          className={`absolute top-1/2 left-0 box-border h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-ui-border bg-ui-surface transition-transform duration-[500ms] ease-out ${checked ? 'translate-x-2.5' : 'translate-x-0'}`}
+          className={`absolute top-1/2 left-0 box-border h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 ${checked ? 'border-ui-control' : 'border-ui-control-hover'} bg-ui-panel transition-transform duration-[500ms] ease-out ${checked ? 'translate-x-2.5' : 'translate-x-0'}`}
         />
       </button>
     </div>
@@ -369,7 +369,7 @@ const SIDEBAR_ANIMATION_MS = 250
 
 // 업종 분류 세로 손잡이와 같은 모양(청록 외곽선, 고른 칸 바탕색)이다.
 const RANGE_HANDLE_CLASS =
-  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center box-border rounded-full border border-[var(--brand)] bg-[var(--brand-surface)] text-ui-white touch-none'
+  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center box-border rounded-full border border-brand bg-brand-surface text-ui-white touch-none'
 
 // 섹션 전체가 막혔을 때의 안내 말풍선은 섹션 아래 끝이 아니라 마우스 커서 바로 옆에 띄운다 —
 // 섹션이 높아도 안내가 컨트롤에서 멀어지지 않는다. x·y는 마우스의 화면 좌표이고, bounds는 말풍선이 나가면 안 되는 설정창의 화면 위치다.
@@ -496,7 +496,7 @@ function StairRows({
               tabIndex={onPick && !disabled && !blocked ? 0 : undefined}
               onClick={onPick && !disabled && !blocked ? () => onPick(index) : undefined}
               onKeyDown={onPick && !disabled && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
-              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-[var(--brand)]/35' : lit ? 'bg-[var(--accent)]/50' : 'bg-[var(--ui-control)]'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-[var(--brand)]' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
+              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-brand/35' : lit ? 'bg-[var(--accent)]/50' : 'bg-[var(--ui-control)]'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-brand' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
               style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
               <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-ui-background/35' : 'bg-ui-white/20'}`}>
@@ -577,8 +577,8 @@ function DepthStairSelect({
         }}
         onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
       >
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[var(--ui-border)]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[var(--ui-selection)] transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
         <span
           role="slider"
           tabIndex={disabled ? -1 : 0}
@@ -594,7 +594,7 @@ function DepthStairSelect({
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
             else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
           }}
-          className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[var(--brand)] bg-[var(--brand-surface)]`}
+          className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-brand bg-brand-surface`}
           style={{ top: stairCenterOf(depth - 1) }}
         >
           <StairChevron direction="up" />
@@ -665,7 +665,7 @@ function DepthStairRange({
     else onChange(minIndex, Math.max(minIndex, Math.min(maxIndex + delta, maxSelectableIndex)))
   }
   const handleStyle = (index: number) => ({ top: stairCenterOf(index) })
-  const singleClass = `${STAIR_HANDLE_BASE} size-3 border-[var(--brand)] bg-[var(--brand-surface)]`
+  const singleClass = `${STAIR_HANDLE_BASE} size-3 border-brand bg-brand-surface`
   return (
     <div
       role="group"
@@ -693,8 +693,8 @@ function DepthStairRange({
         onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
         onPointerUp={() => { dragRef.current = null }}
       >
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[var(--ui-border)]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[var(--ui-selection)] transition-[top,height]" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[top,height]" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
         {merged ? (
           <span
             role="slider"
@@ -706,7 +706,7 @@ function DepthStairRange({
               if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') handleKeys('min')(e)
               else handleKeys('max')(e)
             }}
-            className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[var(--brand)] bg-[var(--brand-surface)]`}
+            className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-brand bg-brand-surface`}
             style={handleStyle(minIndex)}
           >
             <StairChevron direction="up" />
@@ -913,9 +913,9 @@ function RangeSlider({
         className={`relative h-4 w-full ${disabled ? 'cursor-not-allowed opacity-35' : 'cursor-pointer'}`}
         onPointerDown={startDrag}
       >
-        <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-border)]" />
+        <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
         <div
-          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-selection)]"
+          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
           style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, width: `calc(${maxPct - minPct}% - ${(maxPct - minPct) * 0.16}px)`, transition: slideTransition }}
         />
         {/* 두 핸들이 같은 칸에 모이면 원 두 개가 겹쳐 화살표가 뭉개진다. 그때는 바깥으로 벌어지는
@@ -1058,17 +1058,17 @@ function SingleRangeInput({
   const barTransition = smooth ? `width ${slide}` : undefined
   return (
     <div className={`relative h-4 ${disabled ? 'opacity-35' : ''}`}>
-      <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-border)]" />
+      <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
       <span
         aria-hidden="true"
-        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-selection)]"
+        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
         style={{ width: `calc(${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
       />
       {/* 눈에 보이는 손잡이 — 아래 input의 기본 손잡이는 투명하게 두고, 이 손잡이가 값 위치로 미끄러진다. */}
       {smooth && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--brand)] bg-[var(--brand-surface)]"
+          className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-brand bg-brand-surface"
           style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)`, transition: `left ${slide}` }}
         />
       )}
@@ -1195,7 +1195,7 @@ export function SettingsSectorStockScopeSection({
       </span>
       <SettingDescription>업종 평균에 넣을 종목</SettingDescription>
       <div role="radiogroup" aria-label="집계 대상 종목" className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === scope)} className="rounded-[5px] bg-[var(--accent)]" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === scope)} className="rounded-[5px] border border-brand bg-brand-surface" />
         {options.map(option => {
           const selected = scope === option.value
           return (
@@ -1206,7 +1206,7 @@ export function SettingsSectorStockScopeSection({
               aria-checked={selected}
               onClick={() => onChange(option.value)}
               className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                selected ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
+                selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
               }`}
             >
               {option.label}
@@ -1216,7 +1216,7 @@ export function SettingsSectorStockScopeSection({
           )
         })}
         {/* 전종목 버튼 안쪽 오른쪽 — 버튼 안에 버튼을 넣을 수 없어 같은 자리에 겹쳐 두고, 눌러도 선택이 바뀌지 않는다. translate를 쓰면 안쪽의 fixed 말풍선이 이 칸 기준으로 위치가 틀어져 inset-y-0으로 가운데에 둔다. 어두운 미선택 칩에서는 아이콘을 밝게, 밝은 선택 채움에서는 진하게 표시하고 호버·포커스에도 대비를 유지한다. */}
-        <span className={`pointer-events-none absolute inset-y-0 left-1/2 right-0.5 z-20 flex items-center justify-center text-[13px]/4 font-medium ${scope === 'ALL' ? '[&_button]:text-ui-surface [&_button:hover]:text-ui-background [&_button:focus-visible]:text-ui-background' : '[&_button]:text-ui-text [&_button:hover]:text-ui-white [&_button:focus-visible]:text-ui-white'}`}>
+        <span className={`pointer-events-none absolute inset-y-0 left-1/2 right-0.5 z-20 flex items-center justify-center text-[13px]/4 font-medium ${scope === 'ALL' ? '[&_button]:text-ui-white [&_button:hover]:text-ui-white [&_button:focus-visible]:text-ui-white' : '[&_button]:text-ui-text [&_button:hover]:text-ui-white [&_button:focus-visible]:text-ui-white'}`}>
           <span aria-hidden="true" className="invisible whitespace-nowrap">전종목</span>
           <span className="pointer-events-auto flex items-center">
             <SettingHelpBubble
@@ -1290,7 +1290,7 @@ export function SettingsAverageModeSection({
       <div className={enabled ? '' : 'opacity-35'}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
         <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
-          <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] bg-[var(--accent)]" />
+          <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] border border-brand bg-brand-surface" />
           {options.map(option => {
             const selected = avgChangeRateUseSimple === option.value
             return (
@@ -1302,7 +1302,7 @@ export function SettingsAverageModeSection({
                 onClick={() => onChange(option.value)}
                 disabled={!enabled}
                 className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                  selected ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
+                  selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
                 }`}
               >
                 {option.label}
@@ -1386,11 +1386,11 @@ function SettingsTaxonomySelector({
     <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-4 py-3' : 'mb-6 pt-5 pb-6'} text-ui-white`}>
       <p data-map-select-title className="font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none">
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
-        <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
+        <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
         {TAXONOMY_SELECT_TITLE}
       </p>
       <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] bg-[var(--brand-surface)]" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] border border-brand bg-brand-surface" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1458,7 +1458,7 @@ function SettingsAverageModeSelector({
         <SettingHelpBubble label="등락률 평균" description={"업종 등락률 계산에 적용할\n평균 방식을 선택합니다."} />
       </p>
       <div role="radiogroup" aria-label="등락률 평균" className="relative mt-3 grid grid-cols-2 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] bg-[var(--accent)]" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] border border-brand bg-brand-surface" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1467,7 +1467,7 @@ function SettingsAverageModeSelector({
             aria-checked={avgChangeRateUseSimple === option.value}
             onClick={() => avgChangeRateUseSimple !== option.value && onToggleAvgChangeRateUseSimple()}
             className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-              avgChangeRateUseSimple === option.value ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
+              avgChangeRateUseSimple === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
           >
             {option.label}
@@ -1757,7 +1757,7 @@ export function SettingsSectorLevelSection({
               aria-label="박스 내 표기"
               className={`relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px] ${stockLabelEnabled ? '' : 'opacity-35'}`}
             >
-              <SlidingHighlight count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="rounded-[5px] bg-[var(--accent)]" />
+              <SlidingHighlight count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="rounded-[5px] border border-brand bg-brand-surface" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
                 const value = index + 1
                 const selected = stockLabelModeIndex === value
@@ -1770,7 +1770,7 @@ export function SettingsSectorLevelSection({
                     disabled={!stockLabelEnabled}
                     onClick={() => onChangeStockLabelModeIndex(value)}
                     className={`relative z-10 min-h-[38px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
-                      selected ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
+                      selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
                     }`}
                   >
                     {label === '모두' ? (
@@ -1849,7 +1849,7 @@ export function SettingsStockPopupSection({
         aria-label="종목 정보 여는 방식"
         className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]"
       >
-        <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[5px] bg-[var(--accent)]" />
+        <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[5px] border border-brand bg-brand-surface" />
         {[
           { label: '우클릭', onHover: false },
           { label: '마우스 올리기', onHover: true },
@@ -1863,7 +1863,7 @@ export function SettingsStockPopupSection({
               aria-checked={selected}
               onClick={() => onChangeStockPopupOnHover(option.onHover)}
               className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
-              selected ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
+              selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
             >
               {option.label}
@@ -2011,7 +2011,7 @@ export function SettingsSectorChangeSection({
         className="mt-2 justify-center"
       />
       <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative mt-2 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[5px] bg-[var(--accent)]" />
+        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[5px] border border-brand bg-brand-surface" />
         {DIRECTION_OPTIONS.map(option => (
           <button
             key={option.value}
@@ -2019,7 +2019,7 @@ export function SettingsSectorChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -2044,7 +2044,7 @@ export function SettingsStockChangeSection({
       </p>
       <SettingDescription>상승·하락 종목만 표시</SettingDescription>
       <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[5px] bg-[var(--accent)]" />
+        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[5px] border border-brand bg-brand-surface" />
         {DIRECTION_OPTIONS.map(option => (
           <button
             key={option.value}
@@ -2052,7 +2052,7 @@ export function SettingsStockChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -2272,7 +2272,7 @@ export function SettingsColorSection({
             data-hint="기본값으로 초기화"
             onClick={async () => { if (await appConfirm('등락률 색상을 기본값으로 초기화하시겠습니까?', { title: '색상 초기화' })) runWithFeedback(onResetColorScale) }}
             disabled={isResettingColorScale}
-            className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:cursor-wait disabled:opacity-70"
+            className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-brand focus-visible:text-brand disabled:cursor-wait disabled:opacity-70"
           >
             <RefreshIcon className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -2572,7 +2572,7 @@ export default function SettingsPanel({
     <div className="-mr-[3px] ml-auto flex shrink-0 items-center gap-1">
       <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
           if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(discardDrafts)
-        }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50">
+        }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
         <HistoryIcon className="h-5 w-5" aria-hidden="true" />
       </button>
       <button
@@ -2594,9 +2594,9 @@ export default function SettingsPanel({
             commitDrafts(commitPreferences).catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.', { title: '저장 실패' }))
           })
         }}
-        className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50"
+        className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50"
       >
-        {hasDrafts && <span aria-hidden="true" className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-[var(--brand)]" />}
+        {hasDrafts && <span aria-hidden="true" className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-brand" />}
         {/* 좌우 대칭 디스켓 — 위쪽 셔터와 아래쪽 라벨이 가운데에 있고 접힌 모서리가 없다. 오른쪽 위 청록 점(변경 있음)과 겹치는 모양이 없다. */}
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
           <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM7 3v5h10V3M7 21v-8h10v8" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
@@ -2616,7 +2616,7 @@ export default function SettingsPanel({
         data-hint={isOnLeft ? '설정창을 오른쪽으로 이동' : '설정창을 왼쪽으로 이동'}
         ref={sideTabRef}
         style={{ backgroundColor: TAXONOMY_BACKGROUND_COLOR }}
-        className={`absolute top-1/2 z-10 flex h-8 w-[14px] -translate-y-1/2 items-center justify-center border border-ui-border p-0 text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${
+        className={`absolute top-1/2 z-10 flex h-8 w-[14px] -translate-y-1/2 items-center justify-center border border-ui-border p-0 text-ui-muted hover:text-brand focus-visible:text-brand ${
           isOnLeft ? '-right-[13px] rounded-r-lg border-l-0' : '-left-[13px] rounded-l-lg border-r-0'
         }`}
       >
@@ -2634,7 +2634,7 @@ export default function SettingsPanel({
     )}
     <div
       data-settings-panel
-      className="relative tabular-nums select-none flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)]"
+      className="relative tabular-nums select-none flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-ui-panel"
       style={{ '--accent': 'var(--panel-gray)', '--accent-hover': 'var(--ui-white)', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
     >
       {/* 지도 최상단 종목 박스에 맞춘 헤더 높이를 유지하고 내용은 세로 중앙에 둔다. */}
@@ -2643,7 +2643,7 @@ export default function SettingsPanel({
           <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
             {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Group에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
             {/* 아래 Basis 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
-            <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
+            <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
             {pageLabel ?? '설정'}
           </p>
           {stockCountLabel && (
@@ -2656,7 +2656,7 @@ export default function SettingsPanel({
         {headerRight && <div className="-mr-[3px] ml-auto flex shrink-0 items-center">{headerRight}</div>}
       </div>
       {availableSections.length > 0 && (
-      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-ui-border bg-[var(--ui-panel)] px-1">
+      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-ui-border bg-ui-panel px-1">
           {availableSections.map(section => {
             const selected = section.id === selectedSection?.id
             return (
@@ -2673,14 +2673,14 @@ export default function SettingsPanel({
                   else setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  selected ? 'text-[var(--brand)]' : 'text-ui-muted hover:text-[var(--brand)]'
+                  selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
                 <SettingsSectionIcon icon={section.icon} />
                 <span className="max-w-full truncate font-bold">{section.label}</span>
                 <span
                   aria-hidden="true"
-                  className={`absolute inset-x-2 bottom-0 h-0.5 bg-[var(--brand)] transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
+                  className={`absolute inset-x-2 bottom-0 h-0.5 bg-brand transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
                 />
               </button>
             )
@@ -2737,7 +2737,7 @@ export default function SettingsPanel({
       </SettingsFeedbackContext.Provider>
       </div>
       {isPreferenceFeedbackActive && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-[var(--ui-panel)]">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-ui-panel">
           <Spinner showLogo className="aspect-square w-4/5 shrink-0" />
         </div>
       )}

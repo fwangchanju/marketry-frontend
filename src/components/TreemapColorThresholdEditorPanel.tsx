@@ -92,7 +92,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
   }
   const edgeAligned = (position: number) => Math.min(Math.max(position, 0.06), 0.94) * 100
   // 값 말풍선은 눈금 글자와 같은 줄·같은 크기(11px)로 그 위에 포개서 보여 준다(고른 값이 눈금과 같으면 그 눈금 글자를 덮는다).
-  const badgeClass = 'absolute top-[35px] z-10 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-[var(--brand)] px-1 text-[11px] font-medium leading-4 tabular-nums text-ui-background'
+  const badgeClass = 'absolute top-[35px] z-10 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-brand px-1 text-[11px] font-medium leading-4 tabular-nums text-ui-background'
 
   return (
     <>
@@ -112,7 +112,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             role="img"
             aria-label="0% 고정"
             data-hint="0% 고정"
-            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-ui-border hover:border-ui-white'}`}
+            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border ${zeroSelected ? 'border-brand ring-[3px] ring-brand/35' : 'border-ui-border hover:border-ui-white'}`}
             style={{ backgroundColor: zeroColor }}
           />
           <div className={zeroSelected ? 'opacity-70' : ''}>
@@ -135,7 +135,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
                     aria-valuemax={BAR_MAX_PERCENT}
                     aria-valuenow={item.percent}
                     onKeyDown={event => handleKeyDown(event, rank)}
-                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-surface ${selected ? 'border-[var(--brand)] ring-[3px] ring-[var(--brand)]/35' : 'border-ui-border hover:border-ui-white'}`}
+                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-surface ${selected ? 'border-brand ring-[3px] ring-brand/35' : 'border-ui-border hover:border-ui-white'}`}
                     style={{ left }}
                   />
                 </div>
@@ -241,7 +241,7 @@ export default function TreemapColorThresholdEditorPanel({
             type="button"
             onClick={onApply}
             disabled={isSaving}
-            className="h-7 flex-1 rounded-[5px] border border-[var(--brand-surface)] bg-[var(--brand-surface)] px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-[var(--brand-surface-hover)] hover:bg-[var(--brand-surface-hover)] disabled:cursor-wait disabled:opacity-70"
+            className="h-7 flex-1 rounded-[5px] border border-brand-surface bg-brand-surface px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-brand-surface-hover hover:bg-brand-surface-hover disabled:cursor-wait disabled:opacity-70"
           >
             {isSaving ? '적용 중...' : '적용'}
           </button>

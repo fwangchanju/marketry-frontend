@@ -64,7 +64,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
             <polyline points="6 9 12 15 18 9" stroke="var(--brand-surface)" strokeWidth={3} />
           </svg>
         ) : (
-          <ChevronDownIcon strokeWidth={3.5} className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 text-[var(--brand)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDownIcon strokeWidth={3.5} className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 text-brand transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         )}
       </button>
       {isOpen && position && (
@@ -79,7 +79,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
             width: position.width - indent,
             transform: position.openUpward ? 'translateY(-100%)' : undefined,
           }}
-          className="z-50 overflow-hidden rounded-none border border-ui-border bg-[var(--ui-panel)] p-0 text-ui-white shadow-xl"
+          className="z-50 overflow-hidden rounded-none border border-ui-border bg-ui-panel p-0 text-ui-white shadow-xl"
           onClick={e => e.stopPropagation()}
         >
           {options.map((option, index) => (
