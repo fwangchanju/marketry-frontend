@@ -1,3 +1,4 @@
+import { buildSectorParentHints } from '@/utils/sectorFilterHints'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { loadSectorOrder, sectorNamesByDepth, type SectorOrder } from '@/utils/sectorOrder'
@@ -1025,6 +1026,10 @@ export default function AdminStockTable({
   // sectors가 안 바뀌면 참조를 유지해야 AdminStockRow의 React.memo가 제대로 스킵된다.
   const sectorOptions = useMemo(() => buildSectorOptions(sectors), [sectors])
   const sectorOptionsById = useMemo(() => new Map(sectorOptions.map(opt => [opt.id, opt])), [sectorOptions])
+  const sectorParentHints = useMemo(() => buildSectorParentHints(sectorOptions.map(option => {
+    const chain = resolveSectorChain(sectorOptionsById, option.id)
+    return [chain.rootName, chain.midName, chain.leafName].filter((name): name is string => name !== null)
+  })), [sectorOptions, sectorOptionsById])
   // 대·중·소분류 필터는 "가나다 순"과 업종 화면에서 정한 "사용자 지정 순" 순서 중 고른 대로 보여준다(기본 사용자 지정 순, 브라우저에 저장).
   const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'custom'>(() => (localStorage.getItem('marketry:sector-filter-order') === 'alpha' ? 'alpha' : 'custom'))
   const changeSectorFilterMode = useCallback((value: 'alpha' | 'custom') => {
@@ -1582,9 +1587,9 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={columnFilters.clearAll}
-              className="flex h-7 items-center whitespace-nowrap border-0 bg-transparent p-0 text-xs text-[var(--brand)] hover:underline"
+              className="flex h-6 items-center whitespace-nowrap rounded border border-gray-600 bg-transparent px-2 text-sm font-normal text-gray-300 transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
             >
-              필터 {columnFilters.activeCount}개 적용 · 초기화
+              필터 초기화
             </button>
           ) : null
         }
@@ -1718,6 +1723,8 @@ export default function AdminStockTable({
                           onToggle={value => columnFilters.toggle(filterKey, value)}
                           onSelectAll={() => columnFilters.selectAll(filterKey)}
                           onSelectNone={values => columnFilters.selectNone(filterKey, values)}
+                          selectOnlyOnSearch={filterKey === 'industry' || filterKey === 'parentSector' || filterKey === 'midSector' || filterKey === 'subSector'}
+                          hintOf={filterKey === 'midSector' || filterKey === 'subSector' ? value => sectorParentHints[filterKey].get(value) : undefined}
                           optionOrder={filterKey === 'sizeTier' ? tierOrder : filterKey === 'market' ? ['코스피', '코스닥'] : filterKey === 'nxt' ? ['O', '-'] : filterKey === 'parentSector' ? sectorFilterOrder[0] : filterKey === 'midSector' ? sectorFilterOrder[1] : filterKey === 'subSector' ? sectorFilterOrder[2] : undefined}
                           orderMode={filterKey === 'parentSector' || filterKey === 'midSector' || filterKey === 'subSector' ? { value: sectorFilterMode, onChange: changeSectorFilterMode } : undefined}
                           labelOf={filterKey === 'nxt' ? value => (value === 'O' ? 'NXT 거래' : 'NXT 미거래') : undefined}

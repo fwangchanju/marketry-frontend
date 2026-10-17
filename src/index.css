@@ -465,10 +465,29 @@ a { color: var(--accent-light); text-decoration: none; }
 /* 지도 설정 탭마다 1) 2) 3) 4) 5) 제목을 같은 높이에서 시작한다. 내용 높이를 재서 맞추면 글꼴이나 항목 내용이 바뀔 때마다
    소수점 단위로 어긋나서, 항목마다 높이를 고정(127px = 가장 높은 항목 103px + 여백 24px)해 위치가 내용과 무관하게
    정해지게 한다. 제목은 탭 내용 상단 기준 20/147/274/401/528px에서 시작한다. 첫 항목은 위 여백(20px)을 포함해 147px.
-   마지막 항목(제외 업종, 등락률 색상)은 길어도 시작 위치만 맞으면 돼서 높이를 고정하지 않는다.
+   등락률 색상은 길어도 시작 위치만 맞으면 돼서 높이를 고정하지 않는다.
    북마크 탭은 자체 간격 규칙을 쓴다. 항목 내용이 103px를 넘게 바뀌면 이 값을 다시 정해야 한다. */
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-sector-change, .settings-third-stock-change, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places) {
   height: 127px;
+}
+
+/* 제외 업종은 항목 높이를 유지하고 목록만 내부에서 스크롤한다. */
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-fourth-exclude, .settings-second-exclude) {
+  height: 127px;
+  padding-bottom: 24px;
+}
+
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-fourth-exclude, .settings-second-exclude) > div {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.settings-panel-tab-content[data-align-second-heading] .settings-exclude-list {
+  flex: 1;
+  min-height: 0;
+  overscroll-behavior-y: contain;
 }
 
 /* 개수 선택과 업종 단계가 함께 있어 다음 항목까지 충분한 여백을 둔다. */
@@ -500,16 +519,12 @@ a { color: var(--accent-light); text-decoration: none; }
 
 .settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color)::before {
   content: "";
-  display: none;
+  display: block;
   position: absolute;
   top: -12px;
   left: 0;
   right: 0;
   border-top: 1px solid rgb(255 255 255 / 12%);
-}
-
-.settings-panel-tab-content[data-align-second-heading] :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color)::before {
-  display: block;
 }
 
 /* 그룹 페이지처럼 탭 없이 항목만 쌓는 설정 본문 — 첫 항목을 뺀 각 항목 위에 구분선을 둔다. */
@@ -524,6 +539,26 @@ a { color: var(--accent-light); text-decoration: none; }
   left: 0;
   right: 0;
   border-top: 1px solid rgb(255 255 255 / 12%);
+}
+
+/* 모든 페이지와 탭은 마지막 항목 아래에도 같은 구분선을 둔다.
+   스크롤 본문 끝에 그려서 길어진 편집 영역이나 목록과 겹치지 않게 한다. */
+.settings-panel-tab-content::after {
+  content: "";
+  display: block;
+  margin-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+}
+
+/* 높이가 정해진 맵 항목은 남겨 둔 하단 여백의 가운데에 선을 맞춘다. */
+.settings-panel-tab-content[data-align-second-heading]:not(.settings-plain-content):not(:has(.settings-third-color))::after,
+.settings-bookmark-tab::after {
+  margin-top: -12px;
+}
+
+/* 빈 북마크 안내는 설정 항목이 아니므로 끝 구분선을 생략한다. */
+.settings-bookmark-tab:not(:has(.settings-bookmark-item:not(.hidden)))::after {
+  display: none;
 }
 
 /* 탭 없이 항목만 쌓는 설정 본문(그룹·커스텀)의 항목 이름 앞에는 지도 설정창처럼 1) 2) 3) 번호를 붙인다. 번호는 화면에 보이는 순서대로 자동으로 매겨진다.
@@ -755,11 +790,20 @@ a { color: var(--accent-light); text-decoration: none; }
   }
 }
 
-/* 설정창 스크롤 영역(탭 내용 전체, 제외 업종 목록) — 맥 기본 스크롤바는 스크롤할 때만 보여서 내용이 잘린 것처럼 보인다. 가는 스크롤바를 항상 보이게 한다.
+/* 필터는 body 포털에 떠서 #root의 공통 포커스 정리가 닿지 않는다. */
+.column-filter-popup button:focus,
+.column-filter-popup button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.column-filter-options { scrollbar-gutter: stable; }
+
+/* 설정창과 열 필터의 스크롤 영역(탭 내용 전체, 제외 업종 목록, 필터 선택 목록) — 맥 기본 스크롤바는 스크롤할 때만 보여서 내용이 잘린 것처럼 보인다. 가는 스크롤바를 항상 보이게 한다.
    브라우저를 확대하면 탭 내용도 넘쳐서 스크롤이 생긴다. */
-:is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar { width: 6px; }
-:is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar-track { background: rgb(255 255 255 / 8%); border-radius: 3px; }
-:is(.settings-exclude-list, .settings-panel-tab-content)::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 40%); border-radius: 3px; }
+:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar { width: 6px; }
+:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar-track { background: rgb(255 255 255 / 8%); border-radius: 3px; }
+:is(.settings-exclude-list, .settings-panel-tab-content, .column-filter-options)::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 40%); border-radius: 3px; }
 
 /* 설정창 회색 칩(선택 버튼의 안 고른 칸, 실행 버튼, 목록 줄)에 마우스를 올리면 강조색을 30%만 얹어 은은하게 밝힌다. 비활성 버튼에는 적용하지 않는다. */
 .settings-chip-hover:not(:disabled):hover {
