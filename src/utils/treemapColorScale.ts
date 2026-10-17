@@ -16,26 +16,26 @@ export interface ColorScaleConfig {
   thresholds: ColorScaleThreshold[]
 }
 
-// 기본 색상 규칙 — 파랑(음수)과 빨강(양수)은 같은 채도(75)와 같은 명도를 쓰고, 명도는 구간 순서대로 16·33·46·58로 오른다(기본 구간은 2/5/10/20%).
+// 기본 색상 규칙 — 파랑(음수)과 빨강(양수)은 같은 채도(60)와 같은 명도를 쓰고, 명도는 구간 순서대로 16·33·46·58로 오른다(기본 구간은 2/5/8/15%, 하락 파랑 228°·채도 60에 맞춰 상승 빨강도 채도 60).
 // 0%는 색상 편집기의 첫 색인 회색(채도 0)이고 명도는 18이다(0%에서 첫 단계로 갈 때 밝기가 꺾이지 않게 첫 단계 명도 16보다 살짝 밝게 둔다). 색상은 색상 편집기의 파랑(215)·빨강(0) 프리셋과 같다.
 // 범례는 하락 4칸 + 0% + 상승 4칸의 9칸이다.
 // 0%일 때 색 — 저장된 threshold가 없으면 이 값으로 폴백.
 export const DEFAULT_ZERO_COLOR = '#2e2e2e'
 
-// 저장된 threshold가 하나도 없는 side에 쓰는 폴백 프리셋(절댓값 기준). 2/5/10/20%p의 4개 임계값에만 threshold를 둔다.
-// 20% 초과는 별도 threshold를 추가하지 않고, 아래 resolveTreemapColor의 "최고 threshold 초과 시 clamp" 동작에 맡긴다 —
-// 그래야 20% 넘는 구간 전체가 flat한 최고 단계 색 그대로 유지된다(상승만 20~25%에서 포인트 색).
+// 저장된 threshold가 하나도 없는 side에 쓰는 폴백 프리셋(절댓값 기준). 2/5/8/15%p의 4개 임계값에만 threshold를 둔다.
+// 15% 초과는 별도 threshold를 추가하지 않고, 아래 resolveTreemapColor의 "최고 threshold 초과 시 clamp" 동작에 맡긴다 —
+// 그래야 15% 넘는 구간 전체가 flat한 최고 단계 색 그대로 유지된다. 포인트 색은 쓰지 않는다.
 export const DEFAULT_PLUS_THRESHOLDS: ColorScaleThreshold[] = [
-  { thresholdPercent: 2, color: '#470a0a', colorLabel: 'red' }, // 명도 16
-  { thresholdPercent: 5, color: '#931515', colorLabel: 'red' }, // 명도 33
-  { thresholdPercent: 10, color: '#cd1d1d', colorLabel: 'red' }, // 명도 46
-  { thresholdPercent: 20, color: '#e44444', colorLabel: 'red' }, // 명도 58
+  { thresholdPercent: 2, color: '#411010', colorLabel: 'red' }, // 명도 16
+  { thresholdPercent: 5, color: '#872222', colorLabel: 'red' }, // 명도 33
+  { thresholdPercent: 8, color: '#bc2f2f', colorLabel: 'red' }, // 명도 46
+  { thresholdPercent: 15, color: '#d45454', colorLabel: 'red' }, // 명도 58
 ]
 export const DEFAULT_MINUS_THRESHOLDS: ColorScaleThreshold[] = [
   { thresholdPercent: 2, color: '#101a41', colorLabel: 'blue' }, // 명도 16
   { thresholdPercent: 5, color: '#223687', colorLabel: 'blue' }, // 명도 33
-  { thresholdPercent: 10, color: '#2f4bbc', colorLabel: 'blue' }, // 명도 46
-  { thresholdPercent: 20, color: '#546dd4', colorLabel: 'blue' }, // 명도 58
+  { thresholdPercent: 8, color: '#2f4bbc', colorLabel: 'blue' }, // 명도 46
+  { thresholdPercent: 15, color: '#546dd4', colorLabel: 'blue' }, // 명도 58
 ]
 
 // 저장된 구간이 하나도 없을 때 draft를 채우는 초기값 — 위 기본 프리셋을 부호 있는 실제 구간(-12/-8/-5/-2, +2/+5/+8/+12)으로
@@ -50,11 +50,11 @@ export function createDefaultColorScale(): ColorScaleConfig {
   }
 }
 
-// 상승(빨강, 색상 0)·하락(파랑, 색상 228·채도 60)의 정해진 색 — 상승은 채도 75에 구간 순서(작은 값부터)대로 명도 16·33·46·58이다. 기본 색과 같고, 등락률 설정에서 손잡이를 옮기면 이 색으로 맞춘다.
+// 상승(빨강, 색상 0)·하락(파랑, 색상 228·채도 60)의 정해진 색 — 상승·하락 모두 채도 60에 구간 순서(작은 값부터)대로 명도 16·33·46·58이다. 기본 색과 같고, 등락률 설정에서 손잡이를 옮기면 이 색으로 맞춘다.
 const FIXED_RANK_LIGHTNESS = [16, 33, 46, 58]
 export function fixedRankColor(side: 'up' | 'down', rank: number): { color: string; colorLabel: string } {
   const lightness = FIXED_RANK_LIGHTNESS[Math.min(Math.max(rank, 0), FIXED_RANK_LIGHTNESS.length - 1)]
-  return { color: hslToHex(side === 'up' ? 0 : 228, side === 'up' ? 75 : 60, lightness), colorLabel: side === 'up' ? 'red' : 'blue' }
+  return { color: hslToHex(side === 'up' ? 0 : 228, 60, lightness), colorLabel: side === 'up' ? 'red' : 'blue' }
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -93,12 +93,6 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
-// 큰 상승(20~25%)에서만 나타나는 포인트 색(장미). 하락은 포인트 색 없이 인디고 단계만 쓴다.
-// 최고 단계 색에서 20%부터 서서히 바뀌어 25%에서 완전히 이 색이 된다.
-const POINT_START_PERCENT = 20
-const POINT_END_PERCENT = 25
-const POINT_COLOR_UP = '#e11d6a'
-
 // 밝은 배경이면 true — 흰 글자가 읽히지 않으므로 어두운 글자를 쓴다(상대 휘도 0.4 초과).
 export function isLightColor(hex: string): boolean {
   const [r, g, b] = hexToRgb(hex).map(value => {
@@ -135,12 +129,8 @@ export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig
     }
   }
 
-  // 가장 큰 threshold보다도 크면 20%까지는 그 색 그대로(clamp)이고, 20~25%에서만 상승은 포인트 색(핫핑크)으로 바뀐다. 하락은 포인트 색이 없다.
-  const last = thresholds[thresholds.length - 1]
-  const start = Math.max(Math.abs(last.thresholdPercent), POINT_START_PERCENT)
-  if (changeRate < 0 || abs <= start || start >= POINT_END_PERCENT) return last.color
-  const t = Math.min(1, (abs - start) / (POINT_END_PERCENT - start))
-  return lerpColor(last.color, POINT_COLOR_UP, t)
+  // 가장 큰 threshold보다도 크면 그 색 그대로(clamp)이다. 포인트 색은 없다.
+  return thresholds[thresholds.length - 1].color
 }
 
 // changeRate(부호 있는 등락률, %) → 그 부호 쪽 threshold 중 절댓값이 가장 큰 색(보간 없이 고정).

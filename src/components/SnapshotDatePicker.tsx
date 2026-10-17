@@ -483,6 +483,8 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   const dayLabel = draftDay
     ? (draftDay.snapshotTime ? toSnapshotDateLabel(draftDay.snapshotTime) : `${draftDay.date} (${WEEKDAY_LABELS[new Date(`${draftDay.date}T00:00:00`).getDay()]})`)
     : '-'
+  // 아직 새로 고른 날이 없어도 지난 날짜를 보는 중이면 지금 보는 날짜를 흐리게 보여 준다(고르면 흰색으로 바뀐다).
+  const viewedDayLabel = draftDay === null && isPast && !isViewingRange && viewedSnapshotTime !== null ? toSnapshotDateLabel(viewedSnapshotTime) : null
 
   return (
     <span ref={rootRef} className="relative z-40 flex items-center">
@@ -644,7 +646,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
               <div className="mt-1 flex w-[31rem] items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]">
                 <span className="flex items-center gap-2">
                   <span className="font-semibold text-brand">날짜</span>
-                  {draftDay && <span className="text-ui-white">{dayLabel}</span>}
+                  {draftDay ? <span className="text-ui-white">{dayLabel}</span> : viewedDayLabel !== null && <span className="text-ui-muted">{viewedDayLabel}</span>}
                   {tradingDayBadge !== null && <span className="rounded bg-brand px-1.5 py-0.5 font-semibold text-ui-background">{tradingDayBadge}</span>}
                 </span>
                 <button type="button" disabled={draftDay === null} onClick={applyDay} className={APPLY_BUTTON_CLASS}>
