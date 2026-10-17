@@ -1662,11 +1662,27 @@ export function SettingsSectorLevelSection({
                 value={activeDepthMetric}
                 onChange={onChangeActiveDepthMetric}
                 ariaLabel="업종 지표"
-                badge="업종"
+                badge="업종명"
                 outlinedChevron
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
-                className={`mt-4 max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-35'}`}
+                className={`mt-[9.5px] max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-35'}`}
               />
+              {/* 업종 지표 버튼이 지도에서 종목 상자 위(업종 머리글)에 놓인다는 것을 보여 주는 가짜 상자 — 누를 수 없는 그림이라 회색 선으로만 그린다. */}
+              <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-[16rem] pr-4 ${depthMetricEnabled ? '' : 'opacity-35'}`}>
+                <div className="relative h-[62px] rounded-b-[5px] border-x border-b border-ui-control">
+                  <span className="absolute inset-y-0 left-[42%] border-l border-ui-control" />
+                  <span className="absolute left-[42%] right-0 top-1/2 border-t border-ui-control" />
+                  <span className="absolute left-0 top-[58%] w-[42%] border-t border-ui-control" />
+                  <span className="absolute bottom-0 left-[20%] top-[58%] border-l border-ui-control" />
+                  <span className="absolute left-[70%] top-0 h-1/2 border-l border-ui-control" />
+                  <span className="absolute left-[70%] right-0 top-1/4 border-t border-ui-control" />
+                  <span className="absolute left-[85%] top-0 h-1/4 border-l border-ui-control" />
+                  <span className="absolute left-[85%] top-1/4 h-1/4 border-l border-ui-control" />
+                  <span className="absolute bottom-0 left-[64%] top-1/2 border-l border-ui-control" />
+                  <span className="absolute bottom-0 left-[84%] top-1/2 border-l border-ui-control" />
+                  <span className="absolute left-[64%] right-0 top-[75%] border-t border-ui-control" />
+                </div>
+              </div>
             </div>
             {isDepthMetricDisabled && (
               <div

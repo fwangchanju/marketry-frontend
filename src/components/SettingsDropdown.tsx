@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
-import { CheckIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
+import { ChevronDownIcon } from '@/components/icons/AppIcons'
 
 // 설정창 드롭박스 — (badge를 주면 왼쪽에 지도 업종 헤더 모양 배지가 붙는다) 고른 값이 한 줄로 보이는 28px 버튼이고, 누르면 같은 폭의 목록이 펼쳐진다.
-// 목록은 변경 내역 목록과 같은 모양(fixed 위치·var(--ui-panel) 바탕·회색 테두리)이고, 고른 줄에는 체크(✓)가 붙는다.
+// 목록은 변경 내역 목록과 같은 모양(fixed 위치·var(--ui-panel) 바탕·회색 테두리)이고, 고른 값은 목록에서 뺀다(지금 값은 닫힌 버튼에 보이므로 나머지 선택지만 보여 준다).
 
 const ROW_HEIGHT = 25
+// 열린 목록의 한 줄은 닫힌 버튼보다 낮게 둔다.
+const MENU_ROW_HEIGHT = 20
 // compact는 설명 글자(12px/16px) 줄 높이에 가깝게 18px.
 const COMPACT_HEIGHT = 18
 const COMPACT_ROW_HEIGHT = 20
@@ -32,12 +34,15 @@ interface Props<K extends string> {
 
 export default function SettingsDropdown<K extends string>({ options, value, onChange, ariaLabel, disabled = false, badge, compact = false, outlinedChevron = false, className = '' }: Props<K>) {
   const [isOpen, setIsOpen] = useState(false)
-  const [indent, setIndent] = useState(0)
+  // 닫힌 버튼의 배지 폭 — 열린 목록의 글자를 고른 값 글자(배지 오른쪽)와 같은 세로줄에 맞추는 데 쓴다.
+  const [badgeWidth, setBadgeWidth] = useState(0)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const badgeRef = useRef<HTMLSpanElement>(null)
   const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false)
   const selected = options.find(option => option.key === value)
+  const listIndent = badge ? badgeWidth + 2.5 : 0
+  const textPadLeft = badge ? Math.max(4, badgeWidth + 12.5 - listIndent - 1) : undefined
 
   return (
     <div className={className}>
@@ -49,8 +54,8 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
         aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => {
-          // 목록은 배지 오른쪽부터(고른 값이 보이는 자리 아래로) 펼쳐서, 왼쪽에는 배지만 남게 한다.
-          setIndent(badgeRef.current ? badgeRef.current.offsetWidth + 5 : 0)
+          // 목록은 배지 오른쪽 끝(배지 폭 + 왼쪽 여백 2.5)에서 시작하고(직각, 회색 테두리), 글자는 버튼의 고른 값 글자와 같은 세로줄에 놓인다(배지 폭 + 12.5).
+          setBadgeWidth(badgeRef.current ? badgeRef.current.offsetWidth : 0)
           setIsOpen(open => !open)
         }}
         className={`flex w-full items-center justify-between rounded-[5px] border-0 bg-[var(--accent)]/50 ${badge ? 'pl-[2.5px] pr-2.5' : compact ? 'pl-1.5 pr-1' : 'px-2.5'} text-left ${compact ? 'text-xs' : 'text-[13px]'} font-medium text-ui-white disabled:cursor-not-allowed`}
@@ -74,15 +79,15 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
           aria-label={ariaLabel}
           style={{
             position: 'fixed',
-            top: position.top + (position.openUpward ? -6 : 6),
-            left: position.left + indent,
-            width: position.width - indent,
+            top: position.top + (position.openUpward ? 0 : 0),
+            left: position.left + listIndent,
+            width: position.width - listIndent,
             transform: position.openUpward ? 'translateY(-100%)' : undefined,
           }}
-          className="z-50 overflow-hidden rounded-none border border-ui-border bg-ui-panel p-0 text-ui-white shadow-xl"
+          className="z-50 overflow-hidden rounded-none border border-ui-border bg-ui-background p-0 text-ui-white shadow-xl"
           onClick={e => e.stopPropagation()}
         >
-          {options.map((option, index) => (
+          {options.filter(option => option.key !== value).map((option, index) => (
             <button
               key={option.key}
               type="button"
@@ -92,11 +97,10 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
                 onChange(option.key)
                 setIsOpen(false)
               }}
-              className={`settings-chip-hover flex w-full items-center justify-between rounded-none border-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-[13px]'} text-left font-medium text-ui-white ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${option.key === value ? 'bg-ui-white/20' : 'bg-transparent'}`}
-              style={{ height: compact ? COMPACT_ROW_HEIGHT : ROW_HEIGHT }}
+              className={`settings-chip-hover flex w-full items-center justify-between rounded-none border-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-xs'} text-left font-medium text-ui-white ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${option.key === value ? 'bg-ui-white/20' : 'bg-transparent'}`}
+              style={{ height: compact ? COMPACT_ROW_HEIGHT : MENU_ROW_HEIGHT, ...(textPadLeft !== undefined ? { paddingLeft: textPadLeft } : {}) }}
             >
               <span className="truncate">{option.label}</span>
-              {option.key === value && <CheckIcon className={`${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} shrink-0`} />}
             </button>
           ))}
         </div>
