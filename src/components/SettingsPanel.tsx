@@ -424,8 +424,8 @@ function CursorHintBubble({ hint, children }: { hint: CursorHint; children: Reac
 // 계단식 업종 칸(업종 분류 깊이·지표 표시 단계가 같이 쓴다) — 대분류·중분류(▸)·소분류(▸▸)를 지도 업종 헤더 모양(칸 18px, 간격 3px)으로 쌓고 꺾인 선으로 잇는다.
 // 칸과 배지는 고르는 버튼이 아니라 상태 표시이고, 고르는 건 오른쪽 세로 트랙(STAIR_RAIL 폭)의 손잡이가 맡는다.
 // 3단계가 항목 안(제목 위에서 아래 구분선까지 115px)에 들어간다.
-const STAIR_ROW = 18
-const STAIR_GAP = 3
+const STAIR_ROW = 25
+const STAIR_GAP = 6
 const STAIR_STEP = 14
 const STAIR_RAIL = 16
 const stairCenterOf = (index: number) => index * (STAIR_ROW + STAIR_GAP) + STAIR_ROW / 2
@@ -499,7 +499,7 @@ function StairRows({
               className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-brand/35' : lit ? 'bg-[var(--accent)]/50' : 'bg-[var(--ui-control)]'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-brand' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
               style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
-              <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-ui-background/35' : 'bg-ui-white/20'}`}>
+              <span className={`ml-[2.5px] whitespace-nowrap rounded-[3px] px-1.5 leading-[20px] ${lit ? 'bg-ui-background/35' : 'bg-ui-white/20'}`}>
                 {mark}{label}
               </span>
               {valueLabel && lit && !blocked && <span className="ml-2.5 truncate text-[13px] font-medium">{valueLabel}</span>}
@@ -1631,7 +1631,7 @@ export function SettingsSectorLevelSection({
               />
             </div>
             <SettingDescription dimmed={!sectorLevelEnabled}>선택한 단계까지 업종을 세분화해 표시</SettingDescription>
-            <div className={`settings-control-inset mt-[6px] ${sectorLevelEnabled ? '' : 'opacity-35'}`}>
+            <div className={`settings-control-inset mt-[9.5px] ${sectorLevelEnabled ? '' : 'opacity-35'}`}>
               <DepthStairSelect
                 depth={depthValue}
                 labels={depthMetricLabels}
@@ -1696,7 +1696,7 @@ export function SettingsSectorLevelSection({
             <div className={isDepthMetricRangeDisabled ? 'opacity-35' : ''}>
               <SettingDescription>지표를 표시할 업종 단계 범위</SettingDescription>
             </div>
-            <div className={`settings-control-inset mt-[6px] ${isDepthMetricRangeDisabled ? 'opacity-35' : ''}`}>
+            <div className={`settings-control-inset mt-[9.5px] ${isDepthMetricRangeDisabled ? 'opacity-35' : ''}`}>
               <DepthStairRange
                 minIndex={depthMetricSliderMinIndex}
                 maxIndex={depthMetricSliderMaxIndex}
@@ -2019,7 +2019,7 @@ export function SettingsSectorChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+            className={`relative z-10 min-h-[25px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -2052,7 +2052,7 @@ export function SettingsStockChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+            className={`relative z-10 min-h-[25px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -2186,7 +2186,7 @@ export function SettingsTopPickSection({
             className={`mt-1 w-[42px] shrink-0 ${topPickEnabled ? '' : 'opacity-35'}`}
           />
         </div>
-        <div className={`settings-slider-control mt-[6px] ${topPickEnabled ? '' : 'opacity-35'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
+        <div className={`settings-slider-control mt-[7.5px] ${topPickEnabled ? '' : 'opacity-35'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
           <div role="radiogroup" aria-label="상위 업종 강조 단계" className="relative" style={{ height: stairHeight(depthLabelCount) }}>
             <StairRows
               railWidth={0}

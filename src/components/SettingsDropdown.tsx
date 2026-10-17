@@ -5,7 +5,7 @@ import { CheckIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 // 설정창 드롭박스 — (badge를 주면 왼쪽에 지도 업종 헤더 모양 배지가 붙는다) 고른 값이 한 줄로 보이는 28px 버튼이고, 누르면 같은 폭의 목록이 펼쳐진다.
 // 목록은 변경 내역 목록과 같은 모양(fixed 위치·var(--ui-panel) 바탕·회색 테두리)이고, 고른 줄에는 체크(✓)가 붙는다.
 
-const ROW_HEIGHT = 28
+const ROW_HEIGHT = 25
 // compact는 설명 글자(12px/16px) 줄 높이에 가깝게 18px.
 const COMPACT_HEIGHT = 18
 const COMPACT_ROW_HEIGHT = 20
@@ -53,10 +53,10 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
           setIndent(badgeRef.current ? badgeRef.current.offsetWidth + 5 : 0)
           setIsOpen(open => !open)
         }}
-        className={`flex w-full items-center justify-between rounded-[5px] border-0 bg-[var(--accent)]/50 ${badge ? 'pl-[5px] pr-2.5' : compact ? 'pl-1.5 pr-1' : 'px-2.5'} text-left ${compact ? 'text-xs' : 'text-[13px]'} font-medium text-ui-white disabled:cursor-not-allowed`}
+        className={`flex w-full items-center justify-between rounded-[5px] border-0 bg-[var(--accent)]/50 ${badge ? 'pl-[2.5px] pr-2.5' : compact ? 'pl-1.5 pr-1' : 'px-2.5'} text-left ${compact ? 'text-xs' : 'text-[13px]'} font-medium text-ui-white disabled:cursor-not-allowed`}
         style={{ height: compact ? COMPACT_HEIGHT : ROW_HEIGHT }}
       >
-        {badge && <span ref={badgeRef} className="whitespace-nowrap rounded-[3px] bg-ui-background/35 px-1.5 text-[12px] font-bold leading-[18px]">{badge}</span>}
+        {badge && <span ref={badgeRef} className="whitespace-nowrap rounded-[3px] bg-ui-background/35 px-1.5 text-[12px] font-bold leading-[20px]">{badge}</span>}
         <span className={`truncate ${badge ? 'ml-2.5 mr-auto' : ''}`}>{selected?.label}</span>
         {outlinedChevron ? (
           <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
