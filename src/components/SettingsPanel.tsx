@@ -1853,7 +1853,7 @@ export function SettingsSectorLevelSection({
                   {!stockLabelEnabled ? (
                     <><span className="inline-block whitespace-nowrap font-bold">{settingNumber('boxLabel')}) 박스 내 표기</span> 토글을 켜면<br />활성화됩니다.</>
                   ) : (
-                    <><span className="inline-block whitespace-nowrap font-bold">{settingNumber('boxLabel')}) 박스 내 표기</span>에서<br />등락률 또는 종목명+등락률을 선택하면<br />활성화됩니다.</>
+                    <><span className="inline-block whitespace-nowrap font-bold">{settingNumber('boxLabel')}) 박스 내 표기</span>에서<br />등락률이 포함된 칸을 선택하면<br />활성화됩니다.</>
                   )}
                 </CursorHintBubble>
               )}
@@ -2495,7 +2495,9 @@ export default function SettingsPanel({
   const isLoggedIn = useIsLoggedIn()
   const { commitPreferences, isLoaded: preferencesLoaded } = useCustomPreferences()
   const hasDrafts = useHasDrafts()
-  const [isPreferenceFeedbackActive, setIsPreferenceFeedbackActive] = useState(false)
+  const [isPreferenceFeedbackVisible, setIsPreferenceFeedbackVisible] = useState(false)
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false)
+  const isPreferenceFeedbackActive = isPreferenceFeedbackVisible || isSavingPreferences
   const preferenceFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => {
     if (preferenceFeedbackTimerRef.current !== null) clearTimeout(preferenceFeedbackTimerRef.current)
@@ -2503,10 +2505,10 @@ export default function SettingsPanel({
   const runPreferenceAction = (action: () => void) => {
     if (preferenceFeedbackTimerRef.current !== null) return
     // 설정 반영은 즉시 실행하고, 로딩 화면만 공통 시간 동안 유지한다.
-    setIsPreferenceFeedbackActive(true)
+    setIsPreferenceFeedbackVisible(true)
     preferenceFeedbackTimerRef.current = setTimeout(() => {
       preferenceFeedbackTimerRef.current = null
-      setIsPreferenceFeedbackActive(false)
+      setIsPreferenceFeedbackVisible(false)
     }, REFRESH_FEEDBACK_MIN_DURATION_MS)
     action()
   }
@@ -2626,8 +2628,11 @@ export default function SettingsPanel({
           }
           if (!await appConfirm('지금 변경사항을 저장하시겠습니까?', { title: '저장하기' })) return
           // 저장에 실패하면 임시값은 그대로 남아 있으니 알리고, 사용자가 다시 저장하게 한다.
+          setIsSavingPreferences(true)
           runPreferenceAction(() => {
-            commitDrafts(commitPreferences).catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.', { title: '저장 실패' }))
+            commitDrafts(commitPreferences)
+              .catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.', { title: '저장 실패' }))
+              .finally(() => setIsSavingPreferences(false))
           })
         }}
         className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50"
