@@ -32,10 +32,10 @@ export const DEFAULT_PLUS_THRESHOLDS: ColorScaleThreshold[] = [
   { thresholdPercent: 12, color: '#e44444', colorLabel: 'red' }, // 명도 58
 ]
 export const DEFAULT_MINUS_THRESHOLDS: ColorScaleThreshold[] = [
-  { thresholdPercent: 2, color: '#12253f', colorLabel: 'blue' }, // 명도 16
-  { thresholdPercent: 5, color: '#264c82', colorLabel: 'blue' }, // 명도 33
-  { thresholdPercent: 8, color: '#356bb6', colorLabel: 'blue' }, // 명도 46
-  { thresholdPercent: 12, color: '#598acf', colorLabel: 'blue' }, // 명도 58
+  { thresholdPercent: 2, color: '#101a41', colorLabel: 'blue' }, // 명도 16
+  { thresholdPercent: 5, color: '#223687', colorLabel: 'blue' }, // 명도 33
+  { thresholdPercent: 8, color: '#2f4bbc', colorLabel: 'blue' }, // 명도 46
+  { thresholdPercent: 12, color: '#546dd4', colorLabel: 'blue' }, // 명도 58
 ]
 
 // 저장된 구간이 하나도 없을 때 draft를 채우는 초기값 — 위 기본 프리셋을 부호 있는 실제 구간(-12/-8/-5/-2, +2/+5/+8/+12)으로
@@ -50,11 +50,11 @@ export function createDefaultColorScale(): ColorScaleConfig {
   }
 }
 
-// 상승(빨강, 색상 0)·하락(파랑, 색상 215·채도 55)의 정해진 색 — 상승은 채도 75에 구간 순서(작은 값부터)대로 명도 16·33·46·58이다. 기본 색과 같고, 등락률 설정에서 손잡이를 옮기면 이 색으로 맞춘다.
+// 상승(빨강, 색상 0)·하락(파랑, 색상 228·채도 60)의 정해진 색 — 상승은 채도 75에 구간 순서(작은 값부터)대로 명도 16·33·46·58이다. 기본 색과 같고, 등락률 설정에서 손잡이를 옮기면 이 색으로 맞춘다.
 const FIXED_RANK_LIGHTNESS = [16, 33, 46, 58]
 export function fixedRankColor(side: 'up' | 'down', rank: number): { color: string; colorLabel: string } {
   const lightness = FIXED_RANK_LIGHTNESS[Math.min(Math.max(rank, 0), FIXED_RANK_LIGHTNESS.length - 1)]
-  return { color: hslToHex(side === 'up' ? 0 : 215, side === 'up' ? 75 : 55, lightness), colorLabel: side === 'up' ? 'red' : 'blue' }
+  return { color: hslToHex(side === 'up' ? 0 : 228, side === 'up' ? 75 : 60, lightness), colorLabel: side === 'up' ? 'red' : 'blue' }
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -93,12 +93,12 @@ function resolveZeroColor(config: ColorScaleConfig): string {
   return config.thresholds.find(t => t.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR
 }
 
-// 큰 등락률(20~25%)에서만 나타나는 포인트 색 — 장미(상승)·브랜드 서브의 짙은 슬레이트 블루(하락)이다.
+// 큰 등락률(20~25%)에서만 나타나는 포인트 색 — 장미(상승)·스카이 블루(하락)이다.
 // 최고 단계 색에서 20%부터 서서히 바뀌어 25%에서 완전히 이 색이 되며, 하락 극단 구간에서도 흰 글자 대비를 유지한다.
 const POINT_START_PERCENT = 20
 const POINT_END_PERCENT = 25
 const POINT_COLOR_UP = '#e11d6a'
-const POINT_COLOR_DOWN = '#46597d'
+const POINT_COLOR_DOWN = '#38bdf8'
 
 // 밝은 배경이면 true — 흰 글자가 읽히지 않으므로 어두운 글자를 쓴다(상대 휘도 0.4 초과).
 export function isLightColor(hex: string): boolean {
@@ -136,7 +136,7 @@ export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig
     }
   }
 
-  // 가장 큰 threshold보다도 크면 20%까지는 그 색 그대로(clamp)이고, 20~25%에서만 포인트 색(핫핑크/청록)으로 바뀐다.
+  // 가장 큰 threshold보다도 크면 20%까지는 그 색 그대로(clamp)이고, 20~25%에서만 포인트 색(핫핑크/스카이 블루)으로 바뀐다.
   const last = thresholds[thresholds.length - 1]
   const start = Math.max(Math.abs(last.thresholdPercent), POINT_START_PERCENT)
   if (abs <= start || start >= POINT_END_PERCENT) return last.color

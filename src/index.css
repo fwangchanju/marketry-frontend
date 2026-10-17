@@ -17,6 +17,9 @@
   --color-ui-control: var(--ui-control);
   --color-ui-control-hover: var(--ui-control-hover);
   --color-ui-selection: var(--ui-selection);
+  --color-brand: var(--brand);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-surface-hover: var(--brand-surface-hover);
   --color-status-error: var(--status-error);
   --color-status-error-text: var(--status-error-text);
   --color-status-error-ink: var(--status-error-ink);

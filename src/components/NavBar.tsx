@@ -52,9 +52,9 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   }, [isProfileMenuOpen])
 
   // 계정 메뉴가 열려 있는 동안만 헤더를 아래 줄(아이콘 줄, z-30)보다 위에 둔다 — 안 그러면 메뉴 위쪽이 그 줄에 가려진다.
-// 프로필 메뉴는 헤더 아래에 펼쳐지고, 열려 있는 동안 헤더가 페이지 메뉴 위에 표시된다.
+  // 메뉴 줄은 헤더 아래로 13px 겹친다. 로고 줄 배경은 유지하고 겹치는 메뉴 줄은 가리지 않게 아래쪽을 투명하게 둔다.
   return (
-    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40' : 'z-20'} bg-ui-surface`}>
+    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40 bg-[linear-gradient(to_bottom,var(--ui-surface)_53px,transparent_53px)]' : 'z-20 bg-ui-surface'}`}>
       <Link
         to="/"
         aria-label="홈으로 이동: 지도 전체 종목"
@@ -81,7 +81,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           <UserIcon aria-hidden="true" strokeWidth={1.25} className="size-[26px]" />
         </button>
       ) : (
-      <div ref={profileMenuRef} className="relative flex h-16 items-center">
+      <div ref={profileMenuRef} className="relative flex items-center">
         <button
           ref={profileButtonRef}
           type="button"
@@ -93,7 +93,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           <ProfileAvatar className="size-full object-cover" />
         </button>
         {isProfileMenuOpen && (
-          <div className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pb-2 text-ui-white shadow-2xl shadow-ui-background/60">
+          <div className="absolute right-0 top-full z-30 w-64 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pb-2 text-ui-white shadow-2xl shadow-ui-background/60">
             {isLoading ? (
               <p className="px-4 py-3 text-sm text-ui-muted">계정 확인 중...</p>
             ) : session?.authenticated ? (
