@@ -42,7 +42,7 @@
 |---|---|---|---|
 | `--ui-control` | 20 | `#555555` | 버튼·칸 기본, 기간 띠, 테두리·비활성 트랙 |
 | `--ui-control-hover` | 35 | `#757575` | 마우스 올림 |
-| `--ui-text` | 90 | `#E5E5E5` | 본문 글자, 선택된 회색 칸 |
+| `--ui-text` | 90 | `#EAEAEA` | 본문 글자, 선택된 회색 칸 |
 
 별칭: `--ui-border`, `--ui-popup-border` = `--ui-control` / `--ui-selection` = `--ui-text`.
 
