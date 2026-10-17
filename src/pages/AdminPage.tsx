@@ -88,7 +88,7 @@ export default function AdminPage() {
                   <div className="settings-plain-content pt-5">
                     <div className="h-[127px] text-sm">
                       <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
-                      <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-text">내 분류를 MARKETRY 분류로 커밋·롤백</p>
+                      <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">내 분류를 MARKETRY 분류로 커밋·롤백</p>
                       <div className="mt-4 max-w-[16rem] settings-control-inset">
                         <MarketryPublishControls />
                       </div>
@@ -97,7 +97,7 @@ export default function AdminPage() {
                     {isLocalSignupEnabled() && (
                       <div className="text-sm">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">테스트 회원 (로컬 전용)</h2>
-                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-text">
+                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">
                           {testMember.isTestMember ? '지금 테스트 회원입니다' : '로컬 DB의 새 일반 계정으로 전환'}
                         </p>
                         <div className="mt-4 max-w-[16rem] settings-control-inset">

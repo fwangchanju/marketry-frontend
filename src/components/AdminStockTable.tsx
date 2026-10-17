@@ -1613,7 +1613,7 @@ export default function AdminStockTable({
       {excelContainer && createPortal(
         <div className="h-[127px]">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">간편 업종 분류</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-text">다운받아서 AI로 간편 분류 추천</p>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">다운받아서 AI로 간편 분류 추천</p>
           <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
             <button
               type="button"
@@ -1654,7 +1654,7 @@ export default function AdminStockTable({
       {bulkContainer && createPortal(
         <div>
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일괄 변경</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-text">
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">
             {selectedStockCodes.size > 0 ? `선택한 종목 ${selectedStockCodes.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택하세요'}
           </p>
           <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
