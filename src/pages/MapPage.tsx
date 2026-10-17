@@ -729,6 +729,7 @@ export default function MapPage() {
             >
               <SettingsPanelGroup section="composition">
                 <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
+                <SettingsExcludeSection {...settingsModalProps} />
                 <SettingsStockChangeSection
                   value={stockChangeFilter}
                   onChange={value => {
@@ -736,7 +737,6 @@ export default function MapPage() {
                     reset()
                   }}
                 />
-                <SettingsExcludeSection {...settingsModalProps} afterStockChange />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="industry">
                 <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
@@ -747,6 +747,7 @@ export default function MapPage() {
               {/* 북마크 탭 — 원래 탭의 항목을 같은 순서로 다시 그리고, 북마크한 항목만 보인다. */}
               <SettingsPanelGroup section="favorites">
                 <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
+                <SettingsExcludeSection {...settingsModalProps} />
                 <SettingsStockChangeSection
                   value={stockChangeFilter}
                   onChange={value => {
@@ -754,7 +755,6 @@ export default function MapPage() {
                     reset()
                   }}
                 />
-                <SettingsExcludeSection {...settingsModalProps} afterStockChange />
                 <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
                 <SettingsStockSizeSelector marketCapRatio={boxSizeMarketCapRatio} onChangeMarketCapRatio={onChangeBoxSizeMarketCapRatio} />
                 <SettingsSectorLevelSection {...settingsModalProps} showTaxonomy={false} showDecimalPlaces />

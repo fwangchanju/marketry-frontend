@@ -27,11 +27,11 @@ export interface SettingDefaults {
   // 'topTwoTiers'는 시가총액이 큰 두 구간(초대형주+대형주)만, 'topThreeTiers'는 큰 세 구간(중형주까지)을 보여준다
   tierRange: 'all' | 'excludeDefaultTiers' | 'topTwoTiers' | 'topThreeTiers'
   // 업종 등락 방향 필터('all' | 'rising' | 'falling')와 그 업종 단계(0=대분류) — 관리자 페이지 미사용 탭으로 옮김(서버에 저장하지 않고 브라우저에만 둔다)
-  // 1-2 종목 등락 방향 필터
+  // 1-3 종목 등락 방향 필터
   sectorChangeFilter: 'all' | 'rising' | 'falling'
   sectorChangeDepth: number
   stockChangeFilter: 'all' | 'rising' | 'falling'
-  // 1-3 제외 업종 변경 사용 여부
+  // 1-2 제외 업종 변경 사용 여부
   sectorFilterEnabled: boolean
   // 3-1 박스 크기: 시가총액 반영 비율(0=동일 크기 ~ 100=시가총액 비례)
   boxSizeMarketCapRatio: number

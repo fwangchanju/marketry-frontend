@@ -232,8 +232,8 @@ const SETTINGS_SECTION_NUMBERS = Object.fromEntries(
 // 각 탭 안에서 항목이 놓인 순서(1부터).
 const SETTING_ITEM_POSITIONS: Partial<Record<SettingsBookmarkId, { section: SettingsPanelSectionId; item: number }>> = {
   marketValueRange: { section: 'composition', item: 1 },
-  stockChange: { section: 'composition', item: 2 },
-  excludeSector: { section: 'composition', item: 3 },
+  excludeSector: { section: 'composition', item: 2 },
+  stockChange: { section: 'composition', item: 3 },
   depthLevel: { section: 'industry', item: 1 },
   depthMetric: { section: 'industry', item: 2 },
   depthRange: { section: 'industry', item: 3 },
@@ -1383,7 +1383,7 @@ function SettingsTaxonomySelector({
   const isSelected = (key: TaxonomyKey) => (key === 'KRX' ? isExchange : taxonomy === key)
 
   return (
-    <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-4 py-3' : 'mb-6 pt-5 pb-6'} text-ui-white`}>
+    <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-4 py-3' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
       <p data-map-select-title className="font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none">
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
@@ -1452,7 +1452,7 @@ function SettingsAverageModeSelector({
   ]
 
   return (
-    <div className="settings-first-stock-size mb-6 pt-5 pb-6 text-ui-white">
+    <div className="settings-first-stock-size mb-6 pt-3 pb-6 text-ui-white">
       <p className="flex items-center text-[15px]">
         <span className="settings-section-num">등락률 평균</span>
         <SettingHelpBubble label="등락률 평균" description={"업종 등락률 계산에 적용할\n평균 방식을 선택합니다."} />
@@ -1488,7 +1488,7 @@ export function SettingsStockSizeSelector({
   const bookmark = useContext(SettingsBookmarkContext)
   if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('boxSize')) return null
   return (
-    <div className={`settings-first-stock-size text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'boxSize') : 'mb-6 pt-5 pb-6'}`}>
+    <div className={`settings-first-stock-size text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'boxSize') : 'mb-6 pt-3 pb-6'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <SettingTitle bookmarkId="boxSize" help className="text-[15px]">박스 크기</SettingTitle>
@@ -1610,7 +1610,7 @@ export function SettingsSectorLevelSection({
 
   return (
     <div className="text-ui-white">
-      {showTaxonomy && <div className={showDivider ? 'mt-6 pt-8' : inBookmarkTab ? '' : 'pt-5'}>
+      {showTaxonomy && <div className={showDivider ? 'mt-6 pt-8' : inBookmarkTab ? '' : 'pt-3'}>
         <div>
           <div className={`settings-first-depth-level text-sm ${itemClass('depthLevel')}`}>
             <div className="flex max-w-[16rem] items-center justify-between">
@@ -1884,7 +1884,7 @@ function toWonLabel(won: number): string {
 // 관리자 페이지 미사용 탭의 "텍스트 표시 기준" — 지도 설정창 종목 박스 탭에서 옮겨 왔다. 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsTextThresholdSection({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
-    <div className="h-[127px] text-sm">
+    <div className="h-[160px] text-sm">
       <div className="flex max-w-[16rem] items-center justify-between">
         <span className="flex items-center text-left text-[15px] text-ui-white">
           <span className="settings-plain-title">텍스트 표시 기준</span>
@@ -1944,7 +1944,7 @@ export function SettingsMarketValueSection({
   const tierDisplayMaxIndex = tierSteps - tierRangeMinIndex
 
   return (
-    <div className={`settings-market-value text-ui-white ${itemClass} ${bookmark.mode === 'bookmark' ? '' : showDivider ? 'mt-6 pt-8' : 'pt-5'}`}>
+    <div className={`settings-market-value text-ui-white ${itemClass} ${bookmark.mode === 'bookmark' ? '' : showDivider ? 'mt-6 pt-8' : 'pt-3'}`}>
       <p className="flex items-center text-[15px]">
         {/* 순서는 제목 → 물음표 → 북마크 — SettingTitle이 북마크를 제목 바로 뒤에 붙이므로 help로 북마크를 빼고 맨 끝에 직접 둔다. */}
         <SettingTitle bookmarkId="marketValueRange" help>시가총액 범위</SettingTitle>
@@ -1978,7 +1978,7 @@ const DIRECTION_OPTIONS: { value: StockChangeFilter; label: string }[] = [
   { value: 'falling', label: '하락' },
 ]
 
-// 관리자 페이지 미사용 탭의 "업종 등락 방향" — 지도 설정창 종목 구성 탭에서 옮겨 왔다. 항목 높이 127px, 제목 번호는 settings-plain-content가 매긴다.
+// 관리자 페이지 미사용 탭의 "업종 등락 방향" — 지도 설정창 종목 구성 탭에서 옮겨 왔다. 항목 높이 160px, 제목 번호는 settings-plain-content가 매긴다.
 // 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsSectorChangeSection({
   value,
@@ -1997,7 +1997,7 @@ export function SettingsSectorChangeSection({
   noDataLimited?: boolean
 }) {
   return (
-    <div className="settings-second-sector-change h-[127px] text-sm text-ui-white">
+    <div className="settings-second-sector-change h-[160px] text-sm text-ui-white">
       <p className="flex items-center text-[15px]">
         <span className="settings-plain-title">업종 등락 방향</span>
       </p>
@@ -2261,7 +2261,7 @@ export function SettingsColorSection({
   if (colorScaleDraft === null) return null
 
   return (
-    <div className="settings-third-color pt-5 text-ui-white">
+    <div className="settings-third-color pt-3 text-ui-white">
       {/* "색상 커스텀 모드" 토글을 별도 줄로 두지 않고, 제목 바로 우측에 스위치만 붙인다. 초기화 버튼(26px)은 위아래 여백을 -2px씩 줘서 줄 높이를 다른 항목의 제목 줄(22px)과 같게 둔다 — 그래야 메뉴를 바꿔도 제목·토글 위치가 같다. */}
       <div className="flex items-center justify-between">
         <p className="flex items-center text-[15px]">
@@ -2331,7 +2331,7 @@ export function SettingsStrongIndustryColorSection({
     requestAnimationFrame(() => setTimeout(() => onChange(value), 0))
   }
   return (
-    <div className={`settings-first-strong-color text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'strongColor') : 'pt-5'}`}>
+    <div className={`settings-first-strong-color text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'strongColor') : 'pt-3'}`}>
       <p className="flex items-center text-[15px]">
         <SettingTitle bookmarkId="strongColor" help>강조 색상</SettingTitle>
         <SettingHelpBubble
@@ -2691,7 +2691,7 @@ export default function SettingsPanel({
       <div aria-busy={isPreferenceFeedbackActive || undefined} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="contents" inert={isPreferenceFeedbackActive || undefined}>
       {plainContent && (
-        <div data-align-second-heading className="settings-section-list settings-plain-content settings-panel-tab-content min-h-0 flex-1 overflow-y-auto px-4 pt-5 pb-8 text-sm">
+        <div data-align-second-heading className="settings-section-list settings-plain-content settings-panel-tab-content min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-8 text-sm">
           {plainContent}
         </div>
       )}
@@ -2724,9 +2724,9 @@ export default function SettingsPanel({
               onToggleAvgChangeRateUseSimple={onToggleAvgChangeRateUseSimple!}
             />
           ) : null}
-          {/* 북마크 항목 한 칸(127px)과 같은 높이 안에서 글자를 세로 가운데에 둔다. 탭 위 여백(20px)은 .settings-bookmark-tab이 준다. */}
+          {/* 북마크 항목 한 칸(160px)과 같은 높이 안에서 글자를 세로 가운데에 둔다. 탭 위 여백(20px)은 .settings-bookmark-tab이 준다. */}
           {selectedSection.id === 'favorites' && bookmarkContext.enabled && bookmarkContext.ids.length === 0 && (
-            <p className="flex h-[127px] items-center justify-center text-center text-xs font-medium leading-relaxed text-ui-text">
+            <p className="flex h-[160px] items-center justify-center text-center text-xs font-medium leading-relaxed text-ui-text">
               북마크한 항목이 없습니다.
             </p>
           )}

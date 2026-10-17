@@ -85,8 +85,8 @@ export default function AdminPage() {
               >
                 {/* 운영 탭 — 탭 안 항목은 탭 없는 설정창(그룹·커스텀)과 같은 모양이라 settings-plain-content로 감싼다(번호는 이 탭 안에서 1부터). */}
                 <SettingsPanelGroup section="adminOps">
-                  <div className="settings-plain-content pt-5">
-                    <div className="h-[127px] text-sm">
+                  <div className="settings-plain-content pt-3">
+                    <div className="h-[160px] text-sm">
                       <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
                       <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">내 분류를 MARKETRY 분류로 커밋·롤백</p>
                       <div className="mt-4 max-w-[16rem] settings-control-inset">
@@ -118,7 +118,7 @@ export default function AdminPage() {
                 </SettingsPanelGroup>
                 {/* 미사용 탭 — 일반 설정창에서 옮겨 온 항목. 종목 정보는 기존 설정 저장 방식을 유지하고 나머지는 브라우저에만 둔다. */}
                 <SettingsPanelGroup section="adminMoved">
-                  <div className="settings-plain-content pt-5">
+                  <div className="settings-plain-content pt-3">
                     <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
                     <SettingsSectorChangeSection
                       value={sectorChangeFilter}
