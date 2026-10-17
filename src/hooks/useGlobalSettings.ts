@@ -40,6 +40,9 @@ import {
   type ColorScaleConfig,
   type ColorScaleThreshold,
 } from '@/utils/treemapColorScale'
+import { updateDraftParticipant, unregisterDraftParticipant } from '@/utils/settingsDraft'
+import queryClient from '@/api/queryClient'
+import { customTreemapKeys } from './queryKeys'
 import { clampBetweenNeighbors } from '@/utils/thresholdBar'
 import { withStableSectorIds } from '@/utils/guestSectorIds'
 import type { TreemapResponse, TreemapSectorNode } from '@/types/api'
@@ -492,21 +495,18 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [colorEditIndices, setColorEditIndices] = useState<number[]>([])
   // 세션 시작 시점의 draft 스냅샷 — 취소 복구와 편집 전 비어 있던 부호의 fallback 표시를 위해 보관한다.
   const colorEditSnapshotRef = useRef<ColorScaleConfig | null>(null)
-  const { data: colorScaleServerData, refetch: refetchColorScale } = useTreemapColorScale()
+  const { data: colorScaleServerData } = useTreemapColorScale()
   const [colorScaleDraft, setColorScaleDraft] = useState<ColorScaleConfig | null>(null)
-  // 비로그인은 서버에 저장할 수 없으므로, 이 탭에서 바꾼 색상 설정은 세션(sessionStorage)에만 남긴다 — 다른
-  // 화면 설정(usePageSetting의 비로그인 동작)과 같다. 로그인 사용자는 서버 저장이라 이 값을 쓰지 않는다.
-  const [localColorScale, setLocalColorScale] = usePersistedState<ColorScaleConfig | null>('treemap.localColorScale', null)
+  // 과거 비로그인 세션의 저장값은 초기값으로만 읽는다. 새 변경은 상단 저장 전까지 메모리에 둔다.
+  const [localColorScale] = usePersistedState<ColorScaleConfig | null>('treemap.localColorScale', null)
   // draft가 어느 로그인 상태의 값으로 시드됐는지 — 로그인/로그아웃으로 바뀌면 새 서버 값으로 다시 시드한다.
   const [colorScaleDraftOwner, setColorScaleDraftOwner] = useState<boolean | null>(null)
-  const [colorEditError, setColorEditError] = useState<string | null>(null)
-  // 편집 영역이 항상 열려 있으므로, 적용/취소 뒤에 같은 칸을 다시 편집 대상으로 잡기 위해 기억해 둔다.
+  // 저장·되돌리기 뒤에도 마지막으로 보던 칸을 다시 선택한다.
   const selectedColorPercentRef = useRef<number | null>(null)
   if (colorScaleServerData && (colorScaleDraft === null || colorScaleDraftOwner !== isLoggedIn)) {
     setColorScaleDraftOwner(isLoggedIn)
     // 이전 계정에서 열려 있던 편집 세션은 인덱스가 의미를 잃으므로 함께 닫는다.
     setColorEditIndices([])
-    setColorEditError(null)
     colorEditSnapshotRef.current = null
     // 방어적 복사 — react-query 캐시가 들고 있는 참조를 그대로 draft로 물고 있지 않도록.
     const seededThresholds = (!isLoggedIn && localColorScale ? localColorScale : colorScaleServerData).thresholds.map(threshold => ({ ...threshold }))
@@ -543,21 +543,20 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   // 설정 사이드바에서 편집 중인 threshold들 — colorScaleDraft.thresholds의 인덱스 목록.
   // edit 모드는 항상 원소 1개, add 모드는 "+"로 여러 개가 될 수 있다. 빈 배열이면 세션 없음.
-  const createThresholdMutation = useCreateTreemapScaleThreshold()
-  const updateThresholdMutation = useUpdateTreemapScaleThreshold()
-  const deleteThresholdMutation = useDeleteTreemapScaleThreshold()
-  // "적용"이 세션 안의 여러 행을 순회하며 create/update를 여러 번 호출하는 비동기 작업이라,
+  const createThresholdMutation = useCreateTreemapScaleThreshold({ skipGlobalError: true })
+  const updateThresholdMutation = useUpdateTreemapScaleThreshold({ skipGlobalError: true })
+  const deleteThresholdMutation = useDeleteTreemapScaleThreshold({ skipGlobalError: true })
+  // 상단 저장이 여러 행의 create/update를 순회하는 비동기 작업이라,
   // 개별 뮤테이션 훅의 isPending 하나만으로는 전체 진행 상태를 못 나타내서 별도로 든다.
   const [isApplyingColorEdit, setIsApplyingColorEdit] = useState(false)
 
-  // 범례 칸·막대 손잡이를 눌러 편집 대상(첫 편집 행)을 바꾼다 — 적용하지 않은 이전 수정은 되돌리지 않고 그대로 두어, 여러 손잡이·상승/하락을 고친 뒤 한 번에 적용하거나 취소할 수 있다.
+  // 범례 칸·막대 손잡이를 눌러 편집 대상(첫 편집 행)을 바꾼다 — 적용하지 않은 이전 수정은 되돌리지 않고 그대로 두어, 여러 손잡이·상승/하락을 고친 뒤 상단에서 함께 저장하거나 되돌릴 수 있다.
   // 저장된 색이 없는 기본 칸은 그 칸의 기본 값으로 구간을 만들어 편집한다(범례 칸 수는 고정이라 새 칸을 만드는 기능은 없다). 이렇게 채운 기본 칸은 처음 상태(snapshot)에도 같이 넣어 "수정"으로 보지 않는다.
   const handleSelectColorSwatch = (percent: number, color: string) => {
     if (!colorScaleDraft || isApplyingColorEdit) return
     const base = colorEditSnapshotRef.current ?? colorScaleDraft
     colorEditSnapshotRef.current = base
     selectedColorPercentRef.current = percent
-    setColorEditError(null)
     const existingIndex = colorScaleDraft.thresholds.findIndex(threshold => threshold.thresholdPercent === percent)
     const selectFirst = (index: number) => setColorEditIndices(previous => [index, ...previous.filter(item => item !== index)])
     if (existingIndex >= 0) {
@@ -572,7 +571,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 등락률 막대에서 rank번째 구간 경계를 옮긴다 — 상승 구간의 값을 바꾸면 같은 순서의 하락 구간도 같은 값의 거울(-값)로 함께 바뀐다(대칭).
   // 손잡이는 이웃 구간을 넘거나 겹치지 못해서 순서가 밀리거나 같은 값이 생기는 일이 없다. 하락 구간이 아직 없으면 기본 하락 색으로 만든다.
   const handleChangeColorEditRankPercent = (rank: number, wanted: number) => {
-    if (!colorScaleDraft || colorEditIndices.length === 0) return
+    if (!colorScaleDraft || colorEditIndices.length === 0 || isApplyingColorEdit) return
     const positiveRows = sortedSignRows(colorScaleDraft.thresholds, true)
     const negativeRows = sortedSignRows(colorScaleDraft.thresholds, false)
     const target = positiveRows[rank]
@@ -599,14 +598,13 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
       })
     }
     thresholds = recolored
-    setColorEditError(null)
     setColorScaleDraft({ ...colorScaleDraft, thresholds })
     setColorEditIndices(previous => Array.from(new Set([...previous, target.index, mirrorIndex])))
     const selectedIndex = colorEditIndices[0]
     if (selectedIndex === target.index) selectedColorPercentRef.current = percent
     else if (selectedIndex === mirrorIndex) selectedColorPercentRef.current = -percent
   }
-  // 등락률 막대에서 손잡이(그 순서의 구간)나 0% 표식을 눌러 편집 대상을 고른다 — 이전의 범례 칸을 누르는 것과 같다(적용하지 않은 수정은 되돌린다).
+  // 등락률 막대의 손잡이나 0% 표식을 눌러 선택만 바꾼다. 미저장 변경은 유지한다.
   // side는 상승/하락 중 어느 쪽 구간의 색을 편집할지 정한다. 막대의 값은 상승 기준이고 하락은 같은 값의 거울이다.
   const handleSelectColorRank = (rank: number, side: 'up' | 'down') => {
     if (!colorScaleDraft) return
@@ -618,13 +616,13 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     const zero = colorScaleDraft.thresholds.find(threshold => threshold.thresholdPercent === 0)
     handleSelectColorSwatch(0, zero?.color ?? DEFAULT_ZERO_COLOR)
   }
-  const handleApplyColorEdit = async () => {
-    if (!colorScaleDraft || colorEditIndices.length === 0) {
+  const handleSaveColorScale = async () => {
+    if (!colorScaleDraft) {
       colorEditSnapshotRef.current = null
       setColorEditIndices([])
       return
     }
-    setColorEditError(null)
+    if (!isLoggedIn) throw new Error('로그인이 필요합니다.')
     setIsApplyingColorEdit(true)
     try {
       // 같은 signed percentage가 편집 행과 나머지 draft에 모두 있으면, 사용자가 방금 편집한 값을
@@ -646,74 +644,59 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
         const losingIds = candidates
           .map(candidate => candidate.entry.id)
           .filter((id): id is number => id !== undefined && id !== savedId)
+        const saved = savedId === undefined ? undefined : colorEditSnapshotRef.current?.thresholds.find(entry => entry.id === savedId)
         return {
           entry: { ...winner.entry, id: savedId },
-          edited: editedCandidates.length > 0,
-          // 아직 서버에 저장된 적 없는 칸(처음 열 때 채운 기본 칸)도 함께 저장한다 — 바꾼 칸만 저장하면 새로고침 뒤 나머지 기본 칸이 범례에서 사라진다.
-          needsSave: editedCandidates.length > 0 || savedId === undefined,
-          thresholdPercent,
+          // 선택한 칸뿐 아니라 함께 보정된 색과 아직 저장하지 않은 기본 칸도 저장한다.
+          needsSave: !saved || saved.thresholdPercent !== thresholdPercent
+            || saved.color !== winner.entry.color || saved.colorLabel !== winner.entry.colorLabel,
           losingIds,
         }
       })
-      const idsToDelete = Array.from(new Set(resolvedGroups.flatMap(group => group.losingIds)))
+      const retainedIds = new Set(resolvedGroups.map(group => group.entry.id))
+      const removedIds = (colorEditSnapshotRef.current?.thresholds ?? [])
+        .map(entry => entry.id)
+        .filter((id): id is number => id !== undefined && !retainedIds.has(id))
+      const idsToDelete = Array.from(new Set([...removedIds, ...resolvedGroups.flatMap(group => group.losingIds)]))
       const entriesToSave = resolvedGroups.filter(group => group.needsSave).map(group => group.entry)
-
-      // 비로그인은 서버에 저장하지 않는다 — 정리된 결과를 화면 설정과 이 탭의 세션에만 반영한다.
-      if (!isLoggedIn) {
-        const nextDraft = { thresholds: resolvedGroups.map(group => group.entry) }
-        setColorScaleDraft(nextDraft)
-        setLocalColorScale(nextDraft)
-        colorEditSnapshotRef.current = null
-        setColorEditIndices([])
-        return
-      }
 
       // 같은 thresholdPercent는 백엔드에서 중복 불가이므로, 충돌 행 삭제를 완료한 다음에 저장한다.
       await Promise.all(idsToDelete.map(id => deleteThresholdMutation.mutateAsync(id)))
-      const savedEntries = await Promise.all(
-        entriesToSave.map(entry => {
+      // 일부 요청이 성공한 뒤 실패해도 발급받은 id를 임시값에 남겨 재시도 시 중복 생성을 막는다.
+      const savedByThreshold = new Map<number, ColorScaleThreshold>()
+      try {
+        for (const entry of entriesToSave) {
           const payload = { thresholdPercent: entry.thresholdPercent, color: entry.color, colorLabel: entry.colorLabel }
-          return entry.id !== undefined
-            ? updateThresholdMutation.mutateAsync({ id: entry.id, payload })
-            : createThresholdMutation.mutateAsync(payload)
-        }),
-      )
-
-      const savedByThreshold = new Map(savedEntries.map(entry => [entry.thresholdPercent, entry]))
-      setColorScaleDraft({
-        thresholds: resolvedGroups.map(group => group.needsSave ? savedByThreshold.get(group.thresholdPercent)! : group.entry),
-      })
-      colorEditSnapshotRef.current = null
+          const saved = entry.id !== undefined
+            ? await updateThresholdMutation.mutateAsync({ id: entry.id, payload })
+            : await createThresholdMutation.mutateAsync(payload)
+          savedByThreshold.set(entry.thresholdPercent, saved)
+        }
+      } finally {
+        setColorScaleDraft({
+          thresholds: resolvedGroups.map(group => savedByThreshold.get(group.entry.thresholdPercent) ?? group.entry),
+        })
+      }
+      const savedScale = {
+        thresholds: resolvedGroups.map(group => savedByThreshold.get(group.entry.thresholdPercent) ?? group.entry),
+      }
+      // 다음 페이지에서도 방금 저장한 값을 시드하고, 상단 되돌리기도 이 값을 기준으로 한다.
+      queryClient.setQueryData(customTreemapKeys.scale(), savedScale)
+      colorEditSnapshotRef.current = savedScale
       setColorEditIndices([])
-    } catch {
-      // 저장이 실패하면 편집 세션을 닫지 않는다 — 입력한 값을 그대로 둔 채 다시 시도하거나 취소할 수 있다.
-      setColorEditError('색상을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.')
     } finally {
       setIsApplyingColorEdit(false)
     }
   }
-  const handleCancelColorEdit = () => {
-    const hadSaveError = colorEditError !== null
-    // 취소하면 값이 처음으로 돌아가므로, 다시 열 때 고르던 칸을 처음 값 기준으로 다시 잡는다(처음에 없던 칸이면 기본 칸을 연다).
+  const handleDiscardColorScale = () => {
     selectedColorPercentRef.current = colorEditSnapshotRef.current?.thresholds[colorEditIndices[0]]?.thresholdPercent ?? null
     if (colorEditSnapshotRef.current) setColorScaleDraft(colorEditSnapshotRef.current)
-    colorEditSnapshotRef.current = null
-    setColorEditError(null)
     setColorEditIndices([])
-    // 저장 실패 뒤에는 서버에 일부만 반영됐을 수 있어서, 취소할 때 서버 값으로 다시 맞춘다.
-    if (hadSaveError && isLoggedIn) {
-      void refetchColorScale().then(result => {
-        if (!result.data) return
-        colorEditSnapshotRef.current = null
-        setColorEditIndices([])
-        setColorScaleDraft({ thresholds: result.data.thresholds.map(threshold => ({ ...threshold })) })
-      })
-    }
   }
   const colorEditThresholds = colorScaleDraft
     ? colorEditIndices.map(i => colorScaleDraft.thresholds[i]).filter((t): t is ColorScaleThreshold => t !== undefined)
     : []
-  // 편집 영역을 항상 열어두기 위해, 편집 중인 칸이 없으면(처음, 적용/취소 직후) 마지막으로 보던 칸을 다시 연다.
+  // 편집 영역을 항상 열어두기 위해, 편집 중인 칸이 없으면(처음, 저장·되돌리기 직후) 마지막으로 보던 칸을 다시 연다.
   useEffect(() => {
     if (!colorCustomOn || !colorScaleDraft || colorEditIndices.length > 0 || isApplyingColorEdit) return
     // 처음에는 가장 큰 상승 칸(기본 +12%)을 편집 대상으로 연다.
@@ -722,28 +705,13 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
       ?? legendSwatches[0]
     if (swatch) handleSelectColorSwatch(Number.parseFloat(swatch.label), swatch.color)
   })
-  // 저장해 둔 색상 구간을 모두 지워 기본 색상으로 되돌린다. 로그인 사용자는 서버에 저장된 구간도 삭제한다.
-  const handleResetColorScale = async () => {
+  // 초기화도 임시 변경이다. 상단 저장 전에는 서버 값을 지우지 않는다.
+  const handleResetColorScale = () => {
     if (!colorScaleDraft || isApplyingColorEdit) return
-    setIsApplyingColorEdit(true)
-    setColorEditError(null)
-    try {
-      const idsToDelete = (colorEditSnapshotRef.current ?? colorScaleDraft).thresholds
-        .map(threshold => threshold.id)
-        .filter((id): id is number => id !== undefined)
-      if (isLoggedIn) await Promise.all(idsToDelete.map(id => deleteThresholdMutation.mutateAsync(id)))
-      setColorScaleDraft(createDefaultColorScale())
-      // 비로그인의 저장값은 비워 둔다 — 다음 접속 때 같은 기본 7칸으로 다시 채워진다.
-      if (!isLoggedIn) setLocalColorScale({ thresholds: [] })
-      colorEditSnapshotRef.current = null
-      setColorEditIndices([])
-    } catch {
-      setColorEditError('색상을 초기화하지 못했습니다. 잠시 후 다시 시도해 주세요.')
-    } finally {
-      setIsApplyingColorEdit(false)
-    }
+    colorEditSnapshotRef.current ??= colorScaleDraft
+    setColorScaleDraft(createDefaultColorScale())
+    setColorEditIndices([])
   }
-  // 커스텀을 끄면 편집 영역도 닫는다 — 적용하지 않은 수정은 되돌린다.
   // 끄더라도 편집 중인 작업은 취소하지 않는다 — 편집 영역이 흐려진 채로 남았다가 다시 켜면 이어서 할 수 있다.
   const handleChangeColorCustomOn = (on: boolean) => {
     setColorCustomOn(on)
@@ -865,16 +833,24 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     const rank = (up ? barPositiveRows : barNegativeRows).findIndex(row => row.index === selectedIndex)
     return { side: up ? ('up' as const) : ('down' as const), rank: rank < 0 ? null : rank }
   })()
-  // 처음(snapshot)과 지금 draft의 구간·색이 하나라도 다르면 "적용하지 않은 수정"이 있는 것이다(여러 손잡이·상승/하락을 고친 경우 포함).
+  // 저장값(snapshot)과 지금 draft의 구간·색이 하나라도 다르면 "미저장 변경"이 있는 것이다(여러 손잡이·상승/하락을 고친 경우 포함).
   const thresholdSignature = (thresholds: ColorScaleThreshold[] | undefined) =>
     (thresholds ?? []).map(threshold => `${threshold.thresholdPercent}:${threshold.color.toLowerCase()}`).sort().join('|')
   const colorEditHasChanges = colorEditSnapshotRef.current !== null
     && thresholdSignature(colorEditSnapshotRef.current.thresholds) !== thresholdSignature(colorScaleDraft?.thresholds)
 
+  useEffect(() => {
+    updateDraftParticipant('treemap.colorScale', {
+      hasChanges: colorEditHasChanges,
+      save: handleSaveColorScale,
+      discard: handleDiscardColorScale,
+    })
+  })
+  useEffect(() => () => unregisterDraftParticipant('treemap.colorScale'), [])
+
   const colorEditorPanelProps =
     colorEditThresholds.length > 0
       ? {
-          hasChanges: colorEditHasChanges,
           bar: {
             positive: barPositiveRows.map(row => ({ percent: row.threshold.thresholdPercent, color: row.threshold.color })),
             negative: barNegativeRows.map(row => ({ percent: -row.threshold.thresholdPercent, color: row.threshold.color })),
@@ -885,10 +861,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
           onChangeRankPercent: handleChangeColorEditRankPercent,
           onSelectRank: handleSelectColorRank,
           onSelectZero: handleSelectColorZero,
-          onApply: handleApplyColorEdit,
-          onCancel: handleCancelColorEdit,
-          isSaving: isApplyingColorEdit,
-          errorMessage: colorEditError,
         }
       : null
 

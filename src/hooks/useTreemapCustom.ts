@@ -218,17 +218,17 @@ export function useStockSectors(options?: { enabled?: boolean }) {
 // 실제 렌더 소스는 react-query 캐시가 아니라 로컬 colorScaleDraft라서, 페이지가 각 CRUD 호출 결과를
 // 받아 draft를 직접 갱신하고 필요하면 그때 캐시도 같이 맞춘다(한 번의 "적용"이 여러 건의 create/
 // update/delete로 나뉠 수 있어서, 낱개 뮤테이션마다 캐시를 건드리면 중간 상태가 잠깐씩 노출된다).
-export function useCreateCustomScaleThreshold() {
-  return useMutation({ mutationFn: createCustomScaleThreshold, meta: { failure: '등락률 색상을 저장하지 못했습니다.' } })
+export function useCreateCustomScaleThreshold(options: { skipGlobalError?: boolean } = {}) {
+  return useMutation({ mutationFn: createCustomScaleThreshold, meta: { failure: '등락률 색상을 저장하지 못했습니다.', ...options } })
 }
 
 // 서버에 이미 없는 기준값이다 — 다른 화면·탭에서 지웠거나 초기화해서 이 화면의 id가 낡았을 때 생긴다("이미 삭제되었거나 존재하지 않는 색상 기준값입니다.").
 const isScaleThresholdMissing = (error: unknown) => isAxiosError(error) && (error.response?.status === 404 || JSON.stringify(error.response?.data ?? '').includes('이미 삭제'))
 
 // 수정하려는 기준값이 서버에 이미 없으면 오류 창을 띄우지 않고 같은 값으로 새로 만든다(결과적으로 원하는 값이 저장된다).
-export function useUpdateCustomScaleThreshold() {
+export function useUpdateCustomScaleThreshold(options: { skipGlobalError?: boolean } = {}) {
   return useMutation({
-    meta: { failure: '등락률 색상을 저장하지 못했습니다.' },
+    meta: { failure: '등락률 색상을 저장하지 못했습니다.', ...options },
     mutationFn: async ({ id, payload }: { id: number; payload: Parameters<typeof updateCustomScaleThreshold>[1] }) => {
       try {
         return await updateCustomScaleThreshold(id, payload)
@@ -241,9 +241,9 @@ export function useUpdateCustomScaleThreshold() {
 }
 
 // 지우려는 기준값이 서버에 이미 없으면 목적(없애기)이 이미 이뤄진 것이라 오류로 보지 않는다 — "초기화"가 낡은 id 때문에 막히지 않는다.
-export function useDeleteCustomScaleThreshold() {
+export function useDeleteCustomScaleThreshold(options: { skipGlobalError?: boolean } = {}) {
   return useMutation({
-    meta: { failure: '등락률 색상을 삭제하지 못했습니다.' },
+    meta: { failure: '등락률 색상을 삭제하지 못했습니다.', ...options },
     mutationFn: async (id: number) => {
       try {
         await deleteCustomScaleThreshold(id)

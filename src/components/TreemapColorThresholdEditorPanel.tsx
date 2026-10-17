@@ -162,8 +162,6 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
 }
 
 export interface ColorThresholdEditorProps {
-  // 적용하지 않은 수정이 있을 때만 적용/취소 버튼을 보여준다.
-  hasChanges: boolean
   // 등락률 막대 — 상승 구간의 경계(작은 값부터)와 고른 칸의 순서.
   bar: {
     positive: { percent: number; color: string }[]
@@ -175,24 +173,15 @@ export interface ColorThresholdEditorProps {
   onChangeRankPercent: (rank: number, percent: number) => void
   onSelectRank: (rank: number, side: 'up' | 'down') => void
   onSelectZero: () => void
-  onApply: () => void
-  onCancel: () => void
-  isSaving: boolean
-  errorMessage: string | null
 }
 
 // 범례 아래에서 편집하는 등락률 구간 패널. 하락/보합/상승 버튼은 지도 범례와 같은 순서·색이고(색은 정해져 있어 고르지 않는다),
-// 어느 쪽 구간을 편집할지 정한다. 막대 값은 지도에 즉시 반영되고 적용 시 서버에 저장된다. 취소 시에는 부모가 세션 시작 전 값으로 되돌린다.
+// 어느 쪽 구간을 편집할지 정한다. 막대 값은 지도에 즉시 반영되고 상단 저장·되돌리기를 따른다.
 export default function TreemapColorThresholdEditorPanel({
   bar,
   onChangeRankPercent,
   onSelectRank,
   onSelectZero,
-  onApply,
-  onCancel,
-  isSaving,
-  errorMessage,
-  hasChanges,
 }: ColorThresholdEditorProps) {
   return (
     <div className="mt-2 flex flex-col gap-4 text-sm text-ui-white">
@@ -232,31 +221,6 @@ export default function TreemapColorThresholdEditorPanel({
         />
         </div>
       </div>
-
-      {errorMessage && (
-        <p role="alert" className="text-[13px] text-status-error-text">{errorMessage}</p>
-      )}
-
-      {(hasChanges || isSaving) && (
-        <div className="settings-slider-control flex shrink-0 items-center gap-[6px]">
-          <button
-            type="button"
-            onClick={onApply}
-            disabled={isSaving}
-            className="h-7 flex-1 rounded-[5px] border border-brand-surface bg-brand-surface px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-brand-surface-hover hover:bg-brand-surface-hover disabled:cursor-wait disabled:opacity-70"
-          >
-            {isSaving ? '적용 중...' : '적용'}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSaving}
-            className="h-7 flex-1 rounded-[5px] border border-ui-border bg-ui-control px-3 py-0 text-[13px] font-medium text-ui-white transition-colors hover:border-ui-border hover:bg-ui-control-hover disabled:cursor-wait disabled:opacity-70"
-          >
-            취소
-          </button>
-        </div>
-      )}
     </div>
   )
 }
