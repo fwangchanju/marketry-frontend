@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react'
 
-// 관리자 페이지 보관 탭으로 옮긴 설정의 값 — 서버에 저장하지 않고 이 브라우저(localStorage)에만 둔다.
+// 관리자 페이지 미사용 탭으로 옮긴 설정의 값 — 서버에 저장하지 않고 이 브라우저(localStorage)에만 둔다.
 // 한 탭에서 바꾸면 같은 브라우저의 다른 화면(지도 페이지)도 바로 읽도록 같은 창 안 변경은 직접 만든 이벤트로 알린다.
 const CHANGE_EVENT = 'marketry-browser-setting'
 

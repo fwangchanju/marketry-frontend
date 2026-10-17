@@ -8,9 +8,9 @@ export type SettingsBookmarkId =
 
 export const BOOKMARK_ORDER: readonly SettingsBookmarkId[] = [
   'marketValueRange', 'stockChange', 'excludeSector',
-  'depthLevel', 'depthMetric', 'depthRange', 'topPick',
+  'depthLevel', 'depthMetric', 'depthRange',
   'boxSize', 'boxLabel', 'decimalPlaces',
-  'strongColor',
+  'strongColor', 'topPick',
 ]
 
 export function isSettingsBookmarkId(id: unknown): id is SettingsBookmarkId {

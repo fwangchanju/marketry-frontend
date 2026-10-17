@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
-import SettingsPanel, { SettingsPanelGroup, SettingsSectorChangeSection, SettingsTextThresholdSection } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsPanelGroup, SettingsSectorChangeSection, SettingsTextThresholdSection, SettingsStockPopupSection } from '@/components/SettingsPanel'
 import MarketryPublishControls from '@/components/MarketryPublishControls'
 import Spinner from '@/components/Spinner'
+import { usePageSetting } from '@/hooks/usePageSetting'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
@@ -26,6 +27,7 @@ export default function AdminPage() {
   const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = useBrowserSetting('treemap.boxLabelMinAreaPercent', MEMBER_DEFAULTS.boxLabelMinAreaPercent)
   const [sectorChangeFilter, setSectorChangeFilter] = useBrowserSetting<SectorChangeFilter>('treemap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
   const [sectorChangeDepth, setSectorChangeDepth] = useBrowserSetting('treemap.sectorChangeDepth', MEMBER_DEFAULTS.sectorChangeDepth)
+  const [stockPopupOnHover, setStockPopupOnHover] = usePageSetting('treemap.stockPopupOnHover', MEMBER_DEFAULTS.stockPopupOnHover)
   const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
@@ -114,7 +116,7 @@ export default function AdminPage() {
                     )}
                   </div>
                 </SettingsPanelGroup>
-                {/* 보관 탭 — 일반 설정창에서 안 쓰는 항목을 옮겨 온 자리다. 값은 서버에 저장하지 않고 이 브라우저에만 둔다. */}
+                {/* 미사용 탭 — 일반 설정창에서 옮겨 온 항목. 종목 정보는 기존 설정 저장 방식을 유지하고 나머지는 브라우저에만 둔다. */}
                 <SettingsPanelGroup section="adminMoved">
                   <div className="settings-plain-content pt-5">
                     <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
@@ -125,6 +127,7 @@ export default function AdminPage() {
                       onChangeDepth={setSectorChangeDepth}
                       maxSelectableDepth={3}
                     />
+                    <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
                   </div>
                 </SettingsPanelGroup>
               </SettingsPanel>
