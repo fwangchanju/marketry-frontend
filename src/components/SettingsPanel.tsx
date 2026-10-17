@@ -496,10 +496,10 @@ function StairRows({
               tabIndex={onPick && !disabled && !blocked ? 0 : undefined}
               onClick={onPick && !disabled && !blocked ? () => onPick(index) : undefined}
               onKeyDown={onPick && !disabled && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
-              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-brand/35' : lit ? 'bg-[var(--accent)]/50' : 'bg-[var(--ui-control)]'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-brand' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
+              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-brand/35' : 'bg-ui-control'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-brand' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
               style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
-              <span className={`ml-[2.5px] whitespace-nowrap rounded-[3px] px-1.5 leading-[20px] ${lit ? 'bg-ui-background/35' : 'bg-ui-white/20'}`}>
+              <span className={`ml-[2.5px] whitespace-nowrap rounded-[3px] px-1.5 leading-[20px] ${lit ? 'bg-ui-panel text-ui-white' : 'bg-ui-white/20'}`}>
                 {mark}{label}
               </span>
               {valueLabel && lit && !blocked && <span className="ml-2.5 truncate text-[13px] font-medium">{valueLabel}</span>}
@@ -1769,11 +1769,13 @@ export function SettingsSectorLevelSection({
             <div className={stockLabelEnabled ? '' : 'opacity-35'}>
               <SettingDescription>박스 안에 표시할 내용</SettingDescription>
             </div>
-            <div
-              role="radiogroup"
-              aria-label="박스 내 표기"
-              className={`relative mt-[33px] grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px] ${stockLabelEnabled ? '' : 'opacity-35'}`}
-            >
+            <div className={`settings-control-inset mt-[9.5px] max-w-[16rem] ${stockLabelEnabled ? '' : 'opacity-35'}`}>
+              {/* 2-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
+              <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[5px] bg-ui-control pl-[2.5px]">
+                <span className="whitespace-nowrap rounded-[3px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
+              </div>
+              <div className="flex h-[62px] items-center rounded-b-[5px] border-x border-b border-ui-control px-2">
+            <div role="radiogroup" aria-label="박스 내 표기" className="relative grid w-full grid-cols-3 gap-[6px]">
               <SlidingHighlight count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="rounded-[5px] border border-brand bg-brand-surface" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
                 const value = index + 1
@@ -1799,6 +1801,8 @@ export function SettingsSectorLevelSection({
                   </button>
                 )
               })}
+            </div>
+              </div>
             </div>
           </div>
           {showDecimalPlaces && (
