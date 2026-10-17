@@ -312,7 +312,7 @@ function ToggleSwitch({
         aria-label={label}
         onClick={onChange}
         disabled={disabled}
-        className={`relative h-2 w-6 shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
+        className={`relative -mr-1.5 h-2 w-6 shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
       >
         <span
           className={`absolute top-1/2 left-0 box-border h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 ${checked ? 'border-ui-control' : 'border-ui-control-hover'} bg-ui-panel transition-transform duration-[500ms] ease-out ${checked ? 'translate-x-2.5' : 'translate-x-0'}`}
@@ -556,6 +556,7 @@ function DepthStairSelect({
       style={{ height: stairHeight(labels.length) }}
     >
       <StairRows
+        railWidth={0}
         labels={labels}
         litFrom={0}
         litTo={depth - 1}
@@ -564,7 +565,7 @@ function DepthStairSelect({
       />
       <div
         ref={railRef}
-        className="group absolute -right-[15px] top-0 h-full cursor-pointer touch-none"
+        className="group absolute -right-[20px] top-0 h-full cursor-pointer touch-none"
         style={{ width: STAIR_RAIL }}
         onPointerDown={e => {
           e.currentTarget.setPointerCapture(e.pointerId)
@@ -674,10 +675,10 @@ function DepthStairRange({
       className={`relative ${disabled ? 'cursor-not-allowed' : ''}`}
       style={{ height: stairHeight(labels.length) }}
     >
-      <StairRows labels={labels} litFrom={minIndex} litTo={maxIndex} maxSelectableIndex={maxSelectableIndex} blockedHint={() => blockedHint} valueLabel={valueLabel} />
+      <StairRows railWidth={0} labels={labels} litFrom={minIndex} litTo={maxIndex} maxSelectableIndex={maxSelectableIndex} blockedHint={() => blockedHint} valueLabel={valueLabel} />
       <div
         ref={railRef}
-        className={`group absolute -right-[15px] top-0 h-full touch-none ${disabled ? 'pointer-events-none' : 'cursor-pointer'}`}
+        className={`group absolute -right-[20px] top-0 h-full touch-none ${disabled ? 'pointer-events-none' : 'cursor-pointer'}`}
         style={{ width: STAIR_RAIL }}
         onPointerDown={e => {
           e.currentTarget.setPointerCapture(e.pointerId)
@@ -913,7 +914,7 @@ function RangeSlider({
         className={`relative h-4 w-full ${disabled ? 'cursor-not-allowed opacity-35' : 'cursor-pointer'}`}
         onPointerDown={startDrag}
       >
-        <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
+        <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
         <div
           className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
           style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, width: `calc(${maxPct - minPct}% - ${(maxPct - minPct) * 0.16}px)`, transition: slideTransition }}
@@ -1058,11 +1059,11 @@ function SingleRangeInput({
   const barTransition = smooth ? `width ${slide}` : undefined
   return (
     <div className={`relative h-4 ${disabled ? 'opacity-35' : ''}`}>
-      <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
+      <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
       <span
         aria-hidden="true"
-        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
-        style={{ width: `calc(${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
+        className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
+        style={{ width: `calc(8px + ${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
       />
       {/* 눈에 보이는 손잡이 — 아래 input의 기본 손잡이는 투명하게 두고, 이 손잡이가 값 위치로 미끄러진다. */}
       {smooth && (
@@ -1497,7 +1498,7 @@ export function SettingsStockSizeSelector({
         <span className="text-sm text-ui-muted">{marketCapRatio}%</span>
       </div>
       <SettingDescription>시가총액이 박스 크기에 반영되는 정도</SettingDescription>
-      <div className="settings-slider-control mt-[18px]">
+      <div className="settings-slider-control mt-[35px]">
         <SingleRangeInput
           min={0}
           max={100}
@@ -1665,10 +1666,10 @@ export function SettingsSectorLevelSection({
                 badge="업종명"
                 outlinedChevron
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
-                className={`mt-[9.5px] max-w-[16rem] settings-control-inset pr-4 ${depthMetricEnabled ? '' : 'opacity-35'}`}
+                className={`mt-[9.5px] max-w-[16rem] settings-control-inset ${depthMetricEnabled ? '' : 'opacity-35'}`}
               />
               {/* 업종 지표 버튼이 지도에서 종목 상자 위(업종 머리글)에 놓인다는 것을 보여 주는 가짜 상자 — 누를 수 없는 그림이라 회색 선으로만 그린다. */}
-              <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-[16rem] pr-4 ${depthMetricEnabled ? '' : 'opacity-35'}`}>
+              <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-[16rem] ${depthMetricEnabled ? '' : 'opacity-35'}`}>
                 <div className="relative h-[62px] rounded-b-[5px] border-x border-b border-ui-control">
                   <span className="absolute inset-y-0 left-[42%] border-l border-ui-control" />
                   <span className="absolute left-[42%] right-0 top-1/2 border-t border-ui-control" />
@@ -1771,7 +1772,7 @@ export function SettingsSectorLevelSection({
             <div
               role="radiogroup"
               aria-label="박스 내 표기"
-              className={`relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px] ${stockLabelEnabled ? '' : 'opacity-35'}`}
+              className={`relative mt-[33px] grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px] ${stockLabelEnabled ? '' : 'opacity-35'}`}
             >
               <SlidingHighlight count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="rounded-[5px] border border-brand bg-brand-surface" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
@@ -1817,7 +1818,7 @@ export function SettingsSectorLevelSection({
                 <SettingTitle bookmarkId="decimalPlaces">등락률 소수점</SettingTitle>
               </span>
               <SettingDescription>종목 등락률의 소수점 자릿수</SettingDescription>
-              <div className="settings-slider-control mt-[18px]">
+              <div className="settings-slider-control mt-[35px]">
                 <SingleValueSlider
                   index={decimalPlacesIndex}
                   labels={DECIMAL_PLACES_LABELS}
@@ -1968,7 +1969,7 @@ export function SettingsMarketValueSection({
         <BookmarkButton id="marketValueRange" label="시가총액 범위" />
       </p>
       <SettingDescription>지도에 포함할 종목의 시총 구간</SettingDescription>
-      <div className="settings-subsection-list mt-[18px] text-sm">
+      <div className="settings-subsection-list mt-[35px] text-sm">
         <div className="settings-slider-control">
           <RangeSlider
             minIndex={tierDisplayMinIndex}
@@ -2059,7 +2060,7 @@ export function SettingsStockChangeSection({
         <SettingTitle bookmarkId="stockChange">종목 등락 방향</SettingTitle>
       </p>
       <SettingDescription>상승·하락 종목만 표시</SettingDescription>
-      <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
+      <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative mt-[40.5px] grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
         <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[5px] border border-brand bg-brand-surface" />
         {DIRECTION_OPTIONS.map(option => (
           <button
@@ -2111,7 +2112,7 @@ export function SettingsExcludeSection({
         <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
         <div
           inert={!sectorFilterEnabled}
-          className={`settings-control-inset settings-exclude-list mt-2 flex flex-col gap-1 overflow-y-auto ${sectorFilterEnabled ? '' : 'opacity-35'} ${bookmark.mode === 'bookmark' ? 'max-h-14' : 'max-h-40'}`}
+          className={`settings-control-inset settings-exclude-list mt-[7px] flex flex-col gap-1 overflow-y-auto ${sectorFilterEnabled ? '' : 'opacity-35'} ${bookmark.mode === 'bookmark' ? 'max-h-14' : 'max-h-40'}`}
         >
             {excludedSectors.map(sector => (
               // 지도 위쪽 이동 경로의 되돌아가기 버튼과 같은 모양 — 이름 앞에 되돌아가기 표시가 붙은 한 버튼이다.
@@ -2307,7 +2308,7 @@ export function SettingsColorSection({
       </div>
       <SettingDescription dimmed={!colorCustomOn}>등락률 구간별 종목 박스 색상</SettingDescription>
       {/* 맨 위 9칸 색상바는 9칸이 설정창 폭에 들어가지 않아 지웠다(칸 선택은 아래 막대의 손잡이·0% 표식·상승/하락 선택으로 한다). 지도 하단 범례 바는 그대로다. */}
-      <div className="relative">
+      <div className="relative mt-[19.5px]">
         {colorEditorProps && (
           <div className={colorCustomOn ? '' : 'opacity-35'} inert={!colorCustomOn}>
             <TreemapColorThresholdEditorPanel {...colorEditorProps} />
@@ -2358,7 +2359,7 @@ export function SettingsStrongIndustryColorSection({
       </p>
       <SettingDescription>업종명과 상위 업종의 강조 색상</SettingDescription>
       {/* 색 동그라미 줄은 다른 슬라이더와 같은 폭(.settings-slider-control)에 양 끝을 맞춘다. 8칸이 들어가도록 동그라미는 22px이다. */}
-      <div className="settings-slider-control mt-[18px] flex justify-between">
+      <div className="settings-slider-control mt-[42px] flex justify-between">
         {STRONG_INDUSTRY_COLOR_OPTIONS.map(option => (
           <span key={option.value} className="group relative inline-flex">
             <button
