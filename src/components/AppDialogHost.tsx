@@ -60,9 +60,9 @@ export default function AppDialogHost() {
         aria-labelledby="app-dialog-title"
         aria-describedby="app-dialog-message"
         // 색은 설정창 말풍선·NXT 안내창과 같은 크림색 계열이다.
-        className={`select-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-[var(--status-error)]' : ''}`}
+        className={`select-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-status-error' : ''}`}
       >
-        <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-[var(--status-error-ink)]' : 'text-ui-background'}`}>
+        <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-status-error-ink' : 'text-ui-background'}`}>
           <PopupKindBadge kind={dialog.kind === 'confirm' ? '확인' : '알림'} />
           <span>
             {dialog.title}
@@ -72,7 +72,7 @@ export default function AppDialogHost() {
         <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-ui-background">{dialog.message}</p>
         <div className="mt-auto flex justify-end gap-2 pt-3">
           {dialog.kind === 'confirm' && (
-            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-[var(--panel-gray)] px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover">
+            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover">
               취소
             </button>
           )}
@@ -80,7 +80,7 @@ export default function AppDialogHost() {
             type="button"
             autoFocus
             onClick={() => resolveCurrentAppDialog(true)}
-            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold text-ui-white transition-colors ${dialog.adminOnly ? 'bg-[var(--status-error-ink)] hover:bg-[var(--status-error-hover)]' : 'bg-[var(--brand-surface)] hover:bg-[var(--brand-surface-hover)]'}`}
+            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold text-ui-white transition-colors ${dialog.adminOnly ? 'bg-status-error-ink hover:bg-status-error-hover' : 'bg-brand-surface hover:bg-brand-surface-hover'}`}
           >
             {dialog.kind === 'confirm' ? '확인' : '닫기'}
           </button>

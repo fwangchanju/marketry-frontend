@@ -30,6 +30,7 @@ import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/sc
 import { screenshotElementToDownload, screenshotFileName, downloadDataUrl } from '@/utils/screenshotToDownload'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toSnapshotDateLabel, toPctSigned } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
+import { resolveTreemapExtremeColor } from '@/utils/treemapColorScale'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
 import { collectAtDepth } from '@/utils/sectorDepth'
@@ -45,7 +46,6 @@ const INDEX_ROWS = [
   { label: '코스닥', market: 'KOSDAQ', badgeClass: 'bg-[var(--brand-surface)]' },
 ] as const
 
-const rateColorClass = (changeRate: number | null): string => (changeRate === null || changeRate === 0 ? 'text-ui-text' : changeRate > 0 ? 'text-red-400' : 'text-blue-400')
 
 const toIndexValue = (value: number): string => value.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -71,6 +71,8 @@ export default function MarketSummaryPage() {
     market, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
     isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
   } = useGlobalSettings({ allowChangeRateMode: true })
+  // 오르내림 숫자는 지도·그룹 순위와 같은 색 체계의 가장 진한 단계 색을 쓴다(색 구간을 바꿔도 같이 바뀐다). 보합·값 없음은 본문 회색이다.
+  const rateColorStyle = (changeRate: number | null) => (changeRate === null || changeRate === 0 ? undefined : { color: resolveTreemapExtremeColor(changeRate, colorScale) })
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
@@ -309,8 +311,8 @@ export default function MarketSummaryPage() {
                             <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-2 rounded-sm bg-ui-surface pl-1 pr-3">
                               {/* 코스피·코스닥 두 줄의 지수·대비·등락률이 자릿수가 달라도 두 줄이 세로로 맞도록, 값 묶음은 왼쪽에 두고, 값마다 최소 폭을 두어 숫자 끝을 오른쪽으로 맞춘다. 왼쪽 안쪽 여백은 4px다. */}
                               <span className="min-w-[8ch] text-right text-ui-text">{indexValue === null ? '' : toIndexValue(indexValue)}</span>
-                              <span className={`min-w-[7ch] text-right ${rateColorClass(changeRate)}`}>{changeValue === null ? '' : toIndexChange(changeValue)}</span>
-                              <span className={`min-w-[7ch] text-right ${rateColorClass(changeRate)}`}>{changeRate === null ? '' : toPctSigned(changeRate)}</span>
+                              <span className={`min-w-[7ch] text-right ${changeRate === null || changeRate === 0 ? 'text-ui-text' : ''}`} style={rateColorStyle(changeRate)}>{changeValue === null ? '' : toIndexChange(changeValue)}</span>
+                              <span className={`min-w-[7ch] text-right ${changeRate === null || changeRate === 0 ? 'text-ui-text' : ''}`} style={rateColorStyle(changeRate)}>{changeRate === null ? '' : toPctSigned(changeRate)}</span>
                             </span>
                           </span>
                         </Fragment>
@@ -322,8 +324,8 @@ export default function MarketSummaryPage() {
                     <span className="col-span-3 flex h-6 items-center">
                       <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-2 rounded-sm bg-ui-surface pl-1 pr-3">
                         {/* 위 코스피·코스닥 줄과 같은 칸 폭·정렬이다. */}
-                        <span className="min-w-[8ch] text-right text-red-400">▲ {toCount(overview.advancers)}</span>
-                        <span className="min-w-[7ch] text-right text-blue-400">▼ {toCount(overview.decliners)}</span>
+                        <span className="min-w-[8ch] text-right" style={rateColorStyle(1)}>▲ {toCount(overview.advancers)}</span>
+                        <span className="min-w-[7ch] text-right" style={rateColorStyle(-1)}>▼ {toCount(overview.decliners)}</span>
                         <span className="min-w-[7ch] text-right text-ui-text">■ {toCount(overview.unchanged)}</span>
                       </span>
                     </span>

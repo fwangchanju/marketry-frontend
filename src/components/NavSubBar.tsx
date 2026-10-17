@@ -153,7 +153,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
             aria-label="관리자 페이지"
             aria-current={isAdminActive ? 'page' : undefined}
             data-hint="관리자 페이지"
-            className={`${FONT_NAV_TAB} whitespace-nowrap text-[var(--secondary-soft)] transition-colors hover:text-[var(--secondary)] ${isAdminActive ? '' : 'opacity-70 hover:opacity-100'}`}
+            className={`${FONT_NAV_TAB} whitespace-nowrap text-ui-muted transition-colors hover:text-ui-white ${isAdminActive ? '' : 'opacity-70 hover:opacity-100'}`}
           >
             Admin
           </Link>

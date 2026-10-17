@@ -2,8 +2,8 @@
 export type PopupKind = '확인' | '안내' | '알림'
 
 const BADGE_COLOR: Record<PopupKind, string> = {
-  확인: 'bg-[var(--brand-surface)]',
-  안내: 'bg-ui-control-hover',
+  확인: 'bg-brand-surface',
+  안내: 'bg-[color-mix(in_srgb,var(--sub-yellow)_45%,var(--ui-panel))]',
   알림: 'bg-status-warning',
 }
 

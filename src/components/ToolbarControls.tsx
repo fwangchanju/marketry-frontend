@@ -7,12 +7,12 @@ import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
 import { SlidingHighlight } from '@/components/SlidingHighlight'
 
-// 시간대 표시 점의 색 — 프리 마켓은 크림, 메인 마켓은 형광,
-// 애프터 마켓은 서브 팔레트의 연한 슬레이트 블루, 마켓 종료은 연회색이다.
+// 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
+// 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·누적·별도 토글의 선택 칸에도 쓴다).
 const SESSION_DOT_COLOR: Record<TradingSession, string> = {
-  '프리 마켓': 'var(--ui-popup)',
-  '메인 마켓': accentColor('형광'),
-  '애프터 마켓': 'var(--secondary-soft)',
+  '프리 마켓': 'var(--sub-yellow)',
+  '메인 마켓': 'var(--brand)',
+  '애프터 마켓': 'var(--sub-purple)',
   '마켓 종료': accentColor('연회색'),
 }
 
