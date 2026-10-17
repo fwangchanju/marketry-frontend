@@ -114,9 +114,11 @@
 } */
 
 :root {
-  /* UI 기본 원색 12개. 지도·그래프 데이터 팔레트는 별도 관리한다. */
+  /* UI 기본 원색 14개. 지도·그래프 데이터 팔레트는 별도 관리한다. */
   --brand: #12b8a6;
   --brand-surface: #20635d;
+  --secondary: #46597d;
+  --secondary-soft: #798bb2;
   --ui-background: #000000;
   --ui-surface: #18181b;
   --ui-panel: #363639;

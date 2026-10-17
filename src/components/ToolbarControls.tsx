@@ -7,12 +7,12 @@ import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
 import { SlidingHighlight } from '@/components/SlidingHighlight'
 
-// 시간대 말머리 앞 점의 색 — 설정창 4-1) 강조 색상 기준으로 프리 마켓은 연노랑,
-// 메인 마켓은 형광, 애프터 마켓은 연보라, 마켓 종료은 연회색이다.
+// 시간대 표시 점의 색 — 프리 마켓은 크림, 메인 마켓은 형광,
+// 애프터 마켓은 서브 팔레트의 연한 슬레이트 블루, 마켓 종료은 연회색이다.
 const SESSION_DOT_COLOR: Record<TradingSession, string> = {
-  '프리 마켓': accentColor('연노랑'),
+  '프리 마켓': 'var(--ui-popup)',
   '메인 마켓': accentColor('형광'),
-  '애프터 마켓': accentColor('연보라'),
+  '애프터 마켓': 'var(--secondary-soft)',
   '마켓 종료': accentColor('연회색'),
 }
 
@@ -131,7 +131,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
         aria-label="등락률 기준"
         className="relative grid h-6 w-[120px] shrink-0 grid-cols-3 gap-[3px] overflow-visible"
       >
-        <SlidingHighlight count={options.length} index={selectedIndex} gap={3} square fillColor="var(--ui-selection)" />
+        <SlidingHighlight count={options.length} index={selectedIndex} gap={3} square fillColor={SESSION_DOT_COLOR['애프터 마켓']} />
         {options.map(option => (
           // disabled를 쓰지 않는다 — 비활성 버튼은 마우스 이벤트가 없어서 잠긴 별도의 설명을 볼 수 없다. 잠긴 동안은 값만 안 바꾼다.
           <button
