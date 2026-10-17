@@ -52,7 +52,7 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
     <span ref={rootRef} className="flex items-center gap-2">
       {hasExcluded && (
         // 팝업은 이 버튼을 기준으로 놓아서, 팝업의 왼쪽 끝이 버튼의 왼쪽 끝과 맞는다.
-        <span className="relative flex items-center font-normal text-gray-400">
+        <span className="relative flex items-center font-normal text-ui-muted">
           {/* 아이콘과 "제외 종목" 글자가 한 버튼이라 칩 어디를 눌러도 팝업이 열린다(개수는 팝업 제목에 있다). */}
           <button
             type="button"
@@ -60,7 +60,7 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
             aria-haspopup="dialog"
             aria-expanded={isPopupOpen}
             onClick={() => setIsOpen(open => !open)}
-            className="flex h-6 items-center gap-1 border-0 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[#838385] focus-visible:bg-[#838385]"
+            className="flex h-6 items-center gap-1 border-0 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[var(--ui-control-hover)] focus-visible:bg-[var(--ui-control-hover)]"
           >
             <MinusCircleIcon className="h-[15px] w-[15px] shrink-0" />
             <span>제외 종목</span>
@@ -69,19 +69,19 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
                 <div
                   role="dialog"
                   aria-label="제외 종목"
-                  className="absolute left-0 top-full z-50 mt-[7px] w-60 whitespace-normal rounded-md border border-gray-500 bg-[#363639] p-3 text-sm font-normal tracking-normal text-white shadow-xl"
+                  className="absolute left-0 top-full z-50 mt-[7px] w-60 whitespace-normal rounded-md border border-ui-border bg-[var(--ui-panel)] p-3 text-sm font-normal tracking-normal text-ui-white shadow-xl"
                 >
                   <p className="font-semibold">제외 종목 ({excludedStocks.length})</p>
-                  <p className="mt-1 text-xs font-medium leading-relaxed text-gray-300">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>
-                  <div className="mt-2 border-t border-gray-500 pt-2">
+                  <p className="mt-1 text-xs font-medium leading-relaxed text-ui-text">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>
+                  <div className="mt-2 border-t border-ui-border pt-2">
                     {/* 목록은 시가총액이 큰 10종목까지만 적는다. 10종목이 넘으면 제목에 "10 종목"이라고 밝힌다. */}
-                    <p className="mb-1 text-xs font-medium text-gray-300">{excludedStocks.length > MAX_LISTED_STOCKS ? `시가총액 순 ${MAX_LISTED_STOCKS} 종목` : '시가총액 순'}</p>
+                    <p className="mb-1 text-xs font-medium text-ui-text">{excludedStocks.length > MAX_LISTED_STOCKS ? `시가총액 순 ${MAX_LISTED_STOCKS} 종목` : '시가총액 순'}</p>
                     <ul className="space-y-1">
                       {excludedStocks.slice(0, MAX_LISTED_STOCKS).map(stock => (
                         <li key={stock.stockCode} className="flex items-center justify-between gap-2">
                           <span className="min-w-0 truncate" data-hint={stock.stockName}>{stock.stockName}</span>
                           {/* 종목코드는 숫자와 영문이 섞여 있어(예: 0035S0) 글자 폭이 같은 고정폭 글꼴로 써야 코드마다 너비가 같다. */}
-                          <span className="shrink-0 font-mono text-xs text-gray-400">{stock.stockCode}</span>
+                          <span className="shrink-0 font-mono text-xs text-ui-muted">{stock.stockCode}</span>
                         </li>
                       ))}
                     </ul>

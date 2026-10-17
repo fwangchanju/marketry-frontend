@@ -9,10 +9,10 @@ export default function TaxonomyBadge({ taxonomy }: { taxonomy: TaxonomyKey }) {
   return (
     <span className="flex min-w-0 items-center justify-end">
       <span className="flex h-6 min-w-0 overflow-hidden">
-        <span className="flex min-w-0 items-center bg-[var(--brand)] px-1.5 font-semibold text-black">
+        <span className="flex min-w-0 items-center bg-[var(--brand)] px-1.5 font-semibold text-ui-background">
           <span className="truncate">{title}</span>
         </span>
-        <span className="flex shrink-0 items-center whitespace-nowrap bg-cyan-700 px-1.5 text-[13px] font-semibold text-white">분류</span>
+        <span className="flex shrink-0 items-center whitespace-nowrap bg-[var(--brand-surface)] px-1.5 text-[13px] font-semibold text-ui-white">분류</span>
       </span>
     </span>
   )

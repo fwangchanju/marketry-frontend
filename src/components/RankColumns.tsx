@@ -112,7 +112,7 @@ export default function RankColumns({
               if (item.hiddenCount !== undefined) {
                 return (
                   <div key={item.key} className="relative h-full min-w-0">
-                    <span aria-hidden="true" className="absolute bottom-0 left-1/2 -translate-x-1/2 font-bold leading-none text-gray-400">⋯</span>
+                    <span aria-hidden="true" className="absolute bottom-0 left-1/2 -translate-x-1/2 font-bold leading-none text-ui-muted">⋯</span>
                   </div>
                 )
               }
@@ -137,7 +137,7 @@ export default function RankColumns({
           </div>
         </div>
       </div>
-      <div className="relative shrink-0 border-t border-white/25" style={{ height: NAME_BAND_HEIGHT }}>
+      <div className="relative shrink-0 border-t border-ui-white/25" style={{ height: NAME_BAND_HEIGHT }}>
         <div className="absolute inset-0 grid" style={columnsStyle}>
           {items.map(item => {
             const indexMarket = item.isReference ? INDEX_MARKET_BY_KEY[item.key] : undefined
@@ -146,14 +146,14 @@ export default function RankColumns({
             const nameStyle = {
               transform: 'translateX(-100%) rotate(-45deg)',
               transformOrigin: 'top right',
-              color: item.isReference ? highlightColor : item.hiddenCount !== undefined ? '#9ca3af' : '#ffffff',
+              color: item.isReference ? highlightColor : item.hiddenCount !== undefined ? 'var(--ui-muted)' : 'var(--ui-white)',
             }
             return (
               <div key={item.key} className="relative min-w-0">
                 {selectable ? (
                   <button
                     type="button"
-                    className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent transition-colors hover:bg-white/35 focus-visible:outline focus-visible:outline-white`}
+                    className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent transition-colors hover:bg-ui-white/35 focus-visible:outline focus-visible:outline-ui-white`}
                     style={nameStyle}
                     data-hint={item.sectorName}
                     onClick={() => (indexMarket ? onSelectIndex?.(indexMarket) : onSelectSector?.(item.sectorName))}

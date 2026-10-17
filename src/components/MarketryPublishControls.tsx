@@ -14,7 +14,7 @@ import { CommitIcon, HistoryIcon } from '@/components/icons/AppIcons'
 
 // 커스텀 설정창의 다운로드·업로드 버튼과 같은 회색 칩(마우스를 올리면 강조색이 은은하게 비친다). 위험 작업이라는 표시는 설정창 헤더의 ADMIN 경고가 맡는다.
 const BUTTON_CLASS =
-  'settings-chip-hover flex h-7 w-full items-center justify-center gap-1 whitespace-nowrap rounded-[5px] border-0 bg-[#4b4b50] px-2 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40'
+  'settings-chip-hover flex h-7 w-full items-center justify-center gap-1 whitespace-nowrap rounded-[5px] border-0 bg-[var(--ui-control)] px-2 text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-40'
 
 // "MARKETRY 2026-10-08 14:30"에서 앞의 이름을 뺀 날짜·시간만 — 안내 문구에서 이름이 겹쳐 보이지 않게 한다.
 function toDateTimeLabel(label: string) {
@@ -105,17 +105,17 @@ export default function MarketryPublishControls() {
   return (
     <div ref={rootRef} className="relative grid w-full grid-cols-2 gap-[6px]">
       <button type="button" onClick={handlePublish} disabled={isBusy} className={BUTTON_CLASS}>
-        <CommitIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-300" />
+        <CommitIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-ui-text" />
         커밋
       </button>
       <button type="button" onClick={handleToggleVersions} disabled={isBusy} className={BUTTON_CLASS}>
-        <HistoryIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-300" />
+        <HistoryIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-ui-text" />
         롤백
       </button>
       {/* 올리거나 되돌리는 동안 화면 전체를 가리고 큰 로딩을 보여준다 — 오래 걸려도 "진행 중"임을 알 수 있고, 그 사이 다른 곳을 누르지 못한다. */}
       {isBusy && (
         // 어두운 배경은 화면 전체를 덮고, 로딩 원은 메인 영역 안의 가운데에 놓는다.
-        <div className="fixed inset-0 z-[90] bg-black/70">
+        <div className="fixed inset-0 z-[90] bg-ui-background/70">
           <div
             className={`flex items-center justify-center ${mainAreaRect ? 'absolute' : 'h-full w-full'}`}
             style={mainAreaRect ? { left: mainAreaRect.left, top: mainAreaRect.top, width: mainAreaRect.width, height: mainAreaRect.height } : undefined}
@@ -125,12 +125,12 @@ export default function MarketryPublishControls() {
         </div>
       )}
       {isVersionsOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto border border-[#ff4d2e] bg-black p-1 text-sm font-normal">
-          {versions !== null && versions.length > 0 && <p className="px-2 py-1 text-xs font-medium text-gray-300">해당 버전으로 롤백합니다.</p>}
+        <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto border border-[var(--status-error)] bg-ui-background p-1 text-sm font-normal">
+          {versions !== null && versions.length > 0 && <p className="px-2 py-1 text-xs font-medium text-ui-text">해당 버전으로 롤백합니다.</p>}
           {versions === null ? (
-            <p className="px-2 py-1 text-gray-400">불러오는 중…</p>
+            <p className="px-2 py-1 text-ui-muted">불러오는 중…</p>
           ) : versions.length === 0 ? (
-            <p className="px-2 py-1 text-gray-400">올린 버전이 없습니다.</p>
+            <p className="px-2 py-1 text-ui-muted">올린 버전이 없습니다.</p>
           ) : (
             versions.map(version => (
               <button
@@ -138,7 +138,7 @@ export default function MarketryPublishControls() {
                 type="button"
                 onClick={() => handleRestore(version)}
                 disabled={isBusy}
-                className="flex w-full items-center border-0 bg-transparent px-2 py-1 text-left text-white hover:bg-white/10 disabled:opacity-50"
+                className="flex w-full items-center border-0 bg-transparent px-2 py-1 text-left text-ui-white hover:bg-ui-white/10 disabled:opacity-50"
               >
                 {/* 버전 이름 앞의 "MARKETRY"는 뺀다 — 구분되는 것은 시각이고, 알림창에서도 같은 [시각]으로 쓴다. */}
                 <span className="truncate">[{toDateTimeLabel(version.label)}]</span>

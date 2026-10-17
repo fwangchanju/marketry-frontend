@@ -10,9 +10,9 @@ export default function SelectionHintBubble({ onClose }: { onClose: () => void }
       className={`absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 px-4 py-2 text-sm ${HINT_BUBBLE_COLOR_CLASS}`}
     >
       <span>
-        여러 줄은 <b className="text-red-600">드래그</b>하거나 <b className="text-red-600">Shift + 클릭</b>으로 한 번에 선택할 수 있어요.
+        여러 줄은 <b className="text-status-error-ink">드래그</b>하거나 <b className="text-status-error-ink">Shift + 클릭</b>으로 한 번에 선택할 수 있어요.
       </span>
-      <button type="button" onClick={onClose} aria-label="안내 닫기" className="border-0 bg-transparent p-0 text-gray-500 hover:text-black">
+      <button type="button" onClick={onClose} aria-label="안내 닫기" className="border-0 bg-transparent p-0 text-ui-muted hover:text-ui-background">
         <CloseIcon strokeWidth={2.3} className="h-3.5 w-3.5" />
       </button>
     </div>

@@ -58,35 +58,35 @@ export default function AdminVersionSaveSection() {
   }
 
   return (
-    <div className="border-t border-gray-700 p-4">
-      <p className="mb-2 font-bold text-white">버전관리</p>
-      <div className="flex flex-col gap-1 border-b border-gray-700 pb-2">
-        <span className="text-xs text-white">현재버전</span>
+    <div className="border-t border-ui-border p-4">
+      <p className="mb-2 font-bold text-ui-white">버전관리</p>
+      <div className="flex flex-col gap-1 border-b border-ui-border pb-2">
+        <span className="text-xs text-ui-white">현재버전</span>
         {isLoading ? (
           <div className="flex justify-center p-2">
             <Spinner className="h-5 w-5" />
           </div>
         ) : currentVersion ? (
-          <div className="nes-container is-rounded is-dark flex w-full flex-col gap-1 px-2 py-1 text-white">
+          <div className="nes-container is-rounded is-dark flex w-full flex-col gap-1 px-2 py-1 text-ui-white">
             <span className="truncate text-[14px]">이름 : {currentVersion.label}</span>
             <span className="text-[14px]">저장 : {currentVersion.createdAt.slice(0, 10)}</span>
           </div>
         ) : (
-          <span className="text-xs font-medium text-gray-300">없음</span>
+          <span className="text-xs font-medium text-ui-text">없음</span>
         )}
       </div>
       <div className="mt-2 flex max-h-48 flex-col gap-1 overflow-y-auto">
         {versions?.map(version => (
           <div
             key={version.id}
-            className={`group nes-container is-rounded is-dark flex items-center gap-2 px-2 py-1 text-white ${
+            className={`group nes-container is-rounded is-dark flex items-center gap-2 px-2 py-1 text-ui-white ${
               selectedId === version.id ? 'border-2 border-[var(--accent)]' : ''
             }`}
           >
             <button
               type="button"
               onClick={() => handleSelect(version.id, version.label)}
-              className="flex min-w-0 flex-1 flex-col truncate border-0 bg-transparent text-left text-white"
+              className="flex min-w-0 flex-1 flex-col truncate border-0 bg-transparent text-left text-ui-white"
             >
               <span className="truncate text-[14px]">이름 : {version.label}</span>
               <span className="text-[14px]">저장 : {version.createdAt.slice(0, 10)}</span>
@@ -97,7 +97,7 @@ export default function AdminVersionSaveSection() {
                 onClick={() => handleRestore(version.id, version.label)}
                 data-hint="불러오기"
                 aria-label="불러오기"
-                className="nes-btn border-[var(--accent)] bg-[var(--accent)] px-2 py-0.5 text-sm text-black hover:brightness-125"
+                className="nes-btn border-[var(--accent)] bg-[var(--accent)] px-2 py-0.5 text-sm text-ui-background hover:brightness-125"
               >
                 ⤴
               </button>
@@ -106,7 +106,7 @@ export default function AdminVersionSaveSection() {
                 onClick={() => handleDelete(version.id, version.label)}
                 data-hint="삭제"
                 aria-label="삭제"
-                className="nes-btn border-red-600 bg-red-600 px-2 py-0.5 text-sm text-white hover:bg-red-700"
+                className="nes-btn border-status-error-ink bg-status-error-ink px-2 py-0.5 text-sm text-ui-white hover:bg-status-error-hover"
               >
                 ✕
               </button>

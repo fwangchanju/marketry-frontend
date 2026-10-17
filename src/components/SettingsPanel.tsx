@@ -40,7 +40,7 @@ export function SettingsPanelGroup({ children }: SettingsPanelGroupProps) {
 // 한 줄(16px) + 위 간격(4px)이라 높이를 20px로 계산해서 index.css의 탭 정렬 값을 맞춘다.
 // dimmed: 그 항목의 토글이 꺼져 있을 때 제목 줄만 밝게 두고 설명과 조작부를 함께 옅게 한다(조작부는 호출부가 옅게 한다).
 function SettingDescription({ children, dimmed = false }: { children: ReactNode; dimmed?: boolean }) {
-  return <p className={`settings-description mt-1 max-w-[16rem] text-xs/4 font-medium text-gray-300 ${dimmed ? 'opacity-40' : ''}`}>{children}</p>
+  return <p className={`settings-description mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-text ${dimmed ? 'opacity-40' : ''}`}>{children}</p>
 }
 
 // 좌우 이동 탭을 "Basis" 줄 높이로 옮기고, 그 줄 위에 구분선이 있으면(아래쪽 Basis) 탭을 그 선까지 키운 뒤 아래도 같은 길이만큼 대칭으로
@@ -71,7 +71,7 @@ function alignSideTab(outerElement: HTMLElement | null, tab: HTMLElement | null,
 const HELP_TOOLTIP_MARGIN = 6
 const SETTINGS_LOAD_WAIT_MS = 4000
 // 하단 업종 분류·좌우 이동 버튼·분류 선택 버튼 영역은 앞으로도 항상 같은 배경색을 사용한다.
-const TAXONOMY_BACKGROUND_COLOR = '#363639'
+const TAXONOMY_BACKGROUND_COLOR = 'var(--ui-panel)'
 
 // 말풍선 폭은 가장 긴 줄에 맞춘다(w-max whitespace-pre) — 줄바꿈은 문구마다 \n(문자열) 또는 <br />(JSX)로 직접 정한다. 줄 하나가 설정창(18rem)
 // 안에 들어와야 하니 한 줄을 23글자 안쪽으로 쓴다.
@@ -123,7 +123,7 @@ function SettingHelpBubble({ label, description, bookmarkId }: { label: string; 
         onBlur={event => {
           if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)) setIsOpen(false)
         }}
-        className="inline-flex h-4 w-4 items-center justify-center border-0 bg-transparent p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
+        className="inline-flex h-4 w-4 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
       >
         <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="8" cy="8" r="6.35" />
@@ -189,7 +189,7 @@ function BookmarkButton({ id, label }: { id: SettingsBookmarkId; label: string }
       aria-pressed={active}
       data-hint={active ? '북마크 해제' : '북마크 추가'}
       onClick={() => onToggle(id)}
-      className={`ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 ${active ? 'text-[var(--brand)]' : 'text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)]'}`}
+      className={`ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 ${active ? 'text-[var(--brand)]' : 'text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)]'}`}
     >
       {/* 설정창 메뉴 줄의 북마크 아이콘(SettingsSectionIcon)과 같은 모양이다. 14px에서 선 2.1이 화면에서 약 1.2px로 보인다. */}
       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
@@ -297,12 +297,12 @@ function ToggleSwitch({
         <span className="flex min-w-0 items-center gap-2">
           <span
             data-num={labelDataNum}
-            className={`${labelClassName} ${bold ? 'font-bold' : ''} ${forceLabelWhite || checked ? 'text-white' : 'text-gray-500'}`}
+            className={`${labelClassName} ${bold ? 'font-bold' : ''} ${forceLabelWhite || checked ? 'text-ui-white' : 'text-ui-muted'}`}
           >
             {label}
           </span>
           {labelSuffix}
-          {hint && <span className="text-[10.5px] text-gray-500">{hint}</span>}
+          {hint && <span className="text-[10.5px] text-ui-muted">{hint}</span>}
         </span>
       )}
       <button
@@ -312,10 +312,10 @@ function ToggleSwitch({
         aria-label={label}
         onClick={onChange}
         disabled={disabled}
-        className={`relative h-2.5 w-6 shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-gray-600'} ${disabled ? 'cursor-not-allowed' : ''}`}
+        className={`relative h-2.5 w-6 shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
       >
         <span
-          className={`absolute top-1/2 left-0 box-border h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-zinc-200 bg-zinc-800 transition-transform duration-[500ms] ease-out ${checked ? 'translate-x-2.5' : 'translate-x-0'}`}
+          className={`absolute top-1/2 left-0 box-border h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-ui-border bg-ui-surface transition-transform duration-[500ms] ease-out ${checked ? 'translate-x-2.5' : 'translate-x-0'}`}
         />
       </button>
     </div>
@@ -369,7 +369,7 @@ const SIDEBAR_ANIMATION_MS = 250
 
 // 업종 분류 세로 손잡이와 같은 모양(청록 외곽선, 고른 칸 바탕색)이다.
 const RANGE_HANDLE_CLASS =
-  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center box-border rounded-full border border-[#12b8a6] bg-[#20635d] text-white touch-none'
+  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center box-border rounded-full border border-[var(--brand)] bg-[var(--brand-surface)] text-ui-white touch-none'
 
 // 섹션 전체가 막혔을 때의 안내 말풍선은 섹션 아래 끝이 아니라 마우스 커서 바로 옆에 띄운다 —
 // 섹션이 높아도 안내가 컨트롤에서 멀어지지 않는다. x·y는 마우스의 화면 좌표이고, bounds는 말풍선이 나가면 안 되는 설정창의 화면 위치다.
@@ -484,7 +484,7 @@ function StairRows({
             {index > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute rounded-bl-[3px] border-0 border-b-[1.5px] border-l-[1.5px] border-solid border-gray-500"
+                className="absolute rounded-bl-[3px] border-0 border-b-[1.5px] border-l-[1.5px] border-solid border-ui-border"
                 style={{ left: left - STAIR_STEP + 8, top: top - STAIR_GAP, width: STAIR_STEP - 8, height: STAIR_GAP + STAIR_ROW / 2 }}
               />
             )}
@@ -496,10 +496,10 @@ function StairRows({
               tabIndex={onPick && !disabled && !blocked ? 0 : undefined}
               onClick={onPick && !disabled && !blocked ? () => onPick(index) : undefined}
               onKeyDown={onPick && !disabled && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
-              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-[#12b8a6]/40' : lit ? 'bg-[var(--accent)]/45' : 'bg-[#4b4b50]'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-[#12b8a6]' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
+              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-[var(--brand)]/40' : lit ? 'bg-[var(--accent)]/45' : 'bg-[var(--ui-control)]'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-[var(--brand)]' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
               style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
-              <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-black/35' : 'bg-white/15'}`}>
+              <span className={`ml-0.5 whitespace-nowrap rounded-[3px] px-1.5 leading-[14px] ${lit ? 'bg-ui-background/35' : 'bg-ui-white/15'}`}>
                 {mark}{label}
               </span>
               {valueLabel && lit && !blocked && <span className="ml-2.5 truncate text-[13px] font-medium">{valueLabel}</span>}
@@ -577,8 +577,8 @@ function DepthStairSelect({
         }}
         onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
       >
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#cdd2dc] transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[var(--ui-border)]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[var(--ui-selection)] transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
         <span
           role="slider"
           tabIndex={disabled ? -1 : 0}
@@ -594,7 +594,7 @@ function DepthStairSelect({
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
             else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
           }}
-          className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[#12b8a6] bg-[#20635d]`}
+          className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[var(--brand)] bg-[var(--brand-surface)]`}
           style={{ top: stairCenterOf(depth - 1) }}
         >
           <StairChevron direction="up" />
@@ -665,7 +665,7 @@ function DepthStairRange({
     else onChange(minIndex, Math.max(minIndex, Math.min(maxIndex + delta, maxSelectableIndex)))
   }
   const handleStyle = (index: number) => ({ top: stairCenterOf(index) })
-  const singleClass = `${STAIR_HANDLE_BASE} size-3 border-[#12b8a6] bg-[#20635d]`
+  const singleClass = `${STAIR_HANDLE_BASE} size-3 border-[var(--brand)] bg-[var(--brand-surface)]`
   return (
     <div
       role="group"
@@ -693,8 +693,8 @@ function DepthStairRange({
         onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
         onPointerUp={() => { dragRef.current = null }}
       >
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#4b5563]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[#cdd2dc] transition-[top,height]" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[var(--ui-border)]" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-[var(--ui-selection)] transition-[top,height]" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
         {merged ? (
           <span
             role="slider"
@@ -706,7 +706,7 @@ function DepthStairRange({
               if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') handleKeys('min')(e)
               else handleKeys('max')(e)
             }}
-            className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[#12b8a6] bg-[#20635d]`}
+            className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-[var(--brand)] bg-[var(--brand-surface)]`}
             style={handleStyle(minIndex)}
           >
             <StairChevron direction="up" />
@@ -778,7 +778,7 @@ function DepthTextSelect({
               onClick={() => onChange(index)}
               disabled={disabled || isCapped}
               className={`border-0 bg-transparent p-0 text-left text-[13px]/4 disabled:cursor-not-allowed ${
-                depth === index ? 'text-white' : isCapped ? 'text-gray-600' : 'text-gray-400 hover:text-white'
+                depth === index ? 'text-ui-white' : isCapped ? 'text-ui-muted' : 'text-ui-muted hover:text-ui-white'
               }`}
             >
               {label}
@@ -913,9 +913,9 @@ function RangeSlider({
         className={`relative h-4 w-full ${disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
         onPointerDown={startDrag}
       >
-        <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#4b5563]" />
+        <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-border)]" />
         <div
-          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#cdd2dc]"
+          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-selection)]"
           style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, width: `calc(${maxPct - minPct}% - ${(maxPct - minPct) * 0.16}px)`, transition: slideTransition }}
         />
         {/* 두 핸들이 같은 칸에 모이면 원 두 개가 겹쳐 화살표가 뭉개진다. 그때는 바깥으로 벌어지는
@@ -996,7 +996,7 @@ function SliderTickLabels({
   onBlockedHintChange?: (visible: boolean, index?: number) => void
 }) {
   return (
-    <div className={`relative mt-1 h-4 text-[13px]/4 text-gray-400 ${inset ? 'mx-2' : ''}`}>
+    <div className={`relative mt-1 h-4 text-[13px]/4 text-ui-muted ${inset ? 'mx-2' : ''}`}>
       {labels.map((label, index) => {
         const decimalIndex = alignDecimalPoint ? label.indexOf('.') : -1
         const blocked = blockedFromIndex !== undefined && index >= blockedFromIndex
@@ -1006,7 +1006,7 @@ function SliderTickLabels({
         return (
           <span
             key={index}
-            className={`absolute whitespace-nowrap transition-colors duration-300 ${blocked ? 'cursor-not-allowed text-gray-600' : highlighted ? 'font-medium text-white' : 'text-gray-400'} ${
+            className={`absolute whitespace-nowrap transition-colors duration-300 ${blocked ? 'cursor-not-allowed text-ui-muted' : highlighted ? 'font-medium text-ui-white' : 'text-ui-muted'} ${
               '-translate-x-1/2'
             }`}
             style={{ left: `${(index / steps) * 100}%` }}
@@ -1058,17 +1058,17 @@ function SingleRangeInput({
   const barTransition = smooth ? `width ${slide}` : undefined
   return (
     <div className={`relative h-4 ${disabled ? 'opacity-40' : ''}`}>
-      <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#4b5563]" />
+      <span aria-hidden="true" className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-border)]" />
       <span
         aria-hidden="true"
-        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#cdd2dc]"
+        className="absolute left-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-selection)]"
         style={{ width: `calc(${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
       />
       {/* 눈에 보이는 손잡이 — 아래 input의 기본 손잡이는 투명하게 두고, 이 손잡이가 값 위치로 미끄러진다. */}
       {smooth && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#12b8a6] bg-[#20635d]"
+          className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--brand)] bg-[var(--brand-surface)]"
           style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)`, transition: `left ${slide}` }}
         />
       )}
@@ -1190,7 +1190,7 @@ export function SettingsSectorStockScopeSection({
   ]
   return (
     <div className="settings-first-depth-level text-sm">
-      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-white">
+      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-ui-white">
         <span className="settings-plain-title">집계 대상 종목</span>
       </span>
       <SettingDescription>업종 평균에 넣을 종목</SettingDescription>
@@ -1206,7 +1206,7 @@ export function SettingsSectorStockScopeSection({
               aria-checked={selected}
               onClick={() => onChange(option.value)}
               className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
+                selected ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
               }`}
             >
               {option.label}
@@ -1216,12 +1216,12 @@ export function SettingsSectorStockScopeSection({
           )
         })}
         {/* 전종목 버튼 안쪽 오른쪽 — 버튼 안에 버튼을 넣을 수 없어 같은 자리에 겹쳐 두고, 눌러도 선택이 바뀌지 않는다. translate를 쓰면 안쪽의 fixed 말풍선이 이 칸 기준으로 위치가 틀어져 inset-y-0으로 가운데에 둔다. 어두운 미선택 칩에서는 아이콘을 밝게, 밝은 선택 채움에서는 진하게 표시하고 호버·포커스에도 대비를 유지한다. */}
-        <span className={`pointer-events-none absolute inset-y-0 left-1/2 right-0.5 z-20 flex items-center justify-center text-[13px]/4 font-medium ${scope === 'ALL' ? '[&_button]:text-zinc-700 [&_button:hover]:text-black [&_button:focus-visible]:text-black' : '[&_button]:text-zinc-300 [&_button:hover]:text-white [&_button:focus-visible]:text-white'}`}>
+        <span className={`pointer-events-none absolute inset-y-0 left-1/2 right-0.5 z-20 flex items-center justify-center text-[13px]/4 font-medium ${scope === 'ALL' ? '[&_button]:text-ui-surface [&_button:hover]:text-ui-background [&_button:focus-visible]:text-ui-background' : '[&_button]:text-ui-text [&_button:hover]:text-ui-white [&_button:focus-visible]:text-ui-white'}`}>
           <span aria-hidden="true" className="invisible whitespace-nowrap">전종목</span>
           <span className="pointer-events-auto flex items-center">
             <SettingHelpBubble
               label="집계 대상 종목"
-              description={<><b className="text-red-600">전종목을 선택하면</b>{'\n'}맵 페이지 등락률과{'\n'}<b className="text-red-600">다르게 집계</b>될 수 있습니다.</>}
+              description={<><b className="text-status-error-ink">전종목을 선택하면</b>{'\n'}맵 페이지 등락률과{'\n'}<b className="text-status-error-ink">다르게 집계</b>될 수 있습니다.</>}
             />
           </span>
         </span>
@@ -1246,7 +1246,7 @@ export function SettingsGroupDepthSection({
 }) {
   return (
     <div className="settings-first-depth-level text-sm">
-      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-white">
+      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-ui-white">
         <span className="settings-plain-title">업종 분류 단계</span>
       </span>
       <SettingDescription>그래프에 표시할 업종 분류의 단계</SettingDescription>
@@ -1284,7 +1284,7 @@ export function SettingsAverageModeSection({
   return (
     <div className="settings-first-depth-level text-sm">
       <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
-        <span className={`settings-plain-title ${enabled ? 'text-white' : 'text-gray-500'}`}>등락률 기준</span>
+        <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준</span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
       </div>
       <div className={enabled ? '' : 'opacity-40'}>
@@ -1302,7 +1302,7 @@ export function SettingsAverageModeSection({
                 onClick={() => onChange(option.value)}
                 disabled={!enabled}
                 className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                  selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
+                  selected ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
                 }`}
               >
                 {option.label}
@@ -1340,7 +1340,7 @@ export function SettingsBeforeMinutesSection({
   return (
     <div className="settings-second-depth-metric relative mt-6 text-sm">
       <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
-        <span className={`flex items-center gap-1 ${enabled ? 'text-white' : 'text-gray-500'}`}>
+        <span className={`flex items-center gap-1 ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>
           <span className="settings-plain-title">비교 시점</span>
           {disabled && <SettingHelpBubble label="비교 시점" description="기간 등락률을 보는 동안에는 N분 전 대비를 사용할 수 없습니다." />}
         </span>
@@ -1383,14 +1383,14 @@ function SettingsTaxonomySelector({
   const isSelected = (key: TaxonomyKey) => (key === 'KRX' ? isExchange : taxonomy === key)
 
   return (
-    <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-gray-500 px-4 py-3' : 'mb-6 pt-5 pb-6'} text-white`}>
+    <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-4 py-3' : 'mb-6 pt-5 pb-6'} text-ui-white`}>
       <p data-map-select-title className="font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none">
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
         {TAXONOMY_SELECT_TITLE}
       </p>
       <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] bg-cyan-700" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] bg-[var(--brand-surface)]" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1399,7 +1399,7 @@ function SettingsTaxonomySelector({
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
             className={`relative z-10 min-h-[34px] rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-sm font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-              isSelected(option.key) ? 'text-white' : 'text-zinc-200 hover:text-white settings-chip-hover'
+              isSelected(option.key) ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
           >
             {option.label}
@@ -1408,7 +1408,7 @@ function SettingsTaxonomySelector({
       </div>
       {/* 업데이트 시각이 없어도(올린 MARKETRY가 아직 없을 때 등) 줄은 그대로 둬서 다른 분류와 모양이 달라지지 않게 한다. 시각 글자만 같은 폭으로 자리를 잡고 숨긴다. */}
       {atBottom && (
-        <p className={`${FONT_BAR_TIME_SHAPE} mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium text-gray-300`}>
+        <p className={`${FONT_BAR_TIME_SHAPE} mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium text-ui-text`}>
           <span className="flex items-center">
             업데이트
             <SettingHelpBubble
@@ -1417,15 +1417,15 @@ function SettingsTaxonomySelector({
               description={
                 isExchange ? (
                   <>
-                    <b className="text-red-600">키움증권</b>에서 받은{'\n'}종목·업종 정보를 서버에{'\n'}마지막으로 동기화한 시각입니다.{'\n\n'}시세 갱신 시각이나 거래소의{'\n'}공식 분류 변경 시각과는 다릅니다.
+                    <b className="text-status-error-ink">키움증권</b>에서 받은{'\n'}종목·업종 정보를 서버에{'\n'}마지막으로 동기화한 시각입니다.{'\n\n'}시세 갱신 시각이나 거래소의{'\n'}공식 분류 변경 시각과는 다릅니다.
                   </>
                 ) : taxonomy === 'MINE' ? (
                   <>
-                    <b className="text-red-600">내가</b> 종목·업종 정보를{'\n'}마지막으로 수정한 시각입니다.
+                    <b className="text-status-error-ink">내가</b> 종목·업종 정보를{'\n'}마지막으로 수정한 시각입니다.
                   </>
                 ) : (
                   <>
-                    <b className="text-red-600">MARKETRY</b>가 종목·업종 정보를{'\n'}마지막으로 수정한 시각입니다.
+                    <b className="text-status-error-ink">MARKETRY</b>가 종목·업종 정보를{'\n'}마지막으로 수정한 시각입니다.
                   </>
                 )
               }
@@ -1452,7 +1452,7 @@ function SettingsAverageModeSelector({
   ]
 
   return (
-    <div className="settings-first-stock-size mb-6 pt-5 pb-6 text-white">
+    <div className="settings-first-stock-size mb-6 pt-5 pb-6 text-ui-white">
       <p className="flex items-center text-[15px]">
         <span className="settings-section-num">등락률 평균</span>
         <SettingHelpBubble label="등락률 평균" description={"업종 등락률 계산에 적용할\n평균 방식을 선택합니다."} />
@@ -1467,7 +1467,7 @@ function SettingsAverageModeSelector({
             aria-checked={avgChangeRateUseSimple === option.value}
             onClick={() => avgChangeRateUseSimple !== option.value && onToggleAvgChangeRateUseSimple()}
             className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-              avgChangeRateUseSimple === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
+              avgChangeRateUseSimple === option.value ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
           >
             {option.label}
@@ -1488,13 +1488,13 @@ export function SettingsStockSizeSelector({
   const bookmark = useContext(SettingsBookmarkContext)
   if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('boxSize')) return null
   return (
-    <div className={`settings-first-stock-size text-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'boxSize') : 'mb-6 pt-5 pb-6'}`}>
+    <div className={`settings-first-stock-size text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'boxSize') : 'mb-6 pt-5 pb-6'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <SettingTitle bookmarkId="boxSize" help className="text-[15px]">박스 크기</SettingTitle>
           <SettingHelpBubble bookmarkId="boxSize" label="박스 크기" description={"박스 면적은 시가총액^(비율÷100)으로 계산합니다.\n0%는 모든 종목을 같은 크기로 표시합니다.\n50%는 시가총액의 제곱근 비율로 표시합니다.\n100%는 시가총액에 비례해 표시합니다."} />
         </div>
-        <span className="text-sm text-gray-400">{marketCapRatio}%</span>
+        <span className="text-sm text-ui-muted">{marketCapRatio}%</span>
       </div>
       <SettingDescription>시가총액이 박스 크기에 반영되는 정도</SettingDescription>
       <div className="settings-slider-control mt-[18px]">
@@ -1609,12 +1609,12 @@ export function SettingsSectorLevelSection({
   if (inBookmarkTab && bookmarkableIds.every(hideItem)) return null
 
   return (
-    <div className="text-white">
+    <div className="text-ui-white">
       {showTaxonomy && <div className={showDivider ? 'mt-6 pt-8' : inBookmarkTab ? '' : 'pt-5'}>
         <div>
           <div className={`settings-first-depth-level text-sm ${itemClass('depthLevel')}`}>
             <div className="flex max-w-[16rem] items-center justify-between">
-              <span className="flex items-center text-left text-white">
+              <span className="flex items-center text-left text-ui-white">
                 <SettingTitle bookmarkId="depthLevel" className="text-[15px]" help>업종 분류 깊이</SettingTitle>
                 <SettingHelpBubble
                   bookmarkId="depthLevel"
@@ -1644,7 +1644,7 @@ export function SettingsSectorLevelSection({
           <div className={`settings-second-depth-metric relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthMetric')}`}>
             <div className={isDepthMetricDisabled ? 'opacity-40' : ''}>
               <div className="flex max-w-[16rem] items-center justify-between">
-                <span className="flex items-center text-left text-white">
+                <span className="flex items-center text-left text-ui-white">
                   <SettingTitle bookmarkId="depthMetric" className="text-[15px]">업종 지표</SettingTitle>
                 </span>
                 <ToggleSwitch
@@ -1690,7 +1690,7 @@ export function SettingsSectorLevelSection({
             aria-disabled={isDepthMetricRangeDisabled}
             className={`settings-third-depth-range relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthRange')} ${isDepthMetricRangeDisabled ? 'cursor-not-allowed' : ''}`}
           >
-            <span className={`flex items-center text-left text-[15px] text-white ${isDepthMetricRangeDisabled ? 'opacity-40' : ''}`}>
+            <span className={`flex items-center text-left text-[15px] text-ui-white ${isDepthMetricRangeDisabled ? 'opacity-40' : ''}`}>
               <SettingTitle bookmarkId="depthRange">지표 표시 단계</SettingTitle>
             </span>
             <div className={isDepthMetricRangeDisabled ? 'opacity-40' : ''}>
@@ -1738,7 +1738,7 @@ export function SettingsSectorLevelSection({
         <div>
           <div className={`settings-second-stock-label text-sm ${inBookmarkTab ? '' : 'mt-2'} ${itemClass('boxLabel')}`}>
             <div className="flex max-w-[16rem] items-center justify-between">
-              <span className="flex items-center text-left text-white">
+              <span className="flex items-center text-left text-ui-white">
                 <SettingTitle bookmarkId="boxLabel" className="text-[15px]">박스 내 표기</SettingTitle>
               </span>
               <ToggleSwitch
@@ -1770,7 +1770,7 @@ export function SettingsSectorLevelSection({
                     disabled={!stockLabelEnabled}
                     onClick={() => onChangeStockLabelModeIndex(value)}
                     className={`relative z-10 min-h-[38px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
-                      selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
+                      selected ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
                     }`}
                   >
                     {label === '모두' ? (
@@ -1797,7 +1797,7 @@ export function SettingsSectorLevelSection({
               } : undefined}
             >
               <div className={isDecimalPlacesDisabled ? 'opacity-40' : ''}>
-              <span className="flex max-w-[16rem] items-center text-left text-[15px] text-white">
+              <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
                 <SettingTitle bookmarkId="decimalPlaces">등락률 소수점</SettingTitle>
               </span>
               <SettingDescription>종목 등락률의 소수점 자릿수</SettingDescription>
@@ -1838,8 +1838,8 @@ export function SettingsStockPopupSection({
   onChangeStockPopupOnHover: (onHover: boolean) => void
 }) {
   return (
-    <div className="text-sm text-white">
-      <span className="flex max-w-[16rem] items-center text-left text-[15px] text-white">
+    <div className="text-sm text-ui-white">
+      <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
         <span className="settings-plain-title">종목 정보</span>
         <SettingHelpBubble label="종목 정보" description={"업종 정보는 우클릭으로만\n열 수 있습니다."} />
       </span>
@@ -1863,7 +1863,7 @@ export function SettingsStockPopupSection({
               aria-checked={selected}
               onClick={() => onChangeStockPopupOnHover(option.onHover)}
               className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
-              selected ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'
+              selected ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
             >
               {option.label}
@@ -1886,11 +1886,11 @@ export function SettingsTextThresholdSection({ value, onChange }: { value: numbe
   return (
     <div className="h-[127px] text-sm">
       <div className="flex max-w-[16rem] items-center justify-between">
-        <span className="flex items-center text-left text-[15px] text-white">
+        <span className="flex items-center text-left text-[15px] text-ui-white">
           <span className="settings-plain-title">텍스트 표시 기준</span>
           <SettingHelpBubble label="텍스트 표시 기준" description={"기준 퍼센트는 지도 전체 면적 대비\n종목 박스 면적입니다."} />
         </span>
-        <span className="text-gray-400">{value.toFixed(3)}%</span>
+        <span className="text-ui-muted">{value.toFixed(3)}%</span>
       </div>
       <SettingDescription>작은 박스의 글자를 숨기는 기준</SettingDescription>
       <div className="settings-slider-control mt-[18px]">
@@ -1944,7 +1944,7 @@ export function SettingsMarketValueSection({
   const tierDisplayMaxIndex = tierSteps - tierRangeMinIndex
 
   return (
-    <div className={`settings-market-value text-white ${itemClass} ${bookmark.mode === 'bookmark' ? '' : showDivider ? 'mt-6 pt-8' : 'pt-5'}`}>
+    <div className={`settings-market-value text-ui-white ${itemClass} ${bookmark.mode === 'bookmark' ? '' : showDivider ? 'mt-6 pt-8' : 'pt-5'}`}>
       <p className="flex items-center text-[15px]">
         {/* 순서는 제목 → 물음표 → 북마크 — SettingTitle이 북마크를 제목 바로 뒤에 붙이므로 help로 북마크를 빼고 맨 끝에 직접 둔다. */}
         <SettingTitle bookmarkId="marketValueRange" help>시가총액 범위</SettingTitle>
@@ -1997,7 +1997,7 @@ export function SettingsSectorChangeSection({
   noDataLimited?: boolean
 }) {
   return (
-    <div className="settings-second-sector-change h-[127px] text-sm text-white">
+    <div className="settings-second-sector-change h-[127px] text-sm text-ui-white">
       <p className="flex items-center text-[15px]">
         <span className="settings-plain-title">업종 등락 방향</span>
       </p>
@@ -2019,7 +2019,7 @@ export function SettingsSectorChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'}`}
+            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -2038,7 +2038,7 @@ export function SettingsStockChangeSection({
 }) {
   const bookmark = useContext(SettingsBookmarkContext)
   return (
-    <div className={`settings-third-stock-change text-white ${bookmark.mode === 'bookmark' ? '' : 'mt-4 pt-6'} ${bookmarkItemClass(bookmark, 'stockChange')}`}>
+    <div className={`settings-third-stock-change text-ui-white ${bookmark.mode === 'bookmark' ? '' : 'mt-4 pt-6'} ${bookmarkItemClass(bookmark, 'stockChange')}`}>
       <p className="flex items-center text-[15px]">
         <SettingTitle bookmarkId="stockChange">종목 등락 방향</SettingTitle>
       </p>
@@ -2052,7 +2052,7 @@ export function SettingsStockChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-zinc-900' : 'text-zinc-200 hover:text-white settings-chip-hover'}`}
+            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -2080,7 +2080,7 @@ export function SettingsExcludeSection({
   const bookmark = useContext(SettingsBookmarkContext)
   const number = bookmark.mode === 'bookmark' ? bookmark.numbers.excludeSector : undefined
   return (
-    <div className={`${afterStockChange ? 'settings-fourth-exclude' : 'settings-second-exclude'} text-white ${bookmark.mode === 'bookmark' ? '' : 'mt-4 pt-6'} ${bookmarkItemClass(bookmark, 'excludeSector')}`}>
+    <div className={`${afterStockChange ? 'settings-fourth-exclude' : 'settings-second-exclude'} text-ui-white ${bookmark.mode === 'bookmark' ? '' : 'mt-4 pt-6'} ${bookmarkItemClass(bookmark, 'excludeSector')}`}>
       <div className="text-sm">
         <ToggleSwitch
           checked={sectorFilterEnabled}
@@ -2108,7 +2108,7 @@ export function SettingsExcludeSection({
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
                 data-hint="맵에 다시 표시"
-                className="flex h-7 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-white transition-colors hover:bg-[var(--accent)]/30"
+                className="flex h-7 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-ui-white transition-colors hover:bg-[var(--accent)]/30"
               >
                 <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
@@ -2156,7 +2156,7 @@ export function SettingsTopPickSection({
     <div className={`settings-second-top-pick relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${bookmarkItemClass(bookmark, 'topPick')}`}>
       <div className={isTopPickDisabled ? 'opacity-40' : ''}>
         <div className="flex max-w-[16rem] items-center justify-between">
-          <span className="flex items-center text-left text-white">
+          <span className="flex items-center text-left text-ui-white">
             <SettingTitle bookmarkId="topPick" className="text-[15px]" help>상위 업종 강조</SettingTitle>
             <SettingHelpBubble
               bookmarkId="topPick"
@@ -2261,7 +2261,7 @@ export function SettingsColorSection({
   if (colorScaleDraft === null) return null
 
   return (
-    <div className="settings-third-color pt-5 text-white">
+    <div className="settings-third-color pt-5 text-ui-white">
       {/* "색상 커스텀 모드" 토글을 별도 줄로 두지 않고, 제목 바로 우측에 스위치만 붙인다. 초기화 버튼(26px)은 위아래 여백을 -2px씩 줘서 줄 높이를 다른 항목의 제목 줄(22px)과 같게 둔다 — 그래야 메뉴를 바꿔도 제목·토글 위치가 같다. */}
       <div className="flex items-center justify-between">
         <p className="flex items-center text-[15px]">
@@ -2272,7 +2272,7 @@ export function SettingsColorSection({
             data-hint="기본값으로 초기화"
             onClick={async () => { if (await appConfirm('등락률 색상을 기본값으로 초기화하시겠습니까?', { title: '색상 초기화' })) runWithFeedback(onResetColorScale) }}
             disabled={isResettingColorScale}
-            className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:cursor-wait disabled:opacity-60"
+            className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:cursor-wait disabled:opacity-60"
           >
             <RefreshIcon className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -2331,7 +2331,7 @@ export function SettingsStrongIndustryColorSection({
     requestAnimationFrame(() => setTimeout(() => onChange(value), 0))
   }
   return (
-    <div className={`settings-first-strong-color text-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'strongColor') : 'pt-5'}`}>
+    <div className={`settings-first-strong-color text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'strongColor') : 'pt-5'}`}>
       <p className="flex items-center text-[15px]">
         <SettingTitle bookmarkId="strongColor" help>강조 색상</SettingTitle>
         <SettingHelpBubble
@@ -2353,10 +2353,10 @@ export function SettingsStrongIndustryColorSection({
               onPointerDown={event => { if (event.button === 0) pick(option.value) }}
               onClick={event => { if (event.detail === 0) pick(option.value) }}
               style={{ backgroundColor: option.value }}
-              className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-white/30 p-0"
+              className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/30 p-0"
             >
               {selectedColor === option.value && (
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? '#18181b' : '#ffffff'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? 'var(--ui-surface)' : 'var(--ui-white)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12.5l4.5 4.5L19 7" />
                 </svg>
               )}
@@ -2572,7 +2572,7 @@ export default function SettingsPanel({
     <div className="-mr-[3px] ml-auto flex shrink-0 items-center gap-1">
       <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
           if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(discardDrafts)
-        }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50">
+        }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50">
         <HistoryIcon className="h-5 w-5" aria-hidden="true" />
       </button>
       <button
@@ -2594,7 +2594,7 @@ export default function SettingsPanel({
             commitDrafts(commitPreferences).catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.', { title: '저장 실패' }))
           })
         }}
-        className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-gray-300 outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50"
+        className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-50"
       >
         {hasDrafts && <span aria-hidden="true" className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-[var(--brand)]" />}
         {/* 좌우 대칭 디스켓 — 위쪽 셔터와 아래쪽 라벨이 가운데에 있고 접힌 모서리가 없다. 오른쪽 위 청록 점(변경 있음)과 겹치는 모양이 없다. */}
@@ -2616,7 +2616,7 @@ export default function SettingsPanel({
         data-hint={isOnLeft ? '설정창을 오른쪽으로 이동' : '설정창을 왼쪽으로 이동'}
         ref={sideTabRef}
         style={{ backgroundColor: TAXONOMY_BACKGROUND_COLOR }}
-        className={`absolute top-1/2 z-10 flex h-8 w-[14px] -translate-y-1/2 items-center justify-center border border-gray-500 p-0 text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${
+        className={`absolute top-1/2 z-10 flex h-8 w-[14px] -translate-y-1/2 items-center justify-center border border-ui-border p-0 text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${
           isOnLeft ? '-right-[13px] rounded-r-lg border-l-0' : '-left-[13px] rounded-l-lg border-r-0'
         }`}
       >
@@ -2634,20 +2634,20 @@ export default function SettingsPanel({
     )}
     <div
       data-settings-panel
-      className="relative tabular-nums select-none flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-gray-500 bg-[#363639]"
-      style={{ '--accent': 'var(--panel-gray)', '--accent-hover': '#f3f4f6', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
+      className="relative tabular-nums select-none flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)]"
+      style={{ '--accent': 'var(--panel-gray)', '--accent-hover': 'var(--ui-white)', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
     >
       {/* 지도 최상단 종목 박스에 맞춘 헤더 높이를 유지하고 내용은 세로 중앙에 둔다. */}
-      <div className="flex shrink-0 items-center border-b border-gray-500 px-4 py-[10.25px]">
+      <div className="flex shrink-0 items-center border-b border-ui-border px-4 py-[10.25px]">
         <div className="flex min-w-0 items-center gap-2">
-          <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-white">
+          <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
             {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Group에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
             {/* 아래 Basis 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
             <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
             {pageLabel ?? '설정'}
           </p>
           {stockCountLabel && (
-            <span className="flex h-7 w-[7rem] shrink-0 items-center whitespace-nowrap text-sm leading-none text-gray-400">
+            <span className="flex h-7 w-[7rem] shrink-0 items-center whitespace-nowrap text-sm leading-none text-ui-muted">
               <CountLabelWithBadge label={stockCountLabel} alignEnd />
             </span>
           )}
@@ -2656,7 +2656,7 @@ export default function SettingsPanel({
         {headerRight && <div className="-mr-[3px] ml-auto flex shrink-0 items-center">{headerRight}</div>}
       </div>
       {availableSections.length > 0 && (
-      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-gray-500 bg-[#363639] px-1">
+      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-ui-border bg-[var(--ui-panel)] px-1">
           {availableSections.map(section => {
             const selected = section.id === selectedSection?.id
             return (
@@ -2673,7 +2673,7 @@ export default function SettingsPanel({
                   else setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  selected ? 'text-[var(--brand)]' : 'text-gray-400 hover:text-[var(--brand)]'
+                  selected ? 'text-[var(--brand)]' : 'text-ui-muted hover:text-[var(--brand)]'
                 }`}
               >
                 <SettingsSectionIcon icon={section.icon} />
@@ -2726,7 +2726,7 @@ export default function SettingsPanel({
           ) : null}
           {/* 북마크 항목 한 칸(127px)과 같은 높이 안에서 글자를 세로 가운데에 둔다. 탭 위 여백(20px)은 .settings-bookmark-tab이 준다. */}
           {selectedSection.id === 'favorites' && bookmarkContext.enabled && bookmarkContext.ids.length === 0 && (
-            <p className="flex h-[127px] items-center justify-center text-center text-xs font-medium leading-relaxed text-gray-300">
+            <p className="flex h-[127px] items-center justify-center text-center text-xs font-medium leading-relaxed text-ui-text">
               북마크한 항목이 없습니다.
             </p>
           )}
@@ -2737,7 +2737,7 @@ export default function SettingsPanel({
       </SettingsFeedbackContext.Provider>
       </div>
       {isPreferenceFeedbackActive && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#363639]">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-[var(--ui-panel)]">
           <Spinner showLogo className="aspect-square w-4/5 shrink-0" />
         </div>
       )}

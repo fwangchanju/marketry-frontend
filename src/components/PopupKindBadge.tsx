@@ -2,11 +2,11 @@
 export type PopupKind = '확인' | '안내' | '알림'
 
 const BADGE_COLOR: Record<PopupKind, string> = {
-  확인: 'bg-cyan-700',
-  안내: 'bg-gray-500',
-  알림: 'bg-amber-700',
+  확인: 'bg-[var(--brand-surface)]',
+  안내: 'bg-ui-control-hover',
+  알림: 'bg-status-warning',
 }
 
 export default function PopupKindBadge({ kind }: { kind: PopupKind }) {
-  return <span className={`mr-2 inline-flex shrink-0 items-center rounded px-1.5 py-[3px] text-xs leading-none font-semibold text-white ${BADGE_COLOR[kind]}`}>{kind}</span>
+  return <span className={`mr-2 inline-flex shrink-0 items-center rounded px-1.5 py-[3px] text-xs leading-none font-semibold text-ui-white ${BADGE_COLOR[kind]}`}>{kind}</span>
 }

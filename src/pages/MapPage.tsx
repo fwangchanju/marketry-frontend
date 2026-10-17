@@ -62,7 +62,7 @@ const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOS
 // 이동 경로의 이름이 몇 번째 업종 단계인지(0부터) — 마우스가 이미 그 이름 위에 있어서 툴팁에는 이름 대신 단계 이름만 쓴다. 업종은 최대 4단계(대분류·중분류·소분류·세분류)다.
 const SECTOR_LEVEL_LABEL = ['대분류', '중분류', '소분류', '세분류']
 
-const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-white transition-colors hover:bg-white/35'
+const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 
 // 이름 오른쪽의 되돌아가기 표시 — 이름과 한 버튼이라서 올리면 함께 하이라이트된다.
 function BreadcrumbBackIcon() {
@@ -491,7 +491,7 @@ export default function MapPage() {
   const downloadLabel = downloadStatus === 'error' ? '다운로드 실패' : '다운로드'
 
   return (
-    <div className="flex h-screen select-none flex-col overflow-hidden bg-black">
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
       <NavBar />
       <NavSubBar
         // 지금 보는 시장을 메뉴 목록에서 다시 고르면 처음 단계(드릴다운 맨 위)로 돌아간다.
@@ -514,12 +514,12 @@ export default function MapPage() {
         {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
         <div
           ref={settingsRowRef}
-          className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 bg-black"
+          className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 bg-ui-background"
         >
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
               항상 같은 폭을 유지하게 한다 — 내부 콘텐츠(트리맵)가 넘치면 이 컬럼 안에서만 처리된다. */}
-          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="flex min-h-0 min-w-0 flex-1 flex-col bg-black">
+          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
             {/* 왼쪽은 마켓·기간·시계·시간대 묶음, 오른쪽 끝은 프로필(사진 + 거래소·MARKETRY). 두 묶음이 같은 줄에서 서로 밀어내므로
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
@@ -528,7 +528,7 @@ export default function MapPage() {
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·누적/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
-                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
+                  <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                   <SnapshotDatePicker
                     market={market}
                     viewedSnapshotTime={data?.snapshotTime ?? null}
@@ -547,17 +547,17 @@ export default function MapPage() {
                   </ToolbarChip>
                   {isPastSnapshot && (rangeStartTime && pinnedSnapshotTime
                     ? rangeExcludedStocks.length > 0 && (
-                      <ToolbarChip bare tone="text-gray-400">
+                      <ToolbarChip bare tone="text-ui-muted">
                         <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
                       </ToolbarChip>
                     )
                     : (
-                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-white'}>
+                      <ToolbarChip tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                         <ClosingPriceLabel viewedSnapshotTime={data?.snapshotTime ?? null} liveSnapshotTime={liveSnapshotTime} />
                       </ToolbarChip>
                     ))}
                   {isPastSnapshot === false && (
-                    <ToolbarChip bare tone="text-white">
+                    <ToolbarChip bare tone="text-ui-white">
                       <PageRefreshButton
                         cell
                         onRefresh={refetchTreemap}
@@ -579,10 +579,10 @@ export default function MapPage() {
                 </>
               </div>
               {/* 맨 오른쪽 — 분류명을 설정창 업종 분류 선택 버튼 모양으로 표시하고, 좁아지면 이름을 줄인다. 로딩·오류·빈 화면에서도 제자리에 둔다. */}
-              <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-gray-400`}>{modeStatusText}</div>
+              <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>{modeStatusText}</div>
             </Toolbar>
             <div className="flex min-h-0 flex-1">
-              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-black">
+              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               {/* NXT 단독 시간대 공지 — 그 시간대에만 보여주는 알림이다. 닫을 수 있고, 시간대가 끝났다가 다시 오면 또 나온다. */}
               {/* 지도가 그려진 뒤에만 보인다 — 로딩 중이거나 불러오지 못했을 때는 가운데 로딩 원 위에 겹쳐 뜨지 않게 한다. */}
               {nxtOnly && nxtOnlyWindow && !isNxtNoticeDismissed && !isLoading && !isError && (
@@ -594,16 +594,16 @@ export default function MapPage() {
                     aria-labelledby="nxt-notice-title"
                     className={`${HINT_BUBBLE_COLOR_CLASS} ${POPUP_SIZE_CLASS} pointer-events-auto select-none`}
                   >
-                    <h2 id="nxt-notice-title" className="flex items-center text-base font-bold text-black"><PopupKindBadge kind="안내" />{nxtOnlyWindow.fromMinutes < 12 * 60 ? '프리 마켓' : '애프터 마켓'}</h2>
-                    <p className="mt-3 break-keep text-sm leading-relaxed text-black">
+                    <h2 id="nxt-notice-title" className="flex items-center text-base font-bold text-ui-background"><PopupKindBadge kind="안내" />{nxtOnlyWindow.fromMinutes < 12 * 60 ? '프리 마켓' : '애프터 마켓'}</h2>
+                    <p className="mt-3 break-keep text-sm leading-relaxed text-ui-background">
                       {nxtOnlyWindow.label.replace(/ /g, '')}에는 NXT 거래 가능 종목만 표시됩니다.
                       <br />
-                      <span className="text-gray-600">최대 {toCount(nxtStockTotal)}종목이며, 설정에 따라 다를 수 있습니다.</span>
+                      <span className="text-ui-muted">최대 {toCount(nxtStockTotal)}종목이며, 설정에 따라 다를 수 있습니다.</span>
                       {/* 애프터 마켓에서만 — 정규장이 끝난 뒤라 메인 마켓 종가를 따로 볼 수 있다고 알린다(프리 마켓에서는 보이지 않는다). */}
                       {nxtOnlyWindow.fromMinutes >= 12 * 60 && (
                         <>
                           <br />
-                          <span className="text-gray-600">메인 마켓 종가는 상단 종가 버튼으로 확인하세요.</span>
+                          <span className="text-ui-muted">메인 마켓 종가는 상단 종가 버튼으로 확인하세요.</span>
                         </>
                       )}
                     </p>
@@ -611,7 +611,7 @@ export default function MapPage() {
                       <button
                         type="button"
                         onClick={() => setIsNxtNoticeDismissed(true)}
-                        className="rounded-lg border-0 bg-cyan-700 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-cyan-600"
+                        className="rounded-lg border-0 bg-[var(--brand-surface)] px-4 py-2 text-sm font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)]"
                       >
                         닫기
                       </button>
@@ -624,7 +624,7 @@ export default function MapPage() {
                 // 마지막 이름은 링크가 아니라 현재 위치 표시(흰색)다.
                 <nav
                   aria-label="업종 이동 경로"
-                  className="flex h-7 w-full shrink-0 items-center truncate bg-black/70 pl-[7px] text-lg leading-none font-bold"
+                  className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 pl-[7px] text-lg leading-none font-bold"
                 >
                   <button
                     type="button"

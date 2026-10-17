@@ -83,18 +83,18 @@ export default function ScreenshotModal({
   const fitWidth = previewRatio ? `min(calc(100vw - 4rem), calc((85dvh - 11rem) * ${previewRatio}))` : undefined
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-ui-background/70" onClick={onClose}>
       {/* 팝업은 미리보기 이미지 크기에 딱 맞게 줄어든다(w-fit) — 이미지 주변에 빈 여백(레터박스)이 생기지
           않는다. 이미지는 화면(폭 95vw, 높이 85dvh에서 버튼 줄을 뺀 만큼) 안에서 비율을 유지한 채 최대한
           크게 그린다. 스크린샷 전(스피너)에는 임시 크기 칸으로 자리를 잡는다. */}
       <div
-        className="flex max-w-[calc(100vw-2rem)] select-none flex-col rounded-md border border-gray-500 bg-[#363639]"
+        className="flex max-w-[calc(100vw-2rem)] select-none flex-col rounded-md border border-ui-border bg-[var(--ui-panel)]"
         onClick={e => e.stopPropagation()}
         onDragStart={e => e.preventDefault()}
       >
         {/* 설정창 헤더와 같은 모양 — 왼쪽 제목, 오른쪽 ✕, 아래 구분선. */}
-        <div className="flex shrink-0 items-center border-b border-gray-500 p-4">
-          <p className="font-roboto-latin flex h-7 items-center whitespace-nowrap text-lg font-bold leading-none text-white">
+        <div className="flex shrink-0 items-center border-b border-ui-border p-4">
+          <p className="font-roboto-latin flex h-7 items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
             {/* 설정창 헤더 제목 앞의 막대와 같은 모양(청록 세로 막대)이다. */}
             <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
             Screenshot
@@ -103,7 +103,7 @@ export default function ScreenshotModal({
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="ml-auto shrink-0 border-0 bg-transparent text-xl text-gray-400 hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
+            className="ml-auto shrink-0 border-0 bg-transparent text-xl text-ui-muted hover:text-[var(--brand)] focus-visible:text-[var(--brand)]"
           >
             ✕
           </button>

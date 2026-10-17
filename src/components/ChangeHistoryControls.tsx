@@ -58,11 +58,11 @@ function HistoryListPopup<T extends { id: string }>({
         width: position.width,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
       }}
-      className="z-50 overflow-hidden rounded-none border border-gray-500 bg-[#363639] p-0 text-sm text-white shadow-xl"
+      className="z-50 overflow-hidden rounded-none border border-ui-border bg-[var(--ui-panel)] p-0 text-sm text-ui-white shadow-xl"
       onClick={e => e.stopPropagation()}
     >
       {ordered.length === 0 ? (
-        <p className="whitespace-nowrap px-1 text-gray-400">{actionLabel}할 변경 내역이 없습니다.</p>
+        <p className="whitespace-nowrap px-1 text-ui-muted">{actionLabel}할 변경 내역이 없습니다.</p>
       ) : (
         <div className="overflow-y-auto scrollbar-thin" style={{ maxHeight: LIST_MAX_HEIGHT }} onMouseLeave={() => setHoverIndex(-1)}>
           {ordered.map((action, index) => (
@@ -75,12 +75,12 @@ function HistoryListPopup<T extends { id: string }>({
                 setIsOpen(false)
               }}
               data-hint={`${index + 1}단계 ${direction === 'undo' ? '실행 취소' : '다시 실행'}`}
-              className={`flex w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-2 py-1.5 text-left text-[13px] font-medium ${index > 0 ? 'border-t border-t-white/30' : ''} ${index <= hoverIndex ? 'bg-[var(--accent)]/30 text-white' : 'bg-transparent text-white'}`}
+              className={`flex w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-2 py-1.5 text-left text-[13px] font-medium ${index > 0 ? 'border-t border-t-white/30' : ''} ${index <= hoverIndex ? 'bg-[var(--accent)]/30 text-ui-white' : 'bg-transparent text-ui-white'}`}
             >
-              <span className={`w-4 shrink-0 text-right text-xs tabular-nums ${index <= hoverIndex ? 'text-gray-200' : 'text-gray-400'}`}>{direction === 'undo' ? '-' : '+'}{index + 1}</span>
+              <span className={`w-4 shrink-0 text-right text-xs tabular-nums ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-muted'}`}>{direction === 'undo' ? '-' : '+'}{index + 1}</span>
               <span className="flex min-w-0 flex-col">
                 {describe(action).split('\n').map((line, lineIndex) => (
-                  <span key={lineIndex} className={`truncate ${lineIndex > 0 ? `text-xs font-normal ${index <= hoverIndex ? 'text-gray-100' : 'text-gray-300'}` : ''}`}>{line}</span>
+                  <span key={lineIndex} className={`truncate ${lineIndex > 0 ? `text-xs font-normal ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-text'}` : ''}`}>{line}</span>
                 ))}
               </span>
             </button>
@@ -105,7 +105,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
     const label = isUndo ? '실행 취소' : '다시 실행'
     return (
       <>
-        <div className={`flex min-h-[28px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px]/4 font-medium bg-[#4b4b50] text-white ${isEmpty ? 'opacity-40' : ''}`}>
+        <div className={`flex min-h-[28px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px]/4 font-medium bg-[var(--ui-control)] text-ui-white ${isEmpty ? 'opacity-40' : ''}`}>
           <button
             type="button"
             onClick={() => {
@@ -114,7 +114,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
               setListOpen(prev => !prev)
             }}
             disabled={isEmpty}
-            className={`flex w-5 shrink-0 items-center justify-center settings-chip-hover border-0 border-r border-white/15 bg-transparent p-0 text-white disabled:cursor-not-allowed ${isListOpen ? '!bg-[var(--accent)]/30' : ''}`}
+            className={`flex w-5 shrink-0 items-center justify-center settings-chip-hover border-0 border-r border-ui-white/15 bg-transparent p-0 text-ui-white disabled:cursor-not-allowed ${isListOpen ? '!bg-[var(--accent)]/30' : ''}`}
             data-hint={`${label} 목록`}
             aria-label={`${label} 목록`}
           >
@@ -124,7 +124,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
             type="button"
             onClick={isUndo ? onUndo : onRedo}
             disabled={isEmpty}
-            className={`settings-chip-hover flex min-w-0 flex-1 items-center justify-center gap-1 border-0 bg-transparent px-1.5 text-[13px]/4 font-medium text-white disabled:cursor-not-allowed`}
+            className={`settings-chip-hover flex min-w-0 flex-1 items-center justify-center gap-1 border-0 bg-transparent px-1.5 text-[13px]/4 font-medium text-ui-white disabled:cursor-not-allowed`}
             data-hint={`${label} (${isUndo ? 'Ctrl+Z' : 'Ctrl+Y'})`}
             aria-label={label}
           >
@@ -146,7 +146,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
 
   return (
     <div>
-      <p className="settings-description m-0 mt-1 text-xs font-medium text-gray-300">변경 내역 실행 취소·다시 실행</p>
+      <p className="settings-description m-0 mt-1 text-xs font-medium text-ui-text">변경 내역 실행 취소·다시 실행</p>
       <div ref={rowRef} className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
         {pill('undo')}
         {pill('redo')}

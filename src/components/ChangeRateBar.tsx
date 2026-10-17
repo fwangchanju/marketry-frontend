@@ -9,7 +9,7 @@ export default function ChangeRateBar({ swatches }: { swatches: LegendSwatch[] }
         <span
           key={label}
           style={{ backgroundColor: color }}
-          className={`flex h-6 w-full min-w-0 items-center justify-center font-bold leading-none tabular-nums whitespace-nowrap text-white ${swatches.length > 7 ? 'text-[11px]' : 'text-xs'}`}
+          className={`flex h-6 w-full min-w-0 items-center justify-center font-bold leading-none tabular-nums whitespace-nowrap text-ui-white ${swatches.length > 7 ? 'text-[11px]' : 'text-xs'}`}
         >
           {label}
         </span>

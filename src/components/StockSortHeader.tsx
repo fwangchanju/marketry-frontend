@@ -6,7 +6,7 @@ function Arrow({ direction, active }: { direction: 'asc' | 'desc'; active: boole
   return (
     <svg
       viewBox="0 0 12 6"
-      className={`h-1.5 w-3 ${active ? 'text-[var(--brand)]' : 'text-slate-500'}`}
+      className={`h-1.5 w-3 ${active ? 'text-[var(--brand)]' : 'text-ui-muted'}`}
       fill="none"
       stroke="currentColor"
       strokeWidth={1.8}

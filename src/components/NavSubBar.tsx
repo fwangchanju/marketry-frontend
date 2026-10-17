@@ -76,7 +76,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
     return location.pathname === to
   }
   const linkClassName = (to: string) =>
-    `${FONT_NAV_TAB} whitespace-nowrap ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-gray-400 hover:text-white'}`
+    `${FONT_NAV_TAB} whitespace-nowrap ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
 
   const open = (to: string) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
@@ -95,7 +95,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   }
 
   return (
-    <div className="relative z-30 -top-[13px] flex h-8 after:absolute after:inset-x-0 after:top-full after:h-[2.5px] after:bg-zinc-900 shrink-0 items-center justify-between gap-3 bg-zinc-900 px-3 text-xs">
+    <div className="relative z-30 -top-[13px] flex h-8 after:absolute after:inset-x-0 after:top-full after:h-[2.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs">
       <div ref={barRef} className="flex h-8 items-center gap-3">
         {links.map(link => (
           <div
@@ -123,7 +123,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
               {link.label}
             </Link>
             {link.options && openTo === link.to && (
-              <div className="absolute left-0 top-full z-50 w-32 rounded-lg bg-[var(--panel-gray)] p-[3px] shadow-lg shadow-black/60">
+              <div className="absolute left-0 top-full z-50 w-32 rounded-lg bg-[var(--panel-gray)] p-[3px] shadow-lg shadow-ui-background/60">
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
@@ -135,7 +135,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
                         aria-selected={isCurrent}
                         onClick={() => handleSelect(option)}
                         className={`font-roboto-latin block h-[30px] w-full rounded-[5px] border-0 px-2.5 text-left text-sm font-medium transition-colors ${
-                          isCurrent ? 'bg-cyan-700 text-white' : 'bg-transparent text-zinc-800 hover:bg-white/50 hover:text-black'
+                          isCurrent ? 'bg-[var(--brand-surface)] text-ui-white' : 'bg-transparent text-ui-surface hover:bg-ui-white/50 hover:text-ui-background'
                         }`}
                       >
                         {option.label}
@@ -153,7 +153,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
             aria-label="관리자 페이지"
             aria-current={isAdminActive ? 'page' : undefined}
             data-hint="관리자 페이지"
-            className={`${FONT_NAV_TAB} whitespace-nowrap text-[#ff4d2e] transition-colors hover:text-[#ff6a4d] ${isAdminActive ? '' : 'opacity-70 hover:opacity-100'}`}
+            className={`${FONT_NAV_TAB} whitespace-nowrap text-[var(--status-error)] transition-colors hover:text-[var(--status-error-hover)] ${isAdminActive ? '' : 'opacity-70 hover:opacity-100'}`}
           >
             Admin
           </Link>

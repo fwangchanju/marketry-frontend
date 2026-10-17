@@ -15,7 +15,7 @@ import { appConfirm } from '@/utils/appDialogBus'
 import { checkProfileImageFile, resizeProfileImage, PROFILE_IMAGE_MAX_UPLOAD_BYTES } from '@/utils/resizeProfileImage'
 
 // 이메일·닉네임·프로필 사진 항목은 모두 같은 높이(가장 큰 프로필 사진 항목: 위아래 여백 12px씩 + 제목 20px + 간격 8px + 사진 64px + 간격 8px + 안내 16px = 140px, 위 구분선 1px)이고, 내용은 세로 가운데에 둔다.
-const ITEM_CLASS = 'flex min-h-[141px] flex-col justify-center border-t border-gray-700 py-3'
+const ITEM_CLASS = 'flex min-h-[141px] flex-col justify-center border-t border-ui-border py-3'
 const NICKNAME_MAX_LENGTH = 12
 const NICKNAME_PATTERN = /^[가-힣A-Za-z0-9]{2,12}$/
 // 입력하는 동안 바로 알려 주는 제한 사유(빨간 글자) — 문제가 없으면 null.
@@ -169,18 +169,18 @@ export default function ProfilePage() {
   // 로그인하지 않은 상태(세션 확인 중 포함)에서는 로고 말고 아무것도 보이지 않게 한다 — 로그인 팝업만 뜬다.
   if (!session?.authenticated && !isError) {
     return (
-      <div className="min-h-screen text-white">
+      <div className="min-h-screen text-ui-white">
         <NavBar hideAccount />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen text-white">
+    <div className="min-h-screen text-ui-white">
       <NavBar />
       <NavSubBar />
       <main className="mx-auto w-full max-w-md px-4 py-10">
-        <section className="rounded-lg border border-gray-700 bg-zinc-800 p-6">
+        <section className="rounded-lg border border-ui-border bg-ui-surface p-6">
           {isError ? (
             // 다른 화면의 불러오기 실패와 같은 오류 원(문구와 "다시 시도")으로 보여 준다.
             <div className="flex justify-center py-4">
@@ -194,10 +194,10 @@ export default function ProfilePage() {
                 Account
               </h2>
               <div className={ITEM_CLASS}>
-                <p className="text-sm text-gray-300">이메일</p>
+                <p className="text-sm text-ui-text">이메일</p>
                 {/* 구글 로고는 색을 바꾸지 않고 흰 칸 위에 그대로 둔다(로그인 창과 같은 모양). 로그인이 구글 계정이라 이메일이 구글 주소임을 알려 준다. */}
                 <p className="mt-2 flex items-center gap-2 text-base">
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded bg-white">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded bg-ui-white">
                     <GoogleLogoIcon className="size-3.5" />
                   </span>
                   <span className="break-all">{session.email || '등록된 이메일 없음'}</span>
@@ -205,7 +205,7 @@ export default function ProfilePage() {
               </div>
               <div className={ITEM_CLASS}>
                 <form onSubmit={handleSaveNickname}>
-                  <label htmlFor="profile-nickname" className="text-sm text-gray-300">
+                  <label htmlFor="profile-nickname" className="text-sm text-ui-text">
                     닉네임
                   </label>
                   <div className="mt-2 flex gap-2">
@@ -224,27 +224,27 @@ export default function ProfilePage() {
                       autoComplete="off"
                       placeholder="2~12자"
                       // 12자 너비 — 가장 넓은 영문 대문자 12자(약 154px, 글자 13px)도 들어가는 184px(좌우 안쪽 여백 12px·테두리 1px 포함).
-                      className="w-[11.5rem] h-7 rounded border border-gray-600 bg-zinc-900 px-3 text-[13px] text-white outline-none focus:border-gray-400 focus:placeholder:text-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                      className="w-[11.5rem] h-7 rounded border border-ui-border bg-ui-surface px-3 text-[13px] text-ui-white outline-none focus:border-ui-border focus:placeholder:text-transparent disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <button
                       type="submit"
                       disabled={checkNickname.isPending || updateNickname.isPending || isNicknameLocked}
-                      className="h-7 rounded-[5px] border-0 bg-cyan-700 px-4 text-[13px] font-medium text-white transition-colors hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-50"
+                      className="h-7 rounded-[5px] border-0 bg-[var(--brand-surface)] px-4 text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)] disabled:cursor-wait disabled:opacity-50"
                     >
                       {checkNickname.isPending ? '확인 중...' : updateNickname.isPending ? '등록 중...' : '확인'}
                     </button>
                   </div>
-                  <p className="mt-2 text-xs font-medium text-gray-300">먼저, 닉네임이 등록 가능한지 확인합니다.</p>
+                  <p className="mt-2 text-xs font-medium text-ui-text">먼저, 닉네임이 등록 가능한지 확인합니다.</p>
                   {/* 결과·제한 사유 문구가 뜰 자리를 늘 비워 둔다 — 문구가 나타나도 입력칸이 움직이지 않게 한다. */}
                   <div className="mt-2 h-5">
                     {nicknameLiveText ? (
-                      <p role="alert" className="text-sm text-red-300">{nicknameLiveText}</p>
+                      <p role="alert" className="text-sm text-status-error-text">{nicknameLiveText}</p>
                     ) : nicknameMessage ? (
-                      <p role={nicknameMessage.kind === 'error' ? 'alert' : 'status'} className={`text-sm ${nicknameMessage.kind === 'error' ? 'text-red-300' : 'text-green-300'}`}>
+                      <p role={nicknameMessage.kind === 'error' ? 'alert' : 'status'} className={`text-sm ${nicknameMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
                         {nicknameMessage.text}
                       </p>
                     ) : isNicknameLocked && nicknameChangeableAt !== null ? (
-                      <p role="status" className="text-sm text-red-300">
+                      <p role="status" className="text-sm text-status-error-text">
                         7일에 한 번만 바꿀 수 있습니다. ({formatChangeableAt(nicknameChangeableAt)}부터)
                       </p>
                     ) : null}
@@ -252,7 +252,7 @@ export default function ProfilePage() {
                 </form>
               </div>
               <div className={ITEM_CLASS}>
-                <p className="text-sm text-gray-300">프로필 사진</p>
+                <p className="text-sm text-ui-text">프로필 사진</p>
                 <div className="mt-2 flex items-center gap-5">
                   <ProfileAvatar className="size-16 shrink-0 object-cover" />
                   {/* 두 버튼을 세로로 쌓고(너비는 글자에 맞추며 두 버튼이 같은 너비가 된다) 프로필 사진 높이를 두 버튼 높이의 합인 64px(28 + 간격 8 + 28)에 맞춘다. 삭제 버튼이 없을 때는 등록 버튼이 사진 높이의 세로 가운데에 온다. */}
@@ -268,7 +268,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isImageBusy}
-                      className="h-7 rounded-[5px] border-0 bg-cyan-700 px-4 text-[13px] font-medium text-white transition-colors hover:bg-cyan-600 disabled:cursor-wait disabled:opacity-50"
+                      className="h-7 rounded-[5px] border-0 bg-[var(--brand-surface)] px-4 text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)] disabled:cursor-wait disabled:opacity-50"
                     >
                       {isImageBusy ? '처리 중...' : '사진 등록'}
                     </button>
@@ -277,7 +277,7 @@ export default function ProfilePage() {
                         type="button"
                         onClick={handleDeleteImage}
                         disabled={isImageBusy}
-                        className="h-7 rounded-[5px] border-0 bg-zinc-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-50"
+                        className="h-7 rounded-[5px] border-0 bg-ui-control px-4 text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-wait disabled:opacity-50"
                       >
                         사진 삭제
                       </button>
@@ -286,23 +286,23 @@ export default function ProfilePage() {
                 </div>
                 {/* 안내 줄 자리에서 결과 문구로 바뀌어서(줄 수 그대로) 문구가 떠도 항목 높이가 변하지 않는다. */}
                 {imageMessage ? (
-                  <p role={imageMessage.kind === 'error' ? 'alert' : 'status'} className={`mt-2 text-xs font-medium ${imageMessage.kind === 'error' ? 'text-red-300' : 'text-green-300'}`}>
+                  <p role={imageMessage.kind === 'error' ? 'alert' : 'status'} className={`mt-2 text-xs font-medium ${imageMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
                     {imageMessage.text}
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs font-medium text-gray-300">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
+                  <p className="mt-2 text-xs font-medium text-ui-text">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
                 )}
               </div>
-              <div className="border-t border-gray-700 pt-4">
+              <div className="border-t border-ui-border pt-4">
                 <button
                   type="button"
                   onClick={handleLogout}
                   disabled={logout.isPending}
-                  className="h-7 rounded-[5px] border-0 bg-zinc-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-zinc-500 disabled:cursor-wait disabled:opacity-50"
+                  className="h-7 rounded-[5px] border-0 bg-ui-control px-4 text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-wait disabled:opacity-50"
                 >
                   {logout.isPending ? '로그아웃 중...' : '로그아웃'}
                 </button>
-                {logout.isError && <p role="alert" className="mt-3 text-sm text-red-300">로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
+                {logout.isError && <p role="alert" className="mt-3 text-sm text-status-error-text">로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
               </div>
             </>
           ) : null}

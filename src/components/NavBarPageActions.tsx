@@ -25,10 +25,10 @@ const ICON_FRAME_CLASS = 'relative top-[3.5px] bg-transparent'
 // 세 아이콘 모두 20px로 그린다(눈에 보이는 크기가 같도록 스크린샷 아이콘은 그림 격자를 안쪽에 맞춰 두었다). 선 값은 화면 굵기가 약 1.35px가 되게 준다 — 설정창 저장·되돌리기와 같다.
 // 폭 28px — 18px 아이콘 사이가 10px이고 설정창 저장·되돌리기 아이콘과 크기·간격이 같다. 묶음의 간격은 NavSubBar가 0으로 둔다.
 const BUTTON_CLASS = `${BUTTON_BASE_CLASS} w-7`
-// 툴바 칩 안의 새로고침 칸 — 칩(24px) 안에서 사방 1px씩 띄워 22px 높이에 폭은 18px로 좁혀 세로로 긴 직사각형이고, 평소엔 배경 없이 아이콘이 청록(--brand)이고, 올리면 글자색은 그대로 두고 다른 칩과 같은 밝은 회색(#838385) 면만 깔린다.
-const CELL_CLASS = 'm-px flex h-[22px] w-[18px] items-center justify-center border-0 bg-transparent text-[var(--brand)] outline-none transition-colors hover:bg-[#838385] focus-visible:bg-[#838385]'
-// 시각 칩(시계 + 시각 글자) 하나가 새로고침 버튼이다 — 호버 면(#838385)이 칩 전체에 깔린다.
-const CELL_TIME_CLASS = 'flex h-6 shrink-0 items-center gap-1.5 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[#838385]'
+// 툴바 칩 안의 새로고침 칸 — 칩(24px) 안에서 사방 1px씩 띄워 22px 높이에 폭은 18px로 좁혀 세로로 긴 직사각형이고, 평소엔 배경 없이 아이콘이 청록(--brand)이고, 올리면 글자색은 그대로 두고 다른 칩과 같은 밝은 회색(var(--ui-control-hover)) 면만 깔린다.
+const CELL_CLASS = 'm-px flex h-[22px] w-[18px] items-center justify-center border-0 bg-transparent text-[var(--brand)] outline-none transition-colors hover:bg-[var(--ui-control-hover)] focus-visible:bg-[var(--ui-control-hover)]'
+// 시각 칩(시계 + 시각 글자) 하나가 새로고침 버튼이다 — 호버 면(var(--ui-control-hover))이 칩 전체에 깔린다.
+const CELL_TIME_CLASS = 'flex h-6 shrink-0 items-center gap-1.5 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[var(--ui-control-hover)]'
 // 켜진 상태의 아이콘은 선 색(청록)을 35% 투명하게 안쪽에 채운다 — 북마크가 켜진 모양.
 export const FILLED_ICON_CLASS = 'fill-current/35'
 
@@ -90,7 +90,7 @@ export function PageRefreshButton({
           aria-label="스냅샷 새로고침"
           aria-busy={showRefreshing}
           data-hint={helpText}
-          className={`${CELL_TIME_CLASS} group/refresh relative cursor-pointer border-0 outline-none focus-visible:bg-[#838385] ${showRefreshing ? 'cursor-default' : ''} nav-refresh-button ${className}`}
+          className={`${CELL_TIME_CLASS} group/refresh relative cursor-pointer border-0 outline-none focus-visible:bg-[var(--ui-control-hover)] ${showRefreshing ? 'cursor-default' : ''} nav-refresh-button ${className}`}
           onClick={handleRefresh}
         >
           <span aria-hidden={showRefreshing || undefined} className={`flex items-center gap-1.5 ${showRefreshing ? 'invisible' : 'group-hover/refresh:invisible group-focus-visible/refresh:invisible'}`}>{children}</span>
@@ -104,7 +104,7 @@ export function PageRefreshButton({
           aria-label="스냅샷 새로고침"
           aria-busy={showRefreshing}
           data-hint={helpText}
-          className={`${cell ? CELL_CLASS : `${BUTTON_BASE_CLASS} ${ICON_FRAME_CLASS} w-7 ${showRefreshing ? 'text-[var(--accent)]' : 'text-gray-300'}`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default' : ''} ${className}`}
+          className={`${cell ? CELL_CLASS : `${BUTTON_BASE_CLASS} ${ICON_FRAME_CLASS} w-7 ${showRefreshing ? 'text-[var(--accent)]' : 'text-ui-text'}`} nav-refresh-button shrink-0 ${showRefreshing ? 'cursor-default' : ''} ${className}`}
           onClick={handleRefresh}
         >
           <RefreshIcon aria-hidden="true" strokeWidth={cell ? 2.2 : 2} className={`${cell ? 'h-[15px] w-[15px]' : 'h-4 w-4'} shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
@@ -136,7 +136,7 @@ export default function NavBarPageActions({
         data-hint="스크린샷 찍기"
         aria-haspopup="dialog"
         aria-expanded={isScreenshotOpen}
-        className={`flex h-7 w-7 items-center justify-center border-0 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${ICON_FRAME_CLASS} ${isScreenshotOpen ? 'text-[var(--brand)]' : 'text-gray-300'}`}
+        className={`flex h-7 w-7 items-center justify-center border-0 outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${ICON_FRAME_CLASS} ${isScreenshotOpen ? 'text-[var(--brand)]' : 'text-ui-text'}`}
         onClick={onOpenShare}
       >
         <ScreenshotIcon filled={isScreenshotOpen} className="h-5 w-5" />
@@ -146,7 +146,7 @@ export default function NavBarPageActions({
         aria-label="F11"
         data-hint={isNativeFullscreen ? '전체 화면 끄기 (F11)' : '전체 화면 켜기 (F11)'}
         className={`flex h-7 w-7 items-center justify-center border-0 outline-none hover:text-[var(--accent)] ${ICON_FRAME_CLASS} ${
-          isNativeFullscreen ? 'text-[var(--accent)]' : 'text-gray-300'
+          isNativeFullscreen ? 'text-[var(--accent)]' : 'text-ui-text'
         }`}
         onClick={onToggleFullscreen}
       >
@@ -158,7 +158,7 @@ export default function NavBarPageActions({
           aria-label="설정"
           data-hint={isSettingsOpen ? '설정창 닫기' : '설정창 열기'}
           data-settings-toggle
-          className={`${BUTTON_CLASS} ${ICON_FRAME_CLASS} ${isSettingsOpen ? 'text-[var(--accent)]' : 'text-gray-300'}`}
+          className={`${BUTTON_CLASS} ${ICON_FRAME_CLASS} ${isSettingsOpen ? 'text-[var(--accent)]' : 'text-ui-text'}`}
           onClick={onToggleSettings}
         >
           <SettingsIcon strokeWidth={1.44} className={`h-5 w-5 ${isSettingsOpen ? FILLED_ICON_CLASS : ''}`} />

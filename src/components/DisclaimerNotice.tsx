@@ -68,7 +68,7 @@ function SourceHelpBubble() {
         aria-expanded={isOpen}
         onClick={() => setIsOpen(open => !open)}
         onBlur={() => setIsOpen(false)}
-        className="inline-flex h-3 w-3 items-center justify-center border-0 bg-transparent p-0 text-white/70 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
+        className="inline-flex h-3 w-3 items-center justify-center border-0 bg-transparent p-0 text-ui-white/70 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
       >
         <svg aria-hidden="true" viewBox="0 0 16 16" className="h-[11px] w-[11px]" fill="none" stroke="currentColor" strokeWidth="1.95" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="8" cy="8" r="6.35" />
@@ -83,10 +83,10 @@ function SourceHelpBubble() {
           style={{ position: 'fixed', left: position.left, top: position.top }}
           className={`z-50 w-max whitespace-pre ${HINT_BUBBLE_CLASS}`}
         >
-          <div><span className="inline-flex items-center rounded bg-cyan-700 px-1.5 py-[3px] text-xs leading-none font-semibold text-white">출처</span></div>
+          <div><span className="inline-flex items-center rounded bg-[var(--brand-surface)] px-1.5 py-[3px] text-xs leading-none font-semibold text-ui-white">출처</span></div>
           {DATA_SOURCES.map(({ source, items }) => (
             <div key={source} className="mt-1">
-              <div className="font-medium text-red-600">{source}</div>
+              <div className="font-medium text-status-error-ink">{source}</div>
               {items.map(item => (
                 <div key={item} className="pl-3">{item}</div>
               ))}
@@ -101,7 +101,7 @@ function SourceHelpBubble() {
 export default function DisclaimerNotice() {
   return (
     // 글자는 10px, 줄 간격은 12px이라 두 줄이 24px다 — 아래 줄의 등락률 바(24px)와 같은 높이로 맞춘다.
-    <p className="min-w-0 text-left text-[10px] font-bold text-white/70">
+    <p className="min-w-0 text-left text-[10px] font-bold text-ui-white/70">
       <span className="min-w-0 leading-[12px]">
         {DISCLAIMER_LINES.map((line, index) => (
           <span key={line} className="block h-3 truncate">

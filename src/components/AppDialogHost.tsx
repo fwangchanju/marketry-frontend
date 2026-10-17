@@ -46,7 +46,7 @@ export default function AppDialogHost() {
 
   // 바깥(어두운 배경)을 눌러도 닫히지 않는다 — 반드시 버튼이나 Esc로 답해야 한다.
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70" onPointerDown={handleBlockedPointerDown}>
+    <div className="fixed inset-0 z-[100] bg-ui-background/70" onPointerDown={handleBlockedPointerDown}>
       {/* 어두운 배경은 화면 전체를 덮고, 창은 메인 영역 안의 가운데에 놓는다. */}
       <div
         className={`flex items-center justify-center p-4 ${mainAreaRect ? 'absolute' : 'h-full w-full'}`}
@@ -60,19 +60,19 @@ export default function AppDialogHost() {
         aria-labelledby="app-dialog-title"
         aria-describedby="app-dialog-message"
         // 색은 설정창 말풍선·NXT 안내창과 같은 크림색 계열이다.
-        className={`select-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-[#ff4d2e]' : ''}`}
+        className={`select-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-[var(--status-error)]' : ''}`}
       >
-        <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-[#d92b0f]' : 'text-black'}`}>
+        <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-[var(--status-error-ink)]' : 'text-ui-background'}`}>
           <PopupKindBadge kind={dialog.kind === 'confirm' ? '확인' : '알림'} />
           <span>
             {dialog.title}
             {dialog.adminOnly && ' ⚠'}
           </span>
         </h2>
-        <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-black">{dialog.message}</p>
+        <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-ui-background">{dialog.message}</p>
         <div className="mt-auto flex justify-end gap-2 pt-3">
           {dialog.kind === 'confirm' && (
-            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-[var(--panel-gray)] px-4 py-2 text-sm text-zinc-800 transition-colors hover:bg-zinc-400">
+            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-[var(--panel-gray)] px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover">
               취소
             </button>
           )}
@@ -80,7 +80,7 @@ export default function AppDialogHost() {
             type="button"
             autoFocus
             onClick={() => resolveCurrentAppDialog(true)}
-            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold text-white transition-colors ${dialog.adminOnly ? 'bg-[#ff4d2e] hover:bg-[#e03a1c]' : 'bg-cyan-700 hover:bg-cyan-600'}`}
+            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold text-ui-white transition-colors ${dialog.adminOnly ? 'bg-[var(--status-error-ink)] hover:bg-[var(--status-error-hover)]' : 'bg-[var(--brand-surface)] hover:bg-[var(--brand-surface-hover)]'}`}
           >
             {dialog.kind === 'confirm' ? '확인' : '닫기'}
           </button>
