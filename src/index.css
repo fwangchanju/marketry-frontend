@@ -508,18 +508,18 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 
 /* 지도 설정 탭마다 1) 2) 3) 4) 5) 제목을 같은 높이에서 시작한다. 내용 높이를 재서 맞추면 글꼴이나 항목 내용이 바뀔 때마다
-   소수점 단위로 어긋나서, 항목마다 높이를 고정(127px = 가장 높은 항목 103px + 여백 24px)해 위치가 내용과 무관하게
-   정해지게 한다. 제목은 탭 내용 상단 기준 20/147/274/401/528px에서 시작한다. 첫 항목은 위 여백(20px)을 포함해 147px.
+   소수점 단위로 어긋나서, 항목마다 높이를 고정(160px = 가장 높은 항목 103px + 여백 57px)해 위치가 내용과 무관하게
+   정해지게 한다. 제목은 탭 내용 상단 기준 12/172/332/492/652px에서 시작한다. 첫 항목은 위 여백(12px)을 포함해 172px.
    등락률 색상은 길어도 시작 위치만 맞으면 돼서 높이를 고정하지 않는다.
    북마크 탭은 자체 간격 규칙을 쓴다. 항목 내용이 103px를 넘게 바뀌면 이 값을 다시 정해야 한다. */
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-sector-change, .settings-third-stock-change, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places) {
-  height: 127px;
+  height: 160px;
 }
 
 /* 제외 업종은 항목 높이를 유지하고 목록만 내부에서 스크롤한다. */
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-fourth-exclude, .settings-second-exclude) {
-  height: 127px;
-  padding-bottom: 24px;
+  height: 160px;
+  padding-bottom: 18px;
 }
 
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-fourth-exclude, .settings-second-exclude) > div {
@@ -537,12 +537,12 @@ a { color: var(--accent-light); text-decoration: none; }
 
 /* 개수 선택과 업종 단계가 함께 있어 다음 항목까지 충분한 여백을 둔다. */
 .settings-panel-tab-content[data-align-second-heading] .settings-second-top-pick {
-  min-height: 151px;
+  min-height: 160px;
   padding-bottom: 24px;
 }
 
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-market-value, .settings-first-stock-size, .settings-first-strong-color) {
-  height: 147px;
+  height: 172px;
 }
 
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color) {
@@ -628,12 +628,12 @@ a { color: var(--accent-light); text-decoration: none; }
 
 /* 북마크 탭 — 각 항목을 같은 높이로 쌓고, 항목 사이에 구분선을 둔다. */
 .settings-bookmark-tab {
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .settings-bookmark-tab .settings-bookmark-item {
   position: relative;
-  height: 127px;
+  height: 160px;
   margin: 0;
   padding: 0;
   border-color: transparent;

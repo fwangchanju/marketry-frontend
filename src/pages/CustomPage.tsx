@@ -317,8 +317,8 @@ export default function CustomPage() {
               plainContent={!isReadOnlySheet ? (
                 <>
                   {/* 종목 화면은 위에서부터 간편 업종 분류 → 변경 내역 → 일괄 변경 순서다(관리자 기능은 Admin 페이지로 옮겼다). */}
-                  {mode === 'stock' && <div ref={setStockExcelTarget} className="h-[127px]" />}
-                  <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'h-[127px]' : undefined} />
+                  {mode === 'stock' && <div ref={setStockExcelTarget} className="h-[160px]" />}
+                  <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'h-[160px]' : undefined} />
                   {mode === 'stock' && <div ref={setStockBulkTarget} />}
                 </>
               ) : (
