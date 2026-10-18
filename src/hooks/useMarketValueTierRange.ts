@@ -4,7 +4,7 @@ import { useIsLoggedIn } from './useSession'
 import { useCustomPreferences } from './useCustomPreferences'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
 import { useMarketValueTiers } from './useMarketValueTiers'
-import { defaultExcludedTierLabels, tierRangeToExcludedLabels } from '@/utils/marketValueTier'
+import { defaultExcludedTierLabels, marketValueSliderSteps } from '@/utils/marketValueTier'
 
 const MIN_INDEX_KEY = 'treemap.tierRangeMinIndex'
 const MAX_INDEX_KEY = 'treemap.tierRangeMaxIndex'
@@ -17,17 +17,20 @@ export function useMarketValueTierRange(enabled: boolean) {
   const isLoggedIn = useIsLoggedIn()
   const { isLoaded: isPreferencesLoaded } = useCustomPreferences()
   const { data: valueTiersData, isSuccess: isValueTiersSuccess } = useMarketValueTiers()
-  const tiers = useMemo(() => valueTiersData ?? [], [valueTiersData])
+  const baseTiers = useMemo(() => valueTiersData ?? [], [valueTiersData])
+  const tiers = useMemo(() => marketValueSliderSteps(baseTiers), [baseTiers])
 
-  // -1 = tiers를 아직 못 받아와서 기본값을 못 정한 상태. tiers가 도착하면 아래 useEffect가
-  // isExcludedByDefault 기준으로 딱 한 번만 채운다(이미 저장된 값이 있으면 건드리지 않음). 로그인
-  // 사용자는 이 값이 서버 user_preference에 저장된다(usePageSetting).
-  const [storedMinIndex, setMinIndex] = usePageSetting(MIN_INDEX_KEY, -1)
-  const [storedMaxIndex, setMaxIndex] = usePageSetting(MAX_INDEX_KEY, -1)
+  // 예전에 저장한 인덱스는 원래 등급 목록으로 해석한다. 새 선택은 금액으로 저장해서,
+  // 눈금 추가로 기존 사용자 범위가 달라지지 않도록 한다(-1은 미설정, 상한 null은 무제한).
+  const [storedMinIndex] = usePageSetting(MIN_INDEX_KEY, -1)
+  const [storedMaxIndex] = usePageSetting(MAX_INDEX_KEY, -1)
+  const [storedMinValue, setMinValue] = usePageSetting('treemap.tierRangeMinValue', -1)
+  const [storedMaxValue, setMaxValue] = usePageSetting<number | null>('treemap.tierRangeMaxValue', -1)
 
   // 저장된 값이 없을 때의 기본 범위는 값을 써 넣지 않고 계산만 한다 — 써 넣으면 사용자가 바꾸지 않았는데도 "저장 안 된
   // 변경"이 생기고, 서버 설정이 도착하기 전에 기본값이 저장값을 덮어쓴다.
   const defaultRange = useMemo(() => {
+    const tiers = baseTiers
     if (tiers.length === 0) return null
     // 기본 범위는 utils/settingDefaults.ts의 tierRange를 따른다 — 'all'은 모든 구간, 'topTwoTiers'는 가장 큰 두 구간,
     // 그 밖에는 기본 제외 구간(소형주)만 뺀다.
@@ -39,15 +42,24 @@ export function useMarketValueTierRange(enabled: boolean) {
     const first = tiers.findIndex(tier => !excludedLabels.has(tier.label))
     const last = tiers.findLastIndex(tier => !excludedLabels.has(tier.label))
     return { min: first === -1 ? 0 : first, max: last === -1 ? tiers.length - 1 : last }
-  }, [tiers, isLoggedIn])
+  }, [baseTiers, isLoggedIn])
 
-  const minIndex = storedMinIndex !== -1 ? storedMinIndex : (defaultRange?.min ?? -1)
-  const maxIndex = storedMaxIndex !== -1 ? storedMaxIndex : (defaultRange?.max ?? -1)
+  const legacyMinIndex = storedMinIndex !== -1 ? storedMinIndex : (defaultRange?.min ?? -1)
+  const legacyMaxIndex = storedMaxIndex !== -1 ? storedMaxIndex : (defaultRange?.max ?? -1)
+  const minValue = storedMinValue >= 0 ? storedMinValue : (baseTiers[legacyMinIndex]?.thresholdValue ?? 0)
+  const maxValue = storedMaxValue !== -1 ? storedMaxValue : (baseTiers[legacyMaxIndex + 1]?.thresholdValue ?? null)
+  const minIndex = tiers.findLastIndex(tier => tier.thresholdValue <= minValue)
+  const maxIndex = Math.max(minIndex, tiers.findLastIndex(tier => maxValue === null || tier.thresholdValue < maxValue))
+  const setMinIndex = (index: number) => setMinValue(tiers[index].thresholdValue)
+  const setMaxIndex = (index: number) => setMaxValue(tiers[index + 1]?.thresholdValue ?? null)
 
   const excludedMarketValueTiers = useMemo(
     () =>
       enabled && tiers.length > 0 && minIndex !== -1
-        ? tierRangeToExcludedLabels(tiers, minIndex, maxIndex)
+        ? Object.assign(new Set<string>(), { marketValueRange: {
+            min: tiers[minIndex].thresholdValue,
+            max: tiers[maxIndex + 1]?.thresholdValue ?? null,
+          } })
         : new Set<string>(),
     [enabled, tiers, minIndex, maxIndex],
   )

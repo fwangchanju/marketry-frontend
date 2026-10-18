@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { TreemapSectorNode, TreemapItem } from '@/types/api'
 import { computeSectorAverage } from '@/utils/sectorAverage'
+import { isMarketValueExcluded } from '@/utils/marketValueTier'
 
 export type StockChangeFilter = 'all' | 'rising' | 'falling'
 export type SectorChangeFilter = StockChangeFilter
@@ -46,7 +47,7 @@ function filterNodes(
 
     // 선택 단계보다 위에 직접 속한 종목은 선택된 업종에 속하지 않으므로 표시하지 않는다.
     const items = filters.sectorChangeFilter !== 'all' && depth < filters.sectorChangeDepth ? [] : node.items.filter(
-      item => item.totalMarketValue > 0 && !excludedMarketValueTiers.has(item.marketValueTier) &&
+      item => item.totalMarketValue > 0 && !isMarketValueExcluded(item, excludedMarketValueTiers) &&
         (filters.stockChangeFilter === 'all' || (filters.stockChangeFilter === 'rising' ? item.changeRate > 0 : item.changeRate < 0)),
     )
     const children = filterNodes(node.children, excludedSectorIds, excludedMarketValueTiers, filters, depth + 1)

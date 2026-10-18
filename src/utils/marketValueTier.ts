@@ -1,4 +1,28 @@
-import type { MarketValueTierItem } from '@/types/api'
+import type { MarketValueTierItem, TreemapItem } from '@/types/api'
+
+// 등급명 제외와 금액 범위 제외를 함께 전달한다. 기존 Set만 넘기는 호출자는 등급명 기준을 유지한다.
+export type MarketValueExclusions = Set<string> & {
+  marketValueRange?: { min: number; max: number | null }
+}
+
+export function isMarketValueExcluded(
+  item: Pick<TreemapItem, 'marketValueTier' | 'totalMarketValue'>,
+  exclusions: MarketValueExclusions,
+): boolean {
+  const range = exclusions.marketValueRange
+  return range
+    ? item.totalMarketValue < range.min || (range.max !== null && item.totalMarketValue >= range.max)
+    : exclusions.has(item.marketValueTier)
+}
+
+// 중간 눈금에는 등급명을 추가하지 않는다. 서버의 기존 등급 정의는 그대로 둔다.
+export function marketValueSliderSteps(tiers: MarketValueTierItem[]): MarketValueTierItem[] {
+  if (tiers.length === 0) return []
+  const extra = [300_000_000_000, 1_000_000_000_000, 10_000_000_000_000]
+    .filter(value => value > tiers[0].thresholdValue && !tiers.some(tier => tier.thresholdValue === value))
+    .map((thresholdValue, index) => ({ id: -index - 1, label: '', thresholdValue, isExcludedByDefault: false }))
+  return [...tiers, ...extra].sort((a, b) => a.thresholdValue - b.thresholdValue)
+}
 
 // 시가총액 구간 정의는 더 이상 프론트 하드코딩이 아니라 GET /map/value-tiers 조회 결과
 // (useMarketValueTiers)를 그대로 쓴다 — thresholdValue 오름차순으로 내려온다는 게 백엔드 계약.

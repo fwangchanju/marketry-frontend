@@ -1,4 +1,5 @@
 import type { TreemapSectorNode, TreemapItem } from '@/types/api'
+import { isMarketValueExcluded } from './marketValueTier'
 
 export interface SectorAverage {
   weightedAvg: number | null
@@ -26,7 +27,7 @@ export function computeSectorAverage(
   let simpleSum = 0
   let itemCount = 0
   for (const item of collectItems(node)) {
-    if (excludedTierLabels.has(item.marketValueTier)) continue
+    if (isMarketValueExcluded(item, excludedTierLabels)) continue
     weightedSum += item.changeRate * item.totalMarketValue
     totalValue += item.totalMarketValue
     simpleSum += item.changeRate
