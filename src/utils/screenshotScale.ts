@@ -9,8 +9,17 @@ function scaleForLongSide(longSide: number): number {
   return Math.min(2, Math.max(0.5, SHARE_IMAGE_LONG_SIDE / longSide))
 }
 
+// 홈 전체 캡처는 화면 밖으로 넘친 세 항목의 너비까지 포함한다.
+// 스크롤 내용이 아닌 툴바·바깥 여백은 현재 크기를 그대로 더한다.
+export function fullScreenshotSize(el: HTMLElement): { width: number; height: number } {
+  const content = el.querySelector<HTMLElement>('[data-capture-full-width]')
+  const overflowWidth = content ? Math.max(0, content.scrollWidth - content.clientWidth) : 0
+  return { width: el.offsetWidth + overflowWidth, height: el.offsetHeight }
+}
+
 export function shareScreenshotScale(el: HTMLElement): number {
-  return scaleForLongSide(Math.max(el.offsetWidth, el.offsetHeight))
+  const { width, height } = fullScreenshotSize(el)
+  return scaleForLongSide(Math.max(width, height))
 }
 
 // 찍을 영역을 "맨 왼쪽 위부터 selector에 맞는 요소의 오른쪽 끝까지, 높이는 그대로"로 줄인다. 맞는 요소가 없으면 null이다.
@@ -34,15 +43,13 @@ export function captureRegionRect(el: HTMLElement, selector: string, mode: 'thro
     const outerMargin = mode === 'content' ? 3 : 0
     const rawX = rect.left - origin.left + borderLeft + paddingLeft - outerMargin
     const rawY = rect.top - origin.top + borderTop + paddingTop - outerMargin
-    const x = Math.max(0, rawX)
-    const y = Math.max(0, rawY)
-    const right = Math.min(origin.width, rawX + rect.width - borderLeft - borderRight - paddingLeft - paddingRight + outerMargin * 2)
-    const bottom = Math.min(origin.height, rawY + rect.height - borderTop - borderBottom - paddingTop - paddingBottom + outerMargin * 2)
+    // 가로 스크롤로 화면 밖에 있는 항목도 전체를 찍는다. 화면 경계로 자르면
+    // 우측 항목의 폭이 0이 되거나, 스크롤한 뒤 좌측 항목이 잘린다.
     return {
-      x,
-      y,
-      width: Math.max(0, right - x),
-      height: Math.max(0, bottom - y),
+      x: rawX,
+      y: rawY,
+      width: Math.max(0, rect.width - borderLeft - borderRight - paddingLeft - paddingRight + outerMargin * 2),
+      height: Math.max(0, rect.height - borderTop - borderBottom - paddingTop - paddingBottom + outerMargin * 2),
     }
   }
   const right = Math.max(...edges.map(edge => edge.getBoundingClientRect().right))
@@ -67,13 +74,35 @@ function captureBackgroundColor(el: HTMLElement): string {
 // regionSelector를 주면 그 요소들이 차지한 영역만 찍는다(없거나 못 찾으면 전체).
 export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string, regionMode: 'through-right-edge' | 'element' | 'content' = 'through-right-edge') {
   const base = { backgroundColor: captureBackgroundColor(el), filter: isCapturable }
-  const region = regionSelector ? captureRegionRect(el, regionSelector, regionMode) : null
+  const fullSize = fullScreenshotSize(el)
+  const selectedRegion = regionSelector ? captureRegionRect(el, regionSelector, regionMode) : null
+  const isExpandedFullCapture = !selectedRegion && fullSize.width > el.offsetWidth
+  const region = selectedRegion
+    ?? (fullSize.width > el.offsetWidth ? { x: 0, y: 0, ...fullSize } : null)
   if (!region) return { scale: shareScreenshotScale(el), ...base }
   return {
     scale: scaleForLongSide(Math.max(region.width, region.height)),
     width: Math.round(region.width),
     height: Math.round(region.height),
-    style: { transform: `translate(${-region.x}px, ${-region.y}px)`, transformOrigin: 'top left' },
+    // 출력 이미지 크기와 원본 레이아웃 크기를 구분한다. 잘라 낼 폭으로 원본까지
+    // 줄이면 flex 항목이 재배치되므로 복제본은 현재 화면의 원본 크기를 유지한다.
+    style: {
+      width: `${el.offsetWidth}px`,
+      height: `${el.offsetHeight}px`,
+      transform: `translate(${-region.x}px, ${-region.y}px)`,
+      transformOrigin: 'top left',
+    },
+    ...(isExpandedFullCapture ? {
+      // 본문 항목 크기는 유지하고 툴바와 아래 줄만 이미지 전체 폭으로 넓힌다.
+      // 화면의 DOM은 바꾸지 않고 복제본의 분류 배지와 범례를 오른쪽 끝에 맞춘다.
+      onCloneNode: (cloned: Node) => {
+        if (!(cloned instanceof Element)) return
+        for (const row of cloned.querySelectorAll<HTMLElement>('[data-capture-full-width-align]')) {
+          row.style.width = `${fullSize.width}px`
+          row.style.boxSizing = 'border-box'
+        }
+      },
+    } : {}),
     ...base,
   }
 }

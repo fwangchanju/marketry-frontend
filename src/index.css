@@ -194,6 +194,26 @@ html, body, #root {
   color: var(--text);
 }
 
+/* 메인·설정창의 바깥 여백과 사이 간격을 한곳에서 관리한다. */
+.main-settings-row {
+  padding-inline: 4px;
+}
+
+.main-settings-row:has([data-settings-panel-shell]) {
+  column-gap: 4px;
+}
+
+/* 배지 윗선과 툴바·본문 위치를 유지하면서 아래쪽만 1.5px 늘린다. */
+.main-toolbar .toolbar-badge,
+.main-toolbar .toolbar-badge-control {
+  height: calc(1.5rem + 1.5px);
+}
+
+.main-toolbar .toolbar-badge {
+  margin-bottom: -1.5px;
+  transform: translateY(-0.25px);
+}
+
 a { color: var(--accent-light); text-decoration: none; }
 
 /* ── Button (override nes.css's pixel-art bevel look) ───────────────────────── */

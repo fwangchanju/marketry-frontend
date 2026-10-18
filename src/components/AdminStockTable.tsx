@@ -1587,7 +1587,7 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={columnFilters.clearAll}
-              className="flex h-6 items-center whitespace-nowrap rounded border border-ui-border bg-transparent px-2 text-sm font-normal text-ui-text transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+              className="toolbar-badge flex h-6 items-center whitespace-nowrap rounded border border-ui-border bg-transparent px-2 text-sm font-normal text-ui-text transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
             >
               필터 초기화
             </button>
@@ -1618,7 +1618,7 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={handleExportExcel}
-              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white"
+              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
@@ -1629,7 +1629,7 @@ export default function AdminStockTable({
               type="button"
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading}
-              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
+              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >

@@ -297,7 +297,7 @@ export default function GroupPage() {
         {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
         <div
           ref={settingsRowRef}
-          className="relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white"
+          className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white"
         >
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
@@ -358,7 +358,7 @@ export default function GroupPage() {
                 설정 사이드바가 열려도 본문이 밀리는 게 자연스럽게 느껴지도록 한다(밀림 자체는 다른
                 페이지와 동일한 flex 구조이고, 콘텐츠가 항상 남는 공간을 꽉 채우기만 하면 된다). */}
             <div className="flex min-h-0 flex-1">
-              <div className="flex min-h-0 w-full flex-1 flex-col px-[7px] pt-4 pb-[19.5px]">
+              <div className="flex min-h-0 w-full flex-1 flex-col pt-4 pb-[19.5px]">
               {isLoading ? (
                 <div className="flex flex-1 items-center justify-center">
                   <Spinner showElapsed />
@@ -414,7 +414,7 @@ export default function GroupPage() {
               </div>
             </div>
             {/* 아래 줄 — 지도 페이지와 같은 높이(28px)로 왼쪽에 면책조항, 오른쪽 끝에 등락률 색상 범례를 둔다. 로딩 중에도 제자리에 둔다. */}
-            <div className="flex h-7 shrink-0 items-end justify-between gap-3 px-[7px]">
+            <div className="flex h-7 shrink-0 items-end justify-between gap-3">
               <div className="flex h-7 min-w-0 items-end">
                 <DisclaimerNotice />
               </div>
@@ -422,7 +422,7 @@ export default function GroupPage() {
             </div>
           </div>
           {/* 설정창 윗선을 지도 페이지와 같은 높이로 맞춘다 — 지도 페이지에서 실제로 맞춘 모양(설정창 윗선이 위쪽 바 윗선보다 3px 아래)을 따른다. 이 칸은 바보다 5.25px 위에서 시작하므로 5.25 + 3 - 1(눈으로 맞춘 보정) = 7.25px이지만, 지도 페이지의 설정창 칸이 7px이라 실제로는 같은 7px을 띄운다. 아래는 붙인다. */}
-          <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
+          <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel
               {...settingsModalProps}
               isOnLeft={isSettingsOnLeft}

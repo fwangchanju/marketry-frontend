@@ -235,9 +235,9 @@ export default function MarketSummaryPage() {
       />
       {/* 지도/그룹/커스텀 페이지와 같은 본문 틀 — 나중에 내용을 채울 때 이 구조를 그대로 쓴다.
           바깥 박스가 -mt-[10.5px]로 NavSubBar의 짙은 회색 하단에 맞춰 올라가 있으므로, 안쪽 콘솔 줄은
-          mt/mb 5.25px로 위치를 맞추고(이 박스 안에 있어야 overflow에 잘리지 않는다), 설정창
+          위 2.25px·아래 8.25px 여백으로 위치를 맞추고(이 박스 안에 있어야 overflow에 잘리지 않는다), 설정창
           (SettingsPanel)은 이 박스의 맨 오른쪽 자식으로 넣으면 같은 높이에 붙는다. */}
-      <div ref={settingsRowRef} className="relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+      <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
         {/* 스크린샷 대상 — 지도·그룹·커스텀 페이지와 같이 메인 영역 전체(툴바부터 맨 아래 줄까지)다. */}
         <div ref={allFramesRef} data-main-area className="flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           {/* 툴바 — 지도·그룹 페이지와 같은 틀. 왼쪽에 제목 배지, 오른쪽 끝에 분류 배지를 둔다. 로딩 중에도 제자리에 둔다. */}
@@ -291,8 +291,8 @@ export default function MarketSummaryPage() {
               <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
             </div>
           </Toolbar>
-          {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다(좌우 7px). 로딩·오류 원은 지도·그룹·커스텀 페이지와 같은 위 16px·아래 19.5px 여백 안에서 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
-          <div className="flex min-h-0 flex-1 px-[7px]">
+          {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다. 좌우 여백은 바깥 main-settings-row에서 관리한다. 로딩·오류 원은 지도·그룹·커스텀 페이지와 같은 위 16px·아래 19.5px 여백 안에서 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
+          <div className="flex min-h-0 flex-1">
             {isLoading ? (
               <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
                 <Spinner showElapsed />
@@ -308,7 +308,7 @@ export default function MarketSummaryPage() {
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
             <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
             <SortableContext items={safeHomeFrameOrder} strategy={horizontalListSortingStrategy}>
-            <div className="flex min-h-0 min-w-full flex-1 bg-ui-background">
+            <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
             {[
               {
                 title: '시장 지도',
@@ -434,7 +434,7 @@ export default function MarketSummaryPage() {
             )}
           </div>
           {/* 아래 줄 — 지도·그룹 페이지와 같은 높이(28px)로 왼쪽에 면책조항, 오른쪽 끝에 등락률 색상 범례를 둔다. 로딩 중에도 제자리에 둔다. */}
-          <div className="flex h-7 shrink-0 items-end justify-between gap-3 px-[7px]">
+          <div data-capture-full-width-align className="flex h-7 shrink-0 items-end justify-between gap-3">
             <div className="flex h-7 min-w-0 items-end">
               <DisclaimerNotice />
             </div>
@@ -442,7 +442,7 @@ export default function MarketSummaryPage() {
           </div>
         </div>
         {/* 설정창 틀만 먼저 둔다 — 항목은 홈 화면 내용이 정해지면 채운다. */}
-        <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
+        <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel
             pageLabel="Home"
             plainTabLabel="시장 요약"

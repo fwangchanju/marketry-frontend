@@ -28,7 +28,7 @@ const BUTTON_CLASS = `${BUTTON_BASE_CLASS} w-7`
 // 툴바 칩 안의 새로고침 칸 — 칩(24px) 안에서 사방 1px씩 띄워 22px 높이에 폭은 18px로 좁혀 세로로 긴 직사각형이고, 평소엔 배경 없이 아이콘이 청록(--brand)이고, 올리면 글자색은 그대로 두고 다른 칩과 같은 중간 회색(var(--ui-control)) 면만 깔린다.
 const CELL_CLASS = 'm-px flex h-[22px] w-[18px] items-center justify-center border-0 bg-transparent text-[var(--brand)] outline-none transition-colors hover:bg-[var(--ui-control)] focus-visible:bg-[var(--ui-control)]'
 // 시각 칩(시계 + 시각 글자) 하나가 새로고침 버튼이다 — 호버 면(var(--ui-control))이 칩 전체에 깔린다.
-const CELL_TIME_CLASS = 'flex h-6 shrink-0 items-center gap-1.5 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[var(--ui-control)]'
+const CELL_TIME_CLASS = 'toolbar-badge-control flex h-6 shrink-0 items-center gap-1.5 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[var(--ui-control)]'
 // 켜진 상태의 아이콘은 선 색(청록)을 35% 투명하게 안쪽에 채운다 — 북마크가 켜진 모양.
 export const FILLED_ICON_CLASS = 'fill-current/35'
 

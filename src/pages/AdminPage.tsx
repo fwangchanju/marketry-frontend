@@ -51,7 +51,7 @@ export default function AdminPage() {
         }
       />
       <div className="flex min-h-0 flex-1">
-        <div ref={settingsRowRef} className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+        <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
           <div data-main-area className="relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-ui-background text-ui-white">
             {isLoading ? (
               <Spinner showElapsed />
@@ -66,7 +66,7 @@ export default function AdminPage() {
             )}
           </div>
           {isAdmin && (
-            <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
+            <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
               <SettingsPanel
                 pageLabel="Admin"
                 showPreferenceActions={false}

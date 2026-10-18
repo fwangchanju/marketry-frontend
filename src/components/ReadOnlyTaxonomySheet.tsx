@@ -235,7 +235,7 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
         className={`nes-input is-dark text-sm font-normal focus:placeholder:text-transparent ${
           // 윗줄 검색창은 표 안의 약칭 입력창과 같은 색(모서리는 직사각형으로 툴바 칩과 같다)이고, 높이는 왼쪽 제목 박스(24px)와 같다.
           inline
-            ? 'h-6 w-[15.5rem] !rounded-none !border-0 !bg-[var(--ui-panel)] text-ui-white outline-none placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]'
+            ? 'toolbar-badge h-6 w-[15.5rem] !rounded-none !border-0 !bg-[var(--ui-panel)] text-ui-white outline-none placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]'
             : `focus:outline-1 focus:outline-offset-0 focus:outline-ui-white ${settingsLayout ? 'h-8 w-full' : 'h-7 w-[15.5rem]'}`
         }`}
         // 안내 문구와 입력 글자가 위 드롭박스의 글자와 같은 선에서 시작하게 한다: 드롭박스 안쪽 여백(0.5rem)에서
