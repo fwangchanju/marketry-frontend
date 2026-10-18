@@ -59,7 +59,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
   }, [isOpen])
 
   return (
-    <span ref={rootRef} data-change-rate-selector className="relative z-40 flex shrink-0">
+    <span ref={rootRef} className="relative z-40 flex shrink-0">
       <ToolbarChip bare>
         <button
           type="button"
@@ -130,7 +130,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
   }, [isOpen])
 
   return (
-    <span ref={rootRef} className="relative z-40 flex shrink-0">
+    <span ref={rootRef} data-change-rate-selector className="relative z-40 flex shrink-0">
       <ToolbarChip bare>
         <button
           type="button"
