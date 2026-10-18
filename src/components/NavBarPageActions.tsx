@@ -93,7 +93,7 @@ export function PageRefreshButton({
           className={`${CELL_TIME_CLASS} group/refresh relative cursor-pointer border-0 outline-none focus-visible:bg-[var(--ui-control)] ${showRefreshing ? 'cursor-default' : ''} nav-refresh-button ${className}`}
           onClick={handleRefresh}
         >
-          <span aria-hidden={showRefreshing || undefined} className={`flex items-center gap-1.5 ${showRefreshing ? 'invisible' : 'group-hover/refresh:invisible group-focus-visible/refresh:invisible'}`}>{children}</span>
+          <span aria-hidden={showRefreshing || undefined} className={`flex items-center gap-1 ${showRefreshing ? 'invisible' : 'group-hover/refresh:invisible group-focus-visible/refresh:invisible'}`}>{children}</span>
           <span aria-hidden="true" className={`absolute inset-0 flex items-center justify-center text-[var(--brand)] ${showRefreshing ? '' : 'invisible group-hover/refresh:visible group-focus-visible/refresh:visible'}`}>
             <RefreshIcon aria-hidden="true" strokeWidth={2.2} className={`h-[15px] w-[15px] shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
           </span>
