@@ -2464,9 +2464,12 @@ interface Props {
   pageLabel?: string
   // 설정 저장·초기화 기능을 제공하는 페이지에서만 헤더 버튼을 표시한다.
   showPreferenceActions?: boolean
-  // 탭 없이 패널 본문에 바로 그리는 내용 — 설정 항목이 한두 개뿐인 페이지(그룹)용. 탭 분류(children의
-  // SettingsPanelGroup)와 같이 쓰지 않는다.
+  // 한 탭 안에 순서대로 쌓는 본문 — 홈·그룹·커스텀용. 여러 탭 분류(children의
+  // SettingsPanelGroup)와 같이 쓰지 않는다. plainTabLabel을 주면 단일 탭 메뉴 줄을 표시한다.
   plainContent?: ReactNode
+  // 탭 하나로 구성된 페이지도 맵·어드민과 같은 메뉴 줄을 쓴다.
+  plainTabLabel?: string
+  plainTabIcon?: SettingsSectionIconName
   sectionOrder?: readonly SettingsPanelSectionId[]
   taxonomyAtBottom?: boolean
   // Basis 줄이 없는 페이지(관리자)에서 좌우 이동 탭을 다른 페이지와 같은 높이에 둔다.
@@ -2538,6 +2541,8 @@ export default function SettingsPanel({
   isOnLeft = false,
   onToggleSide,
   plainContent,
+  plainTabLabel,
+  plainTabIcon,
   children,
 }: Props) {
   const isLoggedIn = useIsLoggedIn()
@@ -2639,6 +2644,9 @@ export default function SettingsPanel({
     availableSections.sort((a, b) => sectionOrder.indexOf(a.id) - sectionOrder.indexOf(b.id))
   }
   const selectedSection = availableSections.find(section => section.id === activeSection) ?? availableSections[0]
+  const menuSections = plainContent && plainTabLabel
+    ? [{ id: 'plain' as const, label: plainTabLabel, icon: plainTabIcon ?? null }]
+    : availableSections
   const isNonScrollingSection = !taxonomyAtBottom && (selectedSection?.id === 'industry' || selectedSection?.id === 'colors')
 
   // 북마크 탭에는 원래 위치 번호(탭 번호-항목 번호)를 보여준다. 항목 번호는 각 탭에서 항상 고정된 자리다.
@@ -2750,10 +2758,10 @@ export default function SettingsPanel({
         {preferenceActions}
         {headerRight && <div className="-mr-[3px] ml-auto flex shrink-0 items-center">{headerRight}</div>}
       </div>
-      {availableSections.length > 0 && (
+      {menuSections.length > 0 && (
       <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-ui-border bg-ui-panel px-1">
-          {availableSections.map(section => {
-            const selected = section.id === selectedSection?.id
+          {menuSections.map(section => {
+            const selected = section.id === 'plain' || section.id === selectedSection?.id
             return (
               <button
                 key={section.id}
@@ -2763,6 +2771,7 @@ export default function SettingsPanel({
                 aria-controls={`settings-panel-${section.id}`}
                 id={`settings-tab-${section.id}`}
                 onClick={() => {
+                  if (section.id === 'plain') return
                   // 비로그인이 북마크 탭을 누르면 탭을 열지 않고 바로 로그인 팝업을 띄운다.
                   if (section.id === 'favorites' && bookmarkLoginRequired) requestLogin()
                   else setActiveSection(section.id)
@@ -2771,11 +2780,11 @@ export default function SettingsPanel({
                   selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
-                <SettingsSectionIcon
+                {section.icon ? <SettingsSectionIcon
                   icon={section.icon}
                   className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''}`}
                   strokeWidth={section.icon === 'industry' ? 1.22 : 1.1}
-                />
+                /> : <span aria-hidden="true" className="h-[30px] w-[30px] shrink-0" />}
                 <span className="max-w-full truncate font-bold">{section.label}</span>
                 <span
                   aria-hidden="true"
@@ -2790,7 +2799,7 @@ export default function SettingsPanel({
       <div aria-busy={isPreferenceFeedbackActive || undefined} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="contents" inert={isPreferenceFeedbackActive || undefined}>
       {plainContent && (
-        <div data-align-second-heading className="settings-section-list settings-plain-content settings-panel-tab-content min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-8 text-sm">
+        <div role={plainTabLabel ? 'tabpanel' : undefined} id={plainTabLabel ? 'settings-panel-plain' : undefined} aria-labelledby={plainTabLabel ? 'settings-tab-plain' : undefined} data-align-second-heading className="settings-section-list settings-plain-content settings-panel-tab-content min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-8 text-sm">
           {plainContent}
         </div>
       )}

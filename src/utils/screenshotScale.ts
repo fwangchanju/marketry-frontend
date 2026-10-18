@@ -14,7 +14,7 @@ export function shareScreenshotScale(el: HTMLElement): number {
 }
 
 // 찍을 영역을 "맨 왼쪽 위부터 selector에 맞는 요소의 오른쪽 끝까지, 높이는 그대로"로 줄인다. 맞는 요소가 없으면 null이다.
-// 홈에서 맨 오른쪽 틀(시장 요약)만 빼고 찍을 때 쓴다 — 틀 배치는 그대로 두고 오른쪽을 잘라서 찍는다.
+// 홈에서 현재 맨 오른쪽 틀을 빼고 찍을 때 쓴다 — 틀 배치는 그대로 두고 오른쪽을 잘라서 찍는다.
 export function captureRegionRect(el: HTMLElement, selector: string): { x: number; y: number; width: number; height: number } | null {
   const edges = Array.from(el.querySelectorAll(selector))
   if (edges.length === 0) return null

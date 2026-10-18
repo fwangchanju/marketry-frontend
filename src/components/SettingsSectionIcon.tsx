@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type SettingsSectionIconName = 'favorites' | 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'admin-ops' | 'admin-moved'
+export type SettingsSectionIconName = 'favorites' | 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'admin-ops' | 'admin-moved'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
@@ -11,6 +11,20 @@ interface SettingsSectionIconProps {
 // 설정창 메뉴 줄의 아이콘 — 상단 영역 아이콘과 같은 선 아이콘이다(24×24 격자, 선 끝·꺾임 둥글게).
 // 업종 분류·색상은 Lucide(network·palette), 종목 구성·종목 박스·북마크는 Tabler(chart-treemap·text-size·bookmark) 모양이다.
 const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
+  home: (
+    <>
+      <path d="m3 10 9-7 9 7" />
+      <path d="M5 8.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5" />
+      <path d="M9 21v-8h6v8" />
+    </>
+  ),
+  'bar-chart': (
+    <>
+      <rect x="3" y="12" width="4" height="8" rx="1" />
+      <rect x="10" y="4" width="4" height="16" rx="1" />
+      <rect x="17" y="8" width="4" height="12" rx="1" />
+    </>
+  ),
   'equal-size': (
     <>
       <rect x="3" y="3" width="18" height="18" rx="2.25" />

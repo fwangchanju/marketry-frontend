@@ -444,6 +444,8 @@ export default function GroupPage() {
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
               pageLabel="Group"
+              plainTabLabel="그래프"
+              plainTabIcon="bar-chart"
               stockCountLabel={stockCountLabel}
               taxonomyAtBottom
               snapshotTime={data?.taxonomyUpdatedAt}
