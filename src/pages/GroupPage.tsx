@@ -313,6 +313,7 @@ export default function GroupPage() {
                   <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                   <SnapshotDatePicker
                     market={market}
+                    holidayColor={settingsModalProps.legendSwatches.find(swatch => swatch.label === '+8%')?.color}
                     viewedSnapshotTime={displayNow?.snapshotTime ?? null}
                     liveSnapshotTime={liveSnapshotTime}
                     onSelectSnapshotTime={onChangePinnedSnapshotTime}
