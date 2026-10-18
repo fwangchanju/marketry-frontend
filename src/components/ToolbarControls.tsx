@@ -99,9 +99,9 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
 }
 
 const CHANGE_RATE_OPTIONS = [
-  { value: 'close' as const, label: '종가', titlePrefix: '메인 마켓 ', description: '전일 종가 대비 당일 종가' },
-  { value: 'daily' as const, label: '누적', titlePrefix: '애프터 마켓 ', description: '전일 종가 대비 현재가' },
-  { value: 'afterHours' as const, label: '별도', titlePrefix: '애프터 마켓 ', description: '당일 종가 대비 현재가' },
+  { value: 'close' as const, label: '종가', titlePrefix: '메인 마켓 ', descriptionBefore: '전일 종가', descriptionAfter: '당일 종가' },
+  { value: 'daily' as const, label: '누적', titlePrefix: '애프터 마켓 ', descriptionBefore: '전일 종가', descriptionAfter: '현재가' },
+  { value: 'afterHours' as const, label: '별도', titlePrefix: '애프터 마켓 ', descriptionBefore: '당일 종가', descriptionAfter: '현재가' },
 ]
 
 function ChangeRateModeSelector({ basis, selectable, onChange }: {
@@ -174,7 +174,9 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
                 <span className="shrink-0 text-ui-white">
                   {option.titlePrefix}<span className="text-[var(--sub-purple)]">{option.label}</span>
                 </span>
-                <span className="w-[18ch] shrink-0 whitespace-nowrap text-right">{option.description}</span>
+                <span className="w-[18ch] shrink-0 whitespace-nowrap text-right">
+                  {option.descriptionBefore} <span className="text-ui-muted">대비</span> {option.descriptionAfter}
+                </span>
               </button>
             ))}
           </div>

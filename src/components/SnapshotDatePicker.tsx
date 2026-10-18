@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useQueries } from '@tanstack/react-query'
 import { CalendarIcon, ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useTreemap'
+import { getMarketTradingSchedule } from '@/api/treemap'
+import { INFREQUENT_DATA_CACHE } from '@/hooks/cacheConfig'
+import { treemapKeys } from '@/hooks/queryKeys'
+import { KOREAN_PUBLIC_HOLIDAY_DATES } from '@/utils/koreanPublicHolidayDates'
 import Spinner from '@/components/Spinner'
 import { toSnapshotDateLabel } from '@/utils/format'
 import type { MarketQuery } from '@/types/api'
@@ -24,6 +29,8 @@ interface Props {
   isPast: boolean
   // 달력 아이콘 옆에 놓을 날짜 글자 — 누르는 버튼은 달력 아이콘뿐이고 글자는 눌리지 않는다.
   children: ReactNode
+  // 휴장일 날짜에 표시할 현재 등락률 범례의 +8% 색.
+  holidayColor?: string
 }
 
 interface ShownMonth {
@@ -74,6 +81,7 @@ type MonthGridView = 'day' | 'month' | 'year'
 
 interface MonthGridProps {
   market: MarketQuery
+  holidayColor?: string
   // 보여 줄 달 — 위에서 정해 주고, 이전·다음 달 버튼은 onMoveMonth로 알린다(기간 달력은 두 달이 함께 움직인다).
   month: ShownMonth
   onMoveMonth: (delta: number) => void
@@ -97,7 +105,7 @@ interface MonthGridProps {
 }
 
 // 한 달짜리 달력. 그 달의 종가 지도 목록 조회·불러오는 중/오류 화면을 스스로 맡는다.
-function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, showPrevButton = true, showNextButton = true, liveDate, isSelectable, isSelected, bandStart, bandEnd, onPick, showSpinner = true }: MonthGridProps) {
+function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMonthAllowed, showPrevButton = true, showNextButton = true, liveDate, isSelectable, isSelected, bandStart, bandEnd, onPick, showSpinner = true }: MonthGridProps) {
   const monthKey = toMonthKey(month)
   // 월·년 선택 화면 — 날짜 화면의 "10월"을 누르면 월 선택, "2026년"을 누르면 년 선택이 나온다. 년을 고르면 그 해의 월 선택으로, 월을 고르면 날짜 화면으로 돌아온다.
   const [view, setView] = useState<MonthGridView>('day')
@@ -125,10 +133,31 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
 
   const firstWeekday = new Date(month.year, month.monthIndex, 1).getDay()
   const daysInMonth = new Date(month.year, month.monthIndex + 1, 0).getDate()
-  const cells: (number | null)[] = [
+  const monthCells: (number | null)[] = [
     ...Array.from({ length: firstWeekday }, () => null),
     ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
   ]
+  // 모든 달을 6주 높이로 고정해 월 이동 시 달력 팝업 높이가 흔들리지 않게 한다.
+  const cells: (number | null)[] = [...monthCells, ...Array.from({ length: 42 - monthCells.length }, () => null)]
+  // 지도 데이터가 없는 과거 평일만 거래 일정을 조회한다. 실제 휴장으로 확인된 날에만 별도 색을 쓴다.
+  const holidayCandidates = cells.flatMap(day => {
+    if (day === null) return []
+    const date = `${monthKey}-${String(day).padStart(2, '0')}`
+    const weekday = new Date(`${date}T00:00:00`).getDay()
+    return !closingTimeByDate.has(date) && weekday >= 1 && weekday <= 5 && (liveDate === null || date < liveDate) ? [date] : []
+  })
+  const holidaySchedules = useQueries({
+    queries: holidayCandidates.map(date => ({
+      queryKey: treemapKeys.tradingSchedule(date),
+      queryFn: () => getMarketTradingSchedule(date),
+      ...INFREQUENT_DATA_CACHE,
+    })),
+  })
+  const knownPublicHolidayDates = [...KOREAN_PUBLIC_HOLIDAY_DATES].filter(date => date.startsWith(`${monthKey}-`))
+  const holidayDates = new Set([
+    ...knownPublicHolidayDates,
+    ...holidaySchedules.flatMap((result, index) => result.data?.status === 'HOLIDAY' ? [holidayCandidates[index]] : []),
+  ])
 
   return (
     <div className="relative w-60 shrink-0">
@@ -169,16 +198,20 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
           ))}
         </div>
         <div className="relative flex-1">
-          <div className="grid grid-cols-7 text-center font-roboto-latin tabular-nums" aria-busy={isLoading}>
+          <div className="grid grid-cols-7 grid-rows-6 text-center font-roboto-latin tabular-nums" aria-busy={isLoading}>
             {cells.map((day, index) => {
               if (day === null) return <span key={`blank-${index}`} />
               const date = `${monthKey}-${String(day).padStart(2, '0')}`
               const hasClosingMap = closingTimeByDate.has(date)
-              const selectable = isSelectable(date, hasClosingMap, hasPreviousDay(date))
+              // 휴장일은 전 거래일 지도 데이터가 연결돼 있어도 선택할 수 없게 한다.
+              const selectable = !holidayDates.has(date) && isSelectable(date, hasClosingMap, hasPreviousDay(date))
               const selected = isSelected(date)
+              const weekday = (firstWeekday + day - 1) % 7
+              // 주말은 항상 거래 휴장일이고, 평일은 서버 거래 일정이 HOLIDAY라고 확인된 경우에만 휴장 색을 쓴다.
+              // 평일의 데이터 누락(FAILED)은 기존 흐린 색을 유지한다.
+              const isHoliday = weekday === 0 || weekday === 6 || holidayDates.has(date)
               // 기간 띠 — 시작일은 오른쪽 절반, 종료일은 왼쪽 절반, 그 사이 날은 칸 전체를 칠한다. 줄이 바뀌는 곳(일요일·1일 / 토요일·말일)은 끝을 둥글게 한다.
               const hasBand = bandStart !== null && bandEnd !== null && bandStart < bandEnd && date >= bandStart && date <= bandEnd
-              const weekday = (firstWeekday + day - 1) % 7
               const bandShape = date === bandStart ? 'left-1/2 right-0' : date === bandEnd ? 'left-0 right-1/2' : `inset-x-0 ${weekday === 0 || day === 1 ? 'rounded-l-full' : ''} ${weekday === 6 || day === daysInMonth ? 'rounded-r-full' : ''}`
               return (
                 <div key={date} className="relative my-0.5 flex h-7 items-center justify-center">
@@ -193,8 +226,9 @@ function MonthGrid({ market, month, onMoveMonth, onSetMonth, isMonthAllowed, sho
                         ? 'bg-brand-surface font-semibold text-ui-white'
                         : selectable
                           ? 'bg-transparent text-ui-white hover:bg-ui-control'
-                          : 'cursor-not-allowed bg-transparent text-ui-muted'
+                          : `cursor-not-allowed bg-transparent ${isHoliday && holidayColor ? '' : 'text-ui-muted'}`
                     }`}
+                    style={!selected && isHoliday && holidayColor ? { color: holidayColor } : undefined}
                   >
                     {day}
                   </button>
@@ -284,7 +318,7 @@ const RESET_BUTTON_CLASS =
 // 달력 아이콘을 누르면 아래로 달력 창이 뜬다. 데이터가 있는 날짜(종가 지도가 있는 날과 오늘)만 누를 수 있다.
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.
 // "기간"을 켜면 이어진 두 달이 나란히 뜨고(이전·다음 달 버튼은 두 달을 함께 움직인다), 첫 번째로 누른 날이 시작, 두 번째가 종료다.
-export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSnapshotTime, onSelectSnapshotTime, onSelectRange, rangeStartTime, isPast, children }: Props) {
+export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSnapshotTime, onSelectSnapshotTime, onSelectRange, rangeStartTime, isPast, children, holidayColor }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
   const anchorDate = (viewedSnapshotTime ?? liveSnapshotTime)?.slice(0, 10) ?? null
@@ -544,6 +578,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 )}
                 <MonthGrid
                   market={market}
+                  holidayColor={holidayColor}
                   showSpinner={false}
                   month={rangeLeftMonth}
                   onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
@@ -559,6 +594,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 />
                 <MonthGrid
                   market={market}
+                  holidayColor={holidayColor}
                   showSpinner={false}
                   month={addMonths(rangeLeftMonth, 1)}
                   onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
@@ -611,6 +647,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 )}
                 <MonthGrid
                   market={market}
+                  holidayColor={holidayColor}
                   showSpinner={false}
                   month={rangeLeftMonth}
                   onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
@@ -627,6 +664,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 />
                 <MonthGrid
                   market={market}
+                  holidayColor={holidayColor}
                   showSpinner={false}
                   month={addMonths(rangeLeftMonth, 1)}
                   onMoveMonth={delta => setRangeLeftMonth(month => addMonths(month, delta))}
