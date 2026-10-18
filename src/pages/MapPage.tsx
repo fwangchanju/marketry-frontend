@@ -146,15 +146,66 @@ function revealMobileCapture(cloned: Node) {
   const mobileCapture = cloned.querySelector<HTMLElement>('[data-map-mobile-capture]')
   if (mobileCapture) mobileCapture.style.opacity = '1'
   const toolbarLeft = cloned.querySelector<HTMLElement>('.main-toolbar > div:first-child')
+  const toolbarRight = cloned.querySelector<HTMLElement>('.main-toolbar > div:last-child')
   if (mobileCapture && toolbarLeft) {
     const toolbar = document.createElement('div')
     toolbar.className = 'main-toolbar relative mt-[2.25px] mb-0 flex h-7 w-full shrink-0 items-center overflow-hidden bg-ui-background/70 text-sm font-bold text-ui-white'
     const leftContent = toolbarLeft.cloneNode(true) as HTMLElement
     leftContent.style.minWidth = '0'
     leftContent.style.overflow = 'hidden'
+    // 복제본은 버튼 크기·배치를 유지하되 항상 시계·시간을 표시한다. 원본 버튼의 호버·갱신 상태가
+    // 캡처 스타일에 남으면 새로고침 아이콘만 찍힐 수 있다.
+    const refreshButton = leftContent.querySelector<HTMLElement>('.nav-refresh-button')
+    if (refreshButton) {
+      const clockLabel = refreshButton.querySelector<HTMLElement>(':scope > span:first-child')
+      if (clockLabel) {
+        const staticClock = clockLabel.cloneNode(true) as HTMLElement
+        staticClock.removeAttribute('aria-hidden')
+        staticClock.classList.remove('invisible', 'group-hover/refresh:invisible', 'group-focus-visible/refresh:invisible')
+        staticClock.querySelectorAll<HTMLElement>('.invisible').forEach(node => node.classList.remove('invisible'))
+        refreshButton.replaceChildren(staticClock)
+      }
+      refreshButton.classList.remove('group/refresh')
+      refreshButton.classList.remove('cursor-pointer')
+      refreshButton.style.pointerEvents = 'none'
+    }
+    // 모바일 캡처에서는 종가·누적·별도 중 현재 기준만 남기고, 세 버튼 중 첫 칸에 둔다.
+    const changeRateGroup = leftContent.querySelector<HTMLElement>('[role="radiogroup"][aria-label="등락률 기준"]')
+    if (changeRateGroup) {
+      const selectedOption = changeRateGroup.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]')
+      const options = Array.from(changeRateGroup.querySelectorAll<HTMLElement>('[role="radio"]'))
+      const originalWidth = Number.parseFloat(getComputedStyle(changeRateGroup).width) || 120
+      const selectedWidth = (originalWidth - 6) / 3
+      const highlights = Array.from(changeRateGroup.querySelectorAll<HTMLElement>(':scope > [aria-hidden="true"]'))
+      const selectedFill = highlights.find(highlight => highlight.classList.contains('transition-[left]'))
+      const firstBase = highlights.find(highlight => highlight !== selectedFill)
+      options.filter(option => option !== selectedOption).forEach(option => option.remove())
+      highlights.filter(highlight => highlight !== selectedFill && highlight !== firstBase).forEach(highlight => highlight.remove())
+      changeRateGroup.style.width = `${selectedWidth}px`
+      changeRateGroup.style.gridTemplateColumns = 'minmax(0, 1fr)'
+      changeRateGroup.style.gap = '0px'
+      for (const highlight of [firstBase, selectedFill]) {
+        if (highlight) {
+          highlight.style.left = '0px'
+          highlight.style.width = '100%'
+        }
+      }
+    }
     // 모바일 캡처에서는 ALL STOCK과 겹치지 않도록 MAP 페이지 라벨을 숨긴다.
     leftContent.querySelector('.font-roboto-latin > span.absolute')?.remove()
     toolbar.append(leftContent)
+    if (toolbarRight) {
+      const rightContent = toolbarRight.cloneNode(true) as HTMLElement
+      rightContent.style.minWidth = '0'
+      rightContent.style.width = 'max-content'
+      rightContent.style.maxWidth = '100%'
+      toolbar.style.display = 'grid'
+      toolbar.style.gridTemplateColumns = 'minmax(0, 1fr) auto'
+      toolbar.style.columnGap = '4px'
+      leftContent.style.width = '100%'
+      leftContent.style.minWidth = '0'
+      toolbar.append(rightContent)
+    }
     mobileCapture.querySelector('[data-map-mobile-toolbar-placeholder]')?.replaceWith(toolbar)
 
     // 캡처 폭에 따라 flex 레이아웃이나 이미지 변환 과정에서 각 칩의 높이가 달라 보이지 않도록
@@ -721,8 +772,8 @@ export default function MapPage() {
             <div
               aria-hidden="true"
               data-map-mobile-capture-frame
-              style={{ opacity: 0, width: 'calc(100dvh * 3 / 4 + 8px)', height: 'calc(100dvh + 8px)', padding: '4px', boxSizing: 'border-box' }}
-              className="pointer-events-none absolute left-0 top-0 z-[2] bg-ui-background"
+              style={{ opacity: 0, width: 'calc(100dvh * 3 / 4 + 8px)', height: 'calc(100dvh + 4px)', padding: '4px 4px 0', boxSizing: 'border-box' }}
+              className="pointer-events-none absolute left-0 top-0 z-[60] bg-ui-background"
             >
             <div
               aria-hidden="true"
