@@ -3,7 +3,9 @@ export default function FrameTitleBadge({ title, color }: { title: string; color
   return (
     <span style={{ color }} className="flex w-full items-center gap-2 text-[15px] font-bold leading-none whitespace-nowrap">
       <span aria-hidden="true" className="h-px min-w-0 flex-1 bg-ui-panel" />
-      {title}
+      <span className="rounded-[3px] px-1" style={{ background: 'rgb(255 255 255 / 18%)', lineHeight: 1.25 }}>
+        {title}
+      </span>
       <span aria-hidden="true" className="h-px min-w-0 flex-1 bg-ui-panel" />
     </span>
   )
