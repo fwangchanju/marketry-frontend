@@ -206,7 +206,7 @@ export default function CustomPage() {
           위치 재검토가 더 필요해서 일단 뺐다 — 다시 넣을 땐 이 컴포넌트를 재사용하면 된다. */}
       <div className="flex min-h-0 flex-1">
         {/* 공유 스크린샷(screenshotRef)는 [세 번째 바+본문] 열만 찍는다 — 설정 사이드바는 스크린샷에 넣지 않는다. */}
-        <div ref={settingsRowRef} className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+        <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서 창을 좁혀도 사이드바(w-80)가 항상 같은
               폭을 유지하게 한다(지도/섹터/요약 페이지와 동일). */}
           <div
@@ -217,7 +217,7 @@ export default function CustomPage() {
             data-main-area
             className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white"
           >
-            <div className="mt-[5.25px] mb-[5.25px] flex h-7 w-full shrink-0 items-center justify-between bg-ui-background/70 pl-[7px] pr-[7px] text-sm font-bold text-ui-white">
+            <div className="main-toolbar mt-[2.25px] mb-[8.25px] flex h-7 w-full shrink-0 items-center justify-between bg-ui-background/70 text-sm font-bold text-ui-white">
               <div className="flex h-full shrink-0 items-center gap-2">
                 <ToolbarModeText page="CUSTOM" label={mode === 'stock' ? 'STOCK' : 'SECTOR'} />
               </div>
@@ -228,8 +228,8 @@ export default function CustomPage() {
               </div>
             </div>
             <EmptyMessageAreaContext.Provider value={emptyMessageArea}>
-            {/* 좌우 7px — 지도 페이지처럼 화면 왼쪽 끝·설정창과 본문 사이를 띄운다(위 바의 STOCK 드롭다운 시작점, 분류 배지와 설정창 사이 간격과 같다). */}
-            <div className="flex min-h-0 flex-1 px-[7px]">
+            {/* 바깥 main-settings-row에서 좌우 4px·설정창 사이 4px를 관리해 툴바와 본문 시작선을 맞춘다. */}
+            <div className="flex min-h-0 flex-1">
               <div
                 className={`flex min-h-0 min-w-0 flex-1 flex-col ${mode === 'sector' ? 'overflow-y-auto' : ''}`}
               >
@@ -287,7 +287,7 @@ export default function CustomPage() {
             </div>
             </EmptyMessageAreaContext.Provider>
           </div>
-          <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
+          <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel
               pageLabel="Custom"
               plainTabLabel={mode === 'stock' ? '종목' : '업종'}

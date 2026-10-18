@@ -69,7 +69,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           aria-expanded={isOpen}
           aria-haspopup="dialog"
           onClick={() => setIsOpen(open => !open)}
-          className={`flex h-6 items-center border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-[var(--ui-control)] focus-visible:bg-[var(--ui-control)] ${isOpen ? 'bg-[var(--ui-control)]' : 'bg-transparent'}`}
+          className={`toolbar-badge-control flex h-6 items-center border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-[var(--ui-control)] focus-visible:bg-[var(--ui-control)] ${isOpen ? 'bg-[var(--ui-control)]' : 'bg-transparent'}`}
         >
           <TradingSessionIndicator session={sessionOverride} />
         </button>
@@ -129,7 +129,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
       {visible && <div
         role="radiogroup"
         aria-label="등락률 기준"
-        className="relative grid h-6 w-[120px] shrink-0 grid-cols-3 gap-[3px] overflow-visible"
+        className="toolbar-badge relative grid h-6 w-[120px] shrink-0 grid-cols-3 gap-[3px] overflow-visible"
       >
         <SlidingHighlight count={options.length} index={selectedIndex} gap={3} square fillColor={SESSION_DOT_COLOR['애프터 마켓']} />
         {options.map(option => (
@@ -146,7 +146,7 @@ export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
             // 설명은 공용 툴팁(HoverHintLayer)이 띄운다 — 잠긴 별도도 aria-disabled라 올리면 설명이 보인다.
             data-hint={option.help}
             // 안 선택 글자는 옆 거래 세션 글자(text-ui-muted)와 같은 회색이다. 잠긴 별도는 흐리게 해서 잠긴 것을 알아보게 한다.
-            className={`relative z-10 h-6 min-w-0 border-0 bg-transparent px-0 text-[13px] font-semibold leading-none transition-colors duration-[500ms] ${
+            className={`toolbar-badge-control relative z-10 h-6 min-w-0 border-0 bg-transparent px-0 text-[13px] font-semibold leading-none transition-colors duration-[500ms] ${
               basis === option.value
                 ? 'text-ui-surface'
                 : option.locked

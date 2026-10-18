@@ -492,7 +492,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         onClick={toggleOpen}
-        className={`flex h-6 items-center gap-1.5 border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-ui-control focus-visible:bg-ui-control ${isOpen ? 'bg-ui-control' : 'bg-transparent'}`}
+        className={`toolbar-badge-control flex h-6 items-center gap-1.5 border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-ui-control focus-visible:bg-ui-control ${isOpen ? 'bg-ui-control' : 'bg-transparent'}`}
       >
         <CalendarIcon strokeWidth={2.2} className={`h-[15px] w-[15px] shrink-0 ${isOpen ? FILLED_ICON_CLASS : ''}`} aria-hidden />
         {/* 날짜 글자(기간이면 "~ 종료일"까지)도 버튼 안에 둬서 칩 어디를 눌러도 달력이 열린다. */}

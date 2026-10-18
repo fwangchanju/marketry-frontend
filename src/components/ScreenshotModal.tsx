@@ -1,7 +1,7 @@
 import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useState } from 'react'
 import { screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
-import { captureRegionRect } from '@/utils/screenshotScale'
+import { captureRegionRect, fullScreenshotSize } from '@/utils/screenshotScale'
 import { CheckIcon, CopyIcon, HomeFrameCaptureIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
 
@@ -202,6 +202,6 @@ export default function ScreenshotModal({
 function elementRatio(element: HTMLElement | null, regionSelector: string | undefined, regionMode?: 'through-right-edge' | 'element' | 'content'): number | null {
   if (!element) return null
   const region = regionSelector ? captureRegionRect(element, regionSelector, regionMode) : null
-  const { width, height } = region ?? element.getBoundingClientRect()
+  const { width, height } = region ?? fullScreenshotSize(element)
   return width > 0 && height > 0 ? width / height : null
 }

@@ -497,7 +497,7 @@ export default function MapPage() {
         {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
         <div
           ref={settingsRowRef}
-          className="relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 bg-ui-background"
+          className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 bg-ui-background"
         >
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
@@ -601,7 +601,7 @@ export default function MapPage() {
                 // 마지막 이름은 링크가 아니라 현재 위치 표시(흰색)다.
                 <nav
                   aria-label="업종 이동 경로"
-                  className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 pl-[7px] text-lg leading-none font-bold"
+                  className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"
                 >
                   <button
                     type="button"
@@ -650,8 +650,8 @@ export default function MapPage() {
                   />
                 </div>
               ) : (
-                <div className="flex min-h-0 flex-1 flex-col px-[7px]">
-                  {/* 양옆 여백 7px. */}
+                <div className="flex min-h-0 flex-1 flex-col">
+                  {/* 바깥 main-settings-row에서 양옆·설정창 사이 여백을 관리한다. */}
                   <Treemap
                     groups={groups}
                     selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
@@ -680,7 +680,7 @@ export default function MapPage() {
                 </div>
               )}
               {/* 등락률 색상 범례 — 지도 우하단에 오른쪽 끝에 붙여 둔다. 이 줄만큼 지도 아래쪽이 올라온다. 로딩·오류·빈 화면에서도 면책 문구와 함께 맨 아래에 그대로 둔다. */}
-              <div className="flex h-7 shrink-0 items-end justify-between gap-3 pl-[7px] pr-[7px]">
+              <div className="flex h-7 shrink-0 items-end justify-between gap-3">
                 <div className="flex h-7 min-w-0 items-end">
                   <DisclaimerNotice />
                 </div>
@@ -689,8 +689,8 @@ export default function MapPage() {
               </div>
             </div>
           </div>
-          {/* 설정창 위쪽 여백 7px — 위쪽 바의 누적·별도 토글 윗선과 맞춘 값이다. 아래는 붙인다. */}
-          <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
+          {/* 설정창 위쪽 여백 4px — 헤더를 위로 3px 늘리고 아래 구분선 위치는 유지한다. */}
+          <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel
               {...settingsModalProps}
               isOnLeft={isSettingsOnLeft}

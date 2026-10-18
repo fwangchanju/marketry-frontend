@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 
-// 면책조항 — 지도·그룹 페이지 왼쪽 아래에 마침표 기준으로 두 줄(줄 높이 28px)로 보여준다.
+// 면책조항 — 지도·그룹 페이지 왼쪽 아래에 마침표 기준으로 두 줄(각 10px)로 보여준다.
 // 한 줄이 칸보다 길면 줄임표로 자른다(마우스를 올려도 전체 문구를 띄우지 않는다).
 // 둘째 줄 끝의 ? 버튼을 누르면 데이터마다 어디서 받아 오는지 말풍선으로 알려 준다.
 const DISCLAIMER_LINES = [
@@ -68,9 +68,9 @@ function SourceHelpBubble() {
         aria-expanded={isOpen}
         onClick={() => setIsOpen(open => !open)}
         onBlur={() => setIsOpen(false)}
-        className="inline-flex h-3 w-3 items-center justify-center border-0 bg-transparent p-0 text-ui-white/70 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
+        className="inline-flex h-[10px] w-[10px] items-center justify-center border-0 bg-transparent p-0 text-ui-white/70 hover:text-[var(--brand)] focus-visible:text-[var(--brand)] focus-visible:outline focus-visible:outline-1"
       >
-        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-[11px] w-[11px]" fill="none" stroke="currentColor" strokeWidth="1.95" strokeLinecap="round" strokeLinejoin="round">
+        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-[9px] w-[9px]" fill="none" stroke="currentColor" strokeWidth="1.95" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="8" cy="8" r="6.35" />
           <path d="M6.25 6.05a1.85 1.85 0 1 1 3.55.78c-.48.86-1.8 1.06-1.8 2.52" />
           <circle cx="8" cy="11.75" r="0.55" fill="currentColor" stroke="none" />
@@ -100,11 +100,11 @@ function SourceHelpBubble() {
 
 export default function DisclaimerNotice() {
   return (
-    // 글자는 10px, 줄 간격은 12px이라 두 줄이 24px다 — 아래 줄의 등락률 바(24px)와 같은 높이로 맞춘다.
-    <p className="min-w-0 text-left text-[10px] font-bold text-ui-white/70">
-      <span className="min-w-0 leading-[12px]">
+    // 두 줄을 20px로 맞추고 아래 4px를 띄워 등락률 범례와 위·아래 위치를 맞춘다.
+    <p className="m-0 min-w-0 pb-[4px] text-left text-[9px] font-bold leading-[10px] text-ui-white/70">
+      <span className="min-w-0 leading-[10px]">
         {DISCLAIMER_LINES.map((line, index) => (
-          <span key={line} className="block h-3 truncate">
+          <span key={line} className="block h-[10px] truncate">
             {line}
             {index === DISCLAIMER_LINES.length - 1 && <SourceHelpBubble />}
           </span>

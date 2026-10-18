@@ -512,10 +512,10 @@ function StairRows({
               tabIndex={onPick && !disabled && !blocked ? 0 : undefined}
               onClick={onPick && !disabled && !blocked ? () => onPick(index) : undefined}
               onKeyDown={onPick && !disabled && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
-              className={`absolute flex items-center rounded-[3px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-brand/35' : 'bg-ui-control'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-brand' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
+              className={`absolute flex items-center rounded-[4px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-brand/35' : 'bg-ui-control'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-brand' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
               style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
-              <span className={`ml-[2.5px] whitespace-nowrap rounded-[3px] px-1.5 leading-[20px] ${lit ? 'bg-ui-panel text-ui-white' : 'bg-ui-white/20'}`}>
+              <span className={`ml-[2.5px] whitespace-nowrap rounded-[4px] px-1.5 leading-[20px] ${lit ? 'bg-ui-panel text-ui-white' : 'bg-ui-white/20'}`}>
                 {mark}{label}
               </span>
               {valueLabel && lit && !blocked && <span className="ml-2.5 truncate text-[13px] font-medium">{valueLabel}</span>}
@@ -1220,7 +1220,7 @@ export function SettingsSectorStockScopeSection({
       </span>
       <SettingDescription>업종 평균에 넣을 종목</SettingDescription>
       <div role="radiogroup" aria-label="집계 대상 종목" className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === scope)} className="rounded-[5px] border border-brand bg-brand-surface" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === scope)} className="rounded-[4px] border border-brand bg-brand-surface" />
         {options.map(option => {
           const selected = scope === option.value
           return (
@@ -1230,7 +1230,7 @@ export function SettingsSectorStockScopeSection({
               role="radio"
               aria-checked={selected}
               onClick={() => onChange(option.value)}
-              className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+              className={`relative z-10 min-h-[28px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
                 selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
               }`}
             >
@@ -1315,7 +1315,7 @@ export function SettingsAverageModeSection({
       <div className={`settings-average-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
         <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
-          <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] border border-brand bg-brand-surface" />
+          <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] border border-brand bg-brand-surface" />
           {options.map(option => {
             const selected = avgChangeRateUseSimple === option.value
             return (
@@ -1326,7 +1326,7 @@ export function SettingsAverageModeSection({
                 aria-checked={selected}
                 onClick={() => onChange(option.value)}
                 disabled={!enabled}
-                className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+                className={`relative z-10 min-h-[28px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
                   selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
                 }`}
               >
@@ -1408,14 +1408,14 @@ function SettingsTaxonomySelector({
   const isSelected = (key: TaxonomyKey) => (key === 'KRX' ? isExchange : taxonomy === key)
 
   return (
-    <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-4 py-3' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
+    <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-4 pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
       <p data-map-select-title className="font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none">
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
         {TAXONOMY_SELECT_TITLE}
       </p>
       <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[5px] border border-brand bg-brand-surface" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[4px] border border-brand bg-brand-surface" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1423,7 +1423,7 @@ function SettingsTaxonomySelector({
             role="radio"
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
-            className={`relative z-10 min-h-[34px] rounded-[5px] border-0 bg-transparent px-0.5 py-1 text-sm font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+            className={`relative z-10 min-h-[34px] rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-sm font-medium whitespace-nowrap transition-colors duration-[500ms] ${
               isSelected(option.key) ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
           >
@@ -1483,7 +1483,7 @@ function SettingsAverageModeSelector({
         <SettingHelpBubble label="등락률 평균" description={"업종 등락률 계산에 적용할\n평균 방식을 선택합니다."} />
       </p>
       <div role="radiogroup" aria-label="등락률 평균" className="relative mt-3 grid grid-cols-2 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] border border-brand bg-brand-surface" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] border border-brand bg-brand-surface" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1491,7 +1491,7 @@ function SettingsAverageModeSelector({
             role="radio"
             aria-checked={avgChangeRateUseSimple === option.value}
             onClick={() => avgChangeRateUseSimple !== option.value && onToggleAvgChangeRateUseSimple()}
-            className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+            className={`relative z-10 min-h-[28px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
               avgChangeRateUseSimple === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
           >
@@ -1706,7 +1706,7 @@ export function SettingsSectorLevelSection({
               />
               {/* 업종 지표 버튼이 지도에서 종목 상자 위(업종 머리글)에 놓인다는 것을 보여 주는 가짜 상자 — 누를 수 없는 그림이라 회색 선으로만 그린다. */}
               <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-[16rem] ${depthMetricEnabled ? '' : 'opacity-35'}`}>
-                <div className="relative h-[62px] rounded-b-[5px] border-x-2 border-b-2 border-ui-control">
+                <div className="relative h-[62px] rounded-b-[4px] border-x-2 border-b-2 border-ui-control">
                   <span className="absolute inset-y-0 left-[42%] border-l-2 border-ui-control" />
                   <span className="absolute left-[42%] right-0 top-1/2 border-t-2 border-ui-control" />
                   <span className="absolute left-0 top-[58%] w-[42%] border-t-2 border-ui-control" />
@@ -1807,12 +1807,12 @@ export function SettingsSectorLevelSection({
             </div>
             <div className={`settings-control-inset mt-[9.5px] max-w-[16rem] ${stockLabelEnabled ? '' : 'opacity-35'}`}>
               {/* 2-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
-              <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[5px] bg-ui-control pl-[2.5px]">
-                <span className="whitespace-nowrap rounded-[3px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
+              <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
+                <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
               </div>
               <div className="h-[62px] px-px pb-px pt-[2px]">
             <div role="radiogroup" aria-label="박스 내 표기" className="relative grid h-full w-full grid-cols-3 gap-[2px]">
-              <SlidingHighlight square bottomRadius={5} gap={2} count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="border border-brand bg-brand-surface" />
+              <SlidingHighlight square bottomRadius={4} gap={2} count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="border border-brand bg-brand-surface" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
                 const value = index + 1
                 const selected = stockLabelModeIndex === value
@@ -1824,7 +1824,7 @@ export function SettingsSectorLevelSection({
                     aria-checked={selected}
                     disabled={!stockLabelEnabled}
                     onClick={() => onChangeStockLabelModeIndex(value)}
-                    className={`relative z-10 h-full rounded-none ${index === 0 ? 'rounded-bl-[5px]' : index === STOCK_LABEL_MODE_LABELS.length - 1 ? 'rounded-br-[5px]' : ''} border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
+                    className={`relative z-10 h-full rounded-none ${index === 0 ? 'rounded-bl-[4px]' : index === STOCK_LABEL_MODE_LABELS.length - 1 ? 'rounded-br-[4px]' : ''} border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
                       selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
                     }`}
                   >
@@ -1860,14 +1860,14 @@ export function SettingsSectorLevelSection({
               <SettingDescription>종목 등락률의 소수점 자릿수</SettingDescription>
               {/* 3-2)와 같은 가짜 종목 상자 — 세 칸이 0·1·2자리 눈금이고, 슬라이더 손잡이가 각 칸 가운데에 멈춘다. */}
               <div className="settings-control-inset mt-[9.5px] max-w-[16rem]">
-                <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[5px] bg-ui-control pl-[2.5px]">
-                  <span className="whitespace-nowrap rounded-[3px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
+                <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
+                  <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
                 </div>
                 <div className="relative h-[62px]">
                   <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 top-[2px] grid grid-cols-3 gap-[2px]">
-                    <span className="rounded-bl-[5px] bg-ui-control" />
+                    <span className="rounded-bl-[4px] bg-ui-control" />
                     <span className="bg-ui-control" />
-                    <span className="rounded-br-[5px] bg-ui-control" />
+                    <span className="rounded-br-[4px] bg-ui-control" />
                   </div>
                   <div
                     className="absolute top-[13px] [&_[data-slider-track]]:bg-ui-background"
@@ -1921,7 +1921,7 @@ export function SettingsStockPopupSection({
         aria-label="종목 정보 여는 방식"
         className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]"
       >
-        <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[5px] border border-brand bg-brand-surface" />
+        <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[4px] border border-brand bg-brand-surface" />
         {[
           { label: '우클릭', onHover: false },
           { label: '마우스 올리기', onHover: true },
@@ -1934,7 +1934,7 @@ export function SettingsStockPopupSection({
               role="radio"
               aria-checked={selected}
               onClick={() => onChangeStockPopupOnHover(option.onHover)}
-              className={`relative z-10 min-h-[28px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
+              className={`relative z-10 min-h-[28px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
               selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
             >
@@ -2032,7 +2032,7 @@ export function SettingsMarketValueSection({
         <div className="settings-slider-control">
           <p className="mb-4 flex min-h-[22px] justify-center text-[13px]/4 text-ui-white" aria-live="polite" aria-atomic="true">
             {selectedRangeLabel && (
-              <span className="rounded-[5px] border border-ui-border bg-ui-control px-1.5 py-0.5">
+              <span className="rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5">
                 {selectedRangeLabel}
               </span>
             )}
@@ -2093,7 +2093,7 @@ export function SettingsSectorChangeSection({
         className="mt-2 justify-center"
       />
       <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative mt-2 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[5px] border border-brand bg-brand-surface" />
+        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
         {DIRECTION_OPTIONS.map(option => (
           <button
             key={option.value}
@@ -2101,7 +2101,7 @@ export function SettingsSectorChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[25px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+            className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -2126,7 +2126,7 @@ export function SettingsStockChangeSection({
       </p>
       <SettingDescription>상승·하락 종목만 표시</SettingDescription>
       <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative mt-[40.5px] grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[5px] border border-brand bg-brand-surface" />
+        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
         {DIRECTION_OPTIONS.map(option => (
           <button
             key={option.value}
@@ -2134,7 +2134,7 @@ export function SettingsStockChangeSection({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[25px] rounded-[5px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+            className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
           >
             {option.label}
           </button>
@@ -2710,7 +2710,7 @@ export default function SettingsPanel({
 
   return (
     // 바깥 감싸개: 지도 쪽 가장자리 가운데에 튀어나오는 좌우 이동 탭을 패널(overflow-hidden) 밖에 그리려고 둔다. 슬라이드 애니메이션도 여기에 붙는다.
-    <div ref={outerRef} data-settings-panel-shell className={`relative z-20 flex shrink-0 ${animationClass}`}>
+    <div ref={outerRef} data-settings-panel-shell className={`relative z-20 mb-[4px] flex shrink-0 ${animationClass}`}>
     {onToggleSide && (
       <button
         type="button"
@@ -2740,8 +2740,8 @@ export default function SettingsPanel({
       className="relative tabular-nums select-none flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-ui-panel"
       style={{ '--accent': 'var(--panel-gray)', '--accent-hover': 'var(--ui-white)', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
     >
-      {/* 지도 최상단 종목 박스에 맞춘 헤더 높이를 유지하고 내용은 세로 중앙에 둔다. */}
-      <div className="flex shrink-0 items-center border-b border-ui-border px-4 py-[10.25px]">
+      {/* 윗선을 3px 올려 헤더를 늘리고 아래 구분선은 유지한다. 내용은 세로 중간에 둔다. */}
+      <div className="flex shrink-0 items-center border-b border-ui-border px-4 py-[11.75px]">
         <div className="flex min-w-0 items-center gap-2">
           <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
             {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Group에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
