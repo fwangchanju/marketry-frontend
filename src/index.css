@@ -516,6 +516,88 @@ a { color: var(--accent-light); text-decoration: none; }
   height: 160px;
 }
 
+/* 항목 제목·설명은 위에 두고, 남은 세로 공간 가운데에 실제 조작부를 둔다. */
+.settings-panel-tab-content .settings-first-depth-level:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-panel-tab-content .settings-first-depth-level > .settings-slider-control,
+.settings-panel-tab-content .settings-first-depth-level > [role="radiogroup"] {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.settings-panel-tab-content .settings-first-depth-level > div:has(> .settings-description) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.settings-panel-tab-content .settings-first-depth-level > div:has(> .settings-description) > [role="radiogroup"] {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.settings-panel-tab-content .settings-second-depth-metric:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-panel-tab-content .settings-second-depth-metric > div:has(> .settings-description) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.settings-panel-tab-content .settings-second-depth-metric .settings-slider-control {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.settings-panel-tab-content :is(.settings-second-sector-change, .settings-third-stock-change):not(.hidden) {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-panel-tab-content :is(.settings-second-sector-change, .settings-third-stock-change) > [role="radiogroup"] {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.settings-panel-tab-content .settings-before-minutes-control {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.settings-panel-tab-content .settings-before-minutes-control > .settings-slider-control {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.settings-panel-tab-content .settings-text-threshold-item,
+.settings-panel-tab-content .settings-plain-button-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-panel-tab-content :is(.settings-text-threshold-item, .settings-plain-button-item) > :is(.settings-slider-control, [role="radiogroup"], .settings-button-area) {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.settings-panel-tab-content .settings-ops-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-panel-tab-content .settings-ops-item > .settings-button-area {
+  display: flex;
+  flex: 1;
+  align-items: center;
+}
+
 /* 제외 업종은 항목 높이를 유지하고 목록만 내부에서 스크롤한다. */
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-fourth-exclude, .settings-second-exclude) {
   height: 160px;

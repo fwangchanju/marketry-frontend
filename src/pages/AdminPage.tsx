@@ -86,21 +86,21 @@ export default function AdminPage() {
                 {/* 운영 탭 — 탭 안 항목은 탭 없는 설정창(그룹·커스텀)과 같은 모양이라 settings-plain-content로 감싼다(번호는 이 탭 안에서 1부터). */}
                 <SettingsPanelGroup section="adminOps">
                   <div className="settings-plain-content pt-3">
-                    <div className="h-[160px] text-sm">
+                    <div className="settings-ops-item h-[160px] text-sm">
                       <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
                       <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">내 분류를 MARKETRY 분류로 커밋·롤백</p>
-                      <div className="mt-4 max-w-[16rem] settings-control-inset">
+                      <div className="settings-button-area mt-4 max-w-[16rem] settings-control-inset">
                         <MarketryPublishControls />
                       </div>
                     </div>
                     {/* 로컬 개발 전용 — 운영 화면에는 나오지 않는다. 누르면 로컬 DB에 새 USER 계정(테스트 회원)으로 바꾼다. 돌아오는 버튼은 계정 메뉴에 있다(테스트 회원은 관리자가 아니라 이 페이지에 못 들어온다). */}
                     {isLocalSignupEnabled() && (
-                      <div className="text-sm">
+                      <div className="settings-ops-item h-[160px] text-sm">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">테스트 회원 (로컬 전용)</h2>
                         <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">
                           {testMember.isTestMember ? '지금 테스트 회원입니다' : '로컬 DB의 새 일반 계정으로 전환'}
                         </p>
-                        <div className="mt-4 max-w-[16rem] settings-control-inset">
+                        <div className="settings-button-area mt-4 max-w-[16rem] settings-control-inset">
                           <button
                             type="button"
                             onClick={testMember.toggle}
