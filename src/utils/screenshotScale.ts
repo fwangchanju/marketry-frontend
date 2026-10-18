@@ -72,13 +72,19 @@ function captureBackgroundColor(el: HTMLElement): string {
 }
 
 // regionSelector를 주면 그 요소들이 차지한 영역만 찍는다(없거나 못 찾으면 전체).
-export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string, regionMode: 'through-right-edge' | 'element' | 'content' = 'through-right-edge') {
+export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string, regionMode: 'through-right-edge' | 'element' | 'content' = 'through-right-edge', onCloneNode?: (cloned: Node) => void, horizontalPadding = 0) {
   const base = { backgroundColor: captureBackgroundColor(el), filter: isCapturable }
   const fullSize = fullScreenshotSize(el)
   const selectedRegion = regionSelector ? captureRegionRect(el, regionSelector, regionMode) : null
   const isExpandedFullCapture = !selectedRegion && fullSize.width > el.offsetWidth
-  const region = selectedRegion
-    ?? (fullSize.width > el.offsetWidth ? { x: 0, y: 0, ...fullSize } : null)
+  const baseRegion = selectedRegion ?? (fullSize.width > el.offsetWidth ? { x: 0, y: 0, ...fullSize } : null)
+  const region = baseRegion
+    ? horizontalPadding > 0
+      ? { ...baseRegion, x: baseRegion.x - horizontalPadding, width: baseRegion.width + horizontalPadding * 2 }
+      : baseRegion
+    : horizontalPadding > 0
+      ? { x: -horizontalPadding, y: 0, width: el.offsetWidth + horizontalPadding * 2, height: el.offsetHeight }
+      : null
   if (!region) return { scale: shareScreenshotScale(el), ...base }
   return {
     scale: scaleForLongSide(Math.max(region.width, region.height)),
@@ -92,15 +98,18 @@ export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string,
       transform: `translate(${-region.x}px, ${-region.y}px)`,
       transformOrigin: 'top left',
     },
-    ...(isExpandedFullCapture ? {
+    ...(isExpandedFullCapture || onCloneNode ? {
       // 본문 항목 크기는 유지하고 툴바와 아래 줄만 이미지 전체 폭으로 넓힌다.
       // 화면의 DOM은 바꾸지 않고 복제본의 분류 배지와 범례를 오른쪽 끝에 맞춘다.
       onCloneNode: (cloned: Node) => {
         if (!(cloned instanceof Element)) return
-        for (const row of cloned.querySelectorAll<HTMLElement>('[data-capture-full-width-align]')) {
-          row.style.width = `${fullSize.width}px`
-          row.style.boxSizing = 'border-box'
+        if (isExpandedFullCapture) {
+          for (const row of cloned.querySelectorAll<HTMLElement>('[data-capture-full-width-align]')) {
+            row.style.width = `${fullSize.width}px`
+            row.style.boxSizing = 'border-box'
+          }
         }
+        onCloneNode?.(cloned)
       },
     } : {}),
     ...base,

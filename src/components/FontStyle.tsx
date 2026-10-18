@@ -21,4 +21,4 @@ export const FONT_BAR_MODE_STATUS = 'text-base leading-none font-medium'
 // 15px, medium(500). 글자 사이 간격(자간)은 조금 좁힌다(-0.04em — tracking-tight의 -0.025em보다 한 걸음 더).
 // 크기를 뺀 나머지 모양 — 크기를 따로 정하는 곳(설정창 아래의 업데이트 시각)이 쓴다.
 export const FONT_BAR_TIME_SHAPE = 'leading-none font-medium tabular-nums tracking-[-0.04em]'
-export const FONT_BAR_TIME = `text-[15px] ${FONT_BAR_TIME_SHAPE}`
+export const FONT_BAR_TIME = `text-[14px] ${FONT_BAR_TIME_SHAPE}`
