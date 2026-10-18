@@ -38,7 +38,6 @@ import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/c
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
-import { screenshotElementToDownload, downloadDataUrl, screenshotFileName } from '@/utils/screenshotToDownload'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { marketRoute } from '@/utils/marketRoute'
 import type { Market, TreemapSectorNode } from '@/types/api'
@@ -47,7 +46,6 @@ import { buildRankChart } from '@/utils/rankChart'
 import { collectAtDepth } from '@/utils/sectorDepth'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
-type DownloadStatus = 'idle' | 'downloading' | 'error'
 type GroupGraphMode = 'current' | 'delta'
 
 // 지수 등락률 참조 막대에 붙는 한글 라벨 — ALL STOCK은 두 지수를 각각 표시한다.
@@ -194,7 +192,6 @@ export default function GroupPage() {
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
-  const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const screenshotRef = useRef<HTMLDivElement>(null)
 
@@ -212,22 +209,9 @@ export default function GroupPage() {
     }
   }
 
-  const handleDownload = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotRef.current) return
-    setDownloadStatus('downloading')
-    try {
-      if (previewSrc) downloadDataUrl(previewSrc, screenshotFileName('GROUP'))
-      else if (screenshotRef.current) await screenshotElementToDownload(screenshotRef.current, screenshotFileName('GROUP'))
-    } catch {
-      setDownloadStatus('error')
-    } finally {
-      setTimeout(() => setDownloadStatus('idle'), 2000)
-    }
-  }
 
   const copyLabel =
     copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
-  const downloadLabel = downloadStatus === 'error' ? '다운로드 실패' : '다운로드'
 
   // 설정창 위쪽 "nn/nn종목" — 분모는 지금 시장의 모든 종목, 분자는 지도 설정창과 같은 기준(제외한 업종은 하위 업종까지,
   // 제외한 시가총액 구간)으로 걸러 남은 종목이다.
@@ -478,11 +462,8 @@ export default function GroupPage() {
         <ScreenshotModal
           onClose={() => setIsShareOpen(false)}
           onCopy={handleCopy}
-          onDownload={handleDownload}
           copyLabel={copyLabel}
-          downloadLabel={downloadLabel}
           isCopying={copyStatus === 'copying'}
-          isDownloading={downloadStatus === 'downloading'}
           screenshotTarget={screenshotRef.current}
         />
       )}

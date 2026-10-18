@@ -15,10 +15,36 @@ export function shareScreenshotScale(el: HTMLElement): number {
 
 // 찍을 영역을 "맨 왼쪽 위부터 selector에 맞는 요소의 오른쪽 끝까지, 높이는 그대로"로 줄인다. 맞는 요소가 없으면 null이다.
 // 홈에서 현재 맨 오른쪽 틀을 빼고 찍을 때 쓴다 — 틀 배치는 그대로 두고 오른쪽을 잘라서 찍는다.
-export function captureRegionRect(el: HTMLElement, selector: string): { x: number; y: number; width: number; height: number } | null {
+export function captureRegionRect(el: HTMLElement, selector: string, mode: 'through-right-edge' | 'element' | 'content' = 'through-right-edge'): { x: number; y: number; width: number; height: number } | null {
   const edges = Array.from(el.querySelectorAll(selector))
   if (edges.length === 0) return null
   const origin = el.getBoundingClientRect()
+  if (mode === 'element' || mode === 'content') {
+    const target = edges[0]
+    const rect = target.getBoundingClientRect()
+    const style = getComputedStyle(target)
+    const borderLeft = Number.parseFloat(style.borderLeftWidth) || 0
+    const borderRight = Number.parseFloat(style.borderRightWidth) || 0
+    const borderTop = Number.parseFloat(style.borderTopWidth) || 0
+    const borderBottom = Number.parseFloat(style.borderBottomWidth) || 0
+    const paddingLeft = mode === 'content' ? Number.parseFloat(style.paddingLeft) || 0 : 0
+    const paddingRight = mode === 'content' ? Number.parseFloat(style.paddingRight) || 0 : 0
+    const paddingTop = mode === 'content' ? Number.parseFloat(style.paddingTop) || 0 : 0
+    const paddingBottom = mode === 'content' ? Number.parseFloat(style.paddingBottom) || 0 : 0
+    const outerMargin = mode === 'content' ? 3 : 0
+    const rawX = rect.left - origin.left + borderLeft + paddingLeft - outerMargin
+    const rawY = rect.top - origin.top + borderTop + paddingTop - outerMargin
+    const x = Math.max(0, rawX)
+    const y = Math.max(0, rawY)
+    const right = Math.min(origin.width, rawX + rect.width - borderLeft - borderRight - paddingLeft - paddingRight + outerMargin * 2)
+    const bottom = Math.min(origin.height, rawY + rect.height - borderTop - borderBottom - paddingTop - paddingBottom + outerMargin * 2)
+    return {
+      x,
+      y,
+      width: Math.max(0, right - x),
+      height: Math.max(0, bottom - y),
+    }
+  }
   const right = Math.max(...edges.map(edge => edge.getBoundingClientRect().right))
   return { x: 0, y: 0, width: right - origin.left, height: origin.height }
 }
@@ -39,9 +65,9 @@ function captureBackgroundColor(el: HTMLElement): string {
 }
 
 // regionSelector를 주면 그 요소들이 차지한 영역만 찍는다(없거나 못 찾으면 전체).
-export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string) {
+export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string, regionMode: 'through-right-edge' | 'element' | 'content' = 'through-right-edge') {
   const base = { backgroundColor: captureBackgroundColor(el), filter: isCapturable }
-  const region = regionSelector ? captureRegionRect(el, regionSelector) : null
+  const region = regionSelector ? captureRegionRect(el, regionSelector, regionMode) : null
   if (!region) return { scale: shareScreenshotScale(el), ...base }
   return {
     scale: scaleForLongSide(Math.max(region.width, region.height)),

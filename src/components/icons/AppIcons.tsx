@@ -228,6 +228,17 @@ export function SmartphoneIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+// 홈 요약의 세 항목 중 하나를 고르는 캡처 아이콘 — 같은 크기의 칸 세 개가 붙어 있고 선택한 칸만 채운다.
+export function HomeFrameCaptureIcon({ selectedSlot, ...props }: SVGProps<SVGSVGElement> & { selectedSlot: 0 | 1 | 2 | 'all' }) {
+  const filledSlots = selectedSlot === 'all' ? [0, 1, 2] : [selectedSlot]
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+      {filledSlots.map(slot => <rect key={slot} x={3 + slot * 6} y="3" width="6" height="18" fill="var(--brand)" stroke="none" />)}
+      <path d="M3 3h18v18H3zM9 3v18M15 3v18" />
+    </svg>
+  )
+}
+
 export function CopyIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>

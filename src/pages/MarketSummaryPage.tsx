@@ -31,7 +31,6 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
-import { screenshotElementToDownload, screenshotFileName, downloadDataUrl } from '@/utils/screenshotToDownload'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toSnapshotDateLabel, toPctSigned } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { resolveTreemapExtremeColor } from '@/utils/treemapColorScale'
@@ -42,7 +41,6 @@ import { collectAtDepth } from '@/utils/sectorDepth'
 // 홈 화면 시험 배치 — 대분류 업종만으로 그린 약식 등락률 지도와 그룹 등락률 그래프를 스마트폰 크기 틀(가로 360px)에 나란히 둔다.
 // 모바일 사용자에게 스크린샷으로 찍어 보여 주기 좋은지 보고 계속 진행할지 정한다. 관심종목·요약 API는 쓰지 않는다.
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
-type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 // 안내 틀 맨 위의 지수 줄 — 코스피·코스닥은 서브 청록(--brand-surface), 바로 아래 등락 종목은 더 짙은 짙은 서브 청록(--brand-surface-dark)으로 나눈다. 오르면 빨강·내리면 파랑, 변화가 없거나 값이 없으면 회색이다.
 const INDEX_ROWS = [
@@ -63,9 +61,9 @@ const NOTICE_TYPES = [
 ] as const
 
 const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
-const DEFAULT_HOME_FRAME_ORDER = ['시장 지도', '그룹 등락률 (%)', '시장 요약']
+const DEFAULT_HOME_FRAME_ORDER = ['시장 요약', '시장 지도', '그룹 등락률 (%)']
 
-function SortableHomeFrame({ title, index, children, captureUntil }: { title: string; index: number; children: ReactNode; captureUntil?: string }) {
+function SortableHomeFrame({ title, captureId, index, children, captureUntil }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
   return (
     <section
@@ -74,7 +72,7 @@ function SortableHomeFrame({ title, index, children, captureUntil }: { title: st
       style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.6 : undefined }}
       className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'} ${isDragging ? 'cursor-grabbing' : ''}`}
     >
-      <div className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-3' : index === 2 ? 'pl-3 pr-0' : 'px-3'}`}>
+      <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-3' : index === 2 ? 'pl-3 pr-0' : 'px-3'}`}>
         <h2 className="relative z-[6] m-0 flex h-[18px] shrink-0 items-center justify-start">
           <button
             ref={setActivatorNodeRef}
@@ -99,7 +97,6 @@ export default function MarketSummaryPage() {
   const allFramesRef = useRef<HTMLDivElement>(null)
   const [screenshotTarget, setScreenshotTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
-  const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   const {
     settingsModalProps, data, isLoading, isError, refetchTreemap, isRefetchingTreemap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
     changeRateMode, changeRateChoice, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers,
@@ -214,21 +211,8 @@ export default function MarketSummaryPage() {
     }
   }
 
-  const handleDownload = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotTarget) return
-    setDownloadStatus('downloading')
-    try {
-      if (previewSrc) downloadDataUrl(previewSrc, screenshotFileName('HOME'))
-      else if (screenshotTarget) await screenshotElementToDownload(screenshotTarget, screenshotFileName('HOME'))
-    } catch {
-      setDownloadStatus('error')
-    } finally {
-      setTimeout(() => setDownloadStatus('idle'), 2000)
-    }
-  }
 
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
-  const downloadLabel = downloadStatus === 'error' ? '다운로드 실패' : '다운로드'
   // 세 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
 
   return (
@@ -328,6 +312,7 @@ export default function MarketSummaryPage() {
             {[
               {
                 title: '시장 지도',
+                captureId: 'market-map',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
                     <OverviewMap items={overview.items} colorScale={colorScale} />
@@ -336,6 +321,7 @@ export default function MarketSummaryPage() {
               },
               {
                 title: '그룹 등락률 (%)',
+                captureId: 'group-change-rate',
                 body: (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
                     <div className="flex min-h-0 w-full flex-1">
@@ -347,6 +333,7 @@ export default function MarketSummaryPage() {
               {
                 // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '시장 요약',
+                captureId: 'market-summary',
                 body: (
                   // 두 칸 격자다: [배지 칸(네 배지 중 가장 긴 쪽 너비)] [회색 칸(남는 폭)]. 신규 상장·3개월 내 상장·거래 정지·거래 정지 중 네 줄을 세로 한 열로 쌓고,
                   // 배지 칸이 네 줄에 공유돼 짧은 배지는 오른쪽만 늘어나 모두 같은 너비가 된다(글자는 왼쪽). 짝이 되는 두 배지(신규 상장·3개월 내 상장, 거래 정지·거래 정지 중)는 같은 색이라 한눈에 짝이 보인다. 색은 분류 배지(코스피·대분류)의 서브 청록(--brand-surface)과 그보다 짙은 짙은 서브 청록(--brand-surface-dark) 두 가지다 — 빨강·파랑은 오름·내림 뜻이 있어 쓰지 않는다.
@@ -435,7 +422,7 @@ export default function MarketSummaryPage() {
                 ),
               },
             ].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title)).map((frame, frameIndex) => (
-              <SortableHomeFrame key={frame.title} title={frame.title} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined}>
+              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined}>
                 {frame.body}
               </SortableHomeFrame>
             ))}
@@ -458,7 +445,7 @@ export default function MarketSummaryPage() {
         <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel
             pageLabel="Home"
-            plainTabLabel="요약"
+            plainTabLabel="시장 요약"
             plainTabIcon="home"
             {...settingsModalProps}
             isOpen={isSettingsOpen}
@@ -476,13 +463,19 @@ export default function MarketSummaryPage() {
         <ScreenshotModal
           onClose={() => setScreenshotTarget(null)}
           onCopy={handleCopy}
-          onDownload={handleDownload}
           copyLabel={copyLabel}
-          downloadLabel={downloadLabel}
           isCopying={copyStatus === 'copying'}
-          isDownloading={downloadStatus === 'downloading'}
           screenshotTarget={screenshotTarget}
-          regionOption={{ label: '모바일', selector: '[data-capture-until]' }}
+          frameCaptureOptions={safeHomeFrameOrder.map((title, selectedSlot) => {
+            const captureId = title === '시장 지도' ? 'market-map' : title === '그룹 등락률 (%)' ? 'group-change-rate' : 'market-summary'
+            return {
+              id: captureId,
+              label: ['좌측', '중앙', '우측'][selectedSlot],
+              selector: `[data-capture-frame="${captureId}"]`,
+              selectedSlot: selectedSlot as 0 | 1 | 2,
+              mode: 'content' as const,
+            }
+          })}
         />
       )}
     </div>
