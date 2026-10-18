@@ -178,10 +178,10 @@ export default function ScreenshotModal({
               type="button"
               onClick={() => onCopy(previewSrc)}
               disabled={!previewSrc || isCopying}
-              className={BUTTON_ACCENT_CLASS}
+              className={copyLabel === 'Copied' ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}
             >
               {isCopying ? <Spinner className="h-4 w-4" /> : copyLabel === 'Copied' ? <CheckIcon className="h-4 w-4" /> : <CopyIcon className="h-4 w-4" />}
-              {copyLabel === 'Failed' ? '복사실패' : '클립보드'}
+              {copyLabel === 'Copied' ? '복사완료' : copyLabel === 'Failed' ? '복사실패' : '클립보드'}
             </button>
             <button
               type="button"
