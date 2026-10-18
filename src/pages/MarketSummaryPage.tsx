@@ -33,7 +33,7 @@ import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toSnapshotDateLabel, toPctSigned } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
-import { resolveTreemapExtremeColor } from '@/utils/treemapColorScale'
+import { resolveTreemapColor, resolveTreemapExtremeColor } from '@/utils/treemapColorScale'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
 import { collectAtDepth } from '@/utils/sectorDepth'
@@ -249,6 +249,7 @@ export default function MarketSummaryPage() {
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                 <SnapshotDatePicker
                   market={market}
+                  holidayColor={resolveTreemapColor(8, colorScale)}
                   viewedSnapshotTime={data?.snapshotTime ?? null}
                   liveSnapshotTime={liveSnapshotTime}
                   onSelectSnapshotTime={onChangePinnedSnapshotTime}

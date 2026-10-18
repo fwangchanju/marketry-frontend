@@ -1,4 +1,5 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
+import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
@@ -313,7 +314,7 @@ export default function GroupPage() {
                   <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                   <SnapshotDatePicker
                     market={market}
-                    holidayColor={settingsModalProps.legendSwatches.find(swatch => swatch.label === '+8%')?.color}
+                    holidayColor={resolveTreemapColor(8, colorScale)}
                     viewedSnapshotTime={displayNow?.snapshotTime ?? null}
                     liveSnapshotTime={liveSnapshotTime}
                     onSelectSnapshotTime={onChangePinnedSnapshotTime}

@@ -1,4 +1,5 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
+import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
@@ -188,6 +189,9 @@ function revealMobileCapture(cloned: Node) {
       selectedButton.style.alignItems = 'center'
       selectedButton.style.justifyContent = 'center'
       selectedButton.style.backgroundColor = 'var(--sub-purple)'
+      selectedButton.style.color = 'var(--ui-background)'
+      // 캡처 복제본에는 원본의 계산된 text-fill-color도 남아 있으므로 함께 바꾼다.
+      selectedButton.style.webkitTextFillColor = 'var(--ui-background)'
       selectedButton.style.pointerEvents = 'none'
       selectedButton.style.transition = 'none'
       changeRateSelector.replaceWith(selectedButton)
@@ -596,7 +600,7 @@ export default function MapPage() {
                   <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                   <SnapshotDatePicker
                     market={market}
-                    holidayColor={settingsModalProps.legendSwatches.find(swatch => swatch.label === '+8%')?.color}
+                    holidayColor={resolveTreemapColor(8, colorScale)}
                     viewedSnapshotTime={data?.snapshotTime ?? null}
                     liveSnapshotTime={liveSnapshotTime}
                     onSelectSnapshotTime={onChangePinnedSnapshotTime}
