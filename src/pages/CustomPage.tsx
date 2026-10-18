@@ -290,7 +290,8 @@ export default function CustomPage() {
           <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel
               pageLabel="Custom"
-              plainTabLabel={mode === 'stock' ? '종목' : '업종'}
+              plainTabLabel={mode === 'stock' ? '커스텀' : '업종'}
+              plainTabIcon="custom-edit"
               stockCountLabel={countLabel}
               // 저장·초기화는 기능 검토 전 임시 숨김. 재요청 시 새 버튼을 만들지 말고 이 옵션을 true로 바꿔 기존 버튼을 복원한다.
               showPreferenceActions={false}
@@ -302,14 +303,14 @@ export default function CustomPage() {
               plainContent={!isReadOnlySheet ? (
                 <>
                   {/* 종목 화면은 위에서부터 간편 업종 분류 → 변경 내역 → 일괄 변경 순서다(관리자 기능은 Admin 페이지로 옮겼다). */}
-                  {mode === 'stock' && <div ref={setStockExcelTarget} className="h-[160px]" />}
-                  <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'h-[160px]' : undefined} />
-                  {mode === 'stock' && <div ref={setStockBulkTarget} />}
+                  {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
+                  <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
+                  {mode === 'stock' && <div ref={setStockBulkTarget} className="settings-item" />}
                 </>
               ) : (
                 // 마켓트리·거래소 화면은 읽기 전용이라 설정할 항목이 없다 — 그 사실만 알린다.
-                <div className="text-sm">
-                  <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">읽기 전용(쓰기 불가)</h2>
+                <div className="settings-empty-message">
+                  읽기 전용
                 </div>
               )}
               taxonomyAtBottom

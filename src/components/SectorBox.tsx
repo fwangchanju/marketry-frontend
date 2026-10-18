@@ -244,10 +244,10 @@ export default function SectorBox({
             className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header' : ''} absolute top-0 z-[2] flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
           >
             {isTopPick ? (
-              <>
+              <span style={{ lineHeight: 1.25 }}>
                 {depthMark}{sector.sectorName}
                 {headerSuffix && <span className="text-[0.9em] font-normal tabular-nums">{headerSuffix}</span>}
-              </>
+              </span>
             ) : (
               // 업종 배지: 앞 표시·업종명·등락률(헤더에 보이는 값)을 한 배지에 담는다.
               <span className="rounded-[3px] px-1" style={{ background: nameChipBackground, lineHeight: 1.25 }}>
