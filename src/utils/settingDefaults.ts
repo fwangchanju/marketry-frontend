@@ -2,9 +2,8 @@
 // 기본값을 바꾸려면 이 파일만 고치면 된다. 사용자가 값을 바꿔서 저장값이 생기면 그 값이 항상 기본값보다 우선한다
 // (로그인 사용자는 서버 설정, 비로그인은 이 탭의 sessionStorage — usePageSetting 참고).
 //
-// 회원 기본값(MEMBER_DEFAULTS)이 기준이고, 비로그인 기본값(GUEST_DEFAULTS)은 그중 다른 항목만 GUEST_OVERRIDES에 적는다.
-// 가입 직후 사용자의 기본값은 비로그인과 같다 — 그래서 GUEST_OVERRIDES는 비어 있다. 처음 방문자에게 더 화려하게 보이도록
-// 중분류·강세 3개·형광색 등을 기본으로 한다. 둘을 다르게 하고 싶은 항목이 생기면 GUEST_OVERRIDES에 그 항목만 적는다.
+// 회원 기본값(MEMBER_DEFAULTS)을 비로그인 기본값(GUEST_DEFAULTS)에서도 그대로 사용한다.
+// 비회원과 가입 직후 회원은 모든 설정 기본값을 공유한다.
 // 항목 이름 뒤의 번호는 지도 설정창의 항목 번호다.
 
 export type DepthMetricDefault = 'weightedAvgChangeRate' | 'simpleAvgChangeRate'
@@ -72,16 +71,13 @@ export const MEMBER_DEFAULTS: SettingDefaults = {
   boxLabelMinAreaPercent: 0.01, // 미사용 탭 텍스트 표시 기준 0.01%
   decimalPlacesIndex: 1, // 3-3 1자리
   stockPopupOnHover: false,
-  strongIndustryColor: '#c6ff00', // 4-1 형광
+  strongIndustryColor: '#d8ed77', // 4-1 연두
   colorCustomOn: true,
-  avgChangeRateUseSimple: true,
+  avgChangeRateUseSimple: false, // 그룹 등락률 기준: 시총 가중
   sidebarPinned: true,
 }
 
-// 비로그인 기본값 — 회원 기본값과 다른 항목만 적는다. 지금은 없다(가입 직후 사용자와 같다).
-const GUEST_OVERRIDES: Partial<SettingDefaults> = {}
-
-export const GUEST_DEFAULTS: SettingDefaults = { ...MEMBER_DEFAULTS, ...GUEST_OVERRIDES }
+export const GUEST_DEFAULTS: SettingDefaults = { ...MEMBER_DEFAULTS }
 
 export function settingDefaultsFor(isLoggedIn: boolean): SettingDefaults {
   return isLoggedIn ? MEMBER_DEFAULTS : GUEST_DEFAULTS

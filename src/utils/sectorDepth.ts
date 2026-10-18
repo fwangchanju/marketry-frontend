@@ -1,4 +1,5 @@
 import type { TreemapSectorNode } from '@/types/api'
+import { isMarketValueExcluded } from './marketValueTier'
 
 export interface DepthEntry {
   node: TreemapSectorNode
@@ -9,7 +10,7 @@ export interface DepthEntry {
 // 제외한 업종·시가총액 구간을 뺐을 때 이 업종에 남는 종목이 있는지 — 지도 페이지는 남는 종목이 없는 업종을 그리지 않으므로 같은 기준으로 맞춘다.
 function hasVisibleStocks(node: TreemapSectorNode, excludedSectorIds: Set<number>, excludedTiers: Set<string>): boolean {
   if (excludedSectorIds.has(node.sectorId)) return false
-  if (node.items.some(item => !excludedTiers.has(item.marketValueTier))) return true
+  if (node.items.some(item => !isMarketValueExcluded(item, excludedTiers))) return true
   return node.children.some(child => hasVisibleStocks(child, excludedSectorIds, excludedTiers))
 }
 

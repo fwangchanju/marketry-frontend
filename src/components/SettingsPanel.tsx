@@ -2,6 +2,7 @@ import { SlidingHighlight } from '@/components/SlidingHighlight'
 import { CountLabelWithBadge } from '@/components/KindBadge'
 import { Children, Fragment, createContext, isValidElement, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useLocation } from 'react-router-dom'
 import type { DepthMetric } from '@/hooks/useGlobalSettings'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import type { StockChangeFilter, SectorChangeFilter } from '@/hooks/useFilteredTreemap'
@@ -16,6 +17,7 @@ import { ACCENT_PALETTE } from '@/utils/accentPalette'
 import { TAXONOMY_SELECT_TITLE, TAXONOMY_NAMES, type TaxonomyKey } from '@/utils/taxonomyNames'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { useIsLoggedIn } from '@/hooks/useSession'
+import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
 import { commitDrafts, discardDrafts, useHasDrafts } from '@/utils/settingsDraft'
 import { BOOKMARK_ORDER, type SettingsBookmarkId } from '@/utils/settingsBookmarks'
@@ -830,6 +832,7 @@ function RangeSlider({
   limitReason,
   disabledReason,
   labelsAbove = false,
+  showTicks = false,
 }: {
   minIndex: number
   maxIndex: number
@@ -844,6 +847,7 @@ function RangeSlider({
   limitReason?: ReactNode
   disabledReason?: ReactNode
   labelsAbove?: boolean
+  showTicks?: boolean
 }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [limitHintVisible, setLimitHintVisible] = useState(false)
@@ -937,6 +941,10 @@ function RangeSlider({
         />
         {/* 두 핸들이 같은 칸에 모이면 원 두 개가 겹쳐 화살표가 뭉개진다. 그때는 바깥으로 벌어지는
             화살표 둘을 담은 알약 하나로 그려서, 모여 있어도 양방향으로 벌릴 수 있는 핸들임이 보이게 한다. */}
+        {showTicks && labels.map((_, index) => {
+          const pct = index / sliderSteps * 100
+          return <span key={index} aria-hidden="true" className="pointer-events-none absolute top-1/2 h-2 w-px -translate-x-1/2 -translate-y-1/2 bg-ui-muted" style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)` }} />
+        })}
         {minPct === maxPct ? (
           <div
             aria-label={`${minAriaLabel} / ${maxAriaLabel}`}
@@ -1987,15 +1995,17 @@ export function SettingsMarketValueSection({
   const bookmark = useContext(SettingsBookmarkContext)
   if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('marketValueRange')) return null
   const itemClass = bookmarkItemClass(bookmark, 'marketValueRange')
-  const tierSteps = Math.max(tiers.length - 1, 1)
-  const tierDisplayLabels = tiers.map(tier => tier.label)
-  // 화면과 같은 작은 등급부터 표시한다. 다음 등급의 하한이 현재 등급의 상한이다.
+  const lastTierIndex = Math.max(tiers.length - 1, 0)
+  const tierSteps = Math.max(lastTierIndex, 1)
+  const tierDisplayLabels = tiers.map(tier => tier.label).reverse()
+  // 도움말은 기존 등급 정의를 설명한다. 다음 등급의 하한이 현재 등급의 상한이다.
+  const namedTiers = tiers.filter(tier => tier.label !== '')
   const tierRangeLines =
     tiers.length === 0
       ? null
-      : tiers
+      : namedTiers
           .map((tier, index) => {
-            const upper = tiers[index + 1]?.thresholdValue ?? null
+            const upper = namedTiers[index + 1]?.thresholdValue ?? null
             const lower = tier.thresholdValue
             const range = lower === 0 ? `${toWonLabel(upper ?? 0)} 미만` : upper === null ? `${toWonLabel(lower)} 이상` : `${toWonLabel(lower)} 이상 ~ ${toWonLabel(upper)} 미만`
             return `${tier.label}: ${range}`
@@ -2007,10 +2017,10 @@ export function SettingsMarketValueSection({
     : selectedLower === 0 && selectedUpper === undefined ? '전체 시가총액'
     : selectedLower === 0 ? `${toWonLabel(selectedUpper!)} 미만`
     : selectedUpper === undefined ? `${toWonLabel(selectedLower)} 이상`
-    : `${toWonLabel(selectedLower)} 이상 ~ ${toWonLabel(selectedUpper)} 미만`
+    : `${toWonLabel(selectedUpper)} 미만 ~ ${toWonLabel(selectedLower)} 이상`
 
   return (
-    <div className={`settings-market-value text-ui-white ${itemClass} ${bookmark.mode === 'bookmark' ? '' : showDivider ? 'mt-6 pt-8' : 'pt-3'}`}>
+    <div className={`settings-market-value flex flex-col text-ui-white ${itemClass} ${bookmark.mode === 'bookmark' ? '' : showDivider ? 'mt-6 pt-8' : 'pt-3'}`}>
       <p className="flex items-center text-[15px]">
         {/* 순서는 제목 → 물음표 → 북마크 — SettingTitle이 북마크를 제목 바로 뒤에 붙이므로 help로 북마크를 빼고 맨 끝에 직접 둔다. */}
         <SettingTitle bookmarkId="marketValueRange" help>시가총액 범위</SettingTitle>
@@ -2018,26 +2028,26 @@ export function SettingsMarketValueSection({
         <BookmarkButton id="marketValueRange" label="시가총액 범위" />
       </p>
       <SettingDescription>지도에 포함할 종목의 시총 구간</SettingDescription>
-      <div className="settings-subsection-list mt-[19px] text-sm">
+      <div className="settings-subsection-list flex min-h-[90px] flex-1 items-center pb-3 text-sm">
         <div className="settings-slider-control">
-          <RangeSlider
-            minIndex={tierRangeMinIndex}
-            maxIndex={tierRangeMaxIndex}
-            steps={tierSteps}
-            labels={tierDisplayLabels}
-            labelsAbove
-            minAriaLabel="최소 시가총액 구간"
-            maxAriaLabel="최대 시가총액 구간"
-            onChange={onChangeTierRange}
-            disabled={tiers.length === 0}
-          />
-          <p className="mt-2 flex min-h-[22px] justify-center text-[13px]/4 text-ui-white" aria-live="polite" aria-atomic="true">
+          <p className="mb-4 flex min-h-[22px] justify-center text-[13px]/4 text-ui-white" aria-live="polite" aria-atomic="true">
             {selectedRangeLabel && (
               <span className="rounded-[5px] border border-ui-border bg-ui-control px-1.5 py-0.5">
                 {selectedRangeLabel}
               </span>
             )}
           </p>
+          <RangeSlider
+            minIndex={lastTierIndex - tierRangeMaxIndex}
+            maxIndex={lastTierIndex - tierRangeMinIndex}
+            steps={tierSteps}
+            labels={tierDisplayLabels}
+            showTicks
+            minAriaLabel="최대 시가총액 구간"
+            maxAriaLabel="최소 시가총액 구간"
+            onChange={(left, right) => onChangeTierRange(lastTierIndex - right, lastTierIndex - left)}
+            disabled={tiers.length === 0}
+          />
         </div>
       </div>
     </div>
@@ -2180,7 +2190,7 @@ export function SettingsExcludeSection({
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
                 data-hint="맵에 다시 표시"
-                className="flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-bold text-ui-white transition-colors hover:bg-[var(--accent)]/35"
+                className="flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35"
               >
                 <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
@@ -2403,7 +2413,7 @@ export function SettingsStrongIndustryColorSection({
     requestAnimationFrame(() => setTimeout(() => onChange(value), 0))
   }
   return (
-    <div className={`settings-first-strong-color text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'strongColor') : 'pt-3'}`}>
+    <div className={`settings-first-strong-color flex flex-col text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'strongColor') : 'pt-3'}`}>
       <p className="flex items-center text-[15px]">
         <SettingTitle bookmarkId="strongColor" help>강조 색상</SettingTitle>
         <SettingHelpBubble
@@ -2413,34 +2423,36 @@ export function SettingsStrongIndustryColorSection({
         />
       </p>
       <SettingDescription>업종명과 상위 업종의 강조 색상</SettingDescription>
-      {/* 색 동그라미 줄은 다른 슬라이더와 같은 폭(.settings-slider-control)에 양 끝을 맞춘다. 8칸이 들어가도록 동그라미는 22px이다. */}
-      <div className="settings-slider-control mt-[42px] flex justify-between">
-        {STRONG_INDUSTRY_COLOR_OPTIONS.map(option => (
-          <span key={option.value} className="group relative inline-flex">
-            <button
-              type="button"
-              aria-label={`${option.label} 색상 선택`}
-              aria-pressed={selectedColor === option.value}
-              // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
-              onPointerDown={event => { if (event.button === 0) pick(option.value) }}
-              onClick={event => { if (event.detail === 0) pick(option.value) }}
-              style={{ backgroundColor: option.value }}
-              className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/35 p-0"
-            >
-              {selectedColor === option.value && (
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? 'var(--ui-surface)' : 'var(--ui-white)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12.5l4.5 4.5L19 7" />
-                </svg>
-              )}
-            </button>
-            <span
-              role="tooltip"
-              className={`pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS} opacity-0 transition-opacity group-hover:visible group-hover:opacity-100`}
-            >
-              {option.label}
+      {/* 같은 색 계열을 위아래로 비교할 수 있도록 7칸씩 두 줄로 배치한다. 양 끝은 슬라이더 폭에 맞춘다. */}
+      <div className="flex min-h-[82px] flex-1 items-center pb-3">
+        <div className="settings-slider-control grid grid-cols-[repeat(7,22px)] justify-between gap-y-3.5">
+          {STRONG_INDUSTRY_COLOR_OPTIONS.map(option => (
+            <span key={option.value} className="group relative inline-flex">
+              <button
+                type="button"
+                aria-label={`${option.label} 색상 선택`}
+                aria-pressed={selectedColor === option.value}
+                // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
+                onPointerDown={event => { if (event.button === 0) pick(option.value) }}
+                onClick={event => { if (event.detail === 0) pick(option.value) }}
+                style={{ backgroundColor: option.value }}
+                className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/35 p-0"
+              >
+                {selectedColor === option.value && (
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? 'var(--ui-surface)' : 'var(--ui-white)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12.5l4.5 4.5L19 7" />
+                  </svg>
+                )}
+              </button>
+              <span
+                role="tooltip"
+                className={`pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap ${HINT_BUBBLE_CLASS} opacity-0 transition-opacity group-hover:visible group-hover:opacity-100`}
+              >
+                {option.label}
+              </span>
             </span>
-          </span>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -2529,6 +2541,12 @@ export default function SettingsPanel({
   children,
 }: Props) {
   const isLoggedIn = useIsLoggedIn()
+  const { pathname, search, hash } = useLocation()
+  const { requireLogin } = useLoginGate()
+  const requestLogin = () => {
+    if (onRequestLogin) onRequestLogin()
+    else void requireLogin(`${pathname}${search}${hash}`)
+  }
   const { commitPreferences, isLoaded: preferencesLoaded } = useCustomPreferences()
   const hasDrafts = useHasDrafts()
   const [isPreferenceFeedbackVisible, setIsPreferenceFeedbackVisible] = useState(false)
@@ -2656,7 +2674,7 @@ export default function SettingsPanel({
         data-hint="변경값으로 저장하기"
         disabled={isPreferenceFeedbackActive}
         onClick={async () => {
-          if (!isLoggedIn) { onRequestLogin?.(); return }
+          if (!isLoggedIn) { requestLogin(); return }
           if (!hasDrafts) return
           if (!preferencesLoaded) {
             appAlert('저장된 설정을 아직 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.', { title: '불러오기 실패' })
@@ -2746,7 +2764,7 @@ export default function SettingsPanel({
                 id={`settings-tab-${section.id}`}
                 onClick={() => {
                   // 비로그인이 북마크 탭을 누르면 탭을 열지 않고 바로 로그인 팝업을 띄운다.
-                  if (section.id === 'favorites' && bookmarkLoginRequired && onRequestLogin) onRequestLogin()
+                  if (section.id === 'favorites' && bookmarkLoginRequired) requestLogin()
                   else setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
