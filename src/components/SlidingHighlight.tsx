@@ -13,6 +13,7 @@ export function SlidingHighlight({
   className,
   gap = 6,
   fillColor,
+  baseColor,
   square = false,
   bottomRadius = 0,
 }: {
@@ -21,6 +22,7 @@ export function SlidingHighlight({
   className?: string
   gap?: number
   fillColor?: string
+  baseColor?: string
   square?: boolean
   // 직각 칩 묶음에서 맨 왼쪽 칸의 왼쪽 아래와 맨 오른쪽 칸의 오른쪽 아래만 둥글게 한다(px).
   bottomRadius?: number
@@ -35,7 +37,7 @@ export function SlidingHighlight({
           key={i}
           aria-hidden="true"
           className={`pointer-events-none absolute z-0 ${square ? '' : 'rounded-[4px]'}`}
-          style={{ top: 0, bottom: 0, left: leftOf(i), width: `calc(${cell})`, backgroundColor: CHIP_COLOR, ...cornerStyle(i) }}
+          style={{ top: 0, bottom: 0, left: leftOf(i), width: `calc(${cell})`, backgroundColor: baseColor ?? CHIP_COLOR, ...cornerStyle(i) }}
         />
       ))}
       {index >= 0 && (
