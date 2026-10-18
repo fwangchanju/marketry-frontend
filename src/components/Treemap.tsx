@@ -363,6 +363,13 @@ export default function Treemap({
     // 이어진다. overflow-hidden으로 이 삐져나옴 자체를 화면에서 잘라내 루프의 시작을 막는다.
     <div
       ref={containerRef}
+      data-treemap-layout-ready={
+        size.width > 0 && size.height > 0 &&
+        size.width === Math.round(containerRef.current?.clientWidth ?? 0) &&
+        size.height === Math.round(containerRef.current?.clientHeight ?? 0)
+          ? 'true'
+          : 'false'
+      }
       className={`relative isolate w-full overflow-hidden bg-ui-background ${heightClassName} ${suppressSectorHoverBorder ? 'treemap-suppress-sector-border' : ''}`}
       onPointerMove={() => {
         if (suppressSectorHoverBorder && !ghost) setSuppressSectorHoverBorder(false)

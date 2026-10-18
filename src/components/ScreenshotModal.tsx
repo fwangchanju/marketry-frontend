@@ -13,7 +13,7 @@ interface Props {
   isCopying: boolean
   screenshotTarget: HTMLElement | null
   // 지도에서 전체 화면(모니터)과 지도 영역(모바일)을 고르는 버튼을 표시한다.
-  mobileRegionOption?: { label: string; selector: string; mode?: 'through-right-edge' | 'element' | 'content' }
+  mobileRegionOption?: { label: string; selector: string; mode?: 'through-right-edge' | 'element' | 'content'; onCloneNode?: (cloned: Node) => void; monitorHorizontalPadding?: number }
   // 홈의 각 요약 항목을 따로 캡처하는 버튼들.
   frameCaptureOptions?: Array<{ id: string; label: string; selector: string; selectedSlot: 0 | 1 | 2; mode?: 'element' | 'content' }>
 }
@@ -28,14 +28,17 @@ export default function ScreenshotModal({
   frameCaptureOptions,
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
-  // 지도에서는 처음부터 모바일 지도를 보여 주고, 홈에서는 세 항목 전체를 먼저 보여 준다.
-  const [selectedCapture, setSelectedCapture] = useState<string | null>(() => mobileRegionOption ? 'mobile' : null)
+  // 스크린샷 창은 모든 페이지에서 전체 화면(모니터) 캡처를 기본으로 연다.
+  const [selectedCapture, setSelectedCapture] = useState<string | null>(null)
   const selectedFrame = frameCaptureOptions?.find(option => selectedCapture === `frame:${option.id}`)
   const regionSelector = selectedCapture === 'mobile' ? mobileRegionOption?.selector : selectedFrame?.selector
   const regionMode = selectedCapture === 'mobile' ? mobileRegionOption?.mode : selectedFrame?.mode ?? (selectedFrame ? 'element' : undefined)
+  const onCloneNode = selectedCapture === 'mobile' ? mobileRegionOption?.onCloneNode : undefined
+  // 모니터·전체 화면 캡처에는 페이지와 무관하게 좌우 4px 바깥 여백을 포함한다.
+  const horizontalPadding = selectedCapture === null ? mobileRegionOption?.monitorHorizontalPadding ?? 4 : 0
   // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 스크린샷 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
   // 스크린샷으로 찍을 영역의 비율로 어림잡고, 이미지가 로드되면 실제 비율로 바로잡는다.
-  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget, regionSelector, regionMode))
+  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget, regionSelector, regionMode, horizontalPadding))
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -52,23 +55,31 @@ export default function ScreenshotModal({
     // 스크린샷 작업이 무거워서 같은 프레임에서 바로 시작하면 모달이 뜨는 페인트 자체가 밀린다.
     // 두 번의 requestAnimationFrame으로 모달(+스피너)이 먼저 그려진 뒤에 스크린샷을 시작한다.
     let cancelled = false
+    let rafId = 0
+    const captureWhenReady = () => {
+      if (cancelled) return
+      // 모바일용 지도는 별도 크기로 다시 배치한다. ResizeObserver가 새 레이아웃을 계산할 때까지 기다린다.
+      if (onCloneNode && !screenshotTarget.querySelector('[data-map-mobile-capture] [data-treemap-layout-ready="true"]')) {
+        rafId = requestAnimationFrame(captureWhenReady)
+        return
+      }
+      screenshotElementToDataUrl(screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding)
+        .then(dataUrl => {
+          if (!cancelled) setPreviewSrc(dataUrl)
+        })
+        .catch(() => {
+          if (!cancelled) setPreviewSrc(null)
+        })
+    }
     const raf1 = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (cancelled) return
-        screenshotElementToDataUrl(screenshotTarget, regionSelector, regionMode)
-          .then(dataUrl => {
-            if (!cancelled) setPreviewSrc(dataUrl)
-          })
-          .catch(() => {
-            if (!cancelled) setPreviewSrc(null)
-          })
-      })
+      rafId = requestAnimationFrame(captureWhenReady)
     })
     return () => {
       cancelled = true
       cancelAnimationFrame(raf1)
+      cancelAnimationFrame(rafId)
     }
-  }, [screenshotTarget, regionSelector, regionMode])
+  }, [screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding])
 
   // 범위를 바꾸면 새 이미지를 찍는 동안 스피너를 보여 준다.
   const selectCapture = (next: string | null) => {
@@ -77,12 +88,13 @@ export default function ScreenshotModal({
     setSelectedCapture(next)
     const option = next === 'mobile' ? mobileRegionOption : frameCaptureOptions?.find(item => next === `frame:${item.id}`)
     const mode = next === 'mobile' ? mobileRegionOption?.mode : option && 'mode' in option ? option.mode ?? 'element' : undefined
-    setPreviewRatio(elementRatio(screenshotTarget, option?.selector, mode))
+    const horizontalPadding = next === null ? mobileRegionOption?.monitorHorizontalPadding ?? 0 : 0
+    setPreviewRatio(elementRatio(screenshotTarget, option?.selector, mode, horizontalPadding))
   }
 
-  // 높이는 화면(85dvh에서 버튼 줄을 뺀 만큼), 폭은 화면 폭 안에서 이미지 비율로 정한다 — 원래 크기보다 작으면 키우고 크면 줄여서 화면에
+  // 높이는 화면(버튼 줄과 팝업 여백을 뺀 만큼), 폭은 화면 폭 안에서 이미지 비율로 정한다 — 원래 크기보다 작으면 키우고 크면 줄여서 화면에
   // 최대한 꽉 채운다. 스피너 칸과 이미지가 같은 값을 써서, 미리보기가 뜰 때 팝업 크기가 바뀌지 않는다.
-  const fitWidth = previewRatio ? `min(calc(100vw - 4rem), calc((85dvh - 11rem) * ${previewRatio}))` : undefined
+  const fitWidth = previewRatio ? `min(calc(100vw - 4rem), calc((100dvh - 11rem) * ${previewRatio}))` : undefined
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-ui-background/70">
@@ -199,9 +211,11 @@ export default function ScreenshotModal({
 }
 
 // 스크린샷으로 찍을 영역의 가로/세로 비율 — 아직 없거나 크기를 못 재면 null.
-function elementRatio(element: HTMLElement | null, regionSelector: string | undefined, regionMode?: 'through-right-edge' | 'element' | 'content'): number | null {
+function elementRatio(element: HTMLElement | null, regionSelector: string | undefined, regionMode?: 'through-right-edge' | 'element' | 'content', horizontalPadding = 0): number | null {
   if (!element) return null
   const region = regionSelector ? captureRegionRect(element, regionSelector, regionMode) : null
-  const { width, height } = region ?? fullScreenshotSize(element)
+  const size = region ?? fullScreenshotSize(element)
+  const width = size.width + horizontalPadding * 2
+  const { height } = size
   return width > 0 && height > 0 ? width / height : null
 }

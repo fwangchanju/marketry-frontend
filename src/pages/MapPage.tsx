@@ -139,6 +139,36 @@ function findRawNodeByPath(nodes: TreemapSectorNode[], path: string[]): TreemapS
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 
+function revealMobileCapture(cloned: Node) {
+  if (!(cloned instanceof Element)) return
+  const mobileFrame = cloned.querySelector<HTMLElement>('[data-map-mobile-capture-frame]')
+  if (mobileFrame) mobileFrame.style.opacity = '1'
+  const mobileCapture = cloned.querySelector<HTMLElement>('[data-map-mobile-capture]')
+  if (mobileCapture) mobileCapture.style.opacity = '1'
+  const toolbarLeft = cloned.querySelector<HTMLElement>('.main-toolbar > div:first-child')
+  if (mobileCapture && toolbarLeft) {
+    const toolbar = document.createElement('div')
+    toolbar.className = 'main-toolbar relative mt-[2.25px] mb-0 flex h-7 w-full shrink-0 items-center overflow-hidden bg-ui-background/70 text-sm font-bold text-ui-white'
+    const leftContent = toolbarLeft.cloneNode(true) as HTMLElement
+    leftContent.style.minWidth = '0'
+    leftContent.style.overflow = 'hidden'
+    // 모바일 캡처에서는 ALL STOCK과 겹치지 않도록 MAP 페이지 라벨을 숨긴다.
+    leftContent.querySelector('.font-roboto-latin > span.absolute')?.remove()
+    toolbar.append(leftContent)
+    mobileCapture.querySelector('[data-map-mobile-toolbar-placeholder]')?.replaceWith(toolbar)
+
+    // 캡처 폭에 따라 flex 레이아웃이나 이미지 변환 과정에서 각 칩의 높이가 달라 보이지 않도록
+    // 화면 툴바와 같은 높이를 인라인으로 고정한다. 배지는 폭이 좁아도 줄어들지 않는다.
+    toolbar.querySelectorAll<HTMLElement>('.toolbar-badge, .toolbar-badge-control, [data-toolbar-session-chip]').forEach(badge => {
+      badge.style.boxSizing = 'border-box'
+      badge.style.height = '26.25px'
+      badge.style.minHeight = '26.25px'
+      badge.style.maxHeight = '26.25px'
+      badge.style.flexShrink = '0'
+    })
+  }
+}
+
 export default function MapPage() {
   const { pathname, search, hash } = useLocation()
   const isLoggedIn = useIsLoggedIn()
@@ -502,7 +532,7 @@ export default function MapPage() {
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
               항상 같은 폭을 유지하게 한다 — 내부 콘텐츠(트리맵)가 넘치면 이 컬럼 안에서만 처리된다. */}
-          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
             {/* 왼쪽은 마켓·기간·시계·시간대 묶음, 오른쪽 끝은 프로필(사진 + 거래소·MARKETRY). 두 묶음이 같은 줄에서 서로 밀어내므로
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
@@ -559,7 +589,7 @@ export default function MapPage() {
               <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>{modeStatusText}</div>
             </Toolbar>
             <div className="flex min-h-0 flex-1">
-              <div data-map-mobile-capture className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               {/* NXT 단독 시간대 공지 — 그 시간대에만 보여주는 알림이다. 닫을 수 있고, 시간대가 끝났다가 다시 오면 또 나온다. */}
               {/* 지도가 그려진 뒤에만 보인다 — 로딩 중이거나 불러오지 못했을 때는 가운데 로딩 원 위에 겹쳐 뜨지 않게 한다. */}
               {nxtOnly && nxtOnlyWindow && !isNxtNoticeDismissed && !isLoading && !isError && (
@@ -688,6 +718,59 @@ export default function MapPage() {
               </div>
               </div>
             </div>
+          {isShareOpen && !isLoading && !isError && visibleItems.length > 0 && (
+            <div
+              aria-hidden="true"
+              data-map-mobile-capture-frame
+              style={{ opacity: 0, width: 'calc(100dvh * 3 / 4 + 8px)', height: 'calc(100dvh + 8px)', padding: '4px', boxSizing: 'border-box' }}
+              className="pointer-events-none absolute left-0 top-0 z-[2] bg-ui-background"
+            >
+            <div
+              aria-hidden="true"
+              data-map-mobile-capture
+              style={{ opacity: 0, width: '100%', height: '100%' }}
+              className="flex flex-col bg-ui-background"
+            >
+              <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[2.25px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
+              <div aria-hidden="true" className="h-2 shrink-0" />
+              {path.length > 0 && (
+                <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
+                  <span className={BREADCRUMB_LINK_CLASS}>{MARKET_LABEL[market]}<BreadcrumbBackIcon /></span>
+                  {path.map((name, index) => (
+                    <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS}>{name}{index < path.length - 1 && <BreadcrumbBackIcon />}</span>
+                  ))}
+                </nav>
+              )}
+              <div className="flex min-h-0 flex-1 flex-col">
+                <Treemap
+                  groups={groups}
+                  selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
+                  depth={path.length}
+                  onSelectSector={() => {}}
+                  onExcludeSector={() => {}}
+                  heightClassName="min-h-0 flex-1"
+                  marketValueDepthRange={marketValueDepthRange}
+                  weightedAvgDepthRange={weightedAvgDepthRange}
+                  simpleAvgDepthRange={simpleAvgDepthRange}
+                  upDownCountDepthRange={upDownCountDepthRange}
+                  boxSizeMarketCapRatio={boxSizeMarketCapRatio}
+                  stretch={mapStretchFor(settingsModalProps.taxonomy)}
+                  tile={mapTileMethod()}
+                  canExclude={false}
+                  colorScale={colorScale}
+                  labelMinAreaPercent={boxLabelMinAreaPercent}
+                  stockLabelMode={stockLabelMode}
+                  stockPopupOnHover={false}
+                  decimalPlaces={decimalPlaces}
+                  topPickSectorKeys={topPickSectorKeys}
+                  strongIndustryColor={strongIndustryColor}
+                  zoomOutRequestDepth={null}
+                  onZoomOutComplete={() => {}}
+                />
+              </div>
+            </div>
+            </div>
+          )}
           </div>
           {/* 설정창 위쪽 여백 4px — 헤더를 위로 3px 늘리고 아래 구분선 위치는 유지한다. */}
           <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
@@ -766,7 +849,7 @@ export default function MapPage() {
           copyLabel={copyLabel}
           isCopying={copyStatus === 'copying'}
           screenshotTarget={screenshotRef.current}
-          mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture]', mode: 'element' }}
+          mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }}
         />
       )}
     </div>

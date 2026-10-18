@@ -80,7 +80,7 @@ function SortableHomeFrame({ title, captureId, index, children, captureUntil, hi
             aria-label={`${title}, 끌어서 위치 이동`}
             {...attributes}
             {...listeners}
-            className="home-frame-header group w-full cursor-grab border-0 bg-transparent p-0 text-center active:cursor-grabbing focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--brand)]"
+            className="home-frame-header group w-full cursor-grab border-0 bg-transparent p-0 text-left active:cursor-grabbing focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--brand)]"
           >
             <FrameTitleBadge title={title} color={highlightColor} />
           </button>

@@ -189,7 +189,7 @@ export default function SectorBox({
           이 섹터 몫의 헤더 공간을 아예 안 비워둔다). 그 대신 실제 하위 섹터들이 이 자리를 이어받아
           맨 위(depth 0) 취급을 받는다(아래 subSectors map의 depth 전달 참고). isSelf는 헤더가 아예
           없어 우클릭도 못 받으므로(팝업 대상이 될 수 없음) hover 오버레이도 같이 생략한다. */}
-      {!sector.isSelf && (
+      {!sector.isSelf && sector.height >= sectorHeaderHeight(depth) && (
         <>
           {/* 헤더를 hover(또는 팝업이 뜬 채 고정)했을 때 섹터 박스 전체를 옅게 덮는 오버레이. 표시
               여부는 순수 CSS(:has())로 판정한다(index.css) — 헤더 :hover/:focus-visible 자체를
