@@ -170,30 +170,27 @@ function revealMobileCapture(cloned: Node) {
       refreshButton.style.pointerEvents = 'none'
     }
     // 모바일 캡처에서는 종가·누적·별도 중 현재 기준만 남기고, 세 버튼 중 첫 칸에 둔다.
-    const changeRateGroup = leftContent.querySelector<HTMLElement>('[role="radiogroup"][aria-label="등락률 기준"]')
-    if (changeRateGroup) {
-      const selectedOption = changeRateGroup.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]')
-      if (selectedOption) {
-        const originalWidth = Number.parseFloat(getComputedStyle(changeRateGroup).width) || 120
-        const selectedWidth = (originalWidth - 6) / 3
-        const selectedButton = selectedOption.cloneNode(true) as HTMLButtonElement
-        // 선택 상태만 남기는 정적 칩을 새로 만든다. 원본 그룹은 선택 배경을 500ms 이동시키므로
-        // 복제 DOM에서 칩만 옮기면 글자와 보라색 배경의 위치가 어긋난다.
-        selectedButton.classList.add('toolbar-badge')
-        selectedButton.removeAttribute('data-hint')
-        selectedButton.style.width = `${selectedWidth}px`
-        selectedButton.style.minWidth = `${selectedWidth}px`
-        selectedButton.style.height = '26.25px'
-        selectedButton.style.minHeight = '26.25px'
-        selectedButton.style.boxSizing = 'border-box'
-        selectedButton.style.display = 'flex'
-        selectedButton.style.alignItems = 'center'
-        selectedButton.style.justifyContent = 'center'
-        selectedButton.style.backgroundColor = 'var(--sub-purple)'
-        selectedButton.style.pointerEvents = 'none'
-        selectedButton.style.transition = 'none'
-        changeRateGroup.replaceWith(selectedButton)
-      }
+    const changeRateSelector = leftContent.querySelector<HTMLElement>('[data-change-rate-selector]')
+    const changeRateButton = changeRateSelector?.querySelector<HTMLButtonElement>('[data-change-rate-mode]')
+    if (changeRateButton && changeRateSelector) {
+      leftContent.querySelector('[aria-label="등락률 기준 선택"]')?.remove()
+      const selectedButton = changeRateButton.cloneNode(true) as HTMLButtonElement
+      // 모바일 캡처에는 현재 기준만 정적 칩으로 남기고 메뉴 동작은 제거한다.
+      selectedButton.classList.add('toolbar-badge')
+      selectedButton.removeAttribute('aria-expanded')
+      selectedButton.removeAttribute('aria-haspopup')
+      selectedButton.style.width = '38px'
+      selectedButton.style.minWidth = '38px'
+      selectedButton.style.height = '26.25px'
+      selectedButton.style.minHeight = '26.25px'
+      selectedButton.style.boxSizing = 'border-box'
+      selectedButton.style.display = 'flex'
+      selectedButton.style.alignItems = 'center'
+      selectedButton.style.justifyContent = 'center'
+      selectedButton.style.backgroundColor = 'var(--sub-purple)'
+      selectedButton.style.pointerEvents = 'none'
+      selectedButton.style.transition = 'none'
+      changeRateSelector.replaceWith(selectedButton)
     }
     // 모바일 캡처에서는 ALL STOCK과 겹치지 않도록 MAP 페이지 라벨을 숨긴다.
     leftContent.querySelector('.font-roboto-latin > span.absolute')?.remove()

@@ -5,7 +5,6 @@ import { type TradingSession } from '@/utils/tradingWindow'
 import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
-import { SlidingHighlight } from '@/components/SlidingHighlight'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
 // 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·누적·별도 토글의 선택 칸에도 쓴다).
@@ -79,7 +78,6 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           aria-label="시장 시간대 안내"
           className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
-          <p className="mb-1.5 px-1 text-xs font-medium text-ui-text">시장 시간대</p>
           {SESSION_GUIDE.map(row => (
             <div key={row.session} className="flex items-center justify-between gap-4 px-2 py-1">
               <span className="flex items-center">
@@ -100,59 +98,104 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
   )
 }
 
-// 등락률 기준 토글 — 종가(그날 정규장 종가 지도) / 누적(전일 종가 대비) / 별도(당일 종가 대비). 애프터 마켓 시작부터 다음 프리 마켓 개장 전까지만 보인다.
-// 시간외 스냅샷이 아직 없으면 별도는 잠긴다. 시장 시간대 말머리는 버튼의 표시 여부와 무관하게 유지한다.
-// 버튼에 커서를 올리면 공용 툴팁(data-hint)이 뜬다. 잠긴 별도도 올려서 설명을 볼 수 있다.
+const CHANGE_RATE_OPTIONS = [
+  { value: 'close' as const, label: '종가', titlePrefix: '메인 마켓 ', description: '전일 종가 대비 당일 종가' },
+  { value: 'daily' as const, label: '누적', titlePrefix: '애프터 마켓 ', description: '전일 종가 대비 현재가' },
+  { value: 'afterHours' as const, label: '별도', titlePrefix: '애프터 마켓 ', description: '당일 종가 대비 현재가' },
+]
+
+function ChangeRateModeSelector({ basis, selectable, onChange }: {
+  basis: ChangeRateChoice
+  selectable: boolean
+  onChange: (basis: ChangeRateChoice) => void
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const rootRef = useRef<HTMLSpanElement>(null)
+  const options = CHANGE_RATE_OPTIONS.map(option => ({ ...option, locked: option.value === 'afterHours' && !selectable }))
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false)
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false)
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen])
+
+  return (
+    <span ref={rootRef} data-change-rate-selector className="relative z-40 flex shrink-0">
+      <ToolbarChip bare>
+        <button
+          type="button"
+          data-change-rate-mode
+          aria-label={`등락률 기준: ${options.find(option => option.value === basis)?.label ?? '누적'}`}
+          aria-expanded={isOpen}
+          aria-haspopup="dialog"
+          onClick={() => setIsOpen(open => !open)}
+          className={`toolbar-badge-control ${FONT_BAR_TIME} flex h-6 items-center border-0 px-1.5 font-semibold text-[var(--sub-purple)] outline-none transition-colors ${isOpen ? 'bg-[var(--ui-control)]' : 'bg-transparent hover:bg-[var(--ui-control)] focus-visible:bg-[var(--ui-control)]'}`}
+        >
+          {options.find(option => option.value === basis)?.label ?? '누적'}
+        </button>
+      </ToolbarChip>
+      {isOpen && (
+        <div
+          role="dialog"
+          aria-label="등락률 기준 선택"
+          className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-[3px] text-sm font-normal tracking-normal text-ui-white shadow-xl"
+        >
+          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col gap-0.5">
+            {options.map(option => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={basis === option.value}
+                aria-disabled={option.locked}
+                onClick={() => {
+                  if (option.locked) return
+                  onChange(option.value)
+                  setIsOpen(false)
+                }}
+                className={`flex w-full items-center justify-between gap-4 rounded-[5px] border-0 px-2 py-1 text-left text-ui-white transition-colors ${
+                  basis === option.value
+                    ? 'bg-[var(--brand-surface)]'
+                    : option.locked
+                      ? 'bg-transparent cursor-not-allowed opacity-40'
+                      : 'bg-transparent hover:bg-ui-white/10'
+                }`}
+              >
+                <span className="shrink-0 text-ui-white">
+                  {option.titlePrefix}<span className="text-[var(--sub-purple)]">{option.label}</span>
+                </span>
+                <span className="w-[18ch] shrink-0 whitespace-nowrap text-right">{option.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </span>
+  )
+}
+
+// 등락률 기준을 단일 버튼으로 통합하고, 눌렀을 때 설명과 함께 세 선택지를 안내한다.
 export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
   basis: ChangeRateChoice
   visible: boolean
   selectable: boolean
   onChange: (basis: ChangeRateChoice) => void
 }) {
-  const options = [
-    { value: 'close' as const, label: '종가', help: '메인 마켓 종가\n(전일 종가 대비 당일 종가)', locked: false },
-    { value: 'daily' as const, label: '누적', help: '애프터 마켓 누적\n(전일 종가 대비 현재가)', locked: false },
-    { value: 'afterHours' as const, label: '별도', help: '애프터 마켓 별도\n(당일 종가 대비 현재가)', locked: !selectable },
-  ]
-  // 설정창 선택 버튼과 같은 모양 — 틀 없이 직각 직각 칩 3개(간격 3px)이고, 선택 칸의 색 채움이 칩 사이를 미끄러진다.
-  const selectedIndex = options.findIndex(option => option.value === basis)
-
   return (
     <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-      {/* 종가 지도는 정규장이 끝난 시점의 지도라서, 지금이 애프터 마켓이어도 시간대 글자는 "마켓 종료"로 둔다. 시각으로 계산하지 않아 개장·마감이 달라지는 날에도 맞다. */}
+      {/* 종가 지도는 정규장이 끝난 시점의 지도라서, 지금이 애프터 마켓이어도 시간대 글자는 "마켓 종료"로 둔다. */}
       <TradingSessionChip session={basis === 'close' ? '마켓 종료' : undefined} />
-      {visible && <div
-        role="radiogroup"
-        aria-label="등락률 기준"
-        className="toolbar-badge relative grid h-6 w-[120px] shrink-0 grid-cols-3 gap-[3px] overflow-visible"
-      >
-        <SlidingHighlight count={options.length} index={selectedIndex} gap={3} square baseColor="var(--ui-panel)" fillColor={SESSION_DOT_COLOR['애프터 마켓']} />
-        {options.map(option => (
-          // disabled를 쓰지 않는다 — 비활성 버튼은 마우스 이벤트가 없어서 잠긴 별도의 설명을 볼 수 없다. 잠긴 동안은 값만 안 바꾼다.
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={basis === option.value}
-            aria-disabled={option.locked}
-            onClick={() => {
-              if (!option.locked && basis !== option.value) onChange(option.value)
-            }}
-            // 설명은 공용 툴팁(HoverHintLayer)이 띄운다 — 잠긴 별도도 aria-disabled라 올리면 설명이 보인다.
-            data-hint={option.help}
-            // 안 선택 글자는 옆 거래 세션 글자(text-ui-muted)와 같은 회색이다. 잠긴 별도는 흐리게 해서 잠긴 것을 알아보게 한다.
-            className={`toolbar-badge-control ${FONT_BAR_TIME} relative z-10 h-6 min-w-0 border-0 bg-transparent px-0 font-semibold transition-colors duration-[500ms] ${
-              basis === option.value
-                ? 'text-ui-surface'
-                : option.locked
-                  ? 'cursor-not-allowed text-ui-muted opacity-35'
-                  : 'text-ui-muted hover:text-ui-white'
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>}
+      {visible && <ChangeRateModeSelector basis={basis} selectable={selectable} onChange={onChange} />}
     </div>
   )
 }
