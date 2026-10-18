@@ -120,7 +120,7 @@ export default function RankColumns({
               return (
                 <div key={item.key} className="relative h-full min-w-0" style={{ containerType: 'inline-size' }}>
                   <div
-                    className="absolute bottom-0 left-[18%] right-[18%] rounded-sm"
+                    className="absolute bottom-0 left-[18%] right-[18%] rounded-sm border border-ui-control"
                     style={{
                       backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                       height: `${heightPercent}%`,

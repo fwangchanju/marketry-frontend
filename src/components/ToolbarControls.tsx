@@ -69,7 +69,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           aria-expanded={isOpen}
           aria-haspopup="dialog"
           onClick={() => setIsOpen(open => !open)}
-          className={`flex h-6 items-center border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-[var(--ui-control-hover)] focus-visible:bg-[var(--ui-control-hover)] ${isOpen ? 'bg-[var(--ui-control-hover)]' : 'bg-transparent'}`}
+          className={`flex h-6 items-center border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-[var(--ui-control)] focus-visible:bg-[var(--ui-control)] ${isOpen ? 'bg-[var(--ui-control)]' : 'bg-transparent'}`}
         >
           <TradingSessionIndicator session={sessionOverride} />
         </button>

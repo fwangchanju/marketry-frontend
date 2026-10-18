@@ -306,6 +306,7 @@ export default function CustomPage() {
           <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel
               pageLabel="Custom"
+              plainTabLabel={mode === 'stock' ? '종목' : '업종'}
               stockCountLabel={countLabel}
               // 저장·초기화는 기능 검토 전 임시 숨김. 재요청 시 새 버튼을 만들지 말고 이 옵션을 true로 바꿔 기존 버튼을 복원한다.
               showPreferenceActions={false}

@@ -1,4 +1,7 @@
-import { Fragment, useMemo, useRef, useState } from 'react'
+import { Fragment, useMemo, useRef, useState, type ReactNode } from 'react'
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -26,6 +29,7 @@ import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useMarketNotices } from '@/hooks/useMarketNotices'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { screenshotElementToDownload, screenshotFileName, downloadDataUrl } from '@/utils/screenshotToDownload'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toSnapshotDateLabel, toPctSigned } from '@/utils/format'
@@ -58,6 +62,37 @@ const NOTICE_TYPES = [
   { type: 'TRADING_SUSPENSION', label: '거래 정지', showItems: false, badgeClass: 'bg-[var(--brand-surface-dark)]', countLabel: '거래 정지 중', countKey: 'currentSuspensionCount', valueKey: 'currentSuspensionMarketValue' },
 ] as const
 
+const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
+const DEFAULT_HOME_FRAME_ORDER = ['시장 지도', '그룹 등락률 (%)', '시장 요약']
+
+function SortableHomeFrame({ title, index, children, captureUntil }: { title: string; index: number; children: ReactNode; captureUntil?: string }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
+  return (
+    <section
+      ref={setNodeRef}
+      data-capture-until={captureUntil}
+      style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.6 : undefined }}
+      className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'} ${isDragging ? 'cursor-grabbing' : ''}`}
+    >
+      <div className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-3' : index === 2 ? 'pl-3 pr-0' : 'px-3'}`}>
+        <h2 className="relative z-[6] m-0 flex h-[18px] shrink-0 items-center justify-start">
+          <button
+            ref={setActivatorNodeRef}
+            type="button"
+            aria-label={`${title}, 끌어서 위치 이동`}
+            {...attributes}
+            {...listeners}
+            className="home-frame-header group w-full cursor-grab border-0 bg-transparent p-0 text-left active:cursor-grabbing focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--brand)]"
+          >
+            <FrameTitleBadge title={title} className="group-hover:text-ui-white" />
+          </button>
+        </h2>
+        {children}
+      </div>
+    </section>
+  )
+}
+
 export default function MarketSummaryPage() {
   // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
@@ -74,6 +109,21 @@ export default function MarketSummaryPage() {
   // 오르내림 숫자는 지도·그룹 순위와 같은 색 체계의 가장 진한 단계 색을 쓴다(색 구간을 바꿔도 같이 바뀐다). 보합·값 없음은 본문 회색이다.
   const rateColorStyle = (changeRate: number | null) => (changeRate === null || changeRate === 0 ? undefined : { color: resolveTreemapExtremeColor(changeRate, colorScale) })
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [homeFrameOrder, setHomeFrameOrder] = useLocalPersistedState(HOME_FRAME_ORDER_KEY, DEFAULT_HOME_FRAME_ORDER)
+  const frameSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+  const safeHomeFrameOrder = [
+    ...homeFrameOrder.filter((title, index) => DEFAULT_HOME_FRAME_ORDER.includes(title) && homeFrameOrder.indexOf(title) === index),
+    ...DEFAULT_HOME_FRAME_ORDER.filter(title => !homeFrameOrder.includes(title)),
+  ]
+  const handleFrameDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return
+    const from = safeHomeFrameOrder.indexOf(String(active.id))
+    const to = safeHomeFrameOrder.indexOf(String(over.id))
+    if (from >= 0 && to >= 0) setHomeFrameOrder(arrayMove(safeHomeFrameOrder, from, to))
+  }
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
 
@@ -272,6 +322,8 @@ export default function MarketSummaryPage() {
             <div className="flex min-h-0 min-w-0 flex-1">
             {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서(지도 아래 약 15px), 캡처 중에는 스크롤을 풀어 둔다. */}
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
+            <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
+            <SortableContext items={safeHomeFrameOrder} strategy={horizontalListSortingStrategy}>
             <div className="flex min-h-0 min-w-full flex-1 bg-ui-background">
             {[
               {
@@ -382,19 +434,14 @@ export default function MarketSummaryPage() {
                   </div>
                 ),
               },
-            ].map((frame, frameIndex) => (
-              <section key={frame.title} data-capture-until={frame.title === '그룹 등락률 (%)' ? '' : undefined} className={`relative flex h-full min-w-[320px] flex-col bg-ui-background ${frameIndex === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}>
-                {/* 안쪽 여백은 양 끝(첫 틀의 왼쪽·마지막 틀의 오른쪽)에는 두지 않고 틀 사이(구분선 양옆)에만 12px 둔다. 그래서 양 끝 틀은 한쪽 여백(12px), 가운데 틀은 양쪽 여백(24px)을 가진다. 틀(section) 폭을 같게 두면 가운데 내용만 12px 좁아지므로, 양 끝 틀의 폭을 (전체 ÷ 3 − 4px)로 정해 세 틀의 내용 폭을 같게 한다. 위아래 여백은 없다. */}
-                <div className={`flex min-h-0 flex-1 flex-col bg-ui-background ${frameIndex === 0 ? 'pl-0 pr-3' : frameIndex === 2 ? 'pl-3 pr-0' : 'px-3'}`}>
-                  {/* 세 틀의 제목 줄(18px, 지도 페이지 섹터 헤더와 같은 높이). 본문은 제목 줄 바로 아래에서 시작해 지도 페이지 첫 종목 박스와 같은 높이에 놓인다. */}
-                  <h2 className="m-0 flex h-[18px] shrink-0 items-center justify-start">
-                    <FrameTitleBadge title={frame.title} />
-                  </h2>
-                  {frame.body}
-                </div>
-              </section>
+            ].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title)).map((frame, frameIndex) => (
+              <SortableHomeFrame key={frame.title} title={frame.title} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined}>
+                {frame.body}
+              </SortableHomeFrame>
             ))}
             </div>
+            </SortableContext>
+            </DndContext>
             </div>
             </div>
             )}
@@ -411,6 +458,8 @@ export default function MarketSummaryPage() {
         <div className={`flex shrink-0 pt-[7px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel
             pageLabel="Home"
+            plainTabLabel="요약"
+            plainTabIcon="home"
             {...settingsModalProps}
             isOpen={isSettingsOpen}
             onOpenChange={setIsSettingsOpen}
