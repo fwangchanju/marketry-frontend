@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTaxonomySelection } from '@/hooks/useTaxonomySelection'
 import { FLASH_HOLD_MS } from '@/components/numberEffectTiming'
 
@@ -24,19 +24,24 @@ export default function KindBadge({ kind, onDark = false, className = '' }: { ki
 // 슬라이더처럼 연속으로 바뀌는 동안은 청록색을 유지하고(숫자는 지금 보이는 값에서 새 목표로 이어서 움직인다), 멈춘 뒤 1.5초 지나면 원래 색으로 돌아온다.
 const FLASH_SUPPRESS_AFTER_TAXONOMY_MS = 1500
 const COUNT_TWEEN_MS = 1000
+// 사용자 선택: 숫자가 바뀌기 전 30% 확대하고 밝게 강조한다.
+const COUNT_CUE_MS = 200
 
 function useCountChange(numerator: string, denominator: string) {
   const [taxonomy] = useTaxonomySelection()
   const [isFlashing, setIsFlashing] = useState(false)
+  const [isCueVisible, setIsCueVisible] = useState(false)
   // 움직이는 중에 보여줄 숫자. null이면 받은 숫자를 그대로 보여준다.
   const [tweenValue, setTweenValue] = useState<number | null>(null)
   const previous = useRef<{ numerator: string; denominator: string; taxonomy: string } | null>(null)
   const suppressUntil = useRef(0)
   const timer = useRef<number | undefined>(undefined)
+  const cueTimer = useRef<number | undefined>(undefined)
+  const cueUntil = useRef(0)
   const frame = useRef<number | undefined>(undefined)
   const shownValue = useRef<number | null>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const before = previous.current
     previous.current = { numerator, denominator, taxonomy }
     if (!before) return
@@ -62,6 +67,12 @@ function useCountChange(numerator: string, denominator: string) {
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 값이 바뀐 순간에만 켜고 타이머로 끄는 일회성 시각 효과라 렌더 중에 계산할 수 없다
     setIsFlashing(true)
+    if (frame.current === undefined) {
+      setIsCueVisible(true)
+      cueUntil.current = performance.now() + COUNT_CUE_MS
+      window.clearTimeout(cueTimer.current)
+      cueTimer.current = window.setTimeout(() => setIsCueVisible(false), COUNT_CUE_MS)
+    }
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => setIsFlashing(false), FLASH_HOLD_MS)
 
@@ -72,9 +83,12 @@ function useCountChange(numerator: string, denominator: string) {
       return
     }
     if (frame.current !== undefined) window.cancelAnimationFrame(frame.current)
-    const startedAt = performance.now()
+    // 전환 신호가 끝날 때까지 이전 숫자를 유지한다. 연속 조절 중에는 효과를 반복하지 않는다.
+    shownValue.current = from
+    setTweenValue(Math.round(from))
+    const startedAt = Math.max(performance.now(), cueUntil.current)
     const step = (now: number) => {
-      const progress = Math.min(1, (now - startedAt) / COUNT_TWEEN_MS)
+      const progress = Math.max(0, Math.min(1, (now - startedAt) / COUNT_TWEEN_MS))
       if (progress >= 1) {
         frame.current = undefined
         shownValue.current = null
@@ -91,9 +105,10 @@ function useCountChange(numerator: string, denominator: string) {
 
   useEffect(() => () => {
     window.clearTimeout(timer.current)
+    window.clearTimeout(cueTimer.current)
     if (frame.current !== undefined) window.cancelAnimationFrame(frame.current)
   }, [])
-  return { isFlashing, shownNumerator: tweenValue === null ? numerator : String(tweenValue) }
+  return { isFlashing, isCueVisible, shownNumerator: tweenValue === null ? numerator : String(tweenValue) }
 }
 
 // "449/2741종목" → "449/2741 [종목]"(숫자가 앞, 배지가 바로 뒤). align이 end면 숫자와 배지를 칸의 오른쪽 끝에 붙인다.
@@ -101,12 +116,12 @@ function useCountChange(numerator: string, denominator: string) {
 export function CountLabelWithBadge({ label, alignEnd = false }: { label: string; alignEnd?: boolean }) {
   const match = /^(.*?)(종목|업종)$/.exec(label)
   const [numerator = '', denominator = ''] = (match?.[1] ?? '').replaceAll(',', '').split('/')
-  const { isFlashing, shownNumerator } = useCountChange(numerator, denominator)
+  const { isFlashing, isCueVisible, shownNumerator } = useCountChange(numerator, denominator)
   if (!match) return <>{label}</>
   return (
     <span className={`items-center gap-1.5 ${alignEnd ? 'flex w-full justify-end' : 'inline-flex'}`}>
       <span>
-        <span className={`tabular-nums transition-colors duration-500 ${isFlashing ? 'text-[var(--brand)]' : ''}`}>{shownNumerator}</span>
+        <span className={`inline-block origin-right tabular-nums transition-[transform,color] ease-out motion-reduce:transform-none ${isCueVisible ? 'scale-[1.3] font-bold text-ui-white duration-150' : `scale-100 duration-300 ${isFlashing ? 'text-[var(--brand)]' : ''}`}`}>{shownNumerator}</span>
         {denominator && `/${denominator}`}
       </span>
       <KindBadge kind={match[2] as Kind} onDark />
