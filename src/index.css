@@ -203,14 +203,8 @@ html, body, #root {
   column-gap: 4px;
 }
 
-/* 배지 윗선과 툴바·본문 위치를 유지하면서 아래쪽만 1.5px 늘린다. */
-.main-toolbar .toolbar-badge,
-.main-toolbar .toolbar-badge-control {
-  height: calc(1.5rem + 1.5px);
-}
-
 .main-toolbar .toolbar-badge {
-  margin-bottom: -1.5px;
+  margin-bottom: -2.25px;
   transform: translateY(-0.25px);
 }
 
@@ -844,6 +838,12 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 
 @layer utilities {
+  /* h-6와 같은 유틸리티보다 우선 적용해 배지 아래쪽을 툴바 하단에 맞춘다. */
+  .main-toolbar .toolbar-badge,
+  .main-toolbar .toolbar-badge-control {
+    height: calc(1.5rem + 2.25px);
+  }
+
   /* 하이라이트는 마우스가 올라가는 순간 즉시 켜지고(아래 :hover의 transition: none), 벗어날 때만 짧게 사라진다.
      올라갈 때도 서서히 켜지게 하면(0.15초) 마우스를 빠르게 움직일 때 색이 늦게 따라오는 것처럼 보인다. */
   .treemap-stock {

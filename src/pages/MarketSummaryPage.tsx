@@ -63,7 +63,7 @@ const NOTICE_TYPES = [
 const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
 const DEFAULT_HOME_FRAME_ORDER = ['시장 요약', '시장 지도', '그룹 등락률 (%)']
 
-function SortableHomeFrame({ title, captureId, index, children, captureUntil }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string }) {
+function SortableHomeFrame({ title, captureId, index, children, captureUntil, highlightColor }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; highlightColor: string }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
   return (
     <section
@@ -73,16 +73,16 @@ function SortableHomeFrame({ title, captureId, index, children, captureUntil }: 
       className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'} ${isDragging ? 'cursor-grabbing' : ''}`}
     >
       <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-3' : index === 2 ? 'pl-3 pr-0' : 'px-3'}`}>
-        <h2 className="relative z-[6] m-0 flex h-[18px] shrink-0 items-center justify-start">
+        <h2 className="relative z-[6] m-0 flex h-[18px] shrink-0 items-center justify-center">
           <button
             ref={setActivatorNodeRef}
             type="button"
             aria-label={`${title}, 끌어서 위치 이동`}
             {...attributes}
             {...listeners}
-            className="home-frame-header group w-full cursor-grab border-0 bg-transparent p-0 text-left active:cursor-grabbing focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--brand)]"
+            className="home-frame-header group w-full cursor-grab border-0 bg-transparent p-0 text-center active:cursor-grabbing focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--brand)]"
           >
-            <FrameTitleBadge title={title} className="group-hover:text-ui-white" />
+            <FrameTitleBadge title={title} color={highlightColor} />
           </button>
         </h2>
         {children}
@@ -422,7 +422,7 @@ export default function MarketSummaryPage() {
                 ),
               },
             ].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title)).map((frame, frameIndex) => (
-              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined}>
+              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} highlightColor={strongIndustryColor}>
                 {frame.body}
               </SortableHomeFrame>
             ))}
