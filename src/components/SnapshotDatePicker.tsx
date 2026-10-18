@@ -139,17 +139,18 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
   ]
   // 모든 달을 6주 높이로 고정해 월 이동 시 달력 팝업 높이가 흔들리지 않게 한다.
   const cells: (number | null)[] = [...monthCells, ...Array.from({ length: 42 - monthCells.length }, () => null)]
-  // 지도 데이터가 없는 과거 평일만 거래 일정을 조회한다. 실제 휴장으로 확인된 날에만 별도 색을 쓴다.
+  // 전 거래일 데이터가 연결된 휴장일도 있으므로, 종가 지도 유무와 무관하게 평일 일정을 확인한다.
   const holidayCandidates = cells.flatMap(day => {
     if (day === null) return []
     const date = `${monthKey}-${String(day).padStart(2, '0')}`
     const weekday = new Date(`${date}T00:00:00`).getDay()
-    return !closingTimeByDate.has(date) && weekday >= 1 && weekday <= 5 && (liveDate === null || date < liveDate) ? [date] : []
+    return weekday >= 1 && weekday <= 5 && (liveDate === null || date <= liveDate) ? [date] : []
   })
   const holidaySchedules = useQueries({
     queries: holidayCandidates.map(date => ({
       queryKey: treemapKeys.tradingSchedule(date),
       queryFn: () => getMarketTradingSchedule(date),
+      retry: 1,
       ...INFREQUENT_DATA_CACHE,
     })),
   })
@@ -158,6 +159,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
     ...knownPublicHolidayDates,
     ...holidaySchedules.flatMap((result, index) => result.data?.status === 'HOLIDAY' ? [holidayCandidates[index]] : []),
   ])
+  const pendingScheduleDates = new Set(holidayCandidates.filter((_, index) => holidaySchedules[index].isPending))
 
   return (
     <div className="relative w-60 shrink-0">
@@ -204,7 +206,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
               const date = `${monthKey}-${String(day).padStart(2, '0')}`
               const hasClosingMap = closingTimeByDate.has(date)
               // 휴장일은 전 거래일 지도 데이터가 연결돼 있어도 선택할 수 없게 한다.
-              const selectable = !holidayDates.has(date) && isSelectable(date, hasClosingMap, hasPreviousDay(date))
+              const selectable = !holidayDates.has(date) && !pendingScheduleDates.has(date) && isSelectable(date, hasClosingMap, hasPreviousDay(date))
               const selected = isSelected(date)
               const weekday = (firstWeekday + day - 1) % 7
               // 주말은 항상 거래 휴장일이고, 평일은 서버 거래 일정이 HOLIDAY라고 확인된 경우에만 휴장 색을 쓴다.

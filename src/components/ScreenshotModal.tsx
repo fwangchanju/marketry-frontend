@@ -28,6 +28,8 @@ export default function ScreenshotModal({
   frameCaptureOptions,
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
+  const [captureError, setCaptureError] = useState<string | null>(null)
+  const [captureAttempt, setCaptureAttempt] = useState(0)
   // 스크린샷 창은 모든 페이지에서 전체 화면(모니터) 캡처를 기본으로 연다.
   const [selectedCapture, setSelectedCapture] = useState<string | null>(null)
   const selectedFrame = frameCaptureOptions?.find(option => selectedCapture === `frame:${option.id}`)
@@ -51,13 +53,25 @@ export default function ScreenshotModal({
   }, [onClose])
 
   useEffect(() => {
-    if (!screenshotTarget) return
     // 스크린샷 작업이 무거워서 같은 프레임에서 바로 시작하면 모달이 뜨는 페인트 자체가 밀린다.
     // 두 번의 requestAnimationFrame으로 모달(+스피너)이 먼저 그려진 뒤에 스크린샷을 시작한다.
     let cancelled = false
+    let finished = false
     let rafId = 0
+    const failCapture = (message: string) => {
+      if (cancelled || finished) return
+      finished = true
+      cancelAnimationFrame(rafId)
+      setCaptureError(message)
+    }
+    const timeoutId = window.setTimeout(() => failCapture('캡처 시간이 초과되었습니다. 다시 시도해 주세요.'), 10_000)
     const captureWhenReady = () => {
-      if (cancelled) return
+      if (cancelled || finished) return
+      if (!screenshotTarget || (regionSelector && !screenshotTarget.querySelector(regionSelector))) {
+        window.clearTimeout(timeoutId)
+        failCapture('캡처할 영역이 없습니다.')
+        return
+      }
       // 모바일용 지도는 별도 크기로 다시 배치한다. ResizeObserver가 새 레이아웃을 계산할 때까지 기다린다.
       if (onCloneNode && !screenshotTarget.querySelector('[data-map-mobile-capture] [data-treemap-layout-ready="true"]')) {
         rafId = requestAnimationFrame(captureWhenReady)
@@ -65,10 +79,15 @@ export default function ScreenshotModal({
       }
       screenshotElementToDataUrl(screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding)
         .then(dataUrl => {
-          if (!cancelled) setPreviewSrc(dataUrl)
+          if (!cancelled && !finished) {
+            finished = true
+            window.clearTimeout(timeoutId)
+            setPreviewSrc(dataUrl)
+          }
         })
         .catch(() => {
-          if (!cancelled) setPreviewSrc(null)
+          window.clearTimeout(timeoutId)
+          failCapture('화면을 캡처하지 못했습니다. 다시 시도해 주세요.')
         })
     }
     const raf1 = requestAnimationFrame(() => {
@@ -76,19 +95,27 @@ export default function ScreenshotModal({
     })
     return () => {
       cancelled = true
+      window.clearTimeout(timeoutId)
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(rafId)
     }
-  }, [screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding])
+  }, [screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding, captureAttempt])
+
+  const retryCapture = () => {
+    setPreviewSrc(null)
+    setCaptureError(null)
+    setCaptureAttempt(attempt => attempt + 1)
+  }
 
   // 범위를 바꾸면 새 이미지를 찍는 동안 스피너를 보여 준다.
   const selectCapture = (next: string | null) => {
     if (next === selectedCapture) return
     setPreviewSrc(null)
+    setCaptureError(null)
     setSelectedCapture(next)
     const option = next === 'mobile' ? mobileRegionOption : frameCaptureOptions?.find(item => next === `frame:${item.id}`)
     const mode = next === 'mobile' ? mobileRegionOption?.mode : option && 'mode' in option ? option.mode ?? 'element' : undefined
-    const horizontalPadding = next === null ? mobileRegionOption?.monitorHorizontalPadding ?? 0 : 0
+    const horizontalPadding = next === null ? mobileRegionOption?.monitorHorizontalPadding ?? 4 : 0
     setPreviewRatio(elementRatio(screenshotTarget, option?.selector, mode, horizontalPadding))
   }
 
@@ -137,7 +164,7 @@ export default function ScreenshotModal({
             className={`flex items-center justify-center self-center ${fitWidth ? '' : 'h-[50dvh] w-[60vw]'}`}
             style={fitWidth && previewRatio ? { width: fitWidth, aspectRatio: previewRatio } : undefined}
           >
-            <Spinner showElapsed />
+            <Spinner showElapsed={!captureError} errorMessage={captureError ?? undefined} onRetry={captureError ? retryCapture : undefined} />
           </div>
         )}
         {/* 양끝 칸의 폭을 같게 유지해 문구 길이와 무관하게 복사 상태를 정중앙에 둔다.

@@ -16,6 +16,28 @@ export interface ColorScaleConfig {
   thresholds: ColorScaleThreshold[]
 }
 
+// 서버는 같은 등락률의 중복을 거부한다. 이동할 자리를 차지한 행을 먼저 옮긴 뒤 저장한다.
+export function orderThresholdSaves(
+  entries: ColorScaleThreshold[],
+  savedThresholds: ColorScaleThreshold[],
+  removedIds: number[],
+): ColorScaleThreshold[] {
+  const pending = [...entries]
+  const releasedIds = new Set(removedIds)
+  const ordered: ColorScaleThreshold[] = []
+  while (pending.length > 0) {
+    const index = pending.findIndex(entry => !savedThresholds.some(saved =>
+      saved.id !== undefined && saved.id !== entry.id && !releasedIds.has(saved.id)
+      && saved.thresholdPercent === entry.thresholdPercent,
+    ))
+    if (index === -1) throw new Error('등락률 구간의 저장 순서를 정할 수 없습니다.')
+    const [entry] = pending.splice(index, 1)
+    ordered.push(entry)
+    if (entry.id !== undefined) releasedIds.add(entry.id)
+  }
+  return ordered
+}
+
 // 기본 색상 규칙 — 파랑(음수)과 빨강(양수)은 같은 채도(60)와 같은 명도를 쓰고, 명도는 구간 순서대로 16·33·46·64로 오른다(기본 구간은 2/5/8/15%, 하락 파랑 228°·채도 60에 맞춰 상승 빨강도 채도 60).
 // 0%는 버튼·테두리(ui-control)와 같은 회색을 쓴다.
 // 범례는 하락 4칸 + 0% + 상승 4칸의 9칸이다.

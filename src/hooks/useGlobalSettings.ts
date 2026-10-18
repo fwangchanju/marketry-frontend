@@ -33,6 +33,7 @@ import { useMarketValueTierRange } from './useMarketValueTierRange'
 import { registerExcludedSector, unregisterExcludedSector } from '@/api/treemap'
 import {
   createDefaultColorScale,
+  orderThresholdSaves,
   fixedRankColor,
   DEFAULT_MINUS_THRESHOLDS,
   DEFAULT_ZERO_COLOR,
@@ -658,7 +659,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
         .map(entry => entry.id)
         .filter((id): id is number => id !== undefined && !retainedIds.has(id))
       const idsToDelete = Array.from(new Set([...removedIds, ...resolvedGroups.flatMap(group => group.losingIds)]))
-      const entriesToSave = resolvedGroups.filter(group => group.needsSave).map(group => group.entry)
+      const entriesToSave = orderThresholdSaves(
+        resolvedGroups.filter(group => group.needsSave).map(group => group.entry),
+        colorEditSnapshotRef.current?.thresholds ?? [],
+        idsToDelete,
+      )
 
       // 같은 thresholdPercent는 백엔드에서 중복 불가이므로, 충돌 행 삭제를 완료한 다음에 저장한다.
       await Promise.all(idsToDelete.map(id => deleteThresholdMutation.mutateAsync(id)))
