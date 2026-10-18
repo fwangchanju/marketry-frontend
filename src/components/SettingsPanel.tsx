@@ -1312,7 +1312,7 @@ export function SettingsAverageModeSection({
         <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준</span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
       </div>
-      <div className={enabled ? '' : 'opacity-35'}>
+      <div className={`settings-average-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
         <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
           <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[5px] border border-brand bg-brand-surface" />
@@ -1371,7 +1371,7 @@ export function SettingsBeforeMinutesSection({
         </span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="비교 그래프" hideLabel disabled={disabled} />
       </div>
-      <div className={enabled ? '' : 'opacity-35'}>
+      <div className={`settings-before-minutes-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>현재 등락률과 비교할 시점</SettingDescription>
         <div className="settings-slider-control mt-[18px]">
           <SingleValueSlider
@@ -1910,7 +1910,7 @@ export function SettingsStockPopupSection({
   onChangeStockPopupOnHover: (onHover: boolean) => void
 }) {
   return (
-    <div className="text-sm text-ui-white">
+    <div className="settings-plain-button-item h-[160px] text-sm text-ui-white">
       <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
         <span className="settings-plain-title">종목 정보</span>
         <SettingHelpBubble label="종목 정보" description={"업종 정보는 우클릭으로만\n열 수 있습니다."} />
@@ -1956,7 +1956,7 @@ function toWonLabel(won: number): string {
 // 관리자 페이지 미사용 탭의 "텍스트 표시 기준" — 지도 설정창 종목 박스 탭에서 옮겨 왔다. 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsTextThresholdSection({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
-    <div className="h-[160px] text-sm">
+    <div className="settings-text-threshold-item h-[160px] text-sm">
       <div className="flex max-w-[16rem] items-center justify-between">
         <span className="flex items-center text-left text-[15px] text-ui-white">
           <span className="settings-plain-title">텍스트 표시 기준</span>
@@ -2788,7 +2788,7 @@ export default function SettingsPanel({
                 <span className="max-w-full truncate font-bold">{section.label}</span>
                 <span
                   aria-hidden="true"
-                  className={`absolute inset-x-2 bottom-0 h-0.5 bg-brand transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
+                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 bg-brand transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
                 />
               </button>
             )
