@@ -572,8 +572,7 @@ export default function MapPage() {
                         helpText={SNAPSHOT_REFRESH_HELP}
                         minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                       >
-                        <ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
-                        <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} />
+                        <AnimatedClockLabel snapshotTime={data?.snapshotTime ?? null} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} />
                       </PageRefreshButton>
                     </ToolbarChip>
                   )}

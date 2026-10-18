@@ -69,7 +69,7 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
                 <div
                   role="dialog"
                   aria-label="제외 종목"
-                  className="absolute left-0 top-full z-50 mt-[7px] w-60 whitespace-normal rounded-md border border-ui-border bg-[var(--ui-panel)] p-3 text-sm font-normal tracking-normal text-ui-white shadow-xl"
+                  className="absolute left-0 top-full z-50 mt-1 w-60 whitespace-normal rounded-md border border-ui-border bg-[var(--ui-panel)] p-3 text-sm font-normal tracking-normal text-ui-white shadow-xl"
                 >
                   <p className="font-semibold">제외 종목 ({excludedStocks.length})</p>
                   <p className="mt-1 text-xs font-medium leading-relaxed text-ui-text">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>

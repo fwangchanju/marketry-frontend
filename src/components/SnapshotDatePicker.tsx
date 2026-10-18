@@ -502,7 +502,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
         <div
           role="dialog"
           aria-label="날짜 선택 달력"
-          className="absolute left-0 top-full z-50 mt-[7px] w-max rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
+          className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
           {/* 위쪽 줄: 왼쪽에 하루/기간 스위치, 오른쪽 끝에 실시간·최근일을 나란히 둔다(하루·기간 모드가 같은 배치). 거래일 수는 툴바의 날짜 옆에 둔다. */}
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-ui-border pb-2 text-[13px]">
