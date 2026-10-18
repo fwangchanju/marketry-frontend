@@ -50,7 +50,6 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
-import { screenshotElementToDownload, downloadDataUrl, screenshotFileName } from '@/utils/screenshotToDownload'
 import { limitDepth, flattenAllItems, type FilteredTreemapSectorNode } from '@/hooks/useFilteredTreemap'
 import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
 
@@ -139,7 +138,6 @@ function findRawNodeByPath(nodes: TreemapSectorNode[], path: string[]): TreemapS
 }
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
-type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 export default function MapPage() {
   const { pathname, search, hash } = useLocation()
@@ -217,7 +215,6 @@ export default function MapPage() {
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
-  const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   // NXT 안내 알림을 닫았는지 — 다른 분류으로 바꾸면 초기화돼서, NXT를 다시 고를 때 또 보인다.
   const [isNxtNoticeDismissed, setIsNxtNoticeDismissed] = useState(false)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
@@ -473,21 +470,8 @@ export default function MapPage() {
     }
   }
 
-  const handleDownload = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotRef.current) return
-    setDownloadStatus('downloading')
-    try {
-      if (previewSrc) downloadDataUrl(previewSrc, screenshotFileName('MAP'))
-      else if (screenshotRef.current) await screenshotElementToDownload(screenshotRef.current, screenshotFileName('MAP'))
-      setDownloadStatus('idle')
-    } catch {
-      setDownloadStatus('error')
-      setTimeout(() => setDownloadStatus('idle'), 2000)
-    }
-  }
 
   const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
-  const downloadLabel = downloadStatus === 'error' ? '다운로드 실패' : '다운로드'
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
@@ -575,7 +559,7 @@ export default function MapPage() {
               <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>{modeStatusText}</div>
             </Toolbar>
             <div className="flex min-h-0 flex-1">
-              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+              <div data-map-mobile-capture className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               {/* NXT 단독 시간대 공지 — 그 시간대에만 보여주는 알림이다. 닫을 수 있고, 시간대가 끝났다가 다시 오면 또 나온다. */}
               {/* 지도가 그려진 뒤에만 보인다 — 로딩 중이거나 불러오지 못했을 때는 가운데 로딩 원 위에 겹쳐 뜨지 않게 한다. */}
               {nxtOnly && nxtOnlyWindow && !isNxtNoticeDismissed && !isLoading && !isError && (
@@ -779,12 +763,10 @@ export default function MapPage() {
         <ScreenshotModal
           onClose={() => setIsShareOpen(false)}
           onCopy={handleCopy}
-          onDownload={handleDownload}
           copyLabel={copyLabel}
-          downloadLabel={downloadLabel}
           isCopying={copyStatus === 'copying'}
-          isDownloading={downloadStatus === 'downloading'}
           screenshotTarget={screenshotRef.current}
+          mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture]', mode: 'element' }}
         />
       )}
     </div>

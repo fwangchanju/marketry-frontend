@@ -2,41 +2,40 @@ import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyle
 import { useEffect, useState } from 'react'
 import { screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import { captureRegionRect } from '@/utils/screenshotScale'
-import { CheckIcon, CopyIcon, DownloadIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
+import { CheckIcon, CopyIcon, HomeFrameCaptureIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
 
 interface Props {
   onClose: () => void
   // 미리보기 이미지(data URL)를 넘긴다 — 있으면 같은 영역을 다시 찍지 않고 그 이미지를 쓴다.
   onCopy: (previewSrc: string | null) => void
-  onDownload: (previewSrc: string | null) => void
   copyLabel: string
-  downloadLabel: string
   isCopying: boolean
-  isDownloading: boolean
   screenshotTarget: HTMLElement | null
-  // 있으면 "모니터"(전체) 옆에 맨 왼쪽부터 selector 요소의 오른쪽 끝까지만 찍는 버튼(휴대폰 아이콘 + label)을 보여 준다(홈에서 맨 오른쪽 틀을 뺀 영역).
-  regionOption?: { label: string; selector: string }
+  // 지도에서 전체 화면(모니터)과 지도 영역(모바일)을 고르는 버튼을 표시한다.
+  mobileRegionOption?: { label: string; selector: string; mode?: 'through-right-edge' | 'element' | 'content' }
+  // 홈의 각 요약 항목을 따로 캡처하는 버튼들.
+  frameCaptureOptions?: Array<{ id: string; label: string; selector: string; selectedSlot: 0 | 1 | 2; mode?: 'element' | 'content' }>
 }
 
 export default function ScreenshotModal({
   onClose,
   onCopy,
-  onDownload,
-  downloadLabel,
-  isDownloading,
   copyLabel,
   isCopying,
   screenshotTarget,
-  regionOption,
+  mobileRegionOption,
+  frameCaptureOptions,
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
-  // regionOption이 있으면(홈) 처음부터 그 범위(모바일)로 찍는다. 다른 범위가 필요하면 "모니터"를 누른다.
-  const [isRegionOnly, setIsRegionOnly] = useState(() => regionOption !== undefined)
-  const regionSelector = regionOption && isRegionOnly ? regionOption.selector : undefined
+  // 지도에서는 처음부터 모바일 지도를 보여 주고, 홈에서는 세 항목 전체를 먼저 보여 준다.
+  const [selectedCapture, setSelectedCapture] = useState<string | null>(() => mobileRegionOption ? 'mobile' : null)
+  const selectedFrame = frameCaptureOptions?.find(option => selectedCapture === `frame:${option.id}`)
+  const regionSelector = selectedCapture === 'mobile' ? mobileRegionOption?.selector : selectedFrame?.selector
+  const regionMode = selectedCapture === 'mobile' ? mobileRegionOption?.mode : selectedFrame?.mode ?? (selectedFrame ? 'element' : undefined)
   // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 스크린샷 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
   // 스크린샷으로 찍을 영역의 비율로 어림잡고, 이미지가 로드되면 실제 비율로 바로잡는다.
-  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget, regionOption?.selector))
+  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget, regionSelector, regionMode))
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -56,7 +55,7 @@ export default function ScreenshotModal({
     const raf1 = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (cancelled) return
-        screenshotElementToDataUrl(screenshotTarget, regionSelector)
+        screenshotElementToDataUrl(screenshotTarget, regionSelector, regionMode)
           .then(dataUrl => {
             if (!cancelled) setPreviewSrc(dataUrl)
           })
@@ -69,13 +68,16 @@ export default function ScreenshotModal({
       cancelled = true
       cancelAnimationFrame(raf1)
     }
-  }, [screenshotTarget, regionSelector])
+  }, [screenshotTarget, regionSelector, regionMode])
 
   // 범위를 바꾸면 새 이미지를 찍는 동안 스피너를 보여 준다.
-  const selectRegion = (next: boolean) => {
-    if (next === isRegionOnly) return
+  const selectCapture = (next: string | null) => {
+    if (next === selectedCapture) return
     setPreviewSrc(null)
-    setIsRegionOnly(next)
+    setSelectedCapture(next)
+    const option = next === 'mobile' ? mobileRegionOption : frameCaptureOptions?.find(item => next === `frame:${item.id}`)
+    const mode = next === 'mobile' ? mobileRegionOption?.mode : option && 'mode' in option ? option.mode ?? 'element' : undefined
+    setPreviewRatio(elementRatio(screenshotTarget, option?.selector, mode))
   }
 
   // 높이는 화면(85dvh에서 버튼 줄을 뺀 만큼), 폭은 화면 폭 안에서 이미지 비율로 정한다 — 원래 크기보다 작으면 키우고 크면 줄여서 화면에
@@ -83,7 +85,7 @@ export default function ScreenshotModal({
   const fitWidth = previewRatio ? `min(calc(100vw - 4rem), calc((85dvh - 11rem) * ${previewRatio}))` : undefined
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-ui-background/70" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-ui-background/70">
       {/* 팝업은 미리보기 이미지 크기에 딱 맞게 줄어든다(w-fit) — 이미지 주변에 빈 여백(레터박스)이 생기지
           않는다. 이미지는 화면(폭 95vw, 높이 85dvh에서 버튼 줄을 뺀 만큼) 안에서 비율을 유지한 채 최대한
           크게 그린다. 스크린샷 전(스피너)에는 임시 크기 칸으로 자리를 잡는다. */}
@@ -130,29 +132,46 @@ export default function ScreenshotModal({
             좁은 화면에서는 복사 상태 아래로 양끝 버튼을 내려 겹치지 않게 한다. */}
         <div className="mt-4 flex shrink-0 items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
-            {regionOption && (
+            {frameCaptureOptions && (
+              <button
+                type="button"
+                aria-label="전체 화면 캡처"
+                aria-pressed={selectedCapture === null}
+                onClick={() => selectCapture(null)}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-0 p-1 transition-colors ${selectedCapture === null ? 'bg-brand-surface text-ui-white hover:bg-brand-surface-hover' : 'bg-ui-control text-ui-white hover:bg-ui-control-hover'}`}
+              >
+                <HomeFrameCaptureIcon selectedSlot="all" className="h-7 w-7 text-ui-white" />
+              </button>
+            )}
+            {mobileRegionOption && (
               <>
-                <button type="button" aria-pressed={!isRegionOnly} onClick={() => selectRegion(false)} className={!isRegionOnly ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
+                <button type="button" aria-pressed={selectedCapture === null} onClick={() => selectCapture(null)} className={selectedCapture === null ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
                   <MonitorIcon className="h-4 w-4" />
                   모니터
                 </button>
-                <button type="button" aria-pressed={isRegionOnly} onClick={() => selectRegion(true)} className={isRegionOnly ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
+                <button type="button" aria-pressed={selectedCapture === 'mobile'} onClick={() => selectCapture('mobile')} className={selectedCapture === 'mobile' ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
                   <SmartphoneIcon className="h-4 w-4" />
-                  {regionOption.label}
+                  {mobileRegionOption.label}
                 </button>
               </>
             )}
+            {frameCaptureOptions?.map(option => {
+              const active = selectedCapture === `frame:${option.id}`
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-label={`${option.label} 항목 캡처`}
+                  aria-pressed={active}
+                  onClick={() => selectCapture(`frame:${option.id}`)}
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-0 p-1 transition-colors ${active ? 'bg-brand-surface text-ui-white hover:bg-brand-surface-hover' : 'bg-ui-control text-ui-white hover:bg-ui-control-hover'}`}
+                >
+                  <HomeFrameCaptureIcon selectedSlot={option.selectedSlot} className="h-7 w-7 text-ui-white" />
+                </button>
+              )
+            })}
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onDownload(previewSrc)}
-              disabled={isDownloading || (regionOption !== undefined && !previewSrc)}
-              className={BUTTON_BASE_CLASS}
-            >
-              {isDownloading ? <Spinner className="h-4 w-4" /> : <DownloadIcon className="h-4 w-4" />}
-              {downloadLabel}
-            </button>
             {/* 복사는 자동으로 하지 않고 이 버튼으로만 한다. 공유는 대부분 붙여 넣는 용도라 이 버튼이 강조 버튼이다(청록). 글자는 다른 버튼과 같은 4글자로 고정하고,
                 상태는 아이콘(복사 중=스피너, 완료=체크)으로 보여준다. 실패만 "복사실패"(4글자). */}
             <button
@@ -180,9 +199,9 @@ export default function ScreenshotModal({
 }
 
 // 스크린샷으로 찍을 영역의 가로/세로 비율 — 아직 없거나 크기를 못 재면 null.
-function elementRatio(element: HTMLElement | null, regionSelector: string | undefined): number | null {
+function elementRatio(element: HTMLElement | null, regionSelector: string | undefined, regionMode?: 'through-right-edge' | 'element' | 'content'): number | null {
   if (!element) return null
-  const region = regionSelector ? captureRegionRect(element, regionSelector) : null
+  const region = regionSelector ? captureRegionRect(element, regionSelector, regionMode) : null
   const { width, height } = region ?? element.getBoundingClientRect()
   return width > 0 && height > 0 ? width / height : null
 }

@@ -21,11 +21,9 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession, useIsLoggedIn } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
-import { screenshotElementToDownload, downloadDataUrl, screenshotFileName } from '@/utils/screenshotToDownload'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
-type DownloadStatus = 'idle' | 'downloading' | 'error'
 
 // 커스텀 섹터·종목 배정 관리 화면 — 예전 관리자 페이지를 대체한다. 이제는 admin 역할이 아니라 로그인 여부로
 // 접근을 가른다(가입/로그인 전환 지시서 4) — 누구든
@@ -148,7 +146,6 @@ export default function CustomPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
-  const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>('idle')
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const screenshotRef = useRef<HTMLDivElement>(null)
   // 안내 문구를 본문 영역 전체의 한가운데에 그리기 위한 기준 요소(EmptyMessageAreaContext).
@@ -168,22 +165,9 @@ export default function CustomPage() {
     }
   }
 
-  const handleDownload = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotRef.current) return
-    setDownloadStatus('downloading')
-    try {
-      if (previewSrc) downloadDataUrl(previewSrc, screenshotFileName('CUSTOM'))
-      else if (screenshotRef.current) await screenshotElementToDownload(screenshotRef.current, screenshotFileName('CUSTOM'))
-    } catch {
-      setDownloadStatus('error')
-    } finally {
-      setTimeout(() => setDownloadStatus('idle'), 2000)
-    }
-  }
 
   const copyLabel =
     copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
-  const downloadLabel = downloadStatus === 'error' ? '다운로드 실패' : '다운로드'
 
   const actions = (
     <NavBarPageActions
@@ -341,11 +325,8 @@ export default function CustomPage() {
         <ScreenshotModal
           onClose={() => setIsShareOpen(false)}
           onCopy={handleCopy}
-          onDownload={handleDownload}
           copyLabel={copyLabel}
-          downloadLabel={downloadLabel}
           isCopying={copyStatus === 'copying'}
-          isDownloading={downloadStatus === 'downloading'}
           screenshotTarget={screenshotRef.current}
         />
       )}
