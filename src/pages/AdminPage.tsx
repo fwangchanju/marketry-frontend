@@ -61,8 +61,8 @@ export default function AdminPage() {
                 <Link to="/home" className="mt-4 inline-block text-[var(--accent)] underline">홈으로</Link>
               </div>
             ) : (
-              // 공통 세로형 로고를 정적으로 표시한다.
-              <Spinner still />
+              // 공통 세로형 로고 아래 상태 칸에 관리자 위험 아이콘을 표시한다.
+              <Spinner still stillContent={<span aria-hidden="true" className="text-[11cqw] leading-none text-[var(--status-error)]">⚠</span>} />
             )}
           </div>
           {isAdmin && (
