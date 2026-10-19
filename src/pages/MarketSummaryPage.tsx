@@ -52,8 +52,8 @@ const INDEX_ROWS = [
 
 const toIndexValue = (value: number): string => value.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-// 날짜는 기존 확정 위치(카드 중앙 + 82.375px, 업종 + 75.625px)를 유지한다.
-// 공통 그래프 하단은 카드 중앙 + 58.375px, 날짜 간격은 각각 24px / 17.25px다.
+// 넉넉한 화면에서는 확정한 날짜 위치를 유지하고, 작은 화면에서는 하단 60px을 확보한다.
+// 막대는 그래프 반쪽 높이에서 값 라벨 공간(20px)을 뺀 범위 안에 그린다.
 function MarketIndexTrendChart({ items, market, label, colorScale }: { items: MarketOverviewTrendItem[]; market: 'KOSPI' | 'KOSDAQ'; label: string; colorScale: ColorScaleConfig }) {
   const dateLabels = (date: string) => {
     const value = new Date(`${date}T00:00:00Z`)
@@ -66,19 +66,14 @@ function MarketIndexTrendChart({ items, market, label, colorScale }: { items: Ma
     <div role="img" aria-label={`${label} 최근 ${values.length}거래일 등락률 그래프`} className="relative grid h-full w-full grid-cols-5 gap-2">
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-[#808080]" />
       {values.map(item => {
-        const magnitude = Math.min(Math.abs(item.changeRate) / scale, 1) * 55
-        const height = Math.max(2, magnitude)
+        const ratio = Math.min(Math.abs(item.changeRate) / scale, 1)
+        const height = `max(2px, min(${ratio * 55}px, calc((50% - 20px) * ${ratio})))`
         const barColor = item.changeRate === 0 ? 'var(--ui-muted)' : resolveTreemapExtremeColor(item.changeRate, colorScale)
         return (
           <div key={`${item.date}-${item.market}`} className="relative min-w-0 text-center">
             <div className="relative mx-auto h-full w-full max-w-32">
-              <div className="absolute inset-x-0 top-0 flex h-1/2 items-end justify-center">
-                {item.changeRate >= 0 && <i className="w-1/4 rounded-t-sm" style={{ height, backgroundColor: barColor }} />}
-              </div>
-              <div className="absolute inset-x-0 bottom-0 flex h-1/2 items-start justify-center">
-                {item.changeRate < 0 && <i className="w-1/4 rounded-b-sm" style={{ height, backgroundColor: barColor }} />}
-              </div>
-              <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[12px] font-semibold tabular-nums" style={{ top: item.changeRate >= 0 ? `calc(50% - ${height}px - 19px)` : `calc(50% + ${height}px + 1px)`, color: barColor }}>{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(2)}</div>
+              <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 ${item.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
+              <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[12px] font-semibold tabular-nums" style={{ top: item.changeRate >= 0 ? `calc(50% - ${height} - 19px)` : `calc(50% + ${height} + 1px)`, color: barColor }}>{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(2)}</div>
             </div>
             <div className="absolute inset-x-0 top-[calc(100%+24px)] text-ui-muted">
               <div className="whitespace-nowrap text-[12px] leading-tight tabular-nums">{dateLabels(item.date).date}</div>
@@ -105,19 +100,14 @@ function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSector
         {points.map(point => {
           const date = new Date(`${point.date}T00:00:00Z`)
           const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getUTCDay()]
-          const magnitude = Math.min(Math.abs(point.changeRate) / scale, 1) * 55
-          const height = Math.max(2, magnitude)
+          const ratio = Math.min(Math.abs(point.changeRate) / scale, 1)
+          const height = `max(2px, min(${ratio * 55}px, calc((50% - 20px) * ${ratio})))`
           const barColor = resolveTreemapExtremeColor(point.changeRate, colorScale)
           return (
             <div key={point.date} className="relative min-w-0 text-center">
               <div className="relative mx-auto h-full w-full max-w-32">
-                <div className="absolute inset-x-0 top-0 flex h-1/2 items-end justify-center">
-                  {point.changeRate >= 0 && <i className="w-1/4 rounded-t-sm" style={{ height, backgroundColor: barColor }} />}
-                </div>
-                <div className="absolute inset-x-0 bottom-0 flex h-1/2 items-start justify-center">
-                  {point.changeRate < 0 && <i className="w-1/4 rounded-b-sm" style={{ height, backgroundColor: barColor }} />}
-                </div>
-                <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[12px] font-semibold tabular-nums" style={{ top: point.changeRate >= 0 ? `calc(50% - ${height}px - 19px)` : `calc(50% + ${height}px + 1px)`, color: barColor }}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(2)}</div>
+                <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 ${point.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
+                <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[12px] font-semibold tabular-nums" style={{ top: point.changeRate >= 0 ? `calc(50% - ${height} - 19px)` : `calc(50% + ${height} + 1px)`, color: barColor }}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(2)}</div>
               </div>
               <div className="absolute inset-x-0 top-[calc(100%+17.25px)] text-ui-muted">
                 <div className="whitespace-nowrap text-[12px] leading-tight tabular-nums">{date.getUTCMonth() + 1}/{date.getUTCDate()}</div>
@@ -500,7 +490,7 @@ export default function MarketSummaryPage() {
                               ))}
                             </div>
                           </div>
-                          <div className="absolute inset-x-2 top-[37px] bottom-[calc(50%-58.375px)]">
+                          <div className="absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]">
                             <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />
                           </div>
                         </section>
@@ -513,7 +503,7 @@ export default function MarketSummaryPage() {
                           <span className="min-w-0 truncate px-1.5 py-1 text-right text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
                         </div>
                       </div>
-                      <div className="absolute inset-x-2 top-[37px] bottom-[calc(50%-58.375px)]">
+                      <div className="absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]">
                         <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />
                       </div>
                     </section>
