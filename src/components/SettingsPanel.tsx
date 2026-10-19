@@ -2847,8 +2847,8 @@ export default function SettingsPanel({
       </SettingsFeedbackContext.Provider>
       </div>
       {isPreferenceFeedbackActive && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-ui-panel">
-          <Spinner showLogo className="aspect-square w-4/5 shrink-0" />
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-ui-panel [container-type:size]">
+          <Spinner showLogo className="aspect-square w-[min(80cqw,80cqh)] shrink-0" />
         </div>
       )}
       </div>
