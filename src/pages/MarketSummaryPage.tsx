@@ -54,35 +54,36 @@ const INDEX_ROWS = [
 const toIndexValue = (value: number): string => value.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 function MarketIndexTrendChart({ items, market, label, colorScale }: { items: MarketOverviewTrendItem[]; market: 'KOSPI' | 'KOSDAQ'; label: string; colorScale: ColorScaleConfig }) {
-  const dateLabel = (date: string) => {
+  const dateLabels = (date: string) => {
     const value = new Date(`${date}T00:00:00Z`)
-    return `${value.getUTCMonth() + 1}/${value.getUTCDate()}`
+    return { date: `${value.getUTCMonth() + 1}/${value.getUTCDate()}`, weekday: ['일', '월', '화', '수', '목', '금', '토'][value.getUTCDay()] }
   }
-  const values = items.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))
+  const values = items.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date)).slice(-5)
   const scale = Math.max(3, ...values.map(item => Math.abs(item.changeRate)))
+  if (!values.length) return null
   return (
-    <div role="img" aria-label={`${label} 최근 ${values.length}거래일 등락률 그래프`} className="grid w-full grid-cols-5 gap-2 pt-1">
+    <div role="img" aria-label={`${label} 최근 ${values.length}거래일 등락률 그래프`} className="relative grid w-full grid-cols-5 gap-2 pt-1">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[52px] h-px bg-ui-muted" />
       {values.map(item => {
-        const magnitude = Math.min(Math.abs(item.changeRate) / scale, 1) * 40
+        const magnitude = Math.min(Math.abs(item.changeRate) / scale, 1) * 28
         const height = Math.max(2, magnitude)
         const barColor = item.changeRate === 0 ? 'var(--ui-muted)' : resolveTreemapExtremeColor(item.changeRate, colorScale)
         return (
           <div key={`${item.date}-${item.market}`} className="min-w-0 text-center">
-            <div className="h-5 truncate text-[11px] font-semibold tabular-nums text-ui-text">{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(1)}%</div>
-            <div className="relative mx-auto h-[88px] w-full max-w-32">
-              <div className="absolute inset-x-0 top-1/2 h-px bg-ui-muted" />
+            <div className="relative mx-auto h-[96px] w-full max-w-32">
               <div className="absolute inset-x-0 top-0 flex h-1/2 items-end justify-center">
-                {item.changeRate >= 0 && <i className="w-1/2 rounded-t-sm" style={{ height, backgroundColor: barColor }} />}
+                {item.changeRate >= 0 && <i className="w-1/4 rounded-t-sm" style={{ height, backgroundColor: barColor }} />}
               </div>
               <div className="absolute inset-x-0 bottom-0 flex h-1/2 items-start justify-center">
-                {item.changeRate < 0 && <i className="w-1/2 rounded-b-sm" style={{ height, backgroundColor: barColor }} />}
+                {item.changeRate < 0 && <i className="w-1/4 rounded-b-sm" style={{ height, backgroundColor: barColor }} />}
               </div>
+              <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[12px] font-semibold tabular-nums" style={{ top: item.changeRate >= 0 ? `calc(50% - ${height}px - 19px)` : `calc(50% + ${height}px + 1px)`, color: barColor }}>{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(2)}</div>
             </div>
-            <div className="mt-1 whitespace-nowrap text-[10px] tabular-nums text-ui-muted">{dateLabel(item.date)}</div>
+            <div className="mt-1 whitespace-nowrap text-[12px] leading-tight tabular-nums text-ui-muted">{dateLabels(item.date).date}</div>
+            <div className="whitespace-nowrap text-[11px] leading-tight text-ui-muted">({dateLabels(item.date).weekday})</div>
           </div>
         )
       })}
-      {!values.length && <div className="col-span-5 py-5 text-center text-[12px] text-ui-muted">-</div>}
     </div>
   )
 }
@@ -92,33 +93,41 @@ type PersonalSectorTrend = { sectorName: string; points: PersonalSectorPoint[] }
 
 function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSectorTrend | undefined; colorScale: ColorScaleConfig }) {
   const points = trend?.points ?? []
-  if (!points.length) {
-    return <div role="img" aria-label="내 분류 최상위 업종 최근 거래일 이력 없음" className="flex h-[168px] items-center justify-center text-[12px] text-ui-muted">-</div>
-  }
-  const extent = Math.max(1, ...points.map(point => Math.abs(point.changeRate)))
-  const y = (value: number) => 50 - (value / extent) * 32
-  const polyline = points.map((point, index) => `${12 + index * (196 / Math.max(1, points.length - 1))},${y(point.changeRate)}`).join(' ')
-  const color = points.length ? resolveTreemapExtremeColor(points.at(-1)!.changeRate, colorScale) : 'var(--ui-muted)'
+  if (!points.length) return null
+  const scale = Math.max(3, ...points.map(point => Math.abs(point.changeRate)))
   return (
     <div className="min-w-0">
-      <div className="mb-1 truncate text-[12px] font-semibold text-ui-text">{trend?.sectorName ?? '-'}</div>
-      <svg role="img" aria-label={`${trend?.sectorName ?? '내 분류 상위 업종'} 최근 거래일 등락률 그래프`} preserveAspectRatio="none" viewBox="0 0 220 100" className="block h-[132px] w-full">
-        {[18, 50, 82].map(lineY => <line key={lineY} x1="8" x2="212" y1={lineY} y2={lineY} stroke={lineY === 50 ? 'var(--ui-muted)' : 'var(--ui-border)'} strokeWidth="0.8" strokeDasharray={lineY === 50 ? undefined : '2 3'} />)}
-        {points.length > 1 && <polyline points={polyline} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
-        {points.map((point, index) => <circle key={point.date} cx={12 + index * (196 / Math.max(1, points.length - 1))} cy={y(point.changeRate)} r="2.7" fill={resolveTreemapExtremeColor(point.changeRate, colorScale)} />)}
-      </svg>
-      <div className="grid grid-cols-5 text-center text-[10px] tabular-nums text-ui-muted">
-        {points.map(point => <span key={point.date}>{`${new Date(`${point.date}T00:00:00Z`).getUTCMonth() + 1}/${new Date(`${point.date}T00:00:00Z`).getUTCDate()}`}</span>)}
-      </div>
-      <div className="flex justify-between gap-2 text-[11px] font-semibold tabular-nums text-ui-text">
-        {points.map(point => <span key={point.date}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(1)}%</span>)}
+      <div role="img" aria-label={`${trend?.sectorName ?? '최상위 업종'} 최근 ${points.length}거래일 등락률 막대그래프`} className="relative grid grid-cols-5 gap-2">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-12 h-px bg-ui-muted" />
+        {points.map(point => {
+          const date = new Date(`${point.date}T00:00:00Z`)
+          const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getUTCDay()]
+          const magnitude = Math.min(Math.abs(point.changeRate) / scale, 1) * 28
+          const height = Math.max(2, magnitude)
+          const barColor = resolveTreemapExtremeColor(point.changeRate, colorScale)
+          return (
+            <div key={point.date} className="min-w-0 text-center">
+              <div className="relative mx-auto h-[96px] w-full max-w-32">
+                <div className="absolute inset-x-0 top-0 flex h-1/2 items-end justify-center">
+                  {point.changeRate >= 0 && <i className="w-1/4 rounded-t-sm" style={{ height, backgroundColor: barColor }} />}
+                </div>
+                <div className="absolute inset-x-0 bottom-0 flex h-1/2 items-start justify-center">
+                  {point.changeRate < 0 && <i className="w-1/4 rounded-b-sm" style={{ height, backgroundColor: barColor }} />}
+                </div>
+                <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[12px] font-semibold tabular-nums" style={{ top: point.changeRate >= 0 ? `calc(50% - ${height}px - 19px)` : `calc(50% + ${height}px + 1px)`, color: barColor }}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(2)}</div>
+              </div>
+              <div className="mt-1 whitespace-nowrap text-[12px] leading-tight tabular-nums text-ui-muted">{date.getUTCMonth() + 1}/{date.getUTCDate()}</div>
+              <div className="whitespace-nowrap text-[11px] leading-tight text-ui-muted">({weekday})</div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
 function SummaryBadge({ children }: { children: ReactNode }) {
-  return <span className="inline-flex h-5 min-h-5 shrink-0 items-center whitespace-nowrap rounded-sm bg-[var(--brand-surface)] px-1.5 text-[12px] font-semibold leading-none text-ui-white">{children}</span>
+  return <span className="inline-flex h-6 min-h-6 shrink-0 items-center whitespace-nowrap rounded-sm bg-[var(--brand-surface)] px-2 text-[14px] font-semibold leading-none text-ui-white">{children}</span>
 }
 
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
@@ -206,18 +215,47 @@ export default function MarketSummaryPage() {
   const { data: session } = useSession()
   const marketTrendDates = [...new Set((marketSummary?.marketOverviewTrends ?? []).map(item => item.date))].sort().slice(-5)
   const personalTrendBasis = changeRateChoice === 'afterHours' ? 'afterHours' : 'daily'
+  const trendTaxonomy = settingsModalProps.taxonomy === 'NXT' ? 'KRX' : settingsModalProps.taxonomy
+  const personalTrendEndDate = pinnedSnapshotTime?.slice(0, 10) ?? data?.snapshotTime?.slice(0, 10) ?? marketTrendDates.at(-1) ?? null
+  const indexEndDate = pinnedSnapshotTime?.slice(0, 10) ?? marketSummary?.marketOverviews.snapshotTime?.slice(0, 10) ?? null
+  const { data: historicalIndexData } = useQuery({
+    queryKey: ['home-historical-market-index', indexEndDate, changeRateChoice],
+    enabled: Boolean(indexEndDate),
+    queryFn: async () => {
+      const endDate = indexEndDate!
+      const endMonth = endDate.slice(0, 7)
+      const [year, month] = endMonth.split('-').map(Number)
+      const previousMonth = new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7)
+      const dayLists = await Promise.all([previousMonth, endMonth].map(value => getSnapshotDays('ALL_STOCK', value)))
+      const days = dayLists.flat().filter(day => day.date <= endDate).sort((a, b) => a.date.localeCompare(b.date)).slice(-6)
+      const snapshots = await Promise.all(days.flatMap(day => (['KOSPI', 'KOSDAQ'] as const).map(async market => ({
+        date: day.date,
+        market,
+        overview: (await getTreemap(market, 'KRX', day.snapshotTime, false, personalTrendBasis)).marketOverview,
+      }))))
+      return snapshots
+    },
+    staleTime: 60_000,
+  })
   const { data: personalSectorTrend } = useQuery({
-    queryKey: ['home-personal-sector-trend', session?.userId ?? null, marketTrendDates, changeRateChoice],
-    enabled: Boolean(session?.authenticated && marketTrendDates.length),
+    queryKey: ['home-personal-sector-trend', session?.userId ?? null, personalTrendEndDate, data?.snapshotTime, pinnedSnapshotTime !== undefined, marketTrendDates, changeRateChoice, settingsModalProps.taxonomy],
+    enabled: Boolean(personalTrendEndDate && data?.snapshotTime && (settingsModalProps.taxonomy !== 'MINE' || session?.authenticated)),
     queryFn: async (): Promise<PersonalSectorTrend> => {
-      const isCloseChoice = changeRateChoice === 'close'
-      const historicalDates = isCloseChoice ? marketTrendDates : marketTrendDates.slice(0, -1)
+      const isPinnedDate = pinnedSnapshotTime !== undefined
+      let historicalDates = marketTrendDates.filter(date => date < personalTrendEndDate!).slice(-4)
+      if (isPinnedDate && personalTrendEndDate) {
+        const endMonth = personalTrendEndDate.slice(0, 7)
+        const [year, month] = endMonth.split('-').map(Number)
+        const previousMonth = new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7)
+        const dayLists = await Promise.all([previousMonth, endMonth].map(value => getSnapshotDays('ALL_STOCK', value)))
+        historicalDates = dayLists.flat().map(day => day.date).filter(date => date < personalTrendEndDate).sort().slice(-4)
+      }
       const months = [...new Set(historicalDates.map(date => date.slice(0, 7)))]
       const snapshotDays = (await Promise.all(months.map(month => getSnapshotDays('ALL_STOCK', month)))).flat()
       const historicalDays = historicalDates.map(date => snapshotDays.find(day => day.date === date)).filter((day): day is NonNullable<typeof day> => Boolean(day))
-      const historicalMaps = await Promise.all(historicalDays.map(day => getTreemap('ALL_STOCK', 'MINE', day.snapshotTime, false, personalTrendBasis)))
-      const currentMap = isCloseChoice ? null : await getTreemap('ALL_STOCK', 'MINE', undefined, false, personalTrendBasis)
-      const currentDate = currentMap?.snapshotTime?.slice(0, 10) ?? marketTrendDates.at(-1)
+      const historicalMaps = await Promise.all(historicalDays.map(day => getTreemap('ALL_STOCK', trendTaxonomy, day.snapshotTime, false, personalTrendBasis)))
+      const currentMap = data
+      const currentDate = currentMap?.snapshotTime?.slice(0, 10) ?? personalTrendEndDate
       const datedMaps = [
         ...historicalMaps.map((map, index) => ({ date: historicalDays[index].date, map })),
         ...(currentMap && currentDate ? [{ date: currentDate, map: currentMap }] : []),
@@ -249,8 +287,26 @@ export default function MarketSummaryPage() {
   // 요약 조회의 지수는 항상 최근 값이다 — 지도가 지난 시각이나 기간을 보고 있거나 시간외 별도 등락률이면 맞지 않으므로 보여 주지 않는다(그룹 페이지도 일간 등락률일 때만 넣는다).
   const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
   const indexOf = (market: 'KOSPI' | 'KOSDAQ') => {
-    const item = isLatestDailyView ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market) : undefined
+    const historical = pinnedSnapshotTime
+      ? historicalIndexData?.find(candidate => candidate.date === pinnedSnapshotTime.slice(0, 10) && candidate.market === market)?.overview
+      : undefined
+    const item = historical ?? (isLatestDailyView ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market) : undefined)
     return { indexValue: item?.indexValue ?? null, tradingValue: item?.tradingValue ?? null, changeValue: item?.changeValue ?? null, changeRate: item?.changeRate ?? null }
+  }
+  const indexTrendItems = pinnedSnapshotTime
+    ? (historicalIndexData ?? []).flatMap(({ date, market, overview }) => overview ? [{ date, market, changeRate: overview.changeRate }] : [])
+    : marketSummary?.marketOverviewTrends ?? []
+  const indexPeriodChangeRate = (market: 'KOSPI' | 'KOSDAQ'): number | null => {
+    const snapshots = (historicalIndexData ?? []).filter(item => item.market === market && item.overview?.indexValue).sort((a, b) => a.date.localeCompare(b.date))
+    if (snapshots.length >= 6) {
+      const firstClose = snapshots[0].overview!.indexValue
+      const latestClose = snapshots.at(-1)!.overview!.indexValue
+      if (firstClose > 0) return ((latestClose / firstClose) - 1) * 100
+    }
+    // 종가 스냅샷 조회가 아직 없거나 실패해도 5개 일별 종가 대비 등락률로 같은 기간 수익률을 계산한다.
+    const dailyRates = indexTrendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date)).slice(-5).map(item => item.changeRate)
+    if (dailyRates.length < 5) return null
+    return (dailyRates.reduce((factor, rate) => factor * (1 + rate / 100), 1) - 1) * 100
   }
 
   // 홈은 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
@@ -442,56 +498,58 @@ export default function MarketSummaryPage() {
                   <div className="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto pb-1 text-[14px] font-medium leading-none tabular-nums">
                     {INDEX_ROWS.map(({ label, market }) => {
                       const { indexValue, tradingValue, changeRate } = indexOf(market)
-                      const trendItems = marketSummary?.marketOverviewTrends ?? []
+                      const trendItems = indexTrendItems
+                      const periodRate = indexPeriodChangeRate(market)
                       return (
-                        <section key={market} aria-label={`${label} 오늘 시장 요약과 최근 5거래일`} className="grid grid-cols-[minmax(104px,0.3fr)_minmax(0,1fr)] gap-2 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
-                          <div className="min-w-0 space-y-1">
-                            <SummaryBadge>{label} · 오늘</SummaryBadge>
-                            <div className="space-y-1">
+                        <section key={market} aria-label={`${label} 시장 요약과 최근 5거래일`} className="min-w-0 space-y-1 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                          <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2">
+                            <SummaryBadge>{label}</SummaryBadge>
+                            <div className="grid min-w-0 grid-cols-3 gap-1">
                               {[
-                                { label: '지수', value: indexValue === null ? '—' : toIndexValue(indexValue), color: undefined },
-                                { label: '등락률', value: changeRate === null ? '—' : toPctSigned(changeRate), color: rateColorStyle(changeRate)?.color },
-                                { label: '거래대금', value: tradingValue === null ? '—' : toJoEokDecimal(tradingValue / 100), color: undefined },
-                              ].map(metric => metric.label === '지수' ? (
-                                <div key={metric.label} className="min-w-0 rounded-sm bg-ui-surface px-1.5 py-1.5">
-                                  <div className="mb-0.5 text-[10px] font-medium text-ui-muted">{metric.label}</div>
-                                  <div className="truncate text-[14px] font-bold leading-tight text-ui-text">{metric.value}</div>
-                                </div>
-                              ) : (
-                                <div key={metric.label} className="flex min-w-0 items-center justify-between gap-1 rounded-sm bg-ui-surface px-1.5 py-1">
-                                  <div className="shrink-0 text-[10px] font-medium text-ui-muted">{metric.label}</div>
-                                  <div className="truncate text-right text-[12px] font-semibold text-ui-text" style={metric.color ? { color: metric.color } : undefined}>{metric.value}</div>
+                                { label: '지수', value: indexValue === null ? '' : toIndexValue(indexValue), color: undefined },
+                                { label: '등락률', value: changeRate === null ? '' : toPctSigned(changeRate), color: rateColorStyle(changeRate)?.color },
+                                { label: '거래대금', value: tradingValue === null ? '' : toJoEokDecimal(tradingValue / 100), color: undefined },
+                              ].map(metric => (
+                                <div key={metric.label} className="min-w-0 rounded-sm bg-ui-surface px-1.5 py-1">
+                                  <div className="truncate text-[12px] font-medium text-ui-muted">{metric.label}</div>
+                                  <div className="truncate text-[14px] font-semibold leading-tight text-ui-text" style={metric.color ? { color: metric.color } : undefined}>{metric.value}</div>
                                 </div>
                               ))}
                             </div>
                           </div>
-                          <div className="min-w-0 space-y-0.5">
-                            <SummaryBadge>최근 5거래일</SummaryBadge>
+                          <div className="min-w-0">
+                            <div className="flex items-center justify-start gap-2">
+                              <SummaryBadge>최근 5거래일</SummaryBadge>
+                              {periodRate !== null && <span className="text-[13px] font-semibold tabular-nums" style={{ color: resolveTreemapExtremeColor(periodRate, colorScale) }}>누적 {periodRate > 0 ? '+' : ''}{periodRate.toFixed(2)}</span>}
+                            </div>
                             <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />
                           </div>
                         </section>
                       )
                     })}
-                    <section aria-label="내 분류 최상위 업종 오늘 최근 5거래일 등락률" className="space-y-1 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
-                      <SummaryBadge>내 분류 최상위 업종 · 오늘</SummaryBadge>
+                    <section aria-label="내 분류 최상위 업종 최근 5거래일 등락률" className="space-y-1 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <SummaryBadge>최상위 업종</SummaryBadge>
+                        <span className="min-w-0 truncate text-right text-[14px] font-semibold text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
+                      </div>
                       <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />
                     </section>
+                    <section aria-label="등락 종목 수" className="hidden min-h-[120px] flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-2 py-1.5 xl:flex">
+                      <SummaryBadge>등락 종목</SummaryBadge>
+                      <div className="mt-1 grid min-h-0 flex-1 grid-rows-3 gap-1">
+                        {[
+                          { label: '상승', icon: '▲', value: overview.advancers, rate: 1 },
+                          { label: '하락', icon: '▼', value: overview.decliners, rate: -1 },
+                          { label: '보합', icon: '■', value: overview.unchanged, rate: 0 },
+                        ].map(item => (
+                          <div key={item.label} className="flex min-h-0 items-center justify-between rounded-sm bg-ui-surface px-2 text-[14px]">
+                            <span className="text-ui-muted">{item.label}</span>
+                            <span className="truncate text-right text-[18px] font-semibold leading-tight" style={item.rate ? rateColorStyle(item.rate) : undefined}>{item.icon} {toCount(item.value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
                     <div className="mt-auto grid gap-2 pt-2">
-                      <section aria-label="등락 종목 수" className="rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
-                        <SummaryBadge>등락 종목</SummaryBadge>
-                        <div className="mt-1 grid grid-cols-3 gap-1">
-                          {[
-                            { label: '상승', icon: '▲', value: overview.advancers, rate: 1 },
-                            { label: '하락', icon: '▼', value: overview.decliners, rate: -1 },
-                            { label: '보합', icon: '■', value: overview.unchanged, rate: 0 },
-                          ].map(item => (
-                            <div key={item.label} className="min-w-0 rounded-sm bg-ui-surface px-1.5 py-1 text-center">
-                              <div className="mb-0.5 text-[10px] font-medium text-ui-muted">{item.label}</div>
-                              <div className="truncate text-[12px] font-semibold leading-tight" style={item.rate ? rateColorStyle(item.rate) : undefined}>{item.icon} {toCount(item.value)}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
                       <div className="grid grid-cols-2 gap-2">
                         {NOTICE_TYPES.map(({ type, label, showItems, countLabel, countKey, valueKey }) => {
                           const items = (notices?.items ?? []).filter(item => item.type === type)
@@ -501,17 +559,17 @@ export default function MarketSummaryPage() {
                               <SummaryBadge>{showItems ? label : countLabel}</SummaryBadge>
                               {showItems && (
                                 <div className="mt-1 min-w-0 truncate rounded-sm bg-ui-surface px-1.5 py-1 text-[11px] text-ui-text" style={{ color: strongIndustryColor }} title={items.map(item => item.stockName).join(' · ')}>
-                                  {items.length > 0 ? items.map(item => item.stockName).join(' · ') : '—'}
+                                  {items.length > 0 ? items.map(item => item.stockName).join(' · ') : ''}
                                 </div>
                               )}
                               <div className={`${showItems ? 'mt-1' : 'mt-2'} space-y-1`}>
                                 <div className="flex min-w-0 items-center justify-between gap-1 rounded-sm bg-ui-surface px-1.5 py-1 text-[11px]">
                                   <span className="truncate text-ui-muted">{showItems ? countLabel : '종목 수'}</span>
-                                  <span className="shrink-0 font-semibold text-ui-text">{notices?.[countKey] ?? '-'}</span>
+                                  <span className="shrink-0 font-semibold text-ui-text">{notices?.[countKey] ?? ''}</span>
                                 </div>
                                 <div className="flex min-w-0 items-center justify-between gap-1 rounded-sm bg-ui-surface px-1.5 py-1 text-[11px]">
                                   <span className="shrink-0 text-ui-muted">시총 합</span>
-                                  <span className="truncate text-right font-semibold text-ui-text">{marketValue != null ? toJoEokDecimal(marketValue / 100_000_000) : '—'}</span>
+                                  <span className="truncate text-right font-semibold text-ui-text">{marketValue != null ? toJoEokDecimal(marketValue / 100_000_000) : ''}</span>
                                 </div>
                               </div>
                             </section>
