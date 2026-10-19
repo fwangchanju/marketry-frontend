@@ -415,7 +415,7 @@ function SectorSearchPopup({
               type="button"
               onClick={() => onSelect(opt.id)}
               onMouseEnter={() => search.setHighlightedIndex(index)}
-              className={`block w-full truncate rounded-none border-0 py-1 pr-3 pl-4 text-left text-sm font-normal text-ui-white shadow-none outline-none ${
+              className={`flex min-h-7 w-full items-center truncate rounded-none border-0 py-1 pr-3 pl-4 text-left text-sm font-normal text-ui-white shadow-none outline-none ${
                 index === search.highlightedIndex ? 'bg-ui-white/10' : 'bg-transparent'
               }`}
             >
