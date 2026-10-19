@@ -733,6 +733,8 @@ a { color: var(--accent-light); text-decoration: none; }
 .settings-panel-tab-content[data-align-second-heading] .settings-exclude-list {
   flex: 1;
   min-height: 0;
+  /* 20px 항목 3개 + 4px 간격 2개. 남는 버튼 영역 안에서 세로 중간에 둔다. */
+  margin-block: auto;
   overscroll-behavior-y: contain;
 }
 

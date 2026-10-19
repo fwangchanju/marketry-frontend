@@ -2179,7 +2179,7 @@ export function SettingsExcludeSection({
         <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
         <div
           inert={!sectorFilterEnabled}
-          className={`settings-control-inset settings-exclude-list mt-[7px] flex flex-col gap-1 overflow-y-auto ${sectorFilterEnabled ? '' : 'opacity-35'} ${bookmark.mode === 'bookmark' ? 'max-h-14' : 'max-h-40'}`}
+          className={`settings-control-inset settings-exclude-list mt-[7px] flex max-h-[68px] flex-col gap-1 overflow-y-auto ${sectorFilterEnabled ? '' : 'opacity-35'}`}
         >
             {excludedSectors.map(sector => (
               // 지도 위쪽 이동 경로의 되돌아가기 버튼과 같은 모양 — 이름 앞에 되돌아가기 표시가 붙은 한 버튼이다.
