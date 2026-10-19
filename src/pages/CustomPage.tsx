@@ -310,7 +310,7 @@ export default function CustomPage() {
               ) : (
                 // 마켓트리·거래소 화면은 읽기 전용이라 설정할 항목이 없다 — 그 사실만 알린다.
                 <div className="settings-empty-message">
-                  <span className="text-center">읽기 전용<br />내 분류만 가능</span>
+                  <span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 분류만 가능</span></span>
                 </div>
               )}
               taxonomyAtBottom
