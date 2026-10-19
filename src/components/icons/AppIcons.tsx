@@ -62,6 +62,16 @@ export function UploadIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+// 공개 분류 업데이트 — 구름으로 올리는 화살표.
+export function CloudUploadIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M7 18H6a4 4 0 0 1-.9-7.9 7 7 0 0 1 13.6-1.6A5 5 0 0 1 18 18h-1" />
+      <path d="m8 14 4-4 4 4M12 10v11" />
+    </svg>
+  )
+}
+
 export function CheckIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>

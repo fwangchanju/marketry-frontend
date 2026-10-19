@@ -1214,7 +1214,7 @@ export function SettingsSectorStockScopeSection({
     { value: 'ALL', label: '전종목' },
   ]
   return (
-    <div className="settings-first-depth-level text-sm">
+    <div className="settings-first-depth-level settings-graph-item text-sm">
       <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-ui-white">
         <span className="settings-plain-title">집계 대상 종목</span>
       </span>
@@ -1270,7 +1270,7 @@ export function SettingsGroupDepthSection({
   lockedMessage?: ReactNode
 }) {
   return (
-    <div className="settings-first-depth-level text-sm">
+    <div className="settings-first-depth-level settings-graph-item text-sm">
       <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-ui-white">
         <span className="settings-plain-title">업종 분류 단계</span>
       </span>
@@ -1307,7 +1307,7 @@ export function SettingsAverageModeSection({
     { value: true, label: '동일 가중' },
   ]
   return (
-    <div className="settings-first-depth-level text-sm">
+    <div className="settings-first-depth-level settings-graph-item text-sm">
       <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준</span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
@@ -1363,7 +1363,7 @@ export function SettingsBeforeMinutesSection({
     0,
   )
   return (
-    <div className="settings-second-depth-metric relative mt-6 text-sm">
+    <div className="settings-second-depth-metric settings-graph-item relative mt-6 text-sm">
       <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`flex items-center gap-1 ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>
           <span className="settings-plain-title">비교 시점</span>
@@ -1513,7 +1513,7 @@ export function SettingsStockSizeSelector({
   const bookmark = useContext(SettingsBookmarkContext)
   if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('boxSize')) return null
   return (
-    <div className={`settings-first-stock-size text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'boxSize') : 'mb-6 pt-3 pb-6'}`}>
+    <div className={`settings-first-stock-size settings-auto-item text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'boxSize') : 'mb-6 pt-3 pb-6'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <SettingTitle bookmarkId="boxSize" help className="text-[15px]">박스 크기</SettingTitle>
@@ -1521,7 +1521,7 @@ export function SettingsStockSizeSelector({
         </div>
       </div>
       <SettingDescription>시가총액이 박스 크기에 반영되는 정도</SettingDescription>
-      <div className="settings-slider-control mt-1">
+      <div className="settings-slider-control">
         <div className="mb-2 flex items-center justify-between text-ui-muted">
           <div className="flex flex-col items-center gap-1">
             <SettingsSectionIcon icon="equal-size" className="relative -left-[6.225px] h-[48px] w-[48px] origin-top-left scale-[1.15]" strokeWidth={0.587} />
@@ -1647,9 +1647,9 @@ export function SettingsSectorLevelSection({
 
   return (
     <div className="text-ui-white">
-      {showTaxonomy && <div className={showDivider ? 'mt-6 pt-8' : inBookmarkTab ? '' : 'pt-3'}>
+      {showTaxonomy && <div className={showDivider ? 'mt-6 pt-8' : ''}>
         <div>
-          <div className={`settings-first-depth-level text-sm ${itemClass('depthLevel')}`}>
+          <div className={`settings-first-depth-level settings-auto-item text-sm ${itemClass('depthLevel')}`}>
             <div className="flex max-w-[16rem] items-center justify-between">
               <span className="flex items-center text-left text-ui-white">
                 <SettingTitle bookmarkId="depthLevel" className="text-[15px]" help>업종 분류 깊이</SettingTitle>
@@ -1668,7 +1668,7 @@ export function SettingsSectorLevelSection({
               />
             </div>
             <SettingDescription dimmed={!sectorLevelEnabled}>선택한 단계까지 업종을 세분화해 표시</SettingDescription>
-            <div className={`settings-control-inset mt-[9.5px] ${sectorLevelEnabled ? '' : 'opacity-35'}`}>
+            <div className={`settings-control-inset ${sectorLevelEnabled ? '' : 'opacity-35'}`}>
               <DepthStairSelect
                 depth={depthValue}
                 labels={depthMetricLabels}
@@ -1678,8 +1678,8 @@ export function SettingsSectorLevelSection({
               />
             </div>
           </div>
-          <div className={`settings-second-depth-metric relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthMetric')}`}>
-            <div className={isDepthMetricDisabled ? 'opacity-35' : ''}>
+          <div className={`settings-second-depth-metric settings-auto-item relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthMetric')}`}>
+            <div className={`settings-auto-content ${isDepthMetricDisabled ? 'opacity-35' : ''}`}>
               <div className="flex max-w-[16rem] items-center justify-between">
                 <span className="flex items-center text-left text-ui-white">
                   <SettingTitle bookmarkId="depthMetric" className="text-[15px]">업종 지표</SettingTitle>
@@ -1702,7 +1702,7 @@ export function SettingsSectorLevelSection({
                 badge="업종명"
                 outlinedChevron
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
-                className={`mt-[9.5px] max-w-[16rem] settings-control-inset ${depthMetricEnabled ? '' : 'opacity-35'}`}
+                className={`max-w-[16rem] settings-control-inset ${depthMetricEnabled ? '' : 'opacity-35'}`}
               />
               {/* 업종 지표 버튼이 지도에서 종목 상자 위(업종 머리글)에 놓인다는 것을 보여 주는 가짜 상자 — 누를 수 없는 그림이라 회색 선으로만 그린다. */}
               <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-[16rem] ${depthMetricEnabled ? '' : 'opacity-35'}`}>
@@ -1741,7 +1741,7 @@ export function SettingsSectorLevelSection({
           </div>
           <div
             aria-disabled={isDepthMetricRangeDisabled}
-            className={`settings-third-depth-range relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthRange')} ${isDepthMetricRangeDisabled ? 'cursor-not-allowed' : ''}`}
+            className={`settings-third-depth-range settings-auto-item relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthRange')} ${isDepthMetricRangeDisabled ? 'cursor-not-allowed' : ''}`}
           >
             <span className={`flex items-center text-left text-[15px] text-ui-white ${isDepthMetricRangeDisabled ? 'opacity-35' : ''}`}>
               <SettingTitle bookmarkId="depthRange">지표 표시 단계</SettingTitle>
@@ -1749,7 +1749,7 @@ export function SettingsSectorLevelSection({
             <div className={isDepthMetricRangeDisabled ? 'opacity-35' : ''}>
               <SettingDescription>지표를 표시할 업종 단계 범위</SettingDescription>
             </div>
-            <div className={`settings-control-inset mt-[9.5px] ${isDepthMetricRangeDisabled ? 'opacity-35' : ''}`}>
+            <div className={`settings-control-inset ${isDepthMetricRangeDisabled ? 'opacity-35' : ''}`}>
               <DepthStairRange
                 minIndex={depthMetricSliderMinIndex}
                 maxIndex={depthMetricSliderMaxIndex}
@@ -1789,7 +1789,7 @@ export function SettingsSectorLevelSection({
           같은 번호 위계로 이어서 표시한다. */}
       {showStockDisplay && <div className={showTaxonomy ? 'mt-6 pt-8' : 'pt-0'}>
         <div>
-          <div className={`settings-second-stock-label text-sm ${inBookmarkTab ? '' : 'mt-2'} ${itemClass('boxLabel')}`}>
+          <div className={`settings-second-stock-label settings-auto-item text-sm ${inBookmarkTab ? '' : 'mt-2'} ${itemClass('boxLabel')}`}>
             <div className="flex max-w-[16rem] items-center justify-between">
               <span className="flex items-center text-left text-ui-white">
                 <SettingTitle bookmarkId="boxLabel" className="text-[15px]">박스 내 표기</SettingTitle>
@@ -1805,7 +1805,7 @@ export function SettingsSectorLevelSection({
             <div className={stockLabelEnabled ? '' : 'opacity-35'}>
               <SettingDescription>박스 안에 표시할 내용</SettingDescription>
             </div>
-            <div className={`settings-control-inset mt-[9.5px] max-w-[16rem] ${stockLabelEnabled ? '' : 'opacity-35'}`}>
+            <div className={`settings-control-inset max-w-[16rem] ${stockLabelEnabled ? '' : 'opacity-35'}`}>
               {/* 2-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
               <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                 <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
@@ -1844,7 +1844,7 @@ export function SettingsSectorLevelSection({
           {showDecimalPlaces && (
             <div
               aria-disabled={isDecimalPlacesDisabled || undefined}
-              className={`settings-fourth-decimal-places relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('decimalPlaces')} ${isDecimalPlacesDisabled ? 'cursor-not-allowed' : ''}`}
+              className={`settings-fourth-decimal-places settings-auto-item relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('decimalPlaces')} ${isDecimalPlacesDisabled ? 'cursor-not-allowed' : ''}`}
               onPointerEnter={isDecimalPlacesDisabled ? e => setDecimalPlacesHint(cursorHintFrom(e)) : undefined}
               onPointerMove={isDecimalPlacesDisabled ? e => setDecimalPlacesHint(cursorHintFrom(e)) : undefined}
               onPointerLeave={() => setDecimalPlacesHint(null)}
@@ -1853,13 +1853,13 @@ export function SettingsSectorLevelSection({
                 setDecimalPlacesHint(cursorHintFrom(e))
               } : undefined}
             >
-              <div className={isDecimalPlacesDisabled ? 'opacity-35' : ''}>
+              <div className={`settings-auto-content ${isDecimalPlacesDisabled ? 'opacity-35' : ''}`}>
               <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
                 <SettingTitle bookmarkId="decimalPlaces">등락률 소수점</SettingTitle>
               </span>
               <SettingDescription>종목 등락률의 소수점 자릿수</SettingDescription>
               {/* 3-2)와 같은 가짜 종목 상자 — 세 칸이 0·1·2자리 눈금이고, 슬라이더 손잡이가 각 칸 가운데에 멈춘다. */}
-              <div className="settings-control-inset mt-[9.5px] max-w-[16rem]">
+              <div className="settings-control-inset max-w-[16rem]">
                 <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                   <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
                 </div>
@@ -2079,33 +2079,35 @@ export function SettingsSectorChangeSection({
   noDataLimited?: boolean
 }) {
   return (
-    <div className="settings-second-sector-change h-[160px] text-sm text-ui-white">
+    <div className="settings-second-sector-change settings-admin-item h-[160px] text-sm text-ui-white">
       <p className="flex items-center text-[15px]">
         <span className="settings-plain-title">업종 등락 방향</span>
       </p>
       <SettingDescription>상승·하락 업종만 표시</SettingDescription>
-      <DepthTextSelect
-        depth={depth}
-        onChange={onChangeDepth}
-        maxSelectableDepth={maxSelectableDepth}
-        noDataLimited={noDataLimited}
-        ariaLabel="업종 등락 방향 업종 단계"
-        className="mt-2 justify-center"
-      />
-      <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative mt-2 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
-        {DIRECTION_OPTIONS.map(option => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={value === option.value}
-            onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
-          >
-            {option.label}
-          </button>
-        ))}
+      <div className="settings-button-area flex flex-col gap-2">
+        <DepthTextSelect
+          depth={depth}
+          onChange={onChangeDepth}
+          maxSelectableDepth={maxSelectableDepth}
+          noDataLimited={noDataLimited}
+          ariaLabel="업종 등락 방향 업종 단계"
+          className="justify-center"
+        />
+        <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
+          <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
+          {DIRECTION_OPTIONS.map(option => (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={value === option.value}
+              onClick={() => onChange(option.value)}
+              className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -2235,8 +2237,8 @@ export function SettingsTopPickSection({
   if (inBookmarkTab && !bookmark.ids.includes('topPick')) return null
 
   return (
-    <div className={`settings-second-top-pick relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${bookmarkItemClass(bookmark, 'topPick')}`}>
-      <div className={isTopPickDisabled ? 'opacity-35' : ''}>
+    <div className={`settings-second-top-pick settings-auto-item relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${bookmarkItemClass(bookmark, 'topPick')}`}>
+      <div className={`settings-auto-content ${isTopPickDisabled ? 'opacity-35' : ''}`}>
         <div className="flex max-w-[16rem] items-center justify-between">
           <span className="flex items-center text-left text-ui-white">
             <SettingTitle bookmarkId="topPick" className="text-[15px]" help>상위 업종 강조</SettingTitle>
@@ -2268,7 +2270,7 @@ export function SettingsTopPickSection({
             className={`mt-1 w-[42px] shrink-0 ${topPickEnabled ? '' : 'opacity-35'}`}
           />
         </div>
-        <div className={`settings-slider-control mt-[7.5px] ${topPickEnabled ? '' : 'opacity-35'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
+        <div className={`settings-slider-control ${topPickEnabled ? '' : 'opacity-35'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
           <div role="radiogroup" aria-label="상위 업종 강조 단계" className="relative" style={{ height: stairHeight(depthLabelCount) }}>
             <StairRows
               railWidth={0}
@@ -2343,7 +2345,7 @@ export function SettingsColorSection({
   if (colorScaleDraft === null) return null
 
   return (
-    <div className="settings-third-color pt-3 text-ui-white">
+    <div className="settings-third-color settings-auto-item text-ui-white">
       {/* "색상 커스텀 모드" 토글을 별도 줄로 두지 않고, 제목 바로 우측에 스위치만 붙인다. 초기화 버튼(26px)은 위아래 여백을 -2px씩 줘서 줄 높이를 다른 항목의 제목 줄(22px)과 같게 둔다 — 그래야 메뉴를 바꿔도 제목·토글 위치가 같다. */}
       <div className="flex items-center justify-between">
         <p className="flex items-center text-[15px]">
@@ -2373,7 +2375,7 @@ export function SettingsColorSection({
       </div>
       <SettingDescription dimmed={!colorCustomOn}>등락률 구간별 종목 박스 색상</SettingDescription>
       {/* 맨 위 9칸 색상바는 9칸이 설정창 폭에 들어가지 않아 지웠다(칸 선택은 아래 막대의 손잡이·0% 표식·상승/하락 선택으로 한다). 지도 하단 범례 바는 그대로다. */}
-      <div className="relative mt-[11.5px]">
+      <div className="settings-auto-control relative">
         {colorEditorProps && (
           <div className={colorCustomOn ? '' : 'opacity-35'} inert={!colorCustomOn}>
             <TreemapColorThresholdEditorPanel {...colorEditorProps} />
@@ -2832,9 +2834,9 @@ export default function SettingsPanel({
               onToggleAvgChangeRateUseSimple={onToggleAvgChangeRateUseSimple!}
             />
           ) : null}
-          {/* 북마크 항목 한 칸(160px)과 같은 높이 안에서 글자를 세로 가운데에 둔다. 탭 위 여백(20px)은 .settings-bookmark-tab이 준다. */}
+          {/* 빈 북마크 안내도 읽기 전용 안내와 같은 160px 영역의 가운데·중간에 둔다. */}
           {selectedSection.id === 'favorites' && bookmarkContext.enabled && bookmarkContext.ids.length === 0 && (
-            <p className="flex h-[160px] items-center justify-center text-center text-xs font-medium leading-relaxed text-ui-text">
+            <p className="settings-empty-message">
               북마크한 항목이 없습니다.
             </p>
           )}

@@ -10,7 +10,7 @@ import { treemapKeys } from '@/hooks/queryKeys'
 import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
-import { CommitIcon, HistoryIcon } from '@/components/icons/AppIcons'
+import { CloudUploadIcon, HistoryIcon } from '@/components/icons/AppIcons'
 
 // 커스텀 설정창의 다운로드·업로드 버튼과 같은 회색 칩(마우스를 올리면 강조색이 은은하게 비친다). 위험 작업이라는 표시는 설정창 헤더의 ADMIN 경고가 맡는다.
 const BUTTON_CLASS =
@@ -54,18 +54,18 @@ export default function MarketryPublishControls() {
 
   const handlePublish = async () => {
     const confirmed = await appConfirm(
-      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n내 분류를 MARKETRY 분류로 커밋하시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`,
-      { adminOnly: true, title: 'MARKETRY 커밋' },
+      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n내 분류를 MARKETRY 분류로 업데이트하시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`,
+      { adminOnly: true, title: 'MARKETRY 업데이트' },
     )
     if (!confirmed) return
-    setBusyMessage('MARKETRY를 커밋 중입니다.')
+    setBusyMessage('MARKETRY를 업데이트 중입니다.')
     try {
       const published = await publishMarketry(createPublicationLabel(new Date()))
       setVersions(null)
       await refreshMaps()
-      appAlert(`[${toDateTimeLabel(published.label)}]\nMARKETRY 커밋이 완료되었습니다.`, { title: '커밋 완료' })
+      appAlert(`[${toDateTimeLabel(published.label)}]\nMARKETRY 업데이트이 완료되었습니다.`, { title: '업데이트 완료' })
     } catch {
-      appAlert('MARKETRY에 올리지 못했습니다.', { title: '커밋 실패' })
+      appAlert('MARKETRY에 올리지 못했습니다.', { title: '업데이트 실패' })
     } finally {
       setBusyMessage(null)
     }
@@ -105,8 +105,8 @@ export default function MarketryPublishControls() {
   return (
     <div ref={rootRef} className="relative grid w-full grid-cols-2 gap-[6px]">
       <button type="button" onClick={handlePublish} disabled={isBusy} className={BUTTON_CLASS}>
-        <CommitIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-ui-text" />
-        커밋
+        <CloudUploadIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-ui-text" />
+        업데이트
       </button>
       <button type="button" onClick={handleToggleVersions} disabled={isBusy} className={BUTTON_CLASS}>
         <HistoryIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-ui-text" />
