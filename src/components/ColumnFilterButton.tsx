@@ -80,8 +80,8 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
     })
   }, [options, optionOrder, orderMode?.value])
 
-  const trimmed = query.trim()
-  const shownOptions = trimmed ? sortedOptions.filter(value => labelOf(value).includes(trimmed)) : sortedOptions
+  const trimmed = query.trim().toLowerCase()
+  const shownOptions = trimmed ? sortedOptions.filter(value => labelOf(value).toLowerCase().includes(trimmed)) : sortedOptions
 
   const toggleOption = (value: string) => {
     if (selectOnlyOnSearch && trimmed && sortedOptions.every(option => !excluded.has(option))) {
