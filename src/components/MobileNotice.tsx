@@ -4,9 +4,8 @@ import MarketryLogo from '@/components/MarketryLogo'
 export default function MobileNotice() {
   return (
     <div role="alert" className="flex min-h-screen flex-col items-center justify-center gap-6 bg-ui-background px-8 text-center text-ui-white">
-      <MarketryLogo className="h-auto w-48" />
-      <p className="text-lg font-medium">PC에서 접속해 주세요.</p>
-      <p className="text-sm text-ui-text">모바일 화면은 지원하지 않습니다.</p>
+      <MarketryLogo layout="stacked" className="h-auto w-48" />
+      <p className="text-lg font-medium">현재 페이지는 PC 화면에 최적화되어 있습니다.</p>
     </div>
   )
 }
