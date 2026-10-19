@@ -60,7 +60,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
         aria-label="홈으로 이동: 지도 전체 종목"
         className="flex h-[60px] shrink-0 items-center"
       >
-        <MarketryLogo className="h-[40.9px] w-auto max-w-[18rem]" />
+        <MarketryLogo layout="horizontalClean" className="h-auto w-[min(13rem,calc(100vw-10rem))]" />
       </Link>
       <div className="flex items-center gap-3">
       {hideAccount ? null : (
