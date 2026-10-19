@@ -199,7 +199,8 @@ export default function SectorBox({
               하위 헤더보다 높다. 선택한 섹터 자신의 헤더는 활성 상태에서 CSS가 31로 올려 기존
               헤더 hover 표기를 유지한다. */}
           <div className="treemap-sector-hover-overlay absolute inset-0 z-[30] pointer-events-none" aria-hidden="true" />
-          {/* 업종 헤더(SectorHeader) — 업종 박스 맨 위 제목. 업종명과 등락률 같은 수치를 한 줄로 보여 준다. */}
+          {/* 업종 헤더(SectorHeader) — 업종 박스 맨 위 제목. 업종명과 등락률 같은 수치를 한 줄로 보여 준다.
+              강조 헤더는 z-30 강조 테두리보다 위에 둔다. 얇은 하위 헤더에서는 테두리 2px이 글자 윗부분을 덮기 때문이다. */}
           <button
             type="button"
             onMouseDown={e => {
@@ -241,7 +242,7 @@ export default function SectorBox({
               width: `calc(100% - ${PADDING * 2}px)`,
               ...(isTopPick ? { backgroundColor: strongIndustryColor, color: 'var(--ui-surface)' } : absoluteDepth === 0 ? { color: strongIndustryColor } : {}),
             } as CSSProperties}
-            className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header' : ''} absolute top-0 z-[2] flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
+            className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header z-[31]' : 'z-[2]'} absolute top-0 flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
           >
             {/* 줄 높이로 헤더를 채우면 작은 지표 글자·폴백 글꼴의 baseline에 따라
                 줄 상자가 커져 위쪽이 잘릴 수 있다. 고정 높이 틀 안에서 같은 방식으로 가운데 정렬한다. */}
