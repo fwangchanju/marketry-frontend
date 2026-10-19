@@ -45,10 +45,26 @@ const MarketOverviewItemSchema = z.object({
   snapshotTime: z.string(),
 })
 
+const MarketOverviewTrendItemSchema = z.object({
+  market: MarketSchema,
+  date: z.string(),
+  changeRate: z.number(),
+})
+export type MarketOverviewTrendItem = z.infer<typeof MarketOverviewTrendItemSchema>
+
+const MarketSectorTrendItemSchema = z.object({
+  date: z.string(),
+  sectorName: z.string(),
+  changeRate: z.number(),
+})
+export type MarketSectorTrendItem = z.infer<typeof MarketSectorTrendItemSchema>
+
 // ─── Market summary (/summary) ─────────────────────────────────────────
 
 export const MarketSummaryResponseSchema = z.object({
   marketOverviews: snapshotResponseSchema(MarketOverviewItemSchema),
+  marketOverviewTrends: z.array(MarketOverviewTrendItemSchema).default([]),
+  sectorOverviewTrends: z.array(MarketSectorTrendItemSchema).default([]),
 })
 
 // ─── Home notices (/map/notices) ───────────────────────────────────────────────

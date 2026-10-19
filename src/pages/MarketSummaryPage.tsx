@@ -24,6 +24,7 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
+import type { MarketOverviewTrendItem, MarketSectorTrendItem } from '@/types/api'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useMarketNotices } from '@/hooks/useMarketNotices'
@@ -33,26 +34,93 @@ import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toSnapshotDateLabel, toPctSigned } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
-import { resolveTreemapColor, resolveTreemapExtremeColor } from '@/utils/treemapColorScale'
+import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
 import { collectAtDepth } from '@/utils/sectorDepth'
 
-// 홈 화면 시험 배치 — 대분류 업종만으로 그린 약식 등락률 지도와 그룹 등락률 그래프를 스마트폰 크기 틀(가로 360px)에 나란히 둔다.
-// 모바일 사용자에게 스크린샷으로 찍어 보여 주기 좋은지 보고 계속 진행할지 정한다. 관심종목·요약 API는 쓰지 않는다.
+// 홈 시장 요약 배치
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 
 // 시장 요약의 항목 배지는 툴바의 "분류" 칸과 같은 짙은 청록 배경(--brand-surface)·흰 글자을 쓴다. 지수는 오르면 빨강·내리면 파랑, 변화가 없거나 값이 없으면 회색이다.
 const INDEX_ROWS = [
-  { label: '코스피', market: 'KOSPI', badgeClass: 'bg-[var(--brand-surface)] text-ui-white' },
-  { label: '코스닥', market: 'KOSDAQ', badgeClass: 'bg-[var(--brand-surface)] text-ui-white' },
+  { label: '코스피', market: 'KOSPI' },
+  { label: '코스닥', market: 'KOSDAQ' },
 ] as const
 
 
 const toIndexValue = (value: number): string => value.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-// 지수 대비(전일 대비 포인트) — 부호를 붙인다(+12.34 / -5.67 / 0.00).
-const toIndexChange = (value: number): string => `${value > 0 ? '+' : ''}${toIndexValue(value)}`
+function MarketIndexTrendChart({ items, market, label, colorScale }: { items: MarketOverviewTrendItem[]; market: 'KOSPI' | 'KOSDAQ'; label: string; colorScale: ColorScaleConfig }) {
+  const dateLabel = (date: string) => {
+    const value = new Date(`${date}T00:00:00Z`)
+    return `${value.getUTCMonth() + 1}/${value.getUTCDate()}`
+  }
+  const values = items.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))
+  const scale = Math.max(3, ...values.map(item => Math.abs(item.changeRate)))
+  return (
+    <div role="img" aria-label={`${label} 최근 ${values.length}거래일 등락률 그래프`} className="grid w-full grid-cols-5 gap-1 pt-1">
+      {values.map(item => {
+        const magnitude = Math.min(Math.abs(item.changeRate) / scale, 1) * 26
+        const height = Math.max(2, magnitude)
+        const barColor = item.changeRate === 0 ? 'var(--ui-muted)' : resolveTreemapExtremeColor(item.changeRate, colorScale)
+        return (
+          <div key={`${item.date}-${item.market}`} className="min-w-0 text-center">
+            <div className="h-4 truncate text-[10px] font-semibold tabular-nums text-ui-text">{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(1)}%</div>
+            <div className="relative mx-auto h-[54px] w-full max-w-24">
+              <div className="absolute inset-x-0 top-1/2 h-px bg-ui-muted" />
+              <div className="absolute inset-x-0 top-0 flex h-1/2 items-end justify-center">
+                {item.changeRate >= 0 && <i className="w-1/2 rounded-t-sm" style={{ height, backgroundColor: barColor }} />}
+              </div>
+              <div className="absolute inset-x-0 bottom-0 flex h-1/2 items-start justify-center">
+                {item.changeRate < 0 && <i className="w-1/2 rounded-b-sm" style={{ height, backgroundColor: barColor }} />}
+              </div>
+            </div>
+            <div className="mt-1 whitespace-nowrap text-[10px] tabular-nums text-ui-muted">{dateLabel(item.date)}</div>
+          </div>
+        )
+      })}
+      {!values.length && <div className="col-span-5 py-5 text-center text-[12px] text-ui-muted">이력 없음</div>}
+    </div>
+  )
+}
+
+function SectorTrendChart({ items, colorScale }: { items: MarketSectorTrendItem[]; colorScale: ColorScaleConfig }) {
+  const dates = [...new Set(items.map(item => item.date))].sort()
+  const latestDate = dates.at(-1)
+  const topSectors = items.filter(item => item.date === latestDate).sort((a, b) => b.changeRate - a.changeRate).slice(0, 5)
+  const series = topSectors.map((sector, index) => ({
+    name: sector.sectorName,
+    color: resolveTreemapExtremeColor(sector.changeRate, colorScale),
+    values: dates.map(date => items.find(item => item.date === date && item.sectorName === sector.sectorName)?.changeRate ?? null),
+    index,
+  })).filter(item => item.values.some(value => value !== null))
+  const allValues = series.flatMap(item => item.values.filter((value): value is number => value !== null))
+  const extent = Math.max(1, ...allValues.map(Math.abs))
+  const points = (value: number | null, index: number) => value === null ? null : `${12 + index * (196 / Math.max(1, dates.length - 1))},${44 - value / extent * 34}`
+  return (
+    <div>
+      <svg role="img" aria-label="오늘 상위 업종 최근 5거래일 등락률 그래프" preserveAspectRatio="none" viewBox="0 0 220 78" className="block h-[96px] w-full">
+        {[8, 39, 70].map(y => <line key={y} x1="8" x2="212" y1={y} y2={y} stroke={y === 39 ? 'var(--ui-muted)' : 'var(--ui-border)'} strokeWidth="0.7" strokeDasharray={y === 39 ? undefined : '2 3'} />)}
+        {series.map(line => {
+          const path = line.values.map((value, index) => points(value, index)).filter((point): point is string => point !== null).join(' ')
+          return <polyline key={line.name} points={path} fill="none" stroke={line.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        })}
+      </svg>
+      <div className="grid grid-cols-5 text-center text-[10px] tabular-nums text-ui-muted">
+        {dates.map(date => <span key={date}>{`${new Date(`${date}T00:00:00Z`).getUTCMonth() + 1}/${new Date(`${date}T00:00:00Z`).getUTCDate()}`}</span>)}
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-ui-text">
+        {series.map(line => <span key={line.name} className="flex items-center gap-1"><i className="h-2 w-2 rounded-full" style={{ backgroundColor: line.color }} />{line.name}</span>)}
+        {!series.length && <span className="text-ui-muted">이력 없음</span>}
+      </div>
+    </div>
+  )
+}
+
+function SummaryBadge({ children }: { children: ReactNode }) {
+  return <span className="inline-flex h-5 items-center rounded-sm bg-[var(--brand-surface)] px-1.5 text-[12px] font-semibold text-ui-white">{children}</span>
+}
 
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
 const NOTICE_TYPES = [
@@ -137,11 +205,6 @@ export default function MarketSummaryPage() {
     const item = isLatestDailyView ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market) : undefined
     return { indexValue: item?.indexValue ?? null, tradingValue: item?.tradingValue ?? null, changeValue: item?.changeValue ?? null, changeRate: item?.changeRate ?? null }
   }
-
-  // 코스피·코스닥 거래대금(억 원)과 그 합 — 합은 둘 중 하나라도 못 받았으면 null이다. 서버 값은 백만 원 단위라 100으로 나눈다.
-  const kospiTradingValue = indexOf('KOSPI').tradingValue
-  const kosdaqTradingValue = indexOf('KOSDAQ').tradingValue
-  const totalTradingValueEok = kospiTradingValue === null || kosdaqTradingValue === null ? null : (kospiTradingValue + kosdaqTradingValue) / 100
 
   // 홈은 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
   const effectiveDepth = 1
@@ -335,51 +398,49 @@ export default function MarketSummaryPage() {
                 title: '시장 요약',
                 captureId: 'market-summary',
                 body: (
-                  // 두 칸 격자다: [배지 칸(네 배지 중 가장 긴 쪽 너비)] [회색 칸(남는 폭)]. 신규 상장·3개월 내 상장·거래 정지·거래 정지 중 네 줄을 세로 한 열로 쌓고,
-                  // 배지 칸이 네 줄에 공유돼 짧은 배지는 오른쪽만 늘어나 모두 같은 너비가 된다(글자는 왼쪽). 짝이 되는 두 배지(신규 상장·3개월 내 상장, 거래 정지·거래 정지 중)는 같은 색이라 한눈에 짝이 보인다. 모든 항목 배지는 툴바의 "분류" 칸과 같은 짙은 청록 배경(--brand-surface)·흰 글자을 쓴다.
-                  <div className="grid min-h-0 w-full flex-1 grid-cols-[max-content_minmax(0,1fr)_max-content_minmax(0,1.5fr)] content-start gap-x-1 gap-y-1 overflow-y-auto text-[14px] font-medium leading-none tabular-nums">
-                    {/* 맨 위 세 줄은 코스피·코스닥 지수와 등락 종목(▲N ▼N ■N)다. 코스닥 아래에 등락 종목과 거래 대금, 그 아래에는 빈 줄을 두고 신규 상장부터 안내 종목을 둔다. */}
-                    {INDEX_ROWS.map(({ label, market, badgeClass }) => {
-                      const { indexValue, changeValue, changeRate } = indexOf(market)
+                  <div className="min-h-0 w-full flex-1 space-y-2 overflow-y-auto pb-1 text-[14px] font-medium leading-none tabular-nums">
+                    {INDEX_ROWS.map(({ label, market }) => {
+                      const { indexValue, tradingValue, changeRate } = indexOf(market)
+                      const trendItems = marketSummary?.marketOverviewTrends ?? []
                       return (
-                        <Fragment key={label}>
-                          <span className="flex h-6 items-center">
-                            <span className={`w-full whitespace-nowrap px-1 py-[3px] ${badgeClass}`}>{label}</span>
-                          </span>
-                          <span className="col-span-3 flex h-6 items-center">
-                            <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-2 rounded-sm bg-ui-surface pl-1 pr-3">
-                              {/* 코스피·코스닥 두 줄의 지수·대비·등락률이 자릿수가 달라도 두 줄이 세로로 맞도록, 값 묶음은 왼쪽에 두고, 값마다 최소 폭을 두어 숫자 끝을 오른쪽으로 맞춘다. 왼쪽 안쪽 여백은 4px다. */}
-                              <span className="min-w-[8ch] text-right text-ui-text">{indexValue === null ? '' : toIndexValue(indexValue)}</span>
-                              <span className={`min-w-[7ch] text-right ${changeRate === null || changeRate === 0 ? 'text-ui-text' : ''}`} style={rateColorStyle(changeRate)}>{changeValue === null ? '' : toIndexChange(changeValue)}</span>
-                              <span className={`min-w-[7ch] text-right ${changeRate === null || changeRate === 0 ? 'text-ui-text' : ''}`} style={rateColorStyle(changeRate)}>{changeRate === null ? '' : toPctSigned(changeRate)}</span>
-                            </span>
-                          </span>
-                        </Fragment>
+                        <section key={market} aria-label={`${label} 오늘 시장 요약`} className="space-y-1.5 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                          <div className="space-y-1">
+                            <SummaryBadge>{label} · 오늘</SummaryBadge>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {[
+                                { label: '지수', value: indexValue === null ? '—' : toIndexValue(indexValue), color: undefined },
+                                { label: '등락률', value: changeRate === null ? '—' : toPctSigned(changeRate), color: rateColorStyle(changeRate)?.color },
+                                { label: '거래대금', value: tradingValue === null ? '—' : toJoEokDecimal(tradingValue / 100), color: undefined },
+                              ].map(metric => (
+                                <div key={metric.label} className="min-w-0 rounded-sm bg-ui-surface px-1.5 py-1">
+                                  <div className="mb-1 text-[10px] font-medium text-ui-muted">{metric.label}</div>
+                                  <div className="truncate text-[13px] font-semibold text-ui-text" style={metric.color ? { color: metric.color } : undefined}>{metric.value}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="space-y-0.5">
+                            <SummaryBadge>최근 5거래일</SummaryBadge>
+                            <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />
+                          </div>
+                        </section>
                       )
                     })}
+                    <section aria-label="오늘 상위 업종 최근 5거래일 등락률" className="space-y-1 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                      <SummaryBadge>오늘 상위 업종 · 최근 5거래일</SummaryBadge>
+                      <SectorTrendChart items={marketSummary?.sectorOverviewTrends ?? []} colorScale={colorScale} />
+                    </section>
                     <span className="flex h-6 items-center">
                       <span className="w-full whitespace-nowrap bg-[var(--brand-surface)] px-1 py-[3px] text-ui-white">등락 종목</span>
                     </span>
-                    <span className="col-span-3 flex h-6 items-center">
-                      <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-2 rounded-sm bg-ui-surface pl-1 pr-3">
-                        {/* 위 코스피·코스닥 줄과 같은 칸 폭·정렬이다. */}
-                        <span className="min-w-[8ch] text-right" style={rateColorStyle(1)}>▲ {toCount(overview.advancers)}</span>
-                        <span className="min-w-[7ch] text-right" style={rateColorStyle(-1)}>▼ {toCount(overview.decliners)}</span>
-                        <span className="min-w-[7ch] text-right text-ui-text">■ {toCount(overview.unchanged)}</span>
-                      </span>
-                    </span>
                     <span className="flex h-6 items-center">
-                      <span className="w-full whitespace-nowrap bg-[var(--brand-surface)] px-1 py-[3px] text-ui-white">거래 대금</span>
-                    </span>
-                    <span className="col-span-3 flex h-6 items-center">
-                      <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-2 rounded-sm bg-ui-surface pl-1 pr-3 text-ui-text">
-                        {/* 코스피 / 코스닥 / 전체 순서이고, 위 지수 줄의 지수·대비·등락률과 같은 칸 폭에 숫자 끝을 오른쪽으로 맞춘다. */}
-                        <span className="min-w-[8ch] text-right">{kospiTradingValue === null ? '' : toJoEokDecimal(kospiTradingValue / 100)}</span>
-                        <span className="min-w-[7ch] text-right">{kosdaqTradingValue === null ? '' : toJoEokDecimal(kosdaqTradingValue / 100)}</span>
-                        <span className="min-w-[7ch] text-right">{totalTradingValueEok === null ? '' : toJoEokDecimal(totalTradingValueEok)}</span>
+                      <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-2 rounded-sm bg-ui-surface pl-1 pr-3">
+                        <span className="min-w-0 flex-1 truncate text-right" style={rateColorStyle(1)}>▲ {toCount(overview.advancers)}</span>
+                        <span className="min-w-0 flex-1 truncate text-right" style={rateColorStyle(-1)}>▼ {toCount(overview.decliners)}</span>
+                        <span className="min-w-0 flex-1 truncate text-right text-ui-text">■ {toCount(overview.unchanged)}</span>
                       </span>
                     </span>
-                    <span aria-hidden="true" className="col-span-4 h-6" />
+                    <div className="grid grid-cols-[max-content_minmax(0,1fr)_max-content_minmax(0,1.5fr)] gap-x-1 gap-y-1">
                     {NOTICE_TYPES.map(({ type, label, showItems, badgeClass, countLabel, countKey, valueKey }) => {
                       const items = (notices?.items ?? []).filter(item => item.type === type)
                       const rowClass = 'flex h-6 items-center'
@@ -418,6 +479,7 @@ export default function MarketSummaryPage() {
                         </Fragment>
                       )
                     })}
+                    </div>
                   </div>
                 ),
               },

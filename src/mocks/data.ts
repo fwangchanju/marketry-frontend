@@ -35,6 +35,36 @@ export const marketOverviews = [
   },
 ]
 
+const recentWeekdays = (() => {
+  const dates: string[] = []
+  const date = new Date()
+  date.setHours(0, 0, 0, 0)
+  while (dates.length < 5) {
+    const weekday = date.getDay()
+    if (weekday !== 0 && weekday !== 6) {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      dates.unshift(`${year}-${month}-${day}`)
+    }
+    date.setDate(date.getDate() - 1)
+  }
+  return dates
+})()
+
+export const marketOverviewTrends = [
+  { market: 'KOSPI' as const, rates: [-0.42, 0.31, -0.86, 0.54, 0.48] },
+  { market: 'KOSDAQ' as const, rates: [0.18, -0.62, -0.37, 0.11, -0.39] },
+].flatMap(({ market, rates }) => rates.map((changeRate, index) => ({ market, date: recentWeekdays[index], changeRate })))
+
+export const sectorOverviewTrends = [
+  { sectorName: '전력', rates: [0.4, -0.2, 1.1, 0.8, 2.7] },
+  { sectorName: '반도체', rates: [-0.6, 1.2, -1.0, 0.5, 2.0] },
+  { sectorName: '자동차', rates: [0.3, -0.4, 0.7, -0.8, 1.3] },
+  { sectorName: '조선', rates: [1.1, 0.6, -0.5, 0.9, -0.6] },
+  { sectorName: '바이오', rates: [-0.8, -1.2, 0.4, 1.4, 1.7] },
+].flatMap(({ sectorName, rates }) => rates.map((changeRate, index) => ({ date: recentWeekdays[index], sectorName, changeRate })))
+
 // 시가총액 구간 정의 목업 — GET /market-map/value-tiers, thresholdValue 오름차순(백엔드 계약과 동일).
 export const marketValueTiers = [
   { id: 1, label: '소형주', thresholdValue: 0, isExcludedByDefault: true },

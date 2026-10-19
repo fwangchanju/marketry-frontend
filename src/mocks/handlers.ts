@@ -86,7 +86,11 @@ export const handlers = [
   }),
 
   // ── 대시보드(시장요약, 홈 화면이 지수 등락률만 쓴다) ────────────────────────────────
-  http.get('/api/summary', () => HttpResponse.json({ marketOverviews: snapshot(data.marketOverviews) })),
+  http.get('/api/summary', () => HttpResponse.json({
+    marketOverviews: snapshot(data.marketOverviews),
+    marketOverviewTrends: data.marketOverviewTrends,
+    sectorOverviewTrends: data.sectorOverviewTrends,
+  })),
 
   // ── 마켓맵(공개 기본 조회) ────────────────────────────────────────────
   // marketOverview는 market이 단일 마켓일 때만(ALL_STOCK이면 단일 지수값이 없어 null) — 실제 백엔드와 동일.
