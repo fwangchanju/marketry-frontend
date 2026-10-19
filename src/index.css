@@ -567,6 +567,15 @@ a { color: var(--accent-light); text-decoration: none; }
 .settings-custom-control > .settings-plain-title {
   margin-bottom: 0;
 }
+/* 커스텀 설정 조작부의 글자는 버튼·입력칸 높이의 세로 중간에 둔다. */
+.settings-custom-control :is(button, input[type="text"]) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.settings-custom-control button {
+  display: flex;
+  align-items: center;
+}
 .settings-custom-control > .settings-control-inset,
 .settings-custom-control > div:has(> .settings-description) > .settings-control-inset {
   margin-top: auto;
@@ -724,6 +733,8 @@ a { color: var(--accent-light); text-decoration: none; }
 .settings-panel-tab-content[data-align-second-heading] .settings-exclude-list {
   flex: 1;
   min-height: 0;
+  /* 20px 항목 3개 + 4px 간격 2개. 남는 버튼 영역 안에서 세로 중간에 둔다. */
+  margin-block: auto;
   overscroll-behavior-y: contain;
 }
 

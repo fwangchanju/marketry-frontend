@@ -290,7 +290,7 @@ export default function CustomPage() {
           <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel
               pageLabel="Custom"
-              plainTabLabel={mode === 'stock' ? '커스텀' : '업종'}
+              plainTabLabel="커스텀"
               plainTabIcon="custom-edit"
               stockCountLabel={countLabel}
               // 저장·초기화는 기능 검토 전 임시 숨김. 재요청 시 새 버튼을 만들지 말고 이 옵션을 true로 바꿔 기존 버튼을 복원한다.
@@ -310,7 +310,7 @@ export default function CustomPage() {
               ) : (
                 // 마켓트리·거래소 화면은 읽기 전용이라 설정할 항목이 없다 — 그 사실만 알린다.
                 <div className="settings-empty-message">
-                  읽기 전용
+                  <span className="text-center">읽기 전용<br />내 분류만 가능</span>
                 </div>
               )}
               taxonomyAtBottom

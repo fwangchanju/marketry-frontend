@@ -61,8 +61,8 @@ export default function AdminPage() {
                 <Link to="/home" className="mt-4 inline-block text-[var(--accent)] underline">홈으로</Link>
               </div>
             ) : (
-              // 다른 페이지가 불러오는 동안 보여 주는 것과 같은 로고 원이지만, 돌지도 숫자를 세지도 않는다. 숫자가 있던 자리(로고 아래)에는 확인창 제목에 붙는 것과 같은 빨간 ⚠를 둔다.
-              <Spinner still stillContent={<span aria-hidden="true" className="text-[11cqw] leading-none text-[var(--status-error)]">⚠</span>} />
+              // 공통 세로형 로고를 정적으로 표시한다.
+              <Spinner still />
             )}
           </div>
           {isAdmin && (
