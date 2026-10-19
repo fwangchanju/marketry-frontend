@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { compareKoreanText } from '@/utils/koreanSort'
+import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 
 const POPUP_WIDTH_PX = 208
 const SEARCH_MIN_OPTIONS = 10
@@ -16,7 +17,7 @@ function FunnelIcon({ className }: { className?: string }) {
 // "가나다 순 / 사용자 지정 순" 두 칸 — 대·중·소분류 필터와 일괄 변경 팝업이 같이 쓴다.
 export function SectorOrderToggle({ label, value, onChange, compact = false }: { label: string; value: 'alpha' | 'custom'; onChange: (value: 'alpha' | 'custom') => void; compact?: boolean }) {
   return (
-    <div className={compact ? 'flex gap-3' : 'flex gap-1 px-3 pb-2'} role="radiogroup" aria-label={`${label} 보기 순서`}>
+    <div className={compact ? 'flex gap-3' : 'flex w-max gap-1 px-3 pb-2'} role="radiogroup" aria-label={`${label} 보기 순서`}>
       {([['alpha', '가나다 순'], ['custom', '사용자 지정 순']] as const).map(([option, text]) => (
         <button
           key={option}
@@ -26,7 +27,7 @@ export function SectorOrderToggle({ label, value, onChange, compact = false }: {
           onClick={() => onChange(option)}
           className={compact
             ? `whitespace-nowrap border-0 bg-transparent p-0 text-xs font-medium ${value === option ? 'text-[var(--brand)]' : 'text-ui-text hover:text-ui-white'}`
-            : `h-6 flex-1 rounded border p-0 text-xs font-medium leading-none shadow-none outline-none focus:outline-none focus-visible:outline-none ${value === option ? 'border-[var(--brand)] bg-transparent text-[var(--brand)]' : 'border-ui-border bg-transparent text-ui-text hover:text-[var(--brand)]'}`}
+            : `h-6 shrink-0 whitespace-nowrap rounded border px-2 text-xs font-medium shadow-none outline-none focus:outline-none focus-visible:outline-none ${value === option ? 'border-[var(--brand)] bg-transparent text-[var(--brand)]' : 'border-ui-border bg-transparent text-ui-text hover:text-ui-white'}`}
         >
           {text}
         </button>
@@ -163,8 +164,9 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
             <div className="px-3 pb-2">
               <input
                 type="text"
+                maxLength={SEARCH_MAX_LENGTH}
                 value={query}
-                onChange={event => setQuery(event.target.value)}
+                onChange={event => setQuery(event.target.value.slice(0, SEARCH_MAX_LENGTH))}
                 placeholder="검색"
                 aria-label={`${label} 검색`}
                 autoFocus

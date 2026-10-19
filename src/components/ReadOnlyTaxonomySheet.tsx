@@ -9,6 +9,7 @@ import StockSortHeader from '@/components/StockSortHeader'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
+import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -203,8 +204,6 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
 }
 
 // 검색어 최대 글자 수 — 분류 이름(대·중·소분류)·약칭 최대 길이(12자)와 같다.
-const SEARCH_MAX_LENGTH = 12
-
 // 표 위의 검색창과 개수 — 카테고리·종목 화면이 같은 틀(위치·크기)을 쓰도록 한 곳에 둔다. 커스텀 종목 표도 이걸 쓴다.
 export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel, extra, settingsLayout = false, inline = false, inputRightEdgePx, afterInput }: {
   query: string
