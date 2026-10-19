@@ -28,16 +28,20 @@ export default function ScreenshotModal({
   frameCaptureOptions,
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
+  const [contextPreviewSrc, setContextPreviewSrc] = useState<string | null>(null)
+  const [highlightRegion, setHighlightRegion] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
   const [captureError, setCaptureError] = useState<string | null>(null)
   const [captureAttempt, setCaptureAttempt] = useState(0)
   // 스크린샷 창은 모든 페이지에서 전체 화면(모니터) 캡처를 기본으로 연다.
   const [selectedCapture, setSelectedCapture] = useState<string | null>(null)
   const selectedFrame = frameCaptureOptions?.find(option => selectedCapture === `frame:${option.id}`)
+  const showContextPreview = Boolean(selectedFrame)
   const regionSelector = selectedCapture === 'mobile' ? mobileRegionOption?.selector : selectedFrame?.selector
   const regionMode = selectedCapture === 'mobile' ? mobileRegionOption?.mode : selectedFrame?.mode ?? (selectedFrame ? 'element' : undefined)
   const onCloneNode = selectedCapture === 'mobile' ? mobileRegionOption?.onCloneNode : undefined
   // 모니터·전체 화면 캡처에는 페이지와 무관하게 좌우 4px 바깥 여백을 포함한다.
   const horizontalPadding = selectedCapture === null ? mobileRegionOption?.monitorHorizontalPadding ?? 4 : 0
+  const fullPreviewPadding = mobileRegionOption?.monitorHorizontalPadding ?? 4
   // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 스크린샷 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
   // 스크린샷으로 찍을 영역의 비율로 어림잡고, 이미지가 로드되면 실제 비율로 바로잡는다.
   const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget, regionSelector, regionMode, horizontalPadding))
@@ -77,18 +81,26 @@ export default function ScreenshotModal({
         rafId = requestAnimationFrame(captureWhenReady)
         return
       }
-      screenshotElementToDataUrl(screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding)
-        .then(dataUrl => {
+      const capture = async () => {
+        try {
+          // 프레임 선택 중에는 전체 화면을 배경으로 먼저 보여주고, 선택 프레임은 별도로 캡처해 복사한다.
+          if (showContextPreview) {
+            const context = await screenshotElementToDataUrl(screenshotTarget, undefined, undefined, undefined, fullPreviewPadding)
+            if (cancelled || finished) return
+            setContextPreviewSrc(context)
+          }
+          const dataUrl = await screenshotElementToDataUrl(screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding)
           if (!cancelled && !finished) {
             finished = true
             window.clearTimeout(timeoutId)
             setPreviewSrc(dataUrl)
           }
-        })
-        .catch(() => {
+        } catch {
           window.clearTimeout(timeoutId)
           failCapture('화면을 캡처하지 못했습니다. 다시 시도해 주세요.')
-        })
+        }
+      }
+      void capture()
     }
     const raf1 = requestAnimationFrame(() => {
       rafId = requestAnimationFrame(captureWhenReady)
@@ -99,10 +111,11 @@ export default function ScreenshotModal({
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(rafId)
     }
-  }, [screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding, captureAttempt])
+  }, [screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding, fullPreviewPadding, showContextPreview, captureAttempt])
 
   const retryCapture = () => {
     setPreviewSrc(null)
+    setContextPreviewSrc(null)
     setCaptureError(null)
     setCaptureAttempt(attempt => attempt + 1)
   }
@@ -116,12 +129,20 @@ export default function ScreenshotModal({
     const option = next === 'mobile' ? mobileRegionOption : frameCaptureOptions?.find(item => next === `frame:${item.id}`)
     const mode = next === 'mobile' ? mobileRegionOption?.mode : option && 'mode' in option ? option.mode ?? 'element' : undefined
     const horizontalPadding = next === null ? mobileRegionOption?.monitorHorizontalPadding ?? 4 : 0
-    setPreviewRatio(elementRatio(screenshotTarget, option?.selector, mode, horizontalPadding))
+    const frameOption = frameCaptureOptions?.find(item => next === `frame:${item.id}`)
+    if (frameOption && screenshotTarget) {
+      setPreviewRatio(elementRatio(screenshotTarget, undefined, undefined, fullPreviewPadding))
+      setHighlightRegion(regionOverlay(screenshotTarget, frameOption.selector, frameOption.mode ?? 'element', fullPreviewPadding))
+    } else {
+      setHighlightRegion(null)
+      setPreviewRatio(elementRatio(screenshotTarget, option?.selector, mode, horizontalPadding))
+    }
   }
 
   // 높이는 화면(버튼 줄과 팝업 여백을 뺀 만큼), 폭은 화면 폭 안에서 이미지 비율로 정한다 — 원래 크기보다 작으면 키우고 크면 줄여서 화면에
   // 최대한 꽉 채운다. 스피너 칸과 이미지가 같은 값을 써서, 미리보기가 뜰 때 팝업 크기가 바뀌지 않는다.
   const fitWidth = previewRatio ? `min(calc(100vw - 4rem), calc((100dvh - 11rem) * ${previewRatio}))` : undefined
+  const displayPreviewSrc = contextPreviewSrc ?? previewSrc
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-ui-background/70">
@@ -150,15 +171,25 @@ export default function ScreenshotModal({
           </button>
         </div>
         <div className="flex flex-col p-4">
-        {previewSrc ? (
-          <img
-            src={previewSrc}
-            alt="마켓맵 미리보기"
-            draggable={false}
-            onLoad={e => setPreviewRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
-            style={fitWidth ? { width: fitWidth } : undefined}
-            className="block h-auto max-w-full self-center"
-          />
+        {displayPreviewSrc ? (
+          <div className="relative max-w-full self-center overflow-hidden" style={fitWidth ? { width: fitWidth } : undefined}>
+            <img
+              src={displayPreviewSrc}
+              alt="마켓 화면 미리보기"
+              draggable={false}
+              onLoad={e => {
+                if (!highlightRegion) setPreviewRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)
+              }}
+              className="block h-auto w-full"
+            />
+            {highlightRegion && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute rounded-[3px] border border-dashed border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.78)]"
+                style={{ left: `${highlightRegion.left * 100}%`, top: `${highlightRegion.top * 100}%`, width: `${highlightRegion.width * 100}%`, height: `${highlightRegion.height * 100}%` }}
+              />
+            )}
+          </div>
         ) : (
           <div
             className={`flex items-center justify-center self-center [container-type:size] ${fitWidth ? '' : 'h-[50dvh] w-[60vw]'}`}
@@ -235,6 +266,18 @@ export default function ScreenshotModal({
       </div>
     </div>
   )
+}
+
+function regionOverlay(element: HTMLElement, selector: string, mode: 'element' | 'content', horizontalPadding = 0): { left: number; top: number; width: number; height: number } | null {
+  const region = captureRegionRect(element, selector, mode)
+  const size = fullScreenshotSize(element)
+  const fullWidth = size.width + horizontalPadding * 2
+  if (!region || fullWidth <= 0 || size.height <= 0) return null
+  const left = Math.max(0, Math.min(fullWidth, region.x + horizontalPadding))
+  const top = Math.max(0, Math.min(size.height, region.y))
+  const right = Math.max(left, Math.min(fullWidth, region.x + horizontalPadding + region.width))
+  const bottom = Math.max(top, Math.min(size.height, region.y + region.height))
+  return { left: left / fullWidth, top: top / size.height, width: (right - left) / fullWidth, height: (bottom - top) / size.height }
 }
 
 // 스크린샷으로 찍을 영역의 가로/세로 비율 — 아직 없거나 크기를 못 재면 null.

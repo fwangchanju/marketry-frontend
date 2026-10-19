@@ -1,4 +1,5 @@
-import { Fragment, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -8,7 +9,6 @@ import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import { ClockIcon } from '@/components/icons/AppIcons'
 import SettingsPanel, { SettingsGroupDepthSection } from '@/components/SettingsPanel'
-import FrameTitleBadge from '@/components/FrameTitleBadge'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import Spinner from '@/components/Spinner'
@@ -24,10 +24,11 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
-import type { MarketOverviewTrendItem, MarketSectorTrendItem } from '@/types/api'
+import type { MarketOverviewTrendItem, TreemapSectorNode } from '@/types/api'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useMarketNotices } from '@/hooks/useMarketNotices'
+import { useSession } from '@/hooks/useSession'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
@@ -38,6 +39,7 @@ import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig 
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
 import { collectAtDepth } from '@/utils/sectorDepth'
+import { getSnapshotDays, getTreemap } from '@/api/treemap'
 
 // 홈 시장 요약 배치
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
@@ -59,15 +61,15 @@ function MarketIndexTrendChart({ items, market, label, colorScale }: { items: Ma
   const values = items.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))
   const scale = Math.max(3, ...values.map(item => Math.abs(item.changeRate)))
   return (
-    <div role="img" aria-label={`${label} 최근 ${values.length}거래일 등락률 그래프`} className="grid w-full grid-cols-5 gap-1 pt-1">
+    <div role="img" aria-label={`${label} 최근 ${values.length}거래일 등락률 그래프`} className="grid w-full grid-cols-5 gap-2 pt-1">
       {values.map(item => {
-        const magnitude = Math.min(Math.abs(item.changeRate) / scale, 1) * 26
+        const magnitude = Math.min(Math.abs(item.changeRate) / scale, 1) * 40
         const height = Math.max(2, magnitude)
         const barColor = item.changeRate === 0 ? 'var(--ui-muted)' : resolveTreemapExtremeColor(item.changeRate, colorScale)
         return (
           <div key={`${item.date}-${item.market}`} className="min-w-0 text-center">
-            <div className="h-4 truncate text-[10px] font-semibold tabular-nums text-ui-text">{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(1)}%</div>
-            <div className="relative mx-auto h-[54px] w-full max-w-24">
+            <div className="h-5 truncate text-[11px] font-semibold tabular-nums text-ui-text">{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(1)}%</div>
+            <div className="relative mx-auto h-[88px] w-full max-w-32">
               <div className="absolute inset-x-0 top-1/2 h-px bg-ui-muted" />
               <div className="absolute inset-x-0 top-0 flex h-1/2 items-end justify-center">
                 {item.changeRate >= 0 && <i className="w-1/2 rounded-t-sm" style={{ height, backgroundColor: barColor }} />}
@@ -80,46 +82,43 @@ function MarketIndexTrendChart({ items, market, label, colorScale }: { items: Ma
           </div>
         )
       })}
-      {!values.length && <div className="col-span-5 py-5 text-center text-[12px] text-ui-muted">이력 없음</div>}
+      {!values.length && <div className="col-span-5 py-5 text-center text-[12px] text-ui-muted">-</div>}
     </div>
   )
 }
 
-function SectorTrendChart({ items, colorScale }: { items: MarketSectorTrendItem[]; colorScale: ColorScaleConfig }) {
-  const dates = [...new Set(items.map(item => item.date))].sort()
-  const latestDate = dates.at(-1)
-  const topSectors = items.filter(item => item.date === latestDate).sort((a, b) => b.changeRate - a.changeRate).slice(0, 5)
-  const series = topSectors.map((sector, index) => ({
-    name: sector.sectorName,
-    color: resolveTreemapExtremeColor(sector.changeRate, colorScale),
-    values: dates.map(date => items.find(item => item.date === date && item.sectorName === sector.sectorName)?.changeRate ?? null),
-    index,
-  })).filter(item => item.values.some(value => value !== null))
-  const allValues = series.flatMap(item => item.values.filter((value): value is number => value !== null))
-  const extent = Math.max(1, ...allValues.map(Math.abs))
-  const points = (value: number | null, index: number) => value === null ? null : `${12 + index * (196 / Math.max(1, dates.length - 1))},${44 - value / extent * 34}`
+type PersonalSectorPoint = { date: string; changeRate: number }
+type PersonalSectorTrend = { sectorName: string; points: PersonalSectorPoint[] } | null
+
+function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSectorTrend | undefined; colorScale: ColorScaleConfig }) {
+  const points = trend?.points ?? []
+  if (!points.length) {
+    return <div role="img" aria-label="내 분류 최상위 업종 최근 거래일 이력 없음" className="flex h-[168px] items-center justify-center text-[12px] text-ui-muted">-</div>
+  }
+  const extent = Math.max(1, ...points.map(point => Math.abs(point.changeRate)))
+  const y = (value: number) => 50 - (value / extent) * 32
+  const polyline = points.map((point, index) => `${12 + index * (196 / Math.max(1, points.length - 1))},${y(point.changeRate)}`).join(' ')
+  const color = points.length ? resolveTreemapExtremeColor(points.at(-1)!.changeRate, colorScale) : 'var(--ui-muted)'
   return (
-    <div>
-      <svg role="img" aria-label="오늘 상위 업종 최근 5거래일 등락률 그래프" preserveAspectRatio="none" viewBox="0 0 220 78" className="block h-[96px] w-full">
-        {[8, 39, 70].map(y => <line key={y} x1="8" x2="212" y1={y} y2={y} stroke={y === 39 ? 'var(--ui-muted)' : 'var(--ui-border)'} strokeWidth="0.7" strokeDasharray={y === 39 ? undefined : '2 3'} />)}
-        {series.map(line => {
-          const path = line.values.map((value, index) => points(value, index)).filter((point): point is string => point !== null).join(' ')
-          return <polyline key={line.name} points={path} fill="none" stroke={line.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-        })}
+    <div className="min-w-0">
+      <div className="mb-1 truncate text-[12px] font-semibold text-ui-text">{trend?.sectorName ?? '-'}</div>
+      <svg role="img" aria-label={`${trend?.sectorName ?? '내 분류 상위 업종'} 최근 거래일 등락률 그래프`} preserveAspectRatio="none" viewBox="0 0 220 100" className="block h-[132px] w-full">
+        {[18, 50, 82].map(lineY => <line key={lineY} x1="8" x2="212" y1={lineY} y2={lineY} stroke={lineY === 50 ? 'var(--ui-muted)' : 'var(--ui-border)'} strokeWidth="0.8" strokeDasharray={lineY === 50 ? undefined : '2 3'} />)}
+        {points.length > 1 && <polyline points={polyline} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+        {points.map((point, index) => <circle key={point.date} cx={12 + index * (196 / Math.max(1, points.length - 1))} cy={y(point.changeRate)} r="2.7" fill={resolveTreemapExtremeColor(point.changeRate, colorScale)} />)}
       </svg>
       <div className="grid grid-cols-5 text-center text-[10px] tabular-nums text-ui-muted">
-        {dates.map(date => <span key={date}>{`${new Date(`${date}T00:00:00Z`).getUTCMonth() + 1}/${new Date(`${date}T00:00:00Z`).getUTCDate()}`}</span>)}
+        {points.map(point => <span key={point.date}>{`${new Date(`${point.date}T00:00:00Z`).getUTCMonth() + 1}/${new Date(`${point.date}T00:00:00Z`).getUTCDate()}`}</span>)}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-ui-text">
-        {series.map(line => <span key={line.name} className="flex items-center gap-1"><i className="h-2 w-2 rounded-full" style={{ backgroundColor: line.color }} />{line.name}</span>)}
-        {!series.length && <span className="text-ui-muted">이력 없음</span>}
+      <div className="flex justify-between gap-2 text-[11px] font-semibold tabular-nums text-ui-text">
+        {points.map(point => <span key={point.date}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(1)}%</span>)}
       </div>
     </div>
   )
 }
 
 function SummaryBadge({ children }: { children: ReactNode }) {
-  return <span className="inline-flex h-5 items-center rounded-sm bg-[var(--brand-surface)] px-1.5 text-[12px] font-semibold text-ui-white">{children}</span>
+  return <span className="inline-flex h-5 min-h-5 shrink-0 items-center whitespace-nowrap rounded-sm bg-[var(--brand-surface)] px-1.5 text-[12px] font-semibold leading-none text-ui-white">{children}</span>
 }
 
 // 안내 틀에 항상 한 칸씩 두는 안내 종류 — 신규(신규 상장)를 먼저, 정지(거래정지로 지도에서 빠지기 시작한 종목)를 그 아래에 둔다.
@@ -131,8 +130,22 @@ const NOTICE_TYPES = [
 const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
 const DEFAULT_HOME_FRAME_ORDER = ['시장 요약', '시장 지도', '그룹 등락률 (%)']
 
-function SortableHomeFrame({ title, captureId, index, children, captureUntil, highlightColor }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; highlightColor: string }) {
+function SortableHomeFrame({ title, captureId, index, children, captureUntil, showHeader = true, insetHeader = false }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; showHeader?: boolean; insetHeader?: boolean }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
+  const header = (
+    <div className="relative z-[6] flex h-5 min-h-5 shrink-0 items-center">
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        aria-label={`${title}, 끌어서 위치 이동`}
+        {...attributes}
+        {...listeners}
+        className="home-frame-header group flex h-5 min-h-5 w-fit cursor-grab items-center border-0 bg-transparent p-0 text-left active:cursor-grabbing focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--brand)]"
+      >
+        <SummaryBadge>{title}</SummaryBadge>
+      </button>
+    </div>
+  )
   return (
     <section
       ref={setNodeRef}
@@ -140,20 +153,13 @@ function SortableHomeFrame({ title, captureId, index, children, captureUntil, hi
       style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.6 : undefined }}
       className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'} ${isDragging ? 'cursor-grabbing' : ''}`}
     >
-      <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-3' : index === 2 ? 'pl-3 pr-0' : 'px-3'}`}>
-        <h2 className="relative z-[6] m-0 flex h-[18px] shrink-0 items-center justify-center">
-          <button
-            ref={setActivatorNodeRef}
-            type="button"
-            aria-label={`${title}, 끌어서 위치 이동`}
-            {...attributes}
-            {...listeners}
-            className="home-frame-header group w-full cursor-grab border-0 bg-transparent p-0 text-left active:cursor-grabbing focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--brand)]"
-          >
-            <FrameTitleBadge title={title} color={highlightColor} />
-          </button>
-        </h2>
-        {children}
+      <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : index === 2 ? 'pl-1 pr-0' : 'px-1'}`}>
+        {insetHeader ? (
+          <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+            {header}
+            <div className="mt-1 flex min-h-0 flex-1 flex-col">{children}</div>
+          </div>
+        ) : <>{showHeader && header}{children}</>}
       </div>
     </section>
   )
@@ -197,6 +203,47 @@ export default function MarketSummaryPage() {
 
   // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
   const { data: marketSummary } = useMarketSummary()
+  const { data: session } = useSession()
+  const marketTrendDates = [...new Set((marketSummary?.marketOverviewTrends ?? []).map(item => item.date))].sort().slice(-5)
+  const personalTrendBasis = changeRateChoice === 'afterHours' ? 'afterHours' : 'daily'
+  const { data: personalSectorTrend } = useQuery({
+    queryKey: ['home-personal-sector-trend', session?.userId ?? null, marketTrendDates, changeRateChoice],
+    enabled: Boolean(session?.authenticated && marketTrendDates.length),
+    queryFn: async (): Promise<PersonalSectorTrend> => {
+      const isCloseChoice = changeRateChoice === 'close'
+      const historicalDates = isCloseChoice ? marketTrendDates : marketTrendDates.slice(0, -1)
+      const months = [...new Set(historicalDates.map(date => date.slice(0, 7)))]
+      const snapshotDays = (await Promise.all(months.map(month => getSnapshotDays('ALL_STOCK', month)))).flat()
+      const historicalDays = historicalDates.map(date => snapshotDays.find(day => day.date === date)).filter((day): day is NonNullable<typeof day> => Boolean(day))
+      const historicalMaps = await Promise.all(historicalDays.map(day => getTreemap('ALL_STOCK', 'MINE', day.snapshotTime, false, personalTrendBasis)))
+      const currentMap = isCloseChoice ? null : await getTreemap('ALL_STOCK', 'MINE', undefined, false, personalTrendBasis)
+      const currentDate = currentMap?.snapshotTime?.slice(0, 10) ?? marketTrendDates.at(-1)
+      const datedMaps = [
+        ...historicalMaps.map((map, index) => ({ date: historicalDays[index].date, map })),
+        ...(currentMap && currentDate ? [{ date: currentDate, map: currentMap }] : []),
+      ].sort((a, b) => a.date.localeCompare(b.date)).slice(-5)
+      const average = (node: TreemapSectorNode) => {
+        const stocks = collectItems(node)
+        const totalValue = stocks.reduce((sum, stock) => sum + stock.totalMarketValue, 0)
+        return totalValue > 0 ? stocks.reduce((sum, stock) => sum + stock.changeRate * stock.totalMarketValue, 0) / totalValue : null
+      }
+      const latestRoots = datedMaps.at(-1)?.map.items ?? []
+      const top = latestRoots
+        .map(node => ({ node, changeRate: average(node) }))
+        .filter((entry): entry is { node: TreemapSectorNode; changeRate: number } => entry.changeRate !== null)
+        .sort((a, b) => b.changeRate - a.changeRate)[0]
+      if (!top) return null
+      return {
+        sectorName: top.node.sectorName,
+        points: datedMaps.flatMap(({ date, map }) => {
+          const node = map.items.find(item => item.sectorId === top.node.sectorId)
+          const changeRate = node ? average(node) : null
+          return changeRate === null ? [] : [{ date, changeRate }]
+        }),
+      }
+    },
+    staleTime: 60_000,
+  })
   // 안내는 지도와 따로 불러온다 — 실패하거나 느려도 홈 화면을 막지 않고, 못 받으면 틀만 비워 둔다.
   const { data: notices } = useMarketNotices()
   // 요약 조회의 지수는 항상 최근 값이다 — 지도가 지난 시각이나 기간을 보고 있거나 시간외 별도 등락률이면 맞지 않으므로 보여 주지 않는다(그룹 페이지도 일간 등락률일 때만 넣는다).
@@ -377,20 +424,14 @@ export default function MarketSummaryPage() {
                 title: '시장 지도',
                 captureId: 'market-map',
                 body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <OverviewMap items={overview.items} colorScale={colorScale} />
-                  </div>
+                  <OverviewMap items={overview.items} colorScale={colorScale} />
                 ),
               },
               {
                 title: '그룹 등락률 (%)',
                 captureId: 'group-change-rate',
                 body: (
-                  <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <div className="flex min-h-0 w-full flex-1">
-                      <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
-                    </div>
-                  </div>
+                  <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
                 ),
               },
               {
@@ -398,93 +439,91 @@ export default function MarketSummaryPage() {
                 title: '시장 요약',
                 captureId: 'market-summary',
                 body: (
-                  <div className="min-h-0 w-full flex-1 space-y-2 overflow-y-auto pb-1 text-[14px] font-medium leading-none tabular-nums">
+                  <div className="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto pb-1 text-[14px] font-medium leading-none tabular-nums">
                     {INDEX_ROWS.map(({ label, market }) => {
                       const { indexValue, tradingValue, changeRate } = indexOf(market)
                       const trendItems = marketSummary?.marketOverviewTrends ?? []
                       return (
-                        <section key={market} aria-label={`${label} 오늘 시장 요약`} className="space-y-1.5 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
-                          <div className="space-y-1">
+                        <section key={market} aria-label={`${label} 오늘 시장 요약과 최근 5거래일`} className="grid grid-cols-[minmax(104px,0.3fr)_minmax(0,1fr)] gap-2 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                          <div className="min-w-0 space-y-1">
                             <SummaryBadge>{label} · 오늘</SummaryBadge>
-                            <div className="grid grid-cols-3 gap-1.5">
+                            <div className="space-y-1">
                               {[
                                 { label: '지수', value: indexValue === null ? '—' : toIndexValue(indexValue), color: undefined },
                                 { label: '등락률', value: changeRate === null ? '—' : toPctSigned(changeRate), color: rateColorStyle(changeRate)?.color },
                                 { label: '거래대금', value: tradingValue === null ? '—' : toJoEokDecimal(tradingValue / 100), color: undefined },
-                              ].map(metric => (
-                                <div key={metric.label} className="min-w-0 rounded-sm bg-ui-surface px-1.5 py-1">
-                                  <div className="mb-1 text-[10px] font-medium text-ui-muted">{metric.label}</div>
-                                  <div className="truncate text-[13px] font-semibold text-ui-text" style={metric.color ? { color: metric.color } : undefined}>{metric.value}</div>
+                              ].map(metric => metric.label === '지수' ? (
+                                <div key={metric.label} className="min-w-0 rounded-sm bg-ui-surface px-1.5 py-1.5">
+                                  <div className="mb-0.5 text-[10px] font-medium text-ui-muted">{metric.label}</div>
+                                  <div className="truncate text-[14px] font-bold leading-tight text-ui-text">{metric.value}</div>
+                                </div>
+                              ) : (
+                                <div key={metric.label} className="flex min-w-0 items-center justify-between gap-1 rounded-sm bg-ui-surface px-1.5 py-1">
+                                  <div className="shrink-0 text-[10px] font-medium text-ui-muted">{metric.label}</div>
+                                  <div className="truncate text-right text-[12px] font-semibold text-ui-text" style={metric.color ? { color: metric.color } : undefined}>{metric.value}</div>
                                 </div>
                               ))}
                             </div>
                           </div>
-                          <div className="space-y-0.5">
+                          <div className="min-w-0 space-y-0.5">
                             <SummaryBadge>최근 5거래일</SummaryBadge>
                             <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />
                           </div>
                         </section>
                       )
                     })}
-                    <section aria-label="오늘 상위 업종 최근 5거래일 등락률" className="space-y-1 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
-                      <SummaryBadge>오늘 상위 업종 · 최근 5거래일</SummaryBadge>
-                      <SectorTrendChart items={marketSummary?.sectorOverviewTrends ?? []} colorScale={colorScale} />
+                    <section aria-label="내 분류 최상위 업종 오늘 최근 5거래일 등락률" className="space-y-1 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                      <SummaryBadge>내 분류 최상위 업종 · 오늘</SummaryBadge>
+                      <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />
                     </section>
-                    <span className="flex h-6 items-center">
-                      <span className="w-full whitespace-nowrap bg-[var(--brand-surface)] px-1 py-[3px] text-ui-white">등락 종목</span>
-                    </span>
-                    <span className="flex h-6 items-center">
-                      <span className="flex h-[22px] min-w-0 flex-1 items-center justify-start gap-2 rounded-sm bg-ui-surface pl-1 pr-3">
-                        <span className="min-w-0 flex-1 truncate text-right" style={rateColorStyle(1)}>▲ {toCount(overview.advancers)}</span>
-                        <span className="min-w-0 flex-1 truncate text-right" style={rateColorStyle(-1)}>▼ {toCount(overview.decliners)}</span>
-                        <span className="min-w-0 flex-1 truncate text-right text-ui-text">■ {toCount(overview.unchanged)}</span>
-                      </span>
-                    </span>
-                    <div className="grid grid-cols-[max-content_minmax(0,1fr)_max-content_minmax(0,1.5fr)] gap-x-1 gap-y-1">
-                    {NOTICE_TYPES.map(({ type, label, showItems, badgeClass, countLabel, countKey, valueKey }) => {
-                      const items = (notices?.items ?? []).filter(item => item.type === type)
-                      const rowClass = 'flex h-6 items-center'
-                      return (
-                        <Fragment key={type}>
-                          {showItems && (
-                            <>
-                              {/* 네 배지의 너비·좌우 끝은 모두 같다. 들여쓰기는 배지가 아니라 오른쪽 회색 칸의 종목 이름 글자에 한다. */}
-                              <span className={rowClass}>
-                                <span className={`w-full whitespace-nowrap px-1 py-[3px] ${badgeClass}`}>{label}</span>
-                              </span>
-                              {/* 그날 안내 종목은 종류 배지 바로 오른쪽 회색 칸에 한 줄로 적는다 — 없으면 글자 없이 빈 칸, 둘 이상이면 이름을 " · "(공백·가운뎃점·공백)로 이어 쓰고 칸보다 길면 …로 줄인다. */}
-                              <span className={`${rowClass} col-span-3`}>
-                                <span className="flex h-[22px] min-w-0 flex-1 items-center rounded-sm bg-ui-surface pl-[calc(0.25rem+0.34em)] pr-1 text-ui-text">
-                                  <span className="min-w-0 truncate" style={{ color: strongIndustryColor }}>{items.map(item => item.stockName).join(' · ')}</span>
-                                </span>
-                              </span>
-                            </>
-                          )}
-                          {/* 날짜와 무관한 현황 이름표(신규 상장은 "3개월 내 상장", 거래 정지는 "거래 정지 중")는 짝이 되는 종류 배지와 같은 색 배지, 오른쪽 회색 칸에 건수를 적는다. 아직 못 받았으면 "-"를 적는다(0건이면 0). */}
-                          <span className={rowClass}>
-                            <span className={`w-full whitespace-nowrap px-1 py-[3px] ${badgeClass}`}>{countLabel}</span>
-                          </span>
-                          <span className={rowClass}>
-                            <span className="flex h-[22px] min-w-0 flex-1 items-center justify-center rounded-sm bg-ui-surface px-1 text-ui-text">{notices?.[countKey] ?? '-'}</span>
-                          </span>
-                          {/* 같은 줄 오른쪽에 그 종목들의 현시점 시가총액 합을 "시총 합" 배지(같은 줄 배지와 같은 색)와 회색 칸으로 둔다. 표기는 Custom 페이지와 같은 n,nnn.n조/억이다. */}
-                          <span className={`${rowClass} whitespace-nowrap`}>
-                            <span className={`px-1 py-[3px] ${badgeClass}`}>시총 합</span>
-                          </span>
-                          <span className={rowClass}>
-                            <span className="flex h-[22px] min-w-0 flex-1 items-center justify-end rounded-sm bg-ui-surface px-1 text-ui-text">
-                              {notices?.[valueKey] != null ? toJoEokDecimal(notices[valueKey] / 100_000_000) : ''}
-                            </span>
-                          </span>
-                        </Fragment>
-                      )
-                    })}
+                    <div className="mt-auto grid gap-2 pt-2">
+                      <section aria-label="등락 종목 수" className="rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                        <SummaryBadge>등락 종목</SummaryBadge>
+                        <div className="mt-1 grid grid-cols-3 gap-1">
+                          {[
+                            { label: '상승', icon: '▲', value: overview.advancers, rate: 1 },
+                            { label: '하락', icon: '▼', value: overview.decliners, rate: -1 },
+                            { label: '보합', icon: '■', value: overview.unchanged, rate: 0 },
+                          ].map(item => (
+                            <div key={item.label} className="min-w-0 rounded-sm bg-ui-surface px-1.5 py-1 text-center">
+                              <div className="mb-0.5 text-[10px] font-medium text-ui-muted">{item.label}</div>
+                              <div className="truncate text-[12px] font-semibold leading-tight" style={item.rate ? rateColorStyle(item.rate) : undefined}>{item.icon} {toCount(item.value)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                      <div className="grid grid-cols-2 gap-2">
+                        {NOTICE_TYPES.map(({ type, label, showItems, countLabel, countKey, valueKey }) => {
+                          const items = (notices?.items ?? []).filter(item => item.type === type)
+                          const marketValue = notices?.[valueKey]
+                          return (
+                            <section key={type} aria-label={showItems ? label : countLabel} className="min-w-0 rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                              <SummaryBadge>{showItems ? label : countLabel}</SummaryBadge>
+                              {showItems && (
+                                <div className="mt-1 min-w-0 truncate rounded-sm bg-ui-surface px-1.5 py-1 text-[11px] text-ui-text" style={{ color: strongIndustryColor }} title={items.map(item => item.stockName).join(' · ')}>
+                                  {items.length > 0 ? items.map(item => item.stockName).join(' · ') : '—'}
+                                </div>
+                              )}
+                              <div className={`${showItems ? 'mt-1' : 'mt-2'} space-y-1`}>
+                                <div className="flex min-w-0 items-center justify-between gap-1 rounded-sm bg-ui-surface px-1.5 py-1 text-[11px]">
+                                  <span className="truncate text-ui-muted">{showItems ? countLabel : '종목 수'}</span>
+                                  <span className="shrink-0 font-semibold text-ui-text">{notices?.[countKey] ?? '-'}</span>
+                                </div>
+                                <div className="flex min-w-0 items-center justify-between gap-1 rounded-sm bg-ui-surface px-1.5 py-1 text-[11px]">
+                                  <span className="shrink-0 text-ui-muted">시총 합</span>
+                                  <span className="truncate text-right font-semibold text-ui-text">{marketValue != null ? toJoEokDecimal(marketValue / 100_000_000) : '—'}</span>
+                                </div>
+                              </div>
+                            </section>
+                          )
+                        })}
+                      </div>
                     </div>
                   </div>
                 ),
               },
             ].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title)).map((frame, frameIndex) => (
-              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} highlightColor={strongIndustryColor}>
+              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} showHeader={frame.title !== '시장 요약'} insetHeader={frame.title !== '시장 요약'}>
                 {frame.body}
               </SortableHomeFrame>
             ))}
