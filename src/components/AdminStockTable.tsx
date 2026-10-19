@@ -10,7 +10,8 @@ import type { SectorItem, StockSectorListItem } from '@/types/api'
 import { toCount, toJoEokDecimal, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { findAliasConflict } from '@/utils/aliasConflict'
-import { buildUploadPlan, pathKey, readClassificationFile } from '@/utils/classificationUpload'
+import { ClassificationUploadError, buildUploadPlan, pathKey, readClassificationFile } from '@/utils/classificationUpload'
+import { getErrorDetail } from '@/utils/errorMessage'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
 import { useAssignStockSector, useBulkAssignStockSector, useCreateSector, useUpdateStockAlias } from '@/hooks/useTreemapCustom'
@@ -931,9 +932,11 @@ export default function AdminStockTable({
 
   const assignStockSector = useAssignStockSector()
   const bulkAssignStockSector = useBulkAssignStockSector()
-  const createSectorMutation = useCreateSector()
+  const uploadAssignStockSector = useBulkAssignStockSector({ skipGlobalError: true })
+  const createSectorMutation = useCreateSector({ skipGlobalError: true })
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const updateAlias = useUpdateStockAlias()
   // 약칭 지정은 관리자 전용이다 — 관리자의 약칭은 MARKETRY로 올릴 내용에만 쓰이고, 다른 사용자의 데이터는 건드리지 않는다.
   // 일반 사용자에게는 약칭 값을 보여주지도 수정하게 하지도 않는다(백엔드도 관리자만 허용한다). 열 자리만 빈칸으로 두어 다른 시트와 열 위치를 맞춘다.
@@ -1442,6 +1445,11 @@ export default function AdminStockTable({
   // 엑셀 업로드 — 파일의 대·중·소분류대로 종목 분류를 한 번에 바꾼다. 적용 전에 요약을 보여 주고, 없는 분류는 새로 만든다.
   const handleUploadFile = async (file: File) => {
     setIsUploading(true)
+    let createdCount = 0
+    let appliedCount = 0
+    const failed: string[] = []
+    let applying = false
+    let requestPending = false
     try {
       const rows = await readClassificationFile(file)
       if (rows.length === 0) {
@@ -1464,21 +1472,26 @@ export default function AdminStockTable({
       ].join('\n')
       if (!(await appConfirm(summary, { title: '엑셀 적용' }))) return
 
+      applying = true
       const idByPath = plan.existingIdByPath
       for (const path of plan.newSectors) {
-        const parentId = path.length === 1 ? null : (idByPath.get(pathKey(path.slice(0, -1))) ?? null)
+        const parentId = path.length === 1 ? null : idByPath.get(pathKey(path.slice(0, -1)))
+        if (parentId === undefined) throw new Error('상위 업종을 찾을 수 없습니다.')
+        requestPending = true
         const created = await createSectorMutation.mutateAsync({ name: path[path.length - 1], parentId })
+        requestPending = false
+        createdCount++
         idByPath.set(pathKey(path), created.id)
       }
-      const failed: string[] = []
-      let appliedCount = 0
       for (const group of plan.assignments) {
         const sectorId = idByPath.get(pathKey(group.path))
-        if (sectorId === undefined) continue
+        if (sectorId === undefined) throw new Error('변경할 업종을 찾을 수 없습니다.')
         const before = new Map(itemsRef.current.map(item => [item.stockCode, item.sectorId]))
         for (let start = 0; start < group.stockCodes.length; start += 500) {
           const chunk = group.stockCodes.slice(start, start + 500)
-          const result = await bulkAssignStockSector.mutateAsync({ stockCodes: chunk, sectorId })
+          requestPending = true
+          const result = await uploadAssignStockSector.mutateAsync({ stockCodes: chunk, sectorId })
+          requestPending = false
           failed.push(...result.failedStockCodes)
           const entries = chunk
             .filter(stockCode => !result.failedStockCodes.includes(stockCode))
@@ -1488,36 +1501,60 @@ export default function AdminStockTable({
           if (entries.length > 0) pushUndo({ type: 'bulkSector', sectorName: group.path.join(' > '), after: sectorId, entries })
         }
       }
-      appAlert(`엑셀 적용 완료\n바뀐 종목 ${appliedCount}개${failed.length > 0 ? `\n반영되지 않은 종목 ${failed.length}개` : ''}`, { title: '적용 완료' })
-    } catch {
-      appAlert('엑셀을 적용하지 못했습니다.\n파일 형식과 분류 이름을 확인해 주세요.', { title: '적용 실패' })
+      appAlert(`바뀐 종목 ${appliedCount}개\n새로 만든 업종 ${createdCount}개${failed.length > 0 ? `\n반영되지 않은 종목 ${failed.length}개\n${failed.join(', ')}` : ''}`, { title: failed.length > 0 ? '일부 적용' : '적용 완료' })
+    } catch (error) {
+      if (error instanceof ClassificationUploadError) {
+        appAlert(error.message, { title: '파일 확인' })
+      } else if (applying) {
+        appAlert([
+          '엑셀 적용이 중단됐습니다.',
+          `반영 확인된 종목 ${appliedCount}개 · 생성 확인된 업종 ${createdCount}개`,
+          ...(failed.length > 0 ? [`반영되지 않은 종목 ${failed.length}개: ${failed.join(', ')}`] : []),
+          '이미 반영된 내용은 유지됩니다.',
+          ...(requestPending ? ['중단된 요청은 서버에 반영됐을 수 있습니다. 목록을 새로 확인한 뒤 다시 업로드해 주세요.'] : []),
+          getErrorDetail(error),
+        ].join('\n'), { title: '적용 중단' })
+      } else {
+        appAlert('엑셀을 읽지 못했습니다.\n파일 형식과 열 이름을 확인해 주세요.', { title: '파일 확인' })
+      }
     } finally {
       setIsUploading(false)
     }
   }
 
   // 지금 화면에 필터/정렬 적용된 상태 그대로 내려받는다 — 전체를 받고 싶으면 필터를 먼저 풀면 된다.
-  const handleExportExcel = () => {
-    const filename = `INDUSTRY-${fileTimestamp()}.xlsx`
-    const rows = sorted.map(item => {
-      const display = displayByStockCode.get(item.stockCode)!
-      return {
-        종목코드: item.stockCode,
-        종목명: item.stockName,
-        '종목 크기': item.marketValueTier ?? '',
-        마켓: display.market,
-        '거래소 분류': display.originCategoryName,
-        '대분류': display.parentSectorName,
-        '중분류': display.midSectorName,
-        '소분류': display.subSectorName,
-      }
-    })
-    void exportRowsToExcel(filename, '업종 분류', rows, {
-      alignByHeader: { 종목코드: 'center', '종목 크기': 'center', 마켓: 'center' },
-      fixedWidths: { 종목코드: 15, 종목명: 30, '종목 크기': 15, 마켓: 10, '거래소 분류': 20, 대분류: 20, 중분류: 20, 소분류: 20 },
-      // 업로드로 바꾸는 대·중·소분류만 수정할 수 있고 나머지 열은 잠근다.
-      editableHeaders: ['대분류', '중분류', '소분류'],
-    })
+  const handleExportExcel = async () => {
+    if (sorted.length === 0) {
+      appAlert('다운로드할 종목이 없습니다.\n검색어와 필터를 확인해 주세요.', { title: '다운로드 불가' })
+      return
+    }
+    setIsExporting(true)
+    try {
+      const filename = `INDUSTRY-${fileTimestamp()}.xlsx`
+      const rows = sorted.map(item => {
+        const display = displayByStockCode.get(item.stockCode)!
+        return {
+          종목코드: item.stockCode,
+          종목명: item.stockName,
+          '종목 크기': item.marketValueTier ?? '',
+          마켓: display.market,
+          '거래소 분류': display.originCategoryName,
+          '대분류': display.parentSectorName,
+          '중분류': display.midSectorName,
+          '소분류': display.subSectorName,
+        }
+      })
+      await exportRowsToExcel(filename, '업종 분류', rows, {
+        alignByHeader: { 종목코드: 'center', '종목 크기': 'center', 마켓: 'center' },
+        fixedWidths: { 종목코드: 15, 종목명: 30, '종목 크기': 15, 마켓: 10, '거래소 분류': 20, 대분류: 20, 중분류: 20, 소분류: 20 },
+        // 업로드로 바꾸는 대·중·소분류만 수정할 수 있고 나머지 열은 잠근다.
+        editableHeaders: ['대분류', '중분류', '소분류'],
+      })
+    } catch {
+      appAlert('엑셀 파일을 만들지 못했습니다.\n다시 시도해 주세요.', { title: '다운로드 실패' })
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   // 전체선택은 항상 "지금 필터링돼서 보이는" 종목만 대상으로 한다. 개별 체크는 필터가 바뀌어도 유지된다.
@@ -1617,18 +1654,19 @@ export default function AdminStockTable({
           <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
             <button
               type="button"
-              onClick={handleExportExcel}
-              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white"
+              onClick={() => void handleExportExcel()}
+              disabled={isExporting || isUploading}
+              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
               <DownloadIcon className="h-4 w-4 text-ui-text" />
-              다운로드
+              {isExporting ? '생성 중…' : '다운로드'}
             </button>
             <button
               type="button"
               onClick={() => uploadInputRef.current?.click()}
-              disabled={isUploading}
+              disabled={isUploading || isExporting}
               className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"

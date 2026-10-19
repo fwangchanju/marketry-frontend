@@ -54,6 +54,8 @@ export interface UploadPlan {
 
 const pathKey = (path: string[]) => path.join('\u0000')
 
+export class ClassificationUploadError extends Error {}
+
 export function buildUploadPlan(rows: UploadRow[], sectors: SectorItem[], currentSectorIdByCode: Map<string, number | null>): UploadPlan {
   const idByPath = new Map<string, number>()
   const nameById = new Map(sectors.map(sector => [sector.id, sector]))
@@ -111,6 +113,16 @@ export function buildUploadPlan(rows: UploadRow[], sectors: SectorItem[], curren
     else groups.set(key, { path: row.path, stockCodes: [row.stockCode] })
   }
 
+  // 서버는 부모가 달라도 같은 업종명을 허용하지 않는다. 변경 요청 전에 전체 계획을 검사한다.
+  const pathByName = new Map(sectors.map(sector => [sector.name, pathOf(sector.id)]))
+  for (const path of newSectors) {
+    const name = path[path.length - 1]
+    const existingPath = pathByName.get(name)
+    if (existingPath && pathKey(existingPath) !== pathKey(path)) {
+      throw new ClassificationUploadError(`업종명 [${name}]이 서로 다른 경로에 있습니다.\n${existingPath.join(' > ')}\n${path.join(' > ')}\n업종명은 전체 분류에서 중복될 수 없습니다. 이름을 바꾼 뒤 다시 업로드해 주세요.`)
+    }
+    pathByName.set(name, path)
+  }
   return { newSectors, assignments: [...groups.values()], unknownCodes, existingIdByPath: idByPath, ...plan }
 }
 

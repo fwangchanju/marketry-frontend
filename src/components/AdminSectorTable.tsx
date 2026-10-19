@@ -850,25 +850,27 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       {/* 업종 추가가 먼저, 아래 업종 재배치와는 구분선으로 나눈다 — 구분선은 그룹 페이지 설정창과 같은 모양이다. */}
       <section aria-label="업종 추가" className="settings-item settings-custom-control">
         <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 추가</h2>
+        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-muted">업종명을 입력한 뒤 엔터</p>
         <div className="flex min-w-0 max-w-[16rem] settings-control-inset items-center gap-2">
           <SectorNameInput
             wrapperClassName="flex min-w-0 flex-1"
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
-            placeholder="업종명 입력 후 Enter"
+            placeholder="업종을 추가하세요"
             aria-label="최상위 업종명"
-            className="h-9 min-w-0 flex-1 rounded-[5px] border border-transparent bg-[var(--ui-control)] px-2 text-xs text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-muted focus:border-[var(--brand)]"
+            className="h-9 min-w-0 flex-1 rounded-[5px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-text focus:border-[var(--brand)]"
           />
         </div>
       </section>
       <section aria-label="업종 재배치" className="settings-item settings-custom-control relative before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-ui-white/10 before:content-['']">
         <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 재배치</h2>
+        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-muted">상하 관계를 재배치</p>
         <div className="mb-3 max-w-[16rem] settings-control-inset rounded-[5px] bg-[var(--ui-control)] px-2 py-1.5 text-sm text-ui-white">
-          <div className="flex items-start gap-1">
+          <div className="flex items-center gap-1">
             {/* 대분류 > 중분류 > 소분류를 한 줄에 이어 보여 주고, 길어서 넘치면 자동으로 다음 줄로 이어진다. */}
-            <div className="min-w-0 flex-1 py-0.5 text-xs font-medium leading-5">
-              {!selectedSector && <span className="text-ui-muted">업종을 선택하세요</span>}
+            <div className="min-w-0 flex-1 py-0.5 text-[13px]/4 font-medium">
+              {!selectedSector && <span className="text-ui-text">업종을 선택하세요</span>}
               {selectedSector && getSectorPath(selectedSector).split(SECTOR_PATH_SEPARATOR).map((name, index) => (
                 <span key={index} className="break-all">
                   {index > 0 && (
@@ -883,7 +885,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             <div className="flex shrink-0 items-center gap-1">
               <button type="button" data-hint="다른 업종 하위로 이동" aria-label="다른 업종 하위로 이동" disabled={!selectedSector} onClick={() => selectedSector && setMovingSectorId(selectedSector.id)} className={`${ICON_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-35`}><span aria-hidden="true" className="text-sm leading-none">↪</span></button>
               {movingSector && (
-                <button type="button" onClick={cancelMove} className="h-6 rounded-md border border-ui-border bg-ui-panel px-2 text-xs font-medium text-ui-white hover:bg-ui-white/10">이동 취소</button>
+                <button type="button" onClick={cancelMove} className="h-6 rounded-md border border-ui-border bg-ui-panel px-2 text-[13px]/4 font-medium text-ui-white hover:bg-ui-white/10">이동 취소</button>
               )}
             </div>
           </div>
@@ -893,7 +895,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 <b>{movingSector.name}</b>을(를) 옮길 상위 업종 줄 오른쪽의 <b className="text-status-error-ink">여기</b> 버튼을 누르세요. 줄을 눌러 펼치면 다른 업종도 찾을 수 있습니다.
               </p>
               {movingSector.parentId !== null && (
-                <button type="button" onClick={() => void confirmMove(null)} className="mt-2 h-7 rounded-md border border-[var(--ui-popup-border)] bg-transparent px-2 text-xs font-medium text-ui-background hover:bg-ui-background/10">
+                <button type="button" onClick={() => void confirmMove(null)} className="mt-2 h-7 rounded-md border border-[var(--ui-popup-border)] bg-transparent px-2 text-[13px]/4 font-medium text-ui-background hover:bg-ui-background/10">
                   최상위로 이동
                 </button>
               )}

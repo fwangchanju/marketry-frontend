@@ -54,15 +54,16 @@ export function useSectorDeletePreview() {
   })
 }
 
-export function useCreateSector() {
+export function useCreateSector(options?: { skipGlobalError?: boolean }) {
   const queryClient = useQueryClient()
   return useMutation({
-    meta: { failure: '업종을 추가하지 못했습니다.' },
+    meta: { failure: '업종을 추가하지 못했습니다.', skipGlobalError: options?.skipGlobalError },
     mutationFn: ({ name, parentId }: { name: string; parentId: number | null }) => createSector(name, parentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
+    onError: () => queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() }),
   })
 }
 
@@ -185,13 +186,18 @@ export function useAssignStockSector() {
   })
 }
 
-export function useBulkAssignStockSector() {
+export function useBulkAssignStockSector(options?: { skipGlobalError?: boolean }) {
   const queryClient = useQueryClient()
   return useMutation({
-    meta: { failure: '종목의 업종을 바꾸지 못했습니다.' },
+    meta: { failure: '종목의 업종을 바꾸지 못했습니다.', skipGlobalError: options?.skipGlobalError },
     mutationFn: ({ stockCodes, sectorId }: { stockCodes: string[]; sectorId: number }) =>
       bulkAssignStockSector(stockCodes, sectorId),
-    onSuccess: (_data, { stockCodes, sectorId }) => patchStockSectorId(queryClient, stockCodes, sectorId),
+    onSuccess: (data, { stockCodes, sectorId }) => {
+      const failed = new Set(data.failedStockCodes)
+      patchStockSectorId(queryClient, stockCodes.filter(code => !failed.has(code)), sectorId)
+    },
+    // 응답을 못 받은 요청도 서버에는 적용됐을 수 있으므로 실제 값을 다시 받는다.
+    onError: () => queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() }),
   })
 }
 
