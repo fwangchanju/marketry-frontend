@@ -302,10 +302,10 @@ export default function CustomPage() {
               onRequestLogin={() => requireLogin(pathname)}
               plainContent={!isReadOnlySheet ? (
                 <>
-                  {/* 종목 화면은 위에서부터 간편 업종 분류 → 변경 내역 → 일괄 변경 순서다(관리자 기능은 Admin 페이지로 옮겼다). */}
-                  {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
-                  <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
+                  {/* 종목 화면은 위에서부터 일괄 변경 → 변경 내역 → 간편 업종 분류 순서다(관리자 기능은 Admin 페이지로 옮겼다). */}
                   {mode === 'stock' && <div ref={setStockBulkTarget} className="settings-item" />}
+                  <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
+                  {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
                 </>
               ) : (
                 // 마켓트리·거래소 화면은 읽기 전용이라 설정할 항목이 없다 — 그 사실만 알린다.

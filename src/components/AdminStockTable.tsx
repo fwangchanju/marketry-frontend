@@ -3,7 +3,7 @@ import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { loadSectorOrder, sectorNamesByDepth, type SectorOrder } from '@/utils/sectorOrder'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
-import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { SectorItem, StockSectorListItem } from '@/types/api'
@@ -19,6 +19,7 @@ import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
 import { SearchBar } from './ReadOnlyTaxonomySheet'
+import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
 import { createStockMatcher } from '@/utils/stockSearch'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from './EmptyMessage'
@@ -293,7 +294,7 @@ function useSectorSearchState(options: SectorOption[], isOpen: boolean) {
   }
 
   const handleQueryChange = (value: string) => {
-    setQuery(value)
+    setQuery(value.slice(0, SEARCH_MAX_LENGTH))
     setHighlightedIndex(-1)
   }
 
@@ -352,9 +353,16 @@ function SectorSearchPopup({
   // 방향키로 하이라이트가 화면 밖으로 나가면 스크롤이 안 따라가서 지금 뭐가 선택됐는지 안 보이는
   // 문제가 있었다 — 하이라이트된 항목의 DOM 노드를 등록해뒀다가, 바뀔 때마다 보이는 영역으로 스크롤한다.
   const optionRefs = useRef(new Map<number, HTMLButtonElement>())
+  const orderToggleRef = useRef<HTMLDivElement>(null)
+  const [bulkPopupWidth, setBulkPopupWidth] = useState<number>()
   useEffect(() => {
     optionRefs.current.get(search.highlightedIndex)?.scrollIntoView({ block: 'nearest' })
   }, [search.highlightedIndex])
+  useLayoutEffect(() => {
+    if (!orderMode || !orderToggleRef.current) return
+    // 검색 입력의 안쪽 너비를 두 정렬 버튼의 실제 합산 너비에 맞춘다.
+    setBulkPopupWidth(orderToggleRef.current.getBoundingClientRect().width + 2)
+  }, [orderMode])
 
   // 목록이 한 단계(같은 부모 아래)뿐이면 들여쓰기·"- " 표시 없이 이름만 보여준다.
   const isSingleLevel = search.matches.every(opt => opt.parentId === search.matches[0]?.parentId)
@@ -364,18 +372,24 @@ function SectorSearchPopup({
       ref={popupRef}
       style={{
         position: 'fixed',
-        top: position.top,
+        top: position.top + (position.openUpward ? -4 : 4),
         left: position.left,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
+        ...(orderMode && bulkPopupWidth ? { width: bulkPopupWidth } : {}),
       }}
-      className="z-50 w-56 rounded-md border border-ui-border bg-[var(--ui-panel)] py-2 text-sm font-normal text-ui-white shadow-xl"
+      className="z-50 w-[195px] rounded-md border border-ui-border bg-[var(--ui-panel)] py-2 text-sm font-normal text-ui-white shadow-xl"
       onClick={e => e.stopPropagation()}
     >
-      {title && <div className="px-3 pb-2 text-xs font-bold text-[var(--brand)]">{title}</div>}
+      {title && (
+        <div className="px-3 pb-2">
+          <span className="inline-block rounded bg-[var(--brand-surface)] px-1.5 py-[3px] text-[11px] font-semibold leading-none text-ui-white">{title}</span>
+        </div>
+      )}
       <div className="px-3 pb-2">
         <input
           ref={inputRef}
           type="text"
+          maxLength={SEARCH_MAX_LENGTH}
           autoFocus
           value={search.query}
           onChange={e => search.handleQueryChange(e.target.value)}
@@ -386,7 +400,7 @@ function SectorSearchPopup({
         />
         {contextLabel && <p className="m-0 mt-1.5 truncate text-xs font-medium text-ui-text">{contextLabel}</p>}
       </div>
-      {title && orderMode && <SectorOrderToggle label={title} value={orderMode.value} onChange={orderMode.onChange} />}
+      {title && orderMode && <div ref={orderToggleRef} className="w-fit"><SectorOrderToggle label={title} value={orderMode.value} onChange={orderMode.onChange} /></div>}
       <div className="overflow-y-auto scrollbar-thin" style={{ maxHeight: FILTER_LIST_MAX_HEIGHT }}>
         {search.matches.length === 0 ? (
           <p className="m-0 px-3 py-1 text-ui-muted">검색 결과가 없습니다.</p>
@@ -401,8 +415,8 @@ function SectorSearchPopup({
               type="button"
               onClick={() => onSelect(opt.id)}
               onMouseEnter={() => search.setHighlightedIndex(index)}
-              className={`block w-full truncate rounded-none border-0 px-3 py-1 text-left text-sm font-normal text-ui-white shadow-none outline-none ${
-                index === search.highlightedIndex ? 'bg-ui-white/10 text-[var(--brand)]' : 'bg-transparent'
+              className={`block w-full truncate rounded-none border-0 py-1 pr-3 pl-4 text-left text-sm font-normal text-ui-white shadow-none outline-none ${
+                index === search.highlightedIndex ? 'bg-ui-white/10' : 'bg-transparent'
               }`}
             >
               {isSingleLevel ? opt.name : opt.label}
@@ -1606,7 +1620,7 @@ export default function AdminStockTable({
   const rootRef = useRef<HTMLDivElement>(null)
   // 검색창 오른쪽 끝을 아래 약칭 열의 오른쪽 줄에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
   const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { columnKey: 'alias', leftEl: toolbarContainer })
-  // 윗줄(드롭다운 오른쪽)에 그리는 검색창과 필터 초기화 — 실행취소·다시실행은 설정창 안(historyContainer)에 그리고, 컨테이너가 없으면 이 줄에 그대로 그린다.
+  // 윗줄(드롭다운 오른쪽)에 그리는 검색창과 필터 초기화. 실행취소·다시실행은 설정창의 변경 내역 위치에만 표시한다.
   const toolbar = (
     <div className="flex h-full min-h-0 w-full items-center gap-2">
       <SearchBar
@@ -1631,7 +1645,6 @@ export default function AdminStockTable({
           ) : null
         }
       />
-      {!historyContainer && historyControls}
     </div>
   )
 
