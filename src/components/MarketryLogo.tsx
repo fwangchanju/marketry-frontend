@@ -55,12 +55,12 @@ export default function MarketryLogo({ className, layout = 'horizontal' }: Props
         <svg x={0} y={0} width={425} height={400} viewBox="0 0 425 400">
           <image href={marketryLogo} width={1681} height={400} />
         </svg>
-        <g transform="translate(495 60) scale(0.75)">
+        <g transform="translate(495 47.5) scale(0.75)">
           <svg x={0} y={0} width={1490} height={242} viewBox="510 25 1170 190">
             <image href={marketryLogo} width={1681} height={400} filter={`url(#${wordmarkFilterId})`} />
           </svg>
         </g>
-        <text x={495} y={230} dominantBaseline="text-before-edge" fontSize={110} fontWeight={500} fill="var(--ui-white)" className="font-roboto-latin">
+        <text x={495} y={242.5} dominantBaseline="text-before-edge" fontSize={110} fontWeight={500} fill="var(--ui-white)" className="font-roboto-latin">
           Design Your Market
         </text>
       </svg>
