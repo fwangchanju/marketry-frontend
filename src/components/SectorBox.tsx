@@ -238,21 +238,22 @@ export default function SectorBox({
             style={{
               height: sectorHeaderHeight(depth),
               fontSize: sectorHeaderFontSize(depth),
+              lineHeight: `${sectorHeaderHeight(depth)}px`,
               left: PADDING,
               width: `calc(100% - ${PADDING * 2}px)`,
               ...(isTopPick ? { backgroundColor: strongIndustryColor, color: 'var(--ui-surface)' } : absoluteDepth === 0 ? { color: strongIndustryColor } : {}),
             } as CSSProperties}
-            className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header z-[31]' : 'z-[2]'} absolute top-0 flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold leading-none ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
+            className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header z-[31]' : 'z-[2]'} absolute top-0 flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
           >
-            {/* 줄 높이로 헤더를 채우면 작은 지표 글자·폴백 글꼴의 baseline에 따라
-                줄 상자가 커져 위쪽이 잘릴 수 있다. 고정 높이 틀 안에서 같은 방식으로 가운데 정렬한다. */}
+            {/* 글줄 높이는 레이아웃이 확보한 헤더 높이와 같아야 한다.
+                지표는 작은 글꼴의 기준선만 공유하고 별도 줄 높이를 더하지 않는다. */}
             <span
               className={`flex h-full min-w-0 items-center ${isTopPick ? '' : 'rounded-[3px] px-1'}`}
               style={{ background: isTopPick ? undefined : nameChipBackground }}
             >
-              <span className="truncate" style={{ lineHeight: 1.25 }}>
+              <span className="truncate">
                 {depthMark}{sector.sectorName}
-                {headerSuffix && <span className="text-[0.9em] font-normal tabular-nums">{headerSuffix}</span>}
+                {headerSuffix && <span className="text-[0.9em] font-normal tabular-nums" style={{ lineHeight: 0 }}>{headerSuffix}</span>}
               </span>
             </span>
           </button>
