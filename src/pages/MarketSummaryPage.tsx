@@ -207,7 +207,8 @@ export default function MarketSummaryPage() {
   const indexEndDate = pinnedSnapshotTime?.slice(0, 10) ?? marketSummary?.marketOverviews.snapshotTime?.slice(0, 10) ?? null
   const { data: historicalIndexData } = useQuery({
     queryKey: ['home-historical-market-index', indexEndDate, changeRateChoice],
-    enabled: Boolean(indexEndDate),
+    // 최근 화면은 marketSummary에서 지수 시계열을 이미 받는다. 과거 지수 상세 조회는 날짜를 고정해 볼 때만 필요하다.
+    enabled: Boolean(indexEndDate && pinnedSnapshotTime !== undefined),
     queryFn: async () => {
       const endDate = indexEndDate!
       const endMonth = endDate.slice(0, 7)
@@ -228,7 +229,8 @@ export default function MarketSummaryPage() {
     // 시총 범위는 Set의 원소가 아니라 marketValueRange 속성에 있으므로 금액 경계도 캐시 키에 넣는다.
     queryKey: ['home-personal-sector-trend', session?.userId ?? null, personalTrendEndDate, data?.snapshotTime, pinnedSnapshotTime !== undefined, marketTrendDates, changeRateChoice, settingsModalProps.taxonomy,
       [...excludedSectorIds].sort((a, b) => a - b), [...excludedMarketValueTiers].sort(), marketValueRange?.min ?? null, marketValueRange?.max ?? null],
-    enabled: Boolean(personalTrendEndDate && data?.snapshotTime && (settingsModalProps.taxonomy !== 'MINE' || session?.authenticated)),
+    // 시장 요약이 도착하기 전 빈 날짜 목록으로 먼저 실행하면 현재점만 조회한 뒤 같은 추이를 다시 요청한다.
+    enabled: Boolean(personalTrendEndDate && data?.snapshotTime && marketSummary && (settingsModalProps.taxonomy !== 'MINE' || session?.authenticated)),
     queryFn: async (): Promise<PersonalSectorTrend> => {
       const isPinnedDate = pinnedSnapshotTime !== undefined
       let historicalDates = marketTrendDates.filter(date => date < personalTrendEndDate!).slice(-4)
