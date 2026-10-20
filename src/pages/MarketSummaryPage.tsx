@@ -14,6 +14,7 @@ import RankBars from '@/components/RankBars'
 import PeriodTrendChart from '@/components/PeriodTrendChart'
 import { getMarketIndexHistory } from '@/api/marketSummary'
 import Spinner from '@/components/Spinner'
+import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import Toolbar from '@/components/Toolbar'
 import ToolbarChip from '@/components/ToolbarChip'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
@@ -175,7 +176,7 @@ export default function MarketSummaryPage() {
   const {
     settingsModalProps, data, rootNodes, isLoading, isError, refetchTreemap, isRefetchingTreemap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
     changeRateMode, changeRateChoice, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers,
-    market, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
+    market, nxtOnly, nxtOnlyWindow, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
     isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
   } = useGlobalSettings({ allowChangeRateMode: true })
   // 오르내림 숫자는 지도·그룹 순위와 같은 색 체계의 가장 진한 단계 색을 쓴다(색 구간을 바꿔도 같이 바뀐다). 보합·값 없음은 본문 회색이다.
@@ -213,7 +214,7 @@ export default function MarketSummaryPage() {
   const trendTaxonomy = settingsModalProps.taxonomy === 'NXT' ? 'KRX' : settingsModalProps.taxonomy
   const personalTrendEndDate = pinnedSnapshotTime?.slice(0, 10) ?? data?.snapshotTime?.slice(0, 10) ?? marketTrendDates.at(-1) ?? null
   const indexEndDate = pinnedSnapshotTime?.slice(0, 10) ?? marketSummary?.marketOverviews.snapshotTime?.slice(0, 10) ?? null
-  const { data: historicalIndexData, isPending: isIndexHistoryPending, isError: isIndexHistoryError } = useQuery({
+  const { data: historicalIndexData, isPending: isIndexHistoryPending, isError: isIndexHistoryError, refetch: refetchIndexHistory } = useQuery({
     queryKey: ['home-historical-market-index', indexEndDate, rangeStartTime, rangePreviousDay?.snapshotTime, changeRateChoice],
     enabled: Boolean(indexEndDate && pinnedSnapshotTime !== undefined && (!rangeStartTime || rangePreviousDay !== undefined)),
     queryFn: async () => {
@@ -242,7 +243,7 @@ export default function MarketSummaryPage() {
     },
     staleTime: 60_000,
   })
-  const { data: personalSectorTrend, isPending: isSectorTrendPending, isError: isSectorTrendError } = useQuery({
+  const { data: personalSectorTrend, isPending: isSectorTrendPending, isError: isSectorTrendError, refetch: refetchSectorTrend } = useQuery({
     // 시총 범위는 Set의 원소가 아니라 marketValueRange 속성에 있으므로 금액 경계도 캐시 키에 넣는다.
     queryKey: ['home-personal-sector-trend', session?.userId ?? null, personalTrendEndDate, data?.snapshotTime, rangeStartTime, rangePreviousDay?.snapshotTime, pinnedSnapshotTime !== undefined, marketTrendDates, changeRateChoice, settingsModalProps.taxonomy,
       [...excludedSectorIds].sort((a, b) => a - b), [...excludedMarketValueTiers].sort(), marketValueRange?.min ?? null, marketValueRange?.max ?? null],
@@ -462,7 +463,8 @@ export default function MarketSummaryPage() {
             </div>
           </Toolbar>
           {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다. 좌우 여백은 바깥 main-settings-row에서 관리한다. 로딩·오류 원은 지도·그룹·커스텀 페이지와 같은 위 16px·아래 19.5px 여백 안에서 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
-          <div className="flex min-h-0 flex-1">
+          <div className="relative flex min-h-0 flex-1">
+            <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && nxtOnlyWindow.fromMinutes >= 12 * 60 && !isPastSnapshot && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(data?.snapshotTime)} nodes={rootNodes} />
             {isLoading ? (
               <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
                 <Spinner showElapsed />
@@ -499,48 +501,48 @@ export default function MarketSummaryPage() {
                 title: '시장 요약',
                 captureId: 'market-summary',
                 body: (
-                  <div className="grid h-full min-h-0 w-full flex-1 grid-rows-[repeat(3,minmax(0,1fr))] gap-2 overflow-y-auto text-[14px] font-medium leading-none tabular-nums">
+                  <div className="grid h-full min-h-0 w-full flex-1 grid-rows-[repeat(3,minmax(160px,1fr))] gap-2 overflow-y-auto text-[14px] font-medium leading-none tabular-nums">
                     {INDEX_ROWS.map(({ label, market }) => {
                       const { indexValue, tradingValue, changeRate } = indexOf(market)
                       const trendItems = indexTrendItems
                       return (
-                        <section key={market} aria-label={`${label} 시장 요약과 최근 5거래일 추이`} className="relative flex min-h-0 flex-col rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
-                          <div className="grid h-[26px] shrink-0 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+                        <section key={market} aria-label={`${label} 시장 요약과 최근 5거래일 추이`} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                          <div className="flex w-[112px] min-w-0 max-w-[40%] shrink-0 flex-col items-start gap-2">
                             <SummaryBadge>{label}</SummaryBadge>
-                            <div className="grid min-w-0 grid-cols-3 gap-1">
+                            <div className="flex w-full min-w-0 flex-col gap-1">
                               {[
                                 { label: '지수', value: indexValue === null ? '' : toIndexValue(indexValue), color: undefined },
                                 { label: '등락률', value: changeRate === null ? '' : toPctSigned(changeRate), color: rateColorStyle(changeRate)?.color },
                                 { label: '거래대금', value: tradingValue === null ? '' : toJoEokDecimal(tradingValue / 100), color: undefined },
                               ].map(metric => (
-                                <div key={metric.label} aria-label={metric.label} className="min-w-0 px-1.5 py-1 text-right">
+                                <div key={metric.label} aria-label={metric.label} className="min-h-5 w-full min-w-0 text-left">
                                   <div className="truncate text-[14px] font-semibold leading-tight text-ui-text" style={metric.color ? { color: metric.color } : undefined}>{metric.value}</div>
                                 </div>
                               ))}
                             </div>
                           </div>
                           <div className={rangeStartTime && (isIndexHistoryPending || !trendItems.some(item => item.market === market))
-                            ? 'pointer-events-none absolute inset-0'
-                            : 'absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]'}>
+                            ? 'absolute inset-0'
+                            : 'relative ml-3 mb-[60px] min-h-[64px] min-w-0 flex-1 self-stretch'}>
                             {rangeStartTime ? (
-                              <PeriodTrendChart points={trendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))} label={label} colorScale={colorScale} loading={isIndexHistoryPending} error={isIndexHistoryError} />
+                              <PeriodTrendChart points={trendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))} label={label} colorScale={colorScale} loading={isIndexHistoryPending} error={isIndexHistoryError} onRetry={() => { void refetchIndexHistory() }} />
                             ) : <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />}
                           </div>
                         </section>
                       )
                     })}
-                    <section aria-label={rangeStartTime ? '최상위 업종 선택 기간 누적 등락률' : '최상위 업종 최근 5거래일 일간 등락률'} className="relative flex min-h-0 flex-col rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
-                      <div className="grid h-[26px] shrink-0 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-                        <SummaryBadge>{rangeStartTime ? '최상위 업종 · 기간 누적' : '최상위 업종'}</SummaryBadge>
-                        <div className="grid min-w-0 grid-cols-3 gap-1">
-                          <span className="min-w-0 truncate px-1.5 py-1 text-right text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
+                    <section aria-label={rangeStartTime ? '최상위 업종 선택 기간 누적 등락률' : '최상위 업종 최근 5거래일 일간 등락률'} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                      <div className="flex w-[112px] min-w-0 max-w-[40%] shrink-0 flex-col items-start gap-2">
+                        <SummaryBadge>최상위 업종</SummaryBadge>
+                        <div className="flex w-full min-w-0 flex-col gap-1">
+                          <span className="min-h-5 w-full min-w-0 whitespace-normal break-words text-left text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
                         </div>
                       </div>
                       <div className={rangeStartTime && (isSectorTrendPending || !personalSectorTrend?.points.length)
-                        ? 'pointer-events-none absolute inset-0'
-                        : 'absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]'}>
+                        ? 'absolute inset-0'
+                        : 'relative ml-3 mb-[60px] min-h-[64px] min-w-0 flex-1 self-stretch'}>
                         {rangeStartTime ? (
-                          <PeriodTrendChart points={personalSectorTrend?.points ?? []} label={personalSectorTrend?.sectorName ?? '최상위 업종'} colorScale={colorScale} loading={isSectorTrendPending} error={isSectorTrendError} />
+                          <PeriodTrendChart points={personalSectorTrend?.points ?? []} label={personalSectorTrend?.sectorName ?? '최상위 업종'} colorScale={colorScale} loading={isSectorTrendPending} error={isSectorTrendError} onRetry={() => { void refetchSectorTrend() }} />
                         ) : <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />}
                       </div>
                     </section>

@@ -1,10 +1,10 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { resolveTreemapColor } from '@/utils/treemapColorScale'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
-import PopupKindBadge from '@/components/PopupKindBadge'
+import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import SettingsPanel, {
   SettingsPanelGroup,
   SettingsMarketValueSection,
@@ -25,7 +25,6 @@ import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
-import { HINT_BUBBLE_COLOR_CLASS, POPUP_SIZE_CLASS } from '@/components/hintBubbleStyle'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
@@ -54,8 +53,6 @@ import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { limitDepth, flattenAllItems, type FilteredTreemapSectorNode } from '@/hooks/useFilteredTreemap'
 import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
 
-// 업종 트리 전체의 종목 수(제외 업종도 포함한다).
-const countStocks = (nodes: TreemapSectorNode[]): number => nodes.reduce((sum, node) => sum + node.items.length + countStocks(node.children), 0)
 const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'ALL STOCK' }
 // 종목·업종 헤더와 같은 방식 — 올리면 흰색 35% 덮개가 씌워진다(index.css의 hover와 같은 불투명도).
 // 이동 경로의 이름이 몇 번째 업종 단계인지(0부터) — 마우스가 이미 그 이름 위에 있어서 툴팁에는 이름 대신 단계 이름만 쓴다. 업종은 최대 4단계(대분류·중분류·소분류·세분류)다.
@@ -301,21 +298,13 @@ export default function MapPage() {
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
-  // NXT 안내 알림을 닫았는지 — 다른 분류으로 바꾸면 초기화돼서, NXT를 다시 고를 때 또 보인다.
-  const [isNxtNoticeDismissed, setIsNxtNoticeDismissed] = useState(false)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
-  useEffect(() => {
-    if (!nxtOnly) setIsNxtNoticeDismissed(false)
-  }, [nxtOnly])
   // null이 아니면 Treemap이 해당 뎁스로 줄어드는 줌아웃 애니메이션을 재생하고, 끝나면
   // handleZoomOutComplete를 불러서 실제 이동을 한다 — 애니메이션 도중엔 path/groups를 먼저 바꾸지 않는다.
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
   const screenshotRef = useRef<HTMLDivElement>(null)
 
   const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth, reset } = useTreemapDrilldown(filteredRootNodes)
-  // NXT 단독 시간대 안내창에 보여 줄 종목 수 — 서버가 준 NXT 종목 전체(분모)다. 제외 업종·표시 설정을 적용하기 전의 수라서 지도에 그려지는 수와 다를 수 있다.
-  const nxtStockTotal = useMemo(() => countStocks(rootNodes), [rootNodes])
-
   // "업종 단계" 뎁스 제한은 진짜 루트(대분류) 기준 절대값이다 — 설정이 중분류까지면 어디로 드릴다운해도 중분류까지만 보인다.
   // 드릴다운해서 대분류 하나로 들어가면(path.length = 1) 이미 한 단계를 내려온 것이라, 그 안에서는 남은 단계(설정값 - path.length)만 보인다.
   // 다만 들어간 업종의 바로 아래 한 단계는 항상 보여야 하므로 최소 1단계다. 드릴다운 상태에서는 헤더를 그리지 않는 자기 자신은
@@ -646,42 +635,7 @@ export default function MapPage() {
             </Toolbar>
             <div className="flex min-h-0 flex-1">
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
-              {/* NXT 단독 시간대 공지 — 그 시간대에만 보여주는 알림이다. 닫을 수 있고, 시간대가 끝났다가 다시 오면 또 나온다. */}
-              {/* 지도가 그려진 뒤에만 보인다 — 로딩 중이거나 불러오지 못했을 때는 가운데 로딩 원 위에 겹쳐 뜨지 않게 한다. */}
-              {nxtOnly && nxtOnlyWindow && !isNxtNoticeDismissed && !isLoading && !isError && (
-                // 확인창(AppDialogHost)과 같은 양식 — 지도 위 가운데에 크림색 창, 굵은 제목, 본문, 오른쪽 아래 청록 닫기 버튼.
-                // 어두운 배경 없이 창만 띄우고 클릭을 막지 않는다(확인창과 달리 창 밖에서도 지도를 계속 쓸 수 있다). 공유 이미지에는 담지 않는다(data-capture-ignore).
-                <div data-capture-ignore className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center p-4">
-                  <section
-                    role="status"
-                    aria-labelledby="nxt-notice-title"
-                    className={`${HINT_BUBBLE_COLOR_CLASS} ${POPUP_SIZE_CLASS} pointer-events-auto select-none`}
-                  >
-                    <h2 id="nxt-notice-title" className="flex items-center text-base font-bold text-ui-background"><PopupKindBadge kind="안내" />{nxtOnlyWindow.fromMinutes < 12 * 60 ? '프리 마켓' : '애프터 마켓'}</h2>
-                    <p className="mt-3 break-keep text-sm leading-relaxed text-ui-background">
-                      {nxtOnlyWindow.label.replace(/ /g, '')}에는 NXT 거래 가능 종목만 표시됩니다.
-                      <br />
-                      <span className="text-ui-muted">최대 {toCount(nxtStockTotal)}종목이며, 설정에 따라 다를 수 있습니다.</span>
-                      {/* 애프터 마켓에서만 — 정규장이 끝난 뒤라 메인 마켓 종가를 따로 볼 수 있다고 알린다(프리 마켓에서는 보이지 않는다). */}
-                      {nxtOnlyWindow.fromMinutes >= 12 * 60 && (
-                        <>
-                          <br />
-                          <span className="text-ui-muted">메인 마켓 종가는 상단 종가 버튼으로 확인하세요.</span>
-                        </>
-                      )}
-                    </p>
-                    <div className="mt-auto flex justify-end pt-3">
-                      <button
-                        type="button"
-                        onClick={() => setIsNxtNoticeDismissed(true)}
-                        className="rounded-lg border-0 bg-[var(--brand-surface)] px-4 py-2 text-sm font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)]"
-                      >
-                        닫기
-                      </button>
-                    </div>
-                  </section>
-                </div>
-              )}
+              <NxtOnlyNotice active={nxtOnly && pinnedSnapshotTime === undefined && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError} nodes={rootNodes} />
               {path.length > 0 && (
                 // 이름마다 "그 단계로만" 이동하는 링크다 — 줄 전체를 눌러 전체로 가던 동작은 없앴다. 지금 보고 있는
                 // 마지막 이름은 링크가 아니라 현재 위치 표시(흰색)다.

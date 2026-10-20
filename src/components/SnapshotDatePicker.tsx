@@ -353,9 +353,12 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     }
   }, [isOpen])
 
-  // 기간 달력을 열 때 — 이미 기간을 보는 중이면 그 시작일·종료일을 채우고, 아니면 비운다. 오른쪽 달은 종료일(또는 지금 보는 날)이 있는 달, 왼쪽은 그 전 달이다.
-  const prepareRange = () => {
-    if (isViewingRange) {
+  // 하루 모드에서 넘어오면 선택 날짜를 시작일로 유지한다. 이미 적용한 기간을 다시 열면 두 날짜를 복원한다.
+  const prepareRange = (selectedStart: PickedDay | null = null) => {
+    if (selectedStart) {
+      setDraftStart(selectedStart)
+      setDraftEnd(null)
+    } else if (isViewingRange) {
       setDraftStart({ date: rangeStartTime.slice(0, 10), snapshotTime: rangeStartTime })
       setDraftEnd({ date: viewedSnapshotTime.slice(0, 10), snapshotTime: viewedSnapshotTime })
     } else {
@@ -364,8 +367,8 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     }
     // 시작일이 있는 달을 왼쪽에 두고 그 다음 달을 오른쪽에 둔다(한 달 안의 기간이면 둘 다 보인다). 종료일이 그보다 뒤면 종료일이 오른쪽 달이 되게 하고,
     // 오른쪽 달이 실시간 달을 넘지 않게 한다. 기간을 고르는 중이 아니면 오른쪽이 지금 보는 달이다.
-    const endMonth = toShownMonth(viewedSnapshotTime ?? anchorDate ?? new Date().toISOString())
-    const wantedLeft = isViewingRange && rangeStartTime ? maxMonth(toShownMonth(rangeStartTime), addMonths(endMonth, -1)) : addMonths(endMonth, -1)
+    const endMonth = toShownMonth(selectedStart?.date ?? viewedSnapshotTime ?? anchorDate ?? new Date().toISOString())
+    const wantedLeft = selectedStart ? toShownMonth(selectedStart.date) : isViewingRange && rangeStartTime ? maxMonth(toShownMonth(rangeStartTime), addMonths(endMonth, -1)) : addMonths(endMonth, -1)
     const latestLeft = liveDate === null ? null : addMonths(toShownMonth(liveDate), -1)
     setRangeLeftMonth(latestLeft !== null && toMonthKey(wantedLeft) > toMonthKey(latestLeft) ? latestLeft : wantedLeft)
   }
@@ -383,9 +386,16 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
 
   const switchMode = (toRange: boolean) => {
     if (toRange === isRangeMode) return
-    setDraftDay(null)
-    if (toRange) prepareRange()
-    else {
+    if (toRange) {
+      const selectedDay = draftDay ?? (isPast && viewedSnapshotTime ? { date: viewedSnapshotTime.slice(0, 10), snapshotTime: viewedSnapshotTime } : null)
+      // 오늘 선택은 snapshotTime이 null이므로 종가 목록 또는 현재 스냅샷의 시각을 이어받는다.
+      const snapshotTime = selectedDay?.snapshotTime
+        ?? [...(rangeLeftDays.data ?? []), ...(rangeRightDays.data ?? [])].find(day => day.date === selectedDay?.date)?.snapshotTime
+        ?? (selectedDay?.date === liveDate ? liveSnapshotTime : null)
+      prepareRange(selectedDay && snapshotTime ? { date: selectedDay.date, snapshotTime } : null)
+      setDraftDay(null)
+    } else {
+      setDraftDay(null)
       const anchorMonth = toShownMonth(anchorDate ?? new Date().toISOString())
       const wantedLeft = addMonths(anchorMonth, -1)
       const latestLeft = liveDate === null ? null : addMonths(toShownMonth(liveDate), -1)
