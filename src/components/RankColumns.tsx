@@ -5,7 +5,7 @@ import {
   resolveTreemapExtremeColor,
   type ColorScaleConfig,
 } from '@/utils/treemapColorScale'
-import { rankAxisMagnitude } from '@/utils/rankAxis'
+import { rankAxisMagnitude, rankAxisMaximum } from '@/utils/rankAxis'
 
 export interface RankColumnItem {
   key: string
@@ -97,7 +97,7 @@ export default function RankColumns({
       </div>
     )
   }
-  const axisMax = Math.max(rankAxisMagnitude(chart.axisMax), 0.5)
+  const axisMax = Math.max(rankAxisMaximum(chart.axisMax), 0.5)
   // 최소 폭을 강제하지 않고 설정창을 뺀 실제 가용 폭을 모든 항목에 균등 배분한다.
   const columnsStyle = { gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }
 
