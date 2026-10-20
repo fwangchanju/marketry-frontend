@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>신규 상장 이중 분절 미리보기</title></head>
+<body style="margin:0;background:#0a0a0a;color:#fff;font-family:sans-serif"><div id="root"></div>
+<script type="module">
+import React from '/node_modules/.vite/deps/react.js';
+import {createRoot} from '/node_modules/.vite/deps/react-dom_client.js';
+import RankBars from '/src/components/RankBars.tsx';
+import RankColumns from '/src/components/RankColumns.tsx';
+import '/src/index.css';
+const h=React.createElement;
+const chart={axisMax:32.5,rankedItems:[['필수소비재',-1.41],['소프트웨어',-1.85],['금융',-1.90],['헬스케어',-2.07],['임의소비재',-2.31],['운송',-2.99],['반도체 소·부·장',-3.40],['S7',-3.56],['모빌리티',-4.01],['AI 인프라',-5.04],['배터리',-5.39],['소재',-5.55],['에너지화학',-7.23],['산업재',-8.27],['신규 상장',-32.04]].map(([sectorName,value])=>({key:sectorName,sectorName,value}))};
+const props={chart,highlightColor:'#d9ef78',colorScale:{thresholds:[]},applyAxisBreak:true};
+function panel(title,component){return h('section',{style:{border:'1px solid #555',borderRadius:6,padding:16,display:'flex',flexDirection:'column',height:650,minWidth:0}},h('h2',{style:{fontSize:18,margin:'0 0 18px'}},title),h(component,props));}
+createRoot(document.getElementById('root')).render(h('main',{style:{padding:20,maxWidth:1500,margin:'auto'}},h('h1',{style:{fontSize:22,marginBottom:8}},'신규 상장 이중 분절'),h('p',{style:{color:'#aaa',marginBottom:20}},'8px 절단 · 가운데 색상 4px(테두리 포함 6px) · 8px 절단 / 고정 데이터 -32.04%'),h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,500px),1fr))',gap:16}},panel('가로 막대',RankBars),panel('세로 막대',RankColumns))));
+</script></body></html>
