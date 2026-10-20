@@ -54,7 +54,6 @@ type HistoricalIndexPoint = {
   date: string
   market: 'KOSPI' | 'KOSDAQ'
   overview: Awaited<ReturnType<typeof getMarketIndexHistory>>[number]
-  baseIndexValue: number | null
 }
 
 // 시장 요약의 항목 배지는 툴바의 "분류" 칸과 같은 짙은 청록 배경(--brand-surface)·흰 글자을 쓴다. 지수는 오르면 빨강·내리면 파랑, 변화가 없거나 값이 없으면 회색이다.
@@ -86,7 +85,7 @@ function MarketIndexTrendChart({ items, market, label, colorScale }: { items: Ma
               <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 ${item.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
               <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[12px] font-semibold tabular-nums" style={{ top: item.changeRate >= 0 ? `calc(50% - ${height} - 25px)` : `calc(50% + ${height} + 7px)`, color: barColor }}>{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(2)}</div>
             </div>
-            <div className="absolute inset-x-0 top-[calc(100%+12px)] text-ui-muted">
+            <div className="absolute inset-x-0 top-[calc(100%+8px)] text-ui-muted">
               <div className="whitespace-nowrap text-[12px] leading-tight tabular-nums">{dateLabels(item.date).date}</div>
               <div className="whitespace-nowrap text-[11px] leading-tight">({dateLabels(item.date).weekday})</div>
             </div>
@@ -121,7 +120,7 @@ function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSector
                 <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 ${point.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
                 <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[12px] font-semibold tabular-nums" style={{ top: point.changeRate >= 0 ? `calc(50% - ${height} - 25px)` : `calc(50% + ${height} + 7px)`, color: barColor }}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(2)}</div>
               </div>
-              <div className="absolute inset-x-0 top-[calc(100%+12px)] text-ui-muted">
+              <div className="absolute inset-x-0 top-[calc(100%+8px)] text-ui-muted">
                 <div className="whitespace-nowrap text-[12px] leading-tight tabular-nums">{date.getUTCMonth() + 1}/{date.getUTCDate()}</div>
                 <div className="whitespace-nowrap text-[11px] leading-tight">({weekday})</div>
               </div>
@@ -232,14 +231,14 @@ export default function MarketSummaryPage() {
       })))).flat()
       return rows.filter(row => row.snapshotTime.slice(0, 10) <= endDate).flatMap<HistoricalIndexPoint>(overview => {
         const date = overview.snapshotTime.slice(0, 10)
-        if (!rangeStartTime) return [{ date, market: overview.market, overview, baseIndexValue: null }]
+        if (!rangeStartTime) return [{ date, market: overview.market, overview }]
         if (date < rangeStartTime.slice(0, 10)) return []
         const base = rows.find(row => row.market === overview.market && row.snapshotTime.slice(0, 10) === baseDate)
         if (!base) return []
         const baseValue = rangePreviousDay ? base.indexValue : base.indexValue - base.changeValue
         if (baseValue <= 0) return []
         const changeValue = overview.indexValue - baseValue
-        return [{ date, market: overview.market, overview: { ...overview, changeValue, changeRate: changeValue / baseValue * 100 }, baseIndexValue: baseValue }]
+        return [{ date, market: overview.market, overview: { ...overview, changeValue, changeRate: changeValue / baseValue * 100 } }]
       })
     },
     staleTime: 60_000,
@@ -316,7 +315,7 @@ export default function MarketSummaryPage() {
   // 요약 조회의 지수는 항상 최근 값이다 — 지도가 지난 시각이나 기간을 보고 있거나 시간외 별도 등락률이면 맞지 않으므로 보여 주지 않는다(그룹 페이지도 일간 등락률일 때만 넣는다).
   const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
   const indexTrendItems = pinnedSnapshotTime
-    ? (historicalIndexData ?? []).flatMap(({ date, market, overview }) => overview ? [{ date, market, changeRate: overview.changeRate, indexValue: overview.indexValue }] : [])
+    ? (historicalIndexData ?? []).flatMap(({ date, market, overview }) => overview ? [{ date, market, changeRate: overview.changeRate }] : [])
     : marketSummary?.marketOverviewTrends ?? []
 
   // 홈은 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
@@ -501,26 +500,26 @@ export default function MarketSummaryPage() {
                       return (
                         <section key={market} aria-label={`${label} 시장 요약과 최근 5거래일 추이`} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
                           <div className="relative z-10 flex h-[26px] min-w-0 shrink-0 items-center gap-2">
-                            <SummaryBadge className="w-[100px] justify-center">{label}</SummaryBadge>
+                            <SummaryBadge>{label}</SummaryBadge>
                           </div>
                           <div className={rangeStartTime && (isIndexHistoryPending || !trendItems.some(item => item.market === market))
                             ? 'absolute inset-0'
-                            : 'absolute inset-x-2 top-1.5 bottom-[48px]'}>
+                            : 'absolute inset-x-2 top-[30px] bottom-[44px]'}>
                             {rangeStartTime ? (
-                              <PeriodTrendChart points={trendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))} label={label} colorScale={colorScale} baselineIndex={historicalIndexData?.find(item => item.market === market)?.baseIndexValue ?? undefined} loading={isIndexHistoryPending} error={isIndexHistoryError} onRetry={() => { void refetchIndexHistory() }} />
+                              <PeriodTrendChart points={trendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))} label={label} colorScale={colorScale} loading={isIndexHistoryPending} error={isIndexHistoryError} onRetry={() => { void refetchIndexHistory() }} />
                             ) : <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />}
                           </div>
                         </section>
                       )
                     })}
                     <section aria-label={rangeStartTime ? '최상위 업종 선택 기간 누적 등락률' : '최상위 업종 최근 5거래일 일간 등락률'} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
-                      <div className="relative z-10 flex h-[26px] min-w-0 shrink-0 items-center gap-2">
-                        <SummaryBadge className="w-[100px] justify-center">최상위 업종</SummaryBadge>
-                        <span className="min-w-0 text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
+                      <div className="relative z-10 flex min-w-0 shrink-0 flex-col items-start gap-1">
+                        <SummaryBadge>최상위 업종</SummaryBadge>
+                        <span className="max-w-full truncate text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
                       </div>
                       <div className={rangeStartTime && (isSectorTrendPending || !personalSectorTrend?.points.length)
                         ? 'absolute inset-0'
-                        : 'absolute inset-x-2 top-1.5 bottom-[48px]'}>
+                        : 'absolute inset-x-2 top-[30px] bottom-[44px]'}>
                         {rangeStartTime ? (
                           <PeriodTrendChart points={personalSectorTrend?.points ?? []} label={personalSectorTrend?.sectorName ?? '최상위 업종'} colorScale={colorScale} loading={isSectorTrendPending} error={isSectorTrendError} onRetry={() => { void refetchSectorTrend() }} />
                         ) : <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />}
