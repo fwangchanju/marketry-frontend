@@ -82,7 +82,7 @@ function MarketIndexTrendChart({ items, market, label, colorScale }: { items: Ma
         return (
           <div key={`${item.date}-${item.market}`} className="relative min-w-0 text-center">
             <div className="relative mx-auto h-full w-full max-w-32">
-              <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 ${item.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
+            <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 border border-ui-control ${item.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
               <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[13px] font-semibold tabular-nums" style={{ top: item.changeRate >= 0 ? `calc(50% - ${height} - 25px)` : `calc(50% + ${height} + 7px)`, color: barColor }}>{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(2)}</div>
             </div>
             <div className="absolute inset-x-0 top-[calc(100%+8px)] text-ui-muted">
@@ -117,7 +117,7 @@ function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSector
           return (
             <div key={point.date} className="relative min-w-0 text-center">
               <div className="relative mx-auto h-full w-full max-w-32">
-                <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 ${point.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
+              <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 border border-ui-control ${point.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
                 <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[13px] font-semibold tabular-nums" style={{ top: point.changeRate >= 0 ? `calc(50% - ${height} - 25px)` : `calc(50% + ${height} + 7px)`, color: barColor }}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(2)}</div>
               </div>
               <div className="absolute inset-x-0 top-[calc(100%+8px)] text-ui-muted">
@@ -295,8 +295,8 @@ export default function MarketSummaryPage() {
         trendTaxonomy === 'KRX' && !session?.authenticated ? withStableSectorIds(items) : items
       const latestRoots = collectAtDepth(rootNodes, 1, excludedSectorIds, excludedMarketValueTiers)
       const top = latestRoots
-        .map(({ node }) => ({ node, changeRate: computeSectorAverage(node, excludedMarketValueTiers).weightedAvg }))
-        .filter((entry): entry is { node: TreemapSectorNode; changeRate: number } => entry.changeRate !== null)
+        .map(({ node, pathKey }) => ({ node, pathKey, changeRate: computeSectorAverage(node, excludedMarketValueTiers).weightedAvg }))
+        .filter((entry): entry is { node: TreemapSectorNode; pathKey: string; changeRate: number } => entry.changeRate !== null)
         .sort((a, b) => b.changeRate - a.changeRate)[0]
       if (!top) return null
       return {
@@ -304,7 +304,7 @@ export default function MarketSummaryPage() {
         isRange,
         points: datedMaps.flatMap(({ date, items }) => {
           const node = collectAtDepth(date === endDate ? items : trendRoots(items), 1, excludedSectorIds, excludedMarketValueTiers)
-            .find(({ node: candidate }) => candidate.sectorId === top.node.sectorId)?.node
+            .find(({ pathKey }) => pathKey === top.pathKey)?.node
           const changeRate = node ? computeSectorAverage(node, excludedMarketValueTiers).weightedAvg : null
           return changeRate === null ? [] : [{ date, changeRate }]
         }),
@@ -520,7 +520,7 @@ export default function MarketSummaryPage() {
                       )
                     })}
                     <section aria-label={rangeStartTime ? '최상위 업종 선택 기간 누적 등락률' : '최상위 업종 최근 5거래일 일간 등락률'} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
-                      <div className="relative z-10 flex min-w-0 shrink-0 flex-col items-start gap-1">
+                      <div className="relative z-10 flex h-[26px] min-w-0 shrink-0 flex-row items-center gap-2">
                         <SummaryBadge>최상위 업종</SummaryBadge>
                         <span className="max-w-full truncate text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
                       </div>
