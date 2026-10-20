@@ -30,7 +30,7 @@ export const snapshotResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
-const MarketOverviewItemSchema = z.object({
+export const MarketOverviewItemSchema = z.object({
   market: MarketSchema,
   marketStatus: z.string(),
   indexValue: z.number(),

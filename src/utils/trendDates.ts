@@ -14,3 +14,16 @@ export function trendMonths(startDate: string, endDate: string): string[] {
   }
   return months
 }
+
+// 긴 기간의 지도를 한꺼번에 요청하지 않도록 동시 조회를 네 개로 제한한다.
+export async function loadTrendDays<T, R>(days: readonly T[], load: (day: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(days.length)
+  let next = 0
+  await Promise.all(Array.from({ length: Math.min(4, days.length) }, async () => {
+    while (next < days.length) {
+      const index = next++
+      results[index] = await load(days[index])
+    }
+  }))
+  return results
+}

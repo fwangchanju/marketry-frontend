@@ -1423,7 +1423,7 @@ function SettingsTaxonomySelector({
             role="radio"
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
-            className={`relative z-10 min-h-[34px] rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-sm font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+            className={`relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap transition-colors duration-[500ms] ${
               isSelected(option.key) ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
           >
