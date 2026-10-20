@@ -408,6 +408,7 @@ export default function GroupPage() {
                       colorScale={colorScale}
                       onSelectSector={handleSelectSector}
                       onSelectIndex={handleSelectIndex}
+                      applyAxisBreak={!isRangeView && !showDeltaGraph}
                     />
                   </div>
                 </div>

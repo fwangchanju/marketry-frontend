@@ -25,11 +25,13 @@ export default function RankBars({
   highlightColor,
   colorScale,
   onSelectSector,
+  applyAxisBreak = false,
 }: {
   chart: RankColumnsChart
   highlightColor: string
   colorScale: ColorScaleConfig
   onSelectSector?: (sectorName: string) => void
+  applyAxisBreak?: boolean
 }) {
   const items = chart.rankedItems
   const containerRef = useRef<HTMLDivElement>(null)
@@ -51,7 +53,13 @@ export default function RankBars({
       </div>
     )
   }
-  const axisMax = Math.max(rankAxisMaximum(chart.axisMax), 0.5)
+  const displayMagnitudes = items.filter(item => item.hiddenCount === undefined).map(item => {
+    const magnitude = Math.abs(item.value)
+    return applyAxisBreak && item.sectorName === '신규 상장' ? rankAxisMagnitude(magnitude) : magnitude
+  })
+  const hasAnyAxisBreak = applyAxisBreak && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && Math.abs(item.value) > RANK_AXIS_BREAK)
+  const displayAxisMax = Math.ceil(Math.max(1, ...displayMagnitudes) * 2) / 2
+  const axisMax = Math.max(rankAxisMaximum(displayAxisMax, hasAnyAxisBreak), 0.5)
   const rowHeight = size ? size.height / items.length : 40
   const fontSize = size
     ? Math.min(FONT_MAX, Math.max(FONT_MIN, Math.min(rowHeight * FONT_HEIGHT_RATIO, size.width / FONT_WIDTH_DIVISOR)))
@@ -66,9 +74,9 @@ export default function RankBars({
         const isEllipsis = item.hiddenCount !== undefined
         const selectable = onSelectSector !== undefined && !item.isReference && !isEllipsis
         const magnitude = Math.abs(item.value)
-        const hasAxisBreak = magnitude > RANK_AXIS_BREAK
-        const primaryMagnitude = Math.min(magnitude, RANK_AXIS_BREAK)
-        const compressedMagnitude = rankAxisMagnitude(magnitude)
+        const hasAxisBreak = applyAxisBreak && item.sectorName === '신규 상장' && magnitude > RANK_AXIS_BREAK
+        const primaryMagnitude = hasAxisBreak ? Math.min(magnitude, RANK_AXIS_BREAK) : magnitude
+        const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude) : magnitude
         const axisPosition = `calc((100% - ${valueWidth}px) * ${compressedMagnitude / axisMax}${hasAxisBreak ? ` + ${RANK_AXIS_BREAK_GAP_PX}px` : ''})`
         const nameClassName = 'shrink-0 truncate text-right font-bold'
         const nameColor = item.isReference ? highlightColor : isEllipsis ? 'var(--ui-muted)' : 'var(--ui-white)'
@@ -96,19 +104,34 @@ export default function RankBars({
                     className="absolute left-0 top-0 h-full rounded-sm border border-ui-control"
                     style={{
                       width: `calc((100% - ${valueWidth}px) * ${primaryMagnitude / axisMax})`,
-                      backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                      backgroundColor: hasAxisBreak ? '#808080' : item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                     }}
                   />
                   {hasAxisBreak && (
-                    <div
-                      aria-hidden="true"
-                      className="absolute top-0 h-full rounded-sm border border-ui-control"
-                      style={{
-                        left: `calc((100% - ${valueWidth}px) * ${RANK_AXIS_BREAK / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
-                        width: `calc((100% - ${valueWidth}px) * ${(compressedMagnitude - RANK_AXIS_BREAK) / axisMax})`,
-                        backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
-                      }}
-                    />
+                    <>
+                      <div
+                        aria-hidden="true"
+                        className="absolute top-0 h-full rounded-sm border border-ui-control"
+                        style={{
+                          left: `calc((100% - ${valueWidth}px) * ${RANK_AXIS_BREAK / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
+                          width: `calc((100% - ${valueWidth}px) * ${(compressedMagnitude - RANK_AXIS_BREAK) / axisMax})`,
+                          backgroundColor: '#808080',
+                        }}
+                      />
+                      <svg
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-0 overflow-visible"
+                        style={{
+                          left: `calc((100% - ${valueWidth}px) * ${RANK_AXIS_BREAK / axisMax} - 4px)`,
+                          width: `${RANK_AXIS_BREAK_GAP_PX + 8}px`,
+                          height: barHeight,
+                        }}
+                        viewBox={`0 0 ${RANK_AXIS_BREAK_GAP_PX + 8} 40`}
+                        preserveAspectRatio="none"
+                      >
+                        <path d="M3 0 C11 6 0 14 9 20 S7 34 15 40 M17 0 C25 6 14 14 23 20 S21 34 29 40" fill="none" stroke="#f5f5f5" strokeWidth="2.5" />
+                      </svg>
+                    </>
                   )}
                   <span
                     className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1.5 font-bold tabular-nums"

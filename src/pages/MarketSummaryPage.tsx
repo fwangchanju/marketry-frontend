@@ -451,7 +451,7 @@ export default function MarketSummaryPage() {
                 title: '그룹 등락률 (%)',
                 captureId: 'group-change-rate',
                 body: (
-                  <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} />
+                  <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} applyAxisBreak={rangeStartTime === undefined} />
                 ),
               },
               {
