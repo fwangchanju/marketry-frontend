@@ -81,6 +81,7 @@ export default function RankColumns({
   colorScale,
   onSelectSector,
   onSelectIndex,
+  applyAxisBreak = false,
 }: {
   chart: RankColumnsChart
   highlightColor: string
@@ -88,6 +89,7 @@ export default function RankColumns({
   onSelectSector?: (sectorName: string) => void
   // 코스피·코스닥 지수 참조 막대를 눌렀을 때 — 주면 그 막대도 눌러서 이동할 수 있다.
   onSelectIndex?: (market: 'KOSPI' | 'KOSDAQ') => void
+  applyAxisBreak?: boolean
 }) {
   const items = chart.rankedItems
   if (items.length === 0) {
@@ -97,7 +99,13 @@ export default function RankColumns({
       </div>
     )
   }
-  const axisMax = Math.max(rankAxisMaximum(chart.axisMax), 0.5)
+  const displayMagnitudes = items.filter(item => item.hiddenCount === undefined).map(item => {
+    const magnitude = Math.abs(item.value)
+    return applyAxisBreak && item.sectorName === '신규 상장' ? rankAxisMagnitude(magnitude) : magnitude
+  })
+  const hasAnyAxisBreak = applyAxisBreak && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && Math.abs(item.value) > RANK_AXIS_BREAK)
+  const displayAxisMax = Math.ceil(Math.max(1, ...displayMagnitudes) * 2) / 2
+  const axisMax = Math.max(rankAxisMaximum(displayAxisMax, hasAnyAxisBreak), 0.5)
   // 최소 폭을 강제하지 않고 설정창을 뺀 실제 가용 폭을 모든 항목에 균등 배분한다.
   const columnsStyle = { gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }
 
@@ -118,9 +126,9 @@ export default function RankColumns({
                 )
               }
               const magnitude = Math.abs(item.value)
-              const hasAxisBreak = magnitude > RANK_AXIS_BREAK
-              const primaryHeightPercent = (Math.min(magnitude, RANK_AXIS_BREAK) / axisMax) * 100
-              const compressedMagnitude = rankAxisMagnitude(magnitude)
+              const hasAxisBreak = applyAxisBreak && item.sectorName === '신규 상장' && magnitude > RANK_AXIS_BREAK
+              const primaryHeightPercent = ((hasAxisBreak ? Math.min(magnitude, RANK_AXIS_BREAK) : magnitude) / axisMax) * 100
+              const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude) : magnitude
               const tailHeightPercent = hasAxisBreak ? ((compressedMagnitude - RANK_AXIS_BREAK) / axisMax) * 100 : 0
               const heightPercent = (compressedMagnitude / axisMax) * 100
               return (
@@ -128,20 +136,34 @@ export default function RankColumns({
                   <div
                     className="absolute bottom-0 left-[18%] right-[18%] rounded-sm border border-ui-control"
                     style={{
-                      backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                      backgroundColor: hasAxisBreak ? '#808080' : item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                       height: `${primaryHeightPercent}%`,
                     }}
                   />
                   {hasAxisBreak && (
-                    <div
-                      aria-hidden="true"
-                      className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
-                      style={{
-                        bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_GAP_PX}px)`,
-                        height: `${tailHeightPercent}%`,
-                        backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
-                      }}
-                    />
+                    <>
+                      <div
+                        aria-hidden="true"
+                        className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
+                        style={{
+                          bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_GAP_PX}px)`,
+                          height: `${tailHeightPercent}%`,
+                          backgroundColor: '#808080',
+                        }}
+                      />
+                      <svg
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-[18%] right-[18%] overflow-visible"
+                        style={{
+                          bottom: `calc(${primaryHeightPercent}% - 4px)`,
+                          height: `${RANK_AXIS_BREAK_GAP_PX + 8}px`,
+                        }}
+                        viewBox={`0 0 100 ${RANK_AXIS_BREAK_GAP_PX + 8}`}
+                        preserveAspectRatio="none"
+                      >
+                        <path d="M0 5 C12 0 18 0 30 5 S50 10 62 5 S82 0 100 5 M0 17 C12 12 18 12 30 17 S50 22 62 17 S82 12 100 17" fill="none" stroke="#f5f5f5" strokeWidth="2.5" />
+                      </svg>
+                    </>
                   )}
                   <RankColumnValue
                     value={item.value}
