@@ -1,6 +1,7 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
@@ -46,6 +47,9 @@ import type { Market, TreemapSectorNode } from '@/types/api'
 import RankColumns, { type RankColumnItem } from '@/components/RankColumns'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectAtDepth } from '@/utils/sectorDepth'
+import { getMarketIndexHistory } from '@/api/marketSummary'
+import { trendMonths } from '@/utils/trendDates'
+import { usePreviousTradingDay } from '@/hooks/useTreemap'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type GroupGraphMode = 'current' | 'delta'
@@ -140,6 +144,36 @@ export default function GroupPage() {
   const displayNow = isRangeView ? data : (pairQuery.data?.now ?? (pairQuery.isError ? data : undefined))
   const displayBefore = isRangeView ? null : (pairQuery.data?.before ?? null)
   const isPairSettled = isRangeView || pairQuery.isSuccess || pairQuery.isError
+  const queryClient = useQueryClient()
+  const rangePreviousDay = usePreviousTradingDay(market, rangeStartTime?.slice(0, 10) ?? null, { enabled: isRangeView })
+  const rangeIndexEndDate = pinnedSnapshotTime?.slice(0, 10) ?? displayNow?.snapshotTime?.slice(0, 10) ?? null
+  const rangeMarketIndexes = useQuery({
+    queryKey: ['group-range-market-index', market, rangeStartTime, rangeIndexEndDate, rangePreviousDay?.snapshotTime],
+    enabled: Boolean(isRangeView && rangeStartTime && rangeIndexEndDate && rangePreviousDay !== undefined),
+    queryFn: async () => {
+      const startDate = rangeStartTime!.slice(0, 10)
+      const endDate = rangeIndexEndDate!
+      const baseDate = rangePreviousDay?.date ?? startDate
+      const months = trendMonths(baseDate, endDate)
+      const rows = (await Promise.all(months.map(month => queryClient.fetchQuery({
+        queryKey: ['market-index-history', month],
+        queryFn: () => getMarketIndexHistory(month),
+        staleTime: 60_000,
+        gcTime: 30 * 60_000,
+      })))).flat()
+      return (['KOSPI', 'KOSDAQ'] as const).flatMap(indexMarket => {
+        if (market !== 'ALL_STOCK' && market !== indexMarket) return []
+        const marketRows = rows.filter(row => row.market === indexMarket && row.snapshotTime.slice(0, 10) <= endDate).sort((a, b) => a.snapshotTime.localeCompare(b.snapshotTime))
+        const base = marketRows.find(row => row.snapshotTime.slice(0, 10) === baseDate)
+        const last = marketRows.filter(row => row.snapshotTime.slice(0, 10) >= startDate).at(-1)
+        if (!base || !last) return []
+        const baseValue = rangePreviousDay ? base.indexValue : base.indexValue - base.changeValue
+        if (baseValue <= 0) return []
+        return [{ market: indexMarket, changeRate: (last.indexValue - baseValue) / baseValue * 100 }]
+      })
+    },
+    staleTime: 60_000,
+  })
   // data-capture-ready(결정 4) — now가 성공했고 비어 있으면(그 시각 데이터가 아예 없음) 그대로
   // "데이터가 없습니다" 화면을 스크린샷으로 찍는다. 그 외에는 쌍 쿼리까지 끝나 있고(성공 또는 에러), placeholder가
   // 아니고, 시가총액 구간 설정이 준비된 뒤에야 스크린샷을 허용한다 — now 에러는 항상 false다.
@@ -258,9 +292,12 @@ export default function GroupPage() {
       })
     }
 
-    // ALL STOCK은 같은 시각으로 조회한 코스피·코스닥을 각각 추가한다.
-    // 지수 참조 값은 일간 누적 등락률이므로 시간외 별도·기간 등락률에는 섞지 않는다.
-    if (changeRateMode === 'daily' && !isRangeView) {
+    // 기간 모드에는 선택 시장의 기간 누적 지수를, 실시간/특정일 하루 모드에는 같은 시각의 일간 지수를 참조 항목으로 넣는다.
+    if (isRangeView) {
+      for (const index of rangeMarketIndexes.data ?? []) {
+        currentEntries.push({ key: `market-index:${index.market}`, sectorName: MARKET_INDEX_LABEL_KO[index.market], value: index.changeRate, isReference: true })
+      }
+    } else if (changeRateMode === 'daily') {
       const marketIndexes = displayNow.marketOverview
         ? [{ now: displayNow.marketOverview, before: displayBefore?.marketOverview ?? null }]
         : (pairQuery.data?.marketIndexes ?? [])
@@ -275,7 +312,7 @@ export default function GroupPage() {
     }
 
     return { current: buildRankChart(currentEntries), delta: buildRankChart(deltaEntries) }
-  }, [displayNow, displayBefore, pairQuery.data?.marketIndexes, scopedExcludedSectorIds, scopedExcludedTiers, avgChangeRateUseSimple, changeRateMode, isRangeView, effectiveDepth])
+  }, [displayNow, displayBefore, pairQuery.data?.marketIndexes, rangeMarketIndexes.data, scopedExcludedSectorIds, scopedExcludedTiers, avgChangeRateUseSimple, changeRateMode, isRangeView, effectiveDepth])
   const activeChart = showDeltaGraph ? charts.delta : charts.current
 
   return (
