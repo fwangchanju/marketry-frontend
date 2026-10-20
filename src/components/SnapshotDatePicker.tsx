@@ -633,7 +633,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                     <span className="font-semibold text-brand">종료일</span>
                     {draftEnd && <span className="text-ui-white">{toSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
                   </span>
-                  {tradingDayBadge !== null && <span className="rounded bg-brand px-1.5 py-0.5 font-semibold text-ui-background">{tradingDayBadge}</span>}
+                  {tradingDayBadge !== null && <span className="inline-flex h-5 shrink-0 items-center rounded bg-brand px-1.5 text-[13px] font-semibold leading-none text-ui-background">{tradingDayBadge}</span>}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
@@ -695,7 +695,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 <span className="flex items-center gap-2">
                   <span className="font-semibold text-brand">날짜</span>
                   {draftDay ? <span className="text-ui-white">{dayLabel}</span> : viewedDayLabel !== null && <span className="text-ui-muted">{viewedDayLabel}</span>}
-                  {tradingDayBadge !== null && <span className="rounded bg-brand px-1.5 py-0.5 font-semibold text-ui-background">{tradingDayBadge}</span>}
+                  {tradingDayBadge !== null && <span className="inline-flex h-5 shrink-0 items-center rounded bg-brand px-1.5 text-[13px] font-semibold leading-none text-ui-background">{tradingDayBadge}</span>}
                 </span>
                 <button type="button" disabled={draftDay === null} onClick={applyDay} className={APPLY_BUTTON_CLASS}>
                   적용
