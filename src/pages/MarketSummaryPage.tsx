@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -41,6 +41,9 @@ import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTree
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { withStableSectorIds } from '@/utils/guestSectorIds'
 import { getSnapshotDays, getTreemap } from '@/api/treemap'
+import { usePreviousTradingDay } from '@/hooks/useTreemap'
+import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
+import { sampleTrendDays, trendMonths } from '@/utils/trendDates'
 
 // 홈 시장 요약 배치
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
@@ -89,7 +92,7 @@ function MarketIndexTrendChart({ items, market, label, colorScale }: { items: Ma
 }
 
 type PersonalSectorPoint = { date: string; changeRate: number }
-type PersonalSectorTrend = { sectorName: string; points: PersonalSectorPoint[] } | null
+type PersonalSectorTrend = { sectorName: string; isRange: boolean; points: PersonalSectorPoint[] } | null
 
 function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSectorTrend | undefined; colorScale: ColorScaleConfig }) {
   const points = trend?.points ?? []
@@ -97,7 +100,7 @@ function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSector
   const scale = Math.max(3, ...points.map(point => Math.abs(point.changeRate)))
   return (
     <div className="h-full min-w-0 w-full">
-      <div role="img" aria-label={`${trend?.sectorName ?? '최상위 업종'} 최근 ${points.length}거래일 등락률 막대그래프`} className="relative grid h-full grid-cols-5 gap-2">
+      <div role="img" aria-label={`${trend?.sectorName ?? '최상위 업종'} ${trend?.isRange ? '선택 기간 누적' : '최근 5거래일 일간'} 등락률 막대그래프`} className="relative grid h-full gap-2" style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-[#808080]" />
         {points.map(point => {
           const date = new Date(`${point.date}T00:00:00Z`)
@@ -199,6 +202,8 @@ export default function MarketSummaryPage() {
   // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
   const { data: marketSummary } = useMarketSummary()
   const { data: session } = useSession()
+  const queryClient = useQueryClient()
+  const rangePreviousDay = usePreviousTradingDay(market, rangeStartTime?.slice(0, 10) ?? null, { enabled: rangeStartTime !== undefined })
   const marketTrendDates = [...new Set((marketSummary?.marketOverviewTrends ?? []).map(item => item.date))].sort().slice(-5)
   const personalTrendBasis = changeRateChoice === 'afterHours' ? 'afterHours' : 'daily'
   const marketValueRange = (excludedMarketValueTiers as MarketValueExclusions).marketValueRange
@@ -227,30 +232,52 @@ export default function MarketSummaryPage() {
   })
   const { data: personalSectorTrend } = useQuery({
     // 시총 범위는 Set의 원소가 아니라 marketValueRange 속성에 있으므로 금액 경계도 캐시 키에 넣는다.
-    queryKey: ['home-personal-sector-trend', session?.userId ?? null, personalTrendEndDate, data?.snapshotTime, pinnedSnapshotTime !== undefined, marketTrendDates, changeRateChoice, settingsModalProps.taxonomy,
+    queryKey: ['home-personal-sector-trend', session?.userId ?? null, personalTrendEndDate, data?.snapshotTime, rangeStartTime, rangePreviousDay?.snapshotTime, pinnedSnapshotTime !== undefined, marketTrendDates, changeRateChoice, settingsModalProps.taxonomy,
       [...excludedSectorIds].sort((a, b) => a - b), [...excludedMarketValueTiers].sort(), marketValueRange?.min ?? null, marketValueRange?.max ?? null],
     // 시장 요약이 도착하기 전 빈 날짜 목록으로 먼저 실행하면 현재점만 조회한 뒤 같은 추이를 다시 요청한다.
-    enabled: Boolean(personalTrendEndDate && data?.snapshotTime && marketSummary && (settingsModalProps.taxonomy !== 'MINE' || session?.authenticated)),
+    enabled: Boolean(personalTrendEndDate && data?.snapshotTime && (rangeStartTime ? rangePreviousDay !== undefined : marketSummary) && (settingsModalProps.taxonomy !== 'MINE' || session?.authenticated)),
     queryFn: async (): Promise<PersonalSectorTrend> => {
+      const isRange = rangeStartTime !== undefined
       const isPinnedDate = pinnedSnapshotTime !== undefined
-      let historicalDates = marketTrendDates.filter(date => date < personalTrendEndDate!).slice(-4)
-      if (isPinnedDate && personalTrendEndDate) {
-        const endMonth = personalTrendEndDate.slice(0, 7)
-        const [year, month] = endMonth.split('-').map(Number)
+      // 과거 지도는 개별로 캐시해 현재 스냅샷이 갱신돼도 다시 받지 않는다.
+      const cachedDays = (month: string) => queryClient.fetchQuery({
+        queryKey: ['home-trend-days', month],
+        queryFn: () => getSnapshotDays('ALL_STOCK', month),
+        staleTime: 60_000,
+        gcTime: 30 * 60_000,
+      })
+      const cachedMap = (snapshotTime: string) => queryClient.fetchQuery({
+        queryKey: ['map', 'home-trend-map', session?.userId ?? null, trendTaxonomy, snapshotTime, isRange ? 'daily' : personalTrendBasis],
+        queryFn: () => getTreemap('ALL_STOCK', trendTaxonomy, snapshotTime, false, isRange ? 'daily' : personalTrendBasis),
+        staleTime: Infinity,
+        gcTime: 30 * 60_000,
+      })
+      const endDate = personalTrendEndDate!
+      let historicalDates = marketTrendDates.filter(date => date < endDate).slice(-4)
+      if (isPinnedDate && !isRange) {
+        const [year, month] = endDate.slice(0, 7).split('-').map(Number)
         const previousMonth = new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7)
-        const dayLists = await Promise.all([previousMonth, endMonth].map(value => getSnapshotDays('ALL_STOCK', value)))
-        historicalDates = dayLists.flat().map(day => day.date).filter(date => date < personalTrendEndDate).sort().slice(-4)
+        const dayLists = await Promise.all([previousMonth, endDate.slice(0, 7)].map(cachedDays))
+        historicalDates = dayLists.flat().map(day => day.date).filter(date => date < endDate).sort().slice(-4)
       }
-      const months = [...new Set(historicalDates.map(date => date.slice(0, 7)))]
-      const snapshotDays = (await Promise.all(months.map(month => getSnapshotDays('ALL_STOCK', month)))).flat()
-      const historicalDays = historicalDates.map(date => snapshotDays.find(day => day.date === date)).filter((day): day is NonNullable<typeof day> => Boolean(day))
-      const historicalMaps = await Promise.all(historicalDays.map(day => getTreemap('ALL_STOCK', trendTaxonomy, day.snapshotTime, false, personalTrendBasis)))
-      const currentMap = data
-      const currentDate = currentMap?.snapshotTime?.slice(0, 10) ?? personalTrendEndDate
-      const datedMaps = [
-        ...historicalMaps.map((map, index) => ({ date: historicalDays[index].date, map })),
-        ...(currentMap && currentDate ? [{ date: currentDate, map: currentMap }] : []),
-      ].sort((a, b) => a.date.localeCompare(b.date)).slice(-5)
+      const months = isRange
+        ? trendMonths(rangeStartTime.slice(0, 10), endDate)
+        : [...new Set(historicalDates.map(date => date.slice(0, 7)))]
+      const snapshotDays = (await Promise.all(months.map(cachedDays))).flat()
+      const selectedDates = isRange
+        ? sampleTrendDays([...new Set([...snapshotDays.map(day => day.date).filter(date => date >= rangeStartTime.slice(0, 10) && date <= endDate), endDate])].sort())
+        : [...historicalDates, endDate]
+      const baseMap = isRange ? await cachedMap(rangePreviousDay?.snapshotTime ?? rangeStartTime) : null
+      const datedMaps = await Promise.all(selectedDates.map(async date => {
+        if (date === endDate) return { date, items: rootNodes }
+        const day = snapshotDays.find(candidate => candidate.date === date)
+        if (!day) return { date, items: [] }
+        const map = await cachedMap(day.snapshotTime)
+        const items = baseMap
+          ? buildRangeChangeRateTree(map.items, baseMap.items, rangePreviousDay ? 'close' : 'previousClose').items
+          : map.items
+        return { date, items }
+      }))
       const trendRoots = (items: TreemapSectorNode[]) =>
         trendTaxonomy === 'KRX' && !session?.authenticated ? withStableSectorIds(items) : items
       const latestRoots = collectAtDepth(rootNodes, 1, excludedSectorIds, excludedMarketValueTiers)
@@ -261,8 +288,9 @@ export default function MarketSummaryPage() {
       if (!top) return null
       return {
         sectorName: top.node.sectorName,
-        points: datedMaps.flatMap(({ date, map }) => {
-          const node = collectAtDepth(map === currentMap ? rootNodes : trendRoots(map.items), 1, excludedSectorIds, excludedMarketValueTiers)
+        isRange,
+        points: datedMaps.flatMap(({ date, items }) => {
+          const node = collectAtDepth(date === endDate ? items : trendRoots(items), 1, excludedSectorIds, excludedMarketValueTiers)
             .find(({ node: candidate }) => candidate.sectorId === top.node.sectorId)?.node
           const changeRate = node ? computeSectorAverage(node, excludedMarketValueTiers).weightedAvg : null
           return changeRate === null ? [] : [{ date, changeRate }]
@@ -485,9 +513,9 @@ export default function MarketSummaryPage() {
                         </section>
                       )
                     })}
-                    <section aria-label="내 분류 최상위 업종 최근 5거래일 등락률" className="relative flex min-h-0 flex-col rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                    <section aria-label={rangeStartTime ? '최상위 업종 선택 기간 누적 등락률' : '최상위 업종 최근 5거래일 일간 등락률'} className="relative flex min-h-0 flex-col rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
                       <div className="grid h-[26px] shrink-0 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-                        <SummaryBadge>최상위 업종</SummaryBadge>
+                        <SummaryBadge>{rangeStartTime ? '최상위 업종 · 기간 누적' : '최상위 업종'}</SummaryBadge>
                         <div className="grid min-w-0 grid-cols-3 gap-1">
                           <span className="min-w-0 truncate px-1.5 py-1 text-right text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
                         </div>
