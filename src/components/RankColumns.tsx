@@ -5,7 +5,7 @@ import {
   resolveTreemapExtremeColor,
   type ColorScaleConfig,
 } from '@/utils/treemapColorScale'
-import { rankAxisMagnitude, rankAxisMaximum } from '@/utils/rankAxis'
+import { RANK_AXIS_BREAK, RANK_AXIS_BREAK_GAP_PX, rankAxisMagnitude, rankAxisMaximum } from '@/utils/rankAxis'
 
 export interface RankColumnItem {
   key: string
@@ -30,7 +30,7 @@ function toValueLabel(value: number): string {
 }
 
 // 모든 모드에서 숫자는 16px로 표시하고, SVG 영역만 회전한 글자 크기에 맞춘다.
-function RankColumnValue({ value, color, heightPercent }: { value: number; color: string; heightPercent: number }) {
+function RankColumnValue({ value, color, heightPercent, axisGapPx = 0 }: { value: number; color: string; heightPercent: number; axisGapPx?: number }) {
   const svgRef = useRef<SVGSVGElement>(null)
   const textRef = useRef<SVGTextElement>(null)
   const label = toValueLabel(value)
@@ -61,7 +61,7 @@ function RankColumnValue({ value, color, heightPercent }: { value: number; color
     <svg
       ref={svgRef}
       className="absolute left-1/2 -translate-x-1/2 overflow-visible font-bold"
-      style={{ width: 60, height: 60, bottom: `calc(${heightPercent}% + 6px)` }}
+      style={{ width: 60, height: 60, bottom: `calc(${heightPercent}% + ${6 + axisGapPx}px)` }}
       viewBox="0 -100 100 100"
       role="img"
       aria-label={label}
@@ -117,20 +117,37 @@ export default function RankColumns({
                   </div>
                 )
               }
-              const heightPercent = (rankAxisMagnitude(Math.abs(item.value)) / axisMax) * 100
+              const magnitude = Math.abs(item.value)
+              const hasAxisBreak = magnitude > RANK_AXIS_BREAK
+              const primaryHeightPercent = (Math.min(magnitude, RANK_AXIS_BREAK) / axisMax) * 100
+              const compressedMagnitude = rankAxisMagnitude(magnitude)
+              const tailHeightPercent = hasAxisBreak ? ((compressedMagnitude - RANK_AXIS_BREAK) / axisMax) * 100 : 0
+              const heightPercent = (compressedMagnitude / axisMax) * 100
               return (
                 <div key={item.key} className="relative h-full min-w-0" style={{ containerType: 'inline-size' }}>
                   <div
                     className="absolute bottom-0 left-[18%] right-[18%] rounded-sm border border-ui-control"
                     style={{
                       backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
-                      height: `${heightPercent}%`,
+                      height: `${primaryHeightPercent}%`,
                     }}
                   />
+                  {hasAxisBreak && (
+                    <div
+                      aria-hidden="true"
+                      className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
+                      style={{
+                        bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_GAP_PX}px)`,
+                        height: `${tailHeightPercent}%`,
+                        backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                      }}
+                    />
+                  )}
                   <RankColumnValue
                     value={item.value}
                     color={resolveTreemapExtremeColor(item.value, colorScale)}
                     heightPercent={heightPercent}
+                    axisGapPx={hasAxisBreak ? RANK_AXIS_BREAK_GAP_PX : 0}
                   />
                 </div>
               )
