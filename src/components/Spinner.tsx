@@ -5,6 +5,8 @@ interface Props {
   className?: string
   // 1초 뒤부터 경과 시간을 보여 주는 메인 영역 로딩.
   showElapsed?: boolean
+  // 배지나 프레임 등 기준점의 정중앙에 로고와 경과 시간을 둔다.
+  centerContent?: boolean
   // 설정창처럼 좁은 공간의 로고·경과 시간 표시.
   showLogo?: boolean
   errorMessage?: string
@@ -15,7 +17,7 @@ interface Props {
   stillContent?: ReactNode
 }
 
-export default function Spinner({ className, showElapsed = false, showLogo = false, errorMessage, onRetry, message, still = false, stillContent }: Props) {
+export default function Spinner({ className, showElapsed = false, centerContent = false, showLogo = false, errorMessage, onRetry, message, still = false, stillContent }: Props) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const isLoading = !still && !errorMessage
 
@@ -45,7 +47,7 @@ export default function Spinner({ className, showElapsed = false, showLogo = fal
       {message && isLoading && (
         <span className="absolute inset-x-[12%] top-[8%] text-center text-[4.25cqw] leading-tight text-ui-text">{message}</span>
       )}
-      <div className="absolute inset-0 flex translate-y-[2cqw] flex-col items-center justify-center gap-[5cqw]">
+      <div className={`absolute inset-0 flex flex-col items-center justify-center gap-[5cqw] ${centerContent ? '' : 'translate-y-[2cqw]'}`}>
         <MarketryLogo layout="stacked" className="h-auto w-[76%]" />
         <div className="relative flex h-[5.5cqw] w-full translate-y-[2cqw] shrink-0 items-center justify-center">
           {errorMessage ? (
