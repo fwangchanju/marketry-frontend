@@ -131,27 +131,22 @@ const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
 const DEFAULT_HOME_FRAME_ORDER = ['시장 요약', '시장 지도', '그룹 등락률 (%)']
 
 function SortableHomeFrame({ title, captureId, index, children, captureUntil, showHeader = true, insetHeader = false }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; showHeader?: boolean; insetHeader?: boolean }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: title })
   const header = (
     <div className="relative z-[6] flex h-5 min-h-5 shrink-0 items-center">
-      <button
-        ref={setActivatorNodeRef}
-        type="button"
-        aria-label={`${title}, 끌어서 위치 이동`}
-        {...attributes}
-        {...listeners}
-        className="home-frame-header group flex h-5 min-h-5 w-fit cursor-grab items-center border-0 bg-transparent p-0 text-left active:cursor-grabbing focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--brand)]"
-      >
-        <SummaryBadge>{title}</SummaryBadge>
-      </button>
+      <SummaryBadge>{title}</SummaryBadge>
     </div>
   )
   return (
     <section
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      aria-label={`${title}, 끌어서 위치 이동`}
+      data-hint="끌어서 항목 순서 변경"
       data-capture-until={captureUntil}
       style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.6 : undefined }}
-      className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'} ${isDragging ? 'cursor-grabbing' : ''}`}
+      className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background cursor-grab active:cursor-grabbing ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'} ${isDragging ? 'cursor-grabbing' : ''}`}
     >
       <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : index === 2 ? 'pl-1 pr-0' : 'px-1'}`}>
         {insetHeader ? (
