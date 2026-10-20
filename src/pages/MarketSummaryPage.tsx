@@ -312,7 +312,7 @@ export default function MarketSummaryPage() {
     },
     staleTime: 60_000,
   })
-  // 요약 조회의 지수는 항상 최근 값이다 — 지도가 지난 시각이나 기간을 보고 있거나 시간외 별도 등락률이면 맞지 않으므로 보여 주지 않는다(그룹 페이지도 일간 등락률일 때만 넣는다).
+  // 실시간 요약 지수는 최신 일간 보기에서만 쓴다. 과거 날짜·기간 보기에는 조회한 해당 날짜/기간의 지수 추이를 쓴다.
   const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
   const indexTrendItems = pinnedSnapshotTime
     ? (historicalIndexData ?? []).flatMap(({ date, market, overview }) => overview ? [{ date, market, changeRate: overview.changeRate }] : [])
@@ -343,10 +343,10 @@ export default function MarketSummaryPage() {
     const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
     // 그룹 페이지처럼 코스피·코스닥 지수 등락률을 강조 색 참조 막대로 값 순서 자리에 끼운다.
     for (const [market, label] of [['KOSPI', '코스피'], ['KOSDAQ', '코스닥']] as const) {
-      const historicalIndex = rangeStartTime
+      const historicalIndex = pinnedSnapshotTime !== undefined
         ? (historicalIndexData ?? []).filter(candidate => candidate.market === market).sort((a, b) => a.date.localeCompare(b.date)).at(-1)
         : undefined
-      const changeRate = rangeStartTime
+      const changeRate = pinnedSnapshotTime !== undefined
         ? historicalIndex?.overview.changeRate
         : isLatestDailyView
           ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market)?.changeRate
@@ -355,7 +355,7 @@ export default function MarketSummaryPage() {
     }
     const chart = buildRankChart(entries)
     return { items, chart }
-  }, [rootNodes, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, historicalIndexData, rangeStartTime, isLatestDailyView])
+  }, [rootNodes, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, historicalIndexData, pinnedSnapshotTime, isLatestDailyView])
   // 설정창 위쪽 "nn/nn종목" — 그룹 페이지와 같은 기준이다. 분모는 지금 시장의 모든 종목, 분자는 제외한 업종(하위 업종까지)·시가총액 구간을 뺀 종목이다.
   const stockCountLabel = useMemo(() => {
     const nodes = rootNodes
