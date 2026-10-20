@@ -34,10 +34,12 @@ import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toJoEokDecimal, toSnapshotDateLabel, toPctSigned } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
+import type { MarketValueExclusions } from '@/utils/marketValueTier'
 import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
 import { collectAtDepth } from '@/utils/sectorDepth'
+import { withStableSectorIds } from '@/utils/guestSectorIds'
 import { getSnapshotDays, getTreemap } from '@/api/treemap'
 
 // 홈 시장 요약 배치
@@ -170,7 +172,7 @@ export default function MarketSummaryPage() {
   const [screenshotTarget, setScreenshotTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const {
-    settingsModalProps, data, isLoading, isError, refetchTreemap, isRefetchingTreemap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
+    settingsModalProps, data, rootNodes, isLoading, isError, refetchTreemap, isRefetchingTreemap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
     changeRateMode, changeRateChoice, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers,
     market, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
     isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
@@ -204,6 +206,7 @@ export default function MarketSummaryPage() {
   const { data: session } = useSession()
   const marketTrendDates = [...new Set((marketSummary?.marketOverviewTrends ?? []).map(item => item.date))].sort().slice(-5)
   const personalTrendBasis = changeRateChoice === 'afterHours' ? 'afterHours' : 'daily'
+  const marketValueRange = (excludedMarketValueTiers as MarketValueExclusions).marketValueRange
   const trendTaxonomy = settingsModalProps.taxonomy === 'NXT' ? 'KRX' : settingsModalProps.taxonomy
   const personalTrendEndDate = pinnedSnapshotTime?.slice(0, 10) ?? data?.snapshotTime?.slice(0, 10) ?? marketTrendDates.at(-1) ?? null
   const indexEndDate = pinnedSnapshotTime?.slice(0, 10) ?? marketSummary?.marketOverviews.snapshotTime?.slice(0, 10) ?? null
@@ -227,7 +230,9 @@ export default function MarketSummaryPage() {
     staleTime: 60_000,
   })
   const { data: personalSectorTrend } = useQuery({
-    queryKey: ['home-personal-sector-trend', session?.userId ?? null, personalTrendEndDate, data?.snapshotTime, pinnedSnapshotTime !== undefined, marketTrendDates, changeRateChoice, settingsModalProps.taxonomy],
+    // 시총 범위는 Set의 원소가 아니라 marketValueRange 속성에 있으므로 금액 경계도 캐시 키에 넣는다.
+    queryKey: ['home-personal-sector-trend', session?.userId ?? null, personalTrendEndDate, data?.snapshotTime, pinnedSnapshotTime !== undefined, marketTrendDates, changeRateChoice, settingsModalProps.taxonomy,
+      [...excludedSectorIds].sort((a, b) => a - b), [...excludedMarketValueTiers].sort(), marketValueRange?.min ?? null, marketValueRange?.max ?? null],
     enabled: Boolean(personalTrendEndDate && data?.snapshotTime && (settingsModalProps.taxonomy !== 'MINE' || session?.authenticated)),
     queryFn: async (): Promise<PersonalSectorTrend> => {
       const isPinnedDate = pinnedSnapshotTime !== undefined
@@ -249,22 +254,20 @@ export default function MarketSummaryPage() {
         ...historicalMaps.map((map, index) => ({ date: historicalDays[index].date, map })),
         ...(currentMap && currentDate ? [{ date: currentDate, map: currentMap }] : []),
       ].sort((a, b) => a.date.localeCompare(b.date)).slice(-5)
-      const average = (node: TreemapSectorNode) => {
-        const stocks = collectItems(node)
-        const totalValue = stocks.reduce((sum, stock) => sum + stock.totalMarketValue, 0)
-        return totalValue > 0 ? stocks.reduce((sum, stock) => sum + stock.changeRate * stock.totalMarketValue, 0) / totalValue : null
-      }
-      const latestRoots = datedMaps.at(-1)?.map.items ?? []
+      const trendRoots = (items: TreemapSectorNode[]) =>
+        trendTaxonomy === 'KRX' && !session?.authenticated ? withStableSectorIds(items) : items
+      const latestRoots = collectAtDepth(rootNodes, 1, excludedSectorIds, excludedMarketValueTiers)
       const top = latestRoots
-        .map(node => ({ node, changeRate: average(node) }))
+        .map(({ node }) => ({ node, changeRate: computeSectorAverage(node, excludedMarketValueTiers).weightedAvg }))
         .filter((entry): entry is { node: TreemapSectorNode; changeRate: number } => entry.changeRate !== null)
         .sort((a, b) => b.changeRate - a.changeRate)[0]
       if (!top) return null
       return {
         sectorName: top.node.sectorName,
         points: datedMaps.flatMap(({ date, map }) => {
-          const node = map.items.find(item => item.sectorId === top.node.sectorId)
-          const changeRate = node ? average(node) : null
+          const node = collectAtDepth(map === currentMap ? rootNodes : trendRoots(map.items), 1, excludedSectorIds, excludedMarketValueTiers)
+            .find(({ node: candidate }) => candidate.sectorId === top.node.sectorId)?.node
+          const changeRate = node ? computeSectorAverage(node, excludedMarketValueTiers).weightedAvg : null
           return changeRate === null ? [] : [{ date, changeRate }]
         }),
       }
@@ -289,18 +292,7 @@ export default function MarketSummaryPage() {
   // 고른 단계의 업종만 모아 지도 박스와 그래프 막대로 쓴다 — 지도 페이지와 같은 제외 기준을 따른다.
   const overview = useMemo(() => {
     const items: OverviewMapItem[] = []
-    // 오른 종목·내린 종목·보합 종목 수는 제외한 업종·시가총액 구간과 상관없이 지금 시장의 전체 종목을 센다(제외 설정은 막대·지도에만 적용한다).
-    let advancers = 0
-    let decliners = 0
-    let unchanged = 0
-    for (const node of data?.items ?? []) {
-      for (const item of collectItems(node)) {
-        if (item.changeRate > 0) advancers += 1
-        else if (item.changeRate < 0) decliners += 1
-        else unchanged += 1
-      }
-    }
-    for (const { node, pathKey } of collectAtDepth(data?.items ?? [], effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
+    for (const { node, pathKey } of collectAtDepth(rootNodes, effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
       const average = computeSectorAverage(node, excludedMarketValueTiers)
       if (average.weightedAvg === null) continue
       const nodeItems = collectItems(node)
@@ -324,18 +316,18 @@ export default function MarketSummaryPage() {
       if (changeRate !== undefined) entries.push({ key: `market-index:${market}`, sectorName: label, value: changeRate, isReference: true })
     }
     const chart = buildRankChart(entries)
-    return { items, chart, advancers, decliners, unchanged }
-  }, [data, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, isLatestDailyView])
+    return { items, chart }
+  }, [rootNodes, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, isLatestDailyView])
   // 설정창 위쪽 "nn/nn종목" — 그룹 페이지와 같은 기준이다. 분모는 지금 시장의 모든 종목, 분자는 제외한 업종(하위 업종까지)·시가총액 구간을 뺀 종목이다.
   const stockCountLabel = useMemo(() => {
-    const nodes = data?.items ?? []
+    const nodes = rootNodes
     const total = nodes.reduce((sum, node) => sum + collectItems(node).length, 0)
     const included = filterTreeByExclusions(nodes, excludedSectorIds, excludedMarketValueTiers).reduce(
       (sum, node) => sum + collectAllItems(node).length,
       0,
     )
     return `${toCount(included)}/${toCount(total)}종목`
-  }, [data, excludedSectorIds, excludedMarketValueTiers])
+  }, [rootNodes, excludedSectorIds, excludedMarketValueTiers])
   // 세 틀을 한 장으로 스크린샷으로 찍는 중에는 틀마다 있는 스크린샷 버튼을 감춰서 이미지에 찍히지 않게 한다.
   const isCapturingAll = screenshotTarget !== null && screenshotTarget === allFramesRef.current
   const handleCopy = async (previewSrc?: string | null) => {
