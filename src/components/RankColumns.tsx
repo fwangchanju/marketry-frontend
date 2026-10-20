@@ -136,34 +136,20 @@ export default function RankColumns({
                   <div
                     className="absolute bottom-0 left-[18%] right-[18%] rounded-sm border border-ui-control"
                     style={{
-                      backgroundColor: hasAxisBreak ? '#808080' : item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                      backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                       height: `${primaryHeightPercent}%`,
                     }}
                   />
                   {hasAxisBreak && (
-                    <>
-                      <div
-                        aria-hidden="true"
-                        className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
-                        style={{
-                          bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_GAP_PX}px)`,
-                          height: `${tailHeightPercent}%`,
-                          backgroundColor: '#808080',
-                        }}
-                      />
-                      <svg
-                        aria-hidden="true"
-                        className="pointer-events-none absolute left-[18%] right-[18%] overflow-visible"
-                        style={{
-                          bottom: `calc(${primaryHeightPercent}% - 4px)`,
-                          height: `${RANK_AXIS_BREAK_GAP_PX + 8}px`,
-                        }}
-                        viewBox={`0 0 100 ${RANK_AXIS_BREAK_GAP_PX + 8}`}
-                        preserveAspectRatio="none"
-                      >
-                        <path d="M0 5 C12 0 18 0 30 5 S50 10 62 5 S82 0 100 5 M0 17 C12 12 18 12 30 17 S50 22 62 17 S82 12 100 17" fill="none" stroke="#f5f5f5" strokeWidth="2.5" />
-                      </svg>
-                    </>
+                    <div
+                      aria-hidden="true"
+                      className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
+                      style={{
+                        bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_GAP_PX}px)`,
+                        height: `${tailHeightPercent}%`,
+                        backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                      }}
+                    />
                   )}
                   <RankColumnValue
                     value={item.value}

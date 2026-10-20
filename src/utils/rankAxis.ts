@@ -6,7 +6,7 @@ const EXTREME_RATE_COMPRESSION = 0.1
 const EXTREME_AXIS_HEADROOM = 8
 
 export const RANK_AXIS_BREAK = RATE_AXIS_BREAK
-export const RANK_AXIS_BREAK_GAP_PX = 20
+export const RANK_AXIS_BREAK_GAP_PX = 5
 
 export function rankAxisMagnitude(magnitude: number): number {
   if (magnitude <= RATE_AXIS_BREAK) return magnitude
