@@ -11,6 +11,8 @@ import { ClockIcon } from '@/components/icons/AppIcons'
 import SettingsPanel, { SettingsGroupDepthSection } from '@/components/SettingsPanel'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
+import PeriodTrendChart from '@/components/PeriodTrendChart'
+import { getMarketIndexHistory } from '@/api/marketSummary'
 import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
 import ToolbarChip from '@/components/ToolbarChip'
@@ -43,7 +45,7 @@ import { withStableSectorIds } from '@/utils/guestSectorIds'
 import { getSnapshotDays, getTreemap } from '@/api/treemap'
 import { usePreviousTradingDay } from '@/hooks/useTreemap'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
-import { sampleTrendDays, trendMonths } from '@/utils/trendDates'
+import { loadTrendDays, trendMonths } from '@/utils/trendDates'
 
 // 홈 시장 요약 배치
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
@@ -96,6 +98,7 @@ type PersonalSectorTrend = { sectorName: string; isRange: boolean; points: Perso
 
 function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSectorTrend | undefined; colorScale: ColorScaleConfig }) {
   const points = trend?.points ?? []
+  if (trend?.isRange) return <PeriodTrendChart points={points} label={trend.sectorName} colorScale={colorScale} />
   if (!points.length) return null
   const scale = Math.max(3, ...points.map(point => Math.abs(point.changeRate)))
   return (
@@ -210,27 +213,36 @@ export default function MarketSummaryPage() {
   const trendTaxonomy = settingsModalProps.taxonomy === 'NXT' ? 'KRX' : settingsModalProps.taxonomy
   const personalTrendEndDate = pinnedSnapshotTime?.slice(0, 10) ?? data?.snapshotTime?.slice(0, 10) ?? marketTrendDates.at(-1) ?? null
   const indexEndDate = pinnedSnapshotTime?.slice(0, 10) ?? marketSummary?.marketOverviews.snapshotTime?.slice(0, 10) ?? null
-  const { data: historicalIndexData } = useQuery({
-    queryKey: ['home-historical-market-index', indexEndDate, changeRateChoice],
-    // 최근 화면은 marketSummary에서 지수 시계열을 이미 받는다. 과거 지수 상세 조회는 날짜를 고정해 볼 때만 필요하다.
-    enabled: Boolean(indexEndDate && pinnedSnapshotTime !== undefined),
+  const { data: historicalIndexData, isPending: isIndexHistoryPending, isError: isIndexHistoryError } = useQuery({
+    queryKey: ['home-historical-market-index', indexEndDate, rangeStartTime, rangePreviousDay?.snapshotTime, changeRateChoice],
+    enabled: Boolean(indexEndDate && pinnedSnapshotTime !== undefined && (!rangeStartTime || rangePreviousDay !== undefined)),
     queryFn: async () => {
       const endDate = indexEndDate!
-      const endMonth = endDate.slice(0, 7)
-      const [year, month] = endMonth.split('-').map(Number)
+      const [year, month] = endDate.slice(0, 7).split('-').map(Number)
       const previousMonth = new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7)
-      const dayLists = await Promise.all([previousMonth, endMonth].map(value => getSnapshotDays('ALL_STOCK', value)))
-      const days = dayLists.flat().filter(day => day.date <= endDate).sort((a, b) => a.date.localeCompare(b.date)).slice(-6)
-      const snapshots = await Promise.all(days.flatMap(day => (['KOSPI', 'KOSDAQ'] as const).map(async market => ({
-        date: day.date,
-        market,
-        overview: (await getTreemap(market, 'KRX', day.snapshotTime, false, personalTrendBasis)).marketOverview,
-      }))))
-      return snapshots
+      const baseDate = rangeStartTime ? rangePreviousDay?.date ?? rangeStartTime.slice(0, 10) : null
+      const months = baseDate ? trendMonths(baseDate, endDate) : [previousMonth, endDate.slice(0, 7)]
+      const rows = (await Promise.all(months.map(month => queryClient.fetchQuery({
+        queryKey: ['market-index-history', month],
+        queryFn: () => getMarketIndexHistory(month),
+        staleTime: 60_000,
+        gcTime: 30 * 60_000,
+      })))).flat()
+      return rows.filter(row => row.snapshotTime.slice(0, 10) <= endDate).flatMap(overview => {
+        const date = overview.snapshotTime.slice(0, 10)
+        if (!rangeStartTime) return [{ date, market: overview.market, overview }]
+        if (date < rangeStartTime.slice(0, 10)) return []
+        const base = rows.find(row => row.market === overview.market && row.snapshotTime.slice(0, 10) === baseDate)
+        if (!base) return []
+        const baseValue = rangePreviousDay ? base.indexValue : base.indexValue - base.changeValue
+        if (baseValue <= 0) return []
+        const changeValue = overview.indexValue - baseValue
+        return [{ date, market: overview.market, overview: { ...overview, changeValue, changeRate: changeValue / baseValue * 100 } }]
+      })
     },
     staleTime: 60_000,
   })
-  const { data: personalSectorTrend } = useQuery({
+  const { data: personalSectorTrend, isPending: isSectorTrendPending, isError: isSectorTrendError } = useQuery({
     // 시총 범위는 Set의 원소가 아니라 marketValueRange 속성에 있으므로 금액 경계도 캐시 키에 넣는다.
     queryKey: ['home-personal-sector-trend', session?.userId ?? null, personalTrendEndDate, data?.snapshotTime, rangeStartTime, rangePreviousDay?.snapshotTime, pinnedSnapshotTime !== undefined, marketTrendDates, changeRateChoice, settingsModalProps.taxonomy,
       [...excludedSectorIds].sort((a, b) => a - b), [...excludedMarketValueTiers].sort(), marketValueRange?.min ?? null, marketValueRange?.max ?? null],
@@ -265,10 +277,10 @@ export default function MarketSummaryPage() {
         : [...new Set(historicalDates.map(date => date.slice(0, 7)))]
       const snapshotDays = (await Promise.all(months.map(cachedDays))).flat()
       const selectedDates = isRange
-        ? sampleTrendDays([...new Set([...snapshotDays.map(day => day.date).filter(date => date >= rangeStartTime.slice(0, 10) && date <= endDate), endDate])].sort())
+        ? [...new Set([...snapshotDays.map(day => day.date).filter(date => date >= rangeStartTime.slice(0, 10) && date <= endDate), endDate])].sort()
         : [...historicalDates, endDate]
       const baseMap = isRange ? await cachedMap(rangePreviousDay?.snapshotTime ?? rangeStartTime) : null
-      const datedMaps = await Promise.all(selectedDates.map(async date => {
+      const datedMaps = await loadTrendDays(selectedDates, async date => {
         if (date === endDate) return { date, items: rootNodes }
         const day = snapshotDays.find(candidate => candidate.date === date)
         if (!day) return { date, items: [] }
@@ -277,7 +289,7 @@ export default function MarketSummaryPage() {
           ? buildRangeChangeRateTree(map.items, baseMap.items, rangePreviousDay ? 'close' : 'previousClose').items
           : map.items
         return { date, items }
-      }))
+      })
       const trendRoots = (items: TreemapSectorNode[]) =>
         trendTaxonomy === 'KRX' && !session?.authenticated ? withStableSectorIds(items) : items
       const latestRoots = collectAtDepth(rootNodes, 1, excludedSectorIds, excludedMarketValueTiers)
@@ -508,7 +520,9 @@ export default function MarketSummaryPage() {
                             </div>
                           </div>
                           <div className="absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]">
-                            <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />
+                            {rangeStartTime ? (
+                              <PeriodTrendChart points={trendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))} label={label} colorScale={colorScale} loading={isIndexHistoryPending} error={isIndexHistoryError} />
+                            ) : <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />}
                           </div>
                         </section>
                       )
@@ -521,7 +535,9 @@ export default function MarketSummaryPage() {
                         </div>
                       </div>
                       <div className="absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]">
-                        <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />
+                        {rangeStartTime ? (
+                          <PeriodTrendChart points={personalSectorTrend?.points ?? []} label={personalSectorTrend?.sectorName ?? '최상위 업종'} colorScale={colorScale} loading={isSectorTrendPending} error={isSectorTrendError} />
+                        ) : <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />}
                       </div>
                     </section>
                   </div>
