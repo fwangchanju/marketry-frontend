@@ -10,7 +10,7 @@ export default function PeriodTrendChart({ points, label, colorScale, loading = 
 }) {
   if (loading || error && !points.length) return (
     <div className="flex h-full w-full items-center justify-center">
-      <Spinner key={loading ? 'loading' : 'error'} showElapsed className="aspect-square h-[min(10rem,70%)] shrink-0" errorMessage={loading ? undefined : '불러오지 못했습니다.'} onRetry={onRetry} />
+      <Spinner key={loading ? 'loading' : 'error'} showElapsed centerContent className="aspect-square h-[min(14rem,80%)] shrink-0" errorMessage={loading ? undefined : '불러오지 못했습니다.'} onRetry={onRetry} />
     </div>
   )
   if (!points.length) return <div role="status" className="flex h-full items-center justify-center text-center text-sm text-ui-muted">표시할 추이 데이터가 없습니다.</div>

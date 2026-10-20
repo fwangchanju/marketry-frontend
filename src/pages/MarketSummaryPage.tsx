@@ -343,12 +343,19 @@ export default function MarketSummaryPage() {
     const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
     // 그룹 페이지처럼 코스피·코스닥 지수 등락률을 강조 색 참조 막대로 값 순서 자리에 끼운다.
     for (const [market, label] of [['KOSPI', '코스피'], ['KOSDAQ', '코스닥']] as const) {
-      const changeRate = isLatestDailyView ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market)?.changeRate : undefined
+      const historicalIndex = rangeStartTime
+        ? (historicalIndexData ?? []).filter(candidate => candidate.market === market).sort((a, b) => a.date.localeCompare(b.date)).at(-1)
+        : undefined
+      const changeRate = rangeStartTime
+        ? historicalIndex?.overview.changeRate
+        : isLatestDailyView
+          ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market)?.changeRate
+          : undefined
       if (changeRate !== undefined) entries.push({ key: `market-index:${market}`, sectorName: label, value: changeRate, isReference: true })
     }
     const chart = buildRankChart(entries)
     return { items, chart }
-  }, [rootNodes, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, isLatestDailyView])
+  }, [rootNodes, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, historicalIndexData, rangeStartTime, isLatestDailyView])
   // 설정창 위쪽 "nn/nn종목" — 그룹 페이지와 같은 기준이다. 분모는 지금 시장의 모든 종목, 분자는 제외한 업종(하위 업종까지)·시가총액 구간을 뺀 종목이다.
   const stockCountLabel = useMemo(() => {
     const nodes = rootNodes
