@@ -63,7 +63,7 @@ export default function Spinner({ className, showElapsed = false, centerContent 
               <span className="absolute left-1/2 top-1/2 w-[76%] -translate-x-1/2 -translate-y-1/2 text-center text-[4.25cqw] leading-tight text-ui-white">{errorMessage}</span>
             )
           ) : still ? stillContent : (
-            <span aria-hidden="true" className="text-[5.5cqw] leading-none tabular-nums text-ui-text">{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
+            <span aria-hidden="true" className="text-[max(16px,5.5cqw)] leading-none tabular-nums text-ui-text">{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
           )}
         </div>
       </div>

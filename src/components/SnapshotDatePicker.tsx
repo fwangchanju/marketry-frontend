@@ -501,8 +501,8 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   const liveButton = isPast ? (
     <button
       type="button"
-      aria-label="실시간으로 돌아가기"
-      data-hint="실시간으로 돌아가기"
+      aria-label="초기화하고 실시간으로 돌아가기"
+      data-hint="실시간 화면으로 초기화"
       onClick={() => {
         onSelectSnapshotTime(null)
         setIsOpen(false)
@@ -510,7 +510,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       className="flex h-6 shrink-0 items-center gap-1 rounded border-0 bg-ui-control px-2 text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
     >
       <ClockIcon strokeWidth={2.3} className="h-3.5 w-3.5" aria-hidden />
-      실시간
+      초기화
     </button>
   ) : null
   // 하루 모드는 날짜 칸을, 기간 모드는 종료일을 가장 최근 거래일로 채운다(휴장일에는 실제 오늘이 아니라 최근 거래일이라 "최근일"이다). "실시간" 버튼은 지난 날짜·기간을 풀고 바로 실시간으로 돌아간다.
@@ -548,7 +548,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
         <div
           role="dialog"
           aria-label="날짜 선택 달력"
-          className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
+          className="absolute left-0 top-full z-50 mt-1 w-[32.125rem] rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
           {/* 위쪽 줄: 왼쪽에 하루/기간 스위치, 오른쪽 끝에 실시간·최근일을 나란히 둔다(하루·기간 모드가 같은 배치). 거래일 수는 툴바의 날짜 옆에 둔다. */}
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-ui-border pb-2 text-[13px]">
@@ -621,23 +621,23 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   onPick={pickRangeDay}
                 />
               </div>
-              <div className="mt-1 flex items-center justify-between gap-3 border-t border-ui-border pt-2 text-[13px]">
+              <div className="mt-1 flex min-w-0 items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]">
                 {/* 시작일 ~ 종료일은 왼쪽에, 초기화와 적용은 오른쪽 끝에 둔다. */}
-                <span className="flex items-center gap-2">
-                  <span className="flex items-center gap-2">
-                    <span className="font-semibold text-brand">시작일</span>
-                    {draftStart && <span className="text-ui-white">{toSnapshotDateLabel(draftStart.snapshotTime)}</span>}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="flex min-w-0 items-center gap-1">
+                    <span className="shrink-0 font-semibold text-brand">시작일</span>
+                    {draftStart && <span className="truncate text-ui-white">{toSnapshotDateLabel(draftStart.snapshotTime)}</span>}
                   </span>
                   <span aria-hidden="true" className="text-ui-white">~</span>
-                  <span className="flex items-center gap-2">
-                    <span className="font-semibold text-brand">종료일</span>
-                    {draftEnd && <span className="text-ui-white">{toSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
+                  <span className="flex min-w-0 items-center gap-1">
+                    <span className="shrink-0 font-semibold text-brand">종료일</span>
+                    {draftEnd && <span className="truncate text-ui-white">{toSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
                   </span>
                   {tradingDayBadge !== null && <span className="inline-flex h-5 shrink-0 items-center rounded bg-brand px-1.5 text-[13px] font-semibold leading-none text-ui-background">{tradingDayBadge}</span>}
                 </span>
-                <span className="flex items-center gap-1.5">
+                <span className="flex shrink-0 items-center gap-1.5">
                   <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
-                    초기화
+                    선택 해제
                   </button>
                   <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={APPLY_BUTTON_CLASS}>
                     적용
