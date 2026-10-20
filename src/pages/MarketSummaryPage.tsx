@@ -519,7 +519,9 @@ export default function MarketSummaryPage() {
                               ))}
                             </div>
                           </div>
-                          <div className="absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]">
+                          <div className={rangeStartTime && (isIndexHistoryPending || !trendItems.some(item => item.market === market))
+                            ? 'pointer-events-none absolute inset-0'
+                            : 'absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]'}>
                             {rangeStartTime ? (
                               <PeriodTrendChart points={trendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))} label={label} colorScale={colorScale} loading={isIndexHistoryPending} error={isIndexHistoryError} />
                             ) : <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />}
@@ -534,7 +536,9 @@ export default function MarketSummaryPage() {
                           <span className="min-w-0 truncate px-1.5 py-1 text-right text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
                         </div>
                       </div>
-                      <div className="absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]">
+                      <div className={rangeStartTime && (isSectorTrendPending || !personalSectorTrend?.points.length)
+                        ? 'pointer-events-none absolute inset-0'
+                        : 'absolute inset-x-2 top-[37px] bottom-[max(60px,calc(50%-58.375px))]'}>
                         {rangeStartTime ? (
                           <PeriodTrendChart points={personalSectorTrend?.points ?? []} label={personalSectorTrend?.sectorName ?? '최상위 업종'} colorScale={colorScale} loading={isSectorTrendPending} error={isSectorTrendError} />
                         ) : <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />}

@@ -7,7 +7,7 @@ export interface PeriodTrendPoint { date: string; changeRate: number }
 export default function PeriodTrendChart({ points, label, colorScale, loading = false, error = false }: {
   points: PeriodTrendPoint[]; label: string; colorScale: ColorScaleConfig; loading?: boolean; error?: boolean
 }) {
-  if (loading || !points.length) return <div role="status" className="flex h-full items-center justify-center text-sm text-ui-muted">{loading ? '불러오는 중…' : error ? '추이를 불러오지 못했습니다.' : '표시할 추이 데이터가 없습니다.'}</div>
+  if (loading || !points.length) return <div role="status" className="flex h-full items-center justify-center text-center text-sm text-ui-muted">{loading ? '불러오는 중입니다.' : error ? '불러오지 못했습니다.' : '표시할 추이 데이터가 없습니다.'}</div>
   const minimum = Math.min(0, ...points.map(point => point.changeRate))
   const maximum = Math.max(0, ...points.map(point => point.changeRate))
   const span = maximum - minimum || 1
