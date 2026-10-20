@@ -11,26 +11,26 @@ export type DepthMetricDefault = 'weightedAvgChangeRate' | 'simpleAvgChangeRate'
 export interface SettingDefaults {
   // 분류 체계 — true는 MARKETRY 분류다. 비로그인은 이 값과 상관없이 내 분류를 쓸 수 없다(useGlobalSettings).
   isCustom: boolean
-  // 2-1 업종 분류 깊이: 켜짐 여부와 단계(1=대분류, 2=중분류, 3=소분류)
+  // 1-1 업종 분류 깊이: 켜짐 여부와 단계(1=대분류, 2=중분류, 3=소분류)
   sectorLevelEnabled: boolean
   maxDepth: number
-  // 2-2 표시 지표
+  // 1-2 표시 지표
   depthMetric: DepthMetricDefault
-  // 2-3 표시 위치: 단계 범위(0=대분류, 1=중분류, 2=소분류)
+  // 1-3 표시 위치: 단계 범위(0=대분류, 1=중분류, 2=소분류)
   depthMetricMinIndex: number
   depthMetricMaxIndex: number
-  // 4-2 상위 업종 강조: 단계(0=대분류, 1=중분류, 2=소분류)와 개수
+  // 4-3 상위 업종 강조: 단계(0=대분류, 1=중분류, 2=소분류)와 개수
   topPickDepth: number
   topPickCount: number
-  // 1-1 시가총액 범위: 'all'은 모든 구간, 'excludeDefaultTiers'는 기본 제외 구간(소형주)을 뺀다,
+  // 2-1 시가총액 범위: 'all'은 모든 구간, 'excludeDefaultTiers'는 기본 제외 구간(소형주)을 뺀다,
   // 'topTwoTiers'는 시가총액이 큰 두 구간(초대형주+대형주)만, 'topThreeTiers'는 큰 세 구간(중형주까지)을 보여준다
   tierRange: 'all' | 'excludeDefaultTiers' | 'topTwoTiers' | 'topThreeTiers'
   // 업종 등락 방향 필터('all' | 'rising' | 'falling')와 그 업종 단계(0=대분류) — 관리자 페이지 미사용 탭으로 옮김(서버에 저장하지 않고 브라우저에만 둔다)
-  // 1-3 종목 등락 방향 필터
+  // 2-3 종목 등락 방향 필터
   sectorChangeFilter: 'all' | 'rising' | 'falling'
   sectorChangeDepth: number
   stockChangeFilter: 'all' | 'rising' | 'falling'
-  // 1-2 제외 업종 변경 사용 여부
+  // 2-2 제외 업종 변경 사용 여부
   sectorFilterEnabled: boolean
   // 3-1 박스 크기: 시가총액 반영 비율(0=동일 크기 ~ 100=시가총액 비례)
   boxSizeMarketCapRatio: number
@@ -42,9 +42,9 @@ export interface SettingDefaults {
   decimalPlacesIndex: number
   // 종목 정보(관리자 페이지 미사용 탭) 팝업: true면 커서를 올릴 때, false면 우클릭으로 연다
   stockPopupOnHover: boolean
-  // 4-1 강조 색상
+  // 4-2 강조 색상
   strongIndustryColor: string
-  // 4-3 등락률 색상 범위 커스텀 사용 여부
+  // 4-1 등락률 색상 범위 커스텀 사용 여부
   colorCustomOn: boolean
   // 섹터 랭킹/그룹 화면의 평균 방식(true=동일 가중)
   avgChangeRateUseSimple: boolean
@@ -55,13 +55,13 @@ export interface SettingDefaults {
 export const MEMBER_DEFAULTS: SettingDefaults = {
   isCustom: true,
   sectorLevelEnabled: true,
-  maxDepth: 2, // 2-1 중분류까지
-  depthMetric: 'weightedAvgChangeRate', // 2-2 시총 가중
+  maxDepth: 2, // 1-1 중분류까지
+  depthMetric: 'weightedAvgChangeRate', // 1-2 시총 가중
   depthMetricMinIndex: 0,
-  depthMetricMaxIndex: 1, // 2-3 대분류~중분류
+  depthMetricMaxIndex: 1, // 1-3 대분류~중분류
   topPickDepth: 1, // 4-2 중분류
-  topPickCount: 3, // 4-2 상위 업종 강조 3개
-  tierRange: 'topThreeTiers', // 1-1 중형주까지
+  topPickCount: 3, // 4-3 상위 업종 강조 3개
+  tierRange: 'topThreeTiers', // 2-1 중형주까지
   sectorChangeFilter: 'all',
   sectorChangeDepth: 0,
   stockChangeFilter: 'all',

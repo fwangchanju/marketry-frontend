@@ -4,13 +4,13 @@ export type SettingsBookmarkId =
   | 'depthLevel' | 'depthMetric' | 'depthRange' | 'topPick'
   | 'marketValueRange' | 'stockChange' | 'excludeSector'
   | 'boxSize' | 'boxLabel' | 'decimalPlaces'
-  | 'strongColor'
+  | 'colorScale' | 'strongColor'
 
 export const BOOKMARK_ORDER: readonly SettingsBookmarkId[] = [
-  'marketValueRange', 'excludeSector', 'stockChange',
   'depthLevel', 'depthMetric', 'depthRange',
+  'marketValueRange', 'excludeSector', 'stockChange',
   'boxSize', 'boxLabel', 'decimalPlaces',
-  'strongColor', 'topPick',
+  'colorScale', 'strongColor', 'topPick',
 ]
 
 export function isSettingsBookmarkId(id: unknown): id is SettingsBookmarkId {

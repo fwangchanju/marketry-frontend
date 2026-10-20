@@ -527,7 +527,7 @@ a { color: var(--accent-light); text-decoration: none; }
   padding-top: 12px;
 }
 
-.settings-panel-tab-content :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-sector-change, .settings-third-stock-change, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color, .settings-market-value, .settings-first-stock-size, .settings-first-strong-color, .settings-second-top-pick, .settings-fourth-exclude, .settings-second-exclude, .settings-text-threshold-item, .settings-plain-button-item, .settings-ops-item, .settings-item) {
+.settings-panel-tab-content :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-sector-change, .settings-third-stock-change, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-second-strong-color, .settings-market-value, .settings-first-stock-size, .settings-first-color, .settings-second-top-pick, .settings-fourth-exclude, .settings-second-exclude, .settings-text-threshold-item, .settings-plain-button-item, .settings-ops-item, .settings-item) {
   box-sizing: border-box;
   height: 160px;
   min-height: 160px;
@@ -738,23 +738,23 @@ a { color: var(--accent-light); text-decoration: none; }
   overscroll-behavior-y: contain;
 }
 
-.settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color) {
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-second-strong-color) {
   margin-top: 0;
   padding-top: 0;
   border-color: transparent;
 }
 
-.settings-panel-tab-content[data-align-second-heading] :is(.settings-first-stock-size, .settings-market-value, .settings-first-strong-color) {
+.settings-panel-tab-content[data-align-second-heading] :is(.settings-first-stock-size, .settings-market-value, .settings-first-color) {
   margin-bottom: 0;
   border-color: transparent;
 }
 
 /* 항목 구분선 — 각 탭의 두 번째 이후 항목 제목 위에 긋는다. */
-.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color) {
+.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-second-strong-color) {
   position: relative;
 }
 
-.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-third-color)::before {
+.settings-panel-tab-content :is(.settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-second-strong-color)::before {
   content: "";
   display: block;
   position: absolute;
@@ -1050,4 +1050,9 @@ a { color: var(--accent-light); text-decoration: none; }
 /* 북마크에서도 같은 항목은 본래 탭과 동일한 자동 중간 정렬을 쓴다. */
 .settings-bookmark-tab .settings-bookmark-item.settings-auto-item {
   padding-bottom: 12px;
+}
+
+/* 공통 설정은 제목에만 청록색을 사용한다. */
+.settings-panel-tab-content :is(.settings-market-value, .settings-second-exclude, .settings-first-color, .settings-second-strong-color) .settings-section-num {
+  color: var(--brand);
 }
