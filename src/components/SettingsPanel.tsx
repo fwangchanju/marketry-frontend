@@ -1407,6 +1407,9 @@ export function SettingsStockSizeSelector({
           <div className="flex flex-col items-center gap-1">
             <SettingsSectionIcon icon="equal-size" className="relative -left-[6.225px] h-[48px] w-[48px] origin-top-left scale-[1.15]" strokeWidth={0.587} />
           </div>
+          <span aria-live="polite" aria-atomic="true" className="rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">
+            {marketCapRatio}%
+          </span>
           <div className="flex flex-col items-center gap-1">
             <div className="relative -right-[6.225px] flex h-[48px] w-[48px] origin-top-right scale-[1.15] items-center justify-center">
               <SettingsSectionIcon icon="composition" className="h-[54px] w-[54px]" strokeWidth={0.522} />
@@ -1872,7 +1875,7 @@ export function SettingsMarketValueSection({
   // false로 꺼서 이중 구분선을 피한다.
   showDivider?: boolean
 }) {
-  // 저장된 구간 인덱스와 화면 모두 작은 시가총액부터 큰 시가총액 순서다.
+  // 저장 인덱스는 작은 금액부터, 화면과 도움말은 큰 금액부터 표시한다.
   const bookmark = useContext(SettingsBookmarkContext)
   if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('marketValueRange')) return null
   const itemClass = bookmarkItemClass(bookmark, 'marketValueRange')
@@ -1888,9 +1891,10 @@ export function SettingsMarketValueSection({
           .map((tier, index) => {
             const upper = namedTiers[index + 1]?.thresholdValue ?? null
             const lower = tier.thresholdValue
-            const range = lower === 0 ? `${toWonLabel(upper ?? 0)} 미만` : upper === null ? `${toWonLabel(lower)} 이상` : `${toWonLabel(lower)} 이상 ~ ${toWonLabel(upper)} 미만`
+            const range = lower === 0 ? `${toWonLabel(upper ?? 0)} 미만` : upper === null ? `${toWonLabel(lower)} 이상` : `${toWonLabel(upper)} 미만 ~ ${toWonLabel(lower)} 이상`
             return `${tier.label}: ${range}`
           })
+          .reverse()
           .join('\n')
   const selectedLower = tiers[tierRangeMinIndex]?.thresholdValue
   const selectedUpper = tiers[tierRangeMaxIndex + 1]?.thresholdValue

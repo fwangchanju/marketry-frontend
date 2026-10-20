@@ -1,5 +1,5 @@
 import { compareKoreanText } from '@/utils/koreanSort'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router-dom'
 import { usePersistedState } from './usePersistedState'
 import { useTaxonomySelection } from './useTaxonomySelection'
@@ -41,6 +41,7 @@ import {
   type ColorScaleConfig,
   type ColorScaleThreshold,
 } from '@/utils/treemapColorScale'
+import { colorScaleDraftSession } from '@/utils/colorScaleDraftSession'
 import { updateDraftParticipant, unregisterDraftParticipant } from '@/utils/settingsDraft'
 import queryClient from '@/api/queryClient'
 import { customTreemapKeys } from './queryKeys'
@@ -141,7 +142,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const allowChangeRateMode = options?.allowChangeRateMode ?? false
   const { pathname } = useLocation()
   const isLoggedIn = useIsLoggedIn()
-  const { isLoading: isSessionLoading } = useSession()
+  const { data: session, isLoading: isSessionLoading } = useSession()
   // 설정 기본값은 utils/settingDefaults.ts에 모아 두었다(비로그인과 회원이 다르다). 사용자가 값을 바꾸면 저장값이 우선한다.
   const defaults = settingDefaultsFor(isLoggedIn)
   const { requireLogin } = useLoginGate()
@@ -490,30 +491,22 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     topPickMaxSelectableDepth,
   ])
 
-  // 등락률 컬러 스케일 draft — 서버 값(useTreemapColorScale)이 도착하면 딱 한 번만 시드하고,
-  // 이후로는 어드민이 설정 팝업에서 편집하는 draft를 그대로 트리맵/범례에 흘려보낸다. 그래서 "저장"
-  // 전에도 실제로 보여주는 지도 색이 곧바로 바뀐다 — 별도의 미리보기 트리맵이 필요 없다.
-  const [colorEditIndices, setColorEditIndices] = useState<number[]>([])
-  // 세션 시작 시점의 draft 스냅샷 — 취소 복구와 편집 전 비어 있던 부호의 fallback 표시를 위해 보관한다.
-  const colorEditSnapshotRef = useRef<ColorScaleConfig | null>(null)
+  // 공통 색상 임시값은 페이지가 바뀌어도 저장·되돌리기 전까지 유지한다.
+  const colorSession = useSyncExternalStore(colorScaleDraftSession.subscribe, colorScaleDraftSession.getSnapshot)
+  const colorOwner = isLoggedIn ? `user:${session?.userId}` : 'guest'
+  const colorScaleDraft = colorSession.owner === colorOwner ? colorSession.draft : null
+  const colorEditIndices = colorSession.editIndices
+  const setColorScaleDraft = colorScaleDraftSession.setDraft
+  const setColorEditIndices = colorScaleDraftSession.setEditIndices
+  const colorEditSnapshotRef = colorSession.snapshotRef
+  const selectedColorPercentRef = colorSession.selectedPercentRef
   const { data: colorScaleServerData } = useTreemapColorScale()
-  const [colorScaleDraft, setColorScaleDraft] = useState<ColorScaleConfig | null>(null)
-  // 과거 비로그인 세션의 저장값은 초기값으로만 읽는다. 새 변경은 상단 저장 전까지 메모리에 둔다.
   const [localColorScale] = usePersistedState<ColorScaleConfig | null>('treemap.localColorScale', null)
-  // draft가 어느 로그인 상태의 값으로 시드됐는지 — 로그인/로그아웃으로 바뀌면 새 서버 값으로 다시 시드한다.
-  const [colorScaleDraftOwner, setColorScaleDraftOwner] = useState<boolean | null>(null)
-  // 저장·되돌리기 뒤에도 마지막으로 보던 칸을 다시 선택한다.
-  const selectedColorPercentRef = useRef<number | null>(null)
-  if (colorScaleServerData && (colorScaleDraft === null || colorScaleDraftOwner !== isLoggedIn)) {
-    setColorScaleDraftOwner(isLoggedIn)
-    // 이전 계정에서 열려 있던 편집 세션은 인덱스가 의미를 잃으므로 함께 닫는다.
-    setColorEditIndices([])
-    colorEditSnapshotRef.current = null
-    // 방어적 복사 — react-query 캐시가 들고 있는 참조를 그대로 draft로 물고 있지 않도록.
-    const seededThresholds = (!isLoggedIn && localColorScale ? localColorScale : colorScaleServerData).thresholds.map(threshold => ({ ...threshold }))
-    // 저장된 구간이 하나도 없으면(비로그인 첫 접속, 초기화 직후) 기본 7칸을 실제 구간으로 채워서 시작한다.
-    setColorScaleDraft(seededThresholds.length > 0 ? { thresholds: seededThresholds } : createDefaultColorScale())
-  }
+  useEffect(() => {
+    if (isSessionLoading || !colorScaleServerData) return
+    const initial = !isLoggedIn && localColorScale ? localColorScale : colorScaleServerData
+    colorScaleDraftSession.initialize(colorOwner, initial.thresholds.length > 0 ? initial : createDefaultColorScale())
+  }, [isSessionLoading, colorScaleServerData, isLoggedIn, localColorScale, colorOwner])
   // "색상 커스텀 사용" 토글 — 순수 로컬(세션스토리지) 상태. draft(=저장 대상)와는 완전히 분리돼 있어서
   // 꺼도 draft에 저장해둔 값은 건드리지 않고, 그냥 실제 지도에 넘기는 값만 빈 스케일(=기본 프리셋)로 바꿔치기한다.
   const [colorCustomOn, setColorCustomOn] = usePageSetting('treemap.colorCustomOn', defaults.colorCustomOn)
