@@ -14,6 +14,7 @@ import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
 import { EditIcon, PlusIcon, TrashIcon } from '@/components/icons/AppIcons'
+import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 
 interface Props {
   sectors: SectorItem[]
@@ -179,6 +180,7 @@ function DroppableSectorRow({
 }
 
 export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange }: Props) {
+  const stockSearchWidthPx = useStockSearchWidth()
   const [query, setQuery] = useState('')
   const [sectorOrder, setSectorOrder] = useState<SectorOrder>(loadSectorOrder)
   const [undoStack, setUndoStack] = useState<SectorHistoryAction[]>([])
@@ -731,7 +733,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         {toolbarContainer && createPortal(
           <SearchBar
             inline
-            inlineWidthClassName="w-[13.5rem]"
+            inputRightEdgePx={stockSearchWidthPx}
             query={query}
             onChange={setQuery}
             placeholder="업종 검색"

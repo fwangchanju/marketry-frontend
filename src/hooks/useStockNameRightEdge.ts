@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from 'react'
+import { publishStockSearchWidth } from '@/utils/stockSearchWidth'
 
 // 종목 표 위 검색창의 너비를 아래 열(기본 "종목명")의 오른쪽 줄에 맞추기 위한 값 — 그 열 머리글 칸의 오른쪽 끝이 기준 왼쪽에서 몇 px인지.
 // 기준은 표 영역 왼쪽이고, 검색창이 윗줄에 따로 있으면 leftEl(검색창이 시작하는 곳)을 넘겨 거기서부터 잰다.
@@ -16,7 +17,9 @@ export function useStockNameRightEdge(
     const measure = () => {
       const th = scroller.querySelector<HTMLElement>(`th[data-column-key="${columnKey}"]`)
       if (!th) return
-      setRightEdge(Math.round(th.getBoundingClientRect().right - (leftEl ?? root).getBoundingClientRect().left))
+      const width = Math.round(th.getBoundingClientRect().right - (leftEl ?? root).getBoundingClientRect().left)
+      setRightEdge(width)
+      publishStockSearchWidth(width)
     }
     measure()
     scroller.addEventListener('scroll', measure, { passive: true })

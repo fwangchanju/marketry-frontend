@@ -8,6 +8,7 @@ import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
+import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
@@ -256,6 +257,7 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
 type CategorySortKey = 'name' | 'stockCount' | 'marketValue'
 
 function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolbarContainer }: { sectors: SectorRow[]; emptyMessage: string; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
+  const stockSearchWidthPx = useStockSearchWidth()
   const [query, setQuery] = useState('')
   // 시가총액 합이 큰 업종부터 처음 보여준다.
   const { sortKey, direction, toggle } = useSort<CategorySortKey>('marketValue', 'desc')
@@ -320,6 +322,7 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
       {toolbarContainer && createPortal(
         <SearchBar
           inline
+          inputRightEdgePx={stockSearchWidthPx}
           query={query}
           onChange={setQuery}
           placeholder="업종 검색"
