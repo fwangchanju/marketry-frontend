@@ -17,6 +17,7 @@ import SettingsPanel, {
 import ScreenshotModal from '@/components/ScreenshotModal'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
+import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import Toolbar from '@/components/Toolbar'
 import { ClockIcon } from '@/components/icons/AppIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
@@ -74,6 +75,7 @@ export default function GroupPage() {
     market,
     source,
     nxtOnly,
+    nxtOnlyWindow,
     changeRateMode,
     changeRateChoice,
     isAfterHoursControlsVisible,
@@ -358,7 +360,8 @@ export default function GroupPage() {
             {/* 지도/어드민 페이지와 동일하게 본문이 화면을 꽉 채우는 형태 — 가운데 정렬/폭 제한을 없애서
                 설정 사이드바가 열려도 본문이 밀리는 게 자연스럽게 느껴지도록 한다(밀림 자체는 다른
                 페이지와 동일한 flex 구조이고, 콘텐츠가 항상 남는 공간을 꽉 채우기만 하면 된다). */}
-            <div className="flex min-h-0 flex-1">
+            <div className="relative flex min-h-0 flex-1">
+              <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && nxtOnlyWindow.fromMinutes >= 12 * 60 && !isPastSnapshot && !isRangeView} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(displayNow?.snapshotTime)} nodes={displayNow?.items ?? []} />
               <div className="flex min-h-0 w-full flex-1 flex-col pt-4 pb-[19.5px]">
               {isLoading ? (
                 <div className="flex flex-1 items-center justify-center">

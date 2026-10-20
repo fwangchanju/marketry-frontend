@@ -1,13 +1,19 @@
+import Spinner from '@/components/Spinner'
 import { sampleTrendDays } from '@/utils/trendDates'
 import { resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 
 export interface PeriodTrendPoint { date: string; changeRate: number }
 
 // 거래일을 모두 연결하되 날짜 눈금은 최대 다섯 개만 표시한다.
-export default function PeriodTrendChart({ points, label, colorScale, loading = false, error = false }: {
-  points: PeriodTrendPoint[]; label: string; colorScale: ColorScaleConfig; loading?: boolean; error?: boolean
+export default function PeriodTrendChart({ points, label, colorScale, loading = false, error = false, onRetry }: {
+  points: PeriodTrendPoint[]; label: string; colorScale: ColorScaleConfig; loading?: boolean; error?: boolean; onRetry?: () => void
 }) {
-  if (loading || !points.length) return <div role="status" className="flex h-full items-center justify-center text-center text-sm text-ui-muted">{loading ? '불러오는 중입니다.' : error ? '불러오지 못했습니다.' : '표시할 추이 데이터가 없습니다.'}</div>
+  if (loading || error && !points.length) return (
+    <div className="flex h-full w-full items-center justify-center">
+      <Spinner key={loading ? 'loading' : 'error'} showElapsed className="aspect-square h-[min(10rem,70%)] shrink-0" errorMessage={loading ? undefined : '불러오지 못했습니다.'} onRetry={onRetry} />
+    </div>
+  )
+  if (!points.length) return <div role="status" className="flex h-full items-center justify-center text-center text-sm text-ui-muted">표시할 추이 데이터가 없습니다.</div>
   const minimum = Math.min(0, ...points.map(point => point.changeRate))
   const maximum = Math.max(0, ...points.map(point => point.changeRate))
   const span = maximum - minimum || 1
@@ -21,7 +27,6 @@ export default function PeriodTrendChart({ points, label, colorScale, loading = 
       <svg viewBox="0 0 1000 200" preserveAspectRatio="none" className="h-full w-full overflow-visible" aria-hidden="true">
         <line x1="0" x2="1000" y1={y(0)} y2={y(0)} stroke="var(--ui-muted)" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
         <polyline points={points.map((point, index) => `${x(index)},${y(point.changeRate)}`).join(' ')} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-        {points.map((point, index) => <circle key={point.date} cx={x(index)} cy={y(point.changeRate)} r="2" fill={color} vectorEffect="non-scaling-stroke"><title>{point.date}: {point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(2)}%</title></circle>)}
       </svg>
       <span className="absolute right-0 top-0 text-[12px] font-semibold tabular-nums" style={{ color }}>{last.changeRate > 0 ? '+' : ''}{last.changeRate.toFixed(2)}%</span>
       {ticks.map(({ date, index }) => {
