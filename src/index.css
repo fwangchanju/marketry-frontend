@@ -1013,24 +1013,6 @@ a { color: var(--accent-light); text-decoration: none; }
     z-index: 31;
   }
 
-  /* 홈 요약 틀도 업종 헤더와 같이, 헤더에 올리면 내용 전체를 흰색 35%로 강조한다. */
-  .home-summary-frame::after {
-    position: absolute;
-    z-index: 5;
-    inset: 0;
-    background-color: color-mix(in srgb, var(--ui-white) 35%, transparent);
-    content: '';
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.1s ease-out;
-  }
-
-  .home-summary-frame:has(.home-frame-header:hover)::after,
-  .home-summary-frame:has(.home-frame-header:focus-visible)::after {
-    opacity: 1;
-    transition: none;
-  }
-
   /* 드래그/줌 전환 중에는 hover 오버레이를 끈다. 위 트리거들보다 우선한다. */
   .treemap-suppress-sector-border .treemap-sector-hover-overlay {
     opacity: 0 !important;
