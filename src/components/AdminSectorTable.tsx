@@ -5,12 +5,12 @@ import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, use
 import type { SectorItem } from '@/types/api'
 import { useCreateSector, useRenameSector, useReparentSector } from '@/hooks/useTreemapCustom'
 import { useSectorDeleteFlow } from '@/hooks/useSectorDeleteFlow'
-import { halfOverlapCollisionDetection } from '@/utils/dndCollision'
+import { sectorCollisionDetection } from '@/utils/dndCollision'
 import { toCount } from '@/utils/format'
 import { loadSectorOrder, orderSectors, SECTOR_ORDER_STORAGE_KEY, type SectorOrder } from '@/utils/sectorOrder'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
-import { HINT_BUBBLE_CLASS, HINT_BUBBLE_COLOR_CLASS } from '@/components/hintBubbleStyle'
+import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
 import { EditIcon, PlusIcon, TrashIcon } from '@/components/icons/AppIcons'
@@ -69,10 +69,6 @@ function SectorNameInput({ wrapperClassName = '', onChange, onFocus, onBlur, ...
   )
 }
 
-// 상단바 우측 아이콘(NavBarPageActions)과 같은 모양 — 회색 아이콘, hover 때 강조색.
-const ICON_BUTTON_CLASS =
-  'flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none hover:text-[var(--brand)]'
-
 type Row =
   | { type: 'sector'; item: SectorItem; siblingIndex: number }
   | { type: 'add-child'; parentId: number; parentPath: string[]; depth: number }
@@ -122,7 +118,7 @@ const keepInColumnVertically: Modifier = ({ transform, active, draggingNodeRect,
 // 번호 칸 — 업종은 끌어서 다른 업종 위에 놓으면 그 안으로 이동한다(순서 바꾸기는 왼쪽 ⠿ 손잡이).
 const NUMBER_BADGE_CLASS = 'mr-2 inline-flex h-5 w-8 shrink-0 items-center justify-end rounded-sm border border-ui-border bg-ui-panel p-0 pr-1 text-sm leading-none font-bold text-ui-text tabular-nums'
 
-function DraggableNumberBadge({ sectorId, parentId, onPress, onClickBadge, children }: { sectorId: number; parentId: number | null; onPress: () => void; onClickBadge: () => void; children: React.ReactNode }) {
+function DraggableNumberBadge({ sectorId, parentId, children }: { sectorId: number; parentId: number | null; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `sector-move-${sectorId}`,
     data: { sectorId, parentId, mode: 'move' },
@@ -132,11 +128,6 @@ function DraggableNumberBadge({ sectorId, parentId, onPress, onClickBadge, child
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      onPointerDown={event => {
-        listeners?.onPointerDown?.(event)
-        onPress()
-      }}
-      onClick={onClickBadge}
       type="button"
       data-hint="끌어서 다른 업종 하위로 이동"
       className={`${NUMBER_BADGE_CLASS} cursor-grab touch-none ${isDragging ? 'opacity-35' : ''}`}
@@ -202,17 +193,13 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const [addingChildFor, setAddingChildFor] = useState<number | null>(null)
   const [renamingId, setRenamingId] = useState<number | null>(null)
   const [renameValue, setRenameValue] = useState('')
-  const [movingSectorId, setMovingSectorId] = useState<number | null>(null)
   const [highlightedId, setHighlightedId] = useState<number | null>(null)
   const [draggedSector, setDraggedSector] = useState<SectorItem | null>(null)
   // 번호 칸을 끌어 다른 분류로 옮기는 중인지, 그리고 지금 놓으면 들어갈 업종.
   const [isMoveDrag, setIsMoveDrag] = useState(false)
-  // 번호 칸을 누르면 "끌어서 보낼 수 있다"는 안내를 띄운다 — 끄는 동안이나, 끌지 않고 눌렀다면 잠깐(3초) 보인다.
-  const [badgeHint, setBadgeHint] = useState(false)
   // 끌어서 다른 업종 안으로 방금 옮긴 업종 — 다음 조작 전까지 눈에 띄는 표시를 남긴다. 목록이 새로 그려진 뒤 화면 안으로 스크롤한다.
   const [movedSectorId, setMovedSectorId] = useState<number | null>(null)
   const scrollToMovedRef = useRef(false)
-  const badgeHintTimer = useRef<number | undefined>(undefined)
   // 손잡이로 끌 때 띄우는 안내를 메인 영역(왼쪽 끝~설정창 시작점)의 가로·세로 가운데에 놓기 위한 기준.
   const mainAreaRef = useRef<HTMLDivElement>(null)
   const [hintPosition, setHintPosition] = useState<{ x: number; y: number } | null>(null)
@@ -263,29 +250,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
 
   // 이동 모드 — ↪를 누르면 옮길 업종이 정해지고, 표에서 도착할 상위 업종 줄의 "여기" 버튼을 누르면 확인 뒤 옮긴다.
   // 줄을 누르면 평소처럼 펼쳐지므로(선택 변경) 다른 가지의 업종도 찾아가서 고를 수 있다.
-  const movingSector = movingSectorId === null ? null : (sectors.find(item => item.id === movingSectorId) ?? null)
-  const moveTargetIds = new Set(movingSector ? getMoveCandidates(movingSector).map(item => item.id) : [])
-  const cancelMove = () => setMovingSectorId(null)
-  const confirmMove = async (target: SectorItem | null) => {
-    if (!movingSector) return
-    if (!await appConfirm(moveMessage(movingSector.name, target), { title: '업종 이동' })) return
-    const moved = movingSector
-    reparentSector.mutate({ id: moved.id, parentId: target ? target.id : null }, {
-      onSuccess: () => {
-        setMovingSectorId(null)
-        pushHistory({ type: 'reparent', sectorId: moved.id, name: moved.name, fromParentId: moved.parentId, toParentId: target ? target.id : null })
-      },
-    })
-  }
-  useEffect(() => {
-    if (movingSectorId === null) return
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMovingSectorId(null)
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [movingSectorId])
-
   const getSectorPath = (sector: SectorItem) => {
     const path = [sector.name]
     let current = sector
@@ -400,10 +364,13 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     const trimmed = (childNameByParent[parentId] ?? '').trim()
     if (!trimmed) return
     createSector.mutate({ name: trimmed, parentId }, {
-      onSuccess: created => triggerHighlight(created.id),
+      onSuccess: created => {
+        triggerHighlight(created.id)
+        setChildNameByParent(prev => ({ ...prev, [parentId]: '' }))
+        setAddingChildFor(current => current === parentId ? null : current)
+      },
       onError: () => setChildNameByParent(prev => ({ ...prev, [parentId]: trimmed })),
     })
-    setChildNameByParent(prev => ({ ...prev, [parentId]: '' }))
   }
 
   const startRename = (sector: SectorItem) => {
@@ -470,7 +437,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     return rows
   }
   const columnRows = [makeRows(rootSectors, null), makeRows(middleSectors, selectedMajorId), makeRows(smallSectors, selectedMiddleId)]
-  const selectedSector = sectors.find(item => item.id === selectedSectorId) ?? null
 
   const rootIndexById = new Map<number, number>()
   rootSectors.forEach((c, i) => rootIndexById.set(c.id, i + 1))
@@ -492,16 +458,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     return shifts
   }, [draggedSector, isMoveDrag, dropIndicator, draggedRow, sectors, sectorOrder])
 
-  const pressBadge = () => {
-    window.clearTimeout(badgeHintTimer.current)
-    const mainRect = mainAreaRef.current?.getBoundingClientRect()
-    setHintPosition(mainRect ? { x: mainRect.left + mainRect.width / 2, y: mainRect.top + mainRect.height / 2 } : null)
-    setBadgeHint(true)
-  }
-  const clickBadge = () => {
-    window.clearTimeout(badgeHintTimer.current)
-    badgeHintTimer.current = window.setTimeout(() => setBadgeHint(false), 3000)
-  }
   // 번호 칸을 끌 때 놓을 수 있는 업종 — ↪ 이동과 같은 규칙이다: 자기와 그 하위, 지금 부모는 안 되고, 옮긴 뒤 가장 깊은 업종이 소분류를 넘지 않아야 한다.
   // 그래서 소분류를 대분류 줄에 바로 놓아 중분류로 올리거나, 중분류를 다른 중분류에 놓아 소분류로 내릴 수도 있고, 대분류도 다른 대분류 안으로 넣을 수 있다. 맨 위(대분류)로 올릴 때는 대분류 열 머리글에 놓는다.
   const isMoveDropTarget = (dragged: SectorItem | null, target: SectorItem) => {
@@ -615,7 +571,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           selectSector()
         }}
       >
-        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/35 group-hover:bg-[var(--brand)]/50' : movedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'} ${movedSectorId === sector.id ? 'shadow-[inset_3px_0_0_var(--brand)]' : ''}`} style={{ paddingLeft: `${sector.depth * 20 + 8}px` }}>
+        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/35 group-hover:bg-[var(--brand)]/50' : movedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`} style={{ paddingLeft: `${sector.depth * 20 + 8}px` }}>
           <div className="flex items-center gap-2">
             <div className="flex min-w-0 flex-1 items-center">
               <DraggableSectorHandle sectorId={sector.id} parentId={sector.parentId} enabled />
@@ -633,7 +589,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 />
               ) : (
                 <>
-                  <DraggableNumberBadge sectorId={sector.id} parentId={sector.parentId} onPress={pressBadge} onClickBadge={clickBadge}>{itemNumber}</DraggableNumberBadge>
+                  <DraggableNumberBadge sectorId={sector.id} parentId={sector.parentId}>{itemNumber}</DraggableNumberBadge>
                   <button
                     type="button"
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
@@ -641,22 +597,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   >
                     {sector.name}
                   </button>
-                  {movedSectorId === sector.id && (
-                    <span className="ml-2 shrink-0 rounded-sm bg-[var(--brand)] px-1 text-[11px] font-bold leading-4 text-ui-background">방금 이동</span>
-                  )}
                   {(childCountByParent.get(sector.id) ?? 0) > 0 && (
                     <span className="ml-1 shrink-0 text-sm text-ui-muted">({toCount(childCountByParent.get(sector.id) ?? 0)})</span>
-                  )}
-                  {movingSector && moveTargetIds.has(sector.id) && (
-                    <button
-                      type="button"
-                      data-no-row-select
-                      data-hint={`[${movingSector.name}] 업종을 [${sector.name}] 하위로 이동`}
-                      onClick={() => void confirmMove(sector)}
-                      className="ml-auto mr-2 h-6 shrink-0 rounded border border-[var(--brand)] bg-transparent px-2 text-xs font-bold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-ui-background"
-                    >
-                      여기
-                    </button>
                   )}
                   {/* 번호 칸을 끄는 동안 놓을 수 있는 줄 오른쪽 끝에 "여기" 표시를 띄운다(지금 위에 올라간 줄은 채워서 강조). */}
                   {isMoveDrag && isMoveDropTarget(draggedSector, sector) && (
@@ -668,7 +610,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                     </span>
                   )}
                   {/* 선택한 항목은 줄 오른쪽 끝에 하위 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 이동 모드 중이거나 번호 칸을 끄는 중에는 "여기"와 겹치지 않게 숨긴다. */}
-                  {selectedSectorId === sector.id && !movingSector && !isMoveDrag && (
+                  {selectedSectorId === sector.id && !isMoveDrag && (
                     <span className="ml-auto flex shrink-0 items-center gap-0.5 pl-2 pr-2">
                       {sector.depth <= ADD_CHILD_MAX_PARENT_DEPTH && (
                         <button type="button" data-no-row-select data-hint="하위 업종 추가" aria-label={`${sector.name} 하위 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
@@ -710,7 +652,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     <DndContext
       sensors={sensors}
       modifiers={[keepInColumnVertically]}
-      collisionDetection={halfOverlapCollisionDetection}
+      collisionDetection={sectorCollisionDetection}
       onDragOver={updateDragTarget}
       onDragMove={updateDragTarget}
       onDragStart={event => {
@@ -737,8 +679,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         const draggedItem = draggedData && sectors.find(item => item.id === draggedData.sectorId)
         const targetItem = targetData && sectors.find(item => item.id === targetData.sectorId)
         const wasMoveDrag = (event.active.data.current as { mode?: string } | undefined)?.mode === 'move'
-        window.clearTimeout(badgeHintTimer.current)
-        setBadgeHint(false)
         setIsMoveDrag(false)
         setMoveOverId(null)
         const droppedOnRoot = (event.over?.data.current as { root?: boolean } | undefined)?.root === true
@@ -766,8 +706,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         }
       }}
       onDragCancel={() => {
-        window.clearTimeout(badgeHintTimer.current)
-        setBadgeHint(false)
         setIsMoveDrag(false)
         setMoveOverId(null)
         setMoveOverRoot(false)
@@ -780,6 +718,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         {toolbarContainer && createPortal(
           <SearchBar
             inline
+            inlineWidthClassName="w-[13.5rem]"
             query={query}
             onChange={setQuery}
             placeholder="업종 검색"
@@ -815,13 +754,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       </div>
       {/* 커서를 따라다니는 드래그 미리보기 — 끌고 있는 줄을 원래 폭의 한 줄 그대로(손잡이·번호·이름) 청록 배경에 그림자를 줘서 들어 올린 것처럼 보여 준다. */}
       {/* 끄는 동안 안내를 메인 영역 가운데에 띄운다 — ⠿ 손잡이는 위·아래로만 움직인다는 안내, 번호 칸은 끌어서 다른 업종으로 보낼 수 있다는 안내(다른 안내 말풍선과 같은 모양). */}
-      {(badgeHint || (draggedSector && !isMoveDrag)) && createPortal(
+      {draggedSector && !isMoveDrag && createPortal(
         <div role="status" style={{ position: 'fixed', top: hintPosition?.y ?? '50%', left: hintPosition?.x ?? '50%', transform: 'translate(-50%, -50%)' }} className={`z-[100] whitespace-nowrap ${HINT_BUBBLE_CLASS}`}>
-          {badgeHint ? (
-            <><b className="text-status-error-ink">드래그 앤 드랍</b>을 통해 선택한 하위 항목으로 보낼 수 있습니다.</>
-          ) : (
-            <><b className="text-status-error-ink">위·아래</b>로만 이동할 수 있어요.</>
-          )}
+          <><b className="text-status-error-ink">위·아래</b>로만 이동할 수 있어요.</>
         </div>,
         document.body,
       )}
@@ -847,7 +782,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     </DndContext>
     {settingsActionsTarget && createPortal(
       <>
-      {/* 업종 추가가 먼저, 아래 업종 재배치와는 구분선으로 나눈다 — 구분선은 그룹 페이지 설정창과 같은 모양이다. */}
       <section aria-label="업종 추가" className="settings-item settings-custom-control">
         <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 추가</h2>
         <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-muted">업종명을 입력한 뒤 엔터</p>
@@ -861,46 +795,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             aria-label="최상위 업종명"
             className="h-9 min-w-0 flex-1 rounded-[5px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-text focus:border-[var(--brand)]"
           />
-        </div>
-      </section>
-      <section aria-label="업종 재배치" className="settings-item settings-custom-control relative before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-ui-white/10 before:content-['']">
-        <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 재배치</h2>
-        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-muted">상하 관계를 재배치</p>
-        <div className="mb-3 max-w-[16rem] settings-control-inset rounded-[5px] bg-[var(--ui-control)] px-2 py-1.5 text-sm text-ui-white">
-          <div className="flex items-center gap-1">
-            {/* 대분류 > 중분류 > 소분류를 한 줄에 이어 보여 주고, 길어서 넘치면 자동으로 다음 줄로 이어진다. */}
-            <div className="min-w-0 flex-1 py-0.5 text-[13px]/4 font-medium">
-              {!selectedSector && <span className="text-ui-text">업종을 선택하세요</span>}
-              {selectedSector && getSectorPath(selectedSector).split(SECTOR_PATH_SEPARATOR).map((name, index) => (
-                <span key={index} className="break-all">
-                  {index > 0 && (
-                    <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-0.5 inline h-3.5 w-3.5 align-text-bottom text-ui-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 6 15 12 9 18" />
-                    </svg>
-                  )}
-                  {name}
-                </span>
-              ))}
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              <button type="button" data-hint="다른 업종 하위로 이동" aria-label="다른 업종 하위로 이동" disabled={!selectedSector} onClick={() => selectedSector && setMovingSectorId(selectedSector.id)} className={`${ICON_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-35`}><span aria-hidden="true" className="text-sm leading-none">↪</span></button>
-              {movingSector && (
-                <button type="button" onClick={cancelMove} className="h-6 rounded-md border border-ui-border bg-ui-panel px-2 text-[13px]/4 font-medium text-ui-white hover:bg-ui-white/10">이동 취소</button>
-              )}
-            </div>
-          </div>
-          {movingSector && (
-            <div className={`mt-2 p-2 text-xs leading-relaxed ${HINT_BUBBLE_COLOR_CLASS}`}>
-              <p>
-                <b>{movingSector.name}</b>을(를) 옮길 상위 업종 줄 오른쪽의 <b className="text-status-error-ink">여기</b> 버튼을 누르세요. 줄을 눌러 펼치면 다른 업종도 찾을 수 있습니다.
-              </p>
-              {movingSector.parentId !== null && (
-                <button type="button" onClick={() => void confirmMove(null)} className="mt-2 h-7 rounded-md border border-[var(--ui-popup-border)] bg-transparent px-2 text-[13px]/4 font-medium text-ui-background hover:bg-ui-background/10">
-                  최상위로 이동
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </section>
       {/* 변경 내역 — 종목 화면과 같은 부품이다. */}

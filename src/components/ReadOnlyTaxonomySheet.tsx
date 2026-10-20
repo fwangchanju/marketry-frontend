@@ -205,7 +205,7 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
 
 // 검색어 최대 글자 수 — 분류 이름(대·중·소분류)·약칭 최대 길이(12자)와 같다.
 // 표 위의 검색창과 개수 — 카테고리·종목 화면이 같은 틀(위치·크기)을 쓰도록 한 곳에 둔다. 커스텀 종목 표도 이걸 쓴다.
-export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel, extra, settingsLayout = false, inline = false, inputRightEdgePx, afterInput }: {
+export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel, extra, settingsLayout = false, inline = false, inlineWidthClassName = 'w-[15.5rem]', inputRightEdgePx, afterInput }: {
   query: string
   onChange: (query: string) => void
   placeholder: string
@@ -214,6 +214,8 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
   settingsLayout?: boolean
   // 윗줄(드롭다운 오른쪽)에 한 줄로 얹을 때 — 표 위 줄 전용 여백(아래 간격·오른쪽 여백)을 없앤다.
   inline?: boolean
+  // 페이지별 표에 맞춰 inline 검색창 너비를 조정한다.
+  inlineWidthClassName?: string
   // 개수 오른쪽 끝에 붙는 추가 조작(예: "NXT만 보기" 체크박스).
   extra?: ReactNode
   // 검색창의 오른쪽 끝을 표 영역 왼쪽에서 이 px에 맞춘다(종목 표: 아래 종목명 열의 오른쪽 줄). 없으면 기본 너비.
@@ -234,7 +236,7 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
         className={`nes-input is-dark text-sm font-normal focus:placeholder:text-transparent ${
           // 윗줄 검색창은 표 안의 약칭 입력창과 같은 색(모서리는 직사각형으로 툴바 칩과 같다)이고, 높이는 왼쪽 제목 박스(24px)와 같다.
           inline
-            ? 'toolbar-badge h-6 w-[15.5rem] !rounded-none !border-0 !bg-[var(--ui-panel)] text-ui-white outline-none placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]'
+            ? `toolbar-badge h-6 ${inlineWidthClassName} !rounded-none !border-0 !bg-[var(--ui-panel)] text-ui-white outline-none placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]`
             : `focus:outline-1 focus:outline-offset-0 focus:outline-ui-white ${settingsLayout ? 'h-8 w-full' : 'h-7 w-[15.5rem]'}`
         }`}
         // 안내 문구와 입력 글자가 위 드롭박스의 글자와 같은 선에서 시작하게 한다: 드롭박스 안쪽 여백(0.5rem)에서
