@@ -6,8 +6,9 @@ const EXTREME_RATE_COMPRESSION = 0.1
 
 export const RANK_AXIS_BREAK = RATE_AXIS_BREAK
 export const RANK_AXIS_BREAK_CUT_PX = 8
-export const RANK_AXIS_BREAK_BRIDGE_PX = 4
-// 두 절단 사이에 4px 막대를 남긴다: 빈틈 8px + 막대 4px + 빈틈 8px.
+export const RANK_AXIS_BREAK_BRIDGE_PX = 6
+// 가운데 막대는 양쪽 테두리 1px씩을 포함해 6px로 그려 내부 색상이 4px 남는다.
+// 빈틈 8px + 막대 6px + 빈틈 8px.
 export const RANK_AXIS_BREAK_GAP_PX = RANK_AXIS_BREAK_CUT_PX * 2 + RANK_AXIS_BREAK_BRIDGE_PX
 
 export function rankAxisMagnitude(magnitude: number): number {
