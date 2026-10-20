@@ -80,6 +80,7 @@ type SectorHistoryAction =
   | { id: string; type: 'reorder'; parentId: number | null; beforeIds: number[]; afterIds: number[] }
 type SectorHistoryInput = SectorHistoryAction extends infer A ? (A extends { id: string } ? Omit<A, 'id'> : never) : never
 const SECTOR_HISTORY_LIMIT = 9
+const DRAG_CONTROL_CLASS = 'cursor-grab touch-none rounded-sm border border-ui-border bg-ui-panel text-ui-text transition-colors hover:border-[var(--brand)] hover:bg-[var(--brand)]/10 hover:text-[var(--brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]'
 
 function DraggableSectorHandle({
   sectorId,
@@ -95,7 +96,7 @@ function DraggableSectorHandle({
     data: { sectorId, parentId },
     disabled: !enabled,
   })
-  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 touch-none items-center justify-center border-0 bg-transparent text-ui-muted hover:text-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-35 ${isDragging ? 'opacity-30' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
+  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center ${DRAG_CONTROL_CLASS} disabled:cursor-not-allowed disabled:opacity-35 ${isDragging ? 'opacity-30' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
 }
 
 // 끄는 중 마우스의 세로 위치 — 손잡이를 열 안으로 가두는 제한(keepInColumnVertically) 때문에 손잡이 위치는 맨 위·맨 아래에서 멈추므로,
@@ -116,10 +117,10 @@ const keepInColumnVertically: Modifier = ({ transform, active, draggingNodeRect,
 }
 
 // 번호 칸 — 업종은 끌어서 다른 업종 위에 놓으면 그 안으로 이동한다(순서 바꾸기는 왼쪽 ⠿ 손잡이).
-const NUMBER_BADGE_CLASS = 'mr-2 inline-flex h-5 w-8 shrink-0 items-center justify-end rounded-sm border border-ui-border bg-ui-panel p-0 pr-1 text-sm leading-none font-bold text-ui-text tabular-nums'
+const NUMBER_BADGE_CLASS = 'mr-2 inline-flex h-6 w-8 shrink-0 items-center justify-end p-0 pr-1 text-sm leading-none font-bold tabular-nums'
 
 function DraggableNumberBadge({ sectorId, parentId, children }: { sectorId: number; parentId: number | null; children: React.ReactNode }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef } = useDraggable({
     id: `sector-move-${sectorId}`,
     data: { sectorId, parentId, mode: 'move' },
   })
@@ -130,7 +131,7 @@ function DraggableNumberBadge({ sectorId, parentId, children }: { sectorId: numb
       {...attributes}
       type="button"
       data-hint="끌어서 다른 업종 하위로 이동"
-      className={`${NUMBER_BADGE_CLASS} cursor-grab touch-none ${isDragging ? 'opacity-35' : ''}`}
+      className={`${NUMBER_BADGE_CLASS} ${DRAG_CONTROL_CLASS}`}
     >
       {children}
     </button>
@@ -145,7 +146,7 @@ function RootDropHeader({ className, isActive, isOver, children }: { className: 
       {children}
       {isActive && (
         <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-5 -translate-y-1/2 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[18px] ${isOver ? 'bg-[var(--brand)] text-ui-background' : 'bg-transparent text-[var(--brand)]'}`}>
-          여기 (최상위)
+          여기
         </span>
       )}
     </div>
@@ -197,9 +198,10 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const [draggedSector, setDraggedSector] = useState<SectorItem | null>(null)
   // 번호 칸을 끌어 다른 분류로 옮기는 중인지, 그리고 지금 놓으면 들어갈 업종.
   const [isMoveDrag, setIsMoveDrag] = useState(false)
-  // 끌어서 다른 업종 안으로 방금 옮긴 업종 — 다음 조작 전까지 눈에 띄는 표시를 남긴다. 목록이 새로 그려진 뒤 화면 안으로 스크롤한다.
-  const [movedSectorId, setMovedSectorId] = useState<number | null>(null)
-  const scrollToMovedRef = useRef(false)
+  // 이동하거나 새로 만든 업종 — 다음 조작 전까지 배경색으로 표시하고, 목록이 다시 그려진 뒤 화면 안으로 스크롤한다.
+  const [recentlyChangedSectorId, setRecentlyChangedSectorId] = useState<number | null>(null)
+  const [recentChangeType, setRecentChangeType] = useState<'신규' | '이동' | null>(null)
+  const scrollToRecentChangeRef = useRef(false)
   // 손잡이로 끌 때 띄우는 안내를 메인 영역(왼쪽 끝~설정창 시작점)의 가로·세로 가운데에 놓기 위한 기준.
   const mainAreaRef = useRef<HTMLDivElement>(null)
   const [hintPosition, setHintPosition] = useState<{ x: number; y: number } | null>(null)
@@ -347,6 +349,12 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     setTimeout(() => setHighlightedId(current => (current === id ? null : current)), 2000)
   }
 
+  const markRecentChange = (id: number, type: '신규' | '이동') => {
+    setRecentlyChangedSectorId(id)
+    setRecentChangeType(type)
+    scrollToRecentChangeRef.current = true
+  }
+
   const handleCreate = () => {
     const trimmed = newName.trim()
     if (!trimmed) return
@@ -365,6 +373,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     if (!trimmed) return
     createSector.mutate({ name: trimmed, parentId }, {
       onSuccess: created => {
+        markRecentChange(created.id, '신규')
         triggerHighlight(created.id)
         setChildNameByParent(prev => ({ ...prev, [parentId]: '' }))
         setAddingChildFor(current => current === parentId ? null : current)
@@ -498,20 +507,19 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         setSelectedMajorId(target ? (chain[0]?.id ?? null) : dragged.id)
         setSelectedMiddleId(target ? (chain[1]?.id ?? null) : null)
         setSelectedSectorId(target ? target.id : dragged.id)
-        setMovedSectorId(dragged.id)
-        scrollToMovedRef.current = true
+        markRecentChange(dragged.id, '이동')
         triggerHighlight(dragged.id)
         pushHistory({ type: 'reparent', sectorId: dragged.id, name: dragged.name, fromParentId: dragged.parentId, toParentId: target ? target.id : null })
       },
     })
   }
   useEffect(() => {
-    if (!scrollToMovedRef.current || movedSectorId === null) return
-    const row = document.querySelector(`[data-sector-row="${movedSectorId}"]`)
+    if (!scrollToRecentChangeRef.current || recentlyChangedSectorId === null) return
+    const row = document.querySelector(`[data-sector-row="${recentlyChangedSectorId}"]`)
     if (!row) return
-    scrollToMovedRef.current = false
+    scrollToRecentChangeRef.current = false
     row.scrollIntoView({ block: 'nearest' })
-  }, [movedSectorId, sectors, selectedMajorId, selectedMiddleId])
+  }, [recentlyChangedSectorId, sectors, selectedMajorId, selectedMiddleId])
 
   const renderRow = (row: Row) => {
     if (row.type === 'add-child') {
@@ -520,8 +528,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       return (
         <tr key={`add-child-${parentId}`}>
           <td className="py-0.5 text-left" style={{ paddingLeft: `${row.depth * 20 + 8}px` }}>
-            {/* 입력칸 왼쪽을 항목 이름 글자의 시작선에 맞춘다 — 손잡이(24px) + 간격(4px) + 번호 칸(28px) + 간격(8px) = 64px. */}
-            <div className="group/create flex items-center gap-2 pl-16">
+            {/* 입력 글자의 시작선을 생성 후 업종명과 맞춘다. input 내부 여백(8px)만큼 입력칸 자체는 왼쪽에서 시작한다. */}
+            <div className="group/create flex items-center gap-2 pl-14">
               <SectorNameInput
                 wrapperClassName="inline-flex"
                 autoFocus
@@ -553,7 +561,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     const isRenaming = renamingId === sector.id
     // 줄 어디를 눌러도(이름 글자뿐 아니라 빈 곳, 번호 칸 포함) 선택한다. 순서 이동 손잡이와 이름 바꾸기 입력창은 제외한다.
     const selectSector = () => {
-      setMovedSectorId(null)
+      setRecentlyChangedSectorId(null)
       setSelectedSectorId(sector.id)
       if (sector.depth === 0) { setSelectedMajorId(current => current === sector.id ? null : sector.id); setSelectedMiddleId(null) }
       if (sector.depth === 1) setSelectedMiddleId(current => current === sector.id ? null : sector.id)
@@ -571,7 +579,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           selectSector()
         }}
       >
-        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/35 group-hover:bg-[var(--brand)]/50' : movedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`} style={{ paddingLeft: `${sector.depth * 20 + 8}px` }}>
+        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/35 group-hover:bg-[var(--brand)]/50' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`} style={{ paddingLeft: `${sector.depth * 20 + 8}px` }}>
           <div className="flex items-center gap-2">
             <div className="flex min-w-0 flex-1 items-center">
               <DraggableSectorHandle sectorId={sector.id} parentId={sector.parentId} enabled />
@@ -597,6 +605,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   >
                     {sector.name}
                   </button>
+                  {recentlyChangedSectorId === sector.id && recentChangeType && (
+                    <span className="ml-2 inline-flex h-6 w-8 shrink-0 items-center justify-center rounded-sm border border-ui-border bg-ui-panel text-sm font-bold leading-none text-ui-text">
+                      {recentChangeType}
+                    </span>
+                  )}
                   {(childCountByParent.get(sector.id) ?? 0) > 0 && (
                     <span className="ml-1 shrink-0 text-sm text-ui-muted">({toCount(childCountByParent.get(sector.id) ?? 0)})</span>
                   )}
@@ -657,7 +670,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       onDragMove={updateDragTarget}
       onDragStart={event => {
         setDropIndicator(null)
-        setMovedSectorId(null)
+        setRecentlyChangedSectorId(null)
         setMoveOverId(null)
         setMoveOverRoot(false)
         setIsMoveDrag((event.active.data.current as { mode?: string } | undefined)?.mode === 'move')
@@ -771,8 +784,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
               style={{ width: draggedRow?.width, marginLeft: draggedRow?.offsetX, paddingLeft: `${draggedSector.depth * 20 + 8}px` }}
               className="flex items-center border-y-2 border-[var(--brand)] bg-[var(--brand-surface)] py-0.5 text-sm text-ui-white shadow-xl"
             >
-              <span aria-hidden="true" className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center text-xl leading-none text-ui-text">⠿</span>
-              <span aria-hidden="true" className="mr-2 inline-flex h-5 w-8 shrink-0 items-center justify-end pr-1 rounded-sm border border-ui-border bg-ui-panel text-sm leading-none font-bold text-ui-text tabular-nums">{number}</span>
+              <span aria-hidden="true" className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center text-xl leading-none ${DRAG_CONTROL_CLASS}`}>⠿</span>
+              <span aria-hidden="true" className={`mr-2 inline-flex h-6 w-8 shrink-0 items-center justify-end pr-1 text-sm leading-none font-bold tabular-nums ${DRAG_CONTROL_CLASS}`}>{number}</span>
               <span className="truncate">{draggedSector.name}</span>
               {childCount > 0 && <span className="ml-1 shrink-0 text-ui-text">({toCount(childCount)})</span>}
             </div>
