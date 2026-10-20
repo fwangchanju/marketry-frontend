@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import type { RankColumnsChart } from '@/components/RankColumns'
 import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
-import { rankAxisMagnitude } from '@/utils/rankAxis'
+import { rankAxisMagnitude, rankAxisMaximum } from '@/utils/rankAxis'
 
 // 자리가 있으면 글자·막대를 키우고, 자리가 모자랄 때만 줄인다. 줄 높이(틀 높이 ÷ 항목 수)와 틀 폭에 맞춰 정한다.
 const FONT_HEIGHT_RATIO = 0.38 // 줄 높이에 대한 글자 크기 비율
@@ -51,7 +51,7 @@ export default function RankBars({
       </div>
     )
   }
-  const axisMax = Math.max(rankAxisMagnitude(chart.axisMax), 0.5)
+  const axisMax = Math.max(rankAxisMaximum(chart.axisMax), 0.5)
   const rowHeight = size ? size.height / items.length : 40
   const fontSize = size
     ? Math.min(FONT_MAX, Math.max(FONT_MIN, Math.min(rowHeight * FONT_HEIGHT_RATIO, size.width / FONT_WIDTH_DIVISOR)))
