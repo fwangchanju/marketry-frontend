@@ -5,7 +5,7 @@ import {
   resolveTreemapExtremeColor,
   type ColorScaleConfig,
 } from '@/utils/treemapColorScale'
-import { RANK_AXIS_BREAK, RANK_AXIS_BREAK_GAP_PX, rankAxisMagnitude, rankAxisMaximum } from '@/utils/rankAxis'
+import { RANK_AXIS_BREAK, RANK_AXIS_BREAK_CUT_PX, RANK_AXIS_BREAK_BRIDGE_PX, RANK_AXIS_BREAK_GAP_PX, rankAxisMagnitude } from '@/utils/rankAxis'
 
 export interface RankColumnItem {
   key: string
@@ -105,7 +105,7 @@ export default function RankColumns({
   })
   const hasAnyAxisBreak = applyAxisBreak && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && Math.abs(item.value) > RANK_AXIS_BREAK)
   const displayAxisMax = Math.ceil(Math.max(1, ...displayMagnitudes) * 2) / 2
-  const axisMax = Math.max(rankAxisMaximum(displayAxisMax, hasAnyAxisBreak), 0.5)
+  const axisMax = Math.max(displayAxisMax, 0.5)
   // 최소 폭을 강제하지 않고 설정창을 뺀 실제 가용 폭을 모든 항목에 균등 배분한다.
   const columnsStyle = { gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }
 
@@ -116,7 +116,7 @@ export default function RankColumns({
     >
       <div className="relative min-h-[110px] flex-1" style={{ paddingTop: 64 }}>
         <div className="relative h-full w-full">
-          <div className="absolute inset-0 grid" style={columnsStyle}>
+          <div className="absolute inset-0 grid" style={{ ...columnsStyle, top: hasAnyAxisBreak ? RANK_AXIS_BREAK_GAP_PX : 0 }}>
             {items.map(item => {
               if (item.hiddenCount !== undefined) {
                 return (
@@ -141,15 +141,26 @@ export default function RankColumns({
                     }}
                   />
                   {hasAxisBreak && (
-                    <div
-                      aria-hidden="true"
-                      className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
-                      style={{
-                        bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_GAP_PX}px)`,
-                        height: `${tailHeightPercent}%`,
-                        backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
-                      }}
-                    />
+                    <>
+                      <div
+                        aria-hidden="true"
+                        className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
+                        style={{
+                          bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_CUT_PX}px)`,
+                          height: RANK_AXIS_BREAK_BRIDGE_PX,
+                          backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                        }}
+                      />
+                      <div
+                        aria-hidden="true"
+                        className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
+                        style={{
+                          bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_GAP_PX}px)`,
+                          height: `${tailHeightPercent}%`,
+                          backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                        }}
+                      />
+                    </>
                   )}
                   <RankColumnValue
                     value={item.value}

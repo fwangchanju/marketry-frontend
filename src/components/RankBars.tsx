@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import type { RankColumnsChart } from '@/components/RankColumns'
 import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
-import { RANK_AXIS_BREAK, RANK_AXIS_BREAK_GAP_PX, rankAxisMagnitude, rankAxisMaximum } from '@/utils/rankAxis'
+import { RANK_AXIS_BREAK, RANK_AXIS_BREAK_CUT_PX, RANK_AXIS_BREAK_BRIDGE_PX, RANK_AXIS_BREAK_GAP_PX, rankAxisMagnitude } from '@/utils/rankAxis'
 
 // 자리가 있으면 글자·막대를 키우고, 자리가 모자랄 때만 줄인다. 줄 높이(틀 높이 ÷ 항목 수)와 틀 폭에 맞춰 정한다.
 const FONT_HEIGHT_RATIO = 0.38 // 줄 높이에 대한 글자 크기 비율
@@ -59,13 +59,14 @@ export default function RankBars({
   })
   const hasAnyAxisBreak = applyAxisBreak && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && Math.abs(item.value) > RANK_AXIS_BREAK)
   const displayAxisMax = Math.ceil(Math.max(1, ...displayMagnitudes) * 2) / 2
-  const axisMax = Math.max(rankAxisMaximum(displayAxisMax, hasAnyAxisBreak), 0.5)
+  const axisMax = Math.max(displayAxisMax, 0.5)
   const rowHeight = size ? size.height / items.length : 40
   const fontSize = size
     ? Math.min(FONT_MAX, Math.max(FONT_MIN, Math.min(rowHeight * FONT_HEIGHT_RATIO, size.width / FONT_WIDTH_DIVISOR)))
     : 14
   const nameWidth = fontSize * NAME_WIDTH_EM
   const valueWidth = fontSize * VALUE_WIDTH_EM
+  const reservedWidth = valueWidth + (hasAnyAxisBreak ? RANK_AXIS_BREAK_GAP_PX : 0)
   const barHeight = Math.min(rowHeight * BAR_HEIGHT_RATIO, fontSize * BAR_MAX_FONT_RATIO)
 
   return (
@@ -77,7 +78,7 @@ export default function RankBars({
         const hasAxisBreak = applyAxisBreak && item.sectorName === '신규 상장' && magnitude > RANK_AXIS_BREAK
         const primaryMagnitude = hasAxisBreak ? Math.min(magnitude, RANK_AXIS_BREAK) : magnitude
         const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude) : magnitude
-        const axisPosition = `calc((100% - ${valueWidth}px) * ${compressedMagnitude / axisMax}${hasAxisBreak ? ` + ${RANK_AXIS_BREAK_GAP_PX}px` : ''})`
+        const axisPosition = `calc((100% - ${reservedWidth}px) * ${compressedMagnitude / axisMax}${hasAxisBreak ? ` + ${RANK_AXIS_BREAK_GAP_PX}px` : ''})`
         const nameClassName = 'shrink-0 truncate text-right font-bold'
         const nameColor = item.isReference ? highlightColor : isEllipsis ? 'var(--ui-muted)' : 'var(--ui-white)'
         return (
@@ -103,20 +104,31 @@ export default function RankBars({
                   <div
                     className="absolute left-0 top-0 h-full rounded-sm border border-ui-control"
                     style={{
-                      width: `calc((100% - ${valueWidth}px) * ${primaryMagnitude / axisMax})`,
+                      width: `calc((100% - ${reservedWidth}px) * ${primaryMagnitude / axisMax})`,
                       backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                     }}
                   />
                   {hasAxisBreak && (
-                    <div
-                      aria-hidden="true"
-                      className="absolute top-0 h-full rounded-sm border border-ui-control"
-                      style={{
-                        left: `calc((100% - ${valueWidth}px) * ${RANK_AXIS_BREAK / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
-                        width: `calc((100% - ${valueWidth}px) * ${(compressedMagnitude - RANK_AXIS_BREAK) / axisMax})`,
-                        backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
-                      }}
-                    />
+                    <>
+                      <div
+                        aria-hidden="true"
+                        className="absolute top-0 h-full rounded-sm border border-ui-control"
+                        style={{
+                          left: `calc((100% - ${reservedWidth}px) * ${RANK_AXIS_BREAK / axisMax} + ${RANK_AXIS_BREAK_CUT_PX}px)`,
+                          width: RANK_AXIS_BREAK_BRIDGE_PX,
+                          backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                        }}
+                      />
+                      <div
+                        aria-hidden="true"
+                        className="absolute top-0 h-full rounded-sm border border-ui-control"
+                        style={{
+                          left: `calc((100% - ${reservedWidth}px) * ${RANK_AXIS_BREAK / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
+                          width: `calc((100% - ${reservedWidth}px) * ${(compressedMagnitude - RANK_AXIS_BREAK) / axisMax})`,
+                          backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                        }}
+                      />
+                    </>
                   )}
                   <span
                     className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1.5 font-bold tabular-nums"
