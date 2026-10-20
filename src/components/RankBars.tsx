@@ -104,34 +104,19 @@ export default function RankBars({
                     className="absolute left-0 top-0 h-full rounded-sm border border-ui-control"
                     style={{
                       width: `calc((100% - ${valueWidth}px) * ${primaryMagnitude / axisMax})`,
-                      backgroundColor: hasAxisBreak ? '#808080' : item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                      backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                     }}
                   />
                   {hasAxisBreak && (
-                    <>
-                      <div
-                        aria-hidden="true"
-                        className="absolute top-0 h-full rounded-sm border border-ui-control"
-                        style={{
-                          left: `calc((100% - ${valueWidth}px) * ${RANK_AXIS_BREAK / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
-                          width: `calc((100% - ${valueWidth}px) * ${(compressedMagnitude - RANK_AXIS_BREAK) / axisMax})`,
-                          backgroundColor: '#808080',
-                        }}
-                      />
-                      <svg
-                        aria-hidden="true"
-                        className="pointer-events-none absolute top-0 overflow-visible"
-                        style={{
-                          left: `calc((100% - ${valueWidth}px) * ${RANK_AXIS_BREAK / axisMax} - 4px)`,
-                          width: `${RANK_AXIS_BREAK_GAP_PX + 8}px`,
-                          height: barHeight,
-                        }}
-                        viewBox={`0 0 ${RANK_AXIS_BREAK_GAP_PX + 8} 40`}
-                        preserveAspectRatio="none"
-                      >
-                        <path d="M3 0 C11 6 0 14 9 20 S7 34 15 40 M17 0 C25 6 14 14 23 20 S21 34 29 40" fill="none" stroke="#f5f5f5" strokeWidth="2.5" />
-                      </svg>
-                    </>
+                    <div
+                      aria-hidden="true"
+                      className="absolute top-0 h-full rounded-sm border border-ui-control"
+                      style={{
+                        left: `calc((100% - ${valueWidth}px) * ${RANK_AXIS_BREAK / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
+                        width: `calc((100% - ${valueWidth}px) * ${(compressedMagnitude - RANK_AXIS_BREAK) / axisMax})`,
+                        backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                      }}
+                    />
                   )}
                   <span
                     className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1.5 font-bold tabular-nums"
