@@ -26,12 +26,12 @@ export default function PeriodTrendChart({ points, label, colorScale, loading = 
     <div role="img" aria-label={`${label} 선택 기간 누적 등락률 선형 그래프`} className="relative h-full w-full">
       <svg viewBox="0 0 1000 200" preserveAspectRatio="none" className="h-full w-full overflow-visible" aria-hidden="true">
         <line x1="0" x2="1000" y1={y(0)} y2={y(0)} stroke="var(--ui-muted)" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
-        <polyline points={points.map((point, index) => `${x(index)},${y(point.changeRate)}`).join(' ')} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+        <polyline points={points.map((point, index) => `${x(index)},${y(point.changeRate)}`).join(' ')} fill="none" stroke={color} strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
       </svg>
       <span className="absolute right-0 top-[-22px] text-[14px] font-semibold tabular-nums" style={{ color }}>{last.changeRate > 0 ? '+' : ''}{last.changeRate.toFixed(2)}%</span>
       {ticks.map(({ date, index }) => {
         const day = new Date(`${date}T00:00:00Z`)
-        return <div key={date} className="absolute whitespace-nowrap text-center text-[12px] leading-tight text-ui-muted" style={{ top: 'calc(100% + 8px)', left: `${x(index) / 10}%`, transform: index === 0 ? undefined : index === points.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)' }}>
+        return <div key={date} className="absolute whitespace-nowrap text-center text-[13px] leading-tight text-ui-muted" style={{ top: 'calc(100% + 8px)', left: `${x(index) / 10}%`, transform: index === 0 ? undefined : index === points.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)' }}>
           <div>{day.getUTCMonth() + 1}/{day.getUTCDate()}</div><div>({['일', '월', '화', '수', '목', '금', '토'][day.getUTCDay()]})</div>
         </div>
       })}
