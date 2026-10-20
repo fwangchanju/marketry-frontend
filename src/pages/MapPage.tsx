@@ -1,7 +1,7 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NxtOnlyNotice from '@/components/NxtOnlyNotice'
@@ -15,7 +15,6 @@ import SettingsPanel, {
   SettingsStrongIndustryColorSection,
   SettingsTopPickSection,
   SettingsStockSizeSelector,
-  type SettingsBookmarkId,
   type SettingsPanelSectionId,
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
@@ -31,12 +30,9 @@ import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useTreemapDrilldown } from '@/hooks/useTreemapDrilldown'
+import { useIsLoggedIn } from '@/hooks/useSession'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
-import { usePageSetting } from '@/hooks/usePageSetting'
-import { sanitizeBookmarkIds } from '@/utils/settingsBookmarks'
-import { useIsLoggedIn } from '@/hooks/useSession'
-import { useLoginGate } from '@/hooks/useLoginGate'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import type { DisplayGroup } from '@/hooks/useTreemapLayout'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
@@ -65,10 +61,8 @@ function BreadcrumbBackIcon() {
   return <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
 }
 
-// 북마크 탭이 한 화면에 들어가도록 항목 수를 제한한다.
-const MAX_SETTINGS_BOOKMARKS = 5
 const MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [
-  'composition', 'industry', 'stockDisplay', 'colors', 'favorites',
+  'industry', 'composition', 'stockDisplay', 'colors',
 ]
 
 // "업종 단계" 슬라이더가 "끄기"(뎁스 0)일 때만 쓰는 합성 섹터 — 실제 섹터가 아니므로
@@ -223,26 +217,7 @@ function revealMobileCapture(cloned: Node) {
 }
 
 export default function MapPage() {
-  const { pathname, search, hash } = useLocation()
   const isLoggedIn = useIsLoggedIn()
-  const { requireLogin } = useLoginGate()
-  // 북마크는 로그인 사용자의 서버 설정에만 저장한다. 비로그인이 누르면 저장하지 않고 로그인을 안내한다.
-  const [storedSettingsBookmarks, setSettingsBookmarks] = usePageSetting<string[]>('treemap.settingsBookmarks', [])
-  // 없어진 항목의 id가 저장돼 있어도 개수 제한(5개)에 잡히지 않도록 알려진 id만 쓴다.
-  const settingsBookmarks = sanitizeBookmarkIds(storedSettingsBookmarks)
-  const toggleSettingsBookmark = (id: SettingsBookmarkId) => {
-    if (!isLoggedIn) {
-      requireLogin(`${pathname}${search}${hash}`)
-      return
-    }
-    if (settingsBookmarks.includes(id)) {
-      setSettingsBookmarks(settingsBookmarks.filter(item => item !== id))
-    } else if (settingsBookmarks.length >= MAX_SETTINGS_BOOKMARKS) {
-      appAlert(`북마크는 최대 ${MAX_SETTINGS_BOOKMARKS}개까지 설정할 수 있습니다.`, { title: '추가 제한' })
-    } else {
-      setSettingsBookmarks([...settingsBookmarks, id])
-    }
-  }
   const {
     settingsModalProps,
     colorEditorPanelProps,
@@ -788,17 +763,11 @@ export default function MapPage() {
               {...settingsModalProps}
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
-              boxSizeMarketCapRatio={boxSizeMarketCapRatio}
-              onChangeBoxSizeMarketCapRatio={onChangeBoxSizeMarketCapRatio}
               pageLabel="Map"
               sectionOrder={MAP_SETTINGS_SECTION_ORDER}
               taxonomyAtBottom
               snapshotTime={data?.taxonomyUpdatedAt}
               stockCountLabel={`${toCount(visibleItems.length)}/${toCount(totalItemCount)}종목`}
-              bookmarks={settingsBookmarks}
-              onToggleBookmark={toggleSettingsBookmark}
-              bookmarkLoginRequired={!isLoggedIn}
-              onRequestLogin={() => requireLogin(`${pathname}${search}${hash}`)}
               onSelectTaxonomy={next => {
                 settingsModalProps.onSelectTaxonomy(next)
                 reset()
@@ -819,33 +788,15 @@ export default function MapPage() {
                 <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="stockDisplay">
-                <SettingsSectorLevelSection {...settingsModalProps} showTaxonomy={false} showDecimalPlaces />
-              </SettingsPanelGroup>
-              {/* 북마크 탭 — 원래 탭의 항목을 같은 순서로 다시 그리고, 북마크한 항목만 보인다. */}
-              <SettingsPanelGroup section="favorites">
-                <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
-                <SettingsExcludeSection {...settingsModalProps} />
-                <SettingsStockChangeSection
-                  value={stockChangeFilter}
-                  onChange={value => {
-                    onChangeStockChangeFilter(value)
-                    reset()
-                  }}
-                />
-                <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
                 <SettingsStockSizeSelector marketCapRatio={boxSizeMarketCapRatio} onChangeMarketCapRatio={onChangeBoxSizeMarketCapRatio} />
                 <SettingsSectorLevelSection {...settingsModalProps} showTaxonomy={false} showDecimalPlaces />
-                {strongIndustryColor && onChangeStrongIndustryColor && (
-                  <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
-                )}
-                <SettingsTopPickSection {...settingsModalProps} />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="colors">
+                <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
                 {strongIndustryColor && onChangeStrongIndustryColor && (
                   <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
                 )}
                 <SettingsTopPickSection {...settingsModalProps} />
-                <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
               </SettingsPanelGroup>
             </SettingsPanel>
           </div>

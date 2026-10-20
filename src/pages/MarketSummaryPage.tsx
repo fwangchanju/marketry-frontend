@@ -8,7 +8,7 @@ import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/c
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import { ClockIcon } from '@/components/icons/AppIcons'
-import SettingsPanel from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsPanelGroup, SettingsMarketValueSection, SettingsExcludeSection, SettingsColorSection, SettingsStrongIndustryColorSection } from '@/components/SettingsPanel'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import PeriodTrendChart from '@/components/PeriodTrendChart'
@@ -177,7 +177,7 @@ export default function MarketSummaryPage() {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const {
     settingsModalProps, data, rootNodes, isLoading, isError, refetchTreemap, isRefetchingTreemap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
-    changeRateMode, changeRateChoice, colorScale, strongIndustryColor, excludedSectorIds, excludedMarketValueTiers,
+    changeRateMode, changeRateChoice, colorScale, strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps, excludedSectorIds, excludedMarketValueTiers,
     market, nxtOnly, nxtOnlyWindow, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
     isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
   } = useGlobalSettings({ allowChangeRateMode: true })
@@ -555,18 +555,11 @@ export default function MarketSummaryPage() {
             <ChangeRateBar swatches={settingsModalProps.legendSwatches} />
           </div>
         </div>
-        {/* 설정창 틀만 먼저 둔다 — 항목은 홈 화면 내용이 정해지면 채운다. */}
+        {/* 홈·그룹·맵이 함께 쓰는 종목 구성과 색상 설정. */}
         <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel
             pageLabel="Home"
-            plainTabLabel="시장 요약"
-            plainTabIcon="home"
             {...settingsModalProps}
-            plainContent={(
-              <div className="settings-empty-message">
-                <span className="text-center">읽기 전용<br /><span className="text-ui-muted">Map·Group 설정을 따름</span></span>
-              </div>
-            )}
             isOpen={isSettingsOpen}
             onOpenChange={setIsSettingsOpen}
             isOnLeft={isSettingsOnLeft}
@@ -574,7 +567,16 @@ export default function MarketSummaryPage() {
             stockCountLabel={stockCountLabel}
             taxonomyAtBottom
             snapshotTime={data?.taxonomyUpdatedAt}
-          />
+          >
+              <SettingsPanelGroup section="composition">
+                <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
+                <SettingsExcludeSection {...settingsModalProps} />
+              </SettingsPanelGroup>
+              <SettingsPanelGroup section="colors">
+                <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
+                <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
+              </SettingsPanelGroup>
+          </SettingsPanel>
         </div>
       </div>
       {screenshotTarget && (

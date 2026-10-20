@@ -9,10 +9,9 @@ import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import { MARKET_LABEL } from '@/utils/marketOptions'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import SettingsPanel, {
+  SettingsPanelGroup, SettingsMarketValueSection, SettingsExcludeSection, SettingsColorSection, SettingsStrongIndustryColorSection,
   SettingsAverageModeSection,
   SettingsGroupDepthSection,
-  SettingsSectorStockScopeSection,
-  type SectorStockScope,
   SettingsBeforeMinutesSection,
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
@@ -33,7 +32,6 @@ import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { usePageSetting } from '@/hooks/usePageSetting'
-import { appAlert } from '@/utils/appDialogBus'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
 import { CAPTURE_ID } from '@/utils/captureIds'
@@ -73,7 +71,7 @@ export default function GroupPage() {
 
   const {
     settingsModalProps,
-    strongIndustryColor,
+    strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps,
     avgChangeRateUseSimple,
     onChangeAvgChangeRateUseSimple,
     market,
@@ -107,30 +105,21 @@ export default function GroupPage() {
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
   const [graphMode, setGraphMode] = usePageSetting<GroupGraphMode>('groupPage.graphMode', 'current')
-  // 집계 대상 종목: 맵 페이지면 지도 설정창의 제외 기준을 따르고, 전체 포함이면 제외 설정 없이 전체 종목으로 계산한다.
-  const [sectorStockScope, setSectorStockScope] = usePageSetting<SectorStockScope>('groupPage.sectorStockScope', 'MAP')
-  const isAllStocks = sectorStockScope === 'ALL'
   // 막대 하나가 가리키는 업종 분류 깊이(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 고를 수 있다.
   const [groupDepth, setGroupDepth] = usePageSetting<number>('groupPage.depth', 1)
   const selectableDepth = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT' ? 1 : 3
   const effectiveDepth = Math.min(groupDepth, selectableDepth)
-  const scopedExcludedSectorIds = useMemo(() => (isAllStocks ? new Set<number>() : excludedSectorIds), [isAllStocks, excludedSectorIds])
-  const scopedExcludedTiers = useMemo(() => (isAllStocks ? new Set<string>() : excludedMarketValueTiers), [isAllStocks, excludedMarketValueTiers])
+
 
   // now는 여기서 따로 조회하지 않는다 — useGlobalSettings()가 이미 부르는 useTreemap(market, source)
   // 결과(data)를 그대로 쓴다. before는 그 now.snapshotTime에서 계산한 시각을 쌍으로 묶어 조회한다
   // (marketry-backend 지시서 결정 4) — 이렇게 해야 재조회로 now가 새 tick으로 바뀌는 순간에도
   // 화면이 새 now·옛 before를 잠깐이라도 섞어 그리지 않는다.
   // 업종을 누르면 지도 페이지로 가서 그 업종을 누른 상태로 연다(지도 페이지가 sector 주소 값을 읽어 한 번만 쓴다).
-  // 전종목이면 그래프의 숫자가 지도와 다르게 집계되므로 지도로 이동하지 않고, 안내창으로 이유를 알려 준다.
   const handleSelectSector = (sectorName: string) => {
-    if (isAllStocks) {
-      void appAlert('집계 대상 종목을 전종목으로 선택하는 경우\n이동을 제한합니다.', { title: '이동 제한' })
-      return
-    }
     navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
   }
-  // 코스피·코스닥 지수 막대를 누르면 그 시장의 지도로 간다. 업종과 달리 지도에서도 같은 지수라 전종목 제한은 두지 않는다.
+  // 코스피·코스닥 지수 막대를 누르면 그 시장의 지도로 간다.
   const handleSelectIndex = (indexMarket: 'KOSPI' | 'KOSDAQ') => navigate(marketRoute('/map', indexMarket))
   // 기간 등락률을 보는 중이면 "N분 전 대비"는 쓰지 않는다 — before를 받지 않고, 지금 값(data)이 곧 기간 등락률이다.
   const isRangeView = rangeStartTime !== undefined
@@ -255,12 +244,12 @@ export default function GroupPage() {
   const stockCountLabel = useMemo(() => {
     const nodes = displayNow?.items ?? []
     const total = nodes.reduce((sum, node) => sum + collectItems(node).length, 0)
-    const included = filterTreeByExclusions(nodes, scopedExcludedSectorIds, scopedExcludedTiers).reduce(
+    const included = filterTreeByExclusions(nodes, excludedSectorIds, excludedMarketValueTiers).reduce(
       (sum, node) => sum + collectAllItems(node).length,
       0,
     )
     return `${toCount(included)}/${toCount(total)}종목`
-  }, [displayNow, scopedExcludedSectorIds, scopedExcludedTiers])
+  }, [displayNow, excludedSectorIds, excludedMarketValueTiers])
 
   const charts = useMemo(() => {
     if (!displayNow) return { current: buildRankChart([]), delta: buildRankChart([]) }
@@ -272,8 +261,8 @@ export default function GroupPage() {
     const currentEntries: RankColumnItem[] = []
     const deltaEntries: RankColumnItem[] = []
 
-    for (const { node, pathKey } of collectAtDepth(displayNow.items, effectiveDepth, scopedExcludedSectorIds, scopedExcludedTiers)) {
-      const nowAverage = computeSectorAverage(node, scopedExcludedTiers)
+    for (const { node, pathKey } of collectAtDepth(displayNow.items, effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
+      const nowAverage = computeSectorAverage(node, excludedMarketValueTiers)
       const nowValue = avgChangeRateUseSimple ? nowAverage.simpleAvg : nowAverage.weightedAvg
       // 새 트리는 종목이 하나도 없는 최상위 섹터도 노드로 준다 — 그런 섹터는 평균이 null이라
       // 두 그래프 모두에서 뺀다(옛 /api/sector는 애초에 그런 섹터를 안 내려줬다).
@@ -282,7 +271,7 @@ export default function GroupPage() {
 
       const beforeNode = beforeByPath.get(pathKey)
       if (!beforeNode) continue
-      const beforeAverage = computeSectorAverage(beforeNode, scopedExcludedTiers)
+      const beforeAverage = computeSectorAverage(beforeNode, excludedMarketValueTiers)
       const beforeValue = avgChangeRateUseSimple ? beforeAverage.simpleAvg : beforeAverage.weightedAvg
       if (beforeValue === null) continue
       deltaEntries.push({
@@ -312,7 +301,7 @@ export default function GroupPage() {
     }
 
     return { current: buildRankChart(currentEntries), delta: buildRankChart(deltaEntries) }
-  }, [displayNow, displayBefore, pairQuery.data?.marketIndexes, rangeMarketIndexes.data, scopedExcludedSectorIds, scopedExcludedTiers, avgChangeRateUseSimple, changeRateMode, isRangeView, effectiveDepth])
+  }, [displayNow, displayBefore, pairQuery.data?.marketIndexes, rangeMarketIndexes.data, excludedSectorIds, excludedMarketValueTiers, avgChangeRateUseSimple, changeRateMode, isRangeView, effectiveDepth])
   const activeChart = showDeltaGraph ? charts.delta : charts.current
 
   return (
@@ -470,32 +459,37 @@ export default function GroupPage() {
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
               pageLabel="Group"
-              plainTabLabel="그래프"
-              plainTabIcon="bar-chart"
+              sectionOrder={['graph', 'composition', 'colors']}
               stockCountLabel={stockCountLabel}
               taxonomyAtBottom
               snapshotTime={data?.taxonomyUpdatedAt}
-              plainContent={
-                <>
-                  <SettingsSectorStockScopeSection scope={sectorStockScope} onChange={setSectorStockScope} />
-                  <SettingsGroupDepthSection depth={groupDepth} onChange={setGroupDepth} selectableDepth={selectableDepth} />
-                  <SettingsAverageModeSection
-                    avgChangeRateUseSimple={avgChangeRateUseSimple}
-                    onChange={onChangeAvgChangeRateUseSimple}
-                    enabled={!showDeltaGraph}
-                    onToggle={toggleGraph}
-                    toggleDisabled={isRangeView}
-                  />
-                  <SettingsBeforeMinutesSection
-                    beforeMinutes={beforeMinutes}
-                    onChange={setBeforeMinutes}
-                    enabled={showDeltaGraph}
-                    onToggle={toggleGraph}
-                    disabled={isRangeView}
-                  />
-                </>
-              }
-            />
+            >
+              <SettingsPanelGroup section="composition">
+                <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
+                <SettingsExcludeSection {...settingsModalProps} />
+              </SettingsPanelGroup>
+              <SettingsPanelGroup section="colors">
+                <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
+                <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
+              </SettingsPanelGroup>
+              <SettingsPanelGroup section="graph">
+                <SettingsGroupDepthSection depth={groupDepth} onChange={setGroupDepth} selectableDepth={selectableDepth} />
+                <SettingsAverageModeSection
+                  avgChangeRateUseSimple={avgChangeRateUseSimple}
+                  onChange={onChangeAvgChangeRateUseSimple}
+                  enabled={!showDeltaGraph}
+                  onToggle={toggleGraph}
+                  toggleDisabled={isRangeView}
+                />
+                <SettingsBeforeMinutesSection
+                  beforeMinutes={beforeMinutes}
+                  onChange={setBeforeMinutes}
+                  enabled={showDeltaGraph}
+                  onToggle={toggleGraph}
+                  disabled={isRangeView}
+                />
+              </SettingsPanelGroup>
+            </SettingsPanel>
           </div>
         </div>
       </div>
