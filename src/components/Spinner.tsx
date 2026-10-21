@@ -43,7 +43,10 @@ export default function Spinner({ className, showElapsed = false, centerContent 
       aria-label={still ? 'MARKETRY' : errorMessage ?? message ?? (showElapsed ? '데이터를 불러오는 중입니다.' : '설정 처리 중')}
       className={`@container relative ${sizeClass}`}
     >
-      <div aria-hidden="true" className={`absolute inset-0 rounded-full border-[1.9cqw] border-ui-border ${isLoading ? 'animate-spin border-t-[var(--brand)]' : ''}`} />
+      {/* 회전하는 사각 경계가 부모의 스크롤 영역을 늘리지 않도록 링만 고정 영역 안에서 자른다. */}
+      <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-full">
+        <div className={`absolute inset-0 rounded-full border-[1.9cqw] border-ui-border ${isLoading ? 'animate-spin border-t-[var(--brand)]' : ''}`} />
+      </div>
       {message && isLoading && (
         <span className="absolute inset-x-[12%] top-[8%] text-center text-[4.25cqw] leading-tight text-ui-text">{message}</span>
       )}
