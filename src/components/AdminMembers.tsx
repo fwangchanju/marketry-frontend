@@ -81,6 +81,8 @@ export default function AdminMembers({ userId }: { userId: number }) {
                 aria-sort={key !== null && sort?.key === key ? (sort.order === 'asc' ? 'ascending' : 'descending') : undefined}
                 className={`bg-[var(--ui-panel)] px-2 text-center font-bold text-ui-white ${key !== null ? 'cursor-pointer' : ''}`}
                 onClick={key !== null ? () => handleSort(key) : undefined}
+                tabIndex={key !== null ? 0 : undefined}
+                onKeyDown={key !== null ? event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleSort(key) } } : undefined}
               >
                 {key !== null ? <StockSortHeader label={label} state={sort?.key === key ? sort.order : null} /> : label}
               </th>

@@ -34,7 +34,7 @@ function createPublicationLabel(now: Date) {
 // 관리자 전용 — 내 분류를 MARKETRY로 올리고, 이전 버전으로 되돌린다. 다른 사용자의 데이터는 건드리지 않는다.
 export default function MarketryPublishControls() {
   const queryClient = useQueryClient()
-  // 올리거나 되돌리는 중이면 그 안내 문구, 아니면 null.
+  // 올리거나 되돌리는 중이면 true.
   const [isBusy, setIsBusy] = useState(false)
   const mainAreaRect = useMainAreaRect(isBusy)
   const [isVersionsOpen, setIsVersionsOpen] = useState(false)

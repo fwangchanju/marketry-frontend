@@ -126,7 +126,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
   // 이전 달 목록을 받았는데 비어 있으면 그 달로는 넘어가지 않는다(받기 전이나 오류일 때는 막지 않는다).
   const isPreviousMonthEmpty = isPreviousMonthLoaded && previousMonthDays.length === 0
   // 연 단위 이동도 같은 규칙이다 — 1년 전 같은 달 목록을 받았는데 비어 있으면 넘어가지 않는다.
-  const { data: previousYearDays, isSuccess: isPreviousYearLoaded } = useSnapshotDays(market, toMonthKey(addMonths(month, -12)), { retry: 1 })
+  const { data: previousYearDays, isSuccess: isPreviousYearLoaded } = useSnapshotDays(market, toMonthKey(addMonths(month, -12)), { enabled: showPrevButton, retry: 1 })
   const isPreviousYearEmpty = isPreviousYearLoaded && previousYearDays.length === 0
   const firstDataDate = [...(previousMonthDays ?? []), ...(days ?? [])].map(day => day.date).sort()[0] ?? null
   const hasPreviousDay = (date: string) => firstDataDate !== null && date > firstDataDate
