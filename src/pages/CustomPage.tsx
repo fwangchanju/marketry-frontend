@@ -8,7 +8,8 @@ import AdminSectorTable from '@/components/AdminSectorTable'
 import AdminStockTable from '@/components/AdminStockTable'
 import Spinner from '@/components/Spinner'
 import NavBarPageActions from '@/components/NavBarPageActions'
-import SettingsPanel from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
+import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
@@ -37,7 +38,8 @@ export default function CustomPage() {
   // 분류 시트 — 내 분류(mine)만 편집할 수 있다. ?sheet=krx는 읽기 전용 KRX 시트, ?sheet=marketry는 올린
   // MARKETRY를 읽기 전용으로 보여준다(MARKETRY는 내 분류에서 올려서 바꾼다).
   // 예전 주소(?sheet=nxt)는 KRX 시트에서 "NXT 종목만 보기"를 켠 상태로 연다.
-  const { isLoading: isSessionLoading } = useSession()
+  const { data: session, isLoading: isSessionLoading } = useSession()
+  const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
   const isLoggedIn = useIsLoggedIn()
   const { requireLogin } = useLoginGate()
   // 로그인 여부가 확정된 비로그인 — 세션을 확인하는 동안은 아직 모르므로 내 분류 선택을 그대로 둔다.
@@ -300,24 +302,31 @@ export default function CustomPage() {
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
               onRequestLogin={() => requireLogin(pathname)}
-              plainContent={!isReadOnlySheet ? (
-                <>
-                  {/* 종목 화면은 위에서부터 일괄 변경 → 변경 내역 → 간편 업종 분류 순서다(관리자 기능은 Admin 페이지로 옮겼다). */}
-                  {mode === 'stock' && <div ref={setStockBulkTarget} className="settings-item" />}
-                  <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
-                  {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
-                </>
-              ) : (
-                // 마켓트리·거래소 화면은 읽기 전용이라 설정할 항목이 없다 — 그 사실만 알린다.
-                <div className="settings-empty-message">
-                  <span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 분류만 가능</span></span>
-                </div>
-              )}
+              sectionOrder={isAdmin ? ['custom', 'adminOps'] : ['custom']}
               taxonomyAtBottom
               snapshotTime={taxonomyMap?.taxonomyUpdatedAt}
               taxonomy={sheet}
               onSelectTaxonomy={next => handleSelectSheet(next === 'KRX' || next === 'NXT' ? 'KRX' : next)}
-            />
+            >
+              <SettingsPanelGroup section="custom">
+                {!isReadOnlySheet ? (
+                  <>
+                    {mode === 'stock' && <div ref={setStockBulkTarget} className="settings-item" />}
+                    <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
+                    {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
+                  </>
+                ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 분류만 가능</span></span></div>}
+              </SettingsPanelGroup>
+              {isAdmin && <SettingsPanelGroup section="adminOps">
+                <div className="settings-plain-content">
+                  <div className="settings-ops-item h-[160px] text-sm">
+                    <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
+                    <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">내 분류를 MARKETRY 분류로 업데이트·롤백</p>
+                    <div className="settings-button-area mt-4 max-w-[16rem] settings-control-inset"><MarketryPublishControls /></div>
+                  </div>
+                </div>
+              </SettingsPanelGroup>}
+            </SettingsPanel>
           </div>
         </div>
       </div>

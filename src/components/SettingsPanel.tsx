@@ -26,7 +26,7 @@ import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 export type { SettingsBookmarkId }
-export type SettingsPanelSectionId = 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminMoved' | 'graph'
+export type SettingsPanelSectionId = 'custom' | 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminMoved' | 'graph'
 
 interface SettingsPanelGroupProps {
   section: SettingsPanelSectionId
@@ -210,9 +210,10 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'colors', label: '색상', icon: 'colors' },
   { id: 'favorites', label: '북마크', icon: 'favorites' },
   { id: 'graph', label: '그래프', icon: 'bar-chart' },
-  // 관리자 페이지 전용 탭 — 맨 뒤에 붙여서 위 탭 번호(1~5)는 그대로다.
+  // 관리자 전용 탭 — 번호 참조가 있는 기존 설정은 순서를 유지한다.
   { id: 'adminOps', label: '운영', icon: 'admin-ops' },
   { id: 'adminMoved', label: '미사용', icon: 'admin-moved' },
+  { id: 'custom', label: '커스텀', icon: 'custom-edit' },
 ]
 
 // 탭 제목에는 숫자를 표시하지 않지만 북마크와 안내 말풍선에는 원래 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
@@ -1785,7 +1786,7 @@ export function SettingsSectorLevelSection({
   )
 }
 
-// 관리자 페이지 미사용 탭으로 옮긴 종목 정보 설정. 기존 설정 키와 지도 동작은 유지한다.
+// 지도 페이지 관리자 전용 미사용 탭의 종목 정보 설정. 기존 설정 키와 지도 동작은 유지한다.
 export function SettingsStockPopupSection({
   stockPopupOnHover,
   onChangeStockPopupOnHover,
@@ -1837,7 +1838,7 @@ function toWonLabel(won: number): string {
   return `${(won / 1e8).toLocaleString('ko-KR')}억`
 }
 
-// 관리자 페이지 미사용 탭의 "텍스트 표시 기준" — 지도 설정창 종목 박스 탭에서 옮겨 왔다. 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
+// 지도 페이지 관리자 전용 미사용 탭의 "텍스트 표시 기준" — 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsTextThresholdSection({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
     <div className="settings-text-threshold-item h-[160px] text-sm">
@@ -1944,7 +1945,7 @@ const DIRECTION_OPTIONS: { value: StockChangeFilter; label: string }[] = [
   { value: 'falling', label: '하락' },
 ]
 
-// 관리자 페이지 미사용 탭의 "업종 등락 방향" — 지도 설정창 종목 구성 탭에서 옮겨 왔다. 항목 높이 160px, 제목 번호는 settings-plain-content가 매긴다.
+// 지도 페이지 관리자 전용 미사용 탭의 "업종 등락 방향" — 항목 높이 160px, 제목 번호는 settings-plain-content가 매긴다.
 // 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsSectorChangeSection({
   value,
@@ -2656,18 +2657,18 @@ export default function SettingsPanel({
                   else setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
+                  section.id === 'adminOps' || section.id === 'adminMoved' ? 'text-[var(--status-error)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
                 {section.icon ? <SettingsSectionIcon
                   icon={section.icon}
-                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''}`}
+                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${section.id === 'adminOps' || section.id === 'adminMoved' ? 'text-[var(--status-error)]' : ''}`}
                   strokeWidth={section.icon === 'industry' ? 1.22 : 1.1}
                 /> : <span aria-hidden="true" className="h-[30px] w-[30px] shrink-0" />}
                 <span className="max-w-full truncate font-bold">{section.label}</span>
                 <span
                   aria-hidden="true"
-                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 bg-brand transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
+                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${section.id === 'adminOps' || section.id === 'adminMoved' ? 'bg-[var(--status-error)]' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
                 />
               </button>
             )
@@ -2693,7 +2694,7 @@ export default function SettingsPanel({
           data-align-second-heading={(taxonomyAtBottom && selectedSection.id !== 'favorites') || undefined}
           aria-busy={waitingForPreferences || undefined}
           inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'favorites' ? 'settings-bookmark-tab' : ''} ${selectedSection.id === 'graph' ? 'settings-plain-content' : ''} ${
+          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'favorites' ? 'settings-bookmark-tab' : ''} ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' ? 'settings-plain-content pt-3' : ''} ${selectedSection.id === 'adminOps' || selectedSection.id === 'adminMoved' ? 'settings-admin-section' : ''} ${
             isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
           }`}
         >

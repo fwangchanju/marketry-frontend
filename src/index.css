@@ -805,6 +805,9 @@ a { color: var(--accent-light); text-decoration: none; }
   font-variant-numeric: tabular-nums;
   white-space: pre;
 }
+.settings-admin-section .settings-plain-title {
+  color: var(--status-error);
+}
 [data-settings-panel][data-page-label="Home"] .settings-plain-content .settings-plain-title::before {
   counter-increment: none;
   content: "· ";

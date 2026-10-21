@@ -1,38 +1,19 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
-import SettingsPanel, { SettingsPanelGroup, SettingsSectorChangeSection, SettingsTextThresholdSection, SettingsStockPopupSection } from '@/components/SettingsPanel'
-import MarketryPublishControls from '@/components/MarketryPublishControls'
 import AdminMembers from '@/components/AdminMembers'
-import { usePageSetting } from '@/hooks/usePageSetting'
 import { useSession } from '@/hooks/useSession'
-import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
-import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
-import { isLocalSignupEnabled } from '@/utils/localDevLogin'
-import { useBrowserSetting } from '@/utils/browserSetting'
-import { MEMBER_DEFAULTS } from '@/utils/settingDefaults'
-import type { SectorChangeFilter } from '@/hooks/useFilteredTreemap'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 
-const ADMIN_SECTIONS = ['adminOps', 'adminMoved'] as const
-
 // 관리자 전용 페이지 — 모든 사용자가 보는 MARKETRY 맵을 바꾸는 작업을 일반 작업 화면(Custom)과 떨어뜨려 둔다.
-// 메인 영역은 회원 정보 조회, 설정창은 운영 작업으로 나눈다.
+// 메인 영역은 회원 정보 조회. 운영 기능은 Custom, 미사용 설정은 Map의 관리자 전용 탭에 있다.
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다
 // (자동으로 홈으로 보내면 로그인이 끝나기 전에 잘못 쫓겨날 수 있다).
 export default function AdminPage() {
   const { data: session, isLoading } = useSession()
-  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = useBrowserSetting('treemap.boxLabelMinAreaPercent', MEMBER_DEFAULTS.boxLabelMinAreaPercent)
-  const [sectorChangeFilter, setSectorChangeFilter] = useBrowserSetting<SectorChangeFilter>('treemap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
-  const [sectorChangeDepth, setSectorChangeDepth] = useBrowserSetting('treemap.sectorChangeDepth', MEMBER_DEFAULTS.sectorChangeDepth)
-  const [stockPopupOnHover, setStockPopupOnHover] = usePageSetting('treemap.stockPopupOnHover', MEMBER_DEFAULTS.stockPopupOnHover)
   const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
-  const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const testMember = useTestMemberToggle()
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
@@ -44,14 +25,12 @@ export default function AdminPage() {
             isRefreshing={false}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
-            onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
-            isSettingsOpen={isSettingsOpen}
             showRefresh={false}
           />
         }
       />
       <div className="flex min-h-0 flex-1">
-        <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+        <div className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
           <div data-main-area className="relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-ui-background text-ui-white">
             {isLoading ? (
               <p role="status" className="text-sm text-ui-muted">관리자 권한을 확인하는 중입니다.</p>
@@ -64,74 +43,6 @@ export default function AdminPage() {
               <AdminMembers key={session.userId} userId={session.userId!} />
             )}
           </div>
-          {isAdmin && (
-            <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
-              <SettingsPanel
-                pageLabel="Admin"
-                showPreferenceActions={false}
-                fixedSideTab
-                headerRight={
-                  // 지도 설정창 헤더 오른쪽의 아이콘(되돌리기·저장)과 같은 칸 크기(24px)·아이콘 크기(20px)·자리다. 빨간 경고 아이콘만 둔다.
-                  <span aria-label="관리자 전용" data-hint="관리자 전용" className="flex h-6 w-6 items-center justify-center text-[var(--status-error)]">
-                    <span aria-hidden="true" className="text-[18px] leading-none">⚠</span>
-                  </span>
-                }
-                isOpen={isSettingsOpen}
-                onOpenChange={setIsSettingsOpen}
-                isOnLeft={isSettingsOnLeft}
-                onToggleSide={toggleSettingsSide}
-                sectionOrder={ADMIN_SECTIONS}
-              >
-                {/* 운영 탭 — 탭 안 항목은 탭 없는 설정창(그룹·커스텀)과 같은 모양이라 settings-plain-content로 감싼다(번호는 이 탭 안에서 1부터). */}
-                <SettingsPanelGroup section="adminOps">
-                  <div className="settings-plain-content pt-3">
-                    <div className="settings-ops-item h-[160px] text-sm">
-                      <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
-                      <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">내 분류를 MARKETRY 분류로 업데이트·롤백</p>
-                      <div className="settings-button-area mt-4 max-w-[16rem] settings-control-inset">
-                        <MarketryPublishControls />
-                      </div>
-                    </div>
-                    {/* 로컬 개발 전용 — 운영 화면에는 나오지 않는다. 누르면 로컬 DB에 새 USER 계정(테스트 회원)으로 바꾼다. 돌아오는 버튼은 계정 메뉴에 있다(테스트 회원은 관리자가 아니라 이 페이지에 못 들어온다). */}
-                    {isLocalSignupEnabled() && (
-                      <div className="settings-ops-item h-[160px] text-sm">
-                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">테스트 회원 (로컬 전용)</h2>
-                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">
-                          {testMember.isTestMember ? '지금 테스트 회원입니다' : '로컬 DB의 새 일반 계정으로 전환'}
-                        </p>
-                        <div className="settings-button-area mt-4 max-w-[16rem] settings-control-inset">
-                          <button
-                            type="button"
-                            onClick={testMember.toggle}
-                            disabled={testMember.isPending}
-                            data-hint="누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다. 돌아올 때는 오른쪽 위 계정 메뉴를 쓰세요."
-                            className="settings-chip-hover h-7 w-full rounded-[5px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-wait disabled:opacity-35"
-                          >
-                            {testMember.isPending ? '전환 중…' : '테스트 회원으로 전환'}
-                          </button>
-                          {testMember.error && <p role="alert" className="mt-1.5 text-xs text-status-error-text">{testMember.error}</p>}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </SettingsPanelGroup>
-                {/* 미사용 탭 — 일반 설정창에서 옮겨 온 항목. 종목 정보는 기존 설정 저장 방식을 유지하고 나머지는 브라우저에만 둔다. */}
-                <SettingsPanelGroup section="adminMoved">
-                  <div className="settings-plain-content pt-3">
-                    <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
-                    <SettingsSectorChangeSection
-                      value={sectorChangeFilter}
-                      onChange={setSectorChangeFilter}
-                      depth={sectorChangeDepth}
-                      onChangeDepth={setSectorChangeDepth}
-                      maxSelectableDepth={3}
-                    />
-                    <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
-                  </div>
-                </SettingsPanelGroup>
-              </SettingsPanel>
-            </div>
-          )}
         </div>
       </div>
     </div>

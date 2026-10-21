@@ -15,6 +15,9 @@ import SettingsPanel, {
   SettingsStrongIndustryColorSection,
   SettingsTopPickSection,
   SettingsStockSizeSelector,
+  SettingsSectorChangeSection,
+  SettingsTextThresholdSection,
+  SettingsStockPopupSection,
   type SettingsPanelSectionId,
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
@@ -30,7 +33,7 @@ import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useTreemapDrilldown } from '@/hooks/useTreemapDrilldown'
-import { useIsLoggedIn } from '@/hooks/useSession'
+import { useIsLoggedIn, useSession } from '@/hooks/useSession'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -46,7 +49,10 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
-import { limitDepth, flattenAllItems, type FilteredTreemapSectorNode } from '@/hooks/useFilteredTreemap'
+import { limitDepth, flattenAllItems, type FilteredTreemapSectorNode, type SectorChangeFilter } from '@/hooks/useFilteredTreemap'
+import { useBrowserSetting } from '@/utils/browserSetting'
+import { usePageSetting } from '@/hooks/usePageSetting'
+import { MEMBER_DEFAULTS } from '@/utils/settingDefaults'
 import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
 
 const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'ALL STOCK' }
@@ -64,6 +70,7 @@ function BreadcrumbBackIcon() {
 const MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [
   'industry', 'composition', 'stockDisplay', 'colors',
 ]
+const ADMIN_MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [...MAP_SETTINGS_SECTION_ORDER, 'adminMoved']
 
 // "업종 단계" 슬라이더가 "끄기"(뎁스 0)일 때만 쓰는 합성 섹터 — 실제 섹터가 아니므로
 // sectorId는 실제 값과 겹치지 않는 sentinel을 쓰고, isSelf로 매칭해 헤더 자체를 안 그리게 한다
@@ -266,6 +273,12 @@ export default function MapPage() {
     colorScale,
     handleExcludeSector,
   } = useGlobalSettings({ allowChangeRateMode: true })
+  const { data: session } = useSession()
+  const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
+  const [adminSectorChangeFilter, setAdminSectorChangeFilter] = useBrowserSetting<SectorChangeFilter>('treemap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
+  const [adminSectorChangeDepth, setAdminSectorChangeDepth] = useBrowserSetting('treemap.sectorChangeDepth', MEMBER_DEFAULTS.sectorChangeDepth)
+  const [, setAdminBoxLabelMinAreaPercent] = useBrowserSetting('treemap.boxLabelMinAreaPercent', MEMBER_DEFAULTS.boxLabelMinAreaPercent)
+  const [, setAdminStockPopupOnHover] = usePageSetting('treemap.stockPopupOnHover', MEMBER_DEFAULTS.stockPopupOnHover)
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·누적/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
@@ -764,7 +777,7 @@ export default function MapPage() {
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
               pageLabel="Map"
-              sectionOrder={MAP_SETTINGS_SECTION_ORDER}
+              sectionOrder={isAdmin ? ADMIN_MAP_SETTINGS_SECTION_ORDER : MAP_SETTINGS_SECTION_ORDER}
               taxonomyAtBottom
               snapshotTime={data?.taxonomyUpdatedAt}
               stockCountLabel={`${toCount(visibleItems.length)}/${toCount(totalItemCount)}종목`}
@@ -798,6 +811,19 @@ export default function MapPage() {
                 )}
                 <SettingsTopPickSection {...settingsModalProps} />
               </SettingsPanelGroup>
+              {isAdmin && <SettingsPanelGroup section="adminMoved">
+                <div className="settings-plain-content pt-3">
+                  <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setAdminBoxLabelMinAreaPercent} />
+                  <SettingsSectorChangeSection
+                    value={adminSectorChangeFilter === 'rising' || adminSectorChangeFilter === 'falling' ? adminSectorChangeFilter : 'all'}
+                    onChange={setAdminSectorChangeFilter}
+                    depth={Number.isInteger(adminSectorChangeDepth) && adminSectorChangeDepth >= 0 ? adminSectorChangeDepth : 0}
+                    onChangeDepth={setAdminSectorChangeDepth}
+                    maxSelectableDepth={3}
+                  />
+                  <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setAdminStockPopupOnHover} />
+                </div>
+              </SettingsPanelGroup>}
             </SettingsPanel>
           </div>
         </div>
