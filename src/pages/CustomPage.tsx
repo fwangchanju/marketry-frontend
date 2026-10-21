@@ -188,6 +188,7 @@ export default function CustomPage() {
       isScreenshotOpen={isShareOpen}
       onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
       isSettingsOpen={isSettingsOpen}
+      settingsAttention={!isReadOnlySheet && mode === 'sector' && isLoggedIn && !isSectorsLoading && sectors?.length === 0}
       isNativeFullscreen={isNativeFullscreen}
       onToggleFullscreen={handleToggleNativeFullscreen}
       showRefresh={false}

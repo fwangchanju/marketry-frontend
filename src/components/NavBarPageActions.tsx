@@ -7,6 +7,8 @@ interface Props {
   // 설정 창이 없는 화면(커스텀 종목·카테고리)은 둘 다 넘기지 않는다 — 그러면 설정 버튼도 그리지 않는다.
   onToggleSettings?: () => void
   isSettingsOpen?: boolean
+  // true이고 설정창이 닫혀 있으면 설정 버튼이 숨 쉬듯 반짝여 시선을 끈다 — 설정창 안에서 해야 할 일이 있는 화면(비어 있는 내 분류의 업종 추가)에서 쓴다.
+  settingsAttention?: boolean
   // 스크린샷으로 찍을 화면이 없는 페이지(홈)는 둘 다 넘기지 않는다 — 그러면 스크린샷 버튼도 그리지 않는다.
   onOpenShare?: () => void
   isScreenshotOpen?: boolean
@@ -121,6 +123,7 @@ export default function NavBarPageActions({
   isRefreshing,
   onToggleSettings,
   isSettingsOpen = false,
+  settingsAttention = false,
   onOpenShare,
   isScreenshotOpen = false,
   isNativeFullscreen,
@@ -158,7 +161,7 @@ export default function NavBarPageActions({
           aria-label="설정"
           data-hint={isSettingsOpen ? '설정창 닫기' : '설정창 열기'}
           data-settings-toggle
-          className={`${BUTTON_CLASS} ${ICON_FRAME_CLASS} ${isSettingsOpen ? 'text-[var(--accent)]' : 'text-ui-text'}`}
+          className={`${BUTTON_CLASS} ${ICON_FRAME_CLASS} ${isSettingsOpen ? 'text-[var(--accent)]' : 'text-ui-text'} ${settingsAttention && !isSettingsOpen ? 'animate-icon-attention' : ''}`}
           onClick={onToggleSettings}
         >
           <SettingsIcon strokeWidth={1.44} className={`h-5 w-5 ${isSettingsOpen ? FILLED_ICON_CLASS : ''}`} />

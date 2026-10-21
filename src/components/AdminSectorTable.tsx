@@ -12,7 +12,7 @@ import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
-import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
+import EmptyMessage, { EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
 import { EditIcon, PlusIcon, TrashIcon } from '@/components/icons/AppIcons'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import { STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
@@ -829,7 +829,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             </div>
           ))}
           {/* 업종이 하나도 없으면 거래소·MARKETRY 표와 같은 안내 글을 가운데에 보여준다. */}
-          {viewSectors.length === 0 && <EmptyMessage message={sectors.length === 0 ? EMPTY_DATA_MESSAGE : EMPTY_SEARCH_MESSAGE} topClass="top-7" />}
+          {viewSectors.length === 0 && sectors.length > 0 && <EmptyMessage message={EMPTY_SEARCH_MESSAGE} topClass="top-7" />}
         </div>
       </div>
       {/* 커서를 따라다니는 드래그 미리보기 — 끌고 있는 줄을 원래 폭의 한 줄 그대로(손잡이·번호·이름) 청록 배경에 그림자를 줘서 들어 올린 것처럼 보여 준다. */}
@@ -873,7 +873,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
             placeholder="업종을 추가하세요"
             aria-label="최상위 업종명"
-            className="h-9 min-w-0 flex-1 rounded-[5px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-text focus:border-[var(--brand)]"
+            className={`h-9 min-w-0 flex-1 rounded-[5px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-text focus:border-[var(--brand)] ${sectors.length === 0 ? 'animate-input-attention' : ''}`}
           />
         </div>
       </section>
