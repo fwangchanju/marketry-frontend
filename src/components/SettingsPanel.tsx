@@ -417,6 +417,26 @@ function CursorHintBubble({ hint, children }: { hint: CursorHint; children: Reac
   )
 }
 
+// 막힌 컨트롤을 누르면 그 자리에서 왜 안 되는지 말풍선으로 알려 준다(커서가 벗어나면 사라진다).
+// 막힌 영역 위에 투명한 덮개를 얹는 방식은 상위 업종 강조가 막혔을 때와 같다 — 덮개를 얹을 부모는 relative여야 한다.
+function BlockedClickHint({ className, children }: { className: string; children: ReactNode }) {
+  const [hint, setHint] = useState<CursorHint | null>(null)
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className={`absolute z-10 cursor-not-allowed ${className}`}
+        onPointerDown={e => {
+          e.preventDefault()
+          setHint(cursorHintFrom(e))
+        }}
+        onPointerLeave={() => setHint(null)}
+      />
+      {hint && <CursorHintBubble hint={hint}>{children}</CursorHintBubble>}
+    </>
+  )
+}
+
 // 계단식 업종 칸(업종 분류 깊이·지표 표시 단계가 같이 쓴다) — 대분류·중분류(▸)·소분류(▸▸)를 지도 업종 헤더 모양(칸 18px, 간격 3px)으로 쌓고 꺾인 선으로 잇는다.
 // 칸과 배지는 고르는 버튼이 아니라 상태 표시이고, 고르는 건 오른쪽 세로 트랙(STAIR_RAIL 폭)의 손잡이가 맡는다.
 // 3단계가 항목 안(제목 위에서 아래 구분선까지 115px)에 들어간다.
@@ -1161,7 +1181,10 @@ export function SettingsAverageModeSection({
     <div className="settings-first-depth-level settings-graph-item text-sm">
       <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준</span>
-        <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
+        <span className="relative inline-flex">
+          <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
+          {toggleDisabled && <BlockedClickHint className="-inset-1">기간 등락률을 보는 동안에는<br />N분 전 대비로 바꿀 수 없습니다.</BlockedClickHint>}
+        </span>
       </div>
       <div className={`settings-average-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
@@ -1215,10 +1238,10 @@ export function SettingsBeforeMinutesSection({
   )
   return (
     <div className="settings-second-depth-metric settings-graph-item relative mt-6 text-sm">
+      {disabled && <BlockedClickHint className="inset-0">기간 등락률을 보는 동안에는<br />N분 전 대비를 사용할 수 없습니다.</BlockedClickHint>}
       <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`flex items-center gap-1 ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>
           <span className="settings-plain-title">비교 시점</span>
-          {disabled && <SettingHelpBubble label="비교 시점" description="기간 등락률을 보는 동안에는 N분 전 대비를 사용할 수 없습니다." />}
         </span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="비교 그래프" hideLabel disabled={disabled} />
       </div>
