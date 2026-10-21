@@ -46,7 +46,7 @@ import { withStableSectorIds } from '@/utils/guestSectorIds'
 import { getSnapshotDays, getTreemap } from '@/api/treemap'
 import { usePreviousTradingDay } from '@/hooks/useTreemap'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
-import { loadTrendDays, trendMonths } from '@/utils/trendDates'
+import { loadTrendDays, sampleDaysUpTo, trendMonths } from '@/utils/trendDates'
 
 // 홈 시장 요약 배치
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
@@ -57,6 +57,17 @@ type HistoricalIndexPoint = {
 }
 
 // 시장 요약의 항목 배지는 툴바의 "분류" 칸과 같은 짙은 청록 배경(--brand-surface)·흰 글자을 쓴다. 지수는 오르면 빨강·내리면 파랑, 변화가 없거나 값이 없으면 회색이다.
+const TREND_MAX_POINTS = 30
+const TREND_MAX_YEARS = 1
+// 종료일 기준 그래프가 시작하는 날(포함) — 기간이 이보다 길어도 그래프는 이 날부터만 그린다.
+function maxDate(a: string, b: string): string {
+  return a > b ? a : b
+}
+function earliestTrendDate(endDate: string): string {
+  const start = new Date(`${endDate}T00:00:00Z`)
+  start.setUTCFullYear(start.getUTCFullYear() - TREND_MAX_YEARS)
+  return start.toISOString().slice(0, 10)
+}
 const INDEX_ROWS = [
   { label: '코스피', market: 'KOSPI' },
   { label: '코스닥', market: 'KOSDAQ' },
@@ -213,6 +224,9 @@ export default function MarketSummaryPage() {
   const marketValueRange = (excludedMarketValueTiers as MarketValueExclusions).marketValueRange
   const trendTaxonomy = settingsModalProps.taxonomy === 'NXT' ? 'KRX' : settingsModalProps.taxonomy
   const personalTrendEndDate = pinnedSnapshotTime?.slice(0, 10) ?? data?.snapshotTime?.slice(0, 10) ?? marketTrendDates.at(-1) ?? null
+  // 기간이 종료일 기준 TREND_MAX_YEARS년보다 길면 그래프는 일부만 그리므로 그 사실을 그래프에 적는다.
+  const trendRangeEndDate = pinnedSnapshotTime?.slice(0, 10) ?? data?.snapshotTime?.slice(0, 10) ?? null
+  const trendNote = rangeStartTime && trendRangeEndDate && rangeStartTime.slice(0, 10) < earliestTrendDate(trendRangeEndDate) ? `최근 ${TREND_MAX_YEARS}년` : undefined
   const indexEndDate = pinnedSnapshotTime?.slice(0, 10) ?? marketSummary?.marketOverviews.snapshotTime?.slice(0, 10) ?? null
   const { data: historicalIndexData, isPending: isIndexHistoryPending, isError: isIndexHistoryError, refetch: refetchIndexHistory } = useQuery({
     queryKey: ['home-historical-market-index', indexEndDate, rangeStartTime, rangePreviousDay?.snapshotTime, changeRateChoice],
@@ -222,7 +236,11 @@ export default function MarketSummaryPage() {
       const [year, month] = endDate.slice(0, 7).split('-').map(Number)
       const previousMonth = new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7)
       const baseDate = rangeStartTime ? rangePreviousDay?.date ?? rangeStartTime.slice(0, 10) : null
-      const months = baseDate ? trendMonths(baseDate, endDate) : [previousMonth, endDate.slice(0, 7)]
+      // 기준일의 달은 계산에 필요해서 받고, 그래프에 쓰는 달은 종료일 기준 최근 TREND_MAX_YEARS년만 받는다.
+      const graphFrom = earliestTrendDate(endDate)
+      const months = baseDate
+        ? [...new Set([baseDate.slice(0, 7), ...trendMonths(maxDate(baseDate, graphFrom), endDate)])]
+        : [previousMonth, endDate.slice(0, 7)]
       const rows = (await Promise.all(months.map(month => queryClient.fetchQuery({
         queryKey: ['market-index-history', month],
         queryFn: () => getMarketIndexHistory(month),
@@ -232,7 +250,7 @@ export default function MarketSummaryPage() {
       return rows.filter(row => row.snapshotTime.slice(0, 10) <= endDate).flatMap<HistoricalIndexPoint>(overview => {
         const date = overview.snapshotTime.slice(0, 10)
         if (!rangeStartTime) return [{ date, market: overview.market, overview }]
-        if (date < rangeStartTime.slice(0, 10)) return []
+        if (date < rangeStartTime.slice(0, 10) || date < graphFrom) return []
         const base = rows.find(row => row.market === overview.market && row.snapshotTime.slice(0, 10) === baseDate)
         if (!base) return []
         const baseValue = rangePreviousDay ? base.indexValue : base.indexValue - base.changeValue
@@ -274,11 +292,14 @@ export default function MarketSummaryPage() {
         historicalDates = dayLists.flat().map(day => day.date).filter(date => date < endDate).sort().slice(-4)
       }
       const months = isRange
-        ? trendMonths(rangeStartTime.slice(0, 10), endDate)
+        ? trendMonths(maxDate(rangeStartTime.slice(0, 10), earliestTrendDate(endDate)), endDate)
         : [...new Set(historicalDates.map(date => date.slice(0, 7)))]
       const snapshotDays = (await Promise.all(months.map(cachedDays))).flat()
+      // 기간 선택은 자유롭지만 그래프는 종료일 기준 최근 TREND_MAX_YEARS년만 그리고, 점은 최대 TREND_MAX_POINTS개만 쓴다(첫날·마지막 날 포함).
+      // 누적 등락률의 기준은 선택한 시작일 그대로라 그린 구간의 값은 기간 전체 기준과 같다.
+      const earliestGraphDate = earliestTrendDate(endDate)
       const selectedDates = isRange
-        ? [...new Set([...snapshotDays.map(day => day.date).filter(date => date >= rangeStartTime.slice(0, 10) && date <= endDate), endDate])].sort()
+        ? sampleDaysUpTo([...new Set([...snapshotDays.map(day => day.date).filter(date => date >= rangeStartTime.slice(0, 10) && date >= earliestGraphDate && date <= endDate), endDate])].sort(), TREND_MAX_POINTS)
         : [...historicalDates, endDate]
       const baseMap = isRange ? await cachedMap(rangePreviousDay?.snapshotTime ?? rangeStartTime) : null
       const datedMaps = await loadTrendDays(selectedDates, async date => {
@@ -513,7 +534,7 @@ export default function MarketSummaryPage() {
                             ? 'absolute inset-0'
                             : 'absolute inset-x-2 top-[30px] bottom-[44px]'}>
                             {rangeStartTime ? (
-                              <PeriodTrendChart points={trendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))} label={label} colorScale={colorScale} loading={isIndexHistoryPending} error={isIndexHistoryError} onRetry={() => { void refetchIndexHistory() }} />
+                              <PeriodTrendChart points={trendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))} label={label} colorScale={colorScale} loading={isIndexHistoryPending} error={isIndexHistoryError} onRetry={() => { void refetchIndexHistory() }} note={trendNote} />
                             ) : <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />}
                           </div>
                         </section>
@@ -528,7 +549,7 @@ export default function MarketSummaryPage() {
                         ? 'absolute inset-0'
                         : 'absolute inset-x-2 top-[30px] bottom-[44px]'}>
                         {rangeStartTime ? (
-                          <PeriodTrendChart points={personalSectorTrend?.points ?? []} label={personalSectorTrend?.sectorName ?? '최상위 업종'} colorScale={colorScale} loading={isSectorTrendPending} error={isSectorTrendError} onRetry={() => { void refetchSectorTrend() }} />
+                          <PeriodTrendChart points={personalSectorTrend?.points ?? []} label={personalSectorTrend?.sectorName ?? '최상위 업종'} colorScale={colorScale} loading={isSectorTrendPending} error={isSectorTrendError} onRetry={() => { void refetchSectorTrend() }} note={trendNote} />
                         ) : <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />}
                       </div>
                     </section>
