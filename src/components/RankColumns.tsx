@@ -102,9 +102,9 @@ export default function RankColumns({
   const axisBreakAt = applyAxisBreak ? rankAxisBreakAt(items) : 0
   const displayMagnitudes = items.filter(item => item.hiddenCount === undefined).map(item => {
     const magnitude = Math.abs(item.value)
-    return axisBreakAt > 0 && item.sectorName === '신규 상장' && item.value > axisBreakAt ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
+    return axisBreakAt > 0 && item.sectorName === '신규 상장' && Math.abs(item.value) > axisBreakAt ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
   })
-  const hasAnyAxisBreak = axisBreakAt > 0 && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && item.value > axisBreakAt)
+  const hasAnyAxisBreak = axisBreakAt > 0 && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && Math.abs(item.value) > axisBreakAt)
   const displayAxisMax = Math.ceil(Math.max(1, ...displayMagnitudes) * 2) / 2
   const axisMax = Math.max(displayAxisMax, 0.5)
   // 최소 폭을 강제하지 않고 설정창을 뺀 실제 가용 폭을 모든 항목에 균등 배분한다.
@@ -127,7 +127,7 @@ export default function RankColumns({
                 )
               }
               const magnitude = Math.abs(item.value)
-              const hasAxisBreak = axisBreakAt > 0 && item.sectorName === '신규 상장' && item.value > axisBreakAt
+              const hasAxisBreak = axisBreakAt > 0 && item.sectorName === '신규 상장' && Math.abs(item.value) > axisBreakAt
               const primaryHeightPercent = ((hasAxisBreak ? axisBreakAt : magnitude) / axisMax) * 100
               const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
               const tailHeightPercent = hasAxisBreak ? ((compressedMagnitude - axisBreakAt) / axisMax) * 100 : 0
@@ -193,13 +193,12 @@ export default function RankColumns({
                     type="button"
                     className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent transition-colors hover:bg-ui-white/35 focus-visible:outline focus-visible:outline-ui-white`}
                     style={nameStyle}
-                    data-hint={item.sectorName}
                     onClick={() => (indexMarket ? onSelectIndex?.(indexMarket) : onSelectSector?.(item.sectorName))}
                   >
                     {item.sectorName}
                   </button>
                 ) : (
-                  <span className={nameClassName} style={nameStyle} data-hint={item.sectorName}>{item.hiddenCount !== undefined ? `외 ${item.hiddenCount}개` : item.sectorName}</span>
+                  <span className={nameClassName} style={nameStyle}>{item.hiddenCount !== undefined ? `외 ${item.hiddenCount}개` : item.sectorName}</span>
                 )}
               </div>
             )

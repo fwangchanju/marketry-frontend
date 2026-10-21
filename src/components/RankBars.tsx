@@ -58,9 +58,9 @@ export default function RankBars({
   const axisBreakAt = applyAxisBreak ? rankAxisBreakAt(items) : 0
   const displayMagnitudes = items.filter(item => item.hiddenCount === undefined).map(item => {
     const magnitude = Math.abs(item.value)
-    return axisBreakAt > 0 && item.sectorName === '신규 상장' && item.value > axisBreakAt ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
+    return axisBreakAt > 0 && item.sectorName === '신규 상장' && Math.abs(item.value) > axisBreakAt ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
   })
-  const hasAnyAxisBreak = axisBreakAt > 0 && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && item.value > axisBreakAt)
+  const hasAnyAxisBreak = axisBreakAt > 0 && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && Math.abs(item.value) > axisBreakAt)
   const displayAxisMax = Math.ceil(Math.max(1, ...displayMagnitudes) * 2) / 2
   const axisMax = Math.max(displayAxisMax, 0.5)
   const rowHeight = size ? size.height / items.length : 40
@@ -81,11 +81,11 @@ export default function RankBars({
           : undefined
         const selectable = !isEllipsis && (indexMarket ? onSelectIndex !== undefined : !item.isReference && onSelectSector !== undefined)
         const magnitude = Math.abs(item.value)
-        const hasAxisBreak = axisBreakAt > 0 && item.sectorName === '신규 상장' && item.value > axisBreakAt
+        const hasAxisBreak = axisBreakAt > 0 && item.sectorName === '신규 상장' && Math.abs(item.value) > axisBreakAt
         const primaryMagnitude = hasAxisBreak ? axisBreakAt : magnitude
         const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
         const axisPosition = `calc((100% - ${reservedWidth}px) * ${compressedMagnitude / axisMax}${hasAxisBreak ? ` + ${RANK_AXIS_BREAK_GAP_PX}px` : ''})`
-        const nameClassName = 'max-w-full truncate whitespace-nowrap text-right font-bold'
+        const nameClassName = 'max-w-full truncate px-1 whitespace-nowrap text-right font-bold'
         const nameColor = item.isReference ? highlightColor : isEllipsis ? 'var(--ui-muted)' : 'var(--ui-white)'
         return (
           <div key={item.key} className="flex min-h-0 flex-1 items-center gap-2">
@@ -94,17 +94,16 @@ export default function RankBars({
                 <button
                   type="button"
                   aria-label={item.sectorName}
-                  data-hint={item.sectorName}
                   onClick={() => (indexMarket ? onSelectIndex?.(indexMarket) : onSelectSector?.(item.sectorName))}
                   onPointerDown={event => event.stopPropagation()}
                   onKeyDown={event => event.stopPropagation()}
-                  className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 hover:bg-ui-white/35 focus-visible:outline focus-visible:outline-ui-white`}
+                  className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent hover:bg-ui-white/35 focus-visible:outline focus-visible:outline-ui-white`}
                   style={{ color: nameColor }}
                 >
                   {item.sectorName}
                 </button>
               ) : (
-                <span className={nameClassName} data-hint={item.sectorName} style={{ color: nameColor }}>{item.sectorName}</span>
+                <span className={nameClassName} style={{ color: nameColor }}>{item.sectorName}</span>
               )}
             </div>
             <div className="relative min-w-0 flex-1" style={{ height: barHeight }}>
