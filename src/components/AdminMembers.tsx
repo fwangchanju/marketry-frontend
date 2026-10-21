@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { createPortal } from 'react-dom'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getAdminMemberSummary, getAdminMembers, setMembersSpecial } from '@/api/adminMembers'
+import { getAdminMemberSummary, getAdminMembers, resetMembersNickname, setMembersSpecial } from '@/api/adminMembers'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import { DownloadIcon, GoogleLogoIcon } from '@/components/icons/AppIcons'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
@@ -59,7 +59,7 @@ function formatTime(value: string | null) {
   return value.replace('T', ' ').slice(0, 19)
 }
 
-export default function AdminMembers({ userId, summaryContainer, exportContainer, specialContainer }: { userId: number; summaryContainer: HTMLElement | null; exportContainer: HTMLElement | null; specialContainer: HTMLElement | null }) {
+export default function AdminMembers({ userId, summaryContainer, exportContainer, specialContainer, nicknameContainer }: { userId: number; summaryContainer: HTMLElement | null; exportContainer: HTMLElement | null; specialContainer: HTMLElement | null; nicknameContainer: HTMLElement | null }) {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
   const [query, setQuery] = useState('')
@@ -94,6 +94,7 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
   })
   const [isExporting, setIsExporting] = useState(false)
   const [isChangingSpecial, setIsChangingSpecial] = useState(false)
+  const [isResettingNickname, setIsResettingNickname] = useState(false)
   // 체크한 회원 — 검색·정렬·필터·페이지를 바꾸면 비운다(보이는 목록 기준이다).
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set())
   const clearSelection = () => setSelectedIds(new Set())
@@ -165,6 +166,27 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
       appAlert('특별 회원을 바꾸지 못했습니다.\n잠시 후 다시 시도해 주세요.', { title: '변경 실패' })
     } finally {
       setIsChangingSpecial(false)
+    }
+  }
+  // 체크한 회원의 닉네임을 지운다 — 부적절한 닉네임을 정리할 때 쓴다. 지워진 회원은 바로 새 닉네임을 등록할 수 있다.
+  const handleResetNickname = async () => {
+    const selected = (members.data?.items ?? []).filter(member => selectedIds.has(member.id))
+    if (selected.length === 0) return
+    if (selected.some(member => member.role === 'ADMIN')) {
+      appAlert('관리자의 닉네임은 지울 수 없습니다.\n관리자를 빼고 다시 체크해 주세요.', { title: '초기화 불가' })
+      return
+    }
+    const confirmed = await appConfirm(`체크한 ${selected.length}명의 닉네임을 지우시겠습니까?\n지워진 회원은 바로 새 닉네임을 등록할 수 있습니다.`, { adminOnly: true, title: '닉네임 지우기' })
+    if (!confirmed) return
+    setIsResettingNickname(true)
+    try {
+      await resetMembersNickname(selected.map(member => member.id))
+      clearSelection()
+      await queryClient.invalidateQueries({ queryKey: ['admin-members'] })
+    } catch {
+      appAlert('닉네임을 지우지 못했습니다.\n잠시 후 다시 시도해 주세요.', { title: '변경 실패' })
+    } finally {
+      setIsResettingNickname(false)
     }
   }
   const visibleIds = members.data?.items.map(member => member.id) ?? []
@@ -370,6 +392,24 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
           </div>
         </div>,
         specialContainer,
+      )}
+      {nicknameContainer && createPortal(
+        <div className="settings-custom-control">
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">닉네임 지우기</h2>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">체크한 회원의 닉네임을 지웁니다</p>
+          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-1 gap-[6px]">
+            <button
+              type="button"
+              onClick={() => void handleResetNickname()}
+              disabled={selectedIds.size === 0 || isResettingNickname}
+              className="flex h-7 items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
+              data-hint={selectedIds.size === 0 ? '표에서 회원을 먼저 체크하세요.' : `체크한 ${selectedIds.size}명의 닉네임을 지웁니다.`}
+            >
+              지우기
+            </button>
+          </div>
+        </div>,
+        nicknameContainer,
       )}
     </section>
   )
