@@ -15,7 +15,7 @@ import SettingsPanel, {
   SettingsBeforeMinutesSection,
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
+import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import Toolbar from '@/components/Toolbar'
@@ -410,6 +410,11 @@ export default function GroupPage() {
                 <div className="flex flex-1 items-center justify-center">
                   <Spinner showElapsed />
                 </div>
+              ) : source === 'MINE' && displayNow.items.length === 0 ? (
+                // 내 분류가 비어 있으면 코스피·코스닥 막대만 덩그러니 남으므로, 지도와 같은 안내(원·로고·바로 가기)를 보여 준다. 원은 위의 로딩 원과 같은 자리다.
+                <EmptyLogoMessage message={EMPTY_MINE_MESSAGE} containerClassName="">
+                  <CustomPageBadgeLink />
+                </EmptyLogoMessage>
               ) : (
                 <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-auto pb-[19.5px]">
                   <div
