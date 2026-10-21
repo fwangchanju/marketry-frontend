@@ -14,6 +14,6 @@ const MemberPageSchema = z.object({
   accessTrackingAvailable: z.boolean(),
 })
 
-export function getAdminMembers(params: { query: string; role: string; sort: string; page: number }, signal?: AbortSignal) {
+export function getAdminMembers(params: { query: string; role: string; sort: string; order: string; page: number }, signal?: AbortSignal) {
   return client.get('/admin/members', { params, signal }).then(response => MemberPageSchema.parse(response.data))
 }

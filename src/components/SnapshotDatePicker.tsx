@@ -125,11 +125,15 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
   const { data: previousMonthDays, isSuccess: isPreviousMonthLoaded } = useSnapshotDays(market, previousMonthKey, { retry: 1 })
   // 이전 달 목록을 받았는데 비어 있으면 그 달로는 넘어가지 않는다(받기 전이나 오류일 때는 막지 않는다).
   const isPreviousMonthEmpty = isPreviousMonthLoaded && previousMonthDays.length === 0
+  // 연 단위 이동도 같은 규칙이다 — 1년 전 같은 달 목록을 받았는데 비어 있으면 넘어가지 않는다.
+  const { data: previousYearDays, isSuccess: isPreviousYearLoaded } = useSnapshotDays(market, toMonthKey(addMonths(month, -12)), { enabled: showPrevButton, retry: 1 })
+  const isPreviousYearEmpty = isPreviousYearLoaded && previousYearDays.length === 0
   const firstDataDate = [...(previousMonthDays ?? []), ...(days ?? [])].map(day => day.date).sort()[0] ?? null
   const hasPreviousDay = (date: string) => firstDataDate !== null && date > firstDataDate
 
   // 실시간 날짜가 속한 달보다 뒤로는 데이터가 없다.
   const isNextMonthDisabled = liveDate !== null && monthKey >= liveDate.slice(0, 7)
+  const isNextYearDisabled = liveDate !== null && toMonthKey(addMonths(month, 12)) > liveDate.slice(0, 7)
 
   const firstWeekday = new Date(month.year, month.monthIndex, 1).getDay()
   const daysInMonth = new Date(month.year, month.monthIndex + 1, 0).getDate()
@@ -177,20 +181,32 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
         <>
           <div className="mb-1 flex items-center justify-between">
             {showPrevButton ? (
-              <button type="button" aria-label="이전 달" disabled={isPreviousMonthEmpty} onClick={() => onMoveMonth(-1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
-                <ChevronDownIcon className="h-4 w-4 rotate-90" />
-              </button>
-            ) : <span className="h-7 w-7" />}
+              <span className="flex items-center">
+                <button type="button" aria-label="이전 해" disabled={isPreviousYearEmpty} onClick={() => onMoveMonth(-12)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+                  <ChevronDownIcon className="h-4 w-4 rotate-90" />
+                  <ChevronDownIcon className="-ml-2.5 h-4 w-4 rotate-90" />
+                </button>
+                <button type="button" aria-label="이전 달" disabled={isPreviousMonthEmpty} onClick={() => onMoveMonth(-1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+                  <ChevronDownIcon className="h-4 w-4 rotate-90" />
+                </button>
+              </span>
+            ) : <span className="h-7 w-14" />}
             {/* 년을 누르면 년 선택, 월을 누르면 월 선택이 나온다. */}
             <span className="flex items-center gap-1">
               <button type="button" aria-label="년 선택" onClick={() => openView('year')} className="border-0 bg-transparent p-0 font-roboto-latin font-semibold tabular-nums text-ui-white hover:text-brand">{month.year}년</button>
               <button type="button" aria-label="월 선택" onClick={() => openView('month')} className="border-0 bg-transparent p-0 font-roboto-latin font-semibold tabular-nums text-ui-white hover:text-brand">{month.monthIndex + 1}월</button>
             </span>
             {showNextButton ? (
-              <button type="button" aria-label="다음 달" disabled={isNextMonthDisabled} onClick={() => onMoveMonth(1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
-                <ChevronDownIcon className="h-4 w-4 -rotate-90" />
-              </button>
-            ) : <span className="h-7 w-7" />}
+              <span className="flex items-center">
+                <button type="button" aria-label="다음 달" disabled={isNextMonthDisabled} onClick={() => onMoveMonth(1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+                  <ChevronDownIcon className="h-4 w-4 -rotate-90" />
+                </button>
+                <button type="button" aria-label="다음 해" disabled={isNextYearDisabled} onClick={() => onMoveMonth(12)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+                  <ChevronDownIcon className="h-4 w-4 -rotate-90" />
+                  <ChevronDownIcon className="-ml-2.5 h-4 w-4 -rotate-90" />
+                </button>
+              </span>
+            ) : <span className="h-7 w-14" />}
           </div>
           {/* 날짜 영역은 요일 줄을 뺀 나머지 높이를 모두 차지해서, 로딩 원이 그 영역 정중앙에 놓인다(날짜 줄이 5줄인 달도 마찬가지). */}
           <div className="flex min-h-[13.5rem] flex-col">
