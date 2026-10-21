@@ -7,7 +7,7 @@ import { useCreateSector, useRenameSector, useReparentSector } from '@/hooks/use
 import { useSectorDeleteFlow } from '@/hooks/useSectorDeleteFlow'
 import { sectorCollisionDetection } from '@/utils/dndCollision'
 import { toCount } from '@/utils/format'
-import { loadSectorOrder, orderSectors, SECTOR_ORDER_STORAGE_KEY, type SectorOrder } from '@/utils/sectorOrder'
+import { loadSectorOrder, orderSectors, sectorNamesByDepth, SECTOR_ORDER_STORAGE_KEY, type SectorOrder } from '@/utils/sectorOrder'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
@@ -150,7 +150,7 @@ function RootDropHeader({ className, isActive, isOver, children, style, onClick 
     <div ref={setNodeRef} onClick={onClick} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/50' : ''}`} style={style}>
       {children}
       {isActive && (
-        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-6 -translate-y-1/2 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[22px] ${isOver ? 'bg-[var(--brand)] text-ui-background' : 'bg-transparent text-[var(--brand)]'}`}>
+        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-[22px] -translate-y-1/2 rounded border px-2 text-xs font-bold leading-[20px] ${isOver ? 'border-[var(--brand)] bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}>
           여기
         </span>
       )}
@@ -190,6 +190,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const [sortColumn, setSortColumn] = useState<number | null>(null)
   const [sortDirection, setSortDirection] = useState<HeaderSortState>(null)
   const [excludedByDepth, setExcludedByDepth] = useState<Record<number, ReadonlySet<string>>>({})
+  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'custom'>(() => localStorage.getItem('marketry:sector-filter-order') === 'alpha' ? 'alpha' : 'custom')
   const [undoStack, setUndoStack] = useState<SectorHistoryAction[]>([])
   const [redoStack, setRedoStack] = useState<SectorHistoryAction[]>([])
   const historyCounter = useRef(0)
@@ -233,6 +234,10 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     else next.add(value)
     return { ...previous, [depth]: next }
   })
+  const changeSectorFilterMode = (value: 'alpha' | 'custom') => {
+    localStorage.setItem('marketry:sector-filter-order', value)
+    setSectorFilterMode(value)
+  }
 
   const createSector = useCreateSector()
   const renameSector = useRenameSector()
@@ -458,7 +463,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   // 설정창 머리글 개수는 대분류만 센다 — MARKETRY·거래소(읽기 전용 표)와 같은 기준이다. 중·소분류 개수는 위 열 머리글에 따로 적혀 있다.
   const topLevelTotal = sectors.filter(sector => sector.depth === 0).length
   useReportCountLabel(`${toCount(sectorCounts[0])}/${toCount(topLevelTotal)}업종`, onCountLabelChange)
-  const depthOptions = [0, 1, 2].map(depth => [...new Set(sectors.filter(item => depth === 2 ? item.depth >= 2 : item.depth === depth).map(item => item.name))].sort(compareKoreanText))
+  const depthOptions = sectorNamesByDepth(sectors, sectorOrder).map(names => [...new Set(names)])
   const sortSiblings = (items: SectorItem[], parentId: number | null, depth: number) => {
     const ordered = orderSectors(items, parentId, sectorOrder)
     if (sortColumn !== depth || sortDirection === null) return ordered
@@ -468,6 +473,24 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const rootSectors = sortSiblings(viewSectors.filter(c => c.parentId === null && !excludedByDepth[0]?.has(c.name)), null, 0)
   const middleSectors = selectedMajorId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMajorId && !excludedByDepth[1]?.has(c.name)), selectedMajorId, 1)
   const smallSectors = selectedMiddleId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMiddleId && !excludedByDepth[2]?.has(c.name)), selectedMiddleId, 2)
+  // 필터나 검색으로 선택 경로가 감춰지면 다음 열도 함께 닫는다. 숨겨진 부모의 자식만 남아
+  // 맥락 없이 보이거나, 필터를 푼 뒤 오래된 선택이 다시 나타나는 일을 막는다.
+  useEffect(() => {
+    const majorIsVisible = selectedMajorId === null || viewSectors.some(sector => sector.id === selectedMajorId && sector.parentId === null && !excludedByDepth[0]?.has(sector.name))
+    if (!majorIsVisible) {
+      setSelectedMajorId(null)
+      setSelectedMiddleId(null)
+      setSelectedSectorId(null)
+      setAddingChildFor(null)
+      return
+    }
+    const middleIsVisible = selectedMiddleId === null || viewSectors.some(sector => sector.id === selectedMiddleId && sector.parentId === selectedMajorId && !excludedByDepth[1]?.has(sector.name))
+    if (!middleIsVisible) {
+      setSelectedMiddleId(null)
+      setSelectedSectorId(null)
+      setAddingChildFor(null)
+    }
+  }, [viewSectors, excludedByDepth, selectedMajorId, selectedMiddleId])
   const makeRows = (items: SectorItem[], parentId: number | null): Row[] => {
     const rows: Row[] = items.map((item, index) => ({ type: 'sector', item, siblingIndex: index + 1 }))
     if (parentId !== null && addingChildFor === parentId) {
@@ -610,7 +633,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           selectSector()
         }}
       >
-        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/35 group-hover:bg-[var(--brand)]/50' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`} style={{ paddingLeft: `${sector.depth * 20 + 8}px` }}>
+        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/35 group-hover:bg-[var(--brand)]/50' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`} style={{ paddingLeft: '8px' }}>
           <div className="flex items-center gap-2">
             <div className="flex min-w-0 flex-1 items-center">
               <DraggableSectorHandle sectorId={sector.id} parentId={sector.parentId} enabled />
@@ -629,6 +652,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
               ) : (
                 <>
                   <DraggableNumberBadge sectorId={sector.id} parentId={sector.parentId}>{itemNumber}</DraggableNumberBadge>
+                  {sector.depth > 0 && <span aria-hidden="true" className="shrink-0" style={{ width: sector.depth * 20 }} />}
                   <button
                     type="button"
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
@@ -643,7 +667,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   {isMoveDrag && isMoveDropTarget(draggedSector, sector) && (
                     <span
                       aria-hidden="true"
-                      className={`pointer-events-none ml-auto mr-2 h-6 shrink-0 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[22px] ${moveOverId === sector.id ? 'bg-[var(--brand)] text-ui-background' : 'bg-transparent text-[var(--brand)]'}`}
+                      className={`pointer-events-none ml-auto mr-2 h-[22px] shrink-0 rounded border px-2 text-xs font-bold leading-[20px] ${moveOverId === sector.id ? 'border-[var(--brand)] bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}
                     >
                       여기
                     </span>
@@ -681,7 +705,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
               )}
             </div>
             {!isRenaming && recentlyChangedSectorId === sector.id && recentChangeType && (
-              <span className="ml-auto inline-flex h-6 w-8 shrink-0 items-center justify-center rounded-sm border border-ui-border bg-ui-panel text-sm font-bold leading-none text-ui-text">
+              <span className="ml-auto mr-2 inline-flex h-[22px] w-8 shrink-0 items-center justify-center rounded-sm border border-[var(--ui-muted)] bg-[var(--ui-control)] text-sm font-bold leading-none text-ui-white">
                 {recentChangeType}
               </span>
             )}
@@ -784,10 +808,12 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                     filter={<ColumnFilterButton
                       label={label}
                       getOptions={() => depthOptions[depth]}
+                      optionOrder={depthOptions[depth]}
                       excluded={excluded}
                       onToggle={value => toggleDepthFilter(depth, value)}
                       onSelectAll={() => setExcludedByDepth(previous => ({ ...previous, [depth]: new Set() }))}
                       onSelectNone={values => setExcludedByDepth(previous => ({ ...previous, [depth]: new Set(values) }))}
+                      orderMode={{ value: sectorFilterMode, onChange: changeSectorFilterMode }}
                     />}
                   />
                 )
