@@ -132,9 +132,10 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
         권한: gradeLabelOf(gradeOf(member)),
         '회원 가입': formatTime(member.createdAt),
         '최근 접속': members.data?.accessTrackingAvailable ? formatTime(member.lastAccessAt) : '수집 전',
+        '30일 접속': member.accessDays ?? 0,
       })), {
-        alignByHeader: { '아이디': 'right', 연동: 'center', 권한: 'center', '회원 가입': 'center', '최근 접속': 'center' },
-        fixedWidths: { '아이디': 10, 연동: 10, 이메일: 40, 닉네임: 20, 권한: 12, '회원 가입': 22, '최근 접속': 22 },
+        alignByHeader: { '아이디': 'right', 연동: 'center', 권한: 'center', '회원 가입': 'center', '최근 접속': 'center', '30일 접속': 'right' },
+        fixedWidths: { '아이디': 10, 연동: 10, 이메일: 40, 닉네임: 20, 권한: 12, '회원 가입': 22, '최근 접속': 22, '30일 접속': 12 },
       })
     } catch {
       appAlert('엑셀 파일을 만들지 못했습니다.\n다시 시도해 주세요.', { title: '다운로드 실패' })
@@ -224,8 +225,8 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
       </Toolbar>
       <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-auto border border-ui-border" aria-busy={members.isFetching}>
         {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
-        <table className="nes-table is-dark custom-page-table w-full min-w-[900px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
-          <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 64 }} /><col /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /></colgroup>
+        <table className="nes-table is-dark custom-page-table w-full min-w-[990px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
+          <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 64 }} /><col /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /><col style={{ width: 90 }} /></colgroup>
           <thead className="sticky top-0 z-10">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th
@@ -267,6 +268,8 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
                 />
               </th>
             ))}
+              {/* 정렬하지 않는 열 — 일별 접속 기록에서 세므로 서버 정렬 기준이 없다. */}
+              <th scope="col" className="bg-[var(--ui-panel)] px-2 text-center font-bold text-ui-white">30일 접속</th>
             </tr>
           </thead>
           <tbody className="select-text">
@@ -289,6 +292,7 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
                 <td className={`px-2 text-center ${GRADE_COLOR_CLASS[gradeOf(member)]}`}>{gradeLabelOf(gradeOf(member))}</td>
                 <td className="px-2 text-center tabular-nums text-ui-text">{formatTime(member.createdAt)}</td>
                 <td className="px-2 text-center tabular-nums text-ui-text">{members.data.accessTrackingAvailable ? formatTime(member.lastAccessAt) : '수집 전'}</td>
+                <td className="px-2 text-right tabular-nums text-ui-text">{member.accessDays ?? 0}일</td>
               </tr>
             ))}
           </tbody>

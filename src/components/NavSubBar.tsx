@@ -13,6 +13,8 @@ interface MenuOption {
 interface MenuLink {
   to: string
   label: string
+  // 관리자 전용 메뉴 — 글자 색만 관리자 전용 색이다.
+  admin?: boolean
   // 커서를 올리면 아래로 펼쳐지는 목록 — 없으면 그냥 이동만 하는 메뉴(Home).
   options?: MenuOption[]
 }
@@ -33,6 +35,17 @@ const CUSTOM_LINK: MenuLink = {
   ],
 }
 
+// 관리자 계정에만 보이는 Admin 메뉴 — 회원 명단(MEMBER)과 차트(CHART)로 나뉜다.
+const ADMIN_LINK: MenuLink = {
+  to: '/admin/member',
+  label: 'Admin',
+  admin: true,
+  options: [
+    { label: 'MEMBER', to: '/admin/member' },
+    { label: 'CHART', to: '/admin/chart' },
+  ],
+}
+
 // 목록이 닫히기 전에 커서가 메뉴 글자에서 목록으로 건너갈 시간(ms).
 const CLOSE_DELAY_MS = 120
 
@@ -47,11 +60,10 @@ interface Props {
 export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   const location = useLocation()
   const navigate = useNavigate()
-  const links = [...BASE_LINKS, CUSTOM_LINK]
-  // 관리자 계정에만 보이는 Admin 메뉴 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
+  // 관리자 계정에만 Admin 메뉴가 더 보인다 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
   const { data: session, isLoading: isSessionLoading } = useSession()
   const isAdmin = !isSessionLoading && session?.authenticated === true && session.role === 'ADMIN'
-  const isAdminActive = location.pathname === '/admin'
+  const links = isAdmin ? [...BASE_LINKS, CUSTOM_LINK, ADMIN_LINK] : [...BASE_LINKS, CUSTOM_LINK]
   const [openTo, setOpenTo] = useState<string | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const barRef = useRef<HTMLDivElement>(null)
@@ -73,6 +85,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
     if (to === '/map/allstock') return location.pathname.startsWith('/map/')
     if (to === '/group/allstock') return location.pathname.startsWith('/group/')
     if (to === '/custom/sector') return location.pathname.startsWith('/custom')
+    if (to === '/admin/member') return location.pathname.startsWith('/admin')
     return location.pathname === to
   }
   const linkClassName = (to: string) =>
@@ -106,7 +119,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
           >
             <Link
               to={link.to}
-              className={linkClassName(link.to)}
+              className={link.admin ? `${FONT_NAV_TAB} whitespace-nowrap transition-colors hover:text-admin-only-hover ${isLinkActive(link.to) ? 'text-admin-only-hover' : 'text-admin-only'}` : linkClassName(link.to)}
               onPointerDown={event => {
                 touchStartRef.current = event.pointerType === 'touch' ? { to: link.to, wasOpen: openTo === link.to } : null
               }}
@@ -147,16 +160,6 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
             )}
           </div>
         ))}
-        {isAdmin && (
-          <Link
-            to="/admin"
-            aria-label="관리자 페이지"
-            aria-current={isAdminActive ? 'page' : undefined}
-            className={`${FONT_NAV_TAB} whitespace-nowrap transition-colors hover:text-admin-only-hover ${isAdminActive ? 'text-admin-only-hover' : 'text-admin-only'}`}
-          >
-            Admin
-          </Link>
-        )}
       </div>
       {actions && <div className="flex items-center">{actions}</div>}
     </div>
