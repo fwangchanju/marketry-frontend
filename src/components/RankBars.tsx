@@ -85,25 +85,28 @@ export default function RankBars({
         const primaryMagnitude = hasAxisBreak ? axisBreakAt : magnitude
         const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
         const axisPosition = `calc((100% - ${reservedWidth}px) * ${compressedMagnitude / axisMax}${hasAxisBreak ? ` + ${RANK_AXIS_BREAK_GAP_PX}px` : ''})`
-        const nameClassName = 'shrink-0 truncate text-right font-bold'
+        const nameClassName = 'max-w-full truncate whitespace-nowrap text-right font-bold'
         const nameColor = item.isReference ? highlightColor : isEllipsis ? 'var(--ui-muted)' : 'var(--ui-white)'
         return (
           <div key={item.key} className="flex min-h-0 flex-1 items-center gap-2">
-            {selectable ? (
-              <button
-                type="button"
-                aria-label={item.sectorName}
-                onClick={() => (indexMarket ? onSelectIndex?.(indexMarket) : onSelectSector?.(item.sectorName))}
-                onPointerDown={event => event.stopPropagation()}
-                onKeyDown={event => event.stopPropagation()}
-                className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 hover:bg-ui-white/35`}
-                style={{ color: nameColor, width: nameWidth }}
-              >
-                {item.sectorName}
-              </button>
-            ) : (
-              <span className={nameClassName} style={{ color: nameColor, width: nameWidth }}>{item.sectorName}</span>
-            )}
+            <div className="flex shrink-0 justify-end" style={{ width: nameWidth }}>
+              {selectable ? (
+                <button
+                  type="button"
+                  aria-label={item.sectorName}
+                  data-hint={item.sectorName}
+                  onClick={() => (indexMarket ? onSelectIndex?.(indexMarket) : onSelectSector?.(item.sectorName))}
+                  onPointerDown={event => event.stopPropagation()}
+                  onKeyDown={event => event.stopPropagation()}
+                  className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 hover:bg-ui-white/35 focus-visible:outline focus-visible:outline-ui-white`}
+                  style={{ color: nameColor }}
+                >
+                  {item.sectorName}
+                </button>
+              ) : (
+                <span className={nameClassName} data-hint={item.sectorName} style={{ color: nameColor }}>{item.sectorName}</span>
+              )}
+            </div>
             <div className="relative min-w-0 flex-1" style={{ height: barHeight }}>
               {isEllipsis ? (
                 <span aria-hidden="true" className="absolute left-0 top-1/2 -translate-y-1/2 leading-none text-ui-muted">⋯</span>
