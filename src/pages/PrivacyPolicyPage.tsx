@@ -8,7 +8,7 @@ const CONTACT_EMAIL = 'fwangchanju1@gmail.com'
 
 const SERVICE_NAME = 'MARKETRY'
 const SERVICE_DOMAIN = 'marketry.co.kr'
-const EFFECTIVE_DATE = '2026-10-11'
+const EFFECTIVE_DATE = '2026-10-22'
 
 const SECTION_TITLE = 'text-lg font-bold text-ui-white'
 const BODY = 'mt-2 text-sm leading-relaxed text-ui-text'
@@ -43,14 +43,15 @@ export default function PrivacyPolicyPage() {
               <li>Google 로그인 시: Google 계정 식별자(sub), 발급자(issuer), 이메일 주소</li>
               <li>이용자가 직접 입력하거나 올린 정보: 닉네임, 프로필 사진</li>
               <li>이용자가 저장한 정보: 화면 설정, 내 업종 분류, 북마크, 저장해 둔 스냅샷</li>
+              <li>서비스 이용 중 자동으로 생기는 정보: 마지막으로 접속한 시각, 접속한 날짜 기록(하루에 한 번 이상 접속했는지)</li>
             </ul>
           </section>
 
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>3. 개인정보의 이용 목적</h2>
             <p className={BODY}>
-              로그인과 사용자 식별, 닉네임·프로필 사진 표시, 사용자별 설정과 분류 저장을 위해서만 이용합니다. 광고·마케팅
-              목적으로 이용하지 않습니다.
+              로그인과 사용자 식별, 닉네임·프로필 사진 표시, 사용자별 설정과 분류 저장을 위해 이용합니다. 접속 기록은
+              회원 수와 이용 현황을 파악하고 서비스를 운영·개선하는 데에만 씁니다. 광고·마케팅 목적으로 이용하지 않습니다.
             </p>
           </section>
 
@@ -72,24 +73,33 @@ export default function PrivacyPolicyPage() {
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>5. 제3자 제공 및 외부 서비스</h2>
             <p className={BODY}>
-              수집한 개인정보를 제3자에게 제공하지 않습니다. 다만 로그인은 Google의 인증 서비스를 통해 이루어지며, 이때
-              Google이 계정 인증을 처리합니다. Google이 처리하는 정보는 Google의 개인정보처리방침을 따릅니다.
+              수집한 개인정보를 제3자에게 제공하지 않습니다. 다만 아래 외부 서비스를 이용합니다.
             </p>
+            <ul className={LIST}>
+              <li>Google: 로그인 인증을 처리합니다. Google이 처리하는 정보는 Google의 개인정보처리방침을 따릅니다.</li>
+              <li>Cloudflare: 서비스 접속을 중계하고 보호합니다. 접속 과정에서 접속 정보(IP 주소 등)가 전달·처리될 수 있습니다.</li>
+              <li>Cloudflare R2: 장애에 대비해 서비스 데이터를 하루 한 번 백업해 보관합니다. 백업에는 회원 정보가 포함됩니다.</li>
+            </ul>
           </section>
 
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>6. 보관 기간 및 파기</h2>
             <p className={BODY}>
-              수집한 개인정보는 계정 삭제를 요청하기 전까지 보관합니다. 삭제를 요청하면 계정과 닉네임·프로필 사진, 저장한
-              설정·분류·스냅샷을 모두 삭제합니다. 프로필 사진은 프로필 화면에서 직접 지울 수도 있습니다.
+              수집한 개인정보는 탈퇴하기 전까지 보관합니다. 1년 동안 접속하지 않은 계정은 삭제합니다. 프로필 화면에서
+              탈퇴하면 이메일·닉네임·프로필 사진·저장한 설정·분류·스냅샷·접속 기록을 즉시 삭제하며 복구할 수 없습니다.
+              프로필 사진은 프로필 화면에서 직접 지울 수도 있습니다.
+            </p>
+            <p className={BODY}>
+              장애 대비 백업에는 삭제 전 정보가 남아 있을 수 있습니다. 백업은 서버에 7일, Cloudflare R2에 10일 동안만
+              보관하고 그 뒤 자동으로 지워집니다. 백업에서 복원해야 하는 일이 생기면 탈퇴한 정보는 다시 지웁니다.
             </p>
           </section>
 
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>7. 이용자의 권리</h2>
             <p className={BODY}>
-              이용자는 언제든 자신의 개인정보를 확인하고 정정·삭제를 요청할 수 있습니다. 닉네임과 프로필 사진은 프로필
-              화면에서 직접 바꿀 수 있고, 그 밖의 요청은 아래 문의처로 알려 주세요.
+              이용자는 언제든 자신의 개인정보를 확인하고 정정·삭제할 수 있습니다. 닉네임과 프로필 사진은 프로필 화면에서
+              직접 바꾸고, 탈퇴도 프로필 화면에서 직접 할 수 있습니다. 그 밖의 요청은 아래 문의처로 알려 주세요.
             </p>
           </section>
 
@@ -106,6 +116,7 @@ export default function PrivacyPolicyPage() {
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>개정 이력</h2>
             <ul className={LIST}>
+              <li>2026-10-22: 접속 기록 수집, 외부 서비스(Cloudflare·R2 백업), 즉시 탈퇴, 1년 미접속 계정 삭제, 백업 보관 기간 안내 추가</li>
               <li>2026-10-11: 서비스 이름과 주소 변경, 수집 항목(닉네임·프로필 사진·북마크)·쿠키·저장소·외부 서비스·이용자 권리 안내 보강</li>
               <li>2026-09-26: 최초 시행</li>
             </ul>

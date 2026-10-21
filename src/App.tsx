@@ -5,6 +5,7 @@ import MapPage from './pages/MapPage'
 import GroupPage from './pages/GroupPage'
 import CustomPage from './pages/CustomPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsPage from './pages/TermsPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
@@ -94,6 +95,7 @@ export default function App() {
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수
               있어야 하고, 세션/시세 등 데이터 API를 호출하지 않는 순수 정적 페이지다. */}
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           {/* 관리자 전용 — 관리자가 아니면 페이지 안에서 홈으로 보낸다. */}
           {/* 관리자 페이지는 /admin 아래에서 회원 명단과 대시보드(차트 모음)로 나뉜다. */}
