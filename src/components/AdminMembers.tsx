@@ -15,7 +15,7 @@ import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
 
 const PAGE_SIZE = 50
-const controlClass = 'h-6 shrink-0 border-0 bg-[var(--ui-panel)] px-2 text-sm font-normal text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)] disabled:opacity-40'
+const controlClass = 'h-6 shrink-0 whitespace-nowrap border-0 bg-[var(--ui-panel)] px-2 text-sm font-normal text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)] disabled:opacity-40'
 type SortKey = 'id' | 'issuer' | 'email' | 'nickname' | 'role' | 'createdAt' | 'lastAccessAt'
 type SortOrder = 'asc' | 'desc'
 // 로딩 원에서 숫자 세기가 끝나면 나오는 "다시 시도" 버튼(Spinner)과 같은 모양이다.
@@ -185,7 +185,7 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
         <button type="button" className={`toolbar-badge ml-2 ${controlClass}`} disabled={members.isFetching} onClick={() => { void members.refetch() }}>{members.isFetching ? '조회 중…' : '새로고침'}</button>
       </Toolbar>
       <div className="relative min-h-0 flex-1 overflow-auto border border-ui-border" aria-busy={members.isFetching}>
-        <table className="nes-table is-dark custom-page-table w-full min-w-[900px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0 [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th:not(:last-child)]:border-r [&_th]:py-1">
+        <table className="nes-table is-dark custom-page-table w-full min-w-[900px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
           <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 64 }} /><col /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /></colgroup>
           <thead className="sticky top-0 z-10">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
@@ -279,12 +279,12 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
       {summaryContainer && createPortal(
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">회원 현황</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">전체 · 구분별 · 최근 7일 신규 가입</p>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">전체 · 특별 회원 · 최근 7일 신규 가입</p>
           <div className="settings-button-area mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-x-4 gap-y-1.5 text-[13px] tabular-nums">
-            {([['전체', summary.data?.total], ['관리자', summary.data?.admins], ['특별 회원', summary.data?.specials], ['일반 회원', summary.data?.users], ['7일 신규', summary.data?.joinedRecently]] as const).map(([label, value]) => (
-              <span key={label} className="flex items-baseline justify-between gap-2 whitespace-nowrap text-ui-text">
-                <span className="text-ui-muted">{label}</span>
-                <span className="font-medium text-ui-white">{value === undefined ? '-' : `${value.toLocaleString()}명`}</span>
+            {([['전체', summary.data?.total], ['특별 회원', summary.data?.specials], ['7일 신규', summary.data?.joinedRecently]] as const).map(([label, value]) => (
+              <span key={label} className="flex items-baseline justify-between gap-2 whitespace-nowrap">
+                <span className="text-ui-white">{label}</span>
+                <span className="font-medium text-ui-text">{value === undefined ? '-' : `${value.toLocaleString()}명`}</span>
               </span>
             ))}
           </div>
