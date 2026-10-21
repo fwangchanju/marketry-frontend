@@ -26,8 +26,8 @@ import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 export type { SettingsBookmarkId }
-export type SettingsPanelSectionId = 'custom' | 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminMoved' | 'graph'
-const ADMIN_ONLY_SECTIONS: ReadonlySet<SettingsPanelSectionId> = new Set(['adminOps', 'adminMoved'])
+export type SettingsPanelSectionId = 'custom' | 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'adminMoved' | 'graph'
+const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage', 'adminMoved'])
 
 interface SettingsPanelGroupProps {
   section: SettingsPanelSectionId
@@ -212,7 +212,9 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'favorites', label: '북마크', icon: 'favorites' },
   { id: 'graph', label: '그래프', icon: 'bar-chart' },
   // 관리자 전용 탭 — 번호 참조가 있는 기존 설정은 순서를 유지한다.
-  { id: 'adminOps', label: '운영', icon: 'admin-ops' },
+  // 커스텀 페이지의 MARKETRY 분류 업데이트·롤백 탭. 어드민 페이지의 운영 탭(adminManage)과 이름이 겹치지 않게 "업데이트"로 부른다.
+  { id: 'adminOps', label: '업데이트', icon: 'cloud-upload' },
+  { id: 'adminManage', label: '운영', icon: 'admin-ops' },
   { id: 'adminMoved', label: '미사용', icon: 'admin-moved' },
   { id: 'custom', label: '커스텀', icon: 'custom-edit' },
 ]
@@ -414,6 +416,26 @@ function CursorHintBubble({ hint, children }: { hint: CursorHint; children: Reac
       {children}
     </div>,
     document.body,
+  )
+}
+
+// 막힌 컨트롤을 누르면 그 자리에서 왜 안 되는지 말풍선으로 알려 준다(커서가 벗어나면 사라진다).
+// 막힌 영역 위에 투명한 덮개를 얹는 방식은 상위 업종 강조가 막혔을 때와 같다 — 덮개를 얹을 부모는 relative여야 한다.
+function BlockedClickHint({ className, children }: { className: string; children: ReactNode }) {
+  const [hint, setHint] = useState<CursorHint | null>(null)
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className={`absolute z-10 cursor-not-allowed ${className}`}
+        onPointerDown={e => {
+          e.preventDefault()
+          setHint(cursorHintFrom(e))
+        }}
+        onPointerLeave={() => setHint(null)}
+      />
+      {hint && <CursorHintBubble hint={hint}>{children}</CursorHintBubble>}
+    </>
   )
 }
 
@@ -1161,7 +1183,10 @@ export function SettingsAverageModeSection({
     <div className="settings-first-depth-level settings-graph-item text-sm">
       <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준</span>
-        <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
+        <span className="relative inline-flex">
+          <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
+          {toggleDisabled && <BlockedClickHint className="-inset-1">기간 등락률을 보는 동안에는<br />N분 전 대비로 바꿀 수 없습니다.</BlockedClickHint>}
+        </span>
       </div>
       <div className={`settings-average-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
@@ -1215,10 +1240,10 @@ export function SettingsBeforeMinutesSection({
   )
   return (
     <div className="settings-second-depth-metric settings-graph-item relative mt-6 text-sm">
+      {disabled && <BlockedClickHint className="inset-0">기간 등락률을 보는 동안에는<br />N분 전 대비를 사용할 수 없습니다.</BlockedClickHint>}
       <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`flex items-center gap-1 ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>
           <span className="settings-plain-title">비교 시점</span>
-          {disabled && <SettingHelpBubble label="비교 시점" description="기간 등락률을 보는 동안에는 N분 전 대비를 사용할 수 없습니다." />}
         </span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="비교 그래프" hideLabel disabled={disabled} />
       </div>
@@ -2599,18 +2624,18 @@ export default function SettingsPanel({
                   else setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  section.id === 'adminOps' || section.id === 'adminMoved' ? 'text-admin-only' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
+                  ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
                 {section.icon ? <SettingsSectionIcon
                   icon={section.icon}
-                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${section.id === 'adminOps' || section.id === 'adminMoved' ? 'text-admin-only' : ''}`}
+                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : ''}`}
                   strokeWidth={section.icon === 'industry' ? 1.22 : 1.1}
                 /> : <span aria-hidden="true" className="h-[30px] w-[30px] shrink-0" />}
                 <span className="max-w-full truncate font-bold">{section.label}</span>
                 <span
                   aria-hidden="true"
-                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${section.id === 'adminOps' || section.id === 'adminMoved' ? 'bg-admin-only' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
+                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'bg-admin-only' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
                 />
               </button>
             )
@@ -2636,7 +2661,7 @@ export default function SettingsPanel({
           data-align-second-heading={(taxonomyAtBottom && selectedSection.id !== 'favorites') || undefined}
           aria-busy={waitingForPreferences || undefined}
           inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'favorites' ? 'settings-bookmark-tab' : ''} ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' ? 'settings-plain-content pt-3' : ''} ${selectedSection.id === 'adminOps' || selectedSection.id === 'adminMoved' ? 'settings-admin-section' : ''} ${
+          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'favorites' ? 'settings-bookmark-tab' : ''} ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : ''} ${
             isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
           }`}
         >
