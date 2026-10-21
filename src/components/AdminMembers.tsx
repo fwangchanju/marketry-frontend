@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { createPortal } from 'react-dom'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getAdminMemberSummary, getAdminMembers, setMembersSpecial } from '@/api/adminMembers'
@@ -9,6 +9,8 @@ import StockSortHeader from '@/components/StockSortHeader'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import SelectionHintBubble from '@/components/SelectionHintBubble'
+import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
@@ -168,11 +170,17 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
   const visibleIds = members.data?.items.map(member => member.id) ?? []
   const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id))
   const toggleSelectAll = () => setSelectedIds(isAllSelected ? new Set() : new Set(visibleIds))
-  const toggleSelected = (id: number) => setSelectedIds(current => {
-    const next = new Set(current)
-    if (!next.delete(id)) next.add(id)
-    return next
-  })
+  // 줄 선택 — 커스텀 종목 표와 같다(체크박스가 아닌 곳을 눌러도 선택, Shift+클릭 범위, 끌어서 연속 선택).
+  // 줄 선택 훅은 글자 키를 쓰므로 회원 번호를 글자로 바꿔 넘긴다.
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const rowKeys = visibleIds.map(String)
+  const selectedKeys = useMemo(() => new Set([...selectedIds].map(String)) as ReadonlySet<string>, [selectedIds])
+  const setSelectedKeys: Dispatch<SetStateAction<ReadonlySet<string>>> = update =>
+    setSelectedIds(current => {
+      const next = typeof update === 'function' ? update(new Set([...current].map(String))) : update
+      return new Set([...next].map(Number))
+    })
+  const { rowProps, selectionHint } = useRowRangeSelection(rowKeys, scrollContainerRef, selectedKeys, setSelectedKeys)
   const searchTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(searchTimer.current), [])
   const changeSearch = (value: string) => {
@@ -215,7 +223,8 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
         </div>
         <button type="button" className={`toolbar-badge ml-2 ${controlClass}`} disabled={members.isFetching} onClick={() => { void members.refetch() }}>{members.isFetching ? '조회 중…' : '새로고침'}</button>
       </Toolbar>
-      <div className="relative min-h-0 flex-1 overflow-auto border border-ui-border" aria-busy={members.isFetching}>
+      <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-auto border border-ui-border" aria-busy={members.isFetching}>
+        {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
         <table className="nes-table is-dark custom-page-table w-full min-w-[900px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
           <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 64 }} /><col /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /></colgroup>
           <thead className="sticky top-0 z-10">
@@ -262,10 +271,10 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
             </tr>
           </thead>
           <tbody className="select-text">
-            {members.isError || noRoleSelected || members.isPending || members.data.items.length === 0 ? null : members.data.items.map(member => (
-              <tr key={member.id} className={selectedIds.has(member.id) ? 'bg-[var(--brand)]/15' : 'hover:bg-[var(--brand)]/10'}>
+            {members.isError || noRoleSelected || members.isPending || members.data.items.length === 0 ? null : members.data.items.map((member, index) => (
+              <tr key={member.id} {...rowProps(index)} className={`cursor-pointer ${selectedIds.has(member.id) ? 'bg-[var(--brand)]/15' : 'hover:bg-[var(--brand)]/10'}`}>
                 <td className="text-center" style={CHECKBOX_CELL_STYLE}>
-                  <input type="checkbox" aria-label={`${member.email ?? member.id} 선택`} className="mx-auto my-0 block thin-check" checked={selectedIds.has(member.id)} onChange={() => toggleSelected(member.id)} />
+                  <input type="checkbox" aria-label={`${member.email ?? member.id} 선택`} className="mx-auto my-0 block thin-check" checked={selectedIds.has(member.id)} onChange={() => {}} />
                 </td>
                 <td className="px-2 text-right tabular-nums text-ui-muted">{member.id}</td>
                 <td className="px-2 text-center text-ui-muted">
