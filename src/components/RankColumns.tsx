@@ -5,7 +5,7 @@ import {
   resolveTreemapExtremeColor,
   type ColorScaleConfig,
 } from '@/utils/treemapColorScale'
-import { RANK_AXIS_BREAK, RANK_AXIS_BREAK_CUT_PX, RANK_AXIS_BREAK_BRIDGE_PX, RANK_AXIS_BREAK_GAP_PX, rankAxisMagnitude } from '@/utils/rankAxis'
+import { RANK_AXIS_BREAK_CUT_PX, RANK_AXIS_BREAK_BRIDGE_PX, RANK_AXIS_BREAK_GAP_PX, rankAxisBreakAt, rankAxisMagnitude } from '@/utils/rankAxis'
 
 export interface RankColumnItem {
   key: string
@@ -99,11 +99,12 @@ export default function RankColumns({
       </div>
     )
   }
+  const axisBreakAt = applyAxisBreak ? rankAxisBreakAt(items) : 0
   const displayMagnitudes = items.filter(item => item.hiddenCount === undefined).map(item => {
     const magnitude = Math.abs(item.value)
-    return applyAxisBreak && item.sectorName === '신규 상장' ? rankAxisMagnitude(magnitude) : magnitude
+    return axisBreakAt > 0 && item.sectorName === '신규 상장' && item.value > axisBreakAt ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
   })
-  const hasAnyAxisBreak = applyAxisBreak && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && Math.abs(item.value) > RANK_AXIS_BREAK)
+  const hasAnyAxisBreak = axisBreakAt > 0 && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && item.value > axisBreakAt)
   const displayAxisMax = Math.ceil(Math.max(1, ...displayMagnitudes) * 2) / 2
   const axisMax = Math.max(displayAxisMax, 0.5)
   // 최소 폭을 강제하지 않고 설정창을 뺀 실제 가용 폭을 모든 항목에 균등 배분한다.
@@ -126,10 +127,10 @@ export default function RankColumns({
                 )
               }
               const magnitude = Math.abs(item.value)
-              const hasAxisBreak = applyAxisBreak && item.sectorName === '신규 상장' && magnitude > RANK_AXIS_BREAK
-              const primaryHeightPercent = ((hasAxisBreak ? Math.min(magnitude, RANK_AXIS_BREAK) : magnitude) / axisMax) * 100
-              const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude) : magnitude
-              const tailHeightPercent = hasAxisBreak ? ((compressedMagnitude - RANK_AXIS_BREAK) / axisMax) * 100 : 0
+              const hasAxisBreak = axisBreakAt > 0 && item.sectorName === '신규 상장' && item.value > axisBreakAt
+              const primaryHeightPercent = ((hasAxisBreak ? axisBreakAt : magnitude) / axisMax) * 100
+              const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
+              const tailHeightPercent = hasAxisBreak ? ((compressedMagnitude - axisBreakAt) / axisMax) * 100 : 0
               const heightPercent = (compressedMagnitude / axisMax) * 100
               return (
                 <div key={item.key} className="relative h-full min-w-0" style={{ containerType: 'inline-size' }}>

@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import type { RankColumnsChart } from '@/components/RankColumns'
 import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
-import { RANK_AXIS_BREAK, RANK_AXIS_BREAK_CUT_PX, RANK_AXIS_BREAK_BRIDGE_PX, RANK_AXIS_BREAK_GAP_PX, rankAxisMagnitude } from '@/utils/rankAxis'
+import { RANK_AXIS_BREAK_CUT_PX, RANK_AXIS_BREAK_BRIDGE_PX, RANK_AXIS_BREAK_GAP_PX, rankAxisBreakAt, rankAxisMagnitude } from '@/utils/rankAxis'
 
 // 자리가 있으면 글자·막대를 키우고, 자리가 모자랄 때만 줄인다. 줄 높이(틀 높이 ÷ 항목 수)와 틀 폭에 맞춰 정한다.
 const FONT_HEIGHT_RATIO = 0.38 // 줄 높이에 대한 글자 크기 비율
@@ -25,12 +25,14 @@ export default function RankBars({
   highlightColor,
   colorScale,
   onSelectSector,
+  onSelectIndex,
   applyAxisBreak = false,
 }: {
   chart: RankColumnsChart
   highlightColor: string
   colorScale: ColorScaleConfig
   onSelectSector?: (sectorName: string) => void
+  onSelectIndex?: (market: 'KOSPI' | 'KOSDAQ') => void
   applyAxisBreak?: boolean
 }) {
   const items = chart.rankedItems
@@ -53,11 +55,12 @@ export default function RankBars({
       </div>
     )
   }
+  const axisBreakAt = applyAxisBreak ? rankAxisBreakAt(items) : 0
   const displayMagnitudes = items.filter(item => item.hiddenCount === undefined).map(item => {
     const magnitude = Math.abs(item.value)
-    return applyAxisBreak && item.sectorName === '신규 상장' ? rankAxisMagnitude(magnitude) : magnitude
+    return axisBreakAt > 0 && item.sectorName === '신규 상장' && item.value > axisBreakAt ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
   })
-  const hasAnyAxisBreak = applyAxisBreak && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && Math.abs(item.value) > RANK_AXIS_BREAK)
+  const hasAnyAxisBreak = axisBreakAt > 0 && items.some(item => item.hiddenCount === undefined && item.sectorName === '신규 상장' && item.value > axisBreakAt)
   const displayAxisMax = Math.ceil(Math.max(1, ...displayMagnitudes) * 2) / 2
   const axisMax = Math.max(displayAxisMax, 0.5)
   const rowHeight = size ? size.height / items.length : 40
@@ -73,11 +76,14 @@ export default function RankBars({
     <div ref={containerRef} className="flex min-h-0 w-full flex-1 flex-col justify-between" style={{ fontSize }}>
       {items.map(item => {
         const isEllipsis = item.hiddenCount !== undefined
-        const selectable = onSelectSector !== undefined && !item.isReference && !isEllipsis
+        const indexMarket = item.isReference && (item.key === 'market-index:KOSPI' || item.key === 'market-index:KOSDAQ')
+          ? item.key.slice('market-index:'.length) as 'KOSPI' | 'KOSDAQ'
+          : undefined
+        const selectable = !isEllipsis && (indexMarket ? onSelectIndex !== undefined : !item.isReference && onSelectSector !== undefined)
         const magnitude = Math.abs(item.value)
-        const hasAxisBreak = applyAxisBreak && item.sectorName === '신규 상장' && magnitude > RANK_AXIS_BREAK
-        const primaryMagnitude = hasAxisBreak ? Math.min(magnitude, RANK_AXIS_BREAK) : magnitude
-        const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude) : magnitude
+        const hasAxisBreak = axisBreakAt > 0 && item.sectorName === '신규 상장' && item.value > axisBreakAt
+        const primaryMagnitude = hasAxisBreak ? axisBreakAt : magnitude
+        const compressedMagnitude = hasAxisBreak ? rankAxisMagnitude(magnitude, axisBreakAt) : magnitude
         const axisPosition = `calc((100% - ${reservedWidth}px) * ${compressedMagnitude / axisMax}${hasAxisBreak ? ` + ${RANK_AXIS_BREAK_GAP_PX}px` : ''})`
         const nameClassName = 'shrink-0 truncate text-right font-bold'
         const nameColor = item.isReference ? highlightColor : isEllipsis ? 'var(--ui-muted)' : 'var(--ui-white)'
@@ -87,7 +93,9 @@ export default function RankBars({
               <button
                 type="button"
                 aria-label={item.sectorName}
-                onClick={() => onSelectSector(item.sectorName)}
+                onClick={() => (indexMarket ? onSelectIndex?.(indexMarket) : onSelectSector?.(item.sectorName))}
+                onPointerDown={event => event.stopPropagation()}
+                onKeyDown={event => event.stopPropagation()}
                 className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 hover:bg-ui-white/35`}
                 style={{ color: nameColor, width: nameWidth }}
               >
@@ -114,7 +122,7 @@ export default function RankBars({
                         aria-hidden="true"
                         className="absolute top-0 h-full rounded-sm border border-ui-control"
                         style={{
-                          left: `calc((100% - ${reservedWidth}px) * ${RANK_AXIS_BREAK / axisMax} + ${RANK_AXIS_BREAK_CUT_PX}px)`,
+                          left: `calc((100% - ${reservedWidth}px) * ${axisBreakAt / axisMax} + ${RANK_AXIS_BREAK_CUT_PX}px)`,
                           width: RANK_AXIS_BREAK_BRIDGE_PX,
                           backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                         }}
@@ -123,8 +131,8 @@ export default function RankBars({
                         aria-hidden="true"
                         className="absolute top-0 h-full rounded-sm border border-ui-control"
                         style={{
-                          left: `calc((100% - ${reservedWidth}px) * ${RANK_AXIS_BREAK / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
-                          width: `calc((100% - ${reservedWidth}px) * ${(compressedMagnitude - RANK_AXIS_BREAK) / axisMax})`,
+                          left: `calc((100% - ${reservedWidth}px) * ${axisBreakAt / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
+                          width: `calc((100% - ${reservedWidth}px) * ${(compressedMagnitude - axisBreakAt) / axisMax})`,
                           backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                         }}
                       />
