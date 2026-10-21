@@ -1,10 +1,9 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getAdminAccessFrequency, getAdminDailyAccess, getAdminMemberSummary, getAdminSignups } from '@/api/adminMembers'
+import { getAdminAccessFrequency, getAdminDailyAccess, getAdminSignups } from '@/api/adminMembers'
 import DailyAccessChart from '@/components/DailyAccessChart'
 import GrowthLineChart from '@/components/GrowthLineChart'
 import HorizontalBarsChart from '@/components/HorizontalBarsChart'
-import MemberCompositionChart from '@/components/MemberCompositionChart'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -60,14 +59,6 @@ export default function AdminDashboardPage() {
     staleTime: 30_000,
     retry: false,
   })
-  const summary = useQuery({
-    queryKey: ['admin-member-summary', session?.userId],
-    queryFn: ({ signal }) => getAdminMemberSummary(signal),
-    enabled: isAdmin,
-    staleTime: 30_000,
-    retry: false,
-  })
-
   const handleCopy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotRef.current) return
     setCopyStatus('copying')
@@ -123,15 +114,6 @@ export default function AdminDashboardPage() {
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                     ) : dailyAccess.data ? (
                       <DailyAccessChart rows={dailyAccess.data} />
-                    ) : (
-                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
-                    )}
-                  </ChartFrame>
-                  <ChartFrame title="회원 구성" note="관리자 · 특별 회원 · 일반 회원">
-                    {summary.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
-                    ) : summary.data ? (
-                      <MemberCompositionChart counts={summary.data} />
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
@@ -259,7 +241,7 @@ function ChartFrame({ title, note, actions, children }: { title: string; note: s
         <span className="rounded bg-[var(--brand-surface)] px-2 py-1 text-sm leading-none font-semibold text-ui-white">{title}</span>
         {actions}
       </div>
-      <p className="m-0 mt-2 shrink-0 text-xs text-ui-muted">{note}</p>
+      <p className="m-0 mt-2 shrink-0 text-xs font-medium text-ui-white">{note}</p>
       <div className="mt-3 flex min-h-0 flex-1 items-end">{children}</div>
     </section>
   )
