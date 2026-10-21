@@ -48,3 +48,17 @@ const DailyAccessSchema = z.array(z.object({ date: z.string(), members: z.number
 export function getAdminDailyAccess(days: number, signal?: AbortSignal) {
   return client.get('/admin/members/access-daily', { params: { days }, signal }).then(response => DailyAccessSchema.parse(response.data))
 }
+
+const SignupDailySchema = z.array(z.object({ date: z.string(), joined: z.number(), total: z.number() }))
+
+// 최근 N일(오늘 포함)의 일별 신규 가입 수와 누적 회원 수 — 가입 시각으로 세므로 과거부터 채워져 있다.
+export function getAdminSignups(days: number, signal?: AbortSignal) {
+  return client.get('/admin/members/signups', { params: { days }, signal }).then(response => SignupDailySchema.parse(response.data))
+}
+
+const AccessFrequencySchema = z.array(z.object({ label: z.string(), members: z.number() }))
+
+// 최근 30일 중 접속한 날 수 구간별 회원 수.
+export function getAdminAccessFrequency(signal?: AbortSignal) {
+  return client.get('/admin/members/access-frequency', { signal }).then(response => AccessFrequencySchema.parse(response.data))
+}
