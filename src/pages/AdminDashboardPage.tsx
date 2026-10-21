@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getAdminDailyAccess } from '@/api/adminMembers'
+import { getAdminDailyAccess, getAdminMemberSummary } from '@/api/adminMembers'
 import DailyAccessChart from '@/components/DailyAccessChart'
+import MemberCompositionChart from '@/components/MemberCompositionChart'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -12,12 +13,12 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 
-const PERIOD_OPTIONS = [14, 30, 90] as const
+const PERIOD_OPTIONS = [14, 30] as const
 type Period = (typeof PERIOD_OPTIONS)[number]
 
-// 관리자 전용 차트 페이지 — 회원 명단(/admin/member)과 떨어뜨려 회원 이용 추이를 그래프로 본다.
+// 관리자 전용 대시보드 — 회원 명단(/admin/member)과 떨어뜨려 회원 이용 현황을 작은 차트 여러 개로 모아 본다(홈 화면의 틀처럼 한 칸에 차트 하나).
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다.
-export default function AdminChartPage() {
+export default function AdminDashboardPage() {
   const { data: session, isLoading } = useSession()
   const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
@@ -28,6 +29,14 @@ export default function AdminChartPage() {
   const dailyAccess = useQuery({
     queryKey: ['admin-member-daily-access', session?.userId, period],
     queryFn: ({ signal }) => getAdminDailyAccess(period, signal),
+    enabled: isAdmin,
+    staleTime: 30_000,
+    retry: false,
+  })
+
+  const summary = useQuery({
+    queryKey: ['admin-member-summary', session?.userId],
+    queryFn: ({ signal }) => getAdminMemberSummary(signal),
     enabled: isAdmin,
     staleTime: 30_000,
     retry: false,
@@ -72,38 +81,49 @@ export default function AdminChartPage() {
             ) : !isAdmin ? (
               <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
-              <section aria-label="회원 차트" className="flex h-full min-h-0 w-full flex-col text-sm">
+              <section aria-label="회원 대시보드" className="flex h-full min-h-0 w-full flex-col text-sm">
                 <Toolbar>
-                  <ToolbarModeText page="ADMIN" label="CHART" />
+                  <ToolbarModeText page="ADMIN" label="DASHBOARD" />
                 </Toolbar>
-                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto px-4 pb-6 pt-3">
-                  <div className="flex items-center gap-3">
-                    <h2 className="m-0 text-base font-bold text-ui-white">일별 접속 회원 수</h2>
-                    <div role="radiogroup" aria-label="기간" className="flex items-center gap-1">
-                      {PERIOD_OPTIONS.map(option => (
-                        <button
-                          key={option}
-                          type="button"
-                          role="radio"
-                          aria-checked={period === option}
-                          onClick={() => setPeriod(option)}
-                          className={`h-6 rounded-[4px] border-0 px-2 text-sm transition-colors ${period === option ? 'bg-[var(--brand-surface)] font-bold text-ui-white' : 'bg-[var(--ui-panel)] font-normal text-ui-text hover:text-ui-white'}`}
-                        >
-                          {option}일
-                        </button>
-                      ))}
-                    </div>
-                    <span className="text-xs text-ui-muted">하루에 한 번이라도 접속한 서로 다른 회원 수 · 접속 기록은 기록을 시작한 날부터입니다.</span>
-                  </div>
-                  <div className="min-h-[260px] flex-1 border border-ui-border px-3 pb-3 pt-4">
+                {/* 차트 한 개가 한 칸 — 화면을 가득 채우지 않고 칸 크기는 고정이며, 차트가 늘면 칸이 옆·아래로 늘어난다. */}
+                <div className="grid min-h-0 flex-1 auto-rows-[280px] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] content-start gap-3 overflow-auto px-3 pb-6 pt-3">
+                  <ChartFrame
+                    title="일별 접속 회원 수"
+                    note="하루에 접속한 서로 다른 회원 수"
+                    actions={
+                      <div role="radiogroup" aria-label="기간" className="flex items-center gap-1">
+                        {PERIOD_OPTIONS.map(option => (
+                          <button
+                            key={option}
+                            type="button"
+                            role="radio"
+                            aria-checked={period === option}
+                            onClick={() => setPeriod(option)}
+                            className={`h-6 rounded-[4px] border-0 px-2 text-xs transition-colors ${period === option ? 'bg-[var(--brand-surface)] font-bold text-ui-white' : 'bg-[var(--ui-panel)] font-normal text-ui-text hover:text-ui-white'}`}
+                          >
+                            {option}일
+                          </button>
+                        ))}
+                      </div>
+                    }
+                  >
                     {dailyAccess.isError ? (
-                      <p role="alert" className="m-0 text-base text-ui-text">차트 정보를 불러오지 못했습니다.</p>
+                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                     ) : dailyAccess.data ? (
                       <DailyAccessChart rows={dailyAccess.data} />
                     ) : (
-                      <p role="status" className="m-0 text-base text-ui-text">불러오는 중입니다.</p>
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
-                  </div>
+                  </ChartFrame>
+                  <ChartFrame title="회원 구성" note="관리자 · 특별 회원 · 일반 회원">
+                    {summary.isError ? (
+                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                    ) : summary.data ? (
+                      <MemberCompositionChart counts={summary.data} />
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
                 </div>
               </section>
             )}
@@ -120,5 +140,19 @@ export default function AdminChartPage() {
         />
       )}
     </div>
+  )
+}
+
+// 차트 한 칸 — 왼쪽 위에 제목 배지(홈 화면의 틀 제목과 같은 짙은 청록), 오른쪽 위에 조작, 그 아래에 설명과 차트를 둔다.
+function ChartFrame({ title, note, actions, children }: { title: string; note: string; actions?: ReactNode; children: ReactNode }) {
+  return (
+    <section aria-label={title} className="flex min-h-0 flex-col border border-ui-border px-3 pb-3 pt-3">
+      <div className="flex shrink-0 items-center justify-between gap-2">
+        <span className="rounded bg-[var(--brand-surface)] px-2 py-1 text-sm leading-none font-semibold text-ui-white">{title}</span>
+        {actions}
+      </div>
+      <p className="m-0 mt-2 shrink-0 text-xs text-ui-muted">{note}</p>
+      <div className="mt-3 flex min-h-0 flex-1 items-end">{children}</div>
+    </section>
   )
 }
