@@ -17,7 +17,7 @@ interface MenuLink {
   options?: MenuOption[]
 }
 
-// Map·Group은 KOSPI / KOSDAQ / ALL STOCK, Custom은 SECTOR / STOCK을 고른다(예전 화면 왼쪽 위 드롭다운과 같은 목록·순서).
+// Map·Group은 ALL STOCK / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다(예전 화면 왼쪽 위 드롭다운과 같은 목록·순서).
 const BASE_LINKS: MenuLink[] = [
   { to: '/home', label: 'Home' },
   { to: '/map/allstock', label: 'Map', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/map', option.market) })) },
@@ -25,7 +25,7 @@ const BASE_LINKS: MenuLink[] = [
 ]
 // 비로그인에게도 열려 있다 — 마켓트리·거래소 시트는 읽고, 내 분류는 비어 있으며 수정하려 할 때 로그인 팝업이 뜬다.
 const CUSTOM_LINK: MenuLink = {
-  to: '/custom/stock',
+  to: '/custom/sector',
   label: 'Custom',
   options: [
     { label: 'SECTOR', to: '/custom/sector' },
@@ -72,7 +72,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   const isLinkActive = (to: string) => {
     if (to === '/map/allstock') return location.pathname.startsWith('/map/')
     if (to === '/group/allstock') return location.pathname.startsWith('/group/')
-    if (to === '/custom/stock') return location.pathname.startsWith('/custom')
+    if (to === '/custom/sector') return location.pathname.startsWith('/custom')
     return location.pathname === to
   }
   const linkClassName = (to: string) =>

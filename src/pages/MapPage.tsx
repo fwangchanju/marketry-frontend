@@ -27,7 +27,7 @@ import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
-import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
+import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
@@ -671,12 +671,18 @@ export default function MapPage() {
                   <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
                 </div>
               ) : visibleItems.length === 0 ? (
-                <div className="relative flex-1">
-                  <EmptyMessage
-                    message={stockChangeFilter === 'all' && sectorChangeFilter === 'all' ? EMPTY_DATA_MESSAGE : '조건에 해당하는 종목이 없습니다.'}
-                    topClass="-top-1"
-                  />
-                </div>
+                isCustom && stockChangeFilter === 'all' && sectorChangeFilter === 'all' ? (
+                  <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
+                    <CustomPageBadgeLink />
+                  </EmptyLogoMessage>
+                ) : (
+                  <div className="relative flex-1">
+                    <EmptyMessage
+                      message={stockChangeFilter === 'all' && sectorChangeFilter === 'all' ? EMPTY_DATA_MESSAGE : '조건에 해당하는 종목이 없습니다.'}
+                      topClass="-top-1"
+                    />
+                  </div>
+                )
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
                   {/* 바깥 main-settings-row에서 양옆·설정창 사이 여백을 관리한다. */}

@@ -345,6 +345,26 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 .animate-row-blink { animation: row-blink 1s ease-in-out infinite; }
 
+/* 업종이 하나도 없는 회원에게 "업종을 추가하세요" 입력칸으로 시선을 끄는 효과 — 청록 테두리와 번지는 빛이 천천히 숨 쉬듯 켜졌다 꺼지고, 입력칸을 누르면 멈춘다. */
+@keyframes input-attention {
+  0%, 100% { border-color: color-mix(in srgb, var(--brand) 35%, transparent); box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 0%, transparent); }
+  50% { border-color: var(--brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 40%, transparent); }
+}
+.animate-input-attention:not(:focus) { animation: input-attention 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-input-attention:not(:focus) { animation: none; border-color: var(--brand); }
+}
+
+/* 설정창이 닫힌 채 해야 할 일이 있을 때 설정 아이콘으로 시선을 끄는 효과 — 청록색과 번지는 빛이 천천히 숨 쉬듯 반복된다. */
+@keyframes icon-attention {
+  0%, 100% { color: var(--ui-text); filter: drop-shadow(0 0 0 transparent); }
+  50% { color: var(--brand); filter: drop-shadow(0 0 5px var(--brand)); }
+}
+.animate-icon-attention { animation: icon-attention 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-icon-attention { animation: none; color: var(--brand); }
+}
+
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
