@@ -15,6 +15,10 @@ import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
 import { EditIcon, PlusIcon, TrashIcon } from '@/components/icons/AppIcons'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
+import { STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
+import StockSortHeader, { type HeaderSortState } from '@/components/StockSortHeader'
+import ColumnFilterButton from '@/components/ColumnFilterButton'
+import { compareKoreanText } from '@/utils/koreanSort'
 
 interface Props {
   sectors: SectorItem[]
@@ -81,7 +85,7 @@ type SectorHistoryAction =
   | { id: string; type: 'reorder'; parentId: number | null; beforeIds: number[]; afterIds: number[] }
 type SectorHistoryInput = SectorHistoryAction extends infer A ? (A extends { id: string } ? Omit<A, 'id'> : never) : never
 const SECTOR_HISTORY_LIMIT = 9
-const DRAG_CONTROL_CLASS = 'cursor-grab touch-none rounded-sm border border-ui-border bg-ui-panel text-ui-text transition-colors hover:border-[var(--brand)] hover:bg-[var(--brand)]/10 hover:text-[var(--brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]'
+const DRAG_CONTROL_CLASS = 'cursor-grab touch-none rounded-sm border border-[var(--brand)] bg-ui-panel text-ui-text transition-colors hover:bg-[var(--brand)]/10 hover:text-[var(--brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]'
 
 function DraggableSectorHandle({
   sectorId,
@@ -140,13 +144,13 @@ function DraggableNumberBadge({ sectorId, parentId, children }: { sectorId: numb
 }
 
 // 대분류 열 머리글 — 번호 칸을 끄는 동안 여기에 놓으면 그 업종이 최상위(대분류)가 된다. 끄는 중이 아닐 때는 보통 머리글이다.
-function RootDropHeader({ className, isActive, isOver, children }: { className: string; isActive: boolean; isOver: boolean; children: React.ReactNode }) {
+function RootDropHeader({ className, isActive, isOver, children, style, onClick }: { className: string; isActive: boolean; isOver: boolean; children: React.ReactNode; style?: React.CSSProperties; onClick?: () => void }) {
   const { setNodeRef } = useDroppable({ id: 'sector-drop-root', data: { root: true } })
   return (
-    <div ref={setNodeRef} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/50' : ''}`}>
+    <div ref={setNodeRef} onClick={onClick} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/50' : ''}`} style={style}>
       {children}
       {isActive && (
-        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-5 -translate-y-1/2 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[18px] ${isOver ? 'bg-[var(--brand)] text-ui-background' : 'bg-transparent text-[var(--brand)]'}`}>
+        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-6 -translate-y-1/2 rounded border border-[var(--brand)] px-2 text-xs font-bold leading-[22px] ${isOver ? 'bg-[var(--brand)] text-ui-background' : 'bg-transparent text-[var(--brand)]'}`}>
           여기
         </span>
       )}
@@ -183,6 +187,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const stockSearchWidthPx = useStockSearchWidth()
   const [query, setQuery] = useState('')
   const [sectorOrder, setSectorOrder] = useState<SectorOrder>(loadSectorOrder)
+  const [sortColumn, setSortColumn] = useState<number | null>(null)
+  const [sortDirection, setSortDirection] = useState<HeaderSortState>(null)
+  const [excludedByDepth, setExcludedByDepth] = useState<Record<number, ReadonlySet<string>>>({})
   const [undoStack, setUndoStack] = useState<SectorHistoryAction[]>([])
   const [redoStack, setRedoStack] = useState<SectorHistoryAction[]>([])
   const historyCounter = useRef(0)
@@ -211,6 +218,21 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const [moveOverRoot, setMoveOverRoot] = useState(false)
   // 끌고 있는 줄의 폭과, 손잡이(끄는 대상) 기준 줄 왼쪽 끝 위치 — 미리보기를 줄 전체 폭으로, 원래 줄과 같은 왼쪽 위치에서 그린다.
   const [draggedRow, setDraggedRow] = useState<{ width: number; offsetX: number; height: number } | null>(null)
+
+  const toggleHeaderSort = (index: number) => {
+    if (sortColumn !== index) {
+      setSortColumn(index)
+      setSortDirection('asc')
+    } else {
+      setSortDirection(current => current === null ? 'asc' : current === 'asc' ? 'desc' : null)
+    }
+  }
+  const toggleDepthFilter = (depth: number, value: string) => setExcludedByDepth(previous => {
+    const next = new Set(previous[depth] ?? [])
+    if (next.has(value)) next.delete(value)
+    else next.add(value)
+    return { ...previous, [depth]: next }
+  })
 
   const createSector = useCreateSector()
   const renameSector = useRenameSector()
@@ -436,9 +458,16 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   // 설정창 머리글 개수는 대분류만 센다 — MARKETRY·거래소(읽기 전용 표)와 같은 기준이다. 중·소분류 개수는 위 열 머리글에 따로 적혀 있다.
   const topLevelTotal = sectors.filter(sector => sector.depth === 0).length
   useReportCountLabel(`${toCount(sectorCounts[0])}/${toCount(topLevelTotal)}업종`, onCountLabelChange)
-  const rootSectors = orderSectors(viewSectors.filter(c => c.parentId === null), null, sectorOrder)
-  const middleSectors = selectedMajorId === null ? [] : orderSectors(viewSectors.filter(c => c.parentId === selectedMajorId), selectedMajorId, sectorOrder)
-  const smallSectors = selectedMiddleId === null ? [] : orderSectors(viewSectors.filter(c => c.parentId === selectedMiddleId), selectedMiddleId, sectorOrder)
+  const depthOptions = [0, 1, 2].map(depth => [...new Set(sectors.filter(item => depth === 2 ? item.depth >= 2 : item.depth === depth).map(item => item.name))].sort(compareKoreanText))
+  const sortSiblings = (items: SectorItem[], parentId: number | null, depth: number) => {
+    const ordered = orderSectors(items, parentId, sectorOrder)
+    if (sortColumn !== depth || sortDirection === null) return ordered
+    const sign = sortDirection === 'asc' ? 1 : -1
+    return [...ordered].sort((a, b) => sign * compareKoreanText(a.name, b.name) || a.id - b.id)
+  }
+  const rootSectors = sortSiblings(viewSectors.filter(c => c.parentId === null && !excludedByDepth[0]?.has(c.name)), null, 0)
+  const middleSectors = selectedMajorId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMajorId && !excludedByDepth[1]?.has(c.name)), selectedMajorId, 1)
+  const smallSectors = selectedMiddleId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMiddleId && !excludedByDepth[2]?.has(c.name)), selectedMiddleId, 2)
   const makeRows = (items: SectorItem[], parentId: number | null): Row[] => {
     const rows: Row[] = items.map((item, index) => ({ type: 'sector', item, siblingIndex: index + 1 }))
     if (parentId !== null && addingChildFor === parentId) {
@@ -607,11 +636,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   >
                     {sector.name}
                   </button>
-                  {recentlyChangedSectorId === sector.id && recentChangeType && (
-                    <span className="ml-2 inline-flex h-6 w-8 shrink-0 items-center justify-center rounded-sm border border-ui-border bg-ui-panel text-sm font-bold leading-none text-ui-text">
-                      {recentChangeType}
-                    </span>
-                  )}
                   {(childCountByParent.get(sector.id) ?? 0) > 0 && (
                     <span className="ml-1 shrink-0 text-sm text-ui-muted">({toCount(childCountByParent.get(sector.id) ?? 0)})</span>
                   )}
@@ -656,6 +680,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 </>
               )}
             </div>
+            {!isRenaming && recentlyChangedSectorId === sector.id && recentChangeType && (
+              <span className="ml-auto inline-flex h-6 w-8 shrink-0 items-center justify-center rounded-sm border border-ui-border bg-ui-panel text-sm font-bold leading-none text-ui-text">
+                {recentChangeType}
+              </span>
+            )}
           </div>
         </td>
       </DroppableSectorRow>
@@ -745,17 +774,27 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           {(['대분류', '중분류', '소분류'] as const).map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">
               {(() => {
-                const headerClass = `flex h-7 shrink-0 items-center justify-center gap-2 bg-[var(--ui-panel)] text-sm font-bold ${index < 2 ? 'border-r border-ui-white/20' : ''} ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`
+                const headerClass = `flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 bg-[var(--ui-panel)] text-sm font-bold ${index < 2 ? 'border-r border-ui-white/20' : ''} ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`
+                const depth = index
+                const excluded = excludedByDepth[depth] ?? new Set<string>()
                 const headerContent = (
-                  <>
-                    {label} ({toCount(sectorCounts[index])})
-                    {index === activeColumn && <span aria-hidden="true" className="text-[var(--brand)]">⌃</span>}
-                  </>
+                  <StockSortHeader
+                    label={`${label} (${toCount(sectorCounts[index])})`}
+                    state={sortColumn === index ? sortDirection : null}
+                    filter={<ColumnFilterButton
+                      label={label}
+                      getOptions={() => depthOptions[depth]}
+                      excluded={excluded}
+                      onToggle={value => toggleDepthFilter(depth, value)}
+                      onSelectAll={() => setExcludedByDepth(previous => ({ ...previous, [depth]: new Set() }))}
+                      onSelectNone={values => setExcludedByDepth(previous => ({ ...previous, [depth]: new Set(values) }))}
+                    />}
+                  />
                 )
                 return index === 0 ? (
-                  <RootDropHeader className={headerClass} isActive={isMoveDrag && draggedSector?.parentId !== null && draggedSector !== null} isOver={moveOverRoot}>{headerContent}</RootDropHeader>
+                  <RootDropHeader className={headerClass} isActive={isMoveDrag && draggedSector?.parentId !== null && draggedSector !== null} isOver={moveOverRoot} onClick={() => toggleHeaderSort(index)} style={{ height: STOCK_HEADER_ROW_PX }}>{headerContent}</RootDropHeader>
                 ) : (
-                  <div className={headerClass}>{headerContent}</div>
+                  <div className={headerClass} onClick={() => toggleHeaderSort(index)} style={{ height: STOCK_HEADER_ROW_PX }}>{headerContent}</div>
                 )
               })()}
               <div className={`min-h-0 flex-1 overflow-auto scrollbar-hide ${index < 2 ? 'border-r border-ui-border' : ''}`}>
