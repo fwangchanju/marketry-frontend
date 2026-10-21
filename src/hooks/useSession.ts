@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import { devLogin, getSession, logout } from '@/api/auth'
+import { withdrawAccount } from '@/api/profile'
 import { getLastRefreshAt, markSessionAnonymous, refreshSessionOnce } from '@/api/client'
 import { authKeys } from './queryKeys'
 import { STATIC_REFERENCE_CACHE } from './cacheConfig'
@@ -149,24 +150,35 @@ const ANONYMOUS_SESSION: AuthSessionResponse = {
   profileImageVersion: null,
 }
 
+// 로그아웃·탈퇴로 로그인이 끝난 뒤의 정리 — 저장 대기 중인 preferences 디바운스 저장을 취소하고(다음 로그인 사용자에게
+// 새어나가지 않도록) 사용자별 데이터가 남지 않도록 캐시 전체를 비운다 — 이전 계정 화면이 잠깐이라도 보이지 않게.
+function clearSessionData(queryClient: QueryClient) {
+  cancelPendingPreferenceSave()
+  // 세션 쿼리는 지우지 않고 그 자리에서 익명으로 바꾼다 — clear()로 지우면 세션을 구독하던 화면(지도 설정 등)이
+  // 새 쿼리를 따라가지 못해서 로그아웃 뒤에도 이전 사용자의 설정이 그대로 보였다. 바꾼 뒤에 나머지를 비운다.
+  queryClient.setQueryData(authKeys.session(), ANONYMOUS_SESSION)
+  queryClient.removeQueries({ predicate: query => query.queryKey[0] !== authKeys.all[0] })
+  clearCustomModeStorage()
+  try {
+    sessionStorage.removeItem(LAST_USER_ID_STORAGE_KEY)
+  } catch {
+    // 무시
+  }
+}
+
 export function useLogout() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: logout,
-    onSuccess: () => {
-      // 저장 대기 중인 preferences 디바운스 저장을 취소한 뒤(다음 로그인 사용자에게 새어나가지 않도록)
-      // 사용자별 데이터가 남지 않도록 캐시 전체를 비운다 — 이전 계정 화면이 잠깐이라도 보이지 않게.
-      cancelPendingPreferenceSave()
-      // 세션 쿼리는 지우지 않고 그 자리에서 익명으로 바꾼다 — clear()로 지우면 세션을 구독하던 화면(지도 설정 등)이
-      // 새 쿼리를 따라가지 못해서 로그아웃 뒤에도 이전 사용자의 설정이 그대로 보였다. 바꾼 뒤에 나머지를 비운다.
-      queryClient.setQueryData(authKeys.session(), ANONYMOUS_SESSION)
-      queryClient.removeQueries({ predicate: query => query.queryKey[0] !== authKeys.all[0] })
-      clearCustomModeStorage()
-      try {
-        sessionStorage.removeItem(LAST_USER_ID_STORAGE_KEY)
-      } catch {
-        // 무시
-      }
-    },
+    onSuccess: () => clearSessionData(queryClient),
+  })
+}
+
+// 회원 탈퇴 — 서버가 데이터를 지우고 쿠키를 만료시키면 로그아웃과 같게 화면의 사용자 데이터를 비운다.
+export function useWithdrawAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: withdrawAccount,
+    onSuccess: () => clearSessionData(queryClient),
   })
 }

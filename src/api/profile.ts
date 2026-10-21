@@ -19,3 +19,6 @@ export const uploadProfileImage = (image: Blob) => {
 }
 
 export const deleteProfileImage = () => client.delete('/profile/image')
+
+// 회원 탈퇴 — 이메일·프로필·내 분류·설정을 즉시 모두 지운다(되돌릴 수 없다). 관리자는 서버가 거부한다.
+export const withdrawAccount = () => client.delete('/profile/account')

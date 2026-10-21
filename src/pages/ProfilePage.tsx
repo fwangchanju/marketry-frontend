@@ -10,7 +10,7 @@ import ProfileAvatar from '@/components/ProfileAvatar'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCheckNickname, useDeleteProfileImage, useUpdateNickname, useUploadProfileImage } from '@/hooks/useProfile'
-import { useLogout, useSession } from '@/hooks/useSession'
+import { useLogout, useSession, useWithdrawAccount } from '@/hooks/useSession'
 import { appConfirm } from '@/utils/appDialogBus'
 import { checkProfileImageFile, resizeProfileImage, PROFILE_IMAGE_MAX_UPLOAD_BYTES } from '@/utils/resizeProfileImage'
 
@@ -39,6 +39,7 @@ export default function ProfilePage() {
   const { requireLogin } = useLoginGate()
   const leaveToEntryPage = useLeaveToEntryPage()
   const logout = useLogout()
+  const withdraw = useWithdrawAccount()
   const updateNickname = useUpdateNickname()
   const checkNickname = useCheckNickname()
   const uploadImage = useUploadProfileImage()
@@ -160,6 +161,18 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       await logout.mutateAsync()
+      navigate('/home', { replace: true })
+    } catch {
+      // 요청 실패는 아래 계정 카드에서 안내한다.
+    }
+  }
+
+  // 회원 탈퇴 — 확인을 한 번 더 받고, 서버가 데이터를 지우면 홈으로 보낸다. 관리자는 버튼 자체를 보이지 않는다.
+  const handleWithdraw = async () => {
+    const confirmed = await appConfirm('탈퇴하면 이메일, 닉네임, 프로필 사진, 내 분류와 설정이 모두 즉시 지워지며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?', { title: '회원 탈퇴' })
+    if (!confirmed) return
+    try {
+      await withdraw.mutateAsync()
       navigate('/home', { replace: true })
     } catch {
       // 요청 실패는 아래 계정 카드에서 안내한다.
@@ -295,15 +308,29 @@ export default function ProfilePage() {
                 )}
               </div>
               <div className="border-t border-ui-border pt-4">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={logout.isPending}
-                  className="h-7 rounded-[5px] border-0 bg-ui-control px-4 text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-wait disabled:opacity-50"
-                >
-                  {logout.isPending ? '로그아웃 중...' : '로그아웃'}
-                </button>
+                {/* 로그아웃은 왼쪽, 회원 탈퇴는 같은 줄의 오른쪽 끝에 둔다. 관리자는 탈퇴 버튼이 없다. */}
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={logout.isPending}
+                    className="h-7 rounded-[5px] border-0 bg-ui-control px-4 text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-wait disabled:opacity-50"
+                  >
+                    {logout.isPending ? '로그아웃 중...' : '로그아웃'}
+                  </button>
+                  {session.role !== 'ADMIN' && (
+                    <button
+                      type="button"
+                      onClick={handleWithdraw}
+                      disabled={withdraw.isPending}
+                      className="h-7 rounded-[5px] border border-ui-border bg-transparent px-4 text-[13px] font-medium text-status-error-text transition-colors hover:bg-ui-control disabled:cursor-wait disabled:opacity-50"
+                    >
+                      {withdraw.isPending ? '탈퇴 처리 중...' : '회원 탈퇴'}
+                    </button>
+                  )}
+                </div>
                 {logout.isError && <p role="alert" className="mt-3 text-base text-status-error-text">로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
+                {withdraw.isError && <p role="alert" className="mt-3 text-base text-status-error-text">탈퇴하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
               </div>
             </>
           ) : null}
