@@ -7,10 +7,12 @@ import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
+import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
+import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 
 const PERIOD_OPTIONS = [14, 30] as const
@@ -23,6 +25,8 @@ export default function AdminDashboardPage() {
   const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const [period, setPeriod] = useState<Period>(14)
   const screenshotRef = useRef<HTMLDivElement>(null)
@@ -68,6 +72,8 @@ export default function AdminDashboardPage() {
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
             showRefresh={false}
+            onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
+            isSettingsOpen={isSettingsOpen}
             onOpenShare={() => setIsShareOpen(true)}
             isScreenshotOpen={isShareOpen}
           />
@@ -90,22 +96,6 @@ export default function AdminDashboardPage() {
                   <ChartFrame
                     title="일별 접속 회원 수"
                     note="하루에 접속한 서로 다른 회원 수"
-                    actions={
-                      <div role="radiogroup" aria-label="기간" className="flex items-center gap-1">
-                        {PERIOD_OPTIONS.map(option => (
-                          <button
-                            key={option}
-                            type="button"
-                            role="radio"
-                            aria-checked={period === option}
-                            onClick={() => setPeriod(option)}
-                            className={`h-6 rounded-[4px] border-0 px-2 text-xs transition-colors ${period === option ? 'bg-[var(--brand-surface)] font-bold text-ui-white' : 'bg-[var(--ui-panel)] font-normal text-ui-text hover:text-ui-white'}`}
-                          >
-                            {option}일
-                          </button>
-                        ))}
-                      </div>
-                    }
                   >
                     {dailyAccess.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
@@ -128,6 +118,45 @@ export default function AdminDashboardPage() {
               </section>
             )}
           </div>
+          {isAdmin && (
+            <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
+              <SettingsPanel
+                pageLabel="Admin"
+                showPreferenceActions={false}
+                fixedSideTab
+                isOpen={isSettingsOpen}
+                onOpenChange={setIsSettingsOpen}
+                isOnLeft={isSettingsOnLeft}
+                onToggleSide={toggleSettingsSide}
+                sectionOrder={['adminManage']}
+              >
+                <SettingsPanelGroup section="adminManage">
+                  <div className="settings-plain-content">
+                    <div className="settings-ops-item h-[160px] text-sm">
+                      <div className="settings-custom-control">
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일별 접속 기간</h2>
+                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">일별 접속 회원 수 차트에 보여 줄 기간</p>
+                        <div role="radiogroup" aria-label="일별 접속 기간" className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
+                          {PERIOD_OPTIONS.map(option => (
+                            <button
+                              key={option}
+                              type="button"
+                              role="radio"
+                              aria-checked={period === option}
+                              onClick={() => setPeriod(option)}
+                              className={`flex h-7 items-center justify-center settings-chip-hover rounded-[4px] border-0 text-[13px] ${period === option ? 'bg-[var(--brand-surface)] font-bold text-ui-white' : 'bg-[var(--ui-control)] font-medium text-ui-white'}`}
+                            >
+                              {option}일
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </SettingsPanelGroup>
+              </SettingsPanel>
+            </div>
+          )}
         </div>
       </div>
       {isShareOpen && (
