@@ -13,7 +13,6 @@ import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
-import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useTaxonomySelection, type TaxonomySelection } from '@/hooks/useTaxonomySelection'
 import { useCustomSectors, useStockSectors } from '@/hooks/useTreemapCustom'
@@ -37,7 +36,7 @@ export default function CustomPage() {
   const mode = pathname === '/custom/stock' || searchParams.get('mode') === 'stock' ? 'stock' : 'sector'
   // 분류 시트 — 내 분류(mine)만 편집할 수 있다. ?sheet=krx는 읽기 전용 KRX 시트, ?sheet=marketry는 올린
   // MARKETRY를 읽기 전용으로 보여준다(MARKETRY는 내 분류에서 올려서 바꾼다).
-  // 예전 주소(?sheet=nxt)는 KRX 시트에서 "NXT 종목만 보기"를 켠 상태로 연다.
+  // 예전 주소(?sheet=nxt)는 KRX 시트로 연다.
   const { data: session, isLoading: isSessionLoading } = useSession()
   const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
   const isLoggedIn = useIsLoggedIn()
@@ -71,9 +70,6 @@ export default function CustomPage() {
       return params
     })
   }
-  // KRX 시트에서 NXT 거래 종목만 남기는 보기 옵션 — 새로고침해도 유지된다.
-  const [isNxtOnlyView, setIsNxtOnlyView] = usePersistedState('customPage.krxNxtOnly', false)
-  const nxtOnly = sheet === 'KRX' && (isNxtOnlyView || sheetParam === 'NXT')
   // 기존 시트 링크는 처음부터 적용하고 브라우저 공통 선택으로 옮겨 URL이 이후 선택을 덮지 않게 한다.
   useEffect(() => {
     if (!explicitSheet) return
@@ -81,13 +77,12 @@ export default function CustomPage() {
     if (explicitSheet === 'MINE' && isSessionLoading) return
     if (explicitSheet === 'MINE' && isGuestKnown) requireLogin(pathname)
     else setSelectedTaxonomy(explicitSheet)
-    if (sheetParam === 'NXT') setIsNxtOnlyView(true)
     setSearchParams(previous => {
       const params = new URLSearchParams(previous)
       params.delete('sheet')
       return params
     }, { replace: true })
-  }, [explicitSheet, sheetParam, isSessionLoading, isGuestKnown, pathname, requireLogin, setSelectedTaxonomy, setIsNxtOnlyView, setSearchParams])
+  }, [explicitSheet, sheetParam, isSessionLoading, isGuestKnown, pathname, requireLogin, setSelectedTaxonomy, setSearchParams])
   // AdminStockTable의 툴바(종목수/실행취소·다시실행/필터/엑셀 등)를 이 DOM 노드로 포털링해서 세
   // 번째 바 안에 그린다 — useRef 대신 useState인 이유는, ref 콜백이 커밋 단계에서 실행되므로
   // useState로 받아야 그 노드가 준비된 뒤 리렌더가 한 번 더 일어나 AdminStockTable에 null이 아닌
@@ -254,8 +249,6 @@ export default function CustomPage() {
                     isError={isTaxonomyError || (mode === 'stock' && isStockCatalogError)}
                     onRetry={() => { void refetchTaxonomy(); if (mode === 'stock') void refetchStockCatalog() }}
                     source={sheet === 'MARKETRY' ? 'MARKETRY' : 'KRX'}
-                    nxtOnly={nxtOnly}
-                    onNxtOnlyChange={setIsNxtOnlyView}
                     nxtStockCodes={nxtStockCodes}
                     stockMarkets={stockMarkets}
                     stockIndustries={stockIndustries}

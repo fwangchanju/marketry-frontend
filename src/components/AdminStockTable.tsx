@@ -859,8 +859,7 @@ const AdminStockRow = memo(function AdminStockRow({
         <input type="checkbox" className="mx-auto my-0 block thin-check" checked={isSelected} onChange={() => {}} />
       </td>
       <td className={`${alignClass('center')} text-ui-muted ${rowHoverClass}`}>{item.stockCode}</td>
-      <td className={`truncate pl-2 text-left ${marketColorClass(item.market)} ${rowHoverClass}`}>{item.stockName}</td>
-      {!showAlias && <td className={`pl-2 text-left ${rowHoverClass}`} />}
+      <td colSpan={showAlias ? 1 : 2} className={`truncate pl-2 text-left ${marketColorClass(item.market)} ${rowHoverClass}`}>{item.stockName}</td>
       {showAlias && (
         <AdminAliasCell
           alias={item.alias}
@@ -955,9 +954,10 @@ export default function AdminStockTable({
   // 약칭 지정은 관리자 전용이다 — 관리자의 약칭은 MARKETRY로 올릴 내용에만 쓰이고, 다른 사용자의 데이터는 건드리지 않는다.
   // 일반 사용자에게는 약칭 값을 보여주지도 수정하게 하지도 않는다(백엔드도 관리자만 허용한다). 열 자리만 빈칸으로 두어 다른 시트와 열 위치를 맞춘다.
   const isAdmin = useSession().data?.role === 'ADMIN'
-  // 약칭 열은 일반 사용자에게도 자리를 둔다(값은 빈칸) — 마켓트리·거래소 표와 열 위치가 같아야 해서다.
-  const columns = COLUMNS
-  const columnKeys = useMemo(() => columns.map(col => col.columnKey), [columns])
+  // 약칭 열은 관리자에게만 보인다 — 일반 사용자의 표에서는 열 자체를 뺀다. 이때 종목명 열이 약칭 자리까지 차지해서(StockTableColGroup) 나머지 열 위치는 같다.
+  // 열 폭 표(colgroup)는 약칭 열을 그대로 두고, 일반 사용자는 머리글·본문에서 종목명 칸이 두 칸(colSpan 2)을 차지한다 — 그래서 나머지 열 폭이 MARKETRY 표와 똑같다.
+  const columns = useMemo(() => (isAdmin ? COLUMNS : COLUMNS.filter(col => col.key !== 'alias')), [isAdmin])
+  const columnKeys = useMemo(() => COLUMNS.map(col => col.columnKey), [])
   // handleAssign/runBulkAssign에서 "변경 전" 섹터를 읽어야 하는데, items를 그대로 의존성에 넣으면
   // 섹터가 바뀔 때마다(=매 변경마다) 콜백 identity가 바뀌어 AdminStockRow의 memo가 무력화된다 —
   // ref로 최신 값만 따라가게 해서 콜백은 그대로 안정적으로 유지한다.
@@ -1444,14 +1444,16 @@ export default function AdminStockTable({
   // 정렬 방향은 비교 안에 넣는다. 같은 값끼리(예: 같은 마켓)는 방향과 상관없이 항상 시가총액이 큰 종목이 위에 온다.
   // 정렬이 꺼진 상태(sortKey null)는 기본 순서인 시가총액 내림차순이다.
   const sorted = useMemo(() => {
-    const key = sortKey ?? DEFAULT_SORT_KEY
-    const sign = sortKey && sortDirection === 'asc' ? 1 : -1
+    // 일반 사용자는 약칭 열이 없으므로, 예전에 약칭으로 정렬해 둔 값은 기본 순서로 본다.
+    const effectiveSortKey = !isAdmin && sortKey === 'alias' ? null : sortKey
+    const key = effectiveSortKey ?? DEFAULT_SORT_KEY
+    const sign = effectiveSortKey && sortDirection === 'asc' ? 1 : -1
     return [...filtered].sort((a, b) => {
       const diff = compareByKey(a, b, key, displayByStockCode)
       if (diff !== 0) return sign * diff
       return (b.totalMarketValue ?? -Infinity) - (a.totalMarketValue ?? -Infinity) || compareKoreanText(a.stockCode, b.stockCode)
     })
-  }, [filtered, sortKey, sortDirection, displayByStockCode])
+  }, [filtered, sortKey, sortDirection, displayByStockCode, isAdmin])
   useEffect(() => {
     visibleItemsRef.current = sorted
   }, [sorted])
@@ -1619,7 +1621,7 @@ export default function AdminStockTable({
 
   const rootRef = useRef<HTMLDivElement>(null)
   // 검색창 오른쪽 끝을 아래 약칭 열의 오른쪽 줄에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
-  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { columnKey: 'alias', leftEl: toolbarContainer })
+  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { columnKey: isAdmin ? 'alias' : 'stockName', leftEl: toolbarContainer })
   // 윗줄(드롭다운 오른쪽)에 그리는 검색창과 필터 초기화. 실행취소·다시실행은 설정창의 변경 내역 위치에만 표시한다.
   const toolbar = (
     <div className="flex h-full min-h-0 w-full items-center gap-2">
@@ -1788,6 +1790,7 @@ export default function AdminStockTable({
                   <th
                     key={col.key}
                     data-column-key={col.key}
+                    colSpan={col.key === 'stockName' && !isAdmin ? 2 : undefined}
                     className="cursor-pointer whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white"
                     data-hint={col.key === 'alias' && isAdmin ? '약칭은 운영자만 관리할 수 있습니다.' : undefined}
                     onClick={() => handleSort(col.key)}
@@ -1827,7 +1830,7 @@ export default function AdminStockTable({
           <tbody>
             {isPending ? (
               <tr>
-                <td colSpan={columns.length + 1} className="p-8">
+                <td colSpan={COLUMNS.length + 1} className="p-8">
                   {/* 정렬을 바꾸는 동안의 로딩 원 — 지도·그룹 페이지처럼 크게 가운데에 보여준다. */}
                   <div className="flex h-[min(32rem,60vh)] items-center justify-center">
                     <Spinner showElapsed />
@@ -1838,7 +1841,7 @@ export default function AdminStockTable({
               <>
                 {paddingTop > 0 && (
                   <tr>
-                    <td colSpan={columns.length + 1} style={{ height: paddingTop, padding: 0, border: 'none' }} />
+                    <td colSpan={COLUMNS.length + 1} style={{ height: paddingTop, padding: 0, border: 'none' }} />
                   </tr>
                 )}
                 {virtualRows.map(virtualRow => {
@@ -1871,7 +1874,7 @@ export default function AdminStockTable({
                 })}
                 {paddingBottom > 0 && (
                   <tr>
-                    <td colSpan={columns.length + 1} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
+                    <td colSpan={COLUMNS.length + 1} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
                   </tr>
                 )}
               </>
