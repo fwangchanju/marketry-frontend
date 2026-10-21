@@ -135,7 +135,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                       onClick={handleToggleTestMember}
                       disabled={isLoading || isDevSignupPending}
                       aria-pressed={isTestMember}
-                      data-hint={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '로컬 DB에 새 USER 계정을 만들어 테스트 회원으로 전환합니다.'}
+                      data-hint={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '로컬 전용 테스트 회원(번호 800001, 한 명만 재사용)으로 전환합니다. 회원 관리 목록에는 나오지 않습니다.'}
                       className="h-7 w-full rounded-[5px] border-0 bg-admin-only text-[13px] font-medium text-ui-background transition-colors hover:bg-admin-only-hover disabled:opacity-50"
                     >
                       {isDevSignupPending ? '전환 중…' : isTestMember ? '기존 계정으로 돌아가기' : '테스트 회원으로 전환'}
