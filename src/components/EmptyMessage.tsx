@@ -8,6 +8,8 @@ import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
 // 거래소·MARKETRY·내 분류 표와 그룹·지도 페이지가 모두 같은 모양과 같은 문구를 쓴다.
 export const EMPTY_DATA_MESSAGE = '표시할 데이터가 없습니다.'
 export const EMPTY_SEARCH_MESSAGE = '검색 결과가 없습니다.'
+// 종목은 있는데 시총 범위·제외 업종·등락 방향 같은 설정 필터로 전부 가려졌을 때 — 지도·그룹·홈이 같은 문구를 쓴다.
+export const EMPTY_FILTER_MESSAGE = '조건에 해당하는 종목이 없습니다.'
 // 내 분류를 아직 만들지 않은 회원이 내 분류 지도를 열었을 때 — 내 기준으로 만들어 보라는 안내(지도에서는 아래 줄에 커스텀 배지 링크를 붙인다).
 export const EMPTY_MINE_MESSAGE = '내 마음대로 시장 지도를 만들어 보세요.'
 
@@ -38,9 +40,9 @@ export default function EmptyMessage({ message, topClass = 'top-8', children }: 
 
 // 내 분류가 비어 있을 때처럼 다음 행동을 안내하는 화면 — 로딩·오류 원과 같은 자리(위 16px·아래 19.5px 여백 안 가운데)에 같은 원·로고(움직이지 않음)를 두고,
 // children(배지)은 원 안 상태 칸에, 문구는 원 아래에 매단다. 문구는 원의 가운데 정렬에 영향을 주지 않는다.
-export function EmptyLogoMessage({ message, children }: { message: string; children?: ReactNode }) {
+export function EmptyLogoMessage({ message, children, containerClassName = 'pt-4 pb-[19.5px]' }: { message: string; children?: ReactNode; containerClassName?: string }) {
   return (
-    <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
+    <div className={`flex flex-1 items-center justify-center ${containerClassName}`}>
       <div className="relative">
         <Spinner still stillContent={children} />
         <div className="absolute left-1/2 top-full mt-4 -translate-x-1/2 whitespace-nowrap text-center text-base text-ui-text">{message}</div>

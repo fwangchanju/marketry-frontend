@@ -135,7 +135,7 @@ export default function RankColumns({
               return (
                 <div key={item.key} className="relative h-full min-w-0" style={{ containerType: 'inline-size' }}>
                   <div
-                    className="absolute bottom-0 left-[18%] right-[18%] rounded-sm border border-ui-control"
+                    className={`absolute bottom-0 left-[18%] right-[18%] border border-ui-control ${hasAxisBreak ? 'rounded-b-sm' : 'rounded-sm'}`}
                     style={{
                       backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
                       height: `${primaryHeightPercent}%`,
@@ -145,7 +145,7 @@ export default function RankColumns({
                     <>
                       <div
                         aria-hidden="true"
-                        className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
+                        className="absolute left-[18%] right-[18%] border border-ui-control"
                         style={{
                           bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_CUT_PX}px)`,
                           height: RANK_AXIS_BREAK_BRIDGE_PX,
@@ -154,7 +154,7 @@ export default function RankColumns({
                       />
                       <div
                         aria-hidden="true"
-                        className="absolute left-[18%] right-[18%] rounded-sm border border-ui-control"
+                        className="absolute left-[18%] right-[18%] rounded-t-sm border border-ui-control"
                         style={{
                           bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_GAP_PX}px)`,
                           height: `${tailHeightPercent}%`,

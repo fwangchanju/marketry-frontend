@@ -112,7 +112,7 @@ export default function RankBars({
               ) : (
                 <>
                   <div
-                    className="absolute left-0 top-0 h-full rounded-sm border border-ui-control"
+                    className={`absolute left-0 top-0 h-full border border-ui-control ${hasAxisBreak ? 'rounded-l-sm' : 'rounded-sm'}`}
                     style={{
                       width: `calc((100% - ${reservedWidth}px) * ${primaryMagnitude / axisMax})`,
                       backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
@@ -122,7 +122,7 @@ export default function RankBars({
                     <>
                       <div
                         aria-hidden="true"
-                        className="absolute top-0 h-full rounded-sm border border-ui-control"
+                        className="absolute top-0 h-full border border-ui-control"
                         style={{
                           left: `calc((100% - ${reservedWidth}px) * ${axisBreakAt / axisMax} + ${RANK_AXIS_BREAK_CUT_PX}px)`,
                           width: RANK_AXIS_BREAK_BRIDGE_PX,
@@ -131,7 +131,7 @@ export default function RankBars({
                       />
                       <div
                         aria-hidden="true"
-                        className="absolute top-0 h-full rounded-sm border border-ui-control"
+                        className="absolute top-0 h-full rounded-r-sm border border-ui-control"
                         style={{
                           left: `calc((100% - ${reservedWidth}px) * ${axisBreakAt / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
                           width: `calc((100% - ${reservedWidth}px) * ${(compressedMagnitude - axisBreakAt) / axisMax})`,
