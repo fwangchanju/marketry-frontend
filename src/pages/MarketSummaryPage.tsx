@@ -464,7 +464,7 @@ export default function MarketSummaryPage() {
           </Toolbar>
           {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다. 좌우 여백은 바깥 main-settings-row에서 관리한다. 로딩·오류 원은 지도·그룹·커스텀 페이지와 같은 위 16px·아래 19.5px 여백 안에서 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
           <div className="relative flex min-h-0 flex-1">
-            <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && nxtOnlyWindow.fromMinutes >= 12 * 60 && !isPastSnapshot && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(data?.snapshotTime)} nodes={rootNodes} />
+            <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && !isPastSnapshot && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(data?.snapshotTime)} nodes={rootNodes} />
             {isLoading ? (
               <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
                 <Spinner showElapsed />

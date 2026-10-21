@@ -387,7 +387,7 @@ export default function GroupPage() {
                 설정 사이드바가 열려도 본문이 밀리는 게 자연스럽게 느껴지도록 한다(밀림 자체는 다른
                 페이지와 동일한 flex 구조이고, 콘텐츠가 항상 남는 공간을 꽉 채우기만 하면 된다). */}
             <div className="relative flex min-h-0 flex-1">
-              <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && nxtOnlyWindow.fromMinutes >= 12 * 60 && !isPastSnapshot && !isRangeView} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(displayNow?.snapshotTime)} nodes={displayNow?.items ?? []} />
+              <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && !isPastSnapshot && !isRangeView} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(displayNow?.snapshotTime)} nodes={displayNow?.items ?? []} />
               <div className="flex min-h-0 w-full flex-1 flex-col pt-4 pb-[19.5px]">
               {isLoading ? (
                 <div className="flex flex-1 items-center justify-center">
