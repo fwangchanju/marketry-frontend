@@ -27,6 +27,7 @@ function nicknameProblem(value: string): string | null {
   return null
 }
 const NICKNAME_CHANGE_LIMITED_CODE = 'PROFILE_NICKNAME_CHANGE_LIMITED'
+const NICKNAME_RESERVED_CODE = 'PROFILE_NICKNAME_RESERVED'
 // 닉네임을 다시 바꿀 수 있게 되는 시각을 "10월 23일 오후 2시"처럼 한국 시간으로 적는다.
 function formatChangeableAt(epochMillis: number): string {
   return new Date(epochMillis).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: 'numeric', timeZone: 'Asia/Seoul' })
@@ -98,6 +99,7 @@ export default function ProfilePage() {
         setNicknameMessage({ kind: 'error', text: '닉네임은 7일에 한 번만 바꿀 수 있습니다.' })
         void refetch()
       } else if (status === 409) setNicknameMessage({ kind: 'error', text: '이미 사용 중인 닉네임입니다.' })
+      else if (status === 400 && errorCode === NICKNAME_RESERVED_CODE) setNicknameMessage({ kind: 'error', text: '사용할 수 없는 닉네임입니다.' })
       else if (status === 400) setNicknameMessage({ kind: 'error', text: NICKNAME_RULE_MESSAGE })
       else setNicknameMessage({ kind: 'error', text: '닉네임을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.' })
     }

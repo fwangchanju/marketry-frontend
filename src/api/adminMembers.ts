@@ -42,6 +42,12 @@ export function setMembersSpecial(userIds: number[], special: boolean) {
     .then(response => z.object({ changed: z.number() }).parse(response.data))
 }
 
+export function resetMembersNickname(userIds: number[]) {
+  return client
+    .patch('/admin/members/nickname-reset', { userIds })
+    .then(response => z.object({ reset: z.number() }).parse(response.data))
+}
+
 const DailyAccessSchema = z.array(z.object({ date: z.string(), members: z.number() }))
 
 // 최근 N일(오늘 포함)의 일별 접속 회원 수 — 접속한 사람이 없는 날도 0명으로 채워 받는다.
