@@ -9,7 +9,7 @@ import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/c
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import { ClockIcon } from '@/components/icons/AppIcons'
-import { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
+import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import SettingsPanel, { SettingsPanelGroup, SettingsMarketValueSection, SettingsExcludeSection, SettingsColorSection, SettingsStrongIndustryColorSection } from '@/components/SettingsPanel'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
@@ -503,11 +503,16 @@ export default function MarketSummaryPage() {
               <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
                 <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
               </div>
-            ) : settingsModalProps.taxonomy === 'MINE' && rootNodes.length === 0 ? (
+            ) : settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0) ? (
               // 내 분류가 비어 있으면 지도·그룹 페이지와 같은 안내(원·로고·바로 가기)를 홈 전체에 보여 준다 — 원은 위 로딩 원과 같은 자리다.
               <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
                 <CustomPageBadgeLink />
               </EmptyLogoMessage>
+            ) : overview.items.length === 0 ? (
+              // 종목은 있는데 시총 범위·제외 업종 같은 설정으로 업종이 전부 가려졌다 — 빈 틀만 남지 않게 안내 문구를 보여 준다.
+              <div className="relative flex-1">
+                <EmptyMessage message={EMPTY_FILTER_MESSAGE} topClass="top-0" />
+              </div>
             ) : (
             /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 지도" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
             <div className="flex min-h-0 min-w-0 flex-1">

@@ -27,7 +27,7 @@ import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
-import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
+import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
@@ -251,7 +251,6 @@ export default function MapPage() {
     isError,
     rootNodes,
     filteredRootNodes,
-    sectorChangeFilter,
     stockChangeFilter,
     onChangeStockChangeFilter,
     maxDepth,
@@ -318,6 +317,8 @@ export default function MapPage() {
   // 지금 뎁스(path) 기준으로, 섹터 제외/시가총액 구간 필터를 적용하기 전 원본 트리에 있는 전체 종목 수.
   const rawCurrentNode = findRawNodeByPath(rootNodes, path)
   const totalItemCount = collectRawItems(rawCurrentNode ? [rawCurrentNode] : rootNodes).length
+  // 내 분류에 종목이 하나도 배정되지 않은 상태 — 필터·시총 범위로 다 가려진 경우나 한 업종 안으로 들어간 경우와 구분하려고 전체 트리로 센다.
+  const isMineEmpty = isCustom && collectRawItems(rootNodes).length === 0
 
   // 상단 오른쪽 분류 배지(설정창 분류 선택 버튼과 같은 청록색).
   const modeStatusText = <TaxonomyBadge taxonomy={taxonomy} />
@@ -671,14 +672,14 @@ export default function MapPage() {
                   <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
                 </div>
               ) : visibleItems.length === 0 ? (
-                isCustom && stockChangeFilter === 'all' && sectorChangeFilter === 'all' ? (
+                isMineEmpty ? (
                   <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
                     <CustomPageBadgeLink />
                   </EmptyLogoMessage>
                 ) : (
                   <div className="relative flex-1">
                     <EmptyMessage
-                      message={stockChangeFilter === 'all' && sectorChangeFilter === 'all' ? EMPTY_DATA_MESSAGE : '조건에 해당하는 종목이 없습니다.'}
+                      message={totalItemCount === 0 ? EMPTY_DATA_MESSAGE : EMPTY_FILTER_MESSAGE}
                       topClass="-top-1"
                     />
                   </div>

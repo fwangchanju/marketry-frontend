@@ -15,7 +15,7 @@ import SettingsPanel, {
   SettingsBeforeMinutesSection,
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
+import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import Toolbar from '@/components/Toolbar'
@@ -410,11 +410,16 @@ export default function GroupPage() {
                 <div className="flex flex-1 items-center justify-center">
                   <Spinner showElapsed />
                 </div>
-              ) : source === 'MINE' && displayNow.items.length === 0 ? (
+              ) : source === 'MINE' && displayNow.items.every(node => collectItems(node).length === 0) ? (
                 // 내 분류가 비어 있으면 코스피·코스닥 막대만 덩그러니 남으므로, 지도와 같은 안내(원·로고·바로 가기)를 보여 준다. 원은 위의 로딩 원과 같은 자리다.
                 <EmptyLogoMessage message={EMPTY_MINE_MESSAGE} containerClassName="">
                   <CustomPageBadgeLink />
                 </EmptyLogoMessage>
+              ) : activeChart.rankedItems.every(item => item.isReference) ? (
+                // 종목은 있는데 시총 범위·제외 업종 같은 설정으로 업종이 전부 가려졌다 — 지수 막대만 덩그러니 남지 않게 안내 문구를 보여 준다.
+                <div className="relative flex-1">
+                  <EmptyMessage message={EMPTY_FILTER_MESSAGE} topClass="top-0" />
+                </div>
               ) : (
                 <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-auto pb-[19.5px]">
                   <div

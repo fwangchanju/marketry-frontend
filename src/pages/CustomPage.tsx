@@ -22,6 +22,7 @@ import { useSession, useIsLoggedIn } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
+import { appAlert } from '@/utils/appDialogBus'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 
@@ -166,6 +167,21 @@ export default function CustomPage() {
   const copyLabel =
     copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
+  // 내 분류에 업종이 하나도 없는 처음 상태 — 업종 화면이면 업종 추가 입력칸을 강조하고, 업종·종목 두 화면 모두 들어올 때 안내 팝업을 띄운다.
+  const isEmptyMineData = !isReadOnlySheet && isLoggedIn && !isSectorsLoading && sectors?.length === 0
+  const isEmptyMine = isEmptyMineData && mode === 'sector'
+  // 화면(업종·종목)마다 들어올 때 한 번 — 데이터가 다시 불러와져도 반복해서 뜨지 않는다.
+  const emptyGuideShownModeRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!isEmptyMineData) {
+      emptyGuideShownModeRef.current = null
+      return
+    }
+    if (emptyGuideShownModeRef.current === mode) return
+    emptyGuideShownModeRef.current = mode
+    void appAlert('먼저 업종 페이지(Custom > Sector)에서 업종을 추가하세요. 그리고 종목 페이지(Custom > Stock)로 가서 종목을 분류해보세요.', { title: '내 분류 시작하기' })
+  }, [isEmptyMineData, mode])
+
   const actions = (
     <NavBarPageActions
       onRefresh={() => {
@@ -183,7 +199,7 @@ export default function CustomPage() {
       isScreenshotOpen={isShareOpen}
       onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
       isSettingsOpen={isSettingsOpen}
-      settingsAttention={!isReadOnlySheet && mode === 'sector' && isLoggedIn && !isSectorsLoading && sectors?.length === 0}
+      settingsAttention={isEmptyMine}
       isNativeFullscreen={isNativeFullscreen}
       onToggleFullscreen={handleToggleNativeFullscreen}
       showRefresh={false}
@@ -305,9 +321,9 @@ export default function CustomPage() {
               <SettingsPanelGroup section="custom">
                 {!isReadOnlySheet ? (
                   <>
+                    {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
                     {mode === 'stock' && <div ref={setStockBulkTarget} className="settings-item" />}
                     <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
-                    {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
                   </>
                 ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 분류만 가능</span></span></div>}
               </SettingsPanelGroup>

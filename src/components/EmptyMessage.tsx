@@ -8,6 +8,8 @@ import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
 // 거래소·MARKETRY·내 분류 표와 그룹·지도 페이지가 모두 같은 모양과 같은 문구를 쓴다.
 export const EMPTY_DATA_MESSAGE = '표시할 데이터가 없습니다.'
 export const EMPTY_SEARCH_MESSAGE = '검색 결과가 없습니다.'
+// 종목은 있는데 시총 범위·제외 업종·등락 방향 같은 설정 필터로 전부 가려졌을 때 — 지도·그룹·홈이 같은 문구를 쓴다.
+export const EMPTY_FILTER_MESSAGE = '조건에 해당하는 종목이 없습니다.'
 // 내 분류를 아직 만들지 않은 회원이 내 분류 지도를 열었을 때 — 내 기준으로 만들어 보라는 안내(지도에서는 아래 줄에 커스텀 배지 링크를 붙인다).
 export const EMPTY_MINE_MESSAGE = '내 마음대로 시장 지도를 만들어 보세요.'
 
