@@ -35,8 +35,7 @@ function createPublicationLabel(now: Date) {
 export default function MarketryPublishControls() {
   const queryClient = useQueryClient()
   // 올리거나 되돌리는 중이면 그 안내 문구, 아니면 null.
-  const [busyMessage, setBusyMessage] = useState<string | null>(null)
-  const isBusy = busyMessage !== null
+  const [isBusy, setIsBusy] = useState(false)
   const mainAreaRect = useMainAreaRect(isBusy)
   const [isVersionsOpen, setIsVersionsOpen] = useState(false)
   const [versions, setVersions] = useState<MarketryPublication[] | null>(null)
@@ -59,7 +58,7 @@ export default function MarketryPublishControls() {
       { adminOnly: true, title: 'MARKETRY 업데이트' },
     )
     if (!confirmed) return
-    setBusyMessage('MARKETRY를 업데이트 중입니다.')
+    setIsBusy(true)
     try {
       const published = await publishMarketry(createPublicationLabel(new Date()))
       setVersions(null)
@@ -68,7 +67,7 @@ export default function MarketryPublishControls() {
     } catch {
       appAlert('MARKETRY에 올리지 못했습니다.', { title: '업데이트 실패' })
     } finally {
-      setBusyMessage(null)
+      setIsBusy(false)
     }
   }
 
@@ -90,7 +89,7 @@ export default function MarketryPublishControls() {
   const handleRestore = async (version: MarketryPublication) => {
     const confirmed = await appConfirm(`[${toDateTimeLabel(version.label)}]\nMARKETRY 분류를 되돌리시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
     if (!confirmed) return
-    setBusyMessage('MARKETRY를 롤백 중입니다.')
+    setIsBusy(true)
     try {
       await restoreMarketryPublication(version.id)
       setIsVersionsOpen(false)
@@ -99,7 +98,7 @@ export default function MarketryPublishControls() {
     } catch {
       appAlert('MARKETRY를 되돌리지 못했습니다.', { title: '롤백 실패' })
     } finally {
-      setBusyMessage(null)
+      setIsBusy(false)
     }
   }
 
@@ -116,13 +115,13 @@ export default function MarketryPublishControls() {
       {/* 올리거나 되돌리는 동안 화면 전체를 가리고 큰 로딩을 보여준다 — 오래 걸려도 "진행 중"임을 알 수 있고, 그 사이 다른 곳을 누르지 못한다. */}
       {isBusy && createPortal(
         // 설정창(겹침 순서·잘림 영역) 밖, 문서 맨 위에 그려서 설정창으로 옮겨도 화면 전체를 가린다.
-        // 어두운 배경은 화면 전체를 덮고, 로딩 원은 메인 영역 안의 가운데에 놓는다.
+        // 어두운 배경은 화면 전체를 덮고, 메인 영역은 일반 로딩 화면처럼 단색 바탕으로 가려 그 위 가운데에 로딩 원을 놓는다.
         <div className="fixed inset-0 z-[90] bg-ui-background/70">
           <div
-            className={`flex items-center justify-center ${mainAreaRect ? 'absolute' : 'h-full w-full'}`}
+            className={`flex items-center justify-center bg-ui-background ${mainAreaRect ? 'absolute' : 'h-full w-full'}`}
             style={mainAreaRect ? { left: mainAreaRect.left, top: mainAreaRect.top, width: mainAreaRect.width, height: mainAreaRect.height } : undefined}
           >
-            <Spinner showElapsed message={busyMessage} />
+            <Spinner showElapsed />
           </div>
         </div>,
         document.body,
