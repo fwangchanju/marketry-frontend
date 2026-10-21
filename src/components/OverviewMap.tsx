@@ -128,9 +128,9 @@ export default function OverviewMap({
             {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{toPctSigned(item.changeRate)}</span>}
           </>
         )
-        // onSelect가 없으면 눌러서 이동하지 않는 그냥 박스다(홈 시장 요약 지도).
+        // onSelect가 있으면 업종 지도로 이동하는 버튼으로 그린다.
         return onSelect ? (
-          <button key={item.key} type="button" aria-label={item.name} onClick={() => onSelect(item.name)} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} className={boxClassName} style={boxStyle}>
+          <button key={item.key} type="button" aria-label={item.name} onClick={() => onSelect(item.name)} onPointerDown={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} className={boxClassName} style={boxStyle}>
             {content}
           </button>
         ) : (

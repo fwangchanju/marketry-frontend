@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
@@ -47,6 +48,7 @@ import { getSnapshotDays, getTreemap } from '@/api/treemap'
 import { usePreviousTradingDay } from '@/hooks/useTreemap'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
 import { loadTrendDays, sampleDaysUpTo, trendMonths } from '@/utils/trendDates'
+import { marketRoute } from '@/utils/marketRoute'
 
 // 홈 시장 요약 배치
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
@@ -143,44 +145,46 @@ function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSector
   )
 }
 
+const SUMMARY_BADGE_CLASS = 'inline-flex h-6 min-h-6 shrink-0 items-center whitespace-nowrap rounded-sm bg-[var(--brand-surface)] px-2 text-[14px] font-semibold leading-none text-ui-white'
+
 function SummaryBadge({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <span className={`inline-flex h-6 min-h-6 shrink-0 items-center whitespace-nowrap rounded-sm bg-[var(--brand-surface)] px-2 text-[14px] font-semibold leading-none text-ui-white ${className}`}>{children}</span>
+  return <span className={`${SUMMARY_BADGE_CLASS} ${className}`}>{children}</span>
 }
 
 const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
 const DEFAULT_HOME_FRAME_ORDER = ['시장 요약', '시장 지도', '그룹 등락률 (%)']
 
-function SortableHomeFrame({ title, captureId, index, children, captureUntil, showHeader = true, insetHeader = false }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; showHeader?: boolean; insetHeader?: boolean }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: title })
+function SortableHomeFrame({ title, captureId, index, children, captureUntil, showHeader = true, insetHeader = false }: { title: string; captureId: string; index: number; children: ReactNode | ((dragBadge: ReactNode) => ReactNode); captureUntil?: string; showHeader?: boolean; insetHeader?: boolean }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
+  const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" className={`${SUMMARY_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title === '시장 요약' ? '코스피' : title}</span>
+  const body = typeof children === 'function' ? children(dragBadge) : children
   const header = (
     <div className="relative z-[6] flex h-5 min-h-5 shrink-0 items-center">
-      <SummaryBadge>{title}</SummaryBadge>
+      {dragBadge}
     </div>
   )
   return (
     <section
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      aria-label={`${title}, 끌어서 위치 이동`}
-      data-hint="끌어서 항목 순서 변경"
+      aria-label={title}
       data-capture-until={captureUntil}
       style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.6 : undefined }}
-      className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background cursor-grab active:cursor-grabbing ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'} ${isDragging ? 'cursor-grabbing' : ''}`}
+      className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}
     >
       <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : index === 2 ? 'pl-1 pr-0' : 'px-1'}`}>
         {insetHeader ? (
           <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
             {header}
-            <div className="mt-1 flex min-h-0 flex-1 flex-col">{children}</div>
+            <div className="mt-1 flex min-h-0 flex-1 flex-col">{body}</div>
           </div>
-        ) : <>{showHeader && header}{children}</>}
+        ) : <>{showHeader && header}{body}</>}
       </div>
     </section>
   )
 }
 
 export default function MarketSummaryPage() {
+  const navigate = useNavigate()
   // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const allFramesRef = useRef<HTMLDivElement>(null)
@@ -341,6 +345,10 @@ export default function MarketSummaryPage() {
 
   // 홈은 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
   const effectiveDepth = 1
+  const handleSelectSector = (sectorName: string) => {
+    navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
+  }
+  const handleSelectIndex = (indexMarket: 'KOSPI' | 'KOSDAQ') => navigate(marketRoute('/map', indexMarket))
   // 고른 단계의 업종만 모아 지도 박스와 그래프 막대로 쓴다 — 지도 페이지와 같은 제외 기준을 따른다.
   const overview = useMemo(() => {
     const items: OverviewMapItem[] = []
@@ -507,28 +515,28 @@ export default function MarketSummaryPage() {
                 title: '시장 지도',
                 captureId: 'market-map',
                 body: (
-                  <OverviewMap items={overview.items} colorScale={colorScale} />
+                  <OverviewMap items={overview.items} colorScale={colorScale} onSelect={handleSelectSector} />
                 ),
               },
               {
                 title: '그룹 등락률 (%)',
                 captureId: 'group-change-rate',
                 body: (
-                  <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} applyAxisBreak={rangeStartTime === undefined} />
+                  <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={handleSelectSector} onSelectIndex={handleSelectIndex} applyAxisBreak={rangeStartTime === undefined} />
                 ),
               },
               {
                 // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
                 title: '시장 요약',
                 captureId: 'market-summary',
-                body: (
+                body: (dragBadge: ReactNode) => (
                   <div className="grid h-full min-h-0 w-full flex-1 grid-rows-[repeat(3,minmax(160px,1fr))] gap-2 overflow-y-auto text-[14px] font-medium leading-none tabular-nums">
                     {INDEX_ROWS.map(({ label, market }) => {
                       const trendItems = indexTrendItems
                       return (
                         <section key={market} aria-label={`${label} 시장 요약과 최근 5거래일 추이`} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
                           <div className="relative z-10 flex h-[26px] min-w-0 shrink-0 items-center gap-2">
-                            <SummaryBadge>{label}</SummaryBadge>
+                            {market === 'KOSPI' ? dragBadge : <SummaryBadge>{label}</SummaryBadge>}
                           </div>
                           <div className={rangeStartTime && (isIndexHistoryPending || !trendItems.some(item => item.market === market))
                             ? 'absolute inset-0'

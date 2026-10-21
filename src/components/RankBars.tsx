@@ -25,12 +25,14 @@ export default function RankBars({
   highlightColor,
   colorScale,
   onSelectSector,
+  onSelectIndex,
   applyAxisBreak = false,
 }: {
   chart: RankColumnsChart
   highlightColor: string
   colorScale: ColorScaleConfig
   onSelectSector?: (sectorName: string) => void
+  onSelectIndex?: (market: 'KOSPI' | 'KOSDAQ') => void
   applyAxisBreak?: boolean
 }) {
   const items = chart.rankedItems
@@ -74,7 +76,10 @@ export default function RankBars({
     <div ref={containerRef} className="flex min-h-0 w-full flex-1 flex-col justify-between" style={{ fontSize }}>
       {items.map(item => {
         const isEllipsis = item.hiddenCount !== undefined
-        const selectable = onSelectSector !== undefined && !item.isReference && !isEllipsis
+        const indexMarket = item.isReference && (item.key === 'market-index:KOSPI' || item.key === 'market-index:KOSDAQ')
+          ? item.key.slice('market-index:'.length) as 'KOSPI' | 'KOSDAQ'
+          : undefined
+        const selectable = !isEllipsis && (indexMarket ? onSelectIndex !== undefined : !item.isReference && onSelectSector !== undefined)
         const magnitude = Math.abs(item.value)
         const hasAxisBreak = axisBreakAt > 0 && item.sectorName === '신규 상장' && item.value > axisBreakAt
         const primaryMagnitude = hasAxisBreak ? axisBreakAt : magnitude
@@ -88,7 +93,9 @@ export default function RankBars({
               <button
                 type="button"
                 aria-label={item.sectorName}
-                onClick={() => onSelectSector(item.sectorName)}
+                onClick={() => (indexMarket ? onSelectIndex?.(indexMarket) : onSelectSector?.(item.sectorName))}
+                onPointerDown={event => event.stopPropagation()}
+                onKeyDown={event => event.stopPropagation()}
                 className={`${nameClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 hover:bg-ui-white/35`}
                 style={{ color: nameColor, width: nameWidth }}
               >
