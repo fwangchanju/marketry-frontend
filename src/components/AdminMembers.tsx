@@ -67,7 +67,6 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
   const [page, setPage] = useState(0)
   const [sort, setSort] = useState<{ key: SortKey; order: SortOrder } | null>(null)
   const appliedSort = sort ?? DEFAULT_SORT
-  const sortLabel = sort === null ? '최근 가입순' : `${columns.find(column => column.key === sort.key)?.label} ${sort.order === 'asc' ? '오름차순' : '내림차순'}`
   const stockSearchWidthPx = useStockSearchWidth()
   const includedRoles = GRADE_VALUES.filter(value => !excludedRoles.has(value))
   const role = includedRoles.length === GRADE_VALUES.length ? '' : includedRoles.join(',')
@@ -305,14 +304,13 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
         )}
       </div>
       <div className="flex h-7 shrink-0 items-center justify-between gap-2 text-xs text-ui-muted">
-        <span>{members.data || noRoleSelected ? `${query || excludedRoles.size > 0 ? '검색 결과' : '전체'} ${total.toLocaleString()}명 · ` : ''}{sortLabel} · 한국 시각(KST)</span>
+        <span aria-hidden="true" />
         <div className="flex items-center gap-2">
           <button type="button" className={controlClass} disabled={page === 0 || members.isFetching} onClick={() => { setPage(value => value - 1); clearSelection() }}>이전</button>
           <span aria-live="polite">{page + 1} / {pages}</span>
           <button type="button" className={controlClass} disabled={!members.data || members.isError || page + 1 >= pages || members.isFetching} onClick={() => { setPage(value => value + 1); clearSelection() }}>다음</button>
         </div>
       </div>
-      <p className="m-0 pb-1 text-xs text-ui-muted">{members.data?.accessTrackingAvailable ? '최근 접속은 세션 확인·갱신 기준입니다. 과거 기록은 소급되지 않습니다.' : '최근 접속 기록 수집은 준비 중입니다.'}</p>
       {summaryContainer && createPortal(
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">회원 현황</h2>
