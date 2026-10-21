@@ -38,7 +38,7 @@ import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
-import type { MarketValueExclusions } from '@/utils/marketValueTier'
+import { isMarketValueExcluded, type MarketValueExclusions } from '@/utils/marketValueTier'
 import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
@@ -355,13 +355,13 @@ export default function MarketSummaryPage() {
     for (const { node, pathKey } of collectAtDepth(rootNodes, effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
       const average = computeSectorAverage(node, excludedMarketValueTiers)
       if (average.weightedAvg === null) continue
-      const nodeItems = collectItems(node)
+      const nodeItems = collectItems(node).filter(candidate => !isMarketValueExcluded(candidate, excludedMarketValueTiers))
       const advancers = nodeItems.filter(candidate => candidate.changeRate > 0).length
       const decliners = nodeItems.filter(candidate => candidate.changeRate < 0).length
       items.push({
         key: pathKey,
         name: node.sectorName,
-        marketValue: node.totalMarketValue,
+        marketValue: nodeItems.reduce((sum, candidate) => sum + candidate.totalMarketValue, 0),
         changeRate: average.weightedAvg,
         simpleAvg: average.simpleAvg,
         advancers,
