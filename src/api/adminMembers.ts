@@ -62,6 +62,13 @@ export function getAdminSignups(days: number, signal?: AbortSignal) {
   return client.get('/admin/members/signups', { params: { days }, signal }).then(response => SignupDailySchema.parse(response.data))
 }
 
+const VisitorDailySchema = z.array(z.object({ date: z.string(), visitors: z.number(), joined: z.number(), conversionRate: z.number().nullable() }))
+
+// 최근 N일(오늘 포함)의 일별 비회원 방문자 수와 신규 가입 수 — 방문자를 세기 시작하기 전의 날은 0명으로 온다.
+export function getAdminVisitors(days: number, signal?: AbortSignal) {
+  return client.get('/admin/members/visitors', { params: { days }, signal }).then(response => VisitorDailySchema.parse(response.data))
+}
+
 const AccessFrequencySchema = z.array(z.object({ label: z.string(), members: z.number() }))
 
 // 최근 30일 중 접속한 날 수 구간별 회원 수.

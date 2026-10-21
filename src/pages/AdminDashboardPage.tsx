@@ -1,10 +1,9 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getAdminAccessFrequency, getAdminDailyAccess, getAdminMemberSummary, getAdminSignups } from '@/api/adminMembers'
+import { getAdminAccessFrequency, getAdminDailyAccess, getAdminSignups, getAdminVisitors } from '@/api/adminMembers'
 import DailyAccessChart from '@/components/DailyAccessChart'
 import GrowthLineChart from '@/components/GrowthLineChart'
 import HorizontalBarsChart from '@/components/HorizontalBarsChart'
-import MemberCompositionChart from '@/components/MemberCompositionChart'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -53,6 +52,17 @@ export default function AdminDashboardPage() {
     staleTime: 30_000,
     retry: false,
   })
+  const visitors = useQuery({
+    queryKey: ['admin-member-visitors', session?.userId, signupPeriod],
+    queryFn: ({ signal }) => getAdminVisitors(signupPeriod, signal),
+    enabled: isAdmin,
+    staleTime: 30_000,
+    retry: false,
+  })
+  // 방문자를 세기 시작한 날부터만 합친다 — 그 전 날의 가입까지 더하면 전환율이 부풀려진다.
+  const countedDays = (visitors.data ?? []).filter(row => row.visitors > 0)
+  const totalVisitors = countedDays.reduce((sum, row) => sum + row.visitors, 0)
+  const totalJoined = countedDays.reduce((sum, row) => sum + row.joined, 0)
   const accessFrequency = useQuery({
     queryKey: ['admin-member-access-frequency', session?.userId],
     queryFn: ({ signal }) => getAdminAccessFrequency(signal),
@@ -60,14 +70,6 @@ export default function AdminDashboardPage() {
     staleTime: 30_000,
     retry: false,
   })
-  const summary = useQuery({
-    queryKey: ['admin-member-summary', session?.userId],
-    queryFn: ({ signal }) => getAdminMemberSummary(signal),
-    enabled: isAdmin,
-    staleTime: 30_000,
-    retry: false,
-  })
-
   const handleCopy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotRef.current) return
     setCopyStatus('copying')
@@ -127,15 +129,6 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <ChartFrame title="회원 구성" note="관리자 · 특별 회원 · 일반 회원">
-                    {summary.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
-                    ) : summary.data ? (
-                      <MemberCompositionChart counts={summary.data} />
-                    ) : (
-                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
-                    )}
-                  </ChartFrame>
                   <ChartFrame title="일별 신규 가입" note={`하루에 가입한 회원 수 · 최근 ${signupPeriod}일`}>
                     {signups.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
@@ -150,6 +143,32 @@ export default function AdminDashboardPage() {
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                     ) : signups.data ? (
                       <GrowthLineChart rows={signups.data} />
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
+                  <ChartFrame title="일별 방문자 수" note={`로그인하지 않고 들어온 사람 · 하루 기준 · 최근 ${signupPeriod}일`}>
+                    {visitors.isError ? (
+                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                    ) : visitors.data ? (
+                      <DailyAccessChart rows={visitors.data.map(row => ({ date: row.date, members: row.visitors }))} ariaLabelPrefix="일별 비회원 방문자 수" />
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
+                  <ChartFrame title="가입 전환율" note={`방문자 중 가입한 비율 · 최근 ${signupPeriod}일`}>
+                    {visitors.isError ? (
+                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                    ) : visitors.data ? (
+                      totalVisitors === 0 ? (
+                        <p className="m-0 text-sm text-ui-text">아직 센 방문자가 없습니다.</p>
+                      ) : (
+                        <div className="flex w-full flex-col items-center gap-2 self-center">
+                          <span className="text-5xl font-bold leading-none tabular-nums text-ui-white">{((totalJoined / totalVisitors) * 100).toFixed(1)}%</span>
+                          <span className="text-xs font-medium text-ui-white">방문자 {totalVisitors.toLocaleString()}명 중 {totalJoined.toLocaleString()}명 가입</span>
+                          <span className="text-xs text-ui-muted">방문자를 세기 시작한 {countedDays.length}일 기준</span>
+                        </div>
+                      )
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
@@ -214,7 +233,7 @@ export default function AdminDashboardPage() {
                     <div className="settings-ops-item h-[160px] text-sm">
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">가입 추이 기간</h2>
-                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">신규 가입·누적 회원 수 차트에 보여 줄 기간</p>
+                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">가입·누적·방문자 차트에 보여 줄 기간</p>
                         <div role="radiogroup" aria-label="가입 추이 기간" className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
                           {SIGNUP_PERIOD_OPTIONS.map(option => (
                             <button
@@ -259,7 +278,7 @@ function ChartFrame({ title, note, actions, children }: { title: string; note: s
         <span className="rounded bg-[var(--brand-surface)] px-2 py-1 text-sm leading-none font-semibold text-ui-white">{title}</span>
         {actions}
       </div>
-      <p className="m-0 mt-2 shrink-0 text-xs text-ui-muted">{note}</p>
+      <p className="m-0 mt-2 shrink-0 text-xs font-medium text-ui-white">{note}</p>
       <div className="mt-3 flex min-h-0 flex-1 items-end">{children}</div>
     </section>
   )

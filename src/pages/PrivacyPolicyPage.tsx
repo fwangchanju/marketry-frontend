@@ -38,7 +38,7 @@ export default function PrivacyPolicyPage() {
 
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>2. 수집하는 개인정보 항목</h2>
-            <p className={BODY}>로그인하지 않고 이용할 때는 서버에 개인정보를 저장하지 않습니다. Google로 로그인하면 아래 정보를 저장합니다.</p>
+            <p className={BODY}>로그인하지 않고 이용할 때는 이름·이메일 같은 개인정보를 저장하지 않습니다. 다만 하루에 몇 명이 방문했는지 세기 위해, 접속 IP와 브라우저 정보를 되돌릴 수 없는 값으로 바꿔 날짜와 함께 저장합니다(원래 값은 저장하지 않으며, 날짜마다 값이 달라 다른 날의 방문과 이어지지 않습니다). 이 값은 180일 뒤 지웁니다. Google로 로그인하면 아래 정보를 저장합니다.</p>
             <ul className={LIST}>
               <li>Google 로그인 시: Google 계정 식별자(sub), 발급자(issuer), 이메일 주소</li>
               <li>이용자가 직접 입력하거나 올린 정보: 닉네임, 프로필 사진</li>
@@ -116,7 +116,7 @@ export default function PrivacyPolicyPage() {
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>개정 이력</h2>
             <ul className={LIST}>
-              <li>2026-10-22: 접속 기록 수집, 외부 서비스(Cloudflare·R2 백업), 즉시 탈퇴, 1년 미접속 계정 삭제, 백업 보관 기간 안내 추가</li>
+              <li>2026-10-22: 비회원 방문자 수 집계(되돌릴 수 없는 값, 180일 보관), 접속 기록 수집, 외부 서비스(Cloudflare·R2 백업), 즉시 탈퇴, 1년 미접속 계정 삭제, 백업 보관 기간 안내 추가</li>
               <li>2026-10-11: 서비스 이름과 주소 변경, 수집 항목(닉네임·프로필 사진·북마크)·쿠키·저장소·외부 서비스·이용자 권리 안내 보강</li>
               <li>2026-09-26: 최초 시행</li>
             </ul>
