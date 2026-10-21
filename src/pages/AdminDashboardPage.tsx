@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                     ) : visitors.data ? (
                       totalVisitors === 0 ? (
-                        <p className="m-0 text-sm text-ui-text">아직 센 방문자가 없습니다.</p>
+                        <p className="m-0 w-full self-center text-center text-sm text-ui-text">아직 센 방문자가 없습니다.</p>
                       ) : (
                         <div className="flex w-full flex-col items-center gap-2 self-center">
                           <span className="text-5xl font-bold leading-none tabular-nums text-ui-white">{((totalJoined / totalVisitors) * 100).toFixed(1)}%</span>
