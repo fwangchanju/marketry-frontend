@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -113,7 +114,8 @@ export default function MarketryPublishControls() {
         롤백
       </button>
       {/* 올리거나 되돌리는 동안 화면 전체를 가리고 큰 로딩을 보여준다 — 오래 걸려도 "진행 중"임을 알 수 있고, 그 사이 다른 곳을 누르지 못한다. */}
-      {isBusy && (
+      {isBusy && createPortal(
+        // 설정창(겹침 순서·잘림 영역) 밖, 문서 맨 위에 그려서 설정창으로 옮겨도 화면 전체를 가린다.
         // 어두운 배경은 화면 전체를 덮고, 로딩 원은 메인 영역 안의 가운데에 놓는다.
         <div className="fixed inset-0 z-[90] bg-ui-background/70">
           <div
@@ -122,10 +124,11 @@ export default function MarketryPublishControls() {
           >
             <Spinner showElapsed message={busyMessage} />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
       {isVersionsOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto border border-[var(--status-error)] bg-ui-background p-1 text-sm font-normal">
+        <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto border border-admin-only bg-ui-background p-1 text-sm font-normal">
           {versions !== null && versions.length > 0 && <p className="px-2 py-1 text-xs font-medium text-ui-text">해당 버전으로 롤백합니다.</p>}
           {versions === null ? (
             <p className="px-2 py-1 text-ui-muted">불러오는 중…</p>

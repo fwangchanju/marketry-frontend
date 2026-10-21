@@ -20,6 +20,8 @@
   --color-brand: var(--brand);
   --color-brand-surface: var(--brand-surface);
   --color-brand-surface-hover: var(--brand-surface-hover);
+  --color-admin-only: var(--admin-only);
+  --color-admin-only-hover: var(--admin-only-hover);
   --color-status-error: var(--status-error);
   --color-status-error-text: var(--status-error-text);
   --color-status-error-ink: var(--status-error-ink);
@@ -117,11 +119,12 @@
 } */
 
 :root {
-  /* UI 기본 원색 11개. 지도·그래프 데이터 팔레트는 별도 관리한다. */
+  /* UI 기본 원색 12개. 지도·그래프 데이터 팔레트는 별도 관리한다. */
   --brand: #12b8a6;
   --brand-surface: #20635d;
   --sub-yellow: #e6d04a;
   --sub-purple: #b39ddb;
+  --sub-pink: #ec6fb3; /* 관리자 전용 표시 전용 — 시간대(노랑·보라)·브랜드(청록)·오류(갈색)와 겹치지 않는 색 */
   --ui-background: #0a0a0a;
   --ui-surface: #1a1a1a;
   --ui-panel: #2a2a2a;
@@ -147,6 +150,9 @@
   --status-error-ink: color-mix(in srgb, var(--status-error) 65%, var(--ui-background));
   --status-error-text: color-mix(in srgb, var(--status-error) 80%, var(--ui-white));
   --status-error-hover: var(--status-error);
+  /* 관리자 전용 표시 색 — 분홍(sub-pink) 하나, 마우스 올림·선택은 흰색 쪽으로 밝힌 단계. */
+  --admin-only: var(--sub-pink);
+  --admin-only-hover: color-mix(in srgb, var(--sub-pink) 65%, var(--ui-white));
 
   /* 기존 컴포넌트가 쓰는 역할별 별칭. 설정창의 accent는 선택 회색을 상속한다. */
   --bg: var(--ui-background);
@@ -806,7 +812,10 @@ a { color: var(--accent-light); text-decoration: none; }
   white-space: pre;
 }
 .settings-admin-section .settings-plain-title {
-  color: var(--status-error);
+  color: var(--admin-only);
+  /* 일반 탭의 번호 제목(.settings-section-num)과 같은 22px 줄 높이 — 없으면 15px 글자가 21.43px이 되어 헤더 아래가 어긋난다. */
+  font-weight: 500;
+  line-height: 22px;
 }
 [data-settings-panel][data-page-label="Home"] .settings-plain-content .settings-plain-title::before {
   counter-increment: none;

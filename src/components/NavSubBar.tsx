@@ -48,7 +48,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   const location = useLocation()
   const navigate = useNavigate()
   const links = [...BASE_LINKS, CUSTOM_LINK]
-  // 관리자 계정에만 보이는 Admin 메뉴 — 다른 메뉴와 같은 글자 모양이고 색만 빨강이다.
+  // 관리자 계정에만 보이는 Admin 메뉴 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
   const { data: session, isLoading: isSessionLoading } = useSession()
   const isAdmin = !isSessionLoading && session?.authenticated === true && session.role === 'ADMIN'
   const isAdminActive = location.pathname === '/admin'
@@ -152,8 +152,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
             to="/admin"
             aria-label="관리자 페이지"
             aria-current={isAdminActive ? 'page' : undefined}
-            data-hint="관리자 페이지"
-            className={`${FONT_NAV_TAB} whitespace-nowrap text-ui-muted transition-colors hover:text-ui-white ${isAdminActive ? '' : 'opacity-70 hover:opacity-100'}`}
+            className={`${FONT_NAV_TAB} whitespace-nowrap transition-colors hover:text-admin-only-hover ${isAdminActive ? 'text-admin-only-hover' : 'text-admin-only'}`}
           >
             Admin
           </Link>

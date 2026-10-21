@@ -60,9 +60,9 @@ export default function AppDialogHost() {
         aria-labelledby="app-dialog-title"
         aria-describedby="app-dialog-message"
         // 색은 설정창 말풍선·NXT 안내창과 같은 크림색 계열이다.
-        className={`select-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-status-error' : ''}`}
+        className={`select-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-admin-only' : ''}`}
       >
-        <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-status-error-ink' : 'text-ui-background'}`}>
+        <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-admin-only' : 'text-ui-background'}`}>
           <PopupKindBadge kind={dialog.kind === 'confirm' ? '확인' : '알림'} />
           <span>
             {dialog.title}
@@ -80,7 +80,7 @@ export default function AppDialogHost() {
             type="button"
             autoFocus
             onClick={() => resolveCurrentAppDialog(true)}
-            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold text-ui-white transition-colors ${dialog.adminOnly ? 'bg-status-error-ink hover:bg-status-error-hover' : 'bg-brand-surface hover:bg-brand-surface-hover'}`}
+            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold transition-colors ${dialog.adminOnly ? 'bg-admin-only text-ui-background hover:bg-admin-only-hover' : 'bg-brand-surface text-ui-white hover:bg-brand-surface-hover'}`}
           >
             {dialog.kind === 'confirm' ? '확인' : '닫기'}
           </button>
