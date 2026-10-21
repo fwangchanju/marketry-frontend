@@ -16,7 +16,7 @@ import { FONT_BAR_TIME_SHAPE } from '@/components/FontStyle'
 import { ACCENT_PALETTE } from '@/utils/accentPalette'
 import { TAXONOMY_SELECT_TITLE, TAXONOMY_NAMES, type TaxonomyKey } from '@/utils/taxonomyNames'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
-import { useIsLoggedIn } from '@/hooks/useSession'
+import { useIsLoggedIn, useSession } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
 import { commitDrafts, discardDrafts, useHasDrafts } from '@/utils/settingsDraft'
@@ -27,6 +27,7 @@ import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 export type { SettingsBookmarkId }
 export type SettingsPanelSectionId = 'custom' | 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminMoved' | 'graph'
+const ADMIN_ONLY_SECTIONS: ReadonlySet<SettingsPanelSectionId> = new Set(['adminOps', 'adminMoved'])
 
 interface SettingsPanelGroupProps {
   section: SettingsPanelSectionId
@@ -725,77 +726,6 @@ function DepthStairRange({
 
 // 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 깊이(1-1)보다 깊거나 분류에 없는 단계는 비활성이고,
 // 올리거나 누르면 이유를 커서 옆 말풍선으로 알려준다.
-function DepthTextSelect({
-  depth,
-  onChange,
-  maxSelectableDepth,
-  ariaLabel,
-  disabled = false,
-  noDataLimited = false,
-  className = '',
-}: {
-  depth: number
-  onChange: (depth: number) => void
-  maxSelectableDepth: number
-  ariaLabel: string
-  disabled?: boolean
-  // true면 1-1 설정이 아니라 분류 자체에 그 단계 데이터가 없어서 막힌 것이다(KRX·NXT).
-  noDataLimited?: boolean
-  className?: string
-}) {
-  const [hint, setHint] = useState<CursorHint | null>(null)
-  const [blockedLabel, setBlockedLabel] = useState('')
-  return (
-    <div
-      role="radiogroup"
-      aria-label={ariaLabel}
-      className={`relative flex max-w-[16rem] flex-row items-center gap-3 whitespace-nowrap text-left text-[13px]/4 ${className}`}
-      onPointerMove={e => { if (hint) setHint(cursorHintFrom(e)) }}
-      onPointerLeave={() => setHint(null)}
-    >
-      {DEPTH_LABELS.map((label, index) => {
-        const isCapped = index >= maxSelectableDepth
-        const canExplain = isCapped && !disabled
-        return (
-          <span
-            key={label}
-            className={`relative inline-flex ${canExplain ? 'cursor-not-allowed' : ''}`}
-            onPointerEnter={canExplain ? e => { setBlockedLabel(label); setHint(cursorHintFrom(e)) } : undefined}
-            onPointerDown={canExplain ? e => {
-              e.preventDefault()
-              setBlockedLabel(label)
-              setHint(cursorHintFrom(e))
-            } : undefined}
-          >
-            <button
-              type="button"
-              role="radio"
-              aria-checked={depth === index}
-              onClick={() => onChange(index)}
-              disabled={disabled || isCapped}
-              className={`border-0 bg-transparent p-0 text-left text-[13px]/4 disabled:cursor-not-allowed ${
-                depth === index ? 'text-ui-white' : isCapped ? 'text-ui-muted' : 'text-ui-muted hover:text-ui-white'
-              }`}
-            >
-              {label}
-            </button>
-            {canExplain && <span aria-hidden="true" className="absolute inset-0 z-10 cursor-not-allowed" />}
-          </span>
-        )
-      })}
-      {hint && !disabled && (
-        <CursorHintBubble hint={hint}>
-          {noDataLimited ? (
-            <>현재 {blockedLabel} 데이터가 없어<br />비활성화되어 있습니다.</>
-          ) : (
-            <><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthLevel')}) 업종 분류 깊이</span>에서<br />더 깊은 업종 단계를 선택하면<br />활성화됩니다.</>
-          )}
-        </CursorHintBubble>
-      )}
-    </div>
-  )
-}
-
 // 양쪽 끝에 핸들이 있으면 전체 구간 다 보여주고, 핸들을 안쪽으로 옮기면 그 구간(포함) 밖은 제외된다.
 // 두 핸들은 서로를 지나칠 수 없다(겹치는 건 허용 — 그러면 그 한 칸만 표시).
 function RangeSlider({
@@ -1969,30 +1899,40 @@ export function SettingsSectorChangeSection({
         <span className="settings-plain-title">업종 등락 방향</span>
       </p>
       <SettingDescription>상승·하락 업종만 표시</SettingDescription>
-      <div className="settings-button-area flex flex-col gap-2">
-        <DepthTextSelect
-          depth={depth}
-          onChange={onChangeDepth}
-          maxSelectableDepth={maxSelectableDepth}
-          noDataLimited={noDataLimited}
-          ariaLabel="업종 등락 방향 업종 단계"
-          className="justify-center"
-        />
-        <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
-          <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
-          {DIRECTION_OPTIONS.map(option => (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={value === option.value}
-              onClick={() => onChange(option.value)}
-              className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+      <div className="settings-button-area flex flex-col justify-center">
+        {/* 전체·상승·하락 버튼 줄은 버튼 영역의 가운데에 두고, 단계 드롭박스는 그 바로 위 오른쪽 끝에 얹는다(버튼 위치에 영향을 주지 않는다). */}
+        <div className="relative max-w-[16rem] settings-control-inset">
+          <div className="absolute bottom-full right-0 mb-2">
+            <SettingsDropdown
+              options={DEPTH_LABELS.map((label, index) => ({
+                key: String(index),
+                label,
+                disabled: index >= maxSelectableDepth,
+                hint: noDataLimited ? `현재 ${label} 데이터가 없어 비활성화되어 있습니다.` : '업종 분류 깊이에서 더 깊은 업종 단계를 선택하면 활성화됩니다.',
+              }))}
+              value={String(depth)}
+              onChange={key => onChangeDepth(Number(key))}
+              ariaLabel="업종 등락 방향 업종 단계"
+              compact
+              outlinedChevron
+              className="w-[62px] shrink-0"
+            />
+          </div>
+          <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative grid grid-cols-3 gap-[6px]">
+            <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
+            {DIRECTION_OPTIONS.map(option => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={value === option.value}
+                onClick={() => onChange(option.value)}
+                className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>        </div>
       </div>
     </div>
   )
@@ -2499,6 +2439,8 @@ export default function SettingsPanel({
     const timer = window.setTimeout(() => setMounted(false), SIDEBAR_ANIMATION_MS)
     return () => window.clearTimeout(timer)
   }, [isOpen, mounted])
+  // 관리자 전용 탭은 호출부가 실수로 넘겨도 관리자 세션이 아니면 그리지 않는다(서버도 /api/admin/**은 ADMIN만 허용한다).
+  const isAdminSession = useSession().data?.role === 'ADMIN'
   const childNodes = Children.toArray(children)
   const sectionContent = new Map<SettingsPanelSectionId, ReactNode[]>()
   const addSectionContent = (section: SettingsPanelSectionId, content: ReactNode) => {
@@ -2520,7 +2462,7 @@ export default function SettingsPanel({
   const selectedTaxonomy: TaxonomyKey = taxonomy ?? (isCustom ? 'MARKETRY' : 'KRX')
   const handleSelectTaxonomy = onSelectTaxonomy ?? (() => onToggleCustom?.())
 
-  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id))
+  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSession || !ADMIN_ONLY_SECTIONS.has(section.id)))
   if (sectionOrder) {
     availableSections.sort((a, b) => sectionOrder.indexOf(a.id) - sectionOrder.indexOf(b.id))
   }
@@ -2657,18 +2599,18 @@ export default function SettingsPanel({
                   else setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  section.id === 'adminOps' || section.id === 'adminMoved' ? 'text-[var(--status-error)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
+                  section.id === 'adminOps' || section.id === 'adminMoved' ? 'text-admin-only' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
                 {section.icon ? <SettingsSectionIcon
                   icon={section.icon}
-                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${section.id === 'adminOps' || section.id === 'adminMoved' ? 'text-[var(--status-error)]' : ''}`}
+                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${section.id === 'adminOps' || section.id === 'adminMoved' ? 'text-admin-only' : ''}`}
                   strokeWidth={section.icon === 'industry' ? 1.22 : 1.1}
                 /> : <span aria-hidden="true" className="h-[30px] w-[30px] shrink-0" />}
                 <span className="max-w-full truncate font-bold">{section.label}</span>
                 <span
                   aria-hidden="true"
-                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${section.id === 'adminOps' || section.id === 'adminMoved' ? 'bg-[var(--status-error)]' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
+                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${section.id === 'adminOps' || section.id === 'adminMoved' ? 'bg-admin-only' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
                 />
               </button>
             )

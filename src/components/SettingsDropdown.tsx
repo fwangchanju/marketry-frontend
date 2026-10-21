@@ -15,6 +15,9 @@ const COMPACT_ROW_HEIGHT = 20
 interface Option<K extends string> {
   key: K
   label: string
+  // 목록에는 보이지만 고를 수 없다 — hint가 있으면 마우스를 올릴 때 이유를 보여 준다.
+  disabled?: boolean
+  hint?: string
 }
 
 interface Props<K extends string> {
@@ -93,11 +96,14 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
               type="button"
               role="option"
               aria-selected={option.key === value}
+              aria-disabled={option.disabled || undefined}
+              data-hint={option.disabled ? option.hint : undefined}
               onClick={() => {
+                if (option.disabled) return
                 onChange(option.key)
                 setIsOpen(false)
               }}
-              className={`settings-chip-hover flex w-full items-center justify-between rounded-none border-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-xs'} text-left font-medium text-ui-white ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${option.key === value ? 'bg-ui-white/20' : 'bg-transparent'}`}
+              className={`${option.disabled ? 'cursor-not-allowed text-ui-muted' : 'settings-chip-hover text-ui-white'} flex w-full items-center justify-between rounded-none border-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-xs'} text-left font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${option.key === value ? 'bg-ui-white/20' : 'bg-transparent'}`}
               style={{ height: compact ? COMPACT_ROW_HEIGHT : MENU_ROW_HEIGHT, ...(textPadLeft !== undefined ? { paddingLeft: textPadLeft } : {}) }}
             >
               <span className="truncate">{option.label}</span>

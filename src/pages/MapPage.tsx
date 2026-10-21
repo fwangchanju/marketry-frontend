@@ -812,7 +812,7 @@ export default function MapPage() {
                 <SettingsTopPickSection {...settingsModalProps} />
               </SettingsPanelGroup>
               {isAdmin && <SettingsPanelGroup section="adminMoved">
-                <div className="settings-plain-content pt-3">
+                <div className="settings-plain-content">
                   <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setAdminBoxLabelMinAreaPercent} />
                   <SettingsSectorChangeSection
                     value={adminSectorChangeFilter === 'rising' || adminSectorChangeFilter === 'falling' ? adminSectorChangeFilter : 'all'}

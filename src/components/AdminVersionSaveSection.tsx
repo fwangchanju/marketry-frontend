@@ -106,7 +106,7 @@ export default function AdminVersionSaveSection() {
                 onClick={() => handleDelete(version.id, version.label)}
                 data-hint="삭제"
                 aria-label="삭제"
-                className="nes-btn border-status-error-ink bg-status-error-ink px-2 py-0.5 text-sm text-ui-white hover:bg-status-error-hover"
+                className="nes-btn border-admin-only bg-admin-only px-2 py-0.5 text-sm text-ui-background hover:bg-admin-only-hover"
               >
                 ✕
               </button>
