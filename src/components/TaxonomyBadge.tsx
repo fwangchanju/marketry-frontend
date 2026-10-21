@@ -7,7 +7,8 @@ export default function TaxonomyBadge({ taxonomy }: { taxonomy: TaxonomyKey }) {
   const { data: session } = useSession()
   const title = taxonomy === 'MINE' ? session?.nickname || TAXONOMY_NAMES.MINE.title : TAXONOMY_NAMES[taxonomy].title
   return (
-    <span className="flex min-w-0 items-center justify-end">
+    // 그룹·커스텀의 body에 적용된 tabular-nums를 상속하지 않아 페이지마다 이름 폭이 달라지지 않게 한다.
+    <span className="flex min-w-0 items-center justify-end normal-nums">
       <span className="toolbar-badge flex h-6 min-w-0 overflow-hidden rounded-none">
         <span className="flex min-w-0 items-center bg-[var(--brand)] px-1.5 font-semibold text-ui-background">
           <span className="truncate">{title}</span>
