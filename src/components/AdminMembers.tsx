@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { getAdminMemberSummary, getAdminMembers } from '@/api/adminMembers'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
+import { getAdminMemberSummary, getAdminMembers, setMembersSpecial } from '@/api/adminMembers'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import { DownloadIcon, GoogleLogoIcon } from '@/components/icons/AppIcons'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import StockSortHeader from '@/components/StockSortHeader'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import { appAlert } from '@/utils/appDialogBus'
+import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
@@ -57,7 +57,8 @@ function formatTime(value: string | null) {
   return value.replace('T', ' ').slice(0, 19)
 }
 
-export default function AdminMembers({ userId, summaryContainer, exportContainer }: { userId: number; summaryContainer: HTMLElement | null; exportContainer: HTMLElement | null }) {
+export default function AdminMembers({ userId, summaryContainer, exportContainer, specialContainer }: { userId: number; summaryContainer: HTMLElement | null; exportContainer: HTMLElement | null; specialContainer: HTMLElement | null }) {
+  const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
   const [query, setQuery] = useState('')
   const [excludedRoles, setExcludedRoles] = useState<ReadonlySet<string>>(new Set())
@@ -79,6 +80,11 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
     staleTime: 30_000,
     retry: false,
   })
+  // 표에 줄이 없을 때 표 영역 한가운데에 보여 주는 안내(오류는 따로 그린다).
+  const centerMessage = noRoleSelected ? '조건에 맞는 회원이 없습니다.'
+    : members.isPending ? '회원 정보를 불러오는 중입니다.'
+    : members.data?.items.length === 0 ? (query || excludedRoles.size > 0 ? '조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.')
+    : null
   const summary = useQuery({
     queryKey: ['admin-member-summary', userId],
     queryFn: ({ signal }) => getAdminMemberSummary(signal),
@@ -86,6 +92,7 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
     retry: false,
   })
   const [isExporting, setIsExporting] = useState(false)
+  const [isChangingSpecial, setIsChangingSpecial] = useState(false)
   // 체크한 회원 — 검색·정렬·필터·페이지를 바꾸면 비운다(보이는 목록 기준이다).
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set())
   const clearSelection = () => setSelectedIds(new Set())
@@ -132,6 +139,30 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
       appAlert('엑셀 파일을 만들지 못했습니다.\n다시 시도해 주세요.', { title: '다운로드 실패' })
     } finally {
       setIsExporting(false)
+    }
+  }
+  // 체크한 회원을 특별 회원으로 지정하거나 해제한다 — 일반 권한 회원만 가능하다(서버도 같은 규칙으로 막는다).
+  const handleChangeSpecial = async (special: boolean) => {
+    const selected = (members.data?.items ?? []).filter(member => selectedIds.has(member.id))
+    if (selected.length === 0) return
+    if (selected.some(member => member.role === 'ADMIN')) {
+      appAlert('관리자는 특별 회원으로 바꿀 수 없습니다.\n관리자를 빼고 다시 체크해 주세요.', { title: '지정 불가' })
+      return
+    }
+    const confirmed = await appConfirm(`체크한 ${selected.length}명을 ${special ? '특별 회원으로 지정' : '일반 회원으로 해제'}하시겠습니까?`, { adminOnly: true, title: special ? '특별 회원 지정' : '특별 회원 해제' })
+    if (!confirmed) return
+    setIsChangingSpecial(true)
+    try {
+      await setMembersSpecial(selected.map(member => member.id), special)
+      clearSelection()
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin-members'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-member-summary'] }),
+      ])
+    } catch {
+      appAlert('특별 회원을 바꾸지 못했습니다.\n잠시 후 다시 시도해 주세요.', { title: '변경 실패' })
+    } finally {
+      setIsChangingSpecial(false)
     }
   }
   const visibleIds = members.data?.items.map(member => member.id) ?? []
@@ -231,13 +262,7 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
             </tr>
           </thead>
           <tbody className="select-text">
-            {members.isError ? null : noRoleSelected ? (
-              <tr><td colSpan={8} className="text-center"><div className="flex min-h-40 items-center justify-center text-ui-muted">조건에 맞는 회원이 없습니다.</div></td></tr>
-            ) : members.isPending ? (
-              <tr><td colSpan={8} className="text-center"><div role="status" className="flex min-h-40 items-center justify-center text-ui-muted">회원 정보를 불러오는 중입니다.</div></td></tr>
-            ) : members.data.items.length === 0 ? (
-              <tr><td colSpan={8} className="text-center"><div className="flex min-h-40 items-center justify-center text-ui-muted">{query || excludedRoles.size > 0 ? '조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.'}</div></td></tr>
-            ) : members.data.items.map(member => (
+            {members.isError || noRoleSelected || members.isPending || members.data.items.length === 0 ? null : members.data.items.map(member => (
               <tr key={member.id} className={selectedIds.has(member.id) ? 'bg-[var(--brand)]/15' : 'hover:bg-[var(--brand)]/10'}>
                 <td className="text-center" style={CHECKBOX_CELL_STYLE}>
                   <input type="checkbox" aria-label={`${member.email ?? member.id} 선택`} className="mx-auto my-0 block thin-check" checked={selectedIds.has(member.id)} onChange={() => toggleSelected(member.id)} />
@@ -260,8 +285,11 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
             ))}
           </tbody>
         </table>
+        {!members.isError && centerMessage && (
+          <div role="status" className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center px-6 text-center text-base text-ui-text" style={{ top: STOCK_HEADER_ROW_PX }}>{centerMessage}</div>
+        )}
         {members.isError && (
-          <div role="alert" className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center gap-3 text-xl text-ui-text" style={{ top: STOCK_HEADER_ROW_PX }}>
+          <div role="alert" className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center gap-3 text-base text-ui-text" style={{ top: STOCK_HEADER_ROW_PX }}>
             <p className="m-0">회원 정보를 불러오지 못했습니다.</p>
             <button type="button" className={retryButtonClass} disabled={members.isFetching} onClick={() => { void members.refetch() }}>다시 시도</button>
           </div>
@@ -310,6 +338,27 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
           </div>
         </div>,
         exportContainer,
+      )}
+      {specialContainer && createPortal(
+        <div className="settings-custom-control">
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">특별 회원 지정</h2>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">체크한 회원을 특별 회원으로 지정·해제</p>
+          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
+            {([['지정', true], ['해제', false]] as const).map(([label, special]) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => void handleChangeSpecial(special)}
+                disabled={selectedIds.size === 0 || isChangingSpecial}
+                className="flex h-7 items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
+                data-hint={selectedIds.size === 0 ? '표에서 회원을 먼저 체크하세요.' : `체크한 ${selectedIds.size}명을 ${special ? '특별 회원으로 지정' : '일반 회원으로 해제'}합니다.`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>,
+        specialContainer,
       )}
     </section>
   )

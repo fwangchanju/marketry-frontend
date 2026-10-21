@@ -176,11 +176,12 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen text-ui-white">
+    <div className="flex min-h-screen flex-col text-ui-white">
       <NavBar />
       <NavSubBar />
-      <main className="mx-auto w-full max-w-md px-4 py-10">
-        <section className="rounded-lg border border-ui-border bg-ui-surface p-6">
+      {/* 메뉴 아래 남는 영역의 한가운데에 박스를 둔다. */}
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-4 py-10">
+        <section className="rounded-lg border border-ui-border bg-ui-surface p-8">
           {isError ? (
             // 다른 화면의 불러오기 실패와 같은 오류 원(문구와 "다시 시도")으로 보여 준다.
             <div className="flex justify-center py-4">
@@ -234,17 +235,17 @@ export default function ProfilePage() {
                       {checkNickname.isPending ? '확인 중...' : updateNickname.isPending ? '등록 중...' : '확인'}
                     </button>
                   </div>
-                  <p className="mt-2 text-xs font-medium text-ui-text">먼저, 닉네임이 등록 가능한지 확인합니다.</p>
+                  <p className="mt-2 text-base font-medium text-ui-text">먼저, 닉네임이 등록 가능한지 확인합니다.</p>
                   {/* 결과·제한 사유 문구가 뜰 자리를 늘 비워 둔다 — 문구가 나타나도 입력칸이 움직이지 않게 한다. */}
-                  <div className="mt-2 h-5">
+                  <div className="mt-2 h-6">
                     {nicknameLiveText ? (
-                      <p role="alert" className="text-sm text-status-error-text">{nicknameLiveText}</p>
+                      <p role="alert" className="text-base text-status-error-text">{nicknameLiveText}</p>
                     ) : nicknameMessage ? (
-                      <p role={nicknameMessage.kind === 'error' ? 'alert' : 'status'} className={`text-sm ${nicknameMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
+                      <p role={nicknameMessage.kind === 'error' ? 'alert' : 'status'} className={`text-base ${nicknameMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
                         {nicknameMessage.text}
                       </p>
                     ) : isNicknameLocked && nicknameChangeableAt !== null ? (
-                      <p role="status" className="text-sm text-status-error-text">
+                      <p role="status" className="text-base text-status-error-text">
                         7일에 한 번만 바꿀 수 있습니다. ({formatChangeableAt(nicknameChangeableAt)}부터)
                       </p>
                     ) : null}
@@ -286,11 +287,11 @@ export default function ProfilePage() {
                 </div>
                 {/* 안내 줄 자리에서 결과 문구로 바뀌어서(줄 수 그대로) 문구가 떠도 항목 높이가 변하지 않는다. */}
                 {imageMessage ? (
-                  <p role={imageMessage.kind === 'error' ? 'alert' : 'status'} className={`mt-2 text-xs font-medium ${imageMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
+                  <p role={imageMessage.kind === 'error' ? 'alert' : 'status'} className={`mb-4 mt-3 text-base font-medium ${imageMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
                     {imageMessage.text}
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs font-medium text-ui-text">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
+                  <p className="mb-4 mt-3 text-base font-medium text-ui-text">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
                 )}
               </div>
               <div className="border-t border-ui-border pt-4">
@@ -302,7 +303,7 @@ export default function ProfilePage() {
                 >
                   {logout.isPending ? '로그아웃 중...' : '로그아웃'}
                 </button>
-                {logout.isError && <p role="alert" className="mt-3 text-sm text-status-error-text">로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
+                {logout.isError && <p role="alert" className="mt-3 text-base text-status-error-text">로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
               </div>
             </>
           ) : null}

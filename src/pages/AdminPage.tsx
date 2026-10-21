@@ -25,6 +25,7 @@ export default function AdminPage() {
   // 설정창 항목은 회원 표가 그려 준다(검색·정렬·필터 상태가 표에 있어서) — 자리만 여기서 만든다.
   const [summaryTarget, setSummaryTarget] = useState<HTMLElement | null>(null)
   const [exportTarget, setExportTarget] = useState<HTMLElement | null>(null)
+  const [specialTarget, setSpecialTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
 
@@ -65,14 +66,14 @@ export default function AdminPage() {
         <div className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
           <div ref={screenshotRef} data-main-area className="relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-ui-background text-ui-white">
             {isLoading ? (
-              <p role="status" className="text-sm text-ui-muted">관리자 권한을 확인하는 중입니다.</p>
+              <p role="status" className="text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p>
             ) : !isAdmin ? (
-              <div className="text-center text-sm text-ui-text">
+              <div className="text-center text-base text-ui-text">
                 <p>관리자만 볼 수 있는 페이지입니다.</p>
                 <Link to="/home" className="mt-4 inline-block text-[var(--accent)] underline">홈으로</Link>
               </div>
             ) : (
-              <AdminMembers key={session.userId} userId={session.userId!} summaryContainer={summaryTarget} exportContainer={exportTarget} />
+              <AdminMembers key={session.userId} userId={session.userId!} summaryContainer={summaryTarget} exportContainer={exportTarget} specialContainer={specialTarget} />
             )}
           </div>
           {isAdmin && (
@@ -91,6 +92,7 @@ export default function AdminPage() {
                   <div className="settings-plain-content">
                     <div ref={setSummaryTarget} className="settings-ops-item h-[160px] text-sm" />
                     <div ref={setExportTarget} className="settings-ops-item h-[160px] text-sm" />
+                    <div ref={setSpecialTarget} className="settings-ops-item h-[160px] text-sm" />
                   </div>
                 </SettingsPanelGroup>
               </SettingsPanel>
