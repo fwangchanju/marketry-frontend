@@ -27,7 +27,7 @@ function Notice({ active, window, ready, nodes }: Props) {
           {window.label.replace(/ /g, '')}에는 NXT 거래 가능 종목만 표시됩니다.
           <br />
           <span className="text-ui-muted">최대 {toCount(stockTotal)}종목이며, 설정에 따라 다를 수 있습니다.</span>
-          {window.fromMinutes >= 12 * 60 && <><br /><span className="text-ui-muted">메인 마켓 종가는 상단 종가 버튼으로 확인하세요.</span></>}
+          {window.fromMinutes >= 12 * 60 && <><br /><span className="text-ui-muted">메인 마켓 종가는 상단 애프터 마켓 배지 우측 버튼을 변경해서 확인하세요.</span></>}
         </p>
         <div className="mt-auto flex justify-end pt-3">
           <button type="button" onClick={() => setDismissed(true)} className="rounded-lg border-0 bg-[var(--brand-surface)] px-4 py-2 text-sm font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)]">닫기</button>
