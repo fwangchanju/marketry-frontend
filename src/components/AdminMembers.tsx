@@ -1,13 +1,28 @@
 import { useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getAdminMembers } from '@/api/adminMembers'
+import StockSortHeader from '@/components/StockSortHeader'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
 
 const PAGE_SIZE = 50
 const controlClass = 'h-6 shrink-0 border-0 bg-[var(--ui-panel)] px-2 text-sm font-normal text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)] disabled:opacity-40'
-const columns = ['회원 ID', '이메일', '닉네임', '권한', '회원가입 시각', '최근 접속 시각']
+type SortKey = 'id' | 'email' | 'nickname' | 'role' | 'createdAt'
+type SortOrder = 'asc' | 'desc'
+// 최근 접속 시각은 아직 수집 전이라 정렬할 수 없다.
+// 로딩 원에서 숫자 세기가 끝나면 나오는 "다시 시도" 버튼(Spinner)과 같은 모양이다.
+const retryButtonClass = 'rounded border-0 bg-[var(--brand-surface)] px-3 py-1 text-sm font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)] disabled:opacity-40'
+const columns: { label: string; key: SortKey | null }[] = [
+  { label: '회원 ID', key: 'id' },
+  { label: '이메일', key: 'email' },
+  { label: '닉네임', key: 'nickname' },
+  { label: '권한', key: 'role' },
+  { label: '회원가입 시각', key: 'createdAt' },
+  { label: '최근 접속 시각', key: null },
+]
+// 정렬을 풀면 최근 가입순으로 돌아간다.
+const DEFAULT_SORT: { key: SortKey; order: SortOrder } = { key: 'createdAt', order: 'desc' }
 
 function formatTime(value: string | null) {
   if (!value) return '기록 없음'
@@ -20,14 +35,22 @@ export default function AdminMembers({ userId }: { userId: number }) {
   const [query, setQuery] = useState('')
   const [role, setRole] = useState('')
   const [page, setPage] = useState(0)
+  const [sort, setSort] = useState<{ key: SortKey; order: SortOrder } | null>(null)
+  const appliedSort = sort ?? DEFAULT_SORT
+  const sortLabel = sort === null ? '최근 가입순' : `${columns.find(column => column.key === sort.key)?.label} ${sort.order === 'asc' ? '오름차순' : '내림차순'}`
   const members = useQuery({
-    queryKey: ['admin-members', userId, query, role, page],
-    queryFn: ({ signal }) => getAdminMembers({ query, role, sort: 'createdAt', page }, signal),
+    queryKey: ['admin-members', userId, query, role, appliedSort.key, appliedSort.order, page],
+    queryFn: ({ signal }) => getAdminMembers({ query, role, sort: appliedSort.key, order: appliedSort.order, page }, signal),
     staleTime: 30_000,
     retry: false,
   })
   const total = members.data?.total ?? 0
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  // 같은 열을 계속 누르면 오름차순 → 내림차순 → 정렬 해제 순으로 돈다(종목 표와 같다).
+  const handleSort = (key: SortKey) => {
+    setSort(current => current?.key !== key ? { key, order: 'asc' } : current.order === 'asc' ? { key, order: 'desc' } : null)
+    setPage(0)
+  }
   const search = (event: FormEvent) => {
     event.preventDefault()
     setQuery(draft.trim())
@@ -48,18 +71,23 @@ export default function AdminMembers({ userId }: { userId: number }) {
         <button type="button" className={`toolbar-badge ml-2 ${controlClass}`} disabled={members.isFetching} onClick={() => { void members.refetch() }}>{members.isFetching ? '조회 중…' : '새로고침'}</button>
       </Toolbar>
       <div className="relative min-h-0 flex-1 overflow-auto border border-ui-border" aria-busy={members.isFetching}>
-        <table className="nes-table is-dark custom-page-table w-full min-w-[900px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0 [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:border-r [&_th]:py-1">
+        <table className="nes-table is-dark custom-page-table w-full min-w-[900px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0 [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th:not(:last-child)]:border-r [&_th]:py-1">
           <colgroup><col style={{ width: 75 }} /><col /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /></colgroup>
           <thead className="sticky top-0 z-10">
-            <tr style={{ height: STOCK_HEADER_ROW_PX }}>{columns.map(label => <th key={label} scope="col" className="bg-[var(--ui-panel)] px-2 text-center font-bold text-ui-white">{label}</th>)}</tr>
+            <tr style={{ height: STOCK_HEADER_ROW_PX }}>{columns.map(({ label, key }) => (
+              <th
+                key={label}
+                scope="col"
+                aria-sort={key !== null && sort?.key === key ? (sort.order === 'asc' ? 'ascending' : 'descending') : undefined}
+                className={`bg-[var(--ui-panel)] px-2 text-center font-bold text-ui-white ${key !== null ? 'cursor-pointer' : ''}`}
+                onClick={key !== null ? () => handleSort(key) : undefined}
+              >
+                {key !== null ? <StockSortHeader label={label} state={sort?.key === key ? sort.order : null} /> : label}
+              </th>
+            ))}</tr>
           </thead>
           <tbody className="select-text">
-            {members.isError ? (
-              <tr><td colSpan={6} className="text-center"><div role="alert" className="flex min-h-40 flex-col items-center justify-center gap-3 text-ui-muted">
-                <p className="m-0">회원 정보를 불러오지 못했습니다.</p>
-                <button type="button" className={controlClass} disabled={members.isFetching} onClick={() => { void members.refetch() }}>다시 시도</button>
-              </div></td></tr>
-            ) : members.isPending ? (
+            {members.isError ? null : members.isPending ? (
               <tr><td colSpan={6} className="text-center"><div role="status" className="flex min-h-40 items-center justify-center text-ui-muted">회원 정보를 불러오는 중입니다.</div></td></tr>
             ) : members.data.items.length === 0 ? (
               <tr><td colSpan={6} className="text-center"><div className="flex min-h-40 items-center justify-center text-ui-muted">{query || role ? '조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.'}</div></td></tr>
@@ -75,9 +103,15 @@ export default function AdminMembers({ userId }: { userId: number }) {
             ))}
           </tbody>
         </table>
+        {members.isError && (
+          <div role="alert" className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center gap-3 text-xl text-ui-text" style={{ top: STOCK_HEADER_ROW_PX }}>
+            <p className="m-0">회원 정보를 불러오지 못했습니다.</p>
+            <button type="button" className={retryButtonClass} disabled={members.isFetching} onClick={() => { void members.refetch() }}>다시 시도</button>
+          </div>
+        )}
       </div>
       <div className="flex h-7 shrink-0 items-center justify-between gap-2 text-xs text-ui-muted">
-        <span>{members.data ? `${query || role ? '검색 결과' : '전체'} ${total.toLocaleString()}명 · ` : ''}최근 가입순 · 한국 시각(KST)</span>
+        <span>{members.data ? `${query || role ? '검색 결과' : '전체'} ${total.toLocaleString()}명 · ` : ''}{sortLabel} · 한국 시각(KST)</span>
         <div className="flex items-center gap-2">
           <button type="button" className={controlClass} disabled={page === 0 || members.isFetching} onClick={() => setPage(value => value - 1)}>이전</button>
           <span aria-live="polite">{page + 1} / {pages}</span>
