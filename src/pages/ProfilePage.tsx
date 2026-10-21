@@ -195,7 +195,7 @@ export default function ProfilePage() {
                 Account
               </h2>
               <div className={ITEM_CLASS}>
-                <p className="text-sm text-ui-text">이메일</p>
+                <p className="text-base text-ui-text">이메일</p>
                 {/* 구글 로고는 색을 바꾸지 않고 흰 칸 위에 그대로 둔다(로그인 창과 같은 모양). 로그인이 구글 계정이라 이메일이 구글 주소임을 알려 준다. */}
                 <p className="mt-2 flex items-center gap-2 text-base">
                   <span className="flex size-5 shrink-0 items-center justify-center rounded bg-ui-white">
@@ -206,7 +206,7 @@ export default function ProfilePage() {
               </div>
               <div className={ITEM_CLASS}>
                 <form onSubmit={handleSaveNickname}>
-                  <label htmlFor="profile-nickname" className="text-sm text-ui-text">
+                  <label htmlFor="profile-nickname" className="text-base text-ui-text">
                     닉네임
                   </label>
                   <div className="mt-2 flex gap-2">
@@ -235,17 +235,17 @@ export default function ProfilePage() {
                       {checkNickname.isPending ? '확인 중...' : updateNickname.isPending ? '등록 중...' : '확인'}
                     </button>
                   </div>
-                  <p className="mt-2 text-base font-medium text-ui-text">먼저, 닉네임이 등록 가능한지 확인합니다.</p>
+                  <p className="mt-2 text-sm font-medium text-ui-text">먼저, 닉네임이 등록 가능한지 확인합니다.</p>
                   {/* 결과·제한 사유 문구가 뜰 자리를 늘 비워 둔다 — 문구가 나타나도 입력칸이 움직이지 않게 한다. */}
                   <div className="mt-2 h-6">
                     {nicknameLiveText ? (
-                      <p role="alert" className="text-base text-status-error-text">{nicknameLiveText}</p>
+                      <p role="alert" className="text-sm text-status-error-text">{nicknameLiveText}</p>
                     ) : nicknameMessage ? (
-                      <p role={nicknameMessage.kind === 'error' ? 'alert' : 'status'} className={`text-base ${nicknameMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
+                      <p role={nicknameMessage.kind === 'error' ? 'alert' : 'status'} className={`text-sm ${nicknameMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
                         {nicknameMessage.text}
                       </p>
                     ) : isNicknameLocked && nicknameChangeableAt !== null ? (
-                      <p role="status" className="text-base text-status-error-text">
+                      <p role="status" className="text-sm text-status-error-text">
                         7일에 한 번만 바꿀 수 있습니다. ({formatChangeableAt(nicknameChangeableAt)}부터)
                       </p>
                     ) : null}
@@ -253,7 +253,7 @@ export default function ProfilePage() {
                 </form>
               </div>
               <div className={ITEM_CLASS}>
-                <p className="text-sm text-ui-text">프로필 사진</p>
+                <p className="text-base text-ui-text">프로필 사진</p>
                 <div className="mt-2 flex items-center gap-5">
                   <ProfileAvatar className="size-16 shrink-0 object-cover" />
                   {/* 두 버튼을 세로로 쌓고(너비는 글자에 맞추며 두 버튼이 같은 너비가 된다) 프로필 사진 높이를 두 버튼 높이의 합인 64px(28 + 간격 8 + 28)에 맞춘다. 삭제 버튼이 없을 때는 등록 버튼이 사진 높이의 세로 가운데에 온다. */}
@@ -287,11 +287,11 @@ export default function ProfilePage() {
                 </div>
                 {/* 안내 줄 자리에서 결과 문구로 바뀌어서(줄 수 그대로) 문구가 떠도 항목 높이가 변하지 않는다. */}
                 {imageMessage ? (
-                  <p role={imageMessage.kind === 'error' ? 'alert' : 'status'} className={`mb-4 mt-3 text-base font-medium ${imageMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
+                  <p role={imageMessage.kind === 'error' ? 'alert' : 'status'} className={`mb-4 mt-3 text-sm font-medium ${imageMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
                     {imageMessage.text}
                   </p>
                 ) : (
-                  <p className="mb-4 mt-3 text-base font-medium text-ui-text">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
+                  <p className="mb-4 mt-3 text-sm font-medium text-ui-text">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
                 )}
               </div>
               <div className="border-t border-ui-border pt-4">
