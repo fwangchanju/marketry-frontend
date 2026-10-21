@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
@@ -68,10 +67,7 @@ export default function AdminPage() {
             {isLoading ? (
               <p role="status" className="text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p>
             ) : !isAdmin ? (
-              <div className="text-center text-base text-ui-text">
-                <p>관리자만 볼 수 있는 페이지입니다.</p>
-                <Link to="/home" className="mt-4 inline-block text-[var(--accent)] underline">홈으로</Link>
-              </div>
+              <p className="text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
               <AdminMembers key={session.userId} userId={session.userId!} summaryContainer={summaryTarget} exportContainer={exportTarget} specialContainer={specialTarget} />
             )}

@@ -146,7 +146,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                       aria-pressed={isTestMember}
                       className="h-7 w-full rounded-[5px] border-0 bg-admin-only text-[13px] font-medium text-ui-background transition-colors hover:bg-admin-only-hover disabled:opacity-50"
                     >
-                      {isDevSignupPending ? '전환 중…' : isTestMember ? '기존 계정으로 돌아가기' : '테스트 회원으로 전환'}
+                      {isDevSignupPending ? '전환 중…' : isTestMember ? '관리자 계정으로 돌아가기' : '테스트 계정으로 전환'}
                     </button>
                     {devSignupError && <p role="alert" className="mt-1.5 text-xs text-status-error-ink">{devSignupError}</p>}
                   </div>
