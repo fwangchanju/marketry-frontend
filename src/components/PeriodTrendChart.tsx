@@ -15,7 +15,7 @@ export default function PeriodTrendChart({ points, label, colorScale, loading = 
       <Spinner key={loading ? 'loading' : 'error'} showElapsed centerContent className="aspect-square h-[min(14rem,80%)] shrink-0" errorMessage={loading ? undefined : '불러오지 못했습니다.'} onRetry={onRetry} />
     </div>
   )
-  if (!points.length) return <div role="status" className="flex h-full items-center justify-center text-center text-sm text-ui-muted">데이터가 없습니다.</div>
+  if (!points.length) return <div role="status" className="flex h-full items-center justify-center text-center text-base text-ui-text">데이터가 없습니다.</div>
   const minimum = Math.min(0, ...points.map(point => point.changeRate))
   const maximum = Math.max(0, ...points.map(point => point.changeRate))
   const span = maximum - minimum || 1

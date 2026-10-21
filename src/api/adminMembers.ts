@@ -31,3 +31,9 @@ const MemberSummarySchema = z.object({
 export function getAdminMemberSummary(signal?: AbortSignal) {
   return client.get('/admin/members/summary', { signal }).then(response => MemberSummarySchema.parse(response.data))
 }
+
+export function setMembersSpecial(userIds: number[], special: boolean) {
+  return client
+    .patch('/admin/members/special', { userIds, special })
+    .then(response => z.object({ changed: z.number() }).parse(response.data))
+}
