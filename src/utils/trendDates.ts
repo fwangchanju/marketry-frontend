@@ -4,6 +4,12 @@ export function sampleTrendDays<T>(days: readonly T[]): T[] {
   return Array.from({ length: 5 }, (_, index) => days[Math.round(index * (days.length - 1) / 4)])
 }
 
+// 기간이 길면 모든 거래일의 지도를 받지 않도록 균등 간격으로 최대 limit개만 고른다. 첫날과 마지막 날은 항상 포함한다.
+export function sampleDaysUpTo<T>(days: readonly T[], limit: number): T[] {
+  if (days.length <= limit) return [...days]
+  return Array.from({ length: limit }, (_, index) => days[Math.round(index * (days.length - 1) / (limit - 1))])
+}
+
 export function trendMonths(startDate: string, endDate: string): string[] {
   const months: string[] = []
   const cursor = new Date(`${startDate.slice(0, 7)}-01T00:00:00Z`)
