@@ -19,7 +19,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   const { requireLogin } = useLoginGate()
   const logout = useLogout()
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
-  // 로컬 전용 테스트 회원 전환 — 테스트 회원으로 바꾸는 버튼은 Admin 설정창에 있고, 여기서는 테스트 회원일 때 원래 계정으로 돌아오는 버튼만 보인다.
+  // 로컬 전용 테스트 회원 전환 — 테스트 회원 생성과 원래 계정 복귀를 모두 계정 메뉴에서 제공한다.
   const { isTestMember, isPending: isDevSignupPending, error: devSignupError, toggle: handleToggleTestMember } = useTestMemberToggle()
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profileButtonRef = useRef<HTMLButtonElement>(null)
@@ -127,18 +127,18 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                     로그아웃
                   </button>
                 </div>
-                {/* 로컬 개발 전용 — 테스트 회원일 때만 보이며, 누르면 로그아웃 없이 원래 계정으로 돌아온다(테스트 회원으로 바꾸는 버튼은 Admin 설정창에 있다). 운영 화면에는 나오지 않는다. */}
-                {isLocalSignupEnabled() && isTestMember && (
+                {/* 로컬 개발 전용 — 새 테스트 회원으로 전환하거나 테스트 회원에서 원래 계정으로 돌아온다. */}
+                {isLocalSignupEnabled() && (
                   <div className="mx-3 mt-2 border-t border-ui-border pt-2">
                     <button
                       type="button"
                       onClick={handleToggleTestMember}
                       disabled={isLoading || isDevSignupPending}
                       aria-pressed={isTestMember}
-                      data-hint={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '누르면 로컬 DB에 새 USER 계정(테스트 회원)을 만들어 그 계정으로 바꿉니다.'}
+                      data-hint={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '로컬 DB에 새 USER 계정을 만들어 테스트 회원으로 전환합니다.'}
                       className="h-7 w-full rounded-[5px] border-0 bg-[var(--brand-surface)] text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)] disabled:opacity-50"
                     >
-                      {isDevSignupPending ? '전환 중…' : '개발 · 원래 계정으로 돌아가기'}
+                      {isDevSignupPending ? '전환 중…' : isTestMember ? '기존 계정으로 돌아가기' : '테스트 회원으로 전환'}
                     </button>
                     {devSignupError && <p role="alert" className="mt-1.5 text-xs text-status-error-ink">{devSignupError}</p>}
                   </div>
