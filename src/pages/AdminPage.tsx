@@ -85,9 +85,9 @@ export default function AdminPage() {
                 onOpenChange={setIsSettingsOpen}
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
-                sectionOrder={['adminOps']}
+                sectionOrder={['adminManage']}
               >
-                <SettingsPanelGroup section="adminOps">
+                <SettingsPanelGroup section="adminManage">
                   <div className="settings-plain-content">
                     <div ref={setSummaryTarget} className="settings-ops-item h-[160px] text-sm" />
                     <div ref={setExportTarget} className="settings-ops-item h-[160px] text-sm" />

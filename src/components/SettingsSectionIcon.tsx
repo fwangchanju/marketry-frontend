@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type SettingsSectionIconName = 'favorites' | 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'admin-ops' | 'admin-moved' | 'custom-edit'
+export type SettingsSectionIconName = 'favorites' | 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'admin-ops' | 'admin-moved' | 'cloud-upload' | 'custom-edit'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
@@ -82,6 +82,13 @@ const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
     <>
       <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
       <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  // 커스텀의 업데이트 탭 — 탭 안 "업데이트" 버튼과 같은 구름 업로드 모양이다.
+  'cloud-upload': (
+    <>
+      <path d="M7 18H6a4 4 0 0 1-.9-7.9 7 7 0 0 1 13.6-1.6A5 5 0 0 1 18 18h-1" />
+      <path d="m8 14 4-4 4 4M12 10v11" />
     </>
   ),
   'admin-moved': (
