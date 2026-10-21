@@ -62,6 +62,15 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       >
         <MarketryLogo layout="horizontalClean" className="h-auto w-[min(13rem,calc(100vw-10rem))]" />
       </Link>
+      {/* 로컬 개발 서버에서만 보이는 표시 — 운영과 헷갈리지 않게 한다. import.meta.env.DEV는 운영 빌드에서 항상 false라 운영에는 나오지 않는다. */}
+      {isLocalSignupEnabled() && (
+        <span
+          aria-label="로컬 서버"
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-[var(--sub-yellow)] px-2.5 py-1 text-sm font-bold leading-none text-ui-background"
+        >
+          로컬 서버
+        </span>
+      )}
       <div className="flex items-center gap-3">
       {hideAccount ? null : (
       // 비로그인의 사람 모양 칸과 로그인한 프로필 사진 칸은 크기와 자리가 같아서, 로그인 상태가 바뀌어도 오른쪽 위 모양이 달라지지 않는다.
@@ -135,10 +144,9 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                       onClick={handleToggleTestMember}
                       disabled={isLoading || isDevSignupPending}
                       aria-pressed={isTestMember}
-                      data-hint={isTestMember ? '지금 테스트 회원입니다. 누르면 로그아웃 없이 원래 계정으로 돌아갑니다.' : '로컬 전용 테스트 회원(번호 800001, 한 명만 재사용)으로 전환합니다. 회원 관리 목록에는 나오지 않습니다.'}
                       className="h-7 w-full rounded-[5px] border-0 bg-admin-only text-[13px] font-medium text-ui-background transition-colors hover:bg-admin-only-hover disabled:opacity-50"
                     >
-                      {isDevSignupPending ? '전환 중…' : isTestMember ? '기존 계정으로 돌아가기' : '테스트 회원으로 전환'}
+                      {isDevSignupPending ? '전환 중…' : isTestMember ? '관리자 계정으로 돌아가기' : '테스트 계정으로 전환'}
                     </button>
                     {devSignupError && <p role="alert" className="mt-1.5 text-xs text-status-error-ink">{devSignupError}</p>}
                   </div>
