@@ -5,7 +5,7 @@ import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsPanelGroup, SettingsSectorChangeSection, SettingsTextThresholdSection, SettingsStockPopupSection } from '@/components/SettingsPanel'
 import MarketryPublishControls from '@/components/MarketryPublishControls'
-import Spinner from '@/components/Spinner'
+import AdminMembers from '@/components/AdminMembers'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
@@ -19,7 +19,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 const ADMIN_SECTIONS = ['adminOps', 'adminMoved'] as const
 
 // 관리자 전용 페이지 — 모든 사용자가 보는 MARKETRY 맵을 바꾸는 작업을 일반 작업 화면(Custom)과 떨어뜨려 둔다.
-// 다른 페이지처럼 가운데 메인 영역과 옆의 설정창으로 나뉘고, 작업은 설정창에서 한다. 메인 영역에는 로딩 때 보이는 로고 원만 둔다.
+// 메인 영역은 회원 정보 조회, 설정창은 운영 작업으로 나눈다.
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다
 // (자동으로 홈으로 보내면 로그인이 끝나기 전에 잘못 쫓겨날 수 있다).
 export default function AdminPage() {
@@ -54,15 +54,14 @@ export default function AdminPage() {
         <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
           <div data-main-area className="relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-ui-background text-ui-white">
             {isLoading ? (
-              <Spinner showElapsed />
+              <p role="status" className="text-sm text-ui-muted">관리자 권한을 확인하는 중입니다.</p>
             ) : !isAdmin ? (
               <div className="text-center text-sm text-ui-text">
                 <p>관리자만 볼 수 있는 페이지입니다.</p>
                 <Link to="/home" className="mt-4 inline-block text-[var(--accent)] underline">홈으로</Link>
               </div>
             ) : (
-              // 공통 세로형 로고 아래 상태 칸에 관리자 위험 아이콘을 표시한다.
-              <Spinner still stillContent={<span aria-hidden="true" className="text-[11cqw] leading-none text-[var(--status-error)]">⚠</span>} />
+              <AdminMembers key={session.userId} userId={session.userId!} />
             )}
           </div>
           {isAdmin && (
