@@ -11,6 +11,8 @@ const MemberPageSchema = z.object({
     special: z.boolean(),
     createdAt: z.string(),
     lastAccessAt: z.string().nullable(),
+    // 최근 30일 중 접속한 날 수 — 서버가 아직 주지 않는 동안은 비어 있다.
+    accessDays: z.number().nullable().optional(),
   })),
   total: z.number(),
   accessTrackingAvailable: z.boolean(),
@@ -38,4 +40,11 @@ export function setMembersSpecial(userIds: number[], special: boolean) {
   return client
     .patch('/admin/members/special', { userIds, special })
     .then(response => z.object({ changed: z.number() }).parse(response.data))
+}
+
+const DailyAccessSchema = z.array(z.object({ date: z.string(), members: z.number() }))
+
+// 최근 N일(오늘 포함)의 일별 접속 회원 수 — 접속한 사람이 없는 날도 0명으로 채워 받는다.
+export function getAdminDailyAccess(days: number, signal?: AbortSignal) {
+  return client.get('/admin/members/access-daily', { params: { days }, signal }).then(response => DailyAccessSchema.parse(response.data))
 }
