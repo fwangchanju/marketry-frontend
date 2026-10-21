@@ -345,25 +345,25 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 .animate-row-blink { animation: row-blink 1s ease-in-out infinite; }
 
-/* 업종이 하나도 없는 회원에게 "업종을 추가하세요" 입력칸으로 시선을 끄는 효과 — 청록 테두리와 번지는 빛이 천천히 숨 쉬듯 켜졌다 꺼지고, 입력칸을 누르면 멈춘다. */
+/* 업종이 하나도 없는 회원에게 "업종을 추가하세요" 입력칸으로 시선을 끄는 효과 — 노랑 테두리와 번지는 빛이 천천히 숨 쉬듯 켜졌다 꺼지고, 입력칸을 누르면 멈춘다. */
 @keyframes input-attention {
-  0%, 100% { border-color: color-mix(in srgb, var(--brand) 35%, transparent); box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 0%, transparent); }
-  50% { border-color: var(--brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 40%, transparent); }
+  0%, 100% { border-color: color-mix(in srgb, var(--sub-yellow) 35%, transparent); box-shadow: 0 0 0 0 color-mix(in srgb, var(--sub-yellow) 0%, transparent); }
+  50% { border-color: var(--sub-yellow); box-shadow: 0 0 0 4px color-mix(in srgb, var(--sub-yellow) 40%, transparent); }
 }
 .animate-input-attention:not(:focus) { animation: input-attention 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  /* 움직임 줄이기 환경 — 움직이지 않는 대신 청록 테두리와 빛 번짐을 켜 둔 채로 보여 준다(다른 테두리·그림자 규칙에 밀리지 않게 !important). */
-  .animate-input-attention:not(:focus) { animation: none; border-color: var(--brand) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 40%, transparent) !important; }
+  /* 움직임 줄이기 환경 — 움직이지 않는 대신 노랑 테두리와 빛 번짐을 켜 둔 채로 보여 준다(다른 테두리·그림자 규칙에 밀리지 않게 !important). */
+  .animate-input-attention:not(:focus) { animation: none; border-color: var(--sub-yellow) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--sub-yellow) 40%, transparent) !important; }
 }
 
-/* 설정창이 닫힌 채 해야 할 일이 있을 때 설정 아이콘으로 시선을 끄는 효과 — 청록색과 번지는 빛이 천천히 숨 쉬듯 반복된다. */
+/* 설정창이 닫힌 채 해야 할 일이 있을 때 설정 아이콘으로 시선을 끄는 효과 — 노랑과 번지는 빛이 천천히 숨 쉬듯 반복된다. */
 @keyframes icon-attention {
   0%, 100% { color: var(--ui-text); filter: drop-shadow(0 0 0 transparent); }
-  50% { color: var(--brand); filter: drop-shadow(0 0 5px var(--brand)); }
+  50% { color: var(--sub-yellow); filter: drop-shadow(0 0 5px var(--sub-yellow)); }
 }
 .animate-icon-attention { animation: icon-attention 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .animate-icon-attention { animation: none; color: var(--brand) !important; filter: drop-shadow(0 0 5px var(--brand)); }
+  .animate-icon-attention { animation: none; color: var(--sub-yellow) !important; filter: drop-shadow(0 0 5px var(--sub-yellow)); }
 }
 
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
