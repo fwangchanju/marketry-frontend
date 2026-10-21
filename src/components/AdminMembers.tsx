@@ -28,8 +28,8 @@ const columns: { label: string; key: SortKey }[] = [
   { label: '이메일', key: 'email' },
   { label: '닉네임', key: 'nickname' },
   { label: '권한', key: 'role' },
-  { label: '회원가입 시각', key: 'createdAt' },
-  { label: '최근 접속 시각', key: 'lastAccessAt' },
+  { label: '회원 가입', key: 'createdAt' },
+  { label: '최근 접속', key: 'lastAccessAt' },
 ]
 // 정렬을 풀면 최근 가입순으로 돌아간다.
 const DEFAULT_SORT: { key: SortKey; order: SortOrder } = { key: 'createdAt', order: 'desc' }
@@ -130,11 +130,11 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
         이메일: member.email ?? '',
         닉네임: member.nickname ?? '',
         권한: gradeLabelOf(gradeOf(member)),
-        '회원가입 시각': formatTime(member.createdAt),
-        '최근 접속 시각': members.data?.accessTrackingAvailable ? formatTime(member.lastAccessAt) : '수집 전',
+        '회원 가입': formatTime(member.createdAt),
+        '최근 접속': members.data?.accessTrackingAvailable ? formatTime(member.lastAccessAt) : '수집 전',
       })), {
-        alignByHeader: { '아이디': 'right', 연동: 'center', 권한: 'center', '회원가입 시각': 'center', '최근 접속 시각': 'center' },
-        fixedWidths: { '아이디': 10, 연동: 10, 이메일: 40, 닉네임: 20, 권한: 12, '회원가입 시각': 22, '최근 접속 시각': 22 },
+        alignByHeader: { '아이디': 'right', 연동: 'center', 권한: 'center', '회원 가입': 'center', '최근 접속': 'center' },
+        fixedWidths: { '아이디': 10, 연동: 10, 이메일: 40, 닉네임: 20, 권한: 12, '회원 가입': 22, '최근 접속': 22 },
       })
     } catch {
       appAlert('엑셀 파일을 만들지 못했습니다.\n다시 시도해 주세요.', { title: '다운로드 실패' })
