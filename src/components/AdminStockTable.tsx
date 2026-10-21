@@ -713,6 +713,8 @@ function AdminAliasCell({
           onChange={e => setValue(e.target.value.slice(0, ALIAS_MAX_LENGTH))}
           onBlur={stopEdit}
           onKeyDown={e => {
+            // 한글 조합 중의 엔터는 글자를 확정할 뿐이라 저장으로 넘기지 않는다(마지막 글자가 따로 한 번 더 저장되는 것을 막는다).
+            if (e.nativeEvent.isComposing || e.keyCode === 229) return
             if (e.key === 'Enter') submit()
             if (e.key === 'Escape') stopEdit()
           }}

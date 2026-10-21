@@ -64,6 +64,11 @@ function SectorNameInput({ wrapperClassName = '', onChange, onFocus, onBlur, ...
         }}
         onFocus={e => { setFocused(true); onFocus?.(e) }}
         onBlur={e => { setFocused(false); onBlur?.(e) }}
+        // 한글을 치는 중(마지막 글자가 아직 조합 중)에 누른 엔터는 글자를 확정할 뿐이다 — 이때 추가·이름 변경으로 넘기면 "반도체"와 남은 "체"가 따로 만들어진다.
+        onKeyDown={e => {
+          if (e.nativeEvent.isComposing || e.keyCode === 229) return
+          props.onKeyDown?.(e)
+        }}
       />
       {focused && atLimit && (
         <span role="status" className={`pointer-events-none absolute left-0 top-full z-50 mt-1 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}>
