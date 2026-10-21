@@ -26,6 +26,8 @@ const MemberSummarySchema = z.object({
   specials: z.number(),
   users: z.number(),
   joinedRecently: z.number(),
+  // 최근 7일 안에 접속한 회원 수 — 접속 기록이 생긴 뒤부터 센다. 서버가 아직 이 값을 주지 않는 동안은 비어 있다.
+  accessedRecently: z.number().optional(),
 })
 
 export function getAdminMemberSummary(signal?: AbortSignal) {

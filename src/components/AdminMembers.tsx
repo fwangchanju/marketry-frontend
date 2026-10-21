@@ -314,9 +314,9 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
       {summaryContainer && createPortal(
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">회원 현황</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">전체 · 특별 회원 · 최근 7일 신규 가입</p>
+          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">전체 · 특별 회원 · 최근 7일 신규 가입·접속</p>
           <div className="settings-button-area mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-x-4 gap-y-1.5 text-[13px] tabular-nums">
-            {([['전체', summary.data?.total], ['특별 회원', summary.data?.specials], ['7일 신규', summary.data?.joinedRecently]] as const).map(([label, value]) => (
+            {([['전체', summary.data?.total], ['특별 회원', summary.data?.specials], ['7일 신규', summary.data?.joinedRecently], ['7일 접속', summary.data?.accessedRecently]] as const).map(([label, value]) => (
               <span key={label} className="flex items-baseline justify-between gap-2 whitespace-nowrap">
                 <span className="text-ui-white">{label}</span>
                 <span className="font-medium text-ui-text">{value === undefined ? '-' : `${value.toLocaleString()}명`}</span>
