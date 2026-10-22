@@ -77,7 +77,15 @@ export default function ScreenshotModal({
   const fullPreviewPadding = mobileRegionOption?.monitorHorizontalPadding ?? 4
   // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 스크린샷 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
   // 스크린샷으로 찍을 영역의 비율로 어림잡고, 이미지가 로드되면 실제 비율로 바로잡는다.
-  const [previewRatio, setPreviewRatio] = useState<number | null>(() => elementRatio(screenshotTarget, regionSelector, regionMode, horizontalPadding))
+  // 항목(프레임) 캡처로 열 때 팝업은 항목 하나가 아니라 전체 화면 위에 그 자리를 표시하는 그림을 보여 주므로, 처음 크기도 selectCapture와 같이 전체 화면 비율로 잡는다.
+  // 모바일 캡처로 열 때는 그 틀이 팝업이 열린 뒤에 생기므로 아직 재지 못한다 — 틀 크기는 화면 높이로 정해지니(가로 = 높이 × 3/4 + 8px, 세로 = 높이 + 4px) 같은 식으로 미리 잡는다.
+  const [previewRatio, setPreviewRatio] = useState<number | null>(() => {
+    if (selectedFrame) return elementRatio(screenshotTarget, undefined, undefined, fullPreviewPadding)
+    if (selectedCapture === 'mobile' && regionSelector && !screenshotTarget?.querySelector(regionSelector)) {
+      return (window.innerHeight * 0.75 + 8) / (window.innerHeight + 4)
+    }
+    return elementRatio(screenshotTarget, regionSelector, regionMode, horizontalPadding)
+  })
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
