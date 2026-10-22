@@ -342,8 +342,7 @@
   --brand-surface: #20635d;
   --sub-yellow: #e6d04a;
   --sub-purple: #b39ddb;
-  --sub-pink: #ec6fb3; /* 관리자 전용 표시 전용 — 시간대(노랑·보라)·브랜드(청록)·오류(갈색)와 겹치지 않는 색 */
-  --sub-gold: #d6a45a; /* 특별 회원 표시 전용(웜 골드) — 시간대 노랑·관리자 분홍과 겹치지 않는 색 */
+  --sub-gold: #d6a45a; /* 관리자 전용 표시 색(웜 골드) — --admin-only가 이 색을 가리킨다 */
   --ui-background: #0a0a0a;
   --ui-surface: #1a1a1a;
   --ui-panel: #2a2a2a;
@@ -369,9 +368,9 @@
   --status-error-ink: color-mix(in srgb, var(--status-error) 65%, var(--ui-background));
   --status-error-text: color-mix(in srgb, var(--status-error) 80%, var(--ui-white));
   --status-error-hover: var(--status-error);
-  /* 관리자 전용 표시 색 — 분홍(sub-pink) 하나, 마우스 올림·선택은 흰색 쪽으로 밝힌 단계. */
-  --admin-only: var(--sub-pink);
-  --admin-only-hover: color-mix(in srgb, var(--sub-pink) 65%, var(--ui-white));
+  /* 관리자 전용 표시 색 — 골드(sub-gold) 하나, 마우스 올림·선택은 흰색 쪽으로 밝힌 단계. 특별 회원 표시는 애프터 마켓과 같은 보라(sub-purple)다. */
+  --admin-only: var(--sub-gold);
+  --admin-only-hover: color-mix(in srgb, var(--sub-gold) 65%, var(--ui-white));
 
   /* 기존 컴포넌트가 쓰는 역할별 별칭. 설정창의 accent는 선택 회색을 상속한다. */
   --bg: var(--ui-background);
@@ -1041,7 +1040,7 @@ a { color: var(--accent-light); text-decoration: none; }
   line-height: 22px;
 }
 .settings-special-section .settings-plain-title {
-  color: var(--sub-gold);
+  color: var(--sub-purple);
   font-weight: 500;
   line-height: 22px;
 }

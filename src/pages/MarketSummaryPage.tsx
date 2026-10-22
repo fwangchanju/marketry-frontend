@@ -1,6 +1,7 @@
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
+import { CAPTURE_ID } from '@/utils/captureIds'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
@@ -182,6 +183,18 @@ function SortableHomeFrame({ title, captureId, index, children, captureUntil, sh
         ) : <>{showHeader && header}{body}</>}
       </div>
     </section>
+  )
+}
+
+// 3:4 캡처용 판의 틀 — SortableHomeFrame의 안쪽 틀(insetHeader)과 같은 모양이다(끌기·정렬 없이 고정).
+function CaptureFrame({ title, className = '', children }: { title: string; className?: string; children: ReactNode }) {
+  return (
+    <div className={`flex min-h-0 flex-col rounded-sm border border-ui-border bg-ui-background pb-1.5 pl-[7px] pr-[7px] pt-[7px] ${className}`}>
+      <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
+        <span className={SUMMARY_BADGE_CLASS}>{title}</span>
+      </div>
+      <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{children}</div>
+    </div>
   )
 }
 
@@ -417,33 +430,9 @@ export default function MarketSummaryPage() {
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   // 세 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
 
-  return (
-    <div className="flex h-screen flex-col overflow-hidden bg-ui-background">
-      <NavBar />
-      <NavSubBar
-        actions={
-          <NavBarPageActions
-            onRefresh={() => {}}
-            isRefreshing={false}
-            showRefresh={false}
-            onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
-            isSettingsOpen={isSettingsOpen}
-            isNativeFullscreen={isNativeFullscreen}
-            onToggleFullscreen={handleToggleNativeFullscreen}
-            onOpenShare={() => setScreenshotTarget(allFramesRef.current)}
-            isScreenshotOpen={isCapturingAll}
-          />
-        }
-      />
-      {/* 지도/그룹/커스텀 페이지와 같은 본문 틀 — 나중에 내용을 채울 때 이 구조를 그대로 쓴다.
-          바깥 박스가 -mt-[10.5px]로 NavSubBar의 짙은 회색 하단에 맞춰 올라가 있으므로, 안쪽 콘솔 줄은
-          위 2.25px·아래 8.25px 여백으로 위치를 맞추고(이 박스 안에 있어야 overflow에 잘리지 않는다), 설정창
-          (SettingsPanel)은 이 박스의 맨 오른쪽 자식으로 넣으면 같은 높이에 붙는다. */}
-      <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
-        {/* 스크린샷 대상 — 지도·그룹·커스텀 페이지와 같이 메인 영역 전체(툴바부터 맨 아래 줄까지)다. */}
-        <div ref={allFramesRef} data-main-area className="flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
-          {/* 툴바 — 지도·그룹 페이지와 같은 틀. 왼쪽에 제목 배지, 오른쪽 끝에 분류 배지를 둔다. 로딩 중에도 제자리에 둔다. */}
-          <Toolbar>
+  // 툴바 왼쪽(제목 배지·날짜·시각·시간대)과 오른쪽(분류 배지) — 화면의 툴바와 3:4 캡처용 판이 같은 내용을 쓴다.
+  const toolbarContent = (
+    <>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="HOME" label="ALL STOCK" />
               {/* 지도·그룹 페이지와 같은 날짜·시각·시간대 — 홈도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
@@ -492,37 +481,10 @@ export default function MarketSummaryPage() {
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>
               <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
             </div>
-          </Toolbar>
-          {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다. 좌우 여백은 바깥 main-settings-row에서 관리한다. 로딩·오류 원은 지도·그룹·커스텀 페이지와 같은 위 16px·아래 19.5px 여백 안에서 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
-          <div className="relative flex min-h-0 flex-1">
-            <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && !isPastSnapshot && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(data?.snapshotTime)} nodes={rootNodes} />
-            {isLoading ? (
-              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
-                <Spinner showElapsed />
-              </div>
-            ) : isError ? (
-              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
-                <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
-              </div>
-            ) : settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0) ? (
-              // 내 분류가 비어 있으면 지도·그룹 페이지와 같은 안내(원·로고·바로 가기)를 홈 전체에 보여 준다 — 원은 위 로딩 원과 같은 자리다.
-              <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
-                <CustomPageBadgeLink />
-              </EmptyLogoMessage>
-            ) : overview.items.length === 0 ? (
-              // 종목은 있는데 시총 범위·제외 업종 같은 설정으로 업종이 전부 가려졌다 — 빈 틀만 남지 않게 안내 문구를 보여 준다.
-              <div className="relative flex-1">
-                <EmptyMessage message={EMPTY_FILTER_MESSAGE} topClass="top-0" />
-              </div>
-            ) : (
-            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 지도" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
-            <div className="flex min-h-0 min-w-0 flex-1">
-            {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서(지도 아래 약 15px), 캡처 중에는 스크롤을 풀어 둔다. */}
-            <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
-            <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
-            <SortableContext items={safeHomeFrameOrder} strategy={horizontalListSortingStrategy}>
-            <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
-            {[
+    </>
+  )
+  // 홈의 세 틀(제목·캡처 이름·본문) — 화면과 3:4 캡처용 판이 같은 본문을 쓴다.
+  const homeFrames = [
               {
                 title: '시장 지도',
                 captureId: 'market-map',
@@ -576,7 +538,74 @@ export default function MarketSummaryPage() {
                   </div>
                 ),
               },
-            ].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title)).map((frame, frameIndex) => (
+            ]
+  // 렌더러(텔레그램 발송)가 /home?capture=mobile 로 열면 지도 페이지 모바일 캡처와 같은 3:4 세로 판에 툴바와 시장 지도(왼쪽)·그룹 등락률(오른쪽)만 담아 찍는다.
+  const [searchParams] = useSearchParams()
+  const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
+  const isMobileCaptureReady = !isLoading && !isError && Boolean(data?.snapshotTime) && marketSummary !== undefined
+  const mobileCaptureFrames = ['market-map', 'group-change-rate']
+    .map(captureId => homeFrames.find(frame => frame.captureId === captureId))
+    .filter(frame => frame !== undefined)
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-ui-background">
+      <NavBar />
+      <NavSubBar
+        actions={
+          <NavBarPageActions
+            onRefresh={() => {}}
+            isRefreshing={false}
+            showRefresh={false}
+            onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
+            isSettingsOpen={isSettingsOpen}
+            isNativeFullscreen={isNativeFullscreen}
+            onToggleFullscreen={handleToggleNativeFullscreen}
+            onOpenShare={() => setScreenshotTarget(allFramesRef.current)}
+            isScreenshotOpen={isCapturingAll}
+          />
+        }
+      />
+      {/* 지도/그룹/커스텀 페이지와 같은 본문 틀 — 나중에 내용을 채울 때 이 구조를 그대로 쓴다.
+          바깥 박스가 -mt-[10.5px]로 NavSubBar의 짙은 회색 하단에 맞춰 올라가 있으므로, 안쪽 콘솔 줄은
+          위 2.25px·아래 8.25px 여백으로 위치를 맞추고(이 박스 안에 있어야 overflow에 잘리지 않는다), 설정창
+          (SettingsPanel)은 이 박스의 맨 오른쪽 자식으로 넣으면 같은 높이에 붙는다. */}
+      <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+        {/* 스크린샷 대상 — 지도·그룹·커스텀 페이지와 같이 메인 영역 전체(툴바부터 맨 아래 줄까지)다. */}
+        <div ref={allFramesRef} data-main-area className="flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+          {/* 툴바 — 지도·그룹 페이지와 같은 틀. 왼쪽에 제목 배지, 오른쪽 끝에 분류 배지를 둔다. 로딩 중에도 제자리에 둔다. */}
+          <Toolbar>
+            {toolbarContent}
+          </Toolbar>
+          {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다. 좌우 여백은 바깥 main-settings-row에서 관리한다. 로딩·오류 원은 지도·그룹·커스텀 페이지와 같은 위 16px·아래 19.5px 여백 안에서 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
+          <div className="relative flex min-h-0 flex-1">
+            <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && !isPastSnapshot && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(data?.snapshotTime)} nodes={rootNodes} />
+            {isLoading ? (
+              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
+                <Spinner showElapsed />
+              </div>
+            ) : isError ? (
+              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
+                <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
+              </div>
+            ) : settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0) ? (
+              // 내 분류가 비어 있으면 지도·그룹 페이지와 같은 안내(원·로고·바로 가기)를 홈 전체에 보여 준다 — 원은 위 로딩 원과 같은 자리다.
+              <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
+                <CustomPageBadgeLink />
+              </EmptyLogoMessage>
+            ) : overview.items.length === 0 ? (
+              // 종목은 있는데 시총 범위·제외 업종 같은 설정으로 업종이 전부 가려졌다 — 빈 틀만 남지 않게 안내 문구를 보여 준다.
+              <div className="relative flex-1">
+                <EmptyMessage message={EMPTY_FILTER_MESSAGE} topClass="top-0" />
+              </div>
+            ) : (
+            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 지도" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
+            <div className="flex min-h-0 min-w-0 flex-1">
+            {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서(지도 아래 약 15px), 캡처 중에는 스크롤을 풀어 둔다. */}
+            <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
+            <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
+            <SortableContext items={safeHomeFrameOrder} strategy={horizontalListSortingStrategy}>
+            <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
+            {homeFrames.sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title)).map((frame, frameIndex) => (
               <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} showHeader={frame.title !== '시장 요약'} insetHeader={frame.title !== '시장 요약'}>
                 {frame.body}
               </SortableHomeFrame>
@@ -620,6 +649,23 @@ export default function MarketSummaryPage() {
           </SettingsPanel>
         </div>
       </div>
+      {isMobileCaptureMode && (
+        <div
+          data-captureid={CAPTURE_ID.SUMMARY}
+          data-capture-ready={isMobileCaptureReady}
+          style={{ width: 'calc(100dvh * 3 / 4)', height: '100dvh', padding: '4px', boxSizing: 'border-box' }}
+          className="fixed left-0 top-0 z-[200] flex flex-col bg-ui-background text-ui-white"
+        >
+          <Toolbar>{toolbarContent}</Toolbar>
+          <div className="flex min-h-0 flex-1 gap-1">
+            {mobileCaptureFrames.map((frame, index) => (
+              <CaptureFrame key={frame.captureId} title={frame.title} className={`min-w-0 ${index === 0 ? 'flex-[11]' : 'flex-[9]'}`}>
+                {frame.body as ReactNode}
+              </CaptureFrame>
+            ))}
+          </div>
+        </div>
+      )}
       {screenshotTarget && (
         <ScreenshotModal
           onClose={() => setScreenshotTarget(null)}
