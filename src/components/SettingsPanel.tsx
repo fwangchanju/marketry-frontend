@@ -2551,18 +2551,18 @@ export default function SettingsPanel({
                   setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-gold)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
+                  ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
                 {section.icon ? <SettingsSectionIcon
                   icon={section.icon}
-                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-gold)]' : ''}`}
+                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
                   strokeWidth={section.icon === 'industry' ? 1.22 : 1.1}
                 /> : <span aria-hidden="true" className="h-[30px] w-[30px] shrink-0" />}
                 <span className="max-w-full truncate font-bold">{section.label}</span>
                 <span
                   aria-hidden="true"
-                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'bg-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'bg-[var(--sub-gold)]' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
+                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'bg-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'bg-[var(--sub-purple)]' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
                 />
               </button>
             )

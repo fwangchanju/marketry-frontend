@@ -40,7 +40,7 @@ const GRADE_VALUES = ['USER', 'SPECIAL', 'ADMIN'] as const
 type MemberGrade = (typeof GRADE_VALUES)[number]
 const gradeLabelOf = (value: string) => (value === 'ADMIN' ? '관리자' : value === 'SPECIAL' ? '특별 회원' : '일반 회원')
 // 관리자는 관리자 전용 표시색(분홍), 특별 회원은 웜 골드, 일반 회원은 본문 글자색이다.
-const GRADE_COLOR_CLASS: Record<MemberGrade, string> = { ADMIN: 'text-admin-only', SPECIAL: 'text-[var(--sub-gold)]', USER: 'text-ui-text' }
+const GRADE_COLOR_CLASS: Record<MemberGrade, string> = { ADMIN: 'text-admin-only', SPECIAL: 'text-[var(--sub-purple)]', USER: 'text-ui-text' }
 const gradeOf = (member: { role: string; special: boolean }): MemberGrade => (member.role === 'ADMIN' ? 'ADMIN' : member.special ? 'SPECIAL' : 'USER')
 // 로그인 연동 — 구글 로그인이면 구글 로고만 보이고, 그 밖(시스템·로컬 테스트 회원)은 줄표로 둔다.
 const GOOGLE_ISSUER = 'https://accounts.google.com'

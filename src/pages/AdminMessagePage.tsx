@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import sampleImage from '@/assets/telegram-home-sample.png'
 import {
   getTelegramSendSetting,
   saveTelegramSendSetting,
@@ -25,47 +26,32 @@ import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
-const CHIP_BASE = 'flex h-7 items-center justify-center settings-chip-hover rounded-[4px] border-0 text-[13px]'
-const CHIP_OFF = 'bg-[var(--ui-control)] font-medium text-ui-white'
 
 function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
   return {
     enabled: setting.enabled,
     sectorSendMinute: setting.sectorSendMinute,
     sectorSendIntervalMinutes: setting.sectorSendIntervalMinutes,
-    mapSendTimes: setting.mapSendTimes,
   }
-}
-
-function formatClock(hour: number, minute: number) {
-  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
 }
 
 // 서버가 저장할 때 하는 검사와 같은 기준 — 어긋난 값은 저장 버튼을 막아 서버 오류를 피한다.
 function isValidDraft(draft: TelegramSendSettingInput, setting: TelegramSendSetting) {
-  const { collectIntervalMinutes, startHour, endHour } = setting
+  const { collectIntervalMinutes } = setting
   if (draft.sectorSendMinute <= 0 || draft.sectorSendMinute % collectIntervalMinutes !== 0) return false
   if (draft.sectorSendIntervalMinutes <= 0 || draft.sectorSendIntervalMinutes % collectIntervalMinutes !== 0) return false
-  if (draft.mapSendTimes.length === 0) return false
-  return draft.mapSendTimes.every(time => {
-    const [hour, minute] = time.split(':').map(Number)
-    if (Number.isNaN(hour) || Number.isNaN(minute)) return false
-    const total = hour * 60 + minute
-    return minute % collectIntervalMinutes === 0 && total >= startHour * 60 && total <= endHour * 60
-  })
+  return true
 }
 
 function isSameDraft(a: TelegramSendSettingInput, b: TelegramSendSettingInput) {
   return (
     a.enabled === b.enabled &&
     a.sectorSendMinute === b.sectorSendMinute &&
-    a.sectorSendIntervalMinutes === b.sectorSendIntervalMinutes &&
-    a.mapSendTimes.length === b.mapSendTimes.length &&
-    a.mapSendTimes.every((time, index) => time === b.mapSendTimes[index])
+    a.sectorSendIntervalMinutes === b.sectorSendIntervalMinutes
   )
 }
 
-// 관리자 전용 메시지 페이지 — 텔레그램으로 나가는 정기 발송(섹터 순위·지도 이미지)을 운영자가 켜고 끄고 시각을 바꾼다.
+// 관리자 전용 메시지 페이지 — 텔레그램으로 나가는 정기 발송(홈 화면 이미지)을 운영자가 켜고 끄고 시각을 바꾼다.
 // 저장된 값이 없으면 꺼짐이고 시각은 서버 기본값이다. 수집 실패 알림(개발자 채널)은 이 스위치와 별개로 간다.
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다.
 export default function AdminMessagePage() {
@@ -77,7 +63,6 @@ export default function AdminMessagePage() {
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const [draft, setDraft] = useState<TelegramSendSettingInput | null>(null)
-  const [newTime, setNewTime] = useState('')
   const screenshotRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
 
@@ -146,11 +131,6 @@ export default function AdminMessagePage() {
   )
 
   const updateDraft = (patch: Partial<TelegramSendSettingInput>) => setDraft(previous => (previous ? { ...previous, ...patch } : previous))
-  const addMapTime = () => {
-    if (draft === null || newTime === '' || draft.mapSendTimes.includes(newTime)) return
-    updateDraft({ mapSendTimes: [...draft.mapSendTimes, newTime].sort() })
-    setNewTime('')
-  }
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
@@ -182,34 +162,27 @@ export default function AdminMessagePage() {
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="MESSAGE" />
                 </Toolbar>
-                <div className="min-h-0 flex-1 overflow-auto pb-1">
+                <div className="flex min-h-0 flex-1 items-start gap-1 overflow-auto pb-1">
                   {setting.isError ? (
                     <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                   ) : saved ? (
-                    <section aria-label="텔레그램 정기 발송" className="flex max-w-[640px] flex-col border border-ui-border p-[7px]">
-                      <div className="flex items-center gap-2">
+                    <section aria-label="텔레그램 정기 발송" className="flex w-fit max-w-full flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] pb-[7px] pt-1.5">
+                      <div className="flex h-[26px] items-center gap-3">
                         <FrameBadge>텔레그램 정기 발송</FrameBadge>
-                        <FrameBadge className={saved.enabled ? '' : '!bg-[var(--ui-control)] !text-ui-muted'}>
-                          {saved.enabled ? '켜짐' : '꺼짐'}
-                        </FrameBadge>
+                        <span className="text-[14px] font-semibold leading-none text-ui-white">
+                          {saved.saved
+                            ? `업데이트 ${saved.updatedAt?.replace('T', ' ').slice(0, 16) ?? ''}`
+                            : '저장된 설정이 없어 꺼져 있고, 시각은 서버 기본값입니다.'}
+                        </span>
                       </div>
-                      <p className="m-0 mt-2 text-xs font-medium text-ui-white">
-                        {saved.saved
-                          ? `마지막 저장 ${saved.updatedAt?.replace('T', ' ').slice(0, 16) ?? ''}`
-                          : '저장된 설정이 없어 꺼져 있고, 시각은 서버 기본값입니다.'}
-                      </p>
-                      <dl className="m-0 mt-2 grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2 text-sm">
-                        <dt className="text-ui-muted">섹터 순위</dt>
+                      <dl className="m-0 mt-1 grid grid-cols-[3.5rem_1fr] gap-x-3 gap-y-2 text-sm">
+                        <dt className="text-ui-muted">홈 화면</dt>
                         <dd className="m-0 text-ui-white">
-                          {`매일 ${formatClock(saved.startHour, saved.sectorSendMinute)}부터 ${saved.sectorSendIntervalMinutes}분 간격 · 마지막 ${formatClock(saved.endHour, saved.sectorSendMinute)}`}
+                          시장 지도와 그룹 등락률을 한 장으로 전송합니다.
+                          <img src={sampleImage} alt="텔레그램으로 나가는 이미지 예시 — 홈 화면의 시장 지도와 그룹 등락률" className="mt-2 block h-[420px] w-auto rounded-sm border border-ui-border" draggable={false} />
                         </dd>
-                        <dt className="text-ui-muted">지도 이미지</dt>
-                        <dd className="m-0 text-ui-white">
-                          {saved.mapSendTimes.join(' · ')}
-                          <span className="block text-xs text-ui-muted">마지막 시각은 그날 장 마감 시각으로 자동 대체됩니다.</span>
-                        </dd>
-                        <dt className="text-ui-muted">수집 실패 알림</dt>
-                        <dd className="m-0 text-ui-white">이 스위치와 별개로 개발자 채널에 항상 갑니다.</dd>
+                        <dt className="text-ui-muted">수집 실패</dt>
+                        <dd className="m-0 text-ui-white">개발자에게 메시지를 전송합니다.</dd>
                       </dl>
                     </section>
                   ) : (
@@ -255,37 +228,9 @@ export default function AdminMessagePage() {
                         <div className="settings-ops-item h-[160px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 간격</h2>
-                            <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">섹터 순위를 몇 분마다 보낼지</p>
-                            <div className="mt-1 flex max-w-[16rem] translate-y-[6px] settings-control-inset flex-col items-center justify-center gap-1.5">
-                              <span className="rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">{`${draft.sectorSendIntervalMinutes}분 간격`}</span>
-                              <MinuteDial label="발송 간격" size={52} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
-                            </div>
-                          </div>
-                        </div>
-                        <div className="settings-ops-item min-h-[160px] text-sm">
-                          <div className="settings-custom-control">
-                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">지도 발송 시각</h2>
-                            <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">마지막 시각은 장 마감 시각으로 대체</p>
-                            <div className="settings-control-inset mt-2 flex max-h-[68px] flex-col gap-1 overflow-y-auto">
-                              {draft.mapSendTimes.map(time => (
-                                <button key={time} type="button" aria-label={`${time} 지우기`} data-hint="눌러서 지우기" onClick={() => updateDraft({ mapSendTimes: draft.mapSendTimes.filter(item => item !== time) })} className="flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35">
-                                  <span aria-hidden="true" className="w-3.5 shrink-0 text-center text-ui-text">×</span>
-                                  <span className="min-w-0 truncate">{time}</span>
-                                </button>
-                              ))}
-                            </div>
-                            <div className="mt-3 grid max-w-[16rem] settings-control-inset grid-cols-[1fr_auto] gap-[6px]">
-                              <input
-                                type="time"
-                                step={saved.collectIntervalMinutes * 60}
-                                aria-label="추가할 지도 발송 시각"
-                                value={newTime}
-                                onChange={event => setNewTime(event.target.value)}
-                                className="h-7 rounded-[4px] border-0 bg-[var(--ui-control)] px-2 text-[13px] font-medium text-ui-white"
-                              />
-                              <button type="button" onClick={addMapTime} disabled={newTime === ''} className={`${CHIP_BASE} ${CHIP_OFF} px-3 disabled:cursor-not-allowed disabled:opacity-35`}>
-                                추가
-                              </button>
+                            <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">홈 화면을 몇 분마다 보낼지</p>
+                            <div className="mt-1 flex max-w-[16rem] translate-y-[6px] settings-control-inset items-center justify-center">
+                              <MinuteDial label="발송 간격" size={88} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
                             </div>
                           </div>
                         </div>

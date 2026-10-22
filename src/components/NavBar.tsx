@@ -66,7 +66,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       {isLocalSignupEnabled() && (
         <span
           aria-label="로컬 서버"
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-[var(--sub-yellow)] px-2.5 py-1 text-sm font-bold leading-none text-ui-background"
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-admin-only px-2.5 py-1 text-sm font-bold leading-none text-ui-background"
         >
           로컬 서버
         </span>
