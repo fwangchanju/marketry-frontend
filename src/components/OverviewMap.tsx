@@ -23,6 +23,8 @@ export interface OverviewMapItem {
 // 칸 사이 간격(px)과 칸이 간격에 다 깎이지 않게 남기는 최소 두께(px).
 const BOX_GAP = 2
 const MIN_BOX_SIZE = 1
+// 시총이 아주 작은 칸도 지도에서 보이도록 모든 칸에 보장하는 최소 비중(전체 시총 대비). 이보다 작은 칸은 이 비중으로 그려 신규 상장처럼 늘 작은 칸이 1px 줄로만 보이지 않게 한다.
+const MIN_BOX_SHARE = 0.001
 
 // 홈 화면용 약식 지도 — 종목 없이 업종 하나가 박스 하나다. 박스 안에는 업종명과 등락률만 적는다.
 export default function OverviewMap({
@@ -95,8 +97,9 @@ export default function OverviewMap({
 
   const rects = (() => {
     if (size.width === 0 || size.height === 0 || items.length === 0) return []
+    const minValue = items.reduce((total, item) => total + item.marketValue, 0) * MIN_BOX_SHARE
     const root = hierarchy<{ item?: OverviewMapItem; children?: { item: OverviewMapItem }[] }>({ children: items.map(item => ({ item })) })
-      .sum(node => node.item?.marketValue ?? 0)
+      .sum(node => Math.max(node.item?.marketValue ?? 0, minValue))
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
     // 칸 사이 간격은 d3(paddingInner)에 맡기지 않고 직접 깎는다 — d3는 간격이 칸보다 크면 칸을 0px로 지워 버려, 시총이 작은 신규 상장 칸이 지도에서 사라진다. 작은 칸은 간격을 줄여 최소 MIN_BOX_SIZE는 남긴다.
     treemap<typeof root.data>().tile(treemapSquarify).size([size.width, size.height]).paddingInner(0)(root)
