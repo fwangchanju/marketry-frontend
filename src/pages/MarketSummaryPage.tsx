@@ -1,3 +1,4 @@
+import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -146,7 +147,7 @@ function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSector
   )
 }
 
-const SUMMARY_BADGE_CLASS = 'inline-flex h-6 min-h-6 shrink-0 items-center whitespace-nowrap rounded-sm bg-[var(--brand-surface)] px-2 text-[14px] font-semibold leading-none text-ui-white'
+const SUMMARY_BADGE_CLASS = FRAME_BADGE_CLASS
 
 function SummaryBadge({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <span className={`${SUMMARY_BADGE_CLASS} ${className}`}>{children}</span>
@@ -160,7 +161,7 @@ function SortableHomeFrame({ title, captureId, index, children, captureUntil, sh
   const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" className={`${SUMMARY_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title === '시장 요약' ? '코스피' : title}</span>
   const body = typeof children === 'function' ? children(dragBadge) : children
   const header = (
-    <div className="relative z-[6] flex h-5 min-h-5 shrink-0 items-center">
+    <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
       {dragBadge}
     </div>
   )
@@ -174,9 +175,9 @@ function SortableHomeFrame({ title, captureId, index, children, captureUntil, sh
     >
       <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : index === 2 ? 'pl-1 pr-0' : 'px-1'}`}>
         {insetHeader ? (
-          <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+          <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] py-[7px]">
             {header}
-            <div className="mt-1 flex min-h-0 flex-1 flex-col">{body}</div>
+            <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{body}</div>
           </div>
         ) : <>{showHeader && header}{body}</>}
       </div>
@@ -545,7 +546,7 @@ export default function MarketSummaryPage() {
                     {INDEX_ROWS.map(({ label, market }) => {
                       const trendItems = indexTrendItems
                       return (
-                        <section key={market} aria-label={`${label} 시장 요약과 최근 5거래일 추이`} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                        <section key={market} aria-label={`${label} 시장 요약과 최근 5거래일 추이`} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-[7px] pb-[7px] pt-1.5">
                           <div className="relative z-10 flex h-[26px] min-w-0 shrink-0 items-center gap-2">
                             {market === 'KOSPI' ? dragBadge : <SummaryBadge>{label}</SummaryBadge>}
                           </div>
@@ -559,7 +560,7 @@ export default function MarketSummaryPage() {
                         </section>
                       )
                     })}
-                    <section aria-label={rangeStartTime ? '최상위 업종 선택 기간 누적 등락률' : '최상위 업종 최근 5거래일 일간 등락률'} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-2 py-1.5">
+                    <section aria-label={rangeStartTime ? '최상위 업종 선택 기간 누적 등락률' : '최상위 업종 최근 5거래일 일간 등락률'} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-[7px] pb-[7px] pt-1.5">
                       <div className="relative z-10 flex h-[26px] min-w-0 shrink-0 flex-row items-center gap-2">
                         <SummaryBadge>최상위 업종</SummaryBadge>
                         <span className="max-w-full truncate text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>

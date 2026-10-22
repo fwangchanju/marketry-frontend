@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getAdminAccessFrequency, getAdminDailyAccess, getAdminSignups, getAdminVisitors } from '@/api/adminMembers'
 import DailyAccessChart from '@/components/DailyAccessChart'
+import FrameBadge from '@/components/FrameBadge'
 import GrowthLineChart from '@/components/GrowthLineChart'
 import HorizontalBarsChart from '@/components/HorizontalBarsChart'
 import NavBar from '@/components/NavBar'
@@ -9,6 +10,7 @@ import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
+import SettingsSegmentedControl from '@/components/SettingsSegmentedControl'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -116,7 +118,7 @@ export default function AdminDashboardPage() {
                   <ToolbarModeText page="ADMIN" label="DASHBOARD" />
                 </Toolbar>
                 {/* 차트 한 개가 한 칸 — 화면을 가득 채우지 않고 칸 크기는 고정이며, 차트가 늘면 칸이 옆·아래로 늘어난다. */}
-                <div className="grid min-h-0 flex-1 auto-rows-[280px] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] content-start gap-3 overflow-auto px-3 pb-6 pt-3">
+                <div className="grid min-h-0 flex-1 auto-rows-[280px] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] content-start gap-3 overflow-auto pb-1">
                   <ChartFrame
                     title="일별 접속 회원 수"
                     note="하루에 접속한 서로 다른 회원 수"
@@ -214,40 +216,14 @@ export default function AdminDashboardPage() {
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일별 접속 기간</h2>
                         <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">일별 접속 회원 수 차트에 보여 줄 기간</p>
-                        <div role="radiogroup" aria-label="일별 접속 기간" className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
-                          {PERIOD_OPTIONS.map(option => (
-                            <button
-                              key={option}
-                              type="button"
-                              role="radio"
-                              aria-checked={period === option}
-                              onClick={() => setPeriod(option)}
-                              className={`flex h-7 items-center justify-center settings-chip-hover rounded-[4px] border-0 text-[13px] ${period === option ? 'bg-[var(--brand-surface)] font-bold text-ui-white' : 'bg-[var(--ui-control)] font-medium text-ui-white'}`}
-                            >
-                              {option}일
-                            </button>
-                          ))}
-                        </div>
+                        <SettingsSegmentedControl label="일별 접속 기간" options={PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={period} onChange={setPeriod} />
                       </div>
                     </div>
                     <div className="settings-ops-item h-[160px] text-sm">
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">가입 추이 기간</h2>
                         <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">가입·누적·방문자 차트에 보여 줄 기간</p>
-                        <div role="radiogroup" aria-label="가입 추이 기간" className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
-                          {SIGNUP_PERIOD_OPTIONS.map(option => (
-                            <button
-                              key={option}
-                              type="button"
-                              role="radio"
-                              aria-checked={signupPeriod === option}
-                              onClick={() => setSignupPeriod(option)}
-                              className={`flex h-7 items-center justify-center settings-chip-hover rounded-[4px] border-0 text-[13px] ${signupPeriod === option ? 'bg-[var(--brand-surface)] font-bold text-ui-white' : 'bg-[var(--ui-control)] font-medium text-ui-white'}`}
-                            >
-                              {option}일
-                            </button>
-                          ))}
-                        </div>
+                        <SettingsSegmentedControl label="가입 추이 기간" options={SIGNUP_PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={signupPeriod} onChange={setSignupPeriod} />
                       </div>
                     </div>
                   </div>
@@ -273,9 +249,9 @@ export default function AdminDashboardPage() {
 // 차트 한 칸 — 왼쪽 위에 제목 배지(홈 화면의 틀 제목과 같은 짙은 청록), 오른쪽 위에 조작, 그 아래에 설명과 차트를 둔다.
 function ChartFrame({ title, note, actions, children }: { title: string; note: string; actions?: ReactNode; children: ReactNode }) {
   return (
-    <section aria-label={title} className="flex min-h-0 flex-col border border-ui-border px-3 pb-3 pt-3">
+    <section aria-label={title} className="flex min-h-0 flex-col border border-ui-border p-[7px]">
       <div className="flex shrink-0 items-center justify-between gap-2">
-        <span className="rounded bg-[var(--brand-surface)] px-2 py-1 text-sm leading-none font-semibold text-ui-white">{title}</span>
+        <FrameBadge>{title}</FrameBadge>
         {actions}
       </div>
       <p className="m-0 mt-2 shrink-0 text-xs font-medium text-ui-white">{note}</p>
