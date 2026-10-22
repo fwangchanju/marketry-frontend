@@ -70,9 +70,15 @@ function captureBackgroundColor(el: HTMLElement): string {
   return isOpaque ? color : DEFAULT_CAPTURE_BACKGROUND
 }
 
+function hideScrollbars(cloned: Node) {
+  if (cloned instanceof HTMLElement) cloned.style.scrollbarWidth = 'none'
+}
+
 // regionSelector를 주면 그 요소들이 차지한 영역만 찍는다(없거나 못 찾으면 전체).
 export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string, regionMode: 'through-right-edge' | 'element' | 'content' = 'through-right-edge', onCloneNode?: (cloned: Node) => void, horizontalPadding = 0) {
-  const base = { backgroundColor: captureBackgroundColor(el), filter: isCapturable }
+  // 복제본에는 스크롤바를 그리지 않는다 — 찍는 것은 사람이 보는 영역이라 스크롤바가 이미지에 들어갈 이유가 없다. Windows처럼 스크롤바가 자리를 차지하는 환경에서는
+  // 복제본 표가 조금만 넘쳐도 이미지에 스크롤바가 찍힌다(실제 화면에는 없던 것). 레이아웃은 바꾸지 않고 스크롤바만 숨긴다.
+  const base = { backgroundColor: captureBackgroundColor(el), filter: isCapturable, onCloneEachNode: hideScrollbars }
   const fullSize = fullScreenshotSize(el)
   const selectedRegion = regionSelector ? captureRegionRect(el, regionSelector, regionMode) : null
   const isExpandedFullCapture = !selectedRegion && fullSize.width > el.offsetWidth
