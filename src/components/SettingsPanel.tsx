@@ -428,7 +428,7 @@ const stairHeight = (count: number) => count * STAIR_ROW + (count - 1) * STAIR_G
 function StairChevron({ direction, className = '' }: { direction: 'up' | 'down'; className?: string }) {
   return (
     <svg viewBox="0 0 10 6" className={`w-2 ${className}`}>
-      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="var(--ui-white)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -1280,7 +1280,7 @@ function SettingsTaxonomySelector({
         {TAXONOMY_SELECT_TITLE}
       </p>
       <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[4px] border border-brand bg-brand-surface" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[4px] border border-brand-surface bg-brand" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1289,7 +1289,7 @@ function SettingsTaxonomySelector({
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
             className={`relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-              isSelected(option.key) ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
+              isSelected(option.key) ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
           >
             {option.label}
@@ -1346,19 +1346,12 @@ export function SettingsStockSizeSelector({
       </div>
       <SettingDescription>시가총액이 박스 크기에 반영되는 정도</SettingDescription>
       <div className="settings-slider-control">
-        {/* 두 아이콘은 scale(1.15)로 키워 화면 높이가 레이아웃 높이(48px)보다 3.6px 크다 — 배지를 그만큼 내려 화면에 보이는 아이콘 높이의 가운데에 둔다. */}
-        <div className="mb-2 flex items-center justify-between text-ui-muted">
-          <div className="flex flex-col items-center gap-1">
-            <SettingsSectionIcon icon="equal-size" className="relative -left-[6.225px] h-[48px] w-[48px] origin-top-left scale-[1.15]" strokeWidth={0.587} />
-          </div>
-          <span aria-live="polite" aria-atomic="true" className="translate-y-[3.6px] rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">
+        <div className="mb-2 flex h-[22px] items-center justify-between text-ui-muted">
+          <SettingsSectionIcon icon="equal-size" className="h-7 w-7 shrink-0" strokeWidth={1.15} />
+          <span aria-live="polite" aria-atomic="true" className="rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">
             {marketCapRatio}%
           </span>
-          <div className="flex flex-col items-center gap-1">
-            <div className="relative -right-[6.225px] flex h-[48px] w-[48px] origin-top-right scale-[1.15] items-center justify-center">
-              <SettingsSectionIcon icon="composition" className="h-[54px] w-[54px]" strokeWidth={0.522} />
-            </div>
-          </div>
+          <SettingsSectionIcon icon="composition" className="h-7 w-7 shrink-0" strokeWidth={1.15} />
         </div>
         <SingleRangeInput
           min={0}
@@ -1370,9 +1363,9 @@ export function SettingsStockSizeSelector({
           ariaValueText={`${marketCapRatio}%`}
           onChange={onChangeMarketCapRatio}
         />
-        <div className="mt-1 flex justify-between text-[13px]/4 text-ui-muted">
-          <span>동일</span>
-          <span>비례</span>
+        <div className="relative mt-1 h-4 text-[13px]/4 text-ui-muted">
+          <span className="absolute left-2 -translate-x-1/2 whitespace-nowrap">동일</span>
+          <span className="absolute right-2 translate-x-1/2 whitespace-nowrap">비례</span>
         </div>
       </div>
     </div>
@@ -1646,7 +1639,7 @@ export function SettingsSectorLevelSection({
                     }`}
                   >
                     {label === '모두' ? (
-                      <span className="flex flex-col items-center ">
+                      <span className="flex flex-col items-center gap-0.5">
                         <span>종목명</span>
                         <span>등락률</span>
                       </span>
@@ -1779,11 +1772,19 @@ export function SettingsTextThresholdSection({ value, onChange }: { value: numbe
           <span className="settings-plain-title">텍스트 표시 기준</span>
           <SettingHelpBubble label="텍스트 표시 기준" description={"기준 퍼센트는 지도 전체 면적 대비\n종목 박스 면적입니다."} />
         </span>
-        <span className="text-ui-muted">{value.toFixed(3)}%</span>
       </div>
       <SettingDescription>작은 박스의 글자를 숨기는 기준</SettingDescription>
-      <div className="settings-slider-control mt-[18px]">
-        <SingleRangeInput min={0.01} max={0.3} step={0.001} value={value} smooth={false} ariaLabel="텍스트 표시 기준" onChange={onChange} />
+      <div className="settings-slider-control">
+        <div className="mb-2 flex justify-center">
+          <span aria-live="polite" aria-atomic="true" className="rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">
+            {value.toFixed(3)}%
+          </span>
+        </div>
+        <SingleRangeInput min={0.01} max={0.3} step={0.001} value={value} smooth={false} ariaLabel="텍스트 표시 기준" ariaValueText={`${value.toFixed(3)}%`} onChange={onChange} />
+        <div className="relative mt-1 h-4 text-[13px]/4 text-ui-muted">
+          <span className="absolute left-2 -translate-x-1/2 whitespace-nowrap">많이</span>
+          <span className="absolute right-2 translate-x-1/2 whitespace-nowrap">적게</span>
+        </div>
       </div>
     </div>
   )
@@ -1843,7 +1844,7 @@ export function SettingsMarketValueSection({
       <SettingDescription>지도에 포함할 종목의 시총 구간</SettingDescription>
       <div className="settings-subsection-list flex min-h-[90px] flex-1 items-center pb-3 text-sm">
         <div className="settings-slider-control">
-          <p className="mb-4 flex min-h-[22px] justify-center text-[13px]/4 text-ui-white" aria-live="polite" aria-atomic="true">
+          <p className="mb-2 flex min-h-[22px] justify-center text-[13px]/4 text-ui-white" aria-live="polite" aria-atomic="true">
             {selectedRangeLabel && (
               <span className="rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5">
                 {selectedRangeLabel}
@@ -1900,7 +1901,7 @@ export function SettingsSectorChangeSection({
       <div className="settings-button-area flex flex-col justify-center">
         {/* 전체·상승·하락 버튼 줄은 버튼 영역의 가운데에 두고, 단계 드롭박스는 그 바로 위 오른쪽 끝에 얹는다(버튼 위치에 영향을 주지 않는다). */}
         <div className="relative max-w-[16rem] settings-control-inset">
-          <div className="absolute bottom-full right-0 mb-2">
+          <div className="absolute bottom-full right-0 mb-2 grid w-full grid-cols-3 gap-[6px]">
             <SettingsDropdown
               options={DEPTH_LABELS.map((label, index) => ({
                 key: String(index),
@@ -1913,7 +1914,8 @@ export function SettingsSectorChangeSection({
               ariaLabel="업종 등락 방향 업종 단계"
               compact
               outlinedChevron
-              className="w-[62px] shrink-0"
+              centerLabel
+              className="col-start-3 w-full"
             />
           </div>
           <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative grid grid-cols-3 gap-[6px]">

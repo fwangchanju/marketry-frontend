@@ -2,7 +2,7 @@ import { type KeyboardEvent } from 'react'
 import { SettingsOutlinedChevronIcon } from '@/components/icons/AppIcons'
 
 // 업종 지표 드롭박스와 같은 꺾쇠를 위·아래에 재사용한다.
-const ARROW_BUTTON = 'flex h-[18px] w-8 items-center justify-center border-0 bg-transparent p-0 outline-none disabled:cursor-not-allowed disabled:opacity-30'
+const ARROW_BUTTON = 'flex h-[18px] w-8 items-center justify-center border-0 bg-transparent p-0 outline-none disabled:cursor-not-allowed disabled:opacity-35'
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
