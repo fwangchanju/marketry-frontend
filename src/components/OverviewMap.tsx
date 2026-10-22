@@ -20,12 +20,6 @@ export interface OverviewMapItem {
   unchanged?: number
 }
 
-// 칸 사이 간격(px)과 칸이 간격에 다 깎이지 않게 남기는 최소 두께(px).
-const BOX_GAP = 2
-const MIN_BOX_SIZE = 1
-// 시총이 아주 작은 칸도 지도에서 보이도록 모든 칸에 보장하는 최소 비중(전체 시총 대비). 이보다 작은 칸은 이 비중으로 그려 신규 상장처럼 늘 작은 칸이 1px 줄로만 보이지 않게 한다.
-const MIN_BOX_SHARE = 0.001
-
 // 홈 화면용 약식 지도 — 종목 없이 업종 하나가 박스 하나다. 박스 안에는 업종명과 등락률만 적는다.
 export default function OverviewMap({
   items,
@@ -97,24 +91,17 @@ export default function OverviewMap({
 
   const rects = (() => {
     if (size.width === 0 || size.height === 0 || items.length === 0) return []
-    const minValue = items.reduce((total, item) => total + item.marketValue, 0) * MIN_BOX_SHARE
     const root = hierarchy<{ item?: OverviewMapItem; children?: { item: OverviewMapItem }[] }>({ children: items.map(item => ({ item })) })
-      .sum(node => Math.max(node.item?.marketValue ?? 0, minValue))
+      .sum(node => node.item?.marketValue ?? 0)
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
-    // 칸 사이 간격은 d3(paddingInner)에 맡기지 않고 직접 깎는다 — d3는 간격이 칸보다 크면 칸을 0px로 지워 버려, 시총이 작은 신규 상장 칸이 지도에서 사라진다. 작은 칸은 간격을 줄여 최소 MIN_BOX_SIZE는 남긴다.
-    treemap<typeof root.data>().tile(treemapSquarify).size([size.width, size.height]).paddingInner(0)(root)
-    const inset = (length: number) => Math.max(0, Math.min(BOX_GAP / 2, (length - MIN_BOX_SIZE) / 2))
-    return (root.leaves() as unknown as { x0: number; y0: number; x1: number; y1: number; data: { item: OverviewMapItem } }[]).map(leaf => {
-      const insetX = inset(leaf.x1 - leaf.x0)
-      const insetY = inset(leaf.y1 - leaf.y0)
-      return {
-        item: leaf.data.item,
-        x: leaf.x0 + insetX,
-        y: leaf.y0 + insetY,
-        width: leaf.x1 - leaf.x0 - insetX * 2,
-        height: leaf.y1 - leaf.y0 - insetY * 2,
-      }
-    })
+    treemap<typeof root.data>().tile(treemapSquarify).size([size.width, size.height]).paddingInner(2)(root)
+    return (root.leaves() as unknown as { x0: number; y0: number; x1: number; y1: number; data: { item: OverviewMapItem } }[]).map(leaf => ({
+      item: leaf.data.item,
+      x: leaf.x0,
+      y: leaf.y0,
+      width: leaf.x1 - leaf.x0,
+      height: leaf.y1 - leaf.y0,
+    }))
   })()
 
   return (
@@ -125,9 +112,8 @@ export default function OverviewMap({
         const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion)
         const isPinned = popup?.targetKey === `sector:${item.key}`
         // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box).
-        const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`
-        // 안쪽 여백은 박스가 작으면 같이 줄인다 — 고정 2px면 높이가 4px보다 작은 박스(시총이 작은 신규 상장 등)가 여백 때문에 4px로 커져 지도 밖으로 삐져나간다.
-        const boxStyle = { left: x, top: y, width, height, padding: Math.max(0, Math.min(2, width / 2, height / 2)), backgroundColor: background, color: '#ffffff', '--treemap-base-color': background } as React.CSSProperties
+        const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`
+        const boxStyle = { left: x, top: y, width, height, backgroundColor: background, color: '#ffffff', '--treemap-base-color': background } as React.CSSProperties
         // 마우스를 올리면 업종 정보 팝업을 열고 박스를 벗어나면 닫는다(이름이 안 들어가 빠진 박스도 여기서 이름과 등락률을 본다).
         const handlePointerEnter = (event: React.PointerEvent<HTMLElement>) => openPopup(item, event.currentTarget, { x: event.clientX, y: event.clientY })
         const handlePointerLeave = () => setPopup(previous => (previous?.targetKey === `sector:${item.key}` ? null : previous))
