@@ -1151,9 +1151,9 @@ export function SettingsAverageModeSection({
   onToggle: () => void
   toggleDisabled?: boolean
 }) {
-  const options = [
-    { value: false, label: '시총 가중' },
-    { value: true, label: '동일 가중' },
+  const options: { value: boolean; label: string; icon: SettingsSectionIconName }[] = [
+    { value: false, label: '시총 가중', icon: 'composition' },
+    { value: true, label: '동일 가중', icon: 'equal-size' },
   ]
   return (
     <div className="settings-first-depth-level settings-graph-item text-sm">
@@ -1166,26 +1166,38 @@ export function SettingsAverageModeSection({
       </div>
       <div className={`settings-average-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
-        <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
-          <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] border border-brand bg-brand-surface" />
-          {options.map(option => {
-            const selected = avgChangeRateUseSimple === option.value
-            return (
-              <button
+        <div className="settings-control-inset mt-auto mb-auto max-w-[16rem]">
+          <div aria-hidden="true" className="grid grid-cols-2 items-center gap-[6px] text-ui-muted">
+            {options.map(option => (
+              <SettingsSectionIcon
                 key={option.label}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => onChange(option.value)}
-                disabled={!enabled}
-                className={`relative z-10 min-h-[28px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                  selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
-                }`}
-              >
-                {option.label}
-              </button>
-            )
-          })}
+                icon={option.icon}
+                className={`mx-auto ${option.value ? 'h-12 w-12' : 'h-[54px] w-[54px]'}`}
+                strokeWidth={option.value ? 0.675 : 0.6}
+              />
+            ))}
+          </div>
+          <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-2 grid grid-cols-2 gap-[6px]">
+            <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] border border-brand bg-brand-surface" />
+            {options.map(option => {
+              const selected = avgChangeRateUseSimple === option.value
+              return (
+                <button
+                  key={option.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => onChange(option.value)}
+                  disabled={!enabled}
+                  className={`relative z-10 min-h-[28px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+                    selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>

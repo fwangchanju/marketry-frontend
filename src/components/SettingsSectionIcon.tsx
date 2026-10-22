@@ -13,9 +13,9 @@ interface SettingsSectionIconProps {
 const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
   'custom-edit': (
     <>
-      <path d="M12 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-7" />
-      <path d="m16 3 5 5-10 10-5 1 1-5Z" />
-      <path d="m14 5 5 5" />
+      <path d="M3 20c1.5-2 3-2.7 4.5-1.5 1.1.9 2.3.8 3.5-.3" />
+      <path d="m10 14 8-8a2.12 2.12 0 0 1 3 3l-8 8-4 1z" />
+      <path d="m16 8 3 3" />
     </>
   ),
   home: (
