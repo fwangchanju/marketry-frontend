@@ -18,6 +18,31 @@ interface Props {
   frameCaptureOptions?: Array<{ id: string; label: string; selector: string; selectedSlot: 0 | 1 | 2; mode?: 'element' | 'content' }>
 }
 
+// 마지막으로 고른 캡처 범위를 이 브라우저에만 남긴다(서버에는 보내지 않는다). 페이지 종류마다 고를 수 있는 버튼이 달라서(지도: 모바일, 홈: 항목별) 종류별로 따로 둔다.
+// 저장된 값이 지금 페이지에 없는 버튼이면 기본(전체 화면)으로 연다. 접근이 막힌 환경에서는 저장 없이 기본값으로 동작한다.
+function captureChoiceKey(hasMobile: boolean, hasFrames: boolean) {
+  return `marketry-screenshot-capture:${hasMobile ? 'mobile' : hasFrames ? 'frames' : 'full'}`
+}
+
+function readSavedCapture(key: string, hasMobile: boolean, frameIds: string[]): string | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) ?? 'null') as unknown
+    if (saved === 'mobile' && hasMobile) return 'mobile'
+    if (typeof saved === 'string' && frameIds.some(id => saved === `frame:${id}`)) return saved
+  } catch {
+    // 저장값을 못 읽으면 기본값으로 연다.
+  }
+  return null
+}
+
+function saveCapture(key: string, value: string | null) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // 저장이 막혀도 캡처는 그대로 된다.
+  }
+}
+
 export default function ScreenshotModal({
   onClose,
   onCopy,
@@ -29,11 +54,19 @@ export default function ScreenshotModal({
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const [contextPreviewSrc, setContextPreviewSrc] = useState<string | null>(null)
-  const [highlightRegion, setHighlightRegion] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
   const [captureError, setCaptureError] = useState<string | null>(null)
   const [captureAttempt, setCaptureAttempt] = useState(0)
-  // 스크린샷 창은 모든 페이지에서 전체 화면(모니터) 캡처를 기본으로 연다.
-  const [selectedCapture, setSelectedCapture] = useState<string | null>(null)
+  // 스크린샷 창은 마지막으로 고른 캡처 범위로 열고, 고른 적이 없거나 지금 페이지에 없는 범위면 전체 화면(모니터) 캡처로 연다.
+  const choiceKey = captureChoiceKey(Boolean(mobileRegionOption), Boolean(frameCaptureOptions))
+  const [selectedCapture, setSelectedCapture] = useState<string | null>(() =>
+    readSavedCapture(choiceKey, Boolean(mobileRegionOption), frameCaptureOptions?.map(option => option.id) ?? []),
+  )
+  // 항목(프레임) 캡처로 열 때는 전체 화면 위에 그 항목 자리를 표시해야 하므로 처음 값도 selectCapture와 같은 방식으로 만든다.
+  const [highlightRegion, setHighlightRegion] = useState<{ left: number; top: number; width: number; height: number } | null>(() => {
+    const frameOption = frameCaptureOptions?.find(option => selectedCapture === `frame:${option.id}`)
+    if (!frameOption || !screenshotTarget) return null
+    return regionOverlay(screenshotTarget, frameOption.selector, frameOption.mode ?? 'element', mobileRegionOption?.monitorHorizontalPadding ?? 4)
+  })
   const selectedFrame = frameCaptureOptions?.find(option => selectedCapture === `frame:${option.id}`)
   const showContextPreview = Boolean(selectedFrame)
   const regionSelector = selectedCapture === 'mobile' ? mobileRegionOption?.selector : selectedFrame?.selector
@@ -123,6 +156,7 @@ export default function ScreenshotModal({
   // 범위를 바꾸면 새 이미지를 찍는 동안 스피너를 보여 준다.
   const selectCapture = (next: string | null) => {
     if (next === selectedCapture) return
+    saveCapture(choiceKey, next)
     setPreviewSrc(null)
     setCaptureError(null)
     setSelectedCapture(next)

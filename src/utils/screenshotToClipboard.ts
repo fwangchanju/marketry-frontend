@@ -1,4 +1,5 @@
 import { domToBlob } from 'modern-screenshot'
+import { fontCssFor } from './captureFonts'
 import { shareScreenshotOptions } from './screenshotScale'
 
 // domToBlob/domToPng이 무거워서 호출 직후 바로 시작하면, 그 직전에 호출한 setState(예: "복사 중"
@@ -10,7 +11,9 @@ export function waitForNextPaint(): Promise<void> {
 
 export async function screenshotElementToClipboard(el: HTMLElement): Promise<void> {
   await waitForNextPaint()
-  const blob = await domToBlob(el, shareScreenshotOptions(el))
+  const options = shareScreenshotOptions(el)
+  const fontCss = await fontCssFor(el)
+  const blob = await domToBlob(el, fontCss ? { ...options, font: { cssText: fontCss } } : options)
   if (!blob) throw new Error('스크린샷을 찍지 못했습니다')
   await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
 }
