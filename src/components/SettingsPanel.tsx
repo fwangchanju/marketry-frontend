@@ -505,19 +505,22 @@ function StairRows({
 const STAIR_HANDLE_BASE =
   'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-[top,width,height,gap] duration-100'
 
-// 업종 분류 깊이 — 손잡이 하나(︿﹀ 알약, 평소엔 작고 올리면 커진다)를 끌거나 트랙을 눌러 깊이를 바꾼다. 손잡이가 닿은 칸까지(위 칸 포함) 켜져서 겹침이 보인다.
+// 업종 분류 깊이 — 맵은 ︿﹀ 알약과 누적 선택, 그룹은 원형 손잡이와 단일 선택을 쓴다.
 function DepthStairSelect({
   depth,
   labels,
   onChange,
   disabled = false,
   maxSelectableIndex,
+  single = false,
 }: {
   depth: number
   labels: string[]
   onChange: (index: number) => void
   disabled?: boolean
   maxSelectableIndex: number
+  // true면 손잡이가 닿은 칸 하나만 켠다(그룹 페이지: 막대 하나가 가리키는 단계). 기본은 손잡이가 닿은 칸까지 위 칸도 함께 켠다(맵의 깊이 제한).
+  single?: boolean
 }) {
   const last = labels.length - 1
   const railRef = useRef<HTMLDivElement>(null)
@@ -549,7 +552,7 @@ function DepthStairSelect({
       <StairRows
         railWidth={0}
         labels={labels}
-        litFrom={0}
+        litFrom={single ? depth - 1 : 0}
         litTo={depth - 1}
         maxSelectableIndex={maxSelectableIndex}
         blockedHint={label => `현재 분류에는\n${label} 단계가 없습니다.`}
@@ -570,7 +573,7 @@ function DepthStairSelect({
         onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: single ? 0 : stairCenterOf(depth - 1) - stairCenterOf(0) }} />
         <span
           role="slider"
           tabIndex={disabled ? -1 : 0}
@@ -586,11 +589,13 @@ function DepthStairSelect({
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
             else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
           }}
-          className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-brand bg-brand-surface`}
+          className={`${STAIR_HANDLE_BASE} ${single ? 'size-3' : 'h-6 w-3 flex-col gap-2'} border-brand bg-brand-surface`}
           style={{ top: stairCenterOf(depth - 1) }}
         >
-          <StairChevron direction="up" />
-          <StairChevron direction="down" />
+          {!single && <>
+            <StairChevron direction="up" />
+            <StairChevron direction="down" />
+          </>}
         </span>
       </div>
     </div>
@@ -1101,34 +1106,32 @@ function SingleValueSlider({
 // 새 섹션 컴포넌트를 하나 추가해서 끼워 넣기만 하면 되고, 여기 다른 섹션이나 SettingsPanel 껍데기
 // 자체는 안 건드려도 된다.
 
-// 그룹 페이지 "업종 분류 단계" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다.
+// 그룹 페이지 "업종 분류 깊이" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다. 맵 설정의 업종 분류 깊이와 같은 계단 모양이지만 켬/끔 스위치가 없고, 고른 단계 하나만 켜진다.
 // 분류 자체에 하위 단계가 없으면(거래소 분류 KRX·NXT) 대분류만 고를 수 있다. 저장된 값은 건드리지 않고 화면에서만 막는다.
 export function SettingsGroupDepthSection({
   depth,
   onChange,
   selectableDepth,
-  lockedMessage,
 }: {
   depth: number
   onChange: (depth: number) => void
   selectableDepth: number
-  // 막힌 단계에 올렸을 때 보여 줄 문구 — 없으면 "데이터가 없어 비활성화"로 안내한다. 데이터가 있는데도 화면 정책으로 잠근 곳(홈)이 쓴다.
-  lockedMessage?: ReactNode
 }) {
   return (
-    <div className="settings-first-depth-level settings-graph-item text-sm">
-      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-ui-white">
-        <span className="settings-plain-title">업종 분류 단계</span>
-      </span>
+    <div className="settings-first-depth-level settings-auto-item text-sm">
+      <div className="flex max-w-[16rem] items-center justify-between">
+        <span className="flex items-center text-left text-ui-white">
+          <SettingTitle className="text-[15px]">업종 분류 깊이</SettingTitle>
+        </span>
+      </div>
       <SettingDescription>그래프에 표시할 업종 분류의 단계</SettingDescription>
-      <div className="settings-slider-control mt-[18px]">
-        <SingleValueSlider
-          index={Math.min(depth, selectableDepth) - 1}
+      <div className="settings-control-inset">
+        <DepthStairSelect
+          depth={Math.min(depth, selectableDepth)}
           labels={DEPTH_LABELS}
-          ariaLabel="그래프 업종 분류 단계"
           onChange={index => onChange(index + 1)}
           maxSelectableIndex={selectableDepth - 1}
-          blockedReason={label => lockedMessage ?? <>현재 {label} 데이터가 없어<br />비활성화되어 있습니다.</>}
+          single
         />
       </div>
     </div>
@@ -1330,11 +1333,12 @@ export function SettingsStockSizeSelector({
       </div>
       <SettingDescription>시가총액이 박스 크기에 반영되는 정도</SettingDescription>
       <div className="settings-slider-control">
+        {/* 두 아이콘은 scale(1.15)로 키워 화면 높이가 레이아웃 높이(48px)보다 3.6px 크다 — 배지를 그만큼 내려 화면에 보이는 아이콘 높이의 가운데에 둔다. */}
         <div className="mb-2 flex items-center justify-between text-ui-muted">
           <div className="flex flex-col items-center gap-1">
             <SettingsSectionIcon icon="equal-size" className="relative -left-[6.225px] h-[48px] w-[48px] origin-top-left scale-[1.15]" strokeWidth={0.587} />
           </div>
-          <span aria-live="polite" aria-atomic="true" className="rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">
+          <span aria-live="polite" aria-atomic="true" className="translate-y-[3.6px] rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">
             {marketCapRatio}%
           </span>
           <div className="flex flex-col items-center gap-1">
