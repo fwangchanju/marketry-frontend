@@ -1,4 +1,5 @@
 import { domToPng } from 'modern-screenshot'
+import { fontCssFor } from './captureFonts'
 import { shareScreenshotOptions } from './screenshotScale'
 
 async function cropMobileCaptureBottom(dataUrl: string, cropPixels: number): Promise<string> {
@@ -20,7 +21,9 @@ async function cropMobileCaptureBottom(dataUrl: string, cropPixels: number): Pro
 // regionSelector를 주면 맨 왼쪽부터 그 요소의 오른쪽 끝까지만 찍는다.
 export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector?: string, regionMode?: 'through-right-edge' | 'element' | 'content', onCloneNode?: (cloned: Node) => void, horizontalPadding = 0): Promise<string> {
   const options = shareScreenshotOptions(el, regionSelector, regionMode, onCloneNode, horizontalPadding)
-  const dataUrl = await domToPng(el, options)
+  // 글꼴은 찍을 영역에 쓰인 조각만 넣는다(전부 넣으면 캡처마다 글꼴 조각 277개를 내려받는다). 고르지 못하면 라이브러리 기본 동작이다.
+  const fontCss = await fontCssFor(el)
+  const dataUrl = await domToPng(el, fontCss ? { ...options, font: { cssText: fontCss } } : options)
   if (regionSelector !== '[data-map-mobile-capture-frame]') return dataUrl
 
   // 이전 프레임 높이에서 남은 하단 여백을 캡처 이미지 자체에서 4 CSS px 더 잘라낸다.

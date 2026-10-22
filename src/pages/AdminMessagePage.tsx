@@ -35,6 +35,9 @@ function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
   }
 }
 
+// 샘플 이미지(2026-10-20 마감)와 같이 나가는 메시지 예시 — 두 시장을 합친 그룹 중 등락률이 가장 높은 그룹(상위)과 가장 낮은 그룹(하위)이다.
+const SAMPLE_CAPTION = ['[그룹 등락률]', '상위: 필수소비재 -0.38%', '하위: 신규 상장 -31.93%'].join('\n')
+
 // 서버가 저장할 때 하는 검사와 같은 기준 — 어긋난 값은 저장 버튼을 막아 서버 오류를 피한다.
 function isValidDraft(draft: TelegramSendSettingInput, setting: TelegramSendSetting) {
   const { collectIntervalMinutes } = setting
@@ -176,11 +179,14 @@ export default function AdminMessagePage() {
                         </span>
                       </div>
                       <dl className="m-0 mt-1 grid grid-cols-[3.5rem_1fr] gap-x-3 gap-y-2 text-sm">
-                        <dt className="text-ui-muted">홈 화면</dt>
+                        <dt className="text-ui-muted">이미지</dt>
                         <dd className="m-0 text-ui-white">
-                          시장 지도와 그룹 등락률을 한 장으로 전송합니다.
+                          홈 화면을 이미지로 전송합니다.
                           <img src={sampleImage} alt="텔레그램으로 나가는 이미지 예시 — 홈 화면의 시장 지도와 그룹 등락률" className="mt-2 block h-[420px] w-auto rounded-sm border border-ui-border" draggable={false} />
                         </dd>
+                        {/* 이미지와 같이 나가는 메시지(캡션) 예시 — 서버 캡션 형식(SectorRankingTextBuilder.buildMapCaption)과 같은 모양이며, 위 샘플 이미지의 값이다. */}
+                        <dt className="text-ui-muted">메시지</dt>
+                        <dd className="m-0 whitespace-pre-line text-ui-white">{SAMPLE_CAPTION}</dd>
                         <dt className="text-ui-muted">수집 실패</dt>
                         <dd className="m-0 text-ui-white">개발자에게 메시지를 전송합니다.</dd>
                       </dl>
