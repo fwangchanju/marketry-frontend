@@ -35,7 +35,7 @@ const CUSTOM_LINK: MenuLink = {
   ],
 }
 
-// 관리자 계정에만 보이는 Admin 메뉴 — 회원 명단(MEMBER)과 대시보드(DASHBOARD, 차트 모음)로 나뉜다.
+// 관리자 계정에만 보이는 Admin 메뉴 — 회원 명단(MEMBER), 대시보드(DASHBOARD, 차트 모음), 메시지(MESSAGE)로 나뉜다.
 const ADMIN_LINK: MenuLink = {
   to: '/admin/member',
   label: 'Admin',
@@ -43,6 +43,7 @@ const ADMIN_LINK: MenuLink = {
   options: [
     { label: 'MEMBER', to: '/admin/member' },
     { label: 'DASHBOARD', to: '/admin/dashboard' },
+    { label: 'MESSAGE', to: '/admin/message' },
   ],
 }
 

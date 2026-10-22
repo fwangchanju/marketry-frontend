@@ -123,6 +123,15 @@ export function HistoryIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+// 설정창 저장 버튼 — 좌우 대칭 디스켓(위쪽 셔터와 아래쪽 라벨이 가운데에 있고 접힌 모서리가 없다).
+export function SaveIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM7 3v5h10V3M7 21v-8h10v8" />
+    </svg>
+  )
+}
+
 // 표 머리글 정렬 표시 — 정렬 중이면 방향을 가리키는 쐐기 하나(∧/∨), 아니면 위아래 쐐기 한 쌍. 줄기 없이 쐐기만 써서 작은 크기에서도 가볍다.
 export function SortIcon({ active, direction, ...props }: { active: boolean; direction: 'asc' | 'desc' } & SVGProps<SVGSVGElement>) {
   return (
