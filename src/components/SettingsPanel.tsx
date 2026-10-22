@@ -24,8 +24,10 @@ import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
-export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'adminMoved' | 'graph'
-const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage', 'adminMoved'])
+export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'special' | 'graph'
+const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage'])
+// 특별 회원과 운영자만 보는 탭 — 색은 특별 회원 표시색(웜 골드)이다.
+const SPECIAL_SECTIONS: ReadonlySet<string> = new Set(['special'])
 
 interface SettingsPanelGroupProps {
   section: SettingsPanelSectionId
@@ -181,10 +183,10 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'colors', label: '색상', icon: 'colors' },
   { id: 'graph', label: '그래프', icon: 'bar-chart' },
   // 관리자 전용 탭 — 번호 참조가 있는 기존 설정은 순서를 유지한다.
-  // 커스텀 페이지의 MARKETRY 분류 업데이트·롤백 탭. 어드민 페이지의 운영 탭(adminManage)과 이름이 겹치지 않게 "업데이트"로 부른다.
-  { id: 'adminOps', label: '업데이트', icon: 'cloud-upload' },
-  { id: 'adminManage', label: '운영', icon: 'admin-ops' },
-  { id: 'adminMoved', label: '미사용', icon: 'admin-moved' },
+  // 커스텀 페이지의 MARKETRY 분류 업데이트·롤백 탭. 화면 이름은 어드민 페이지의 탭과 같은 "관리자"지만 서로 다른 페이지에 있어 한 설정창에 같이 뜨지 않는다.
+  { id: 'adminOps', label: '관리자', icon: 'member' },
+  { id: 'adminManage', label: '관리자', icon: 'member' },
+  { id: 'special', label: '특별 회원', icon: 'member' },
   { id: 'custom', label: '커스텀', icon: 'custom-edit' },
 ]
 
@@ -2401,7 +2403,9 @@ export default function SettingsPanel({
     return () => window.clearTimeout(timer)
   }, [isOpen, mounted])
   // 관리자 전용 탭은 호출부가 실수로 넘겨도 관리자 세션이 아니면 그리지 않는다(서버도 /api/admin/**은 ADMIN만 허용한다).
-  const isAdminSession = useSession().data?.role === 'ADMIN'
+  const session = useSession().data
+  const isAdminSession = session?.role === 'ADMIN'
+  const isSpecialSession = isAdminSession || session?.special === true
   const childNodes = Children.toArray(children)
   const sectionContent = new Map<SettingsPanelSectionId, ReactNode[]>()
   const addSectionContent = (section: SettingsPanelSectionId, content: ReactNode) => {
@@ -2423,7 +2427,7 @@ export default function SettingsPanel({
   const selectedTaxonomy: TaxonomyKey = taxonomy ?? (isCustom ? 'MARKETRY' : 'KRX')
   const handleSelectTaxonomy = onSelectTaxonomy ?? (() => onToggleCustom?.())
 
-  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSession || !ADMIN_ONLY_SECTIONS.has(section.id)))
+  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSession || !ADMIN_ONLY_SECTIONS.has(section.id)) && (isSpecialSession || !SPECIAL_SECTIONS.has(section.id)))
   if (sectionOrder) {
     availableSections.sort((a, b) => sectionOrder.indexOf(a.id) - sectionOrder.indexOf(b.id))
   }
@@ -2547,18 +2551,18 @@ export default function SettingsPanel({
                   setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
+                  ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-gold)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
                 {section.icon ? <SettingsSectionIcon
                   icon={section.icon}
-                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : ''}`}
+                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-gold)]' : ''}`}
                   strokeWidth={section.icon === 'industry' ? 1.22 : 1.1}
                 /> : <span aria-hidden="true" className="h-[30px] w-[30px] shrink-0" />}
                 <span className="max-w-full truncate font-bold">{section.label}</span>
                 <span
                   aria-hidden="true"
-                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'bg-admin-only' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
+                  className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'bg-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'bg-[var(--sub-gold)]' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
                 />
               </button>
             )
@@ -2583,7 +2587,7 @@ export default function SettingsPanel({
           data-align-second-heading={taxonomyAtBottom || undefined}
           aria-busy={waitingForPreferences || undefined}
           inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : ''} ${
+          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : SPECIAL_SECTIONS.has(selectedSection.id) ? 'settings-special-section' : ''} ${
             isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
           }`}
         >

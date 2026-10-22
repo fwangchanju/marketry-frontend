@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'admin-ops' | 'admin-moved' | 'cloud-upload' | 'custom-edit'
+export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'member' | 'custom-edit'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
@@ -76,24 +76,11 @@ const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
       <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
     </>
   ),
-  // 관리자 페이지 탭 — 운영은 Tabler settings(톱니), 미사용은 원 안에 빗금을 그어 비활성 상태를 나타낸다.
-  'admin-ops': (
+  // 특별 회원·관리자 탭 — 머리와 어깨를 그린 사람 모양이다. 두 탭은 색으로만 구분한다.
+  member: (
     <>
-      <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
-      <circle cx="12" cy="12" r="3" />
-    </>
-  ),
-  // 커스텀의 업데이트 탭 — 탭 안 "업데이트" 버튼과 같은 구름 업로드 모양이다.
-  'cloud-upload': (
-    <>
-      <path d="M7 18H6a4 4 0 0 1-.9-7.9 7 7 0 0 1 13.6-1.6A5 5 0 0 1 18 18h-1" />
-      <path d="m8 14 4-4 4 4M12 10v11" />
-    </>
-  ),
-  'admin-moved': (
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="m5.64 5.64 12.72 12.72" />
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
     </>
   ),
 }
