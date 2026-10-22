@@ -356,12 +356,12 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">목록 내보내기</h2>
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">체크한 회원 또는 검색·필터 목록을 엑셀로</p>
-          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-1 gap-[6px]">
+          <div className="mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset grid-cols-1 gap-[6px]">
             <button
               type="button"
               onClick={() => void handleExport()}
               disabled={isExporting}
-              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
+              className="flex h-[25px] items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
@@ -376,14 +376,14 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">특별 회원 지정</h2>
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">체크한 회원을 특별 회원으로 지정·해제</p>
-          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
+          <div className="mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset grid-cols-2 gap-[6px]">
             {([['지정', true], ['해제', false]] as const).map(([label, special]) => (
               <button
                 key={label}
                 type="button"
                 onClick={() => void handleChangeSpecial(special)}
                 disabled={selectedIds.size === 0 || isChangingSpecial}
-                className="flex h-7 items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
+                className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
                 data-hint={selectedIds.size === 0 ? '표에서 회원을 먼저 체크하세요.' : `체크한 ${selectedIds.size}명을 ${special ? '특별 회원으로 지정' : '일반 회원으로 해제'}합니다.`}
               >
                 {label}
@@ -397,12 +397,12 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">닉네임 지우기</h2>
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">체크한 회원의 닉네임을 지웁니다</p>
-          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-1 gap-[6px]">
+          <div className="mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset grid-cols-1 gap-[6px]">
             <button
               type="button"
               onClick={() => void handleResetNickname()}
               disabled={selectedIds.size === 0 || isResettingNickname}
-              className="flex h-7 items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
+              className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
               data-hint={selectedIds.size === 0 ? '표에서 회원을 먼저 체크하세요.' : `체크한 ${selectedIds.size}명의 닉네임을 지웁니다.`}
             >
               지우기

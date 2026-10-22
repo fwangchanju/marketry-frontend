@@ -212,14 +212,14 @@ export default function AdminDashboardPage() {
               >
                 <SettingsPanelGroup section="adminManage">
                   <div className="settings-plain-content">
-                    <div className="settings-ops-item h-[160px] text-sm">
+                    <div className="settings-ops-item h-[180px] text-sm">
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일별 접속 기간</h2>
                         <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">일별 접속 회원 수 차트에 보여 줄 기간</p>
                         <SettingsSegmentedControl label="일별 접속 기간" options={PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={period} onChange={setPeriod} />
                       </div>
                     </div>
-                    <div className="settings-ops-item h-[160px] text-sm">
+                    <div className="settings-ops-item h-[180px] text-sm">
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">가입 추이 기간</h2>
                         <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">가입·누적·방문자 차트에 보여 줄 기간</p>

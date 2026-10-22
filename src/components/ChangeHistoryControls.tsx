@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
 
@@ -47,7 +48,7 @@ function HistoryListPopup<T extends { id: string }>({
 
   const ordered = [...actions].reverse()
 
-  return (
+  return createPortal(
     <div
       ref={popupRef}
       style={{
@@ -57,7 +58,8 @@ function HistoryListPopup<T extends { id: string }>({
         left: position.left,
         width: position.width,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
-      }}
+        '--accent': 'var(--panel-gray)',
+      } as CSSProperties}
       className="z-50 overflow-hidden rounded-none border border-ui-border bg-[var(--ui-panel)] p-0 text-sm text-ui-white shadow-xl"
       onClick={e => e.stopPropagation()}
     >
@@ -75,7 +77,7 @@ function HistoryListPopup<T extends { id: string }>({
                 setIsOpen(false)
               }}
               data-hint={`${index + 1}단계 ${direction === 'undo' ? '실행 취소' : '다시 실행'}`}
-              className={`flex w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-2 py-1.5 text-left text-[13px] font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white'}`}
+              className={`flex h-6 w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-2 py-0 text-left text-[13px] font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white'}`}
             >
               <span className={`w-4 shrink-0 text-right text-xs tabular-nums ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-muted'}`}>{direction === 'undo' ? '-' : '+'}{index + 1}</span>
               <span className="flex min-w-0 flex-col">
@@ -87,7 +89,8 @@ function HistoryListPopup<T extends { id: string }>({
           ))}
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -105,7 +108,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
     const label = isUndo ? '실행 취소' : '다시 실행'
     return (
       <>
-        <div className={`flex min-h-[28px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px]/4 font-medium bg-[var(--ui-control)] text-ui-white ${isEmpty ? 'opacity-35' : ''}`}>
+        <div className={`flex min-h-[25px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px] leading-[1.3] font-medium bg-[var(--ui-control)] text-ui-white ${isEmpty ? 'opacity-35' : ''}`}>
           <button
             type="button"
             onClick={() => {
@@ -147,7 +150,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
   return (
     <div>
       <p className="settings-description m-0 mt-1 text-xs font-medium text-ui-muted">변경 내역 실행 취소·다시 실행</p>
-      <div ref={rowRef} className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
+      <div ref={rowRef} className="mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset grid-cols-2 gap-[6px]">
         {pill('undo')}
         {pill('redo')}
       </div>

@@ -627,13 +627,13 @@ function BulkAssignButton({
         type="button"
         onClick={handleClick}
         aria-disabled={isIdle}
-        className={`flex h-7 w-full items-center justify-center whitespace-nowrap rounded-[5px] border-0 px-1.5 text-[13px] font-medium transition-colors ${
+        className={`flex h-[25px] w-full items-center justify-center whitespace-nowrap rounded-[5px] border-0 px-1.5 text-[13px] leading-[1.3] font-medium transition-colors ${
           isIdle ? 'cursor-not-allowed bg-[var(--ui-control)] text-ui-white opacity-35' : 'settings-chip-hover bg-[var(--ui-control)] text-ui-white'
         }`}
       >
         {label}
       </button>
-      {isOpen && position && !disabled && (
+      {isOpen && position && !disabled && createPortal(
         <SectorSearchPopup
           popupRef={popupRef}
           inputRef={inputRef}
@@ -643,7 +643,8 @@ function BulkAssignButton({
           onEscape={() => setIsOpen(false)}
           title={title}
           orderMode={orderMode}
-        />
+        />,
+        document.body,
       )}
       {disabled && showHint && disabledHint && (
         <div
@@ -1668,12 +1669,12 @@ export default function AdminStockTable({
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">간편 업종 분류</h2>
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">다운받아서 AI로 간편 분류 추천</p>
-          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
+          <div className="mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset grid-cols-2 gap-[6px]">
             <button
               type="button"
               onClick={() => void handleExportExcel()}
               disabled={isExporting || isUploading}
-              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
+              className="flex h-[25px] items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
               data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
@@ -1684,7 +1685,7 @@ export default function AdminStockTable({
               type="button"
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading || isExporting}
-              className="flex h-7 items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
+              className="flex h-[25px] items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
               data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >
@@ -1712,7 +1713,7 @@ export default function AdminStockTable({
           <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">
             {selectedStockCodes.size > 0 ? `선택한 종목 ${selectedStockCodes.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택하세요'}
           </p>
-          <div className="mt-4 grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
+          <div className="mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset grid-cols-3 gap-[6px]">
             <BulkAssignButton count={selectedStockCodes.size} options={bulkParentOptions} onAssign={handleBulkAssignParent} label="대분류" title="대분류 일괄 변경" orderMode={bulkOrderMode} />
             <BulkAssignButton
               count={selectedStockCodes.size}

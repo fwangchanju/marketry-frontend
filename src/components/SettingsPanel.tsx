@@ -149,7 +149,7 @@ function SettingHelpBubble({ label, description }: { label: string; description:
           <circle cx="8" cy="11.75" r="0.55" fill="currentColor" stroke="none" />
         </svg>
       </button>
-      {isOpen && (
+      {isOpen && createPortal(
         <span
           ref={tooltipRef}
           role="tooltip"
@@ -157,7 +157,8 @@ function SettingHelpBubble({ label, description }: { label: string; description:
           className={`z-50 w-max whitespace-pre ${HINT_BUBBLE_CLASS}`}
         >
           {description}
-        </span>
+        </span>,
+        document.body,
       )}
     </span>
     </>
@@ -505,19 +506,22 @@ function StairRows({
 const STAIR_HANDLE_BASE =
   'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-[top,width,height,gap] duration-100'
 
-// 업종 분류 깊이 — 손잡이 하나(︿﹀ 알약, 평소엔 작고 올리면 커진다)를 끌거나 트랙을 눌러 깊이를 바꾼다. 손잡이가 닿은 칸까지(위 칸 포함) 켜져서 겹침이 보인다.
+// 업종 분류 깊이 — 맵은 ︿﹀ 알약과 누적 선택, 그룹은 원형 손잡이와 단일 선택을 쓴다.
 function DepthStairSelect({
   depth,
   labels,
   onChange,
   disabled = false,
   maxSelectableIndex,
+  single = false,
 }: {
   depth: number
   labels: string[]
   onChange: (index: number) => void
   disabled?: boolean
   maxSelectableIndex: number
+  // true면 손잡이가 닿은 칸 하나만 켠다(그룹 페이지: 막대 하나가 가리키는 단계). 기본은 손잡이가 닿은 칸까지 위 칸도 함께 켠다(맵의 깊이 제한).
+  single?: boolean
 }) {
   const last = labels.length - 1
   const railRef = useRef<HTMLDivElement>(null)
@@ -549,7 +553,7 @@ function DepthStairSelect({
       <StairRows
         railWidth={0}
         labels={labels}
-        litFrom={0}
+        litFrom={single ? depth - 1 : 0}
         litTo={depth - 1}
         maxSelectableIndex={maxSelectableIndex}
         blockedHint={label => `현재 분류에는\n${label} 단계가 없습니다.`}
@@ -570,7 +574,7 @@ function DepthStairSelect({
         onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: stairCenterOf(depth - 1) - stairCenterOf(0) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: single ? 0 : stairCenterOf(depth - 1) - stairCenterOf(0) }} />
         <span
           role="slider"
           tabIndex={disabled ? -1 : 0}
@@ -586,11 +590,13 @@ function DepthStairSelect({
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
             else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
           }}
-          className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-brand bg-brand-surface`}
+          className={`${STAIR_HANDLE_BASE} ${single ? 'size-3' : 'h-6 w-3 flex-col gap-2'} border-brand bg-brand-surface`}
           style={{ top: stairCenterOf(depth - 1) }}
         >
-          <StairChevron direction="up" />
-          <StairChevron direction="down" />
+          {!single && <>
+            <StairChevron direction="up" />
+            <StairChevron direction="down" />
+          </>}
         </span>
       </div>
     </div>
@@ -1101,34 +1107,32 @@ function SingleValueSlider({
 // 새 섹션 컴포넌트를 하나 추가해서 끼워 넣기만 하면 되고, 여기 다른 섹션이나 SettingsPanel 껍데기
 // 자체는 안 건드려도 된다.
 
-// 그룹 페이지 "업종 분류 단계" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다.
+// 그룹 페이지 "업종 분류 깊이" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다. 맵 설정의 업종 분류 깊이와 같은 계단 모양이지만 켬/끔 스위치가 없고, 고른 단계 하나만 켜진다.
 // 분류 자체에 하위 단계가 없으면(거래소 분류 KRX·NXT) 대분류만 고를 수 있다. 저장된 값은 건드리지 않고 화면에서만 막는다.
 export function SettingsGroupDepthSection({
   depth,
   onChange,
   selectableDepth,
-  lockedMessage,
 }: {
   depth: number
   onChange: (depth: number) => void
   selectableDepth: number
-  // 막힌 단계에 올렸을 때 보여 줄 문구 — 없으면 "데이터가 없어 비활성화"로 안내한다. 데이터가 있는데도 화면 정책으로 잠근 곳(홈)이 쓴다.
-  lockedMessage?: ReactNode
 }) {
   return (
-    <div className="settings-first-depth-level settings-graph-item text-sm">
-      <span className="flex max-w-[16rem] items-center text-left text-[15px] font-medium leading-[22px] text-ui-white">
-        <span className="settings-plain-title">업종 분류 단계</span>
-      </span>
+    <div className="settings-first-depth-level settings-auto-item text-sm">
+      <div className="flex max-w-[16rem] items-center justify-between">
+        <span className="flex items-center text-left text-ui-white">
+          <SettingTitle className="text-[15px]">업종 분류 깊이</SettingTitle>
+        </span>
+      </div>
       <SettingDescription>그래프에 표시할 업종 분류의 단계</SettingDescription>
-      <div className="settings-slider-control mt-[18px]">
-        <SingleValueSlider
-          index={Math.min(depth, selectableDepth) - 1}
+      <div className="settings-control-inset">
+        <DepthStairSelect
+          depth={Math.min(depth, selectableDepth)}
           labels={DEPTH_LABELS}
-          ariaLabel="그래프 업종 분류 단계"
           onChange={index => onChange(index + 1)}
           maxSelectableIndex={selectableDepth - 1}
-          blockedReason={label => lockedMessage ?? <>현재 {label} 데이터가 없어<br />비활성화되어 있습니다.</>}
+          single
         />
       </div>
     </div>
@@ -1148,9 +1152,9 @@ export function SettingsAverageModeSection({
   onToggle: () => void
   toggleDisabled?: boolean
 }) {
-  const options = [
-    { value: false, label: '시총 가중' },
-    { value: true, label: '동일 가중' },
+  const options: { value: boolean; label: string; icon: SettingsSectionIconName }[] = [
+    { value: false, label: '시총 가중', icon: 'composition' },
+    { value: true, label: '동일 가중', icon: 'equal-size' },
   ]
   return (
     <div className="settings-first-depth-level settings-graph-item text-sm">
@@ -1163,26 +1167,38 @@ export function SettingsAverageModeSection({
       </div>
       <div className={`settings-average-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
-        <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]">
-          <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] border border-brand bg-brand-surface" />
-          {options.map(option => {
-            const selected = avgChangeRateUseSimple === option.value
-            return (
-              <button
+        <div className="settings-control-inset mt-auto mb-auto max-w-[16rem]">
+          <div aria-hidden="true" className="grid grid-cols-2 items-center gap-[6px] text-ui-muted">
+            {options.map(option => (
+              <SettingsSectionIcon
                 key={option.label}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => onChange(option.value)}
-                disabled={!enabled}
-                className={`relative z-10 min-h-[28px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                  selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
-                }`}
-              >
-                {option.label}
-              </button>
-            )
-          })}
+                icon={option.icon}
+                className={`mx-auto ${option.value ? 'h-12 w-12' : 'h-[54px] w-[54px]'}`}
+                strokeWidth={option.value ? 0.675 : 0.6}
+              />
+            ))}
+          </div>
+          <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-2 grid grid-cols-2 gap-[6px]">
+            <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] border border-brand bg-brand-surface" />
+            {options.map(option => {
+              const selected = avgChangeRateUseSimple === option.value
+              return (
+                <button
+                  key={option.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => onChange(option.value)}
+                  disabled={!enabled}
+                  className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
+                    selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -1330,11 +1346,12 @@ export function SettingsStockSizeSelector({
       </div>
       <SettingDescription>시가총액이 박스 크기에 반영되는 정도</SettingDescription>
       <div className="settings-slider-control">
+        {/* 두 아이콘은 scale(1.15)로 키워 화면 높이가 레이아웃 높이(48px)보다 3.6px 크다 — 배지를 그만큼 내려 화면에 보이는 아이콘 높이의 가운데에 둔다. */}
         <div className="mb-2 flex items-center justify-between text-ui-muted">
           <div className="flex flex-col items-center gap-1">
             <SettingsSectionIcon icon="equal-size" className="relative -left-[6.225px] h-[48px] w-[48px] origin-top-left scale-[1.15]" strokeWidth={0.587} />
           </div>
-          <span aria-live="polite" aria-atomic="true" className="rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">
+          <span aria-live="polite" aria-atomic="true" className="translate-y-[3.6px] rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">
             {marketCapRatio}%
           </span>
           <div className="flex flex-col items-center gap-1">
@@ -1710,7 +1727,7 @@ export function SettingsStockPopupSection({
   onChangeStockPopupOnHover: (onHover: boolean) => void
 }) {
   return (
-    <div className="settings-plain-button-item h-[160px] text-sm text-ui-white">
+    <div className="settings-plain-button-item h-[180px] text-sm text-ui-white">
       <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
         <span className="settings-plain-title">종목 정보</span>
         <SettingHelpBubble label="종목 정보" description={"업종 정보는 우클릭으로만\n열 수 있습니다."} />
@@ -1734,7 +1751,7 @@ export function SettingsStockPopupSection({
               role="radio"
               aria-checked={selected}
               onClick={() => onChangeStockPopupOnHover(option.onHover)}
-              className={`relative z-10 min-h-[28px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
+              className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
               selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
             }`}
             >
@@ -1756,7 +1773,7 @@ function toWonLabel(won: number): string {
 // 지도 페이지 관리자 전용 미사용 탭의 "텍스트 표시 기준" — 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsTextThresholdSection({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
-    <div className="settings-text-threshold-item h-[160px] text-sm">
+    <div className="settings-text-threshold-item h-[180px] text-sm">
       <div className="flex max-w-[16rem] items-center justify-between">
         <span className="flex items-center text-left text-[15px] text-ui-white">
           <span className="settings-plain-title">텍스트 표시 기준</span>
@@ -1856,7 +1873,7 @@ const DIRECTION_OPTIONS: { value: StockChangeFilter; label: string }[] = [
   { value: 'falling', label: '하락' },
 ]
 
-// 지도 페이지 관리자 전용 미사용 탭의 "업종 등락 방향" — 항목 높이 160px, 제목 번호는 settings-plain-content가 매긴다.
+// 지도 페이지 관리자 전용 미사용 탭의 "업종 등락 방향" — 항목 높이 180px, 제목 번호는 settings-plain-content가 매긴다.
 // 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
 export function SettingsSectorChangeSection({
   value,
@@ -1875,7 +1892,7 @@ export function SettingsSectorChangeSection({
   noDataLimited?: boolean
 }) {
   return (
-    <div className="settings-second-sector-change settings-admin-item h-[160px] text-sm text-ui-white">
+    <div className="settings-second-sector-change settings-admin-item h-[180px] text-sm text-ui-white">
       <p className="flex items-center text-[15px]">
         <span className="settings-plain-title">업종 등락 방향</span>
       </p>
@@ -1980,7 +1997,7 @@ export function SettingsExcludeSection({
         <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
         <div
           inert={!sectorFilterEnabled}
-          className={`settings-control-inset settings-exclude-list mt-[7px] flex max-h-[68px] flex-col gap-1 overflow-y-auto ${sectorFilterEnabled ? '' : 'opacity-35'}`}
+          className={`settings-control-inset settings-exclude-list mt-[7px] flex max-h-[92px] flex-col gap-1 overflow-y-auto ${sectorFilterEnabled ? '' : 'opacity-35'}`}
         >
             {excludedSectors.map(sector => (
               // 지도 위쪽 이동 경로의 되돌아가기 버튼과 같은 모양 — 이름 앞에 되돌아가기 표시가 붙은 한 버튼이다.
@@ -2054,20 +2071,20 @@ export function SettingsTopPickSection({
             disabled={isTopPickDisabled}
           />
         </div>
-        <div className="settings-top-pick-count-row flex items-start justify-between">
-          <SettingDescription dimmed={!topPickEnabled}>등락률 상위 업종을 강조</SettingDescription>
-          <SettingsDropdown
-            options={TOP_PICK_COUNT_OPTIONS}
-            value={String(topPickCount) as '1' | '2' | '3'}
-            onChange={key => onChangeTopPickCount(Number(key))}
-            ariaLabel="상위 업종 강조 개수"
-            disabled={isTopPickDisabled || !topPickEnabled}
-            compact
-            outlinedChevron
-            className={`mt-1 w-[42px] shrink-0 ${topPickEnabled ? '' : 'opacity-35'}`}
-          />
-        </div>
-        <div className={`settings-slider-control ${topPickEnabled ? '' : 'opacity-35'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
+        <SettingDescription dimmed={!topPickEnabled}>등락률 상위 업종을 강조</SettingDescription>
+        <div className={`settings-slider-control relative ${topPickEnabled ? '' : 'opacity-35'} ${isTopPickDisabled || !topPickEnabled ? 'pointer-events-none' : ''}`}>
+          <div className="absolute bottom-full right-0 mb-1.5">
+            <SettingsDropdown
+              options={TOP_PICK_COUNT_OPTIONS}
+              value={String(topPickCount) as '1' | '2' | '3'}
+              onChange={key => onChangeTopPickCount(Number(key))}
+              ariaLabel="상위 업종 강조 개수"
+              disabled={isTopPickDisabled || !topPickEnabled}
+              compact
+              outlinedChevron
+              className="w-[42px] shrink-0"
+            />
+          </div>
           <div role="radiogroup" aria-label="상위 업종 강조 단계" className="relative" style={{ height: stairHeight(depthLabelCount) }}>
             <StairRows
               railWidth={0}
