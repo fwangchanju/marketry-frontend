@@ -99,7 +99,7 @@ function MarketIndexTrendChart({ items, market, label, colorScale }: { items: Ma
           <div key={`${item.date}-${item.market}`} className="relative min-w-0 text-center">
             <div className="relative mx-auto h-full w-full max-w-32">
             <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 border border-ui-control ${item.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
-              <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[13px] font-semibold tabular-nums" style={{ top: item.changeRate >= 0 ? `calc(50% - ${height} - 25px)` : `calc(50% + ${height} + 7px)`, color: barColor }}>{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(2)}</div>
+              <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[13px] font-semibold tabular-nums" style={{ top: item.changeRate >= 0 ? `calc(50% - ${height} - 19px)` : `calc(50% + ${height} + 3.5px)`, color: barColor }}>{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(2)}</div>
             </div>
             <div className="absolute inset-x-0 top-[calc(100%+8px)] text-ui-muted">
               <div className="whitespace-nowrap text-[13px] leading-tight tabular-nums">{dateLabels(item.date).date}</div>
@@ -134,7 +134,7 @@ function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSector
             <div key={point.date} className="relative min-w-0 text-center">
               <div className="relative mx-auto h-full w-full max-w-32">
               <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 border border-ui-control ${point.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
-                <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[13px] font-semibold tabular-nums" style={{ top: point.changeRate >= 0 ? `calc(50% - ${height} - 25px)` : `calc(50% + ${height} + 7px)`, color: barColor }}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(2)}</div>
+                <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[13px] font-semibold tabular-nums" style={{ top: point.changeRate >= 0 ? `calc(50% - ${height} - 19px)` : `calc(50% + ${height} + 3.5px)`, color: barColor }}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(2)}</div>
               </div>
               <div className="absolute inset-x-0 top-[calc(100%+8px)] text-ui-muted">
                 <div className="whitespace-nowrap text-[13px] leading-tight tabular-nums">{date.getUTCMonth() + 1}/{date.getUTCDate()}</div>
