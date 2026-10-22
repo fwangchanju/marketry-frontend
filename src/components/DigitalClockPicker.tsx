@@ -1,15 +1,8 @@
 import { type KeyboardEvent } from 'react'
+import { SettingsOutlinedChevronIcon } from '@/components/icons/AppIcons'
 
-// 지도 설정창 손잡이(StairChevron)와 같은 얇은 꺾쇠(︿ ﹀)만 쓴다 — 알약 바탕 없이 강조색이고, 올리면 흰색이 된다.
-const ARROW_BUTTON = 'flex h-4 w-8 items-center justify-center border-0 bg-transparent p-0 text-brand outline-none transition-colors hover:text-ui-white focus-visible:text-ui-white disabled:cursor-not-allowed disabled:opacity-30'
-
-function ArrowIcon({ direction }: { direction: 'up' | 'down' }) {
-  return (
-    <svg viewBox="0 0 10 6" className="w-2.5" aria-hidden="true">
-      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
+// 업종 지표 드롭박스와 같은 꺾쇠를 위·아래에 재사용한다.
+const ARROW_BUTTON = 'flex h-[18px] w-8 items-center justify-center border-0 bg-transparent p-0 outline-none disabled:cursor-not-allowed disabled:opacity-30'
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
@@ -31,7 +24,7 @@ export default function DigitalClockPicker({ hour, minute, step, onChange, label
       <span className="font-mono text-[28px] font-semibold leading-none text-ui-muted" aria-hidden="true">:</span>
       <div className="flex flex-col items-center gap-0.5">
         <button type="button" aria-label="분 올리기" data-hint={`${step}분 늦추기`} disabled={minute >= maxMinute} onClick={() => move(step)} className={ARROW_BUTTON}>
-          <ArrowIcon direction="up" />
+          <SettingsOutlinedChevronIcon orientation="up" className="h-[18px] w-[18px]" aria-hidden="true" />
         </button>
         <div
           role="spinbutton"
@@ -47,7 +40,7 @@ export default function DigitalClockPicker({ hour, minute, step, onChange, label
           {pad(minute)}
         </div>
         <button type="button" aria-label="분 내리기" data-hint={`${step}분 당기기`} disabled={minute <= minMinute} onClick={() => move(-step)} className={ARROW_BUTTON}>
-          <ArrowIcon direction="down" />
+          <SettingsOutlinedChevronIcon orientation="down" className="h-[18px] w-[18px]" aria-hidden="true" />
         </button>
       </div>
     </div>

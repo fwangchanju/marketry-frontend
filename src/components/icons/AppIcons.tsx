@@ -171,6 +171,17 @@ export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+// 설정 드롭박스와 시각 선택기의 청록 외곽선 꺾쇠.
+export function SettingsOutlinedChevronIcon({ orientation = 'down', ...props }: SVGProps<SVGSVGElement> & { orientation?: 'up' | 'down' }) {
+  const points = orientation === 'up' ? '6 15 12 9 18 15' : '6 9 12 15 18 9'
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points={points} stroke="var(--brand)" strokeWidth={7} />
+      <polyline points={points} stroke="var(--brand-surface)" strokeWidth={3} />
+    </svg>
+  )
+}
+
 // 스냅샷 날짜·시각 글자 앞에 붙이는 달력·시계 모양.
 export function CalendarIcon(props: SVGProps<SVGSVGElement>) {
   return (

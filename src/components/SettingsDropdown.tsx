@@ -1,7 +1,7 @@
 import { useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
-import { ChevronDownIcon } from '@/components/icons/AppIcons'
+import { ChevronDownIcon, SettingsOutlinedChevronIcon } from '@/components/icons/AppIcons'
 
 // 설정창 드롭박스 — (badge를 주면 왼쪽에 지도 업종 헤더 모양 배지가 붙는다) 고른 값이 한 줄로 보이는 28px 버튼이고, 누르면 같은 폭의 목록이 펼쳐진다.
 // 목록은 변경 내역 목록과 같은 모양(fixed 위치·var(--ui-panel) 바탕·회색 테두리)이고, 고른 값은 목록에서 뺀다(지금 값은 닫힌 버튼에 보이므로 나머지 선택지만 보여 준다).
@@ -68,10 +68,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
         {badge && <span ref={badgeRef} className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">{badge}</span>}
         <span className={`truncate ${badge ? 'ml-2.5 mr-auto' : ''}`}>{selected?.label}</span>
         {outlinedChevron ? (
-          <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-            <polyline points="6 9 12 15 18 9" stroke="var(--brand)" strokeWidth={7} />
-            <polyline points="6 9 12 15 18 9" stroke="var(--brand-surface)" strokeWidth={3} />
-          </svg>
+          <SettingsOutlinedChevronIcon className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         ) : (
           <ChevronDownIcon strokeWidth={3.5} className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 text-brand transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         )}
