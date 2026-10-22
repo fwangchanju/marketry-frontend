@@ -20,13 +20,11 @@ import { useIsLoggedIn, useSession } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
 import { commitDrafts, discardDrafts, useHasDrafts } from '@/utils/settingsDraft'
-import { BOOKMARK_ORDER, type SettingsBookmarkId } from '@/utils/settingsBookmarks'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
-export type { SettingsBookmarkId }
-export type SettingsPanelSectionId = 'custom' | 'favorites' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'adminMoved' | 'graph'
+export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'adminMoved' | 'graph'
 const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage', 'adminMoved'])
 
 interface SettingsPanelGroupProps {
@@ -79,7 +77,7 @@ const TAXONOMY_BACKGROUND_COLOR = 'var(--ui-panel)'
 
 // 말풍선 폭은 가장 긴 줄에 맞춘다(w-max whitespace-pre) — 줄바꿈은 문구마다 \n(문자열) 또는 <br />(JSX)로 직접 정한다. 줄 하나가 설정창(18rem)
 // 안에 들어와야 하니 한 줄을 23글자 안쪽으로 쓴다.
-function SettingHelpBubble({ label, description }: { label: string; description: ReactNode; bookmarkId?: SettingsBookmarkId }) {
+function SettingHelpBubble({ label, description }: { label: string; description: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const tooltipRef = useRef<HTMLSpanElement>(null)
@@ -164,52 +162,23 @@ function SettingHelpBubble({ label, description }: { label: string; description:
   )
 }
 
-// 북마크한 설정 항목을 북마크 탭에 그대로 다시 그리기 위한 공유 상태. 항목 컴포넌트는 같은 코드를 두 곳(원래 탭,
-// 북마크 탭)에서 쓰고, mode로 어디서 그려지는지 구분한다. 북마크 기능을 켜지 않은 페이지는 enabled=false라 아무것도 안 보인다.
-interface SettingsBookmarkContextValue {
-  enabled: boolean
-  mode: 'source' | 'bookmark'
-  ids: readonly string[]
-  // 북마크 탭에서 보여줄 "원래 위치" 번호(예: "1-2") — 탭 번호-항목 번호.
-  numbers: Partial<Record<SettingsBookmarkId, string>>
-  // 북마크 탭에서 첫 번째로 표시할 항목.
-  firstId?: SettingsBookmarkId
-}
-
 // 설정 반영 때 설정창 전체에 로딩 화면을 잠깐 덮는 실행기 — 저장·되돌리기와 같은 로딩 화면을 하위 항목(색상 초기화 등)도 쓰게 한다.
 const SettingsFeedbackContext = createContext<(action: () => void) => void>(action => action())
 
-const SettingsBookmarkContext = createContext<SettingsBookmarkContextValue>({
-  enabled: false,
-  mode: 'source',
-  ids: [],
-  numbers: {},
-})
-
-// 북마크 탭에서 선택하지 않은 항목은 숨기고, 선택한 항목은 북마크 전용 간격으로 표시한다.
-function bookmarkItemClass(ctx: SettingsBookmarkContextValue, id: SettingsBookmarkId) {
-  if (ctx.mode !== 'bookmark') return ''
-  if (!ctx.ids.includes(id)) return 'hidden'
-  return `settings-bookmark-item ${ctx.firstId === id ? 'settings-bookmark-first' : ''}`
-}
-
-// 항목 제목. 북마크 탭에서는 번호를 자동 카운터 대신 원래 위치 번호로 보여준다.
-function SettingTitle({ bookmarkId, className = '', children }: { bookmarkId: SettingsBookmarkId; className?: string; help?: boolean; children: string }) {
-  const { mode, numbers } = useContext(SettingsBookmarkContext)
-  const number = mode === 'bookmark' ? numbers[bookmarkId] : undefined
+// 항목 제목. 번호는 CSS 자동 카운터(settings-section-num)가 그린다.
+function SettingTitle({ className = '', children }: { className?: string; help?: boolean; children: string }) {
   return (
     <>
-      <span className={`settings-section-num ${number ? 'settings-bookmark-num' : ''} ${className}`} data-num={number}>{children}</span>
+      <span className={`settings-section-num ${className}`}>{children}</span>
     </>
   )
 }
 
 const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: SettingsSectionIconName }[] = [
-  { id: 'industry', label: '업종 분류', icon: 'industry' },
   { id: 'composition', label: '종목 구성', icon: 'composition' },
+  { id: 'industry', label: '업종 분류', icon: 'industry' },
   { id: 'stockDisplay', label: '종목 박스', icon: 'stock-display' },
   { id: 'colors', label: '색상', icon: 'colors' },
-  { id: 'favorites', label: '북마크', icon: 'favorites' },
   { id: 'graph', label: '그래프', icon: 'bar-chart' },
   // 관리자 전용 탭 — 번호 참조가 있는 기존 설정은 순서를 유지한다.
   // 커스텀 페이지의 MARKETRY 분류 업데이트·롤백 탭. 어드민 페이지의 운영 탭(adminManage)과 이름이 겹치지 않게 "업데이트"로 부른다.
@@ -219,15 +188,21 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'custom', label: '커스텀', icon: 'custom-edit' },
 ]
 
-// 탭 제목에는 숫자를 표시하지 않지만 북마크와 안내 말풍선에는 원래 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
+// 탭 제목에는 숫자를 표시하지 않지만 안내 말풍선에는 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
 // 탭 번호는 SETTINGS_SECTIONS 순서에서, 항목 번호는 SETTING_ITEM_POSITIONS의 탭 안 순서에서 만들어서
-// 탭 순서나 항목 순서를 바꾸면 북마크와 말풍선의 번호가 함께 바뀐다(BOOKMARK_ORDER와 북마크 그룹의 렌더 순서는 따로 바꾼다).
+// 탭 순서나 항목 순서를 바꾸면 말풍선의 번호가 함께 바뀐다.
 const SETTINGS_SECTION_NUMBERS = Object.fromEntries(
   SETTINGS_SECTIONS.map((section, index) => [section.id, index + 1]),
 ) as Record<SettingsPanelSectionId, number>
 
 // 각 탭 안에서 항목이 놓인 순서(1부터).
-const SETTING_ITEM_POSITIONS: Partial<Record<SettingsBookmarkId, { section: SettingsPanelSectionId; item: number }>> = {
+type SettingItemId =
+  | 'depthLevel' | 'depthMetric' | 'depthRange' | 'topPick'
+  | 'marketValueRange' | 'stockChange' | 'excludeSector'
+  | 'boxSize' | 'boxLabel' | 'decimalPlaces'
+  | 'colorScale' | 'strongColor'
+
+const SETTING_ITEM_POSITIONS: Partial<Record<SettingItemId, { section: SettingsPanelSectionId; item: number }>> = {
   marketValueRange: { section: 'composition', item: 1 },
   excludeSector: { section: 'composition', item: 2 },
   stockChange: { section: 'composition', item: 3 },
@@ -243,7 +218,7 @@ const SETTING_ITEM_POSITIONS: Partial<Record<SettingsBookmarkId, { section: Sett
 }
 
 // "2-1" 같은 설정 위치 번호.
-const settingNumber = (id: SettingsBookmarkId) => {
+const settingNumber = (id: SettingItemId) => {
   const position = SETTING_ITEM_POSITIONS[id]
   return position ? `${SETTINGS_SECTION_NUMBERS[position.section]}-${position.item}` : ''
 }
@@ -263,7 +238,6 @@ function ToggleSwitch({
   disabled = false,
   bold = false,
   labelClassName = '',
-  labelDataNum,
   hideLabel = false,
   forceLabelWhite = false,
 }: {
@@ -276,8 +250,6 @@ function ToggleSwitch({
   disabled?: boolean
   bold?: boolean
   labelClassName?: string
-  // 북마크 탭에서 라벨 앞에 보이는 원래 위치 번호(settings-bookmark-num이 data-num을 그린다).
-  labelDataNum?: string
   // true면 라벨을 화면에 그리지 않고 스위치만 그린다(접근성용 aria-label은 label을 그대로 씀) —
   // 바깥에서 이미 같은 텍스트를 제목(예: "색상 범위")으로 보여주고 있어 중복 표시를 피할 때 쓴다.
   hideLabel?: boolean
@@ -294,7 +266,6 @@ function ToggleSwitch({
       {!hideLabel && (
         <span className="flex min-w-0 items-center gap-2">
           <span
-            data-num={labelDataNum}
             className={`${labelClassName} ${bold ? 'font-bold' : ''} ${forceLabelWhite || checked ? 'text-ui-white' : 'text-ui-muted'}`}
           >
             {label}
@@ -1347,14 +1318,12 @@ export function SettingsStockSizeSelector({
   marketCapRatio: number
   onChangeMarketCapRatio: (value: number) => void
 }) {
-  const bookmark = useContext(SettingsBookmarkContext)
-  if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('boxSize')) return null
   return (
-    <div className={`settings-first-stock-size settings-auto-item text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'boxSize') : 'mb-6 pt-3 pb-6'}`}>
+    <div className="settings-first-stock-size settings-auto-item text-ui-white mb-6 pt-3 pb-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <SettingTitle bookmarkId="boxSize" help className="text-[15px]">박스 크기</SettingTitle>
-          <SettingHelpBubble bookmarkId="boxSize" label="박스 크기" description={"박스 면적은 시가총액^(비율÷100)으로 계산합니다.\n0%는 모든 종목을 같은 크기로 표시합니다.\n50%는 시가총액의 제곱근 비율로 표시합니다.\n100%는 시가총액에 비례해 표시합니다."} />
+          <SettingTitle help className="text-[15px]">박스 크기</SettingTitle>
+          <SettingHelpBubble label="박스 크기" description={"박스 면적은 시가총액^(비율÷100)으로 계산합니다.\n0%는 모든 종목을 같은 크기로 표시합니다.\n50%는 시가총액의 제곱근 비율로 표시합니다.\n100%는 시가총액에 비례해 표시합니다."} />
         </div>
       </div>
       <SettingDescription>시가총액이 박스 크기에 반영되는 정도</SettingDescription>
@@ -1474,27 +1443,16 @@ export function SettingsSectorLevelSection({
   const [depthMetricSectionHint, setDepthMetricSectionHint] = useState<CursorHint | null>(null)
   const [depthRangeSectionHint, setDepthRangeSectionHint] = useState<CursorHint | null>(null)
   const [decimalPlacesHint, setDecimalPlacesHint] = useState<CursorHint | null>(null)
-  const bookmark = useContext(SettingsBookmarkContext)
-  const inBookmarkTab = bookmark.mode === 'bookmark'
-  const hideItem = (id: SettingsBookmarkId) => inBookmarkTab && !bookmark.ids.includes(id)
-  const itemClass = (id: SettingsBookmarkId) => bookmarkItemClass(bookmark, id)
-  const bookmarkableIds: SettingsBookmarkId[] = [
-    ...(showTaxonomy ? (['depthLevel', 'depthMetric', 'depthRange'] as const) : []),
-    ...(showStockDisplay ? (['boxLabel'] as const) : []),
-    ...(showStockDisplay && showDecimalPlaces ? (['decimalPlaces'] as const) : []),
-  ]
-  if (inBookmarkTab && bookmarkableIds.every(hideItem)) return null
 
   return (
     <div className="text-ui-white">
       {showTaxonomy && <div className={showDivider ? 'mt-6 pt-8' : ''}>
         <div>
-          <div className={`settings-first-depth-level settings-auto-item text-sm ${itemClass('depthLevel')}`}>
+          <div className="settings-first-depth-level settings-auto-item text-sm">
             <div className="flex max-w-[16rem] items-center justify-between">
               <span className="flex items-center text-left text-ui-white">
-                <SettingTitle bookmarkId="depthLevel" className="text-[15px]" help>업종 분류 깊이</SettingTitle>
+                <SettingTitle className="text-[15px]" help>업종 분류 깊이</SettingTitle>
                 <SettingHelpBubble
-                  bookmarkId="depthLevel"
                   label="업종 분류 깊이"
                   description={<>선택한 단계까지 업종을 세분화합니다.<br />끄면 업종 구분 없이 종목만 표시하고,<br /><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthMetric')}) 업종 지표</span>와<br /><span className="inline-block whitespace-nowrap font-bold">{settingNumber('topPick')}) 상위 업종 강조</span>도<br />함께 비활성화됩니다.</>}
                 />
@@ -1518,11 +1476,11 @@ export function SettingsSectorLevelSection({
               />
             </div>
           </div>
-          <div className={`settings-second-depth-metric settings-auto-item relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthMetric')}`}>
+          <div className="settings-second-depth-metric settings-auto-item relative text-sm mt-6">
             <div className={`settings-auto-content ${isDepthMetricDisabled ? 'opacity-35' : ''}`}>
               <div className="flex max-w-[16rem] items-center justify-between">
                 <span className="flex items-center text-left text-ui-white">
-                  <SettingTitle bookmarkId="depthMetric" className="text-[15px]">업종 지표</SettingTitle>
+                  <SettingTitle className="text-[15px]">업종 지표</SettingTitle>
                 </span>
                 <ToggleSwitch
                   checked={depthMetricEnabled}
@@ -1581,10 +1539,10 @@ export function SettingsSectorLevelSection({
           </div>
           <div
             aria-disabled={isDepthMetricRangeDisabled}
-            className={`settings-third-depth-range settings-auto-item relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('depthRange')} ${isDepthMetricRangeDisabled ? 'cursor-not-allowed' : ''}`}
+            className={`settings-third-depth-range settings-auto-item relative text-sm mt-6 ${isDepthMetricRangeDisabled ? 'cursor-not-allowed' : ''}`}
           >
             <span className={`flex items-center text-left text-[15px] text-ui-white ${isDepthMetricRangeDisabled ? 'opacity-35' : ''}`}>
-              <SettingTitle bookmarkId="depthRange">지표 표시 단계</SettingTitle>
+              <SettingTitle>지표 표시 단계</SettingTitle>
             </span>
             <div className={isDepthMetricRangeDisabled ? 'opacity-35' : ''}>
               <SettingDescription>지표를 표시할 업종 단계 범위</SettingDescription>
@@ -1629,10 +1587,10 @@ export function SettingsSectorLevelSection({
           같은 번호 위계로 이어서 표시한다. */}
       {showStockDisplay && <div className={showTaxonomy ? 'mt-6 pt-8' : 'pt-0'}>
         <div>
-          <div className={`settings-second-stock-label settings-auto-item text-sm ${inBookmarkTab ? '' : 'mt-2'} ${itemClass('boxLabel')}`}>
+          <div className="settings-second-stock-label settings-auto-item text-sm mt-2">
             <div className="flex max-w-[16rem] items-center justify-between">
               <span className="flex items-center text-left text-ui-white">
-                <SettingTitle bookmarkId="boxLabel" className="text-[15px]">박스 내 표기</SettingTitle>
+                <SettingTitle className="text-[15px]">박스 내 표기</SettingTitle>
               </span>
               <ToggleSwitch
                 checked={stockLabelEnabled}
@@ -1684,7 +1642,7 @@ export function SettingsSectorLevelSection({
           {showDecimalPlaces && (
             <div
               aria-disabled={isDecimalPlacesDisabled || undefined}
-              className={`settings-fourth-decimal-places settings-auto-item relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${itemClass('decimalPlaces')} ${isDecimalPlacesDisabled ? 'cursor-not-allowed' : ''}`}
+              className={`settings-fourth-decimal-places settings-auto-item relative text-sm mt-6 ${isDecimalPlacesDisabled ? 'cursor-not-allowed' : ''}`}
               onPointerEnter={isDecimalPlacesDisabled ? e => setDecimalPlacesHint(cursorHintFrom(e)) : undefined}
               onPointerMove={isDecimalPlacesDisabled ? e => setDecimalPlacesHint(cursorHintFrom(e)) : undefined}
               onPointerLeave={() => setDecimalPlacesHint(null)}
@@ -1695,7 +1653,7 @@ export function SettingsSectorLevelSection({
             >
               <div className={`settings-auto-content ${isDecimalPlacesDisabled ? 'opacity-35' : ''}`}>
               <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
-                <SettingTitle bookmarkId="decimalPlaces">등락률 소수점</SettingTitle>
+                <SettingTitle>등락률 소수점</SettingTitle>
               </span>
               <SettingDescription>종목 등락률의 소수점 자릿수</SettingDescription>
               {/* 3-2)와 같은 가짜 종목 상자 — 세 칸이 0·1·2자리 눈금이고, 슬라이더 손잡이가 각 칸 가운데에 멈춘다. */}
@@ -1832,9 +1790,6 @@ export function SettingsMarketValueSection({
   showDivider?: boolean
 }) {
   // 저장 인덱스는 작은 금액부터, 화면과 도움말은 큰 금액부터 표시한다.
-  const bookmark = useContext(SettingsBookmarkContext)
-  if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('marketValueRange')) return null
-  const itemClass = bookmarkItemClass(bookmark, 'marketValueRange')
   const lastTierIndex = Math.max(tiers.length - 1, 0)
   const tierSteps = Math.max(lastTierIndex, 1)
   const tierDisplayLabels = tiers.map(tier => tier.label).reverse()
@@ -1861,10 +1816,9 @@ export function SettingsMarketValueSection({
     : `${toWonLabel(selectedUpper)} 미만 ~ ${toWonLabel(selectedLower)} 이상`
 
   return (
-    <div className={`settings-market-value flex flex-col text-ui-white ${itemClass} ${bookmark.mode === 'bookmark' ? '' : showDivider ? 'mt-6 pt-8' : 'pt-3'}`}>
+    <div className={`settings-market-value flex flex-col text-ui-white ${showDivider ? 'mt-6 pt-8' : 'pt-3'}`}>
       <p className="flex items-center text-[15px]">
-        {/* 순서는 제목 → 물음표 → 북마크 — SettingTitle이 북마크를 제목 바로 뒤에 붙이므로 help로 북마크를 빼고 맨 끝에 직접 둔다. */}
-        <SettingTitle bookmarkId="marketValueRange" help>시가총액 범위</SettingTitle>
+        <SettingTitle help>시가총액 범위</SettingTitle>
         {tierRangeLines && <SettingHelpBubble label="시가총액 구간" description={tierRangeLines} />}
       </p>
       <SettingDescription>지도에 포함할 종목의 시총 구간</SettingDescription>
@@ -1970,11 +1924,10 @@ export function SettingsStockChangeSection({
   value: StockChangeFilter
   onChange: (value: StockChangeFilter) => void
 }) {
-  const bookmark = useContext(SettingsBookmarkContext)
   return (
-    <div className={`settings-third-stock-change text-ui-white ${bookmark.mode === 'bookmark' ? '' : 'mt-4 pt-6'} ${bookmarkItemClass(bookmark, 'stockChange')}`}>
+    <div className="settings-third-stock-change text-ui-white mt-4 pt-6">
       <p className="flex items-center text-[15px]">
-        <SettingTitle bookmarkId="stockChange">종목 등락 방향</SettingTitle>
+        <SettingTitle>종목 등락 방향</SettingTitle>
       </p>
       <SettingDescription>상승·하락 종목만 표시</SettingDescription>
       <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative mt-[40.5px] grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
@@ -2011,18 +1964,15 @@ export function SettingsExcludeSection({
   onRemoveExcludedSector: (sectorId: number) => void
   afterStockChange?: boolean
 }) {
-  const bookmark = useContext(SettingsBookmarkContext)
-  const number = bookmark.mode === 'bookmark' ? bookmark.numbers.excludeSector : undefined
   return (
-    <div className={`${afterStockChange ? 'settings-fourth-exclude' : 'settings-second-exclude'} text-ui-white ${bookmark.mode === 'bookmark' ? '' : 'mt-4 pt-6'} ${bookmarkItemClass(bookmark, 'excludeSector')}`}>
+    <div className={`${afterStockChange ? 'settings-fourth-exclude' : 'settings-second-exclude'} text-ui-white mt-4 pt-6`}>
       <div className="text-sm">
         <ToggleSwitch
           checked={sectorFilterEnabled}
           onChange={onToggleSectorFilter}
           label="제외 업종"
           forceLabelWhite
-          labelClassName={`text-[15px] settings-section-num ${number ? 'settings-bookmark-num' : ''}`}
-          labelDataNum={number}
+          labelClassName="text-[15px] settings-section-num"
 
         />
         <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
@@ -2081,18 +2031,14 @@ export function SettingsTopPickSection({
   const depthMetricLabels = Array.from({ length: depthLabelCount }, (_, index) => DEPTH_LABELS[index] ?? `${index + 1}차 분류`)
   const isTopPickDisabled = !sectorLevelEnabled
   const [topPickSectionHint, setTopPickSectionHint] = useState<CursorHint | null>(null)
-  const bookmark = useContext(SettingsBookmarkContext)
-  const inBookmarkTab = bookmark.mode === 'bookmark'
-  if (inBookmarkTab && !bookmark.ids.includes('topPick')) return null
 
   return (
-    <div className={`settings-second-top-pick settings-auto-item relative text-sm ${inBookmarkTab ? '' : 'mt-6'} ${bookmarkItemClass(bookmark, 'topPick')}`}>
+    <div className="settings-second-top-pick settings-auto-item relative text-sm mt-6">
       <div className={`settings-auto-content ${isTopPickDisabled ? 'opacity-35' : ''}`}>
         <div className="flex max-w-[16rem] items-center justify-between">
           <span className="flex items-center text-left text-ui-white">
-            <SettingTitle bookmarkId="topPick" className="text-[15px]" help>상위 업종 강조</SettingTitle>
+            <SettingTitle className="text-[15px]" help>상위 업종 강조</SettingTitle>
             <SettingHelpBubble
-              bookmarkId="topPick"
               label="상위 업종 강조"
               description={<><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthMetric')}) 업종 지표</span>에서<br />동일 가중 등락률을 선택하면<br />동일 가중 등락률로,<br />나머지 지표를 선택하면<br />시총 가중 등락률로 순위를 매깁니다.</>}
             />
@@ -2191,15 +2137,14 @@ export function SettingsColorSection({
     const timer = window.setTimeout(() => setColorOffNoticeVisible(false), COLOR_OFF_NOTICE_MS)
     return () => window.clearTimeout(timer)
   }, [colorOffNoticeVisible])
-  const bookmark = useContext(SettingsBookmarkContext)
-  if (colorScaleDraft === null || (bookmark.mode === 'bookmark' && !bookmark.ids.includes('colorScale'))) return null
+  if (colorScaleDraft === null) return null
 
   return (
-    <div className={`settings-first-color settings-auto-item text-ui-white ${bookmarkItemClass(bookmark, 'colorScale')}`}>
+    <div className="settings-first-color settings-auto-item text-ui-white">
       {/* "색상 커스텀 모드" 토글을 별도 줄로 두지 않고, 제목 바로 우측에 스위치만 붙인다. 초기화 버튼(26px)은 위아래 여백을 -2px씩 줘서 줄 높이를 다른 항목의 제목 줄(22px)과 같게 둔다 — 그래야 메뉴를 바꿔도 제목·토글 위치가 같다. */}
       <div className="flex items-center justify-between">
         <p className="flex items-center text-[15px]">
-          <SettingTitle bookmarkId="colorScale">등락률 색상</SettingTitle>
+          <SettingTitle>등락률 색상</SettingTitle>
           <button
             type="button"
             aria-label="초기화"
@@ -2255,21 +2200,18 @@ export function SettingsStrongIndustryColorSection({
   color: string
   onChange: (color: string) => void
 }) {
-  const bookmark = useContext(SettingsBookmarkContext)
   // 색을 고르면 지도 전체가 다시 그려져 선택 링이 늦게 보이므로, 링은 누른 즉시 따로 보여 주고 지도 색 반영은 한 프레임 뒤로 미룬다(이 값은 외부 저장소라 startTransition으로는 미뤄지지 않는다).
   const [pendingColor, setPendingColor] = useState<{ value: string; base: string } | null>(null)
-  if (bookmark.mode === 'bookmark' && !bookmark.ids.includes('strongColor')) return null
   const selectedColor = pendingColor && pendingColor.base === color.toLowerCase() ? pendingColor.value : color.toLowerCase()
   const pick = (value: string) => {
     setPendingColor({ value, base: color.toLowerCase() })
     requestAnimationFrame(() => setTimeout(() => onChange(value), 0))
   }
   return (
-    <div className={`settings-second-strong-color flex flex-col text-ui-white ${bookmark.mode === 'bookmark' ? bookmarkItemClass(bookmark, 'strongColor') : 'pt-3'}`}>
+    <div className="settings-second-strong-color flex flex-col text-ui-white pt-3">
       <p className="flex items-center text-[15px]">
-        <SettingTitle bookmarkId="strongColor" help>강조 색상</SettingTitle>
+        <SettingTitle help>강조 색상</SettingTitle>
         <SettingHelpBubble
-          bookmarkId="strongColor"
           label="강조 색상"
           description={<>지도 내 업종명(대분류)과<br /><span className="inline-block whitespace-nowrap font-bold">{settingNumber('topPick')}) 상위 업종 강조</span>의 색상을 설정합니다.</>}
         />
@@ -2334,7 +2276,7 @@ interface Props {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   // 분류 체계 선택의 탭은 페이지가 정하고, 박스 크기 선택은 종목 박스 탭에 배치한다.
-  taxonomySection?: 'favorites' | 'industry'
+  taxonomySection?: 'industry'
   isCustom?: boolean
   onToggleCustom?: () => void
   // 지도의 Basis 선택(KRX / NXT / MARKETRY) — 주면 선택 탭이 이 값을 쓰고, 안 주면 isCustom으로 KRX/MARKETRY만 고른다.
@@ -2342,10 +2284,6 @@ interface Props {
   onSelectTaxonomy?: (taxonomy: TaxonomyKey) => void
   // 지도 페이지의 현재/전체 종목 수를 제목 바로 옆에 표시한다.
   stockCountLabel?: string
-  // 관리자 북마크 탭에서 표시할 기존 저장 항목.
-  bookmarks?: readonly string[]
-  // 비로그인이면 북마크 탭을 누를 때 탭을 열지 않고 이 함수(로그인 팝업)를 부른다.
-  bookmarkLoginRequired?: boolean
   onRequestLogin?: () => void
   // 설정창이 화면 왼쪽에 붙어 있는지와 좌우 이동 함수 — onToggleSide를 넘긴 페이지에서만 헤더에 이동 화살표를 보인다.
   isOnLeft?: boolean
@@ -2383,8 +2321,6 @@ export default function SettingsPanel({
   taxonomy,
   onSelectTaxonomy,
   stockCountLabel,
-  bookmarks,
-  bookmarkLoginRequired = false,
   onRequestLogin,
   isOnLeft = false,
   onToggleSide,
@@ -2497,17 +2433,6 @@ export default function SettingsPanel({
     : availableSections
   const isNonScrollingSection = !taxonomyAtBottom && (selectedSection?.id === 'industry' || selectedSection?.id === 'colors')
 
-  // 북마크 탭에는 원래 위치 번호(탭 번호-항목 번호)를 보여준다. 항목 번호는 각 탭에서 항상 고정된 자리다.
-  const bookmarkContext: SettingsBookmarkContextValue = {
-    enabled: Boolean(bookmarks),
-    mode: selectedSection?.id === 'favorites' ? 'bookmark' : 'source',
-    ids: bookmarks ?? [],
-    firstId: BOOKMARK_ORDER.find(id => (bookmarks ?? []).includes(id)),
-    numbers: Object.fromEntries(
-      (Object.keys(SETTING_ITEM_POSITIONS) as SettingsBookmarkId[]).map(id => [id, settingNumber(id)]),
-    ),
-  }
-
   // 닫혀있을 땐 아예 렌더링하지 않는다(트리거 버튼은 더 이상 이 컴포넌트가 아니라 호출부가 따로 그린다).
   if (!isOpen && !mounted) return null
   const sideName = isOnLeft ? 'left' : 'right'
@@ -2619,9 +2544,7 @@ export default function SettingsPanel({
                 id={`settings-tab-${section.id}`}
                 onClick={() => {
                   if (section.id === 'plain') return
-                  // 비로그인이 북마크 탭을 누르면 탭을 열지 않고 바로 로그인 팝업을 띄운다.
-                  if (section.id === 'favorites' && bookmarkLoginRequired) requestLogin()
-                  else setActiveSection(section.id)
+                  setActiveSection(section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
                   ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
@@ -2652,32 +2575,24 @@ export default function SettingsPanel({
       )}
       {!plainContent && availableSections.length === 0 && <div className="min-h-0 flex-1" />}
       <SettingsFeedbackContext.Provider value={runPreferenceAction}>
-      <SettingsBookmarkContext.Provider value={bookmarkContext}>
       {selectedSection && (
         <div
           role="tabpanel"
           id={`settings-panel-${selectedSection.id}`}
           aria-labelledby={`settings-tab-${selectedSection.id}`}
-          data-align-second-heading={(taxonomyAtBottom && selectedSection.id !== 'favorites') || undefined}
+          data-align-second-heading={taxonomyAtBottom || undefined}
           aria-busy={waitingForPreferences || undefined}
           inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'favorites' ? 'settings-bookmark-tab' : ''} ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : ''} ${
+          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : ''} ${
             isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
           }`}
         >
           {!taxonomyAtBottom && selectedSection.id === taxonomySection && hasTaxonomySelector && (
             <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} />
           )}
-          {/* 빈 북마크 안내도 읽기 전용 안내와 같은 160px 영역의 가운데·중간에 둔다. */}
-          {selectedSection.id === 'favorites' && bookmarkContext.enabled && bookmarkContext.ids.length === 0 && (
-            <p className="settings-empty-message">
-              북마크한 항목이 없습니다.
-            </p>
-          )}
           {sectionContent.get(selectedSection.id)?.map((content, index) => <Fragment key={index}>{content}</Fragment>)}
         </div>
       )}
-      </SettingsBookmarkContext.Provider>
       </SettingsFeedbackContext.Provider>
       </div>
       {isPreferenceFeedbackActive && (

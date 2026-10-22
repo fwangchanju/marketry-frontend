@@ -68,7 +68,7 @@ function BreadcrumbBackIcon() {
 }
 
 const MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [
-  'industry', 'composition', 'stockDisplay', 'colors',
+  'composition', 'industry', 'stockDisplay', 'colors',
 ]
 const ADMIN_MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [...MAP_SETTINGS_SECTION_ORDER, 'adminMoved']
 

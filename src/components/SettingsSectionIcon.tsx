@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type SettingsSectionIconName = 'favorites' | 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'admin-ops' | 'admin-moved' | 'cloud-upload' | 'custom-edit'
+export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'admin-ops' | 'admin-moved' | 'cloud-upload' | 'custom-edit'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
@@ -9,7 +9,7 @@ interface SettingsSectionIconProps {
 }
 
 // 설정창 메뉴 줄의 아이콘 — 상단 영역 아이콘과 같은 선 아이콘이다(24×24 격자, 선 끝·꺾임 둥글게).
-// 업종 분류·색상은 Lucide(network·palette), 종목 구성·종목 박스·북마크는 Tabler(chart-treemap·text-size·bookmark) 모양이다.
+// 업종 분류·색상은 Lucide(network·palette), 종목 구성·종목 박스는 Tabler(chart-treemap·text-size) 모양이다.
 const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
   'custom-edit': (
     <>
@@ -76,7 +76,6 @@ const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
       <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
     </>
   ),
-  favorites: <path d="M18 7v14l-6-4l-6 4v-14a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4" />,
   // 관리자 페이지 탭 — 운영은 Tabler settings(톱니), 미사용은 원 안에 빗금을 그어 비활성 상태를 나타낸다.
   'admin-ops': (
     <>
