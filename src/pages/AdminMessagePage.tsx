@@ -215,14 +215,14 @@ export default function AdminMessagePage() {
                   <div className="settings-plain-content">
                     {saved && draft && (
                       <>
-                        <div className="settings-ops-item h-[160px] text-sm">
+                        <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송</h2>
                             <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">정기 리포트를 텔레그램으로 보낼지</p>
                             <SettingsSegmentedControl label="발송" options={SEND_OPTIONS} value={draft.enabled} onChange={value => updateDraft({ enabled: value })} />
                           </div>
                         </div>
-                        <div className="settings-ops-item h-[160px] text-sm">
+                        <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 시작</h2>
                             <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">메시지 첫 발송 시각</p>
@@ -231,12 +231,12 @@ export default function AdminMessagePage() {
                             </div>
                           </div>
                         </div>
-                        <div className="settings-ops-item h-[160px] text-sm">
+                        <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 간격</h2>
                             <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">홈 화면을 몇 분마다 보낼지</p>
                             <div className="mt-1 flex max-w-[16rem] translate-y-[6px] settings-control-inset items-center justify-center">
-                              <MinuteDial label="발송 간격" size={88} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
+                              <MinuteDial label="발송 간격" size={100} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
                             </div>
                           </div>
                         </div>

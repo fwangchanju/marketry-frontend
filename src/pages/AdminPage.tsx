@@ -87,10 +87,10 @@ export default function AdminPage() {
               >
                 <SettingsPanelGroup section="adminManage">
                   <div className="settings-plain-content">
-                    <div ref={setSummaryTarget} className="settings-ops-item h-[160px] text-sm" />
-                    <div ref={setExportTarget} className="settings-ops-item h-[160px] text-sm" />
-                    <div ref={setSpecialTarget} className="settings-ops-item h-[160px] text-sm" />
-                    <div ref={setNicknameTarget} className="settings-ops-item h-[160px] text-sm" />
+                    <div ref={setSummaryTarget} className="settings-ops-item h-[180px] text-sm" />
+                    <div ref={setExportTarget} className="settings-ops-item h-[180px] text-sm" />
+                    <div ref={setSpecialTarget} className="settings-ops-item h-[180px] text-sm" />
+                    <div ref={setNicknameTarget} className="settings-ops-item h-[180px] text-sm" />
                   </div>
                 </SettingsPanelGroup>
               </SettingsPanel>

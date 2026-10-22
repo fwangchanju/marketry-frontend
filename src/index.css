@@ -737,11 +737,6 @@ a { color: var(--accent-light); text-decoration: none; }
   margin-right: 0;
 }
 
-/* 개수 드롭다운의 오른쪽 끝을 공통 조작 영역과 맞춘다. */
-.settings-top-pick-count-row {
-  padding-right: 18px;
-}
-
 .settings-panel-tab-content .settings-section-bullet::before,
 .settings-panel-tab-content .settings-subsection-num::before {
   counter-increment: none;
@@ -754,7 +749,7 @@ a { color: var(--accent-light); text-decoration: none; }
   scrollbar-gutter: stable;
 }
 
-/* 모든 페이지의 설정 항목은 160px. 첫 항목도 동일하며 본문 위 12px는 별도로 둔다.
+/* 모든 페이지의 설정 항목은 180px. 제목은 4px 내리고, 첫 항목 위의 본문 여백 12px는 별도로 둔다.
    포털 컨테이너의 표시 방식은 바꾸지 않는다. */
 .settings-panel-tab-content[data-align-second-heading] {
   padding-top: 12px;
@@ -762,18 +757,18 @@ a { color: var(--accent-light); text-decoration: none; }
 
 .settings-panel-tab-content :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-sector-change, .settings-third-stock-change, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-second-strong-color, .settings-market-value, .settings-first-stock-size, .settings-first-color, .settings-second-top-pick, .settings-fourth-exclude, .settings-second-exclude, .settings-text-threshold-item, .settings-plain-button-item, .settings-ops-item, .settings-item) {
   box-sizing: border-box;
-  height: 160px;
-  min-height: 160px;
+  height: 180px;
+  min-height: 180px;
   flex-shrink: 0;
   margin-top: 0;
   margin-bottom: 0;
-  padding-top: 0;
+  padding-top: 4px;
 }
 
-/* 빈 상태 안내는 한 항목(160px) 안에서 가운데·중간 정렬하며 구분선을 두지 않는다. */
+/* 빈 상태 안내는 한 항목(180px) 안에서 가운데·중간 정렬하며 구분선을 두지 않는다. */
 .settings-empty-message {
   display: flex;
-  height: 160px;
+  height: 180px;
   margin: 0;
   align-items: center;
   justify-content: center;
@@ -822,7 +817,7 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 
 /* 맵의 조작부 높이는 내용으로 결정하고 설명 아래 남는 공간을 위아래로 나눈다.
-   항목 160px와 다음 제목 위 구분선 간격 12px는 공통 레이아웃 규칙이다. */
+   항목 180px와 다음 제목 위 구분선 간격 12px는 공통 레이아웃 규칙이다. */
 .settings-panel-tab-content .settings-auto-item:not(.hidden) {
   display: flex;
   flex-direction: column;
@@ -952,7 +947,7 @@ a { color: var(--accent-light); text-decoration: none; }
 
 /* 제외 업종은 항목 높이를 유지하고 목록만 내부에서 스크롤한다. */
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-fourth-exclude, .settings-second-exclude) {
-  height: 160px;
+  height: 180px;
   padding-bottom: 18px;
 }
 
@@ -966,14 +961,14 @@ a { color: var(--accent-light); text-decoration: none; }
 .settings-panel-tab-content[data-align-second-heading] .settings-exclude-list {
   flex: 1;
   min-height: 0;
-  /* 20px 항목 3개 + 4px 간격 2개. 남는 버튼 영역 안에서 세로 중간에 둔다. */
+  /* 20px 항목 4개 + 4px 간격 3개. 남는 버튼 영역 안에서 세로 중간에 둔다. */
   margin-block: auto;
   overscroll-behavior-y: contain;
 }
 
 .settings-panel-tab-content[data-align-second-heading] :is(.settings-first-depth-level, .settings-second-depth-metric, .settings-third-depth-range, .settings-second-top-pick, .settings-second-sector-change, .settings-third-stock-change, .settings-fourth-exclude, .settings-second-exclude, .settings-second-stock-label, .settings-third-text-threshold, .settings-fourth-decimal-places, .settings-second-strong-color) {
   margin-top: 0;
-  padding-top: 0;
+  padding-top: 4px;
   border-color: transparent;
 }
 

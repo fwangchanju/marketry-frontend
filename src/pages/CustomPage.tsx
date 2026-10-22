@@ -329,10 +329,10 @@ export default function CustomPage() {
               </SettingsPanelGroup>
               {isAdmin && <SettingsPanelGroup section="adminOps">
                 <div className="settings-plain-content">
-                  <div className="settings-ops-item h-[160px] text-sm">
+                  <div className="settings-ops-item h-[180px] text-sm">
                     <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
                     <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">내 분류를 MARKETRY 분류로 업데이트·롤백</p>
-                    <div className="settings-button-area mt-4 max-w-[16rem] settings-control-inset"><MarketryPublishControls /></div>
+                    <div className="settings-button-area mt-4 max-w-[16rem] translate-y-[6px] settings-control-inset"><MarketryPublishControls /></div>
                   </div>
                 </div>
               </SettingsPanelGroup>}

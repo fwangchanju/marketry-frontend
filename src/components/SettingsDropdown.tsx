@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
 
@@ -75,7 +76,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
           <ChevronDownIcon strokeWidth={3.5} className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 text-brand transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         )}
       </button>
-      {isOpen && position && (
+      {isOpen && position && createPortal(
         <div
           ref={popupRef}
           role="listbox"
@@ -86,7 +87,8 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
             left: position.left + listIndent,
             width: position.width - listIndent,
             transform: position.openUpward ? 'translateY(-100%)' : undefined,
-          }}
+            '--accent': 'var(--panel-gray)',
+          } as CSSProperties}
           className="z-50 overflow-hidden rounded-none border border-ui-border bg-ui-background p-0 text-ui-white shadow-xl"
           onClick={e => e.stopPropagation()}
         >
@@ -103,13 +105,14 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
                 onChange(option.key)
                 setIsOpen(false)
               }}
-              className={`${option.disabled ? 'cursor-not-allowed text-ui-muted' : 'settings-chip-hover text-ui-white'} flex w-full items-center justify-between rounded-none border-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-xs'} text-left font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${option.key === value ? 'bg-ui-white/20' : 'bg-transparent'}`}
+              className={`${option.disabled ? 'cursor-not-allowed text-ui-muted' : 'settings-chip-hover text-ui-white'} flex w-full items-center justify-between rounded-none border-0 py-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-xs'} text-left font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${option.key === value ? 'bg-ui-white/20' : 'bg-transparent'}`}
               style={{ height: compact ? COMPACT_ROW_HEIGHT : MENU_ROW_HEIGHT, ...(textPadLeft !== undefined ? { paddingLeft: textPadLeft } : {}) }}
             >
               <span className="truncate">{option.label}</span>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

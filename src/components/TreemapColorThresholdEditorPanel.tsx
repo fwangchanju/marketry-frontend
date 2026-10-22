@@ -91,14 +91,14 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
     onChangeRankPercent(rank, target)
   }
   const edgeAligned = (position: number) => Math.min(Math.max(position, 0.06), 0.94) * 100
-  // 값 말풍선은 눈금 글자와 같은 줄·같은 크기(11px)로 그 위에 포개서 보여 준다(고른 값이 눈금과 같으면 그 눈금 글자를 덮는다).
-  const badgeClass = 'absolute top-[35px] z-10 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-brand px-1 text-[11px] font-medium leading-4 tabular-nums text-ui-background'
+  // 선택값 배지는 가까운 눈금과 겹치지 않도록 11px에 좁은 좌우 여백을 유지하고 같은 줄에 포개서 보여 준다.
+  const badgeClass = 'absolute top-[32px] z-10 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-brand px-0.5 text-[11px] font-medium leading-4 tabular-nums text-ui-background'
 
   return (
     <>
       {/* 막대 폭은 다른 탭의 슬라이더와 같은 .settings-slider-control 폭이다(양 끝 손잡이·눈금 글자는 그 바깥으로 조금 나온다). */}
       <div
-        className="relative h-[51px] touch-none select-none"
+        className="relative h-[48px] touch-none select-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
@@ -143,12 +143,12 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             })}
           </div>
           {BAR_TICKS.map(tick => {
-            // 눈금 글자는 다른 슬라이더 아래 글자처럼 11px 흰색이고, 고른 값과 같은 눈금은 굵은 글씨(500)로 강조한다. 어두운 회색은 읽기 어려워 쓰지 않는다.
+            // 다른 슬라이더처럼 트랙 아래 4px에 눈금을 둔다. 좁은 값 간격 때문에 여기만 12px로 두고 색·굵기 규칙은 맞춘다.
             const highlighted = zeroSelected ? tick === 0 : tick === positive[selectedRank ?? -1]?.percent
             return (
               <span
                 key={tick}
-                className={`pointer-events-none absolute top-[35px] -translate-x-1/2 whitespace-nowrap text-[11px]/4 transition-colors duration-300 ${highlighted ? 'font-medium' : ''} text-ui-white`}
+                className={`pointer-events-none absolute top-[32px] -translate-x-1/2 whitespace-nowrap text-[12px]/4 transition-colors duration-300 ${highlighted ? 'font-medium text-ui-white' : 'text-ui-muted'}`}
                 style={{ left: `${percentToPosition(tick) * 100}%` }}
               >
                 {tick}%

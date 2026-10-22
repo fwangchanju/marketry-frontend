@@ -26,7 +26,7 @@ export default function DigitalClockPicker({ hour, minute, step, onChange, label
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-[4px] bg-[var(--ui-control)] px-3 py-1" aria-label={label} role="group">
+    <div className="flex h-[80px] items-center gap-2 rounded-[4px] bg-[var(--ui-control)] px-3" aria-label={label} role="group">
       <span className="font-mono text-[28px] font-semibold leading-none tabular-nums text-ui-muted" aria-label={`${hour}시`}>{pad(hour)}</span>
       <span className="font-mono text-[28px] font-semibold leading-none text-ui-muted" aria-hidden="true">:</span>
       <div className="flex flex-col items-center gap-0.5">
