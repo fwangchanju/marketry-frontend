@@ -31,7 +31,7 @@ const BUTTON_CLASS = `${BUTTON_BASE_CLASS} w-7`
 const CELL_CLASS = 'm-px flex h-[22px] w-[18px] items-center justify-center border-0 bg-transparent text-[var(--brand)] outline-none transition-colors hover:bg-[var(--ui-control)] focus-visible:bg-[var(--ui-control)]'
 // 시각 칩(시계 + 시각 글자) 하나가 새로고침 버튼이다 — 호버 면(var(--ui-control))이 칩 전체에 깔린다.
 const CELL_TIME_CLASS = 'toolbar-badge-control flex h-6 shrink-0 items-center gap-1.5 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[var(--ui-control)]'
-// 켜진 상태의 아이콘은 선 색(청록)을 35% 투명하게 안쪽에 채운다 — 북마크가 켜진 모양.
+// 켜진 상태의 아이콘은 선 색(청록)을 35% 투명하게 안쪽에 채운다.
 export const FILLED_ICON_CLASS = 'fill-current/35'
 
 // 스냅샷 수집 주기 안내 — 새로고침 버튼에 커서를 올리거나 포커스하면 보여준다.

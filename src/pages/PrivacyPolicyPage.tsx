@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
             <ul className={LIST}>
               <li>Google 로그인 시: Google 계정 식별자(sub), 발급자(issuer), 이메일 주소</li>
               <li>이용자가 직접 입력하거나 올린 정보: 닉네임, 프로필 사진</li>
-              <li>이용자가 저장한 정보: 화면 설정, 내 업종 분류, 북마크, 저장해 둔 스냅샷</li>
+              <li>이용자가 저장한 정보: 화면 설정, 내 업종 분류, 저장해 둔 스냅샷</li>
               <li>서비스 이용 중 자동으로 생기는 정보: 마지막으로 접속한 시각, 접속한 날짜 기록(하루에 한 번 이상 접속했는지)</li>
             </ul>
           </section>
@@ -116,7 +116,7 @@ export default function PrivacyPolicyPage() {
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>개정 이력</h2>
             <ul className={LIST}>
-              <li>2026-10-22: 비회원 방문자 수 집계(되돌릴 수 없는 값, 180일 보관), 접속 기록 수집, 외부 서비스(Cloudflare·R2 백업), 즉시 탈퇴, 1년 미접속 계정 삭제, 백업 보관 기간 안내 추가</li>
+              <li>2026-10-22: 비회원 방문자 수 집계(되돌릴 수 없는 값, 180일 보관), 접속 기록 수집, 외부 서비스(Cloudflare·R2 백업), 즉시 탈퇴, 1년 미접속 계정 삭제, 백업 보관 기간 안내 추가, 저장 정보에서 북마크 삭제</li>
               <li>2026-10-11: 서비스 이름과 주소 변경, 수집 항목(닉네임·프로필 사진·북마크)·쿠키·저장소·외부 서비스·이용자 권리 안내 보강</li>
               <li>2026-09-26: 최초 시행</li>
             </ul>
