@@ -33,10 +33,11 @@ interface Props<K extends string> {
   compact?: boolean
   // 꺽쇠를 고른 칸과 같은 색 조합으로 그린다(안쪽 짙은 청록 + 청록 외곽선).
   outlinedChevron?: boolean
+  centerLabel?: boolean
   className?: string
 }
 
-export default function SettingsDropdown<K extends string>({ options, value, onChange, ariaLabel, disabled = false, badge, compact = false, outlinedChevron = false, className = '' }: Props<K>) {
+export default function SettingsDropdown<K extends string>({ options, value, onChange, ariaLabel, disabled = false, badge, compact = false, outlinedChevron = false, centerLabel = false, className = '' }: Props<K>) {
   const [isOpen, setIsOpen] = useState(false)
   // 닫힌 버튼의 배지 폭 — 열린 목록의 글자를 고른 값 글자(배지 오른쪽)와 같은 세로줄에 맞추는 데 쓴다.
   const [badgeWidth, setBadgeWidth] = useState(0)
@@ -66,7 +67,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
         style={{ height: compact ? COMPACT_HEIGHT : ROW_HEIGHT }}
       >
         {badge && <span ref={badgeRef} className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">{badge}</span>}
-        <span className={`truncate ${badge ? 'ml-2.5 mr-auto' : ''}`}>{selected?.label}</span>
+        <span className={`truncate ${badge ? 'ml-2.5 mr-auto' : ''} ${centerLabel ? 'min-w-0 flex-1 text-center' : ''}`}>{selected?.label}</span>
         {outlinedChevron ? (
           <SettingsOutlinedChevronIcon className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         ) : (
@@ -105,7 +106,8 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
               className={`${option.disabled ? 'cursor-not-allowed text-ui-muted' : 'settings-chip-hover text-ui-white'} flex w-full items-center justify-between rounded-none border-0 py-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-xs'} text-left font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${option.key === value ? 'bg-ui-white/20' : 'bg-transparent'}`}
               style={{ height: compact ? COMPACT_ROW_HEIGHT : MENU_ROW_HEIGHT, ...(textPadLeft !== undefined ? { paddingLeft: textPadLeft } : {}) }}
             >
-              <span className="truncate">{option.label}</span>
+              <span className={`truncate ${centerLabel ? 'min-w-0 flex-1 text-center' : ''}`}>{option.label}</span>
+              {centerLabel && <span aria-hidden="true" className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0`} />}
             </button>
           ))}
         </div>,
