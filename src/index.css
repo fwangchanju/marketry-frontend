@@ -1040,6 +1040,11 @@ a { color: var(--accent-light); text-decoration: none; }
   font-weight: 500;
   line-height: 22px;
 }
+.settings-special-section .settings-plain-title {
+  color: var(--sub-gold);
+  font-weight: 500;
+  line-height: 22px;
+}
 [data-settings-panel][data-page-label="Home"] .settings-plain-content .settings-plain-title::before {
   counter-increment: none;
   content: "· ";

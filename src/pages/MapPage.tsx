@@ -70,7 +70,7 @@ function BreadcrumbBackIcon() {
 const MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [
   'composition', 'industry', 'stockDisplay', 'colors',
 ]
-const ADMIN_MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [...MAP_SETTINGS_SECTION_ORDER, 'adminMoved']
+const SPECIAL_MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [...MAP_SETTINGS_SECTION_ORDER, 'special']
 
 // "업종 단계" 슬라이더가 "끄기"(뎁스 0)일 때만 쓰는 합성 섹터 — 실제 섹터가 아니므로
 // sectorId는 실제 값과 겹치지 않는 sentinel을 쓰고, isSelf로 매칭해 헤더 자체를 안 그리게 한다
@@ -274,6 +274,8 @@ export default function MapPage() {
   } = useGlobalSettings({ allowChangeRateMode: true })
   const { data: session } = useSession()
   const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
+  // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
+  const isSpecialMember = isAdmin || (session?.authenticated === true && session.special === true)
   const [adminSectorChangeFilter, setAdminSectorChangeFilter] = useBrowserSetting<SectorChangeFilter>('treemap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
   const [adminSectorChangeDepth, setAdminSectorChangeDepth] = useBrowserSetting('treemap.sectorChangeDepth', MEMBER_DEFAULTS.sectorChangeDepth)
   const [, setAdminBoxLabelMinAreaPercent] = useBrowserSetting('treemap.boxLabelMinAreaPercent', MEMBER_DEFAULTS.boxLabelMinAreaPercent)
@@ -784,7 +786,7 @@ export default function MapPage() {
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
               pageLabel="Map"
-              sectionOrder={isAdmin ? ADMIN_MAP_SETTINGS_SECTION_ORDER : MAP_SETTINGS_SECTION_ORDER}
+              sectionOrder={isSpecialMember ? SPECIAL_MAP_SETTINGS_SECTION_ORDER : MAP_SETTINGS_SECTION_ORDER}
               taxonomyAtBottom
               snapshotTime={data?.taxonomyUpdatedAt}
               stockCountLabel={`${toCount(visibleItems.length)}/${toCount(totalItemCount)}종목`}
@@ -818,7 +820,7 @@ export default function MapPage() {
                 )}
                 <SettingsTopPickSection {...settingsModalProps} />
               </SettingsPanelGroup>
-              {isAdmin && <SettingsPanelGroup section="adminMoved">
+              {isSpecialMember && <SettingsPanelGroup section="special">
                 <div className="settings-plain-content">
                   <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setAdminBoxLabelMinAreaPercent} />
                   <SettingsSectorChangeSection

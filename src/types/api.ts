@@ -254,6 +254,8 @@ export const AuthSessionResponseSchema = z.object({
   profileImageVersion: z.number().nullish(),
   // 닉네임을 다시 바꿀 수 있게 되는 시각(epoch 밀리초) — 지금 바꿀 수 있으면 null. 옛 응답에는 없을 수 있다.
   nicknameChangeableAt: z.number().nullish(),
+  // 특별 회원 표시(운영자는 role로 따로 구분한다). 옛 응답에는 없을 수 있다.
+  special: z.boolean().nullish(),
 })
 export type AuthSessionResponse = z.infer<typeof AuthSessionResponseSchema>
 
