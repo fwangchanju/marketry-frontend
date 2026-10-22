@@ -1,10 +1,13 @@
-// 신규 상장 이외 항목의 최대 등락폭(상승·하락 모두)까지는 그대로 두고, 그 너머의 길이만 30% 비율로 압축한다.
+// 신규 상장 이외 항목의 최대 등락폭(상승·하락 모두)의 1.5배까지는 그대로 두고, 그 너머의 길이만 30% 비율로 압축한다.
 // 큰 값은 해당 상승률 지점에서 간격을 두고 압축 구간(꼬리)을 이어 그린다. 사선은 쓰지 않는다.
 // 숫자 라벨과 순위는 원래 등락률을 사용한다.
 const EXTREME_RATE_COMPRESSION = 0.3
-// 꼬리는 자르는 지점의 1배를 넘지 않는다. 상장 당일 +300%처럼 큰 값이 나와도 나머지 막대가 눌리지 않게 하며
-// (이때 나머지 최대 막대는 축의 약 50%), 크기는 끊김 표시와 숫자 라벨로 전한다.
-const MAX_TAIL_RATIO = 1
+// 꼬리는 자르는 지점의 절반을 넘지 않는다. 상장 당일 +300%처럼 큰 값이 나와도 나머지 막대가 눌리지 않게 하며
+// (이때 나머지 최대 막대는 축의 약 44%), 크기는 끊김 표시와 숫자 라벨로 전한다.
+const MAX_TAIL_RATIO = 0.5
+// 다른 항목 최대치(또는 아래 하한)의 이 배수를 넘어야 자르기 시작한다. 2등보다 조금 큰 값에 끊김 표시가 붙으면
+// "튀는 값"처럼 보이므로, 눈에 띄게 큰 값에만 붙인다.
+const RANK_AXIS_BREAK_START_RATIO = 1.5
 
 export const RANK_AXIS_BREAK_CUT_PX = 6
 export const RANK_AXIS_BREAK_BRIDGE_PX = 8
@@ -12,13 +15,13 @@ export const RANK_AXIS_BREAK_BRIDGE_PX = 8
 // 빈틈 6px + 막대 8px + 빈틈 6px.
 export const RANK_AXIS_BREAK_GAP_PX = RANK_AXIS_BREAK_CUT_PX * 2 + RANK_AXIS_BREAK_BRIDGE_PX
 
-// 다른 항목 최대치가 이보다 작아도 이 값(%·%p)까지는 자르지 않는다.
+// 다른 항목 최대치가 이보다 작아도 이 값(%·%p)을 기준으로 삼는다.
 // N분 전 대비처럼 값이 작은 그래프에서 신규 상장이 조금만 커도 끊김 표시가 붙는 것을 막는다.
 const RANK_AXIS_BREAK_MIN = 2
 
 export function rankAxisBreakAt(items: readonly { sectorName: string; value: number; hiddenCount?: number }[]): number {
   const othersMax = Math.max(0, ...items.filter(item => item.hiddenCount === undefined && item.sectorName !== '신규 상장').map(item => Math.abs(item.value)))
-  return othersMax > 0 ? Math.max(othersMax, RANK_AXIS_BREAK_MIN) : 0
+  return othersMax > 0 ? Math.max(othersMax, RANK_AXIS_BREAK_MIN) * RANK_AXIS_BREAK_START_RATIO : 0
 }
 
 export function rankAxisMagnitude(magnitude: number, breakAt: number): number {
