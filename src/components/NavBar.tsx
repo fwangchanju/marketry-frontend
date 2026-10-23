@@ -20,7 +20,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   const logout = useLogout()
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   // 로컬 전용 테스트 회원 전환 — 테스트 회원 생성과 원래 계정 복귀를 모두 계정 메뉴에서 제공한다.
-  const { isTestMember, isPending: isDevSignupPending, error: devSignupError, toggle: handleToggleTestMember } = useTestMemberToggle()
+  const { isPending: isDevSignupPending, error: devSignupError, loginAs: handleDevLogin } = useTestMemberToggle()
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profileButtonRef = useRef<HTMLButtonElement>(null)
   useLocalDevLogin()
@@ -136,19 +136,21 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                     로그아웃
                   </button>
                 </div>
-                {/* 로컬 개발 전용 — 새 테스트 회원으로 전환하거나 테스트 회원에서 원래 계정으로 돌아온다. */}
+                {/* 로컬 개발 전용 — 로그인 상태와 상관없이 관리자 계정 또는 테스트 회원으로 로그인한다. */}
                 {isLocalSignupEnabled() && (
-                  <div className="mx-3 mt-2 border-t border-ui-border pt-2">
-                    <button
-                      type="button"
-                      onClick={handleToggleTestMember}
-                      disabled={isLoading || isDevSignupPending}
-                      aria-pressed={isTestMember}
-                      className="h-7 w-full rounded-[5px] border-0 bg-admin-only text-[13px] font-medium text-ui-background transition-colors hover:bg-admin-only-hover disabled:opacity-50"
-                    >
-                      {isDevSignupPending ? '전환 중…' : isTestMember ? '관리자 계정으로 돌아가기' : '테스트 계정으로 전환'}
-                    </button>
-                    {devSignupError && <p role="alert" className="mt-1.5 text-xs text-status-error-ink">{devSignupError}</p>}
+                  <div className="mx-3 mt-2 flex flex-col gap-1.5 border-t border-ui-border pt-2">
+                    {(['admin', 'test'] as const).map(account => (
+                      <button
+                        key={account}
+                        type="button"
+                        onClick={() => handleDevLogin(account)}
+                        disabled={isLoading || isDevSignupPending}
+                        className="h-7 w-full rounded-[5px] border-0 bg-admin-only text-[13px] font-medium text-ui-background transition-colors hover:bg-admin-only-hover disabled:opacity-50"
+                      >
+                        {isDevSignupPending ? '전환 중…' : account === 'admin' ? '관리자 계정으로 로그인' : '테스트 계정으로 로그인'}
+                      </button>
+                    ))}
+                    {devSignupError && <p role="alert" className="mt-0.5 text-xs text-status-error-ink">{devSignupError}</p>}
                   </div>
                 )}
               </>
