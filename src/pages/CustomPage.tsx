@@ -23,6 +23,7 @@ import { useLoginGate } from '@/hooks/useLoginGate'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
+import { isAdminSession } from '@/utils/adminAccess'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 
@@ -39,7 +40,7 @@ export default function CustomPage() {
   // MARKETRY를 읽기 전용으로 보여준다(MARKETRY는 내 분류에서 올려서 바꾼다).
   // 예전 주소(?sheet=nxt)는 KRX 시트로 연다.
   const { data: session, isLoading: isSessionLoading } = useSession()
-  const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
+  const isAdmin = isAdminSession(session)
   const isLoggedIn = useIsLoggedIn()
   const { requireLogin } = useLoginGate()
   // 로그인 여부가 확정된 비로그인 — 세션을 확인하는 동안은 아직 모르므로 내 분류 선택을 그대로 둔다.

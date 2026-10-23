@@ -25,6 +25,7 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { HistoryIcon, SaveIcon } from '@/components/icons/AppIcons'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
+import { isAdminSession } from '@/utils/adminAccess'
 
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
 
@@ -60,7 +61,7 @@ function isSameDraft(a: TelegramSendSettingInput, b: TelegramSendSettingInput) {
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다.
 export default function AdminMessagePage() {
   const { data: session, isLoading } = useSession()
-  const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
+  const isAdmin = isAdminSession(session)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)

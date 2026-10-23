@@ -58,6 +58,7 @@ import { limitDepth, flattenAllItems, type FilteredTreemapSectorNode, type Secto
 import { useTransientSetting } from '@/hooks/useTransientSetting'
 import { MEMBER_DEFAULTS } from '@/utils/settingDefaults'
 import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
+import { isAdminSession } from '@/utils/adminAccess'
 
 const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'ALL STOCK' }
 // 종목·업종 헤더와 같은 방식 — 올리면 흰색 35% 덮개가 씌워진다(index.css의 hover와 같은 불투명도).
@@ -272,7 +273,7 @@ export default function MapPage() {
     handleExcludeSector,
   } = useGlobalSettings({ allowChangeRateMode: true })
   const { data: session } = useSession()
-  const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
+  const isAdmin = isAdminSession(session)
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
   const isSpecialMember = isAdmin || (session?.authenticated === true && session.special === true)
   const [adminSectorChangeFilter, setAdminSectorChangeFilter] = useTransientSetting<SectorChangeFilter>('treemap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
