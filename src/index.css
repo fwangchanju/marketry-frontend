@@ -432,6 +432,32 @@ html, body, #root {
   transform: translateY(-0.25px);
 }
 
+/* 분할 캡처에서는 긴 닉네임도 축소·말줄임 없이 실제 너비로 배치한다. */
+.home-capture-toolbar > div {
+  flex: none;
+}
+
+.home-capture-toolbar .toolbar-badge,
+.home-capture-toolbar .toolbar-badge > span,
+.home-capture-toolbar .toolbar-badge .truncate {
+  min-width: max-content;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* 스크린샷 선택 범위: 2px 선과 2px 간격으로 촘촘하게 표시한다. */
+.capture-selection-outline {
+  background-image:
+    repeating-linear-gradient(to right, white 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(to right, white 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(to bottom, white 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(to bottom, white 0 2px, transparent 2px 4px);
+  background-position: top left, bottom left, top left, top right;
+  background-size: 4px 1px, 4px 1px, 1px 4px, 1px 4px;
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+}
+
 a { color: var(--accent-light); text-decoration: none; }
 
 /* ── Button (override nes.css's pixel-art bevel look) ───────────────────────── */

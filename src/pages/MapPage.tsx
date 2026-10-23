@@ -285,6 +285,7 @@ export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
+  const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
   // 실험 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
@@ -773,7 +774,8 @@ export default function MapPage() {
               </div>
               </div>
             </div>
-          {(isShareOpen || isMobileCaptureMode) && !isLoading && !isError && visibleItems.length > 0 && placeMobileFrame(
+          {/* 모니터 캡처에서는 모바일용 트리맵을 만들지 않아 화면 렌더링과 DOM 복제 비용을 줄인다. */}
+          {((isShareOpen && isMobileScreenshotSelected) || isMobileCaptureMode) && !isLoading && !isError && visibleItems.length > 0 && placeMobileFrame(
             <div
               aria-hidden="true"
               data-map-mobile-capture-frame
@@ -893,12 +895,16 @@ export default function MapPage() {
 
       {isShareOpen && (
         <ScreenshotModal
-          onClose={() => setIsShareOpen(false)}
+          onClose={() => {
+            setIsShareOpen(false)
+            setIsMobileScreenshotSelected(false)
+          }}
           onCopy={handleCopy}
           copyLabel={copyLabel}
           isCopying={copyStatus === 'copying'}
           screenshotTarget={screenshotRef.current}
           mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }}
+          onMobileSelectionChange={setIsMobileScreenshotSelected}
         />
       )}
     </div>

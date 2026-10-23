@@ -204,6 +204,7 @@ export default function MarketSummaryPage() {
   // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const allFramesRef = useRef<HTMLDivElement>(null)
+  const fixedCaptureRef = useRef<HTMLDivElement>(null)
   const [screenshotTarget, setScreenshotTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const {
@@ -659,12 +660,32 @@ export default function MarketSummaryPage() {
           style={{ width: 'calc(100dvh * 3 / 4)', height: '100dvh', padding: '4px', boxSizing: 'border-box' }}
           className="fixed left-0 top-0 z-[200] flex flex-col bg-ui-background text-ui-white"
         >
-          <Toolbar>{toolbarContent}</Toolbar>
+          <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
           <div className="flex min-h-0 flex-1 gap-1">
             {mobileCaptureFrames.map(frame => (
               <CaptureFrame key={frame.captureId} title={frame.title} className="min-w-0 flex-1">
                 {frame.body as ReactNode}
               </CaptureFrame>
+            ))}
+          </div>
+        </div>
+      )}
+      {screenshotTarget && (
+        <div
+          ref={fixedCaptureRef}
+          aria-hidden="true"
+          data-home-fixed-capture
+          className="fixed flex flex-col bg-ui-background"
+          style={{ left: 0, top: 0, width: 2430, height: 1080, opacity: 0, pointerEvents: 'none' }}
+        >
+          <div className="flex min-h-0 flex-1 bg-ui-background">
+            {homeFrames.sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title)).map(frame => (
+              <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full w-[810px] shrink-0 flex-col bg-ui-background p-1">
+                <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
+                <CaptureFrame title={frame.title === '시장 요약' ? '코스피' : frame.title} className="min-h-0 flex-1">
+                  {frame.body as ReactNode}
+                </CaptureFrame>
+              </div>
             ))}
           </div>
         </div>
@@ -676,6 +697,7 @@ export default function MarketSummaryPage() {
           copyLabel={copyLabel}
           isCopying={copyStatus === 'copying'}
           screenshotTarget={screenshotTarget}
+          fixedHomeCaptureRef={fixedCaptureRef}
           frameCaptureOptions={safeHomeFrameOrder.map((title, selectedSlot) => {
             const captureId = title === '시장 지도' ? 'market-map' : title === '그룹 등락률 (%)' ? 'group-change-rate' : 'market-summary'
             return {

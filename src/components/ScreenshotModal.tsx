@@ -1,6 +1,6 @@
 import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useState } from 'react'
-import { screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
+import { screenshotElementToDataUrl, screenshotFixedHomeFrameToDataUrl } from '@/utils/screenshotToPreview'
 import { captureRegionRect, fullScreenshotSize } from '@/utils/screenshotScale'
 import { CheckIcon, CopyIcon, HomeFrameCaptureIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
@@ -12,8 +12,10 @@ interface Props {
   copyLabel: string
   isCopying: boolean
   screenshotTarget: HTMLElement | null
+  fixedHomeCaptureRef?: { current: HTMLElement | null }
   // 지도에서 전체 화면(모니터)과 지도 영역(모바일)을 고르는 버튼을 표시한다.
   mobileRegionOption?: { label: string; selector: string; mode?: 'through-right-edge' | 'element' | 'content'; onCloneNode?: (cloned: Node) => void; monitorHorizontalPadding?: number }
+  onMobileSelectionChange?: (selected: boolean) => void
   // 홈의 각 요약 항목을 따로 캡처하는 버튼들.
   frameCaptureOptions?: Array<{ id: string; label: string; selector: string; selectedSlot: 0 | 1 | 2; mode?: 'element' | 'content' }>
 }
@@ -49,7 +51,9 @@ export default function ScreenshotModal({
   copyLabel,
   isCopying,
   screenshotTarget,
+  fixedHomeCaptureRef,
   mobileRegionOption,
+  onMobileSelectionChange,
   frameCaptureOptions,
 }: Props) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
@@ -61,6 +65,9 @@ export default function ScreenshotModal({
   const [selectedCapture, setSelectedCapture] = useState<string | null>(() =>
     readSavedCapture(choiceKey, Boolean(mobileRegionOption), frameCaptureOptions?.map(option => option.id) ?? []),
   )
+  useEffect(() => {
+    onMobileSelectionChange?.(selectedCapture === 'mobile')
+  }, [onMobileSelectionChange, selectedCapture])
   // 항목(프레임) 캡처로 열 때는 전체 화면 위에 그 항목 자리를 표시해야 하므로 처음 값도 selectCapture와 같은 방식으로 만든다.
   const [highlightRegion, setHighlightRegion] = useState<{ left: number; top: number; width: number; height: number } | null>(() => {
     const frameOption = frameCaptureOptions?.find(option => selectedCapture === `frame:${option.id}`)
@@ -103,6 +110,7 @@ export default function ScreenshotModal({
     let cancelled = false
     let finished = false
     let rafId = 0
+    let missingMobileFrames = 0
     const failCapture = (message: string) => {
       if (cancelled || finished) return
       finished = true
@@ -112,6 +120,11 @@ export default function ScreenshotModal({
     const timeoutId = window.setTimeout(() => failCapture('캡처 시간이 초과되었습니다. 다시 시도해 주세요.'), 10_000)
     const captureWhenReady = () => {
       if (cancelled || finished) return
+      if (regionSelector && selectedCapture === 'mobile' && screenshotTarget && !screenshotTarget.querySelector(regionSelector) && missingMobileFrames++ < 10) {
+        // 저장된 모바일 선택으로 열면 부모가 모바일 판을 한 번 더 렌더링해야 한다.
+        rafId = requestAnimationFrame(captureWhenReady)
+        return
+      }
       if (!screenshotTarget || (regionSelector && !screenshotTarget.querySelector(regionSelector))) {
         window.clearTimeout(timeoutId)
         failCapture('캡처할 영역이 없습니다.')
@@ -125,20 +138,27 @@ export default function ScreenshotModal({
       const capture = async () => {
         try {
           // 프레임 선택 중에는 전체 화면을 배경으로 먼저 보여주고, 선택 프레임은 별도로 캡처해 복사한다.
+          let context: string | null = null
           if (showContextPreview) {
-            const context = await screenshotElementToDataUrl(screenshotTarget, undefined, undefined, undefined, fullPreviewPadding)
+            context = await screenshotElementToDataUrl(screenshotTarget, undefined, undefined, undefined, fullPreviewPadding)
             if (cancelled || finished) return
             setContextPreviewSrc(context)
           }
-          const dataUrl = await screenshotElementToDataUrl(screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding)
+          const fixedHome = fixedHomeCaptureRef?.current
+          if (showContextPreview && fixedHomeCaptureRef && !fixedHome) throw new Error('Fixed home capture is unavailable')
+          const dataUrl = showContextPreview && regionSelector && fixedHome
+            ? await screenshotFixedHomeFrameToDataUrl(fixedHome, regionSelector)
+            : await screenshotElementToDataUrl(screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding)
           if (!cancelled && !finished) {
             finished = true
             window.clearTimeout(timeoutId)
             setPreviewSrc(dataUrl)
           }
-        } catch {
+        } catch (error) {
           window.clearTimeout(timeoutId)
-          failCapture('화면을 캡처하지 못했습니다. 다시 시도해 주세요.')
+          failCapture(error instanceof Error && error.message === '캡처 폭에 상단 정보가 모두 들어가지 않습니다.'
+            ? error.message
+            : '화면을 캡처하지 못했습니다. 다시 시도해 주세요.')
         }
       }
       void capture()
@@ -152,7 +172,7 @@ export default function ScreenshotModal({
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(rafId)
     }
-  }, [screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding, fullPreviewPadding, showContextPreview, captureAttempt])
+  }, [screenshotTarget, fixedHomeCaptureRef, selectedCapture, regionSelector, regionMode, onCloneNode, horizontalPadding, fullPreviewPadding, showContextPreview, captureAttempt])
 
   const retryCapture = () => {
     setPreviewSrc(null)
@@ -185,6 +205,26 @@ export default function ScreenshotModal({
   // 최대한 꽉 채운다. 스피너 칸과 이미지가 같은 값을 써서, 미리보기가 뜰 때 팝업 크기가 바뀌지 않는다.
   const fitWidth = previewRatio ? `min(calc(100vw - 4rem), calc((100dvh - 11rem) * ${previewRatio}))` : undefined
   const displayPreviewSrc = contextPreviewSrc ?? previewSrc
+  const toolbar = screenshotTarget?.querySelector<HTMLElement>('.main-toolbar')
+  const headerSelections = toolbar && screenshotTarget && highlightRegion
+    ? Array.from(toolbar.children).slice(0, 2).map(child => {
+      const headerPadding = 6
+      const rect = child.getBoundingClientRect()
+      const origin = screenshotTarget.getBoundingClientRect()
+      const toolbarRect = toolbar.getBoundingClientRect()
+      const size = fullScreenshotSize(screenshotTarget)
+      const width = size.width + fullPreviewPadding * 2
+      // 전체 화면 미리보기에서 가로 스크롤 폭을 펼치면 오른쪽 배지도 새 오른쪽 끝으로 이동한다.
+      const childLeft = child === toolbar.lastElementChild
+        ? toolbarRect.left - origin.left + size.width - (toolbarRect.right - rect.right) - rect.width
+        : rect.left - origin.left
+      const left = Math.max(0, (childLeft + fullPreviewPadding - headerPadding) / width)
+      const top = Math.max(0, (rect.top - origin.top - headerPadding) / size.height)
+      const right = Math.min(1, (childLeft + rect.width + fullPreviewPadding + headerPadding) / width)
+      const bottom = Math.min(highlightRegion.top - 4 / size.height, (rect.bottom - origin.top + headerPadding) / size.height)
+      return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) }
+    })
+    : []
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-ui-background/70">
@@ -225,11 +265,28 @@ export default function ScreenshotModal({
               className="block h-auto w-full"
             />
             {highlightRegion && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute rounded-[3px] border border-dashed border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.78)]"
-                style={{ left: `${highlightRegion.left * 100}%`, top: `${highlightRegion.top * 100}%`, width: `${highlightRegion.width * 100}%`, height: `${highlightRegion.height * 100}%` }}
-              />
+              <>
+                <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <defs>
+                    <mask id="home-capture-selection-mask">
+                      <rect width="100" height="100" fill="white" />
+                      {headerSelections.map((region, index) => (
+                        <rect key={index} x={region.left * 100} y={region.top * 100} width={region.width * 100} height={region.height * 100} fill="black" />
+                      ))}
+                      <rect x={highlightRegion.left * 100} y={highlightRegion.top * 100} width={highlightRegion.width * 100} height={highlightRegion.height * 100} fill="black" />
+                    </mask>
+                  </defs>
+                  <rect width="100" height="100" fill="rgba(0,0,0,0.78)" mask="url(#home-capture-selection-mask)" />
+                </svg>
+                {headerSelections.map((region, index) => (
+                  <div key={index} aria-hidden="true" className="capture-selection-outline pointer-events-none absolute" style={{ left: `${region.left * 100}%`, top: `${region.top * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%` }} />
+                ))}
+                <div
+                  aria-hidden="true"
+                  className="capture-selection-outline pointer-events-none absolute"
+                  style={{ left: `${highlightRegion.left * 100}%`, top: `${highlightRegion.top * 100}%`, width: `${highlightRegion.width * 100}%`, height: `${highlightRegion.height * 100}%` }}
+                />
+              </>
             )}
           </div>
         ) : (
@@ -315,10 +372,12 @@ function regionOverlay(element: HTMLElement, selector: string, mode: 'element' |
   const size = fullScreenshotSize(element)
   const fullWidth = size.width + horizontalPadding * 2
   if (!region || fullWidth <= 0 || size.height <= 0) return null
-  const left = Math.max(0, Math.min(fullWidth, region.x + horizontalPadding))
-  const top = Math.max(0, Math.min(size.height, region.y))
-  const right = Math.max(left, Math.min(fullWidth, region.x + horizontalPadding + region.width))
-  const bottom = Math.max(top, Math.min(size.height, region.y + region.height))
+  // 본문 점선은 원본 패널의 외곽선 안쪽에 둔다. content 범위의 3px 여유도 함께 걷어 낸다.
+  const inset = 4
+  const left = Math.max(0, Math.min(fullWidth, region.x + horizontalPadding + inset))
+  const top = Math.max(0, Math.min(size.height, region.y + inset))
+  const right = Math.max(left, Math.min(fullWidth, region.x + horizontalPadding + region.width - inset))
+  const bottom = Math.max(top, Math.min(size.height, region.y + region.height - inset))
   return { left: left / fullWidth, top: top / size.height, width: (right - left) / fullWidth, height: (bottom - top) / size.height }
 }
 
