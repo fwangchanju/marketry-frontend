@@ -140,7 +140,8 @@ function findRawNodeByPath(nodes: TreemapSectorNode[], path: string[]): TreemapS
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 
-function revealMobileCapture(cloned: Node) {
+// keepPageLabel: 렌더러가 찍는 판(텔레그램)은 ALL STOCK 배지 위의 페이지 라벨(MAP)을 남긴다. 스크린샷 창의 모바일 캡처는 겹치지 않게 숨긴다.
+function revealMobileCapture(cloned: Node, keepPageLabel = false) {
   if (!(cloned instanceof Element)) return
   const mobileFrame = cloned.querySelector<HTMLElement>('[data-map-mobile-capture-frame]')
   if (mobileFrame) mobileFrame.style.opacity = '1'
@@ -197,7 +198,13 @@ function revealMobileCapture(cloned: Node) {
       changeRateSelector.replaceWith(selectedButton)
     }
     // 모바일 캡처에서는 ALL STOCK과 겹치지 않도록 MAP 페이지 라벨을 숨긴다.
-    leftContent.querySelector('.font-roboto-latin > span.absolute')?.remove()
+    if (keepPageLabel) {
+      // 라벨이 툴바 위쪽으로 살짝 걸쳐 있어 잘리지 않게 한다.
+      toolbar.style.overflow = 'visible'
+      leftContent.style.overflow = 'visible'
+    } else {
+      leftContent.querySelector('.font-roboto-latin > span.absolute')?.remove()
+    }
     toolbar.append(leftContent)
     if (toolbarRight) {
       const rightContent = toolbarRight.cloneNode(true) as HTMLElement
@@ -558,7 +565,7 @@ export default function MapPage() {
         rafId = requestAnimationFrame(revealWhenLaidOut)
         return
       }
-      revealMobileCapture(document.body)
+      revealMobileCapture(document.body, true)
       setIsMobileCaptureReady(true)
     }
     rafId = requestAnimationFrame(revealWhenLaidOut)

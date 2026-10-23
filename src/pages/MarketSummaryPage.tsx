@@ -190,7 +190,7 @@ function SortableHomeFrame({ title, captureId, index, children, captureUntil, sh
 // 3:4 캡처용 판의 틀 — SortableHomeFrame의 안쪽 틀(insetHeader)과 같은 모양이다(끌기·정렬 없이 고정).
 function CaptureFrame({ title, className = '', children }: { title: string; className?: string; children: ReactNode }) {
   return (
-    <div className={`flex min-h-0 flex-col rounded-sm border border-ui-border bg-ui-background pb-1.5 pl-[7px] pr-[7px] pt-[7px] ${className}`}>
+    <div className={`flex min-h-0 flex-col rounded-sm border border-transparent bg-ui-background pb-1.5 pl-[7px] pr-[7px] pt-[7px] ${className}`}>
       <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
         <span className={SUMMARY_BADGE_CLASS}>{title}</span>
       </div>
@@ -661,8 +661,8 @@ export default function MarketSummaryPage() {
         >
           <Toolbar>{toolbarContent}</Toolbar>
           <div className="flex min-h-0 flex-1 gap-1">
-            {mobileCaptureFrames.map((frame, index) => (
-              <CaptureFrame key={frame.captureId} title={frame.title} className={`min-w-0 ${index === 0 ? 'flex-[11]' : 'flex-[9]'}`}>
+            {mobileCaptureFrames.map(frame => (
+              <CaptureFrame key={frame.captureId} title={frame.title} className="min-w-0 flex-1">
                 {frame.body as ReactNode}
               </CaptureFrame>
             ))}
