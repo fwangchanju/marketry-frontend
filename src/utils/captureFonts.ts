@@ -111,11 +111,12 @@ async function embedFontUrls(cssText: string): Promise<string> {
 }
 
 // 찍을 영역에 필요한 글꼴 CSS(파일은 data URL로 넣은 것). 글꼴 정의를 못 읽거나 고른 조각이 하나도 없거나 받지 못하면 undefined(라이브러리 기본 동작)다.
-export async function fontCssFor(root: HTMLElement): Promise<string | undefined> {
+export async function fontCssFor(root: HTMLElement | HTMLElement[]): Promise<string | undefined> {
   const faces = readFontFaces()
   if (faces.length === 0) return undefined
-  const points = usedCodePoints(root)
-  const wanted = usedWeights(root)
+  const roots = Array.isArray(root) ? root : [root]
+  const points = new Set(roots.flatMap(element => [...usedCodePoints(element)]))
+  const wanted = new Set(roots.flatMap(element => [...usedWeights(element)]))
   const picked: string[] = []
   for (const family of new Set(faces.map(face => face.family))) {
     const familyFaces = faces.filter(face => face.family === family)
