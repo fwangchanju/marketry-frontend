@@ -176,26 +176,11 @@ function revealMobileCapture(cloned: Node, keepPageLabel = false) {
     const changeRateButton = changeRateSelector?.querySelector<HTMLButtonElement>('[data-change-rate-mode]')
     if (changeRateButton && changeRateSelector) {
       leftContent.querySelector('[aria-label="등락률 기준 선택"]')?.remove()
-      const selectedButton = changeRateButton.cloneNode(true) as HTMLButtonElement
-      // 모바일 캡처에는 현재 기준만 정적 칩으로 남기고 메뉴 동작은 제거한다.
-      selectedButton.classList.add('toolbar-badge')
-      selectedButton.removeAttribute('aria-expanded')
-      selectedButton.removeAttribute('aria-haspopup')
-      selectedButton.style.width = '38px'
-      selectedButton.style.minWidth = '38px'
-      selectedButton.style.height = '26.25px'
-      selectedButton.style.minHeight = '26.25px'
-      selectedButton.style.boxSizing = 'border-box'
-      selectedButton.style.display = 'flex'
-      selectedButton.style.alignItems = 'center'
-      selectedButton.style.justifyContent = 'center'
-      selectedButton.style.backgroundColor = 'var(--sub-purple)'
-      selectedButton.style.color = 'var(--ui-background)'
-      // 캡처 복제본에는 원본의 계산된 text-fill-color도 남아 있으므로 함께 바꾼다.
-      selectedButton.style.webkitTextFillColor = 'var(--ui-background)'
-      selectedButton.style.pointerEvents = 'none'
-      selectedButton.style.transition = 'none'
-      changeRateSelector.replaceWith(selectedButton)
+      // 지금 툴바의 칩 모양 그대로 두고 메뉴 동작만 뺀다. 보라색 바탕 칩은 예전 모양이라 쓰지 않는다.
+      changeRateButton.removeAttribute('aria-expanded')
+      changeRateButton.removeAttribute('aria-haspopup')
+      changeRateButton.style.pointerEvents = 'none'
+      changeRateButton.style.transition = 'none'
     }
     // 모바일 캡처에서는 ALL STOCK과 겹치지 않도록 MAP 페이지 라벨을 숨긴다.
     if (keepPageLabel) {
