@@ -241,6 +241,7 @@ export default function MapPage() {
     pinnedSnapshotTime,
     refetchTreemap,
     isRefetchingTreemap,
+    sectorChangeMaxDepth,
     isLoading,
     isError,
     rootNodes,
@@ -819,13 +820,6 @@ export default function MapPage() {
               <SettingsPanelGroup section="composition">
                 <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
                 <SettingsExcludeSection {...settingsModalProps} />
-                <SettingsStockChangeSection
-                  value={stockChangeFilter}
-                  onChange={value => {
-                    onChangeStockChangeFilter(value)
-                    reset()
-                  }}
-                />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="industry">
                 <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
@@ -843,12 +837,20 @@ export default function MapPage() {
               </SettingsPanelGroup>
               {isSpecialMember && <SettingsPanelGroup section="special">
                 <div className="settings-plain-content">
+                  <SettingsStockChangeSection
+                    value={stockChangeFilter}
+                    onChange={value => {
+                      onChangeStockChangeFilter(value)
+                      reset()
+                    }}
+                  />
                   <SettingsSectorChangeSection
                     value={adminSectorChangeFilter === 'rising' || adminSectorChangeFilter === 'falling' ? adminSectorChangeFilter : 'all'}
                     onChange={setAdminSectorChangeFilter}
-                    depth={Number.isInteger(adminSectorChangeDepth) && adminSectorChangeDepth >= 0 ? adminSectorChangeDepth : 0}
+                    depth={Math.min(Number.isInteger(adminSectorChangeDepth) && adminSectorChangeDepth >= 0 ? adminSectorChangeDepth : 0, sectorChangeMaxDepth - 1)}
                     onChangeDepth={setAdminSectorChangeDepth}
-                    maxSelectableDepth={3}
+                    maxSelectableDepth={sectorChangeMaxDepth}
+                    noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
                   />
                   <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setAdminStockPopupOnHover} />
                   <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setAdminBoxLabelMinAreaPercent} />
