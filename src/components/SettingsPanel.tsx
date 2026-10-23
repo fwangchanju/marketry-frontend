@@ -2601,7 +2601,7 @@ export default function SettingsPanel({
       <div className="flex shrink-0 items-center border-b border-ui-border px-4 py-[11.75px]">
         <div className="flex min-w-0 items-center gap-2">
           <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
-            {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Group에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
+            {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Graph에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
             {/* 아래 Basis 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
             <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
             {pageLabel ?? '설정'}

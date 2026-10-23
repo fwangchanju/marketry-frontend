@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
+import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
 import { useSession } from '@/hooks/useSession'
@@ -13,22 +14,25 @@ interface MenuOption {
 interface MenuLink {
   to: string
   label: string
+  // 글자 앞 아이콘 — 각 페이지 설정창 메뉴 줄의 아이콘을 그대로 쓴다(홈은 예전 설정창에서 쓰던 집 모양).
+  icon: NavIconName
   // 관리자 전용 메뉴 — 글자 색만 관리자 전용 색이다.
   admin?: boolean
   // 커서를 올리면 아래로 펼쳐지는 목록 — 없으면 그냥 이동만 하는 메뉴(Home).
   options?: MenuOption[]
 }
 
-// Map·Group은 ALL STOCK / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다(예전 화면 왼쪽 위 드롭다운과 같은 목록·순서).
+// Map·Graph는 ALL STOCK / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다(예전 화면 왼쪽 위 드롭다운과 같은 목록·순서).
 const BASE_LINKS: MenuLink[] = [
-  { to: '/home', label: 'Home' },
-  { to: '/map/allstock', label: 'Map', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/map', option.market) })) },
-  { to: '/group/allstock', label: 'Group', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/group', option.market) })) },
+  { to: '/home', label: 'Home', icon: 'home' },
+  { to: '/map/allstock', label: 'Map', icon: 'composition', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/map', option.market) })) },
+  { to: '/graph/allstock', label: 'Graph', icon: 'bar-chart', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/graph', option.market) })) },
 ]
 // 비로그인에게도 열려 있다 — 마켓트리·거래소 시트는 읽고, 내 분류는 비어 있으며 수정하려 할 때 로그인 팝업이 뜬다.
 const CUSTOM_LINK: MenuLink = {
   to: '/custom/sector',
   label: 'Custom',
+  icon: 'custom-edit',
   options: [
     { label: 'SECTOR', to: '/custom/sector' },
     { label: 'STOCK', to: '/custom/stock' },
@@ -39,12 +43,43 @@ const CUSTOM_LINK: MenuLink = {
 const ADMIN_LINK: MenuLink = {
   to: '/admin/member',
   label: 'Admin',
+  icon: 'member',
   admin: true,
   options: [
     { label: 'MEMBER', to: '/admin/member' },
     { label: 'DASHBOARD', to: '/admin/dashboard' },
     { label: 'MESSAGE', to: '/admin/message' },
   ],
+}
+
+// 메뉴 글자는 글자 앞 아이콘과 함께 쓰므로 글자 크기를 18px에서 15px로 줄였다.
+const NAV_TAB_CLASS = `${FONT_NAV_TAB.replace('text-lg', 'text-[15px]')} inline-flex items-center gap-[4.5px] whitespace-nowrap`
+
+// 아이콘마다 선이 그려진 범위(24칸 격자 기준)가 달라서(Map·Admin 16칸, Home·Graph 18칸, Custom 18.6칸) 그대로 같은 크기로 그리면 들쭉날쭉해 보인다.
+// 그려진 범위의 가운데를 잡고 긴 변 + 선 여백 2칸을 한 변으로 하는 정사각형으로 잘라, 모두 같은 18px 칸에 넣는다.
+// 아이콘 중심이 글자 대문자 높이의 중심보다 약 1.4px 낮아서 그만큼 올린다(-translate-y-[1.4px]). 선 굵기는 화면에서 모두 약 1.35px가 되도록 잘린 크기에 맞춰 정한다(굵기 × 잘린 변 ÷ 18).
+const NAV_ICON_PX = 18
+const NAV_ICON_STROKE_PX = 1.35
+type NavIconName = Extract<SettingsSectionIconName, 'home' | 'composition' | 'bar-chart' | 'custom-edit' | 'member'>
+const NAV_ICON_EXTENT: Record<NavIconName, { cx: number; cy: number; size: number }> = {
+  home: { cx: 12, cy: 12, size: 18 },
+  composition: { cx: 12, cy: 12, size: 16 },
+  'bar-chart': { cx: 12, cy: 12, size: 18 },
+  'custom-edit': { cx: 12.31, cy: 12.69, size: 18.62 },
+  member: { cx: 12, cy: 12.5, size: 17 },
+}
+
+function NavIcon({ icon }: { icon: NavIconName }) {
+  const { cx, cy, size } = NAV_ICON_EXTENT[icon]
+  const side = size + 2
+  return (
+    <SettingsSectionIcon
+      icon={icon}
+      className="-translate-y-[1.4px] h-[18px] w-[18px]"
+      viewBox={`${cx - side / 2} ${cy - side / 2} ${side} ${side}`}
+      strokeWidth={(NAV_ICON_STROKE_PX * side) / NAV_ICON_PX}
+    />
+  )
 }
 
 // 목록이 닫히기 전에 커서가 메뉴 글자에서 목록으로 건너갈 시간(ms).
@@ -84,13 +119,13 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
 
   const isLinkActive = (to: string) => {
     if (to === '/map/allstock') return location.pathname.startsWith('/map/')
-    if (to === '/group/allstock') return location.pathname.startsWith('/group/')
+    if (to === '/graph/allstock') return location.pathname.startsWith('/graph/')
     if (to === '/custom/sector') return location.pathname.startsWith('/custom')
     if (to === '/admin/member') return location.pathname.startsWith('/admin')
     return location.pathname === to
   }
   const linkClassName = (to: string) =>
-    `${FONT_NAV_TAB} whitespace-nowrap ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
+    `${NAV_TAB_CLASS} ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
 
   const open = (to: string) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
@@ -100,7 +135,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     closeTimerRef.current = setTimeout(() => setOpenTo(null), CLOSE_DELAY_MS)
   }
-  // 목록에서 지금 보고 있는 항목인지 — Custom은 /custom/sector와 /custom/stock 두 화면 중 하나이고, Map·Group은 주소의 시장 이름이다.
+  // 목록에서 지금 보고 있는 항목인지 — Custom은 /custom/sector와 /custom/stock 두 화면 중 하나이고, Map·Graph는 주소의 시장 이름이다.
   const isCurrentOption = (option: MenuOption) => location.pathname === option.to
   const handleSelect = (option: MenuOption) => {
     setOpenTo(null)
@@ -120,7 +155,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
           >
             <Link
               to={link.to}
-              className={link.admin ? `${FONT_NAV_TAB} whitespace-nowrap transition-colors hover:text-admin-only-hover ${isLinkActive(link.to) ? 'text-admin-only-hover' : 'text-admin-only'}` : linkClassName(link.to)}
+              className={link.admin ? `${NAV_TAB_CLASS} transition-colors hover:text-admin-only-hover ${isLinkActive(link.to) ? 'text-admin-only-hover' : 'text-admin-only'}` : linkClassName(link.to)}
               onPointerDown={event => {
                 touchStartRef.current = event.pointerType === 'touch' ? { to: link.to, wasOpen: openTo === link.to } : null
               }}
@@ -134,6 +169,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
                 }
               }}
             >
+              <NavIcon icon={link.icon} />
               {link.label}
             </Link>
             {link.options && openTo === link.to && (

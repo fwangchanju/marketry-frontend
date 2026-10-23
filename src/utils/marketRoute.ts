@@ -18,6 +18,6 @@ export function marketFromRouteSegment(segment: string | undefined): MarketQuery
   return segment ? MARKET_BY_ROUTE_SEGMENT[segment] ?? null : null
 }
 
-export function marketRoute(basePath: '/map' | '/group', market: MarketQuery): string {
+export function marketRoute(basePath: '/map' | '/graph', market: MarketQuery): string {
   return `${basePath}/${marketToRouteSegment(market)}`
 }

@@ -6,6 +6,8 @@ interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
   className?: string
   strokeWidth?: number
+  // 기본은 24×24 격자 전체다. 그려진 범위가 아이콘마다 달라서 크기를 맞춰야 할 때 그 범위에 맞게 자른 영역을 넘긴다.
+  viewBox?: string
 }
 
 // 설정창 메뉴 줄의 아이콘 — 상단 영역 아이콘과 같은 선 아이콘이다(24×24 격자, 선 끝·꺾임 둥글게).
@@ -95,11 +97,11 @@ const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
 
 // 30px로 그릴 때 선 1.1이 화면에서 약 1.35px로 보여 상단 영역 아이콘의 굵기(docs/ui-areas.md "아이콘 규칙")와 같다.
 // 크기를 바꾸면 선 값도 `굵기 × 24 ÷ 크기`로 맞춰야 한다.
-export default function SettingsSectionIcon({ icon, className = 'h-[30px] w-[30px]', strokeWidth = 1.1 }: SettingsSectionIconProps) {
+export default function SettingsSectionIcon({ icon, className = 'h-[30px] w-[30px]', strokeWidth = 1.1, viewBox = '0 0 24 24' }: SettingsSectionIconProps) {
   return (
     <svg
       aria-hidden="true"
-      viewBox="0 0 24 24"
+      viewBox={viewBox}
       fill="none"
       stroke="currentColor"
       strokeWidth={strokeWidth}
