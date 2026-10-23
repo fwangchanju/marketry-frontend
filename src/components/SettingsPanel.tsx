@@ -26,7 +26,7 @@ import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'special' | 'graph'
 const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage'])
-// 특별 회원과 운영자만 보는 탭 — 색은 특별 회원 표시색(웜 골드)이다.
+// 특별 회원과 운영자만 보는 탭(실험) — 색은 특별 회원 표시색(웜 골드)이다.
 const SPECIAL_SECTIONS: ReadonlySet<string> = new Set(['special'])
 
 interface SettingsPanelGroupProps {
@@ -187,7 +187,8 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   // 커스텀 페이지의 MARKETRY 분류 업데이트·롤백 탭. 화면 이름은 어드민 페이지의 탭과 같은 "관리자"지만 서로 다른 페이지에 있어 한 설정창에 같이 뜨지 않는다.
   { id: 'adminOps', label: '관리자', icon: 'member' },
   { id: 'adminManage', label: '관리자', icon: 'member' },
-  { id: 'special', label: '특별 회원', icon: 'member' },
+  // 실험 탭 — 안 쓰는 기능·시험 중인 기능을 모아 두는 탭이다. 보이는 것도 쓰는 것도 특별 회원과 운영자뿐이다.
+  { id: 'special', label: '실험', icon: 'experiment' },
   { id: 'custom', label: '커스텀', icon: 'custom-edit' },
 ]
 
@@ -1946,7 +1947,7 @@ export function SettingsSectorChangeSection({
   )
 }
 
-// 특별 회원 탭의 "종목 등락 방향" — 업종 등락 방향·종목 정보와 같은 운영자 항목 모양이다(높이 180px, 버튼 영역 가운데).
+// 실험 탭(특별 회원 전용)의 "종목 등락 방향" — 업종 등락 방향·종목 정보와 같은 운영자 항목 모양이다(높이 180px, 버튼 영역 가운데).
 export function SettingsStockChangeSection({
   value,
   onChange,
