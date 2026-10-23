@@ -5,6 +5,9 @@ import { captureRegionRect, fullScreenshotSize } from '@/utils/screenshotScale'
 import { CheckIcon, CopyIcon, HomeFrameCaptureIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
 
+// 팝업 미리보기 높이 상한(px) — 큰 창에서 팝업이 지나치게 커지지 않게 한다.
+const PREVIEW_MAX_HEIGHT_PX = 640
+
 interface Props {
   onClose: () => void
   // 미리보기 이미지(data URL)를 넘긴다 — 있으면 같은 영역을 다시 찍지 않고 그 이미지를 쓴다.
@@ -201,9 +204,9 @@ export default function ScreenshotModal({
     }
   }
 
-  // 높이는 화면(버튼 줄과 팝업 여백을 뺀 만큼), 폭은 화면 폭 안에서 이미지 비율로 정한다 — 원래 크기보다 작으면 키우고 크면 줄여서 화면에
-  // 최대한 꽉 채운다. 스피너 칸과 이미지가 같은 값을 써서, 미리보기가 뜰 때 팝업 크기가 바뀌지 않는다.
-  const fitWidth = previewRatio ? `min(calc(100vw - 4rem), calc((100dvh - 11rem) * ${previewRatio}))` : undefined
+  // 높이는 화면(버튼 줄과 팝업 여백을 뺀 만큼)과 상한 중 작은 쪽, 폭은 화면 폭 안에서 이미지 비율로 정한다 — 큰 창에서도 팝업이 끝없이 커지지 않게
+  // 높이에 상한을 둔다(보여 주는 크기만 정하며 캡처 이미지에는 영향이 없다). 스피너 칸과 이미지가 같은 값을 써서, 미리보기가 뜰 때 팝업 크기가 바뀌지 않는다.
+  const fitWidth = previewRatio ? `min(calc(100vw - 4rem), calc(min(100dvh - 11rem, ${PREVIEW_MAX_HEIGHT_PX}px) * ${previewRatio}))` : undefined
   const displayPreviewSrc = contextPreviewSrc ?? previewSrc
   const toolbar = screenshotTarget?.querySelector<HTMLElement>('.main-toolbar')
   const headerSelections = toolbar && screenshotTarget && highlightRegion
