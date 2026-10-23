@@ -1,6 +1,7 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { resolveTreemapColor } from '@/utils/treemapColorScale'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
+import { createPortal } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
@@ -286,6 +287,9 @@ export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
+  // 렌더러(텔레그램 발송)가 /map/allstock?capture=mobile 로 열면 스크린샷 창의 "모바일" 판(3:4 세로)을 화면에 그대로 펼쳐 놓고 그 틀만 찍는다.
+  const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
+  const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   // null이 아니면 Treemap이 해당 뎁스로 줄어드는 줌아웃 애니메이션을 재생하고, 끝나면
@@ -539,6 +543,25 @@ export default function MapPage() {
 
   const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
+  // 렌더러용 모바일 판 — 데이터가 오고 트리맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
+  const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && visibleItems.length > 0
+  // 렌더러용 판은 상단 메뉴 위에 보이도록 페이지 맨 바깥(body)에 그린다. 스크린샷 창이 열려 있을 때는 지도 본문 안에 투명하게 둔다.
+  const placeMobileFrame = (frame: ReactElement) => (isMobileCaptureMode ? createPortal(frame, document.body) : frame)
+  useEffect(() => {
+    if (!canShowMobileCapture || isMobileCaptureReady) return
+    let rafId = 0
+    const revealWhenLaidOut = () => {
+      if (!document.querySelector('[data-map-mobile-capture] [data-treemap-layout-ready="true"]')) {
+        rafId = requestAnimationFrame(revealWhenLaidOut)
+        return
+      }
+      revealMobileCapture(document.body)
+      setIsMobileCaptureReady(true)
+    }
+    rafId = requestAnimationFrame(revealWhenLaidOut)
+    return () => cancelAnimationFrame(rafId)
+  }, [canShowMobileCapture, isMobileCaptureReady])
+
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
       <NavBar />
@@ -725,12 +748,15 @@ export default function MapPage() {
               </div>
               </div>
             </div>
-          {isShareOpen && !isLoading && !isError && visibleItems.length > 0 && (
+          {(isShareOpen || isMobileCaptureMode) && !isLoading && !isError && visibleItems.length > 0 && placeMobileFrame(
             <div
               aria-hidden="true"
               data-map-mobile-capture-frame
-              style={{ opacity: 0, width: 'calc(100dvh * 3 / 4 + 8px)', height: 'calc(100dvh + 4px)', padding: '4px 4px 0', boxSizing: 'border-box' }}
-              className="pointer-events-none absolute left-0 top-0 z-[60] bg-ui-background"
+              data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
+              data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
+              // 스크린샷 창의 복제본은 아래 4px를 이미지에서 잘라 내므로 그만큼 더 길게 두고, 렌더러가 찍는 판은 화면 왼쪽 위에 딱 맞게 둔다.
+              style={{ opacity: 0, width: 'calc(100dvh * 3 / 4 + 8px)', height: isMobileCaptureMode ? '100dvh' : 'calc(100dvh + 4px)', padding: '4px 4px 0', boxSizing: 'border-box' }}
+              className={`pointer-events-none ${isMobileCaptureMode ? 'fixed z-[200]' : 'absolute z-[60]'} left-0 top-0 bg-ui-background`}
             >
             <div
               aria-hidden="true"

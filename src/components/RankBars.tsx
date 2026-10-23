@@ -88,7 +88,12 @@ export default function RankBars({
         const nameClassName = 'max-w-full truncate px-1 whitespace-nowrap text-right font-bold'
         const nameColor = item.isReference ? highlightColor : isEllipsis ? 'var(--ui-muted)' : 'var(--ui-white)'
         return (
-          <div key={item.key} className="flex min-h-0 flex-1 items-center gap-2">
+          // 텔레그램 발송이 이미지에 그려진 숫자를 그대로 캡션에 쓰도록 렌더러가 읽어 가는 값이다 — 업종 막대만 담고 지수·생략 줄은 뺀다.
+          <div
+            key={item.key}
+            data-capture-row={isEllipsis || item.isReference ? undefined : JSON.stringify({ name: item.sectorName, value: toValueLabel(item.value) })}
+            className="flex min-h-0 flex-1 items-center gap-2"
+          >
             <div className="flex shrink-0 justify-end" style={{ width: nameWidth }}>
               {selectable ? (
                 <button

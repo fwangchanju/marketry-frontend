@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import sampleImage from '@/assets/telegram-home-sample.png'
+import sampleMapImage from '@/assets/telegram-map-sample.png'
 import {
   getTelegramSendSetting,
   saveTelegramSendSetting,
@@ -36,7 +37,7 @@ function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
 }
 
 // 샘플 이미지(2026-10-20 마감)와 같이 나가는 메시지 예시 — 두 시장을 합친 그룹 중 등락률이 가장 높은 그룹(상위)과 가장 낮은 그룹(하위)이다.
-const SAMPLE_CAPTION = ['[그룹 등락률]', '상위: 필수소비재 -0.38%', '하위: 신규 상장 -31.93%'].join('\n')
+const SAMPLE_CAPTION = ['필수소비재 -0.38%', '금융 -2.07%'].join('\n')
 
 // 서버가 저장할 때 하는 검사와 같은 기준 — 어긋난 값은 저장 버튼을 막아 서버 오류를 피한다.
 function isValidDraft(draft: TelegramSendSettingInput, setting: TelegramSendSetting) {
@@ -181,8 +182,18 @@ export default function AdminMessagePage() {
                       <dl className="m-0 mt-1 grid grid-cols-[3.5rem_1fr] gap-x-3 gap-y-2 text-sm">
                         <dt className="text-ui-muted">이미지</dt>
                         <dd className="m-0 text-ui-white">
-                          홈 화면을 이미지로 전송합니다.
-                          <img src={sampleImage} alt="텔레그램으로 나가는 이미지 예시 — 홈 화면의 시장 지도와 그룹 등락률" className="mt-2 block h-[420px] w-auto rounded-sm border border-ui-border" draggable={false} />
+                          시장 요약/시장 지도를 이미지로 전송합니다.
+                          {/* 한 메시지에 두 장이 앨범으로 나간다 — 왼쪽이 시장 요약(홈 화면), 오른쪽이 시장 지도(지도 페이지 모바일 캡처). */}
+                          <div className="mt-2 flex items-start gap-2">
+                            <figure className="m-0">
+                              <img src={sampleImage} alt="텔레그램으로 나가는 이미지 예시 — 시장 요약(시장 지도와 그룹 등락률)" className="block h-[420px] w-auto rounded-sm border border-ui-border" draggable={false} />
+                              <figcaption className="mt-1 text-center text-xs text-ui-muted">시장 요약</figcaption>
+                            </figure>
+                            <figure className="m-0">
+                              <img src={sampleMapImage} alt="텔레그램으로 나가는 이미지 예시 — 시장 지도" className="block h-[420px] w-auto rounded-sm border border-ui-border" draggable={false} />
+                              <figcaption className="mt-1 text-center text-xs text-ui-muted">시장 지도</figcaption>
+                            </figure>
+                          </div>
                         </dd>
                         {/* 이미지와 같이 나가는 메시지(캡션) 예시 — 서버 캡션 형식(SectorRankingTextBuilder.buildMapCaption)과 같은 모양이며, 위 샘플 이미지의 값이다. */}
                         <dt className="text-ui-muted">메시지</dt>
@@ -234,7 +245,7 @@ export default function AdminMessagePage() {
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 간격</h2>
-                            <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">홈 화면을 몇 분마다 보낼지</p>
+                            <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">시장 요약/시장 지도를 몇 분마다 보낼지</p>
                             <div className="mt-1 flex max-w-[16rem] translate-y-[6px] settings-control-inset items-center justify-center">
                               <MinuteDial label="발송 간격" size={100} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
                             </div>
