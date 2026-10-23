@@ -429,7 +429,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   )
 
   // 거래소(KRX·NXT) 분류는 대분류(0)만 있다. 1-2 업종 등락 방향의 단계도 저장값은 두고 여기서만 따라간다.
-  const effectiveSectorChangeDepth = usesCustomTree ? sectorChangeDepth : Math.min(sectorChangeDepth, 0)
+  // 업종 등락 방향의 업종 단계는 지금 그려지는 업종 단계(1-1 업종 분류 깊이)를 넘을 수 없다. 거래소 분류는 대분류만 있고, 업종 단계를 끄면 대분류만 그려진다.
+  // 저장된 값은 건드리지 않고 여기서만 따라간다(깊이를 다시 늘리면 원래 값이 살아난다). 설정창에 보이는 선택값과 실제로 적용되는 값이 같아야 한다.
+  const sectorChangeMaxDepth = Math.max(1, usesCustomTree ? (maxDepth ?? 3) : 1)
+  const effectiveSectorChangeDepth = Math.min(sectorChangeDepth, sectorChangeMaxDepth - 1)
   const directionFilters = useMemo(() => ({
     stockChangeFilter: pathname.startsWith('/map/') ? stockChangeFilter : 'all' as StockChangeFilter,
     sectorChangeFilter: pathname.startsWith('/map/') ? sectorChangeFilter : 'all' as SectorChangeFilter,
@@ -910,6 +913,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     onChangeStockChangeFilter: setStockChangeFilter,
     sectorChangeFilter,
     sectorChangeDepth: effectiveSectorChangeDepth,
+    sectorChangeMaxDepth,
     availableMaxDepth,
     // 선택한 업종 단계는 KRX와 MARKETRY 분류에 동일하게 적용한다.
     maxDepth,

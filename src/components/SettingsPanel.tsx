@@ -1946,6 +1946,7 @@ export function SettingsSectorChangeSection({
   )
 }
 
+// 특별 회원 탭의 "종목 등락 방향" — 업종 등락 방향·종목 정보와 같은 운영자 항목 모양이다(높이 180px, 버튼 영역 가운데).
 export function SettingsStockChangeSection({
   value,
   onChange,
@@ -1954,25 +1955,29 @@ export function SettingsStockChangeSection({
   onChange: (value: StockChangeFilter) => void
 }) {
   return (
-    <div className="settings-third-stock-change text-ui-white mt-4 pt-6">
+    <div className="settings-third-stock-change settings-admin-item h-[180px] text-sm text-ui-white">
       <p className="flex items-center text-[15px]">
-        <SettingTitle>종목 등락 방향</SettingTitle>
+        <span className="settings-plain-title">종목 등락 방향</span>
       </p>
       <SettingDescription>상승·하락 종목만 표시</SettingDescription>
-      <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative mt-[40.5px] grid max-w-[16rem] settings-control-inset grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
-        {DIRECTION_OPTIONS.map(option => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={value === option.value}
-            onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
-          >
-            {option.label}
-          </button>
-        ))}
+      <div className="settings-button-area flex flex-col justify-center">
+        <div className="relative max-w-[16rem] settings-control-inset">
+          <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative grid grid-cols-3 gap-[6px]">
+            <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
+            {DIRECTION_OPTIONS.map(option => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={value === option.value}
+                onClick={() => onChange(option.value)}
+                className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
