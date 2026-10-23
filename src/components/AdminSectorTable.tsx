@@ -638,7 +638,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           selectSector()
         }}
       >
-        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/35 group-hover:bg-[var(--brand)]/50' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`} style={{ paddingLeft: '8px' }}>
+        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`} style={{ paddingLeft: '8px' }}>
           <div className="flex items-center gap-2">
             <div className="flex min-w-0 flex-1 items-center">
               <DraggableSectorHandle sectorId={sector.id} parentId={sector.parentId} enabled />

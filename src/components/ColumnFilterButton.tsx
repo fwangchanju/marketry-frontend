@@ -180,7 +180,7 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
               <button type="button" className="h-6 flex-1 rounded border border-ui-border bg-transparent p-0 text-xs font-medium text-ui-text hover:text-ui-white" onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
             </div>
           )}
-          <ul className="column-filter-options m-0 max-h-64 list-none overflow-y-scroll p-0">
+          <ul className="column-filter-options m-0 max-h-[280px] list-none overflow-y-scroll p-0">
             {shownOptions.length === 0 && <li className="px-3 py-1 text-ui-muted">검색 결과가 없습니다.</li>}
             {shownOptions.map(value => (
               <li key={value}>
