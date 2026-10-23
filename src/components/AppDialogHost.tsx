@@ -47,10 +47,10 @@ export default function AppDialogHost() {
   // 바깥(어두운 배경)을 눌러도 닫히지 않는다 — 반드시 버튼이나 Esc로 답해야 한다.
   return (
     <div className="fixed inset-0 z-[100] bg-ui-background/70" onPointerDown={handleBlockedPointerDown}>
-      {/* 어두운 배경은 화면 전체를 덮고, 창은 메인 영역 안의 가운데에 놓는다. */}
+      {/* NXT 안내창과 같이 가로는 메인 영역 가운데, 세로는 전체 화면 가운데에 놓는다. */}
       <div
         className={`flex items-center justify-center p-4 ${mainAreaRect ? 'absolute' : 'h-full w-full'}`}
-        style={mainAreaRect ? { left: mainAreaRect.left, top: mainAreaRect.top, width: mainAreaRect.width, height: mainAreaRect.height } : undefined}
+        style={mainAreaRect ? { left: mainAreaRect.left, top: 0, width: mainAreaRect.width, height: '100dvh' } : undefined}
       >
       <section
         ref={sectionRef}
@@ -69,7 +69,11 @@ export default function AppDialogHost() {
             {dialog.adminOnly && ' ⚠'}
           </span>
         </h2>
-        <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-ui-background">{dialog.message}</p>
+        <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-ui-background">
+          {dialog.message}
+          {dialog.mutedMessage && <><br /><span className="text-[var(--ui-control)]">{dialog.mutedMessage}</span></>}
+          {dialog.followupMessage && <><br />{dialog.followupMessage}</>}
+        </p>
         <div className="mt-auto flex justify-end gap-2 pt-3">
           {dialog.kind === 'confirm' && (
             <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover">

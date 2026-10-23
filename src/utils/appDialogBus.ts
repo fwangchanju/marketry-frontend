@@ -2,6 +2,8 @@ export type AppDialogRequest = {
   id: number
   kind: 'alert' | 'confirm'
   message: string
+  mutedMessage?: string
+  followupMessage?: string
   title?: string
   adminOnly?: boolean
   resolve?: (confirmed: boolean) => void
@@ -35,8 +37,8 @@ export function appAlert(message: string, options?: { adminOnly?: boolean; title
   return new Promise(resolve => enqueue({ kind: 'alert', message, title: options?.title, adminOnly: options?.adminOnly, resolve: () => resolve() }))
 }
 
-export function appConfirm(message: string, options?: { adminOnly?: boolean; title?: string }): Promise<boolean> {
-  return new Promise(resolve => enqueue({ kind: 'confirm', message, title: options?.title, adminOnly: options?.adminOnly, resolve }))
+export function appConfirm(message: string, options?: { adminOnly?: boolean; title?: string; mutedMessage?: string; followupMessage?: string }): Promise<boolean> {
+  return new Promise(resolve => enqueue({ kind: 'confirm', message, mutedMessage: options?.mutedMessage, followupMessage: options?.followupMessage, title: options?.title, adminOnly: options?.adminOnly, resolve }))
 }
 
 export function resolveCurrentAppDialog(confirmed: boolean) {
