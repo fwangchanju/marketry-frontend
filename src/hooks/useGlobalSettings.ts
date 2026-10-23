@@ -171,7 +171,16 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [afterHoursStart, setAfterHoursStart] = useState<string | null>(null)
   const isAfterHoursControlsVisible = useAfterHoursControlsVisible(afterHoursStart)
   const [storedChangeRateChoice, setStoredChangeRateChoice] = usePersistedState<ChangeRateChoice>('treemap.changeRateMode', 'daily')
-  const requestedChoice: ChangeRateChoice = allowChangeRateMode && isAfterHoursControlsVisible ? storedChangeRateChoice : 'daily'
+  // 렌더러(텔레그램 발송)가 ?capture=mobile&basis=close|afterHours 로 열면 저장된 선택과 표시 시간대에 상관없이 그 기준으로 그린다(15:30~15:40은 종가, 15:40 이후는 별도).
+  // 렌더러는 저장된 선택이 없는 새 브라우저라 주소로 정해 주지 않으면 늘 누적으로 보인다.
+  const captureBasis = useMemo<ChangeRateChoice | null>(() => {
+    const params = new URLSearchParams(window.location.search)
+    const basis = params.get('basis')
+    return params.get('capture') === 'mobile' && (basis === 'close' || basis === 'afterHours') ? basis : null
+  }, [])
+  const requestedChoice: ChangeRateChoice = allowChangeRateMode && captureBasis !== null
+    ? captureBasis
+    : allowChangeRateMode && isAfterHoursControlsVisible ? storedChangeRateChoice : 'daily'
   const requestedBasis: ChangeRateMode = requestedChoice === 'afterHours' ? 'afterHours' : 'daily'
   // 섹터 랭킹/강세 업종 계산에 쓰는 평균 방식은 박스 크기 비율과 별도로 저장한다.
   const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting('treemap.avgChangeRateUseSimple', defaults.avgChangeRateUseSimple)

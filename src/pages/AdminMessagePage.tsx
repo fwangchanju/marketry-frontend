@@ -228,9 +228,9 @@ export default function AdminMessagePage() {
                       <>
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
-                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송</h2>
+                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">텔레그램 발송</h2>
                             <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">정기 리포트를 텔레그램으로 보낼지</p>
-                            <SettingsSegmentedControl label="발송" options={SEND_OPTIONS} value={draft.enabled} onChange={value => updateDraft({ enabled: value })} />
+                            <SettingsSegmentedControl label="텔레그램 발송" options={SEND_OPTIONS} value={draft.enabled} onChange={value => updateDraft({ enabled: value })} />
                           </div>
                         </div>
                         <div className="settings-ops-item h-[180px] text-sm">
