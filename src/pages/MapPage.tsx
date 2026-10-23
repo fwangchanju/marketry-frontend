@@ -2,6 +2,7 @@ import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { createPortal } from 'react-dom'
+import { useSettled } from '@/hooks/useSettled'
 import { useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
@@ -547,8 +548,10 @@ export default function MapPage() {
   const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && visibleItems.length > 0
   // 렌더러용 판은 상단 메뉴 위에 보이도록 페이지 맨 바깥(body)에 그린다. 스크린샷 창이 열려 있을 때는 지도 본문 안에 투명하게 둔다.
   const placeMobileFrame = (frame: ReactElement) => (isMobileCaptureMode ? createPortal(frame, document.body) : frame)
+  // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 복제하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
+  const isMobileCaptureSettled = useSettled(canShowMobileCapture, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
   useEffect(() => {
-    if (!canShowMobileCapture || isMobileCaptureReady) return
+    if (!isMobileCaptureSettled || isMobileCaptureReady) return
     let rafId = 0
     const revealWhenLaidOut = () => {
       if (!document.querySelector('[data-map-mobile-capture] [data-treemap-layout-ready="true"]')) {
@@ -560,7 +563,7 @@ export default function MapPage() {
     }
     rafId = requestAnimationFrame(revealWhenLaidOut)
     return () => cancelAnimationFrame(rafId)
-  }, [canShowMobileCapture, isMobileCaptureReady])
+  }, [isMobileCaptureSettled, isMobileCaptureReady])
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">

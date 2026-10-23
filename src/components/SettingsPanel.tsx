@@ -1999,7 +1999,7 @@ export function SettingsExcludeSection({
         <ToggleSwitch
           checked={sectorFilterEnabled}
           onChange={onToggleSectorFilter}
-          label="제외 업종"
+          label="업종 제외"
           forceLabelWhite
           labelClassName="text-[15px] settings-section-num"
 

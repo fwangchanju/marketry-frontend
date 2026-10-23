@@ -1,3 +1,4 @@
+import { useSettled } from '@/hooks/useSettled'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
@@ -542,7 +543,9 @@ export default function MarketSummaryPage() {
   // 렌더러(텔레그램 발송)가 /home?capture=mobile 로 열면 지도 페이지 모바일 캡처와 같은 3:4 세로 판에 툴바와 시장 지도(왼쪽)·그룹 등락률(오른쪽)만 담아 찍는다.
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
-  const isMobileCaptureReady = !isLoading && !isError && Boolean(data?.snapshotTime) && marketSummary !== undefined
+  // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 준비됐다고 하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
+  const isMobileCaptureLoaded = !isLoading && !isError && Boolean(data?.snapshotTime) && marketSummary !== undefined
+  const isMobileCaptureReady = useSettled(isMobileCaptureLoaded, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
   const mobileCaptureFrames = ['market-map', 'group-change-rate']
     .map(captureId => homeFrames.find(frame => frame.captureId === captureId))
     .filter(frame => frame !== undefined)
