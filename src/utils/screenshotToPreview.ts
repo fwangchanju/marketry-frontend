@@ -29,3 +29,20 @@ export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector
   // 이전 프레임 높이에서 남은 하단 여백을 캡처 이미지 자체에서 4 CSS px 더 잘라낸다.
   return cropMobileCaptureBottom(dataUrl, Math.round(4 * options.scale))
 }
+
+// 텔레그램 홈 모바일 판과 같은 810×1080 픽셀로 저장한다. 별도 리샘플링을 거치면 배지 글자 위치가 달라진다.
+// 툴바는 각 틀 안에 원래 글자 크기로 배치해 전체 상단줄을 축소하지 않는다.
+export async function screenshotFixedHomeFrameToDataUrl(root: HTMLElement, selector: string): Promise<string> {
+  const frame = root.querySelector(selector)?.closest<HTMLElement>('[data-capture-fixed-frame]')
+  if (!frame) throw new Error('Fixed home capture frame is unavailable')
+  const toolbar = frame.querySelector<HTMLElement>('.home-capture-toolbar')
+  const left = toolbar?.firstElementChild as HTMLElement | null
+  const right = toolbar?.lastElementChild as HTMLElement | null
+  if (!toolbar || !left || !right || left.scrollWidth + right.scrollWidth + 12 > toolbar.clientWidth) {
+    throw new Error('캡처 폭에 상단 정보가 모두 들어가지 않습니다.')
+  }
+  if (frame.offsetWidth !== 810 || frame.offsetHeight !== 1080) throw new Error('Fixed home capture size is invalid')
+  const options = { ...shareScreenshotOptions(frame), scale: 1 }
+  const fontCss = await fontCssFor(frame)
+  return domToPng(frame, fontCss ? { ...options, font: { cssText: fontCss } } : options)
+}

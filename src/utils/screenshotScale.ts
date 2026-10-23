@@ -13,7 +13,8 @@ function scaleForLongSide(longSide: number): number {
 export function fullScreenshotSize(el: HTMLElement): { width: number; height: number } {
   const content = el.querySelector<HTMLElement>('[data-capture-full-width]')
   const overflowWidth = content ? Math.max(0, content.scrollWidth - content.clientWidth) : 0
-  return { width: el.offsetWidth + overflowWidth, height: el.offsetHeight }
+  const toolbarWidth = Math.max(0, ...Array.from(el.querySelectorAll<HTMLElement>('[data-capture-full-width-align]'), row => row.scrollWidth))
+  return { width: Math.max(el.offsetWidth + overflowWidth, toolbarWidth), height: el.offsetHeight }
 }
 
 export function shareScreenshotScale(el: HTMLElement): number {
@@ -58,8 +59,8 @@ export function captureRegionRect(el: HTMLElement, selector: string, mode: 'thro
 // data-capture-ignore가 붙은 요소(예: 지도 위 NXT 안내창과 그 어두운 배경)는 일시적인 알림이라 공유 이미지에 담지 않는다.
 const isCapturable = (node: Node) => !(node instanceof Element && node.hasAttribute('data-capture-ignore'))
 
-// 지도는 스크린샷 창이 열려 있는 동안 모바일 캡처용 투명 트리를 하나 더 그린다. 모바일을 고르지 않았을 때는 이 트리가 이미지에 보이지 않는데도
-// 복제 대상 요소가 절반 가까이 늘어 캡처가 느려지므로(모니터 캡처 약 1.2초 → 0.7초) 모바일 캡처일 때만 포함한다.
+// 지도 모바일 캡처용 트리는 모바일을 선택했을 때만 렌더링한다. 선택 전환 중 이미 생성된 트리가 있어도
+// 모니터 이미지의 복제 대상에는 포함하지 않는다.
 const MOBILE_CAPTURE_FRAME_SELECTOR = '[data-map-mobile-capture-frame]'
 const isCapturableWithoutMobileFrame = (node: Node) =>
   isCapturable(node) && !(node instanceof Element && node.matches(MOBILE_CAPTURE_FRAME_SELECTOR))
