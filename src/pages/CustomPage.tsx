@@ -320,9 +320,9 @@ export default function CustomPage() {
               <SettingsPanelGroup section="custom">
                 {!isReadOnlySheet ? (
                   <>
-                    {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
                     {mode === 'stock' && <div ref={setStockBulkTarget} className="settings-item" />}
                     <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
+                    {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
                   </>
                 ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 분류만 가능</span></span></div>}
               </SettingsPanelGroup>

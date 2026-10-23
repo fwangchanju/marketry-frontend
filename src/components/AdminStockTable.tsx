@@ -274,11 +274,11 @@ function matchesSectorSearch(option: SectorOption, trimmed: string, byId: Map<nu
   return false
 }
 
-// 필터 팝업 목록 한 행의 높이(px) — 테이블 본문과 같은 text-sm(20px 줄높이) + py-0.5(위아래 2px씩) 기준.
-const FILTER_LIST_ROW_HEIGHT = 24
-// 필터 팝업을 한 화면에 몇 개 행까지 보여줄지 — 이보다 적으면 목록 실제 높이만큼만 차지하고,
-// 많으면 이 높이에서 스크롤(overflow-y-auto)된다.
-const FILTER_LIST_MAX_VISIBLE_ROWS = 15
+// 섹터 선택 팝업 목록 한 행의 높이(px) — 행의 min-h-7(28px)과 같다.
+const FILTER_LIST_ROW_HEIGHT = 28
+// 선택 팝업을 한 화면에 몇 개 행까지 보여줄지 — 이보다 적으면 목록 실제 높이만큼만 차지하고,
+// 많으면 이 높이에서 스크롤(overflow-y-auto)된다. 열 머리글 필터(ColumnFilterButton)도 같은 10개다.
+const FILTER_LIST_MAX_VISIBLE_ROWS = 10
 const FILTER_LIST_MAX_HEIGHT = FILTER_LIST_ROW_HEIGHT * FILTER_LIST_MAX_VISIBLE_ROWS
 
 
@@ -402,7 +402,7 @@ function SectorSearchPopup({
         {contextLabel && <p className="m-0 mt-1.5 truncate text-xs font-medium text-ui-text">{contextLabel}</p>}
       </div>
       {title && orderMode && <div ref={orderToggleRef} className="w-fit"><SectorOrderToggle label={title} value={orderMode.value} onChange={orderMode.onChange} /></div>}
-      <div className="overflow-y-auto scrollbar-thin" style={{ maxHeight: FILTER_LIST_MAX_HEIGHT }}>
+      <div className="sector-popup-options overflow-y-auto" style={{ maxHeight: FILTER_LIST_MAX_HEIGHT }}>
         {search.matches.length === 0 ? (
           <p className="m-0 px-3 py-1 text-ui-muted">검색 결과가 없습니다.</p>
         ) : (
@@ -457,34 +457,17 @@ function AdminStockSectorCell({
   contextLabel?: string
   // 예: 중분류가 아직 지정 안 된 상태의 소분류 셀 — 고를 수 있는 범위 자체가 없으니 클릭해도 팝업을 안 띄운다.
   disabled?: boolean
-  // disabled일 때 클릭하면 1.5초간 떴다가 자동으로 사라지는 안내 문구.
+  // disabled일 때 마우스를 올리면 공통 말풍선(data-hint)으로 뜨는 안내 문구.
   disabledHint?: string
   // 팝업 제목과 "가나다 순 / 사용자 지정 순" 선택(일괄 변경 팝업과 같은 모양).
   title?: string
   orderMode?: { value: 'alpha' | 'custom'; onChange: (value: 'alpha' | 'custom') => void }
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [showHint, setShowHint] = useState(false)
   const cellRef = useRef<HTMLTableCellElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const search = useSectorSearchState(options, isOpen)
-
-  // 셀 위치에 맞춰 펼치면 화면 오른쪽 끝에서 잘릴 걱정을 해야 해서, 그냥 화면 상단 중앙에 고정으로 띄운다.
-  const showDisabledHint = (e: React.MouseEvent<HTMLTableCellElement>) => {
-    e.stopPropagation()
-    if (!disabledHint) return
-    setShowHint(true)
-    if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current)
-    hintTimeoutRef.current = setTimeout(() => setShowHint(false), 1000)
-  }
-
-  useEffect(() => {
-    return () => {
-      if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current)
-    }
-  }, [])
 
   // 바깥 클릭/스크롤로 닫힐 때도(usePopupPosition 내부에서 직접 호출) 항상 이 함수를 거치도록,
   // 팝업 열림 상태를 바꾸는 지점을 하나로 모은다 — 그래야 행 하이라이트(onEditingChange)가 항상 같이 갱신된다.
@@ -509,6 +492,7 @@ function AdminStockSectorCell({
     <td
       ref={cellRef}
       data-no-row-select
+      data-hint={disabled ? disabledHint : undefined}
       className={`truncate pl-2 text-left ${disabled ? 'cursor-default text-ui-muted' : 'cursor-pointer'} ${
         isHighlighted ? 'bg-[var(--brand)]/35' : rowHoverClass
       }`}
@@ -516,7 +500,7 @@ function AdminStockSectorCell({
       onMouseLeave={onHoverEnd}
       onClick={
         disabled
-          ? showDisabledHint
+          ? e => e.stopPropagation()
           : e => {
               // 행 전체 클릭 시 체크박스가 토글되는 동작(AdminStockRow)과 별개로 동작해야 하므로 버블링을 막는다.
               e.stopPropagation()
@@ -538,14 +522,6 @@ function AdminStockSectorCell({
           title={title}
           orderMode={orderMode}
         />
-      )}
-      {disabled && showHint && (
-        <div
-          style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)' }}
-          className={`z-50 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}
-        >
-          {disabledHint}
-        </div>
       )}
     </td>
   )
@@ -570,16 +546,14 @@ function BulkAssignButton({
   title: string
   orderMode: { value: 'alpha' | 'custom'; onChange: (value: 'alpha' | 'custom') => void }
   // 선행 단계(1차/2차)가 아직 적용 안 된 상태의 2차/3차 버튼 — 버튼 자체는 평소와 똑같이 보이되,
-  // 클릭하면 팝업 대신 안내 문구만 잠깐 띄운다(AdminStockSectorCell의 disabled 셀과 동일한 패턴).
+  // 누르면 아무 일도 없고, 마우스를 올리면 안내 문구가 공통 말풍선(data-hint)으로 뜬다(AdminStockSectorCell의 disabled 셀과 동일한 패턴).
   disabled?: boolean
   disabledHint?: string
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [showHint, setShowHint] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // 설정창은 좌우로 옮길 수 있어서, 누르는 순간 버튼이 화면 오른쪽 절반에 있으면 팝업을 왼쪽으로 연다.
   const [alignRight, setAlignRight] = useState(false)
   const search = useSectorSearchState(options, isOpen)
@@ -594,23 +568,11 @@ function BulkAssignButton({
     alignRight,
   )
 
-  useEffect(() => {
-    return () => {
-      if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current)
-    }
-  }, [])
-
   // 고른 종목이 없으면 흐리게 비활성이다(누르면 아무 일도 없다).
   const isIdle = count === 0
   const handleClick = () => {
     if (isIdle) return
-    if (disabled) {
-      if (!disabledHint) return
-      setShowHint(true)
-      if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current)
-      hintTimeoutRef.current = setTimeout(() => setShowHint(false), 1000)
-      return
-    }
+    if (disabled) return
     search.reset()
     setAlignRight((buttonRef.current?.getBoundingClientRect().left ?? 0) > window.innerWidth / 2)
     setIsOpen(true)
@@ -628,6 +590,7 @@ function BulkAssignButton({
         type="button"
         onClick={handleClick}
         aria-disabled={isIdle}
+        data-hint={!isIdle && disabled ? disabledHint : undefined}
         className={`flex h-[25px] w-full items-center justify-center whitespace-nowrap rounded-[5px] border-0 px-1.5 text-[13px] leading-[1.3] font-medium transition-colors ${
           isIdle ? 'cursor-not-allowed bg-[var(--ui-control)] text-ui-white opacity-35' : 'settings-chip-hover bg-[var(--ui-control)] text-ui-white'
         }`}
@@ -646,14 +609,6 @@ function BulkAssignButton({
           orderMode={orderMode}
         />,
         document.body,
-      )}
-      {disabled && showHint && disabledHint && (
-        <div
-          style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)' }}
-          className={`z-50 whitespace-nowrap ${HINT_BUBBLE_CLASS}`}
-        >
-          {disabledHint}
-        </div>
       )}
     </>
   )
@@ -804,14 +759,14 @@ const AdminStockRow = memo(function AdminStockRow({
       return next
     })
   }
-  // 호버는 20%, 선택은 28%로 칠해 서로 구분하고, 선택 + 호버면 한 단계 더 진하게(38%) 칠한다. 읽기 전용 표(ReadOnlyTaxonomySheet)와 같은 값이다.
+  // 마우스를 올린 줄과 선택한 줄은 같은 청록으로 칠한다.
   const rowHoverClass = isSelected
-    ? isRowHovered
-      ? 'bg-[var(--brand)]/35 border-ui-white/20!'
-      : 'bg-[var(--brand)]/35 border-ui-white/20!'
+    ? 'bg-[var(--brand)]/20 border-ui-white/20!'
     : isRowHovered || editingCells.size > 0
       ? 'bg-[var(--brand)]/20'
       : ''
+  // 마우스를 올린 줄에서 고칠 수 있는 칸(대·중·소분류, 약칭)은 청록, 나머지 칸은 회색(설정창·표 헤더색)으로 칠해 구분한다 — 선택한 줄은 전체를 청록으로 칠한다.
+  const readOnlyHoverClass = isSelected ? rowHoverClass : isRowHovered || editingCells.size > 0 ? 'bg-ui-panel' : ''
 
   // 대분류 팝업엔 최상위 섹터만, 중분류 팝업엔 "지금 이 종목의 대분류"의 자식만, 소분류 팝업엔
   // "지금 이 종목의 중분류"의 자식만 보여준다. sectorId(실제 배정된 섹터)를 parentId로 거슬러
@@ -858,12 +813,12 @@ const AdminStockRow = memo(function AdminStockRow({
       onMouseEnter={() => setIsRowHovered(true)}
       onMouseLeave={() => setIsRowHovered(false)}
     >
-      <td className={`text-center ${rowHoverClass}`} style={CHECKBOX_CELL_STYLE}>
+      <td className={`text-center ${readOnlyHoverClass}`} style={CHECKBOX_CELL_STYLE}>
         {/* 상태 변경은 줄 클릭(handleRowClick)에서 하므로 onChange는 비워 둔다 — 제어되는 체크박스에 필요한 자리표시다. */}
         <input type="checkbox" className="mx-auto my-0 block thin-check" checked={isSelected} onChange={() => {}} />
       </td>
-      <td className={`${alignClass('center')} text-ui-muted ${rowHoverClass}`}>{item.stockCode}</td>
-      <td colSpan={showAlias ? 1 : 2} className={`truncate pl-2 text-left ${marketColorClass(item.market)} ${rowHoverClass}`}>{item.stockName}</td>
+      <td className={`${alignClass('center')} text-ui-muted ${readOnlyHoverClass}`}>{item.stockCode}</td>
+      <td colSpan={showAlias ? 1 : 2} className={`truncate pl-2 text-left ${marketColorClass(item.market)} ${readOnlyHoverClass}`}>{item.stockName}</td>
       {showAlias && (
         <AdminAliasCell
           alias={item.alias}
@@ -875,13 +830,13 @@ const AdminStockRow = memo(function AdminStockRow({
           onEditingChange={editing => setCellEditing('alias', editing)}
         />
       )}
-      <td className={`${alignClass('right')} text-ui-muted ${rowHoverClass}`}>
+      <td className={`${alignClass('right')} text-ui-muted ${readOnlyHoverClass}`}>
         {item.totalMarketValue != null ? toJoEokDecimal(item.totalMarketValue / 100_000_000) : '-'}
       </td>
-      <td className={`text-center text-ui-muted ${rowHoverClass}`}>{item.marketValueTier || '-'}</td>
-      <td className={`text-center ${marketColorClass(item.market)} ${rowHoverClass}`}>{MARKET_LABEL[item.market]}</td>
-      <td className={`text-center ${isNxt ? 'text-ui-muted' : 'text-ui-muted'} ${rowHoverClass}`}>{isNxt ? 'O' : '-'}</td>
-      <td className={`truncate pl-2 text-left text-ui-muted ${rowHoverClass}`}>{item.industryName ?? '-'}</td>
+      <td className={`text-center text-ui-muted ${readOnlyHoverClass}`}>{item.marketValueTier || '-'}</td>
+      <td className={`text-center ${marketColorClass(item.market)} ${readOnlyHoverClass}`}>{MARKET_LABEL[item.market]}</td>
+      <td className={`text-center ${isNxt ? 'text-ui-muted' : 'text-ui-muted'} ${readOnlyHoverClass}`}>{isNxt ? 'O' : '-'}</td>
+      <td className={`truncate pl-2 text-left text-ui-muted ${readOnlyHoverClass}`}>{item.industryName ?? '-'}</td>
       <AdminStockSectorCell
         value={chain.rootName}
         options={parentSectorOptions}
@@ -912,7 +867,7 @@ const AdminStockRow = memo(function AdminStockRow({
         options={subSectorOptions}
         onAssign={sectorId => onAssign(item.stockCode, sectorId)}
         isHighlighted={hoveredKind === 'subSector'}
-        rowHoverClass={rowHoverClass}
+        rowHoverClass={chain.midId == null ? readOnlyHoverClass : rowHoverClass}
         onHoverStart={() => onSubSectorHoverStart(item.stockCode)}
         onHoverEnd={onHoverEnd}
         onEditingChange={editing => setCellEditing('sector3', editing)}
@@ -1724,7 +1679,7 @@ export default function AdminStockTable({
               title="중분류 일괄 변경"
               orderMode={bulkOrderMode}
               disabled={effectiveParentId == null}
-              disabledHint="선택한 종목의 대분류가 같아야 합니다. 다르면 대분류를 먼저 일괄적용하세요"
+              disabledHint={'선택한 종목의 대분류가 같아야 합니다.\n다르면 대분류를 먼저 일괄적용하세요'}
             />
             <BulkAssignButton
               count={selectedStockCodes.size}
@@ -1734,7 +1689,7 @@ export default function AdminStockTable({
               title="소분류 일괄 변경"
               orderMode={bulkOrderMode}
               disabled={effectiveMidId == null}
-              disabledHint="선택한 종목의 중분류가 같아야 합니다. 다르면 중분류를 먼저 일괄적용하세요"
+              disabledHint={'선택한 종목의 중분류가 같아야 합니다.\n다르면 중분류를 먼저 일괄적용하세요'}
             />
           </div>
         </div>,
