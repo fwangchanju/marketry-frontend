@@ -81,10 +81,10 @@ export type MarketNoticeItem = z.infer<typeof MarketNoticeItemSchema>
 export const MarketNoticeResponseSchema = z.object({
   date: z.string(),
   items: z.array(MarketNoticeItemSchema),
-  // 날짜와 무관한 현황 — 최근 3개월 내 신규 상장 수, 지금 거래정지 중인 종목 수. 옛 응답에는 없을 수 있다.
+  // 날짜와 무관한 현황 — 최근 3개월 내 신규 상장 수, 지금 거래정지 중인 종목 수.
   recentNewListingCount: z.number().nullish(),
   currentSuspensionCount: z.number().nullish(),
-  // 그 종목들의 현시점 시가총액 합(원). 옛 응답에는 없을 수 있다.
+  // 그 종목들의 현시점 시가총액 합(원).
   recentNewListingMarketValue: z.number().nullish(),
   currentSuspensionMarketValue: z.number().nullish(),
 })
@@ -173,9 +173,7 @@ export const TreemapScaleResponseSchema = z.object({
 })
 export type TreemapScaleResponse = z.infer<typeof TreemapScaleResponseSchema>
 
-// 백엔드 /api/admin/market-map/* → /api/custom/* 전환(가입/로그인 지시서)에 맞춰 DTO 필드명도
-// category* → sector* 로 바뀌었다. /api/map 응답도 category → sector 정리(instructions-sector-rename.md)로
-// 같은 sectorId/sectorName을 쓰게 됐지만, 두 응답은 여전히 별개 계약이다.
+// /api/custom/* 응답의 필드명은 sector* 이다. /api/map 응답도 같은 sectorId/sectorName을 쓰지만, 두 응답은 별개 계약이다.
 export const SectorItemSchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -249,12 +247,12 @@ export const AuthSessionResponseSchema = z.object({
   userId: z.number().nullable(),
   email: z.string().nullable(),
   role: AuthRoleSchema.nullable(),
-  // 프로필 닉네임과 사진 버전(없으면 null). 옛 응답에는 필드가 없을 수 있어 nullish로 받는다.
+  // 프로필 닉네임과 사진 버전(없으면 null).
   nickname: z.string().nullish(),
   profileImageVersion: z.number().nullish(),
-  // 닉네임을 다시 바꿀 수 있게 되는 시각(epoch 밀리초) — 지금 바꿀 수 있으면 null. 옛 응답에는 없을 수 있다.
+  // 닉네임을 다시 바꿀 수 있게 되는 시각(epoch 밀리초) — 지금 바꿀 수 있으면 null.
   nicknameChangeableAt: z.number().nullish(),
-  // 특별 회원 표시(운영자는 role로 따로 구분한다). 옛 응답에는 없을 수 있다.
+  // 특별 회원 표시(운영자는 role로 따로 구분한다).
   special: z.boolean().nullish(),
 })
 export type AuthSessionResponse = z.infer<typeof AuthSessionResponseSchema>

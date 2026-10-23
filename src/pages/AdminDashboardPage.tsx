@@ -17,6 +17,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
+import { isAdminSession } from '@/utils/adminAccess'
 
 const PERIOD_OPTIONS = [14, 30] as const
 type Period = (typeof PERIOD_OPTIONS)[number]
@@ -30,7 +31,7 @@ const FREQUENCY_BAR_CLASSES = ['bg-ui-muted', 'bg-[var(--brand)]/35', 'bg-[var(-
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다.
 export default function AdminDashboardPage() {
   const { data: session, isLoading } = useSession()
-  const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
+  const isAdmin = isAdminSession(session)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)

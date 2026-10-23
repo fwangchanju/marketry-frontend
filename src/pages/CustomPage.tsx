@@ -23,13 +23,12 @@ import { useLoginGate } from '@/hooks/useLoginGate'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
+import { isAdminSession } from '@/utils/adminAccess'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 
-// 커스텀 섹터·종목 배정 관리 화면 — 예전 관리자 페이지를 대체한다. 이제는 admin 역할이 아니라 로그인 여부로
-// 접근을 가른다(가입/로그인 전환 지시서 4) — 누구든
-// 로그인하면 자신의 커스텀 섹터를 관리할 수 있다. 비로그인으로 직접 URL 진입/새로고침해도 로그인
-// 팝업을 띄우고, 성공하면 이 경로로 돌아온다.
+// 커스텀 섹터·종목 배정 관리 화면 — admin 역할이 아니라 로그인 여부로 접근을 가른다. 누구든 로그인하면 자신의 커스텀 섹터를
+// 관리할 수 있다. 비로그인도 MARKETRY·거래소 분류는 읽을 수 있고, 내 분류를 누르면 로그인 팝업이 뜬다.
 export default function CustomPage() {
   const { pathname } = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -39,7 +38,7 @@ export default function CustomPage() {
   // MARKETRY를 읽기 전용으로 보여준다(MARKETRY는 내 분류에서 올려서 바꾼다).
   // 예전 주소(?sheet=nxt)는 KRX 시트로 연다.
   const { data: session, isLoading: isSessionLoading } = useSession()
-  const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
+  const isAdmin = isAdminSession(session)
   const isLoggedIn = useIsLoggedIn()
   const { requireLogin } = useLoginGate()
   // 로그인 여부가 확정된 비로그인 — 세션을 확인하는 동안은 아직 모르므로 내 분류 선택을 그대로 둔다.

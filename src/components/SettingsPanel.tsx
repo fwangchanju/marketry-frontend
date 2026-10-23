@@ -23,10 +23,10 @@ import { commitDrafts, discardDrafts, useHasDrafts } from '@/utils/settingsDraft
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { isAdminSession } from '@/utils/adminAccess'
 
 export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'special' | 'graph'
 const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage'])
-// 특별 회원과 운영자만 보는 탭(실험) — 색은 특별 회원 표시색(웜 골드)이다.
 const SPECIAL_SECTIONS: ReadonlySet<string> = new Set(['special'])
 
 interface SettingsPanelGroupProps {
@@ -2485,8 +2485,8 @@ export default function SettingsPanel({
   }, [isOpen, mounted])
   // 관리자 전용 탭은 호출부가 실수로 넘겨도 관리자 세션이 아니면 그리지 않는다(서버도 /api/admin/**은 ADMIN만 허용한다).
   const session = useSession().data
-  const isAdminSession = session?.role === 'ADMIN'
-  const isSpecialSession = isAdminSession || session?.special === true
+  const isAdminSessionNow = isAdminSession(session)
+  const isSpecialSession = isAdminSessionNow || session?.special === true
   const childNodes = Children.toArray(children)
   const sectionContent = new Map<SettingsPanelSectionId, ReactNode[]>()
   const addSectionContent = (section: SettingsPanelSectionId, content: ReactNode) => {
@@ -2508,7 +2508,7 @@ export default function SettingsPanel({
   const selectedTaxonomy: TaxonomyKey = taxonomy ?? (isCustom ? 'MARKETRY' : 'KRX')
   const handleSelectTaxonomy = onSelectTaxonomy ?? (() => onToggleCustom?.())
 
-  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSession || !ADMIN_ONLY_SECTIONS.has(section.id)) && (isSpecialSession || !SPECIAL_SECTIONS.has(section.id)))
+  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSessionNow || !ADMIN_ONLY_SECTIONS.has(section.id)) && (isSpecialSession || !SPECIAL_SECTIONS.has(section.id)))
   if (sectionOrder) {
     availableSections.sort((a, b) => sectionOrder.indexOf(a.id) - sectionOrder.indexOf(b.id))
   }

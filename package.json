@@ -9,6 +9,7 @@
     "dev:mock": "vite --mode mock",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "node --test src/utils/*.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

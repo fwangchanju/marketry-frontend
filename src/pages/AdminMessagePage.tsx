@@ -25,6 +25,7 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { HistoryIcon, SaveIcon } from '@/components/icons/AppIcons'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
+import { isAdminSession } from '@/utils/adminAccess'
 
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
 
@@ -36,7 +37,7 @@ function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
   }
 }
 
-// 샘플 이미지(2026-10-20 마감)와 같이 나가는 메시지 예시 — 두 시장을 합친 그룹 중 등락률이 가장 높은 그룹(상위)과 가장 낮은 그룹(하위)이다.
+// 샘플 이미지와 같이 나가는 메시지 예시 — 두 시장을 합친 그룹 중 등락률이 가장 높은 그룹(상위)과 가장 낮은 그룹(하위)이다.
 const SAMPLE_CAPTION = ['신규 상장 +0.16% / 필수소비재 +0.16%', '#애프터'].join('\n')
 
 // 서버가 저장할 때 하는 검사와 같은 기준 — 어긋난 값은 저장 버튼을 막아 서버 오류를 피한다.
@@ -60,7 +61,7 @@ function isSameDraft(a: TelegramSendSettingInput, b: TelegramSendSettingInput) {
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다.
 export default function AdminMessagePage() {
   const { data: session, isLoading } = useSession()
-  const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
+  const isAdmin = isAdminSession(session)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
