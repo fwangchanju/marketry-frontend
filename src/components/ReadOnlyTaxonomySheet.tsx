@@ -484,7 +484,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
         {/* 내 분류와 같은 표·테두리·스크롤 규칙을 쓴다. 마지막 열은 남는 폭을 받아 KRX의 NXT가 대·중·소분류 합계 폭과 일치한다. */}
         <table className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1" style={{ minWidth: stockTableMinWidthPx(STOCK_COLUMN_KEYS) }}>
           <StockTableColGroup keys={STOCK_COLUMN_KEYS} />
-          <thead className="sticky top-0 z-10">
+          <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th className="cursor-pointer bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white" style={CHECKBOX_CELL_STYLE} onClick={toggleSelectAllVisible}>
                 <input

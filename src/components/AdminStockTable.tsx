@@ -765,8 +765,8 @@ const AdminStockRow = memo(function AdminStockRow({
     : isRowHovered || editingCells.size > 0
       ? 'bg-[var(--brand)]/20'
       : ''
-  // 마우스를 올린 줄에서 고칠 수 있는 칸(대·중·소분류, 약칭)은 청록, 나머지 칸은 회색(설정창·표 헤더색)으로 칠해 구분한다 — 선택한 줄은 전체를 청록으로 칠한다.
-  const readOnlyHoverClass = isSelected ? rowHoverClass : isRowHovered || editingCells.size > 0 ? 'bg-ui-panel' : ''
+  // 고칠 수 있는 칸은 청록, 읽기 전용 칸은 머리글보다 어두운 표면색으로 구분한다 — 선택한 줄은 전체를 청록으로 칠한다.
+  const readOnlyHoverClass = isSelected ? rowHoverClass : isRowHovered || editingCells.size > 0 ? 'bg-ui-surface' : ''
 
   // 대분류 팝업엔 최상위 섹터만, 중분류 팝업엔 "지금 이 종목의 대분류"의 자식만, 소분류 팝업엔
   // "지금 이 종목의 중분류"의 자식만 보여준다. sectorId(실제 배정된 섹터)를 parentId로 거슬러
@@ -1707,7 +1707,7 @@ export default function AdminStockTable({
           {/* 표 글자는 드래그해도 파랗게 선택되지 않게 한다(줄 드래그 선택과 겹치기 때문). 입력창 안의 글자는 그대로 선택할 수 있다. */}
           <table style={{ minWidth: stockTableMinWidthPx(columnKeys) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [&_input]:select-text [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
           <StockTableColGroup keys={columnKeys} />
-          <thead className="sticky top-0 z-10">
+          <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th
                 className="cursor-pointer bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white"

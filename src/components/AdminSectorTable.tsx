@@ -803,7 +803,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           {(['대분류', '중분류', '소분류'] as const).map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">
               {(() => {
-                const headerClass = `flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 bg-[var(--ui-panel)] text-sm font-bold ${index < 2 ? 'border-r border-ui-white/20' : ''} ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`
+                const headerClass = `flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 bg-[var(--ui-panel)] text-sm font-bold shadow-[inset_0_-1px_0_var(--ui-border)] ${index < 2 ? 'border-r border-ui-white/20' : ''} ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`
                 const depth = index
                 const excluded = excludedByDepth[depth] ?? new Set<string>()
                 const headerContent = (
