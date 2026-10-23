@@ -40,6 +40,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
+import { HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { isMarketValueExcluded, type MarketValueExclusions } from '@/utils/marketValueTier'
@@ -542,6 +543,8 @@ export default function MarketSummaryPage() {
               },
             ]
   // 렌더러(텔레그램 발송)가 /home?capture=mobile 로 열면 지도 페이지 모바일 캡처와 같은 3:4 세로 판에 툴바와 시장 지도(왼쪽)·그룹 등락률(오른쪽)만 담아 찍는다.
+  // 화면과 고정 캡처판이 같은 순서를 쓴다 — homeFrames 자체는 건드리지 않는다.
+  const orderedHomeFrames = [...homeFrames].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title))
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 준비됐다고 하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
@@ -609,7 +612,7 @@ export default function MarketSummaryPage() {
             <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
             <SortableContext items={safeHomeFrameOrder} strategy={horizontalListSortingStrategy}>
             <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
-            {homeFrames.sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title)).map((frame, frameIndex) => (
+            {orderedHomeFrames.map((frame, frameIndex) => (
               <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} showHeader={frame.title !== '시장 요약'} insetHeader={frame.title !== '시장 요약'}>
                 {frame.body}
               </SortableHomeFrame>
@@ -676,11 +679,11 @@ export default function MarketSummaryPage() {
           aria-hidden="true"
           data-home-fixed-capture
           className="fixed flex flex-col bg-ui-background"
-          style={{ left: 0, top: 0, width: 2430, height: 1080, opacity: 0, pointerEvents: 'none' }}
+          style={{ left: 0, top: 0, width: HOME_CAPTURE_FRAME_WIDTH * homeFrames.length, height: HOME_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
         >
           <div className="flex min-h-0 flex-1 bg-ui-background">
-            {homeFrames.sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title)).map(frame => (
-              <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full w-[810px] shrink-0 flex-col bg-ui-background p-1">
+            {orderedHomeFrames.map(frame => (
+              <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: HOME_CAPTURE_FRAME_WIDTH }}>
                 <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
                 <CaptureFrame title={frame.title === '시장 요약' ? '코스피' : frame.title} className="min-h-0 flex-1">
                   {frame.body as ReactNode}
