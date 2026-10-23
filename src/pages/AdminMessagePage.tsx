@@ -37,7 +37,7 @@ function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
 }
 
 // 샘플 이미지(2026-10-20 마감)와 같이 나가는 메시지 예시 — 두 시장을 합친 그룹 중 등락률이 가장 높은 그룹(상위)과 가장 낮은 그룹(하위)이다.
-const SAMPLE_CAPTION = ['필수소비재 -0.38%', '금융 -2.07%'].join('\n')
+const SAMPLE_CAPTION = ['신규 상장 +0.16% / 필수소비재 +0.16%', '#애프터'].join('\n')
 
 // 서버가 저장할 때 하는 검사와 같은 기준 — 어긋난 값은 저장 버튼을 막아 서버 오류를 피한다.
 function isValidDraft(draft: TelegramSendSettingInput, setting: TelegramSendSetting) {
