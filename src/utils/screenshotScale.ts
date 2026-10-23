@@ -65,6 +65,15 @@ const MOBILE_CAPTURE_FRAME_SELECTOR = '[data-map-mobile-capture-frame]'
 const isCapturableWithoutMobileFrame = (node: Node) =>
   isCapturable(node) && !(node instanceof Element && node.matches(MOBILE_CAPTURE_FRAME_SELECTOR))
 
+// 모바일 이미지는 원본 툴바와 별도 모바일 판만 쓴다. 데스크톱 지도를 통째로 복제하면
+// 같은 종목 박스 트리를 두 벌 직렬화하게 되어 미리보기가 늦어진다.
+function mobileCaptureFilter(root: HTMLElement) {
+  const frame = root.querySelector(MOBILE_CAPTURE_FRAME_SELECTOR)
+  const toolbar = root.querySelector('.main-toolbar')
+  return (node: Node) => isCapturable(node)
+    && !(node instanceof Element && node.parentElement === root && node !== frame && node !== toolbar)
+}
+
 // 찍을 영역 자체에 불투명한 배경색이 있으면 그 색을 찍기 바탕으로 쓴다. 바탕색 옵션이 영역의 배경색을 덮어써서, 홈처럼 영역이 검정인데
 // 바탕색이 다르면 배경이 없는 줄(아래 줄)만 다른 색으로 찍히기 때문이다. 배경이 없으면 기본 바탕색(#000000)을 쓴다.
 // 캡처 라이브러리에는 CSS 변수 대신 실제 픽셀 색을 전달한다.
@@ -85,7 +94,7 @@ function hideScrollbars(cloned: Node) {
 export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string, regionMode: 'through-right-edge' | 'element' | 'content' = 'through-right-edge', onCloneNode?: (cloned: Node) => void, horizontalPadding = 0) {
   // 복제본에는 스크롤바를 그리지 않는다 — 찍는 것은 사람이 보는 영역이라 스크롤바가 이미지에 들어갈 이유가 없다. Windows처럼 스크롤바가 자리를 차지하는 환경에서는
   // 복제본 표가 조금만 넘쳐도 이미지에 스크롤바가 찍힌다(실제 화면에는 없던 것). 레이아웃은 바꾸지 않고 스크롤바만 숨긴다.
-  const filter = regionSelector === MOBILE_CAPTURE_FRAME_SELECTOR ? isCapturable : isCapturableWithoutMobileFrame
+  const filter = regionSelector === MOBILE_CAPTURE_FRAME_SELECTOR ? mobileCaptureFilter(el) : isCapturableWithoutMobileFrame
   const base = { backgroundColor: captureBackgroundColor(el), filter, onCloneEachNode: hideScrollbars }
   const fullSize = fullScreenshotSize(el)
   const selectedRegion = regionSelector ? captureRegionRect(el, regionSelector, regionMode) : null

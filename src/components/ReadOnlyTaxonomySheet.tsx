@@ -89,7 +89,8 @@ function SortableHeader({ label, active, direction, onClick, className, width, i
   )
 }
 
-const HEADER_CELL = `sticky top-0 z-10 ${COLOR.headerBg} px-3 py-1 text-center text-sm font-bold ${COLOR.headerText}`
+// 머리글 아래 선을 셀 안쪽에 그려 첫 행과 구분한다.
+const HEADER_CELL = `sticky top-0 z-10 ${COLOR.headerBg} px-3 py-1 text-center text-sm font-bold ${COLOR.headerText} shadow-[inset_0_-1px_0_var(--ui-border)]`
 const BODY_CELL = `border-b ${COLOR.rowDivider} px-3 py-1 text-sm`
 // 종목 표 한 행의 예상 높이(글줄 20 + 위아래 여백 8 + 아래 선 1) — 실제 높이는 렌더 뒤에 다시 잰다.
 const STOCK_ROW_HEIGHT = 29
@@ -301,7 +302,7 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
               <tr
                 key={row.name}
                 {...rowProps(index)}
-                className={`cursor-pointer text-ui-muted ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/20 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-ui-panel [&:hover>td]:border-ui-white/20!'}`}
+                className={`cursor-pointer text-ui-muted ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/20 [&:hover>td]:bg-[var(--brand)]/35 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-[var(--brand)]/10 [&:hover>td]:border-ui-white/20!'}`}
               >
                 {/* 업종명 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 손잡이 24px + 4px + 번호 칸 28px + 8px = 72px. */}
                 <td className={`${BODY_CELL} relative truncate text-left !pl-[72px]`}>
@@ -483,7 +484,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
         {/* 내 분류와 같은 표·테두리·스크롤 규칙을 쓴다. 마지막 열은 남는 폭을 받아 KRX의 NXT가 대·중·소분류 합계 폭과 일치한다. */}
         <table className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1" style={{ minWidth: stockTableMinWidthPx(STOCK_COLUMN_KEYS) }}>
           <StockTableColGroup keys={STOCK_COLUMN_KEYS} />
-          <thead className="sticky top-0 z-10">
+          <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th className="cursor-pointer bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white" style={CHECKBOX_CELL_STYLE} onClick={toggleSelectAllVisible}>
                 <input
@@ -518,7 +519,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
               const row = visibleRows[virtualRow.index]
               const isKosdaq = row.market === 'KOSDAQ'
               return (
-                <tr key={row.stockCode} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} {...rowProps(virtualRow.index)} className={`cursor-pointer text-ui-muted ${selectedCodes.has(row.stockCode) ? '[&>td]:bg-[var(--brand)]/20 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-ui-panel [&:hover>td]:border-ui-white/20!'}`}>
+                <tr key={row.stockCode} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} {...rowProps(virtualRow.index)} className={`cursor-pointer text-ui-muted ${selectedCodes.has(row.stockCode) ? '[&>td]:bg-[var(--brand)]/20 [&:hover>td]:bg-[var(--brand)]/35 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-[var(--brand)]/10 [&:hover>td]:border-ui-white/20!'}`}>
                   <td className={`${STOCK_BODY_CELL} text-center`} style={CHECKBOX_CELL_STYLE}>
                     <input
                       type="checkbox"

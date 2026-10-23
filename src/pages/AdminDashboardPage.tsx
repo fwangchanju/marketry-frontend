@@ -120,41 +120,20 @@ export default function AdminDashboardPage() {
                 </Toolbar>
                 {/* 차트 한 개가 한 칸 — 화면을 가득 채우지 않고 칸 크기는 고정이며, 차트가 늘면 칸이 옆·아래로 늘어난다. */}
                 <div className="grid min-h-0 flex-1 auto-rows-[280px] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] content-start gap-3 overflow-auto pb-1">
-                  <ChartFrame
-                    title="일별 접속 회원 수"
-                    note="하루에 접속한 서로 다른 회원 수"
-                  >
-                    {dailyAccess.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
-                    ) : dailyAccess.data ? (
-                      <DailyAccessChart rows={dailyAccess.data} />
-                    ) : (
-                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
-                    )}
-                  </ChartFrame>
-                  <ChartFrame title="일별 신규 가입" note={`하루에 가입한 회원 수 · 최근 ${signupPeriod}일`}>
-                    {signups.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
-                    ) : signups.data ? (
-                      <DailyAccessChart rows={signups.data.map(row => ({ date: row.date, members: row.joined }))} ariaLabelPrefix="일별 신규 가입" />
-                    ) : (
-                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
-                    )}
-                  </ChartFrame>
-                  <ChartFrame title="누적 회원 수" note={`가입 시점부터 쌓인 전체 회원 수 · 최근 ${signupPeriod}일`}>
-                    {signups.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
-                    ) : signups.data ? (
-                      <GrowthLineChart rows={signups.data} />
-                    ) : (
-                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
-                    )}
-                  </ChartFrame>
-                  <ChartFrame title="일별 방문자 수" note={`로그인하지 않고 들어온 사람 · 하루 기준 · 최근 ${signupPeriod}일`}>
+                  <ChartFrame title="방문자 수" note={`로그인하지 않고 들어온 사람 · 하루 기준 · 최근 ${signupPeriod}일`}>
                     {visitors.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                     ) : visitors.data ? (
-                      <DailyAccessChart rows={visitors.data.map(row => ({ date: row.date, members: row.visitors }))} ariaLabelPrefix="일별 비회원 방문자 수" />
+                      <DailyAccessChart rows={visitors.data.map(row => ({ date: row.date, members: row.visitors }))} ariaLabelPrefix="비회원 방문자 수" />
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
+                  <ChartFrame title="신규 가입" note={`하루에 가입한 회원 수 · 최근 ${signupPeriod}일`}>
+                    {signups.isError ? (
+                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                    ) : signups.data ? (
+                      <DailyAccessChart rows={signups.data.map(row => ({ date: row.date, members: row.joined }))} ariaLabelPrefix="신규 가입" />
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
@@ -172,6 +151,19 @@ export default function AdminDashboardPage() {
                           <span className="text-xs text-ui-muted">방문자를 세기 시작한 {countedDays.length}일 기준</span>
                         </div>
                       )
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
+                  <PlannedChartFrame title="첫 분류 완료율" note="가입 후 7일 안에 종목을 직접 내 분류에 배정한 회원 비율" />
+                  <ChartFrame
+                    title="접속 회원 수"
+                    note="하루에 접속한 서로 다른 회원 수"
+                  >
+                    {dailyAccess.isError ? (
+                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                    ) : dailyAccess.data ? (
+                      <DailyAccessChart rows={dailyAccess.data} />
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
@@ -195,6 +187,17 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
+                  <PlannedChartFrame title="7일 재방문율" note="가입 다음 날부터 7일 안에 다시 접속한 회원 비율" />
+                  <ChartFrame title="누적 회원 수" note={`가입 시점부터 쌓인 전체 회원 수 · 최근 ${signupPeriod}일`}>
+                    {signups.isError ? (
+                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                    ) : signups.data ? (
+                      <GrowthLineChart rows={signups.data} />
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
+                  <PlannedChartFrame title="화면 속도·오류" note="주요 화면의 지연·오류와 모바일 지도 캡처 시간" />
                 </div>
               </section>
             )}
@@ -215,9 +218,9 @@ export default function AdminDashboardPage() {
                   <div className="settings-plain-content">
                     <div className="settings-ops-item h-[180px] text-sm">
                       <div className="settings-custom-control">
-                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일별 접속 기간</h2>
-                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">일별 접속 회원 수 차트에 보여 줄 기간</p>
-                        <SettingsSegmentedControl label="일별 접속 기간" options={PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={period} onChange={setPeriod} />
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">접속 추이 기간</h2>
+                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">접속 회원 수 차트에 보여 줄 기간</p>
+                        <SettingsSegmentedControl label="접속 추이 기간" options={PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={period} onChange={setPeriod} />
                       </div>
                     </div>
                     <div className="settings-ops-item h-[180px] text-sm">
@@ -259,4 +262,8 @@ function ChartFrame({ title, note, actions, children }: { title: string; note: s
       <div className="mt-3 flex min-h-0 flex-1 items-end">{children}</div>
     </section>
   )
+}
+
+function PlannedChartFrame({ title, note }: { title: string; note: string }) {
+  return <ChartFrame title={title} note={note}><p className="m-auto text-sm text-ui-muted">추가 예정</p></ChartFrame>
 }

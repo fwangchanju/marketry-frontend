@@ -12,7 +12,7 @@ function dateLabel(date: string, index: number, total: number) {
 // 일별 사람 수 막대그래프 — 막대 위에 사람 수, 아래에 날짜를 적는다. 가장 큰 날이 가득 찬 높이다.
 // 0명인 날은 흐린 얇은 막대로 둔다(날짜가 빠진 것이 아니라 0명이라는 뜻). 31일을 넘으면 막대가 가늘어져서
 // 사람 수는 0명이 아닌 날에만 적는다.
-export default function DailyAccessChart({ rows, ariaLabelPrefix = '일별 접속 회원 수' }: { rows: { date: string; members: number }[]; ariaLabelPrefix?: string }) {
+export default function DailyAccessChart({ rows, ariaLabelPrefix = '접속 회원 수' }: { rows: { date: string; members: number }[]; ariaLabelPrefix?: string }) {
   const max = Math.max(1, ...rows.map(row => row.members))
   const dense = rows.length > 31
   return (

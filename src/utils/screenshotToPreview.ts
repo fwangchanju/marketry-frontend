@@ -22,7 +22,11 @@ async function cropMobileCaptureBottom(dataUrl: string, cropPixels: number): Pro
 export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector?: string, regionMode?: 'through-right-edge' | 'element' | 'content', onCloneNode?: (cloned: Node) => void, horizontalPadding = 0): Promise<string> {
   const options = shareScreenshotOptions(el, regionSelector, regionMode, onCloneNode, horizontalPadding)
   // 글꼴은 찍을 영역에 쓰인 조각만 넣는다(전부 넣으면 캡처마다 글꼴 조각 277개를 내려받는다). 고르지 못하면 라이브러리 기본 동작이다.
-  const fontCss = await fontCssFor(el)
+  const mobileFrame = regionSelector === '[data-map-mobile-capture-frame]'
+    ? el.querySelector<HTMLElement>(regionSelector)
+    : null
+  const toolbar = mobileFrame ? el.querySelector<HTMLElement>('.main-toolbar') : null
+  const fontCss = await fontCssFor(mobileFrame && toolbar ? [mobileFrame, toolbar] : el)
   const dataUrl = await domToPng(el, fontCss ? { ...options, font: { cssText: fontCss } } : options)
   if (regionSelector !== '[data-map-mobile-capture-frame]') return dataUrl
 
