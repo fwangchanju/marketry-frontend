@@ -759,14 +759,14 @@ const AdminStockRow = memo(function AdminStockRow({
       return next
     })
   }
-  // 마우스를 올린 줄과 선택한 줄은 같은 청록으로 칠한다.
+  // 마우스를 올린 줄과 선택한 줄은 같은 청록 계열로 칠하고, 선택한 줄을 다시 가리키면 한 단계 진하게 표시한다.
   const rowHoverClass = isSelected
-    ? 'bg-[var(--brand)]/20 border-ui-white/20!'
+    ? isRowHovered ? 'bg-[var(--brand)]/35 border-ui-white/20!' : 'bg-[var(--brand)]/20 border-ui-white/20!'
     : isRowHovered || editingCells.size > 0
-      ? 'bg-[var(--brand)]/20'
+      ? 'bg-[var(--brand)]/20 border-ui-white/20!'
       : ''
-  // 고칠 수 있는 칸은 청록, 읽기 전용 칸은 머리글보다 어두운 표면색으로 구분한다 — 선택한 줄은 전체를 청록으로 칠한다.
-  const readOnlyHoverClass = isSelected ? rowHoverClass : isRowHovered || editingCells.size > 0 ? 'bg-ui-surface' : ''
+  // 읽기 전용 칸은 업종 표와 같은 옅은 청록, 편집 칸은 한 단계 진한 청록으로 구분한다.
+  const readOnlyHoverClass = isSelected ? rowHoverClass : isRowHovered || editingCells.size > 0 ? 'bg-[var(--brand)]/10 border-ui-white/20!' : ''
 
   // 대분류 팝업엔 최상위 섹터만, 중분류 팝업엔 "지금 이 종목의 대분류"의 자식만, 소분류 팝업엔
   // "지금 이 종목의 중분류"의 자식만 보여준다. sectorId(실제 배정된 섹터)를 parentId로 거슬러

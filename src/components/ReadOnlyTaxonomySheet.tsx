@@ -302,7 +302,7 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
               <tr
                 key={row.name}
                 {...rowProps(index)}
-                className={`cursor-pointer text-ui-muted ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/20 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-ui-surface [&:hover>td]:border-ui-white/20!'}`}
+                className={`cursor-pointer text-ui-muted ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/20 [&:hover>td]:bg-[var(--brand)]/35 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-[var(--brand)]/10 [&:hover>td]:border-ui-white/20!'}`}
               >
                 {/* 업종명 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 손잡이 24px + 4px + 번호 칸 28px + 8px = 72px. */}
                 <td className={`${BODY_CELL} relative truncate text-left !pl-[72px]`}>
@@ -519,7 +519,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
               const row = visibleRows[virtualRow.index]
               const isKosdaq = row.market === 'KOSDAQ'
               return (
-                <tr key={row.stockCode} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} {...rowProps(virtualRow.index)} className={`cursor-pointer text-ui-muted ${selectedCodes.has(row.stockCode) ? '[&>td]:bg-[var(--brand)]/20 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-ui-surface [&:hover>td]:border-ui-white/20!'}`}>
+                <tr key={row.stockCode} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} {...rowProps(virtualRow.index)} className={`cursor-pointer text-ui-muted ${selectedCodes.has(row.stockCode) ? '[&>td]:bg-[var(--brand)]/20 [&:hover>td]:bg-[var(--brand)]/35 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-[var(--brand)]/10 [&:hover>td]:border-ui-white/20!'}`}>
                   <td className={`${STOCK_BODY_CELL} text-center`} style={CHECKBOX_CELL_STYLE}>
                     <input
                       type="checkbox"
