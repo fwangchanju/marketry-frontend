@@ -14,7 +14,6 @@ export const SETTINGS_SCHEMA_VERSION = 1
 
 type Preferences = Record<string, unknown>
 
-// 지금은 옮길 규칙이 없다.
 const MIGRATIONS: Record<number, (preferences: Preferences) => Preferences> = {}
 
 export function migratePreferences(raw: Preferences): { preferences: Preferences; changed: boolean } {

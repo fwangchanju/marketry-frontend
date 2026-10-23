@@ -33,6 +33,7 @@ import ColumnFilterButton, { SectorOrderToggle } from '@/components/ColumnFilter
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { DownloadIcon, UploadIcon } from './icons/AppIcons'
+import { isAdminSession } from '@/utils/adminAccess'
 
 interface Props {
   items: StockSectorListItem[]
@@ -956,7 +957,7 @@ export default function AdminStockTable({
   const updateAlias = useUpdateStockAlias()
   // 약칭 지정은 관리자 전용이다 — 관리자의 약칭은 MARKETRY로 올릴 내용에만 쓰이고, 다른 사용자의 데이터는 건드리지 않는다.
   // 일반 사용자에게는 약칭 값을 보여주지도 수정하게 하지도 않는다(백엔드도 관리자만 허용한다). 열 자리만 빈칸으로 두어 다른 시트와 열 위치를 맞춘다.
-  const isAdmin = useSession().data?.role === 'ADMIN'
+  const isAdmin = isAdminSession(useSession().data)
   // 약칭 열은 관리자에게만 보인다 — 일반 사용자의 표에서는 열 자체를 뺀다. 이때 종목명 열이 약칭 자리까지 차지해서(StockTableColGroup) 나머지 열 위치는 같다.
   // 열 폭 표(colgroup)는 약칭 열을 그대로 두고, 일반 사용자는 머리글·본문에서 종목명 칸이 두 칸(colSpan 2)을 차지한다 — 그래서 나머지 열 폭이 MARKETRY 표와 똑같다.
   const columns = useMemo(() => (isAdmin ? COLUMNS : COLUMNS.filter(col => col.key !== 'alias')), [isAdmin])

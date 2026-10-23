@@ -23,6 +23,7 @@ import { createStockMatcher } from '@/utils/stockSearch'
 import { collectItems } from '@/utils/sectorAverage'
 import { SortIcon } from '@/components/icons/AppIcons'
 import { useSession } from '@/hooks/useSession'
+import { isAdminSession } from '@/utils/adminAccess'
 
 const MARKET_LABEL: Record<Market, string> = { KOSPI: '코스피', KOSDAQ: '코스닥' }
 
@@ -144,7 +145,7 @@ function collectSectorRows(nodes: TreemapResponse['items'], parentPath: string[]
 // 분류(/map?source=...)를 그대로 표로 보여준다. 시세가 있는 종목만 내려오므로 거래정지 종목 등은 빠질 수 있다.
 export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, onRetry, source, nxtStockCodes, stockMarkets, stockIndustries, isNxtLoading, onCountLabelChange, toolbarContainer }: Props) {
   // 약칭 열은 MARKETRY 표와 관리자에게만 보인다.
-  const isAdmin = useSession().data?.role === 'ADMIN'
+  const isAdmin = isAdminSession(useSession().data)
   const sectors = useMemo<SectorRow[]>(() => {
     if (!data) return []
     // 업종 표는 최상위 업종별로 하위 종목까지 집계하고, 종목 표는 실제 배정 업종별로 펼친다.

@@ -9,6 +9,7 @@ import { useSession } from '@/hooks/useSession'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
+import { isAdminSession } from '@/utils/adminAccess'
 
 // 관리자 전용 페이지 — 모든 사용자가 보는 MARKETRY 맵을 바꾸는 작업을 일반 작업 화면(Custom)과 떨어뜨려 둔다.
 // 메인 영역은 회원 정보 조회. 운영 기능은 Custom, 미사용 설정은 Map의 관리자 전용 탭에 있다.
@@ -16,7 +17,7 @@ import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/sc
 // (자동으로 홈으로 보내면 로그인이 끝나기 전에 잘못 쫓겨날 수 있다).
 export default function AdminPage() {
   const { data: session, isLoading } = useSession()
-  const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
+  const isAdmin = isAdminSession(session)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
@@ -70,7 +71,7 @@ export default function AdminPage() {
             ) : !isAdmin ? (
               <p className="text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
-              <AdminMembers key={session.userId} userId={session.userId!} summaryContainer={summaryTarget} exportContainer={exportTarget} specialContainer={specialTarget} nicknameContainer={nicknameTarget} />
+              <AdminMembers key={session!.userId} userId={session!.userId!} summaryContainer={summaryTarget} exportContainer={exportTarget} specialContainer={specialTarget} nicknameContainer={nicknameTarget} />
             )}
           </div>
           {isAdmin && (

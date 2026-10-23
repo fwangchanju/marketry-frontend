@@ -101,7 +101,7 @@ export default function StockBox({
         width,
         height,
         backgroundColor,
-        // 상한가·하한가 부근의 포인트 색(분홍/하늘)처럼 밝은 배경에서는 흰 글자가 안 읽혀 어두운 글자를 쓴다.
+        // 상한가·하한가 부근의 포인트 색처럼 밝은 배경에서는 흰 글자가 안 읽혀 어두운 글자를 쓴다.
         color: isLightColor(backgroundColor) ? 'var(--ui-surface)' : undefined,
         '--treemap-base-color': backgroundColor,
       } as CSSProperties}

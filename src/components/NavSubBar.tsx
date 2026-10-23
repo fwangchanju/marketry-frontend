@@ -5,6 +5,7 @@ import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/
 import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
 import { useSession } from '@/hooks/useSession'
+import { isAdminSession } from '@/utils/adminAccess'
 
 interface MenuOption {
   label: string
@@ -14,7 +15,7 @@ interface MenuOption {
 interface MenuLink {
   to: string
   label: string
-  // 글자 앞 아이콘 — 각 페이지 설정창 메뉴 줄의 아이콘을 그대로 쓴다(홈은 예전 설정창에서 쓰던 집 모양).
+  // 글자 앞 아이콘 — 각 페이지 설정창 메뉴 줄의 아이콘을 그대로 쓴다.
   icon: NavIconName
   // 관리자 전용 메뉴 — 글자 색만 관리자 전용 색이다.
   admin?: boolean
@@ -22,7 +23,7 @@ interface MenuLink {
   options?: MenuOption[]
 }
 
-// Map·Graph는 ALL STOCK / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다(예전 화면 왼쪽 위 드롭다운과 같은 목록·순서).
+// Map·Graph는 ALL STOCK / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다.
 const BASE_LINKS: MenuLink[] = [
   { to: '/home', label: 'Home', icon: 'home' },
   { to: '/map/allstock', label: 'Map', icon: 'composition', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/map', option.market) })) },
@@ -98,7 +99,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   const navigate = useNavigate()
   // 관리자 계정에만 Admin 메뉴가 더 보인다 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
   const { data: session, isLoading: isSessionLoading } = useSession()
-  const isAdmin = !isSessionLoading && session?.authenticated === true && session.role === 'ADMIN'
+  const isAdmin = !isSessionLoading && isAdminSession(session)
   const links = isAdmin ? [...BASE_LINKS, CUSTOM_LINK, ADMIN_LINK] : [...BASE_LINKS, CUSTOM_LINK]
   const [openTo, setOpenTo] = useState<string | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
