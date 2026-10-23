@@ -30,7 +30,17 @@ export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector
   return cropMobileCaptureBottom(dataUrl, Math.round(4 * options.scale))
 }
 
-// 텔레그램 홈 모바일 판과 같은 810×1080 픽셀로 저장한다. 별도 리샘플링을 거치면 배지 글자 위치가 달라진다.
+// 텔레그램 홈 모바일 판과 같은 크기(픽셀).
+export const HOME_CAPTURE_FRAME_WIDTH = 810
+export const HOME_CAPTURE_FRAME_HEIGHT = 1080
+// 상단 정보(왼쪽 툴바와 오른쪽 배지)가 고정 폭에 다 들어가지 않을 때 — 사용자에게 안내 문구를 그대로 보여 준다.
+export class CaptureWidthError extends Error {
+  constructor() {
+    super('캡처 폭에 상단 정보가 모두 들어가지 않습니다.')
+  }
+}
+
+// 텔레그램 홈 모바일 판과 같은 크기(픽셀)로 저장한다. 별도 리샘플링을 거치면 배지 글자 위치가 달라진다.
 // 툴바는 각 틀 안에 원래 글자 크기로 배치해 전체 상단줄을 축소하지 않는다.
 export async function screenshotFixedHomeFrameToDataUrl(root: HTMLElement, selector: string): Promise<string> {
   const frame = root.querySelector(selector)?.closest<HTMLElement>('[data-capture-fixed-frame]')
@@ -39,9 +49,9 @@ export async function screenshotFixedHomeFrameToDataUrl(root: HTMLElement, selec
   const left = toolbar?.firstElementChild as HTMLElement | null
   const right = toolbar?.lastElementChild as HTMLElement | null
   if (!toolbar || !left || !right || left.scrollWidth + right.scrollWidth + 12 > toolbar.clientWidth) {
-    throw new Error('캡처 폭에 상단 정보가 모두 들어가지 않습니다.')
+    throw new CaptureWidthError()
   }
-  if (frame.offsetWidth !== 810 || frame.offsetHeight !== 1080) throw new Error('Fixed home capture size is invalid')
+  if (frame.offsetWidth !== HOME_CAPTURE_FRAME_WIDTH || frame.offsetHeight !== HOME_CAPTURE_FRAME_HEIGHT) throw new Error('Fixed home capture size is invalid')
   const options = { ...shareScreenshotOptions(frame), scale: 1 }
   const fontCss = await fontCssFor(frame)
   return domToPng(frame, fontCss ? { ...options, font: { cssText: fontCss } } : options)

@@ -1,6 +1,6 @@
 import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useState } from 'react'
-import { screenshotElementToDataUrl, screenshotFixedHomeFrameToDataUrl } from '@/utils/screenshotToPreview'
+import { CaptureWidthError, screenshotElementToDataUrl, screenshotFixedHomeFrameToDataUrl } from '@/utils/screenshotToPreview'
 import { captureRegionRect, fullScreenshotSize } from '@/utils/screenshotScale'
 import { CheckIcon, CopyIcon, HomeFrameCaptureIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
@@ -159,7 +159,7 @@ export default function ScreenshotModal({
           }
         } catch (error) {
           window.clearTimeout(timeoutId)
-          failCapture(error instanceof Error && error.message === '캡처 폭에 상단 정보가 모두 들어가지 않습니다.'
+          failCapture(error instanceof CaptureWidthError
             ? error.message
             : '화면을 캡처하지 못했습니다. 다시 시도해 주세요.')
         }
