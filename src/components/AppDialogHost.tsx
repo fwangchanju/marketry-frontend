@@ -69,7 +69,11 @@ export default function AppDialogHost() {
             {dialog.adminOnly && ' ⚠'}
           </span>
         </h2>
-        <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-ui-background">{dialog.message}</p>
+        <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-ui-background">
+          {dialog.message}
+          {dialog.mutedMessage && <><br /><span className="text-[var(--ui-control)]">{dialog.mutedMessage}</span></>}
+          {dialog.followupMessage && <><br />{dialog.followupMessage}</>}
+        </p>
         <div className="mt-auto flex justify-end gap-2 pt-3">
           {dialog.kind === 'confirm' && (
             <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover">
