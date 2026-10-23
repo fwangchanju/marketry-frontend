@@ -89,7 +89,8 @@ function SortableHeader({ label, active, direction, onClick, className, width, i
   )
 }
 
-const HEADER_CELL = `sticky top-0 z-10 ${COLOR.headerBg} px-3 py-1 text-center text-sm font-bold ${COLOR.headerText}`
+// 첫 행에 마우스가 올라가면 머리글과 같은 패널색이 된다. 머리글 아래 선을 셀 안쪽에 그려 두 영역을 구분한다.
+const HEADER_CELL = `sticky top-0 z-10 ${COLOR.headerBg} px-3 py-1 text-center text-sm font-bold ${COLOR.headerText} shadow-[inset_0_-1px_0_var(--ui-border)]`
 const BODY_CELL = `border-b ${COLOR.rowDivider} px-3 py-1 text-sm`
 // 종목 표 한 행의 예상 높이(글줄 20 + 위아래 여백 8 + 아래 선 1) — 실제 높이는 렌더 뒤에 다시 잰다.
 const STOCK_ROW_HEIGHT = 29
