@@ -749,8 +749,8 @@ export default function MapPage() {
               data-map-mobile-capture-frame
               data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
               data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
-              // 스크린샷 창의 복제본은 아래 4px를 이미지에서 잘라 내므로 그만큼 더 길게 두고, 렌더러가 찍는 판은 화면 왼쪽 위에 딱 맞게 둔다.
-              style={{ opacity: 0, width: 'calc(100dvh * 3 / 4 + 8px)', height: isMobileCaptureMode ? '100dvh' : 'calc(100dvh + 4px)', padding: '4px 4px 0', boxSizing: 'border-box' }}
+              // 스크린샷 창의 복제본은 아래 4px를 이미지에서 잘라 내므로 그만큼 더 길게 두고, 렌더러가 찍는 판은 화면 왼쪽 위에 딱 맞게 두고 시장 요약 이미지와 같은 810×1080으로 맞춘다.
+              style={{ opacity: 0, width: isMobileCaptureMode ? 'calc(100dvh * 3 / 4)' : 'calc(100dvh * 3 / 4 + 8px)', height: isMobileCaptureMode ? '100dvh' : 'calc(100dvh + 4px)', padding: '4px 4px 0', boxSizing: 'border-box' }}
               className={`pointer-events-none ${isMobileCaptureMode ? 'fixed z-[200]' : 'absolute z-[60]'} left-0 top-0 bg-ui-background`}
             >
             <div
@@ -843,7 +843,6 @@ export default function MapPage() {
               </SettingsPanelGroup>
               {isSpecialMember && <SettingsPanelGroup section="special">
                 <div className="settings-plain-content">
-                  <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setAdminBoxLabelMinAreaPercent} />
                   <SettingsSectorChangeSection
                     value={adminSectorChangeFilter === 'rising' || adminSectorChangeFilter === 'falling' ? adminSectorChangeFilter : 'all'}
                     onChange={setAdminSectorChangeFilter}
@@ -852,6 +851,7 @@ export default function MapPage() {
                     maxSelectableDepth={3}
                   />
                   <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setAdminStockPopupOnHover} />
+                  <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setAdminBoxLabelMinAreaPercent} />
                 </div>
               </SettingsPanelGroup>}
             </SettingsPanel>
