@@ -186,11 +186,11 @@ export default function AdminMessagePage() {
                           {/* 한 메시지에 두 장이 앨범으로 나간다 — 왼쪽이 시장 요약(홈 화면), 오른쪽이 시장 지도(지도 페이지 모바일 캡처). */}
                           <div className="mt-2 flex items-start gap-2">
                             <figure className="m-0">
-                              <img src={sampleImage} alt="텔레그램으로 나가는 이미지 예시 — 시장 요약(시장 지도와 그룹 등락률)" className="block h-[420px] w-auto rounded-sm border border-ui-border" draggable={false} />
+                              <img src={sampleImage} alt="텔레그램으로 나가는 이미지 예시 — 시장 요약(시장 지도와 그룹 등락률)" className="block h-[420px] w-auto rounded-sm" draggable={false} />
                               <figcaption className="mt-1 text-center text-xs text-ui-muted">시장 요약</figcaption>
                             </figure>
                             <figure className="m-0">
-                              <img src={sampleMapImage} alt="텔레그램으로 나가는 이미지 예시 — 시장 지도" className="block h-[420px] w-auto rounded-sm border border-ui-border" draggable={false} />
+                              <img src={sampleMapImage} alt="텔레그램으로 나가는 이미지 예시 — 시장 지도" className="block h-[420px] w-auto rounded-sm" draggable={false} />
                               <figcaption className="mt-1 text-center text-xs text-ui-muted">시장 지도</figcaption>
                             </figure>
                           </div>
