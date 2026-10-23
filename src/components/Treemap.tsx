@@ -4,6 +4,7 @@ import SectorBox from './SectorBox'
 import Popup, { type PopupContent, type PopupState } from './Popup'
 import type { ColorScaleConfig } from '@/utils/treemapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
+import { useStockDrag, type StockDrop } from '@/hooks/useStockDrag'
 
 interface Props {
   groups: DisplayGroup[]
@@ -43,6 +44,9 @@ interface Props {
   // 0이 아닌 뎁스가 오면 그 뎁스로 진입할 때 썼던 위치로 줄어드는 애니메이션을 재생한다.
   zoomOutRequestDepth: number | null
   onZoomOutComplete: (depth: number) => void
+  // 실험 탭의 종목 이동 — 켜져 있으면 종목 박스를 끌어 다른 업종에 놓을 수 있고, 놓으면 onMoveStock을 부른다(저장은 부르는 쪽 몫이다).
+  stockMoveEnabled?: boolean
+  onMoveStock?: (drop: StockDrop) => void
 }
 
 // 컨테이너 기준 0~1 비율 좌표 — 컨테이너 크기가 나중에 달라져도(리사이즈) 값이 그대로 유효하다.
@@ -120,8 +124,11 @@ export default function Treemap({
   strongIndustryColor,
   zoomOutRequestDepth,
   onZoomOutComplete,
+  stockMoveEnabled = false,
+  onMoveStock,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
+  useStockDrag(containerRef, stockMoveEnabled && onMoveStock !== undefined, drop => onMoveStock?.(drop))
   const [size, setSize] = useState({ width: 0, height: 0 })
   const [popup, setPopup] = useState<PopupState | null>(null)
   // 실제(현재) 콘텐츠 wrapper에 거는 transform/opacity — 줌인일 때만 쓴다(작게 시작해서 꽉 차게 커짐).

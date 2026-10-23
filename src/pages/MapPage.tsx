@@ -3,6 +3,8 @@ import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { createPortal } from 'react-dom'
 import { useSettled } from '@/hooks/useSettled'
+import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
+import type { StockDrop } from '@/hooks/useStockDrag'
 import { useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
@@ -19,6 +21,7 @@ import SettingsPanel, {
   SettingsStockSizeSelector,
   SettingsSectorChangeSection,
   SettingsTextThresholdSection,
+  SettingsStockMoveSection,
   SettingsStockPopupSection,
   type SettingsPanelSectionId,
 } from '@/components/SettingsPanel'
@@ -52,8 +55,7 @@ import { appAlert } from '@/utils/appDialogBus'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { limitDepth, flattenAllItems, type FilteredTreemapSectorNode, type SectorChangeFilter } from '@/hooks/useFilteredTreemap'
-import { useBrowserSetting } from '@/utils/browserSetting'
-import { usePageSetting } from '@/hooks/usePageSetting'
+import { useTransientSetting } from '@/hooks/useTransientSetting'
 import { MEMBER_DEFAULTS } from '@/utils/settingDefaults'
 import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
 
@@ -91,6 +93,8 @@ function toFlatDisplayGroup(items: TreemapItem[]): DisplayGroup {
     children: [],
   }
 }
+
+const NO_STOCK_MOVES: StockMoves = {}
 
 function toDisplayGroup(node: FilteredTreemapSectorNode): DisplayGroup {
   return {
@@ -271,16 +275,19 @@ export default function MapPage() {
   const isAdmin = session?.authenticated === true && session.role === 'ADMIN'
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
   const isSpecialMember = isAdmin || (session?.authenticated === true && session.special === true)
-  const [adminSectorChangeFilter, setAdminSectorChangeFilter] = useBrowserSetting<SectorChangeFilter>('treemap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
-  const [adminSectorChangeDepth, setAdminSectorChangeDepth] = useBrowserSetting('treemap.sectorChangeDepth', MEMBER_DEFAULTS.sectorChangeDepth)
-  const [, setAdminBoxLabelMinAreaPercent] = useBrowserSetting('treemap.boxLabelMinAreaPercent', MEMBER_DEFAULTS.boxLabelMinAreaPercent)
-  const [, setAdminStockPopupOnHover] = usePageSetting('treemap.stockPopupOnHover', MEMBER_DEFAULTS.stockPopupOnHover)
+  const [adminSectorChangeFilter, setAdminSectorChangeFilter] = useTransientSetting<SectorChangeFilter>('treemap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
+  const [adminSectorChangeDepth, setAdminSectorChangeDepth] = useTransientSetting('treemap.sectorChangeDepth', MEMBER_DEFAULTS.sectorChangeDepth)
+  const [, setAdminBoxLabelMinAreaPercent] = useTransientSetting('treemap.boxLabelMinAreaPercent', MEMBER_DEFAULTS.boxLabelMinAreaPercent)
+  const [, setAdminStockPopupOnHover] = useTransientSetting('treemap.stockPopupOnHover', MEMBER_DEFAULTS.stockPopupOnHover)
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·누적/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
   const [searchParams, setSearchParams] = useSearchParams()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
+  // 실험 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
+  const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
+  const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
   // 렌더러(텔레그램 발송)가 /map/allstock?capture=mobile 로 열면 스크린샷 창의 "모바일" 판(3:4 세로)을 화면에 그대로 펼쳐 놓고 그 틀만 찍는다.
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
@@ -308,11 +315,16 @@ export default function MapPage() {
     currentNode && effectiveMaxDepth != null && !isFullyFlattened
       ? { ...currentNode, children: limitDepth(currentNode.children, effectiveMaxDepth) }
       : currentNode
-  const groups: DisplayGroup[] = isFullyFlattened
+  const baseGroups: DisplayGroup[] = isFullyFlattened
     ? [toFlatDisplayGroup(flattenAllItems(currentNode ? [currentNode] : currentSiblings))]
     : displayNode
       ? [toDisplayGroup(displayNode)]
       : displaySiblings.map(toDisplayGroup)
+  // 실험 탭의 종목 이동 — 끌어서 옮긴 종목을 화면에서만 도착 업종으로 옮겨 그린다. 메모리에만 두고(서버·브라우저에 저장하지 않는다),
+  // 켜기를 끄거나 시장·분류를 바꾸면 쓰지 않으며 다른 페이지로 가면 상태째 사라진다.
+  const stockMoveScope = `${market}|${settingsModalProps.taxonomy}`
+  const stockMoves = stockMoveEnabled && stockMoveState.scope === stockMoveScope ? stockMoveState.moves : NO_STOCK_MOVES
+  const groups = applyStockMoves(baseGroups, stockMoves)
   const visibleItems = collectItems(groups)
   // 지금 뎁스(path) 기준으로, 섹터 제외/시가총액 구간 필터를 적용하기 전 원본 트리에 있는 전체 종목 수.
   const rawCurrentNode = findRawNodeByPath(rootNodes, path)
@@ -535,6 +547,21 @@ export default function MapPage() {
   }
 
 
+  // 끌어서 놓은 종목을 화면에서만 옮긴다. 저장되지 않는다는 안내는 켤 때 한 번만 띄운다.
+  const handleMoveStock = (drop: StockDrop) => {
+    setStockMoveState(previous => ({
+      scope: stockMoveScope,
+      moves: { ...(previous.scope === stockMoveScope ? previous.moves : {}), [drop.stockCode]: drop.targetSectorId },
+    }))
+  }
+
+  const handleChangeStockMoveEnabled = (enabled: boolean) => {
+    setStockMoveEnabled(enabled)
+    if (enabled) {
+      void appAlert('종목 이동 기능은 저장되지 않습니다.\n임시로 살펴보시고 커스텀 페이지를 이용바랍니다.', { title: '종목 이동' })
+    }
+  }
+
   const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
   // 렌더러용 모바일 판 — 데이터가 오고 트리맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
@@ -731,6 +758,8 @@ export default function MapPage() {
                     topPickSectorKeys={topPickSectorKeys}
                     strongIndustryColor={strongIndustryColor}
                     zoomOutRequestDepth={zoomOutRequestDepth}
+                    stockMoveEnabled={stockMoveEnabled && !isMobileCaptureMode}
+                    onMoveStock={handleMoveStock}
                     onZoomOutComplete={handleZoomOutComplete}
                   />
                 </div>
@@ -852,6 +881,7 @@ export default function MapPage() {
                     maxSelectableDepth={sectorChangeMaxDepth}
                     noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
                   />
+                  <SettingsStockMoveSection enabled={stockMoveEnabled} onChange={handleChangeStockMoveEnabled} />
                   <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setAdminStockPopupOnHover} />
                   <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setAdminBoxLabelMinAreaPercent} />
                 </div>
