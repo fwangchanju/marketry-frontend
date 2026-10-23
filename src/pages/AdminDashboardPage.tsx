@@ -155,6 +155,7 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
+                  <PlannedChartFrame title="첫 분류 완료율" note="가입 후 7일 안에 종목을 직접 내 분류에 배정한 회원 비율" />
                   <ChartFrame
                     title="접속 회원 수"
                     note="하루에 접속한 서로 다른 회원 수"
@@ -186,6 +187,7 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
+                  <PlannedChartFrame title="7일 재방문율" note="가입 다음 날부터 7일 안에 다시 접속한 회원 비율" />
                   <ChartFrame title="누적 회원 수" note={`가입 시점부터 쌓인 전체 회원 수 · 최근 ${signupPeriod}일`}>
                     {signups.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
@@ -195,6 +197,7 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
+                  <PlannedChartFrame title="화면 속도·오류" note="주요 화면의 지연·오류와 모바일 지도 캡처 시간" />
                 </div>
               </section>
             )}
@@ -259,4 +262,8 @@ function ChartFrame({ title, note, actions, children }: { title: string; note: s
       <div className="mt-3 flex min-h-0 flex-1 items-end">{children}</div>
     </section>
   )
+}
+
+function PlannedChartFrame({ title, note }: { title: string; note: string }) {
+  return <ChartFrame title={title} note={note}><p className="m-auto text-sm text-ui-muted">추가 예정</p></ChartFrame>
 }
