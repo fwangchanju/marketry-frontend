@@ -58,6 +58,12 @@ export function captureRegionRect(el: HTMLElement, selector: string, mode: 'thro
 // data-capture-ignore가 붙은 요소(예: 지도 위 NXT 안내창과 그 어두운 배경)는 일시적인 알림이라 공유 이미지에 담지 않는다.
 const isCapturable = (node: Node) => !(node instanceof Element && node.hasAttribute('data-capture-ignore'))
 
+// 지도는 스크린샷 창이 열려 있는 동안 모바일 캡처용 투명 트리를 하나 더 그린다. 모바일을 고르지 않았을 때는 이 트리가 이미지에 보이지 않는데도
+// 복제 대상 요소가 절반 가까이 늘어 캡처가 느려지므로(모니터 캡처 약 1.2초 → 0.7초) 모바일 캡처일 때만 포함한다.
+const MOBILE_CAPTURE_FRAME_SELECTOR = '[data-map-mobile-capture-frame]'
+const isCapturableWithoutMobileFrame = (node: Node) =>
+  isCapturable(node) && !(node instanceof Element && node.matches(MOBILE_CAPTURE_FRAME_SELECTOR))
+
 // 찍을 영역 자체에 불투명한 배경색이 있으면 그 색을 찍기 바탕으로 쓴다. 바탕색 옵션이 영역의 배경색을 덮어써서, 홈처럼 영역이 검정인데
 // 바탕색이 다르면 배경이 없는 줄(아래 줄)만 다른 색으로 찍히기 때문이다. 배경이 없으면 기본 바탕색(#000000)을 쓴다.
 // 캡처 라이브러리에는 CSS 변수 대신 실제 픽셀 색을 전달한다.
@@ -78,7 +84,8 @@ function hideScrollbars(cloned: Node) {
 export function shareScreenshotOptions(el: HTMLElement, regionSelector?: string, regionMode: 'through-right-edge' | 'element' | 'content' = 'through-right-edge', onCloneNode?: (cloned: Node) => void, horizontalPadding = 0) {
   // 복제본에는 스크롤바를 그리지 않는다 — 찍는 것은 사람이 보는 영역이라 스크롤바가 이미지에 들어갈 이유가 없다. Windows처럼 스크롤바가 자리를 차지하는 환경에서는
   // 복제본 표가 조금만 넘쳐도 이미지에 스크롤바가 찍힌다(실제 화면에는 없던 것). 레이아웃은 바꾸지 않고 스크롤바만 숨긴다.
-  const base = { backgroundColor: captureBackgroundColor(el), filter: isCapturable, onCloneEachNode: hideScrollbars }
+  const filter = regionSelector === MOBILE_CAPTURE_FRAME_SELECTOR ? isCapturable : isCapturableWithoutMobileFrame
+  const base = { backgroundColor: captureBackgroundColor(el), filter, onCloneEachNode: hideScrollbars }
   const fullSize = fullScreenshotSize(el)
   const selectedRegion = regionSelector ? captureRegionRect(el, regionSelector, regionMode) : null
   const isExpandedFullCapture = !selectedRegion && fullSize.width > el.offsetWidth

@@ -506,10 +506,11 @@ function StairRows({
 const STAIR_HANDLE_BASE =
   'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-[top,width,height,gap] duration-100'
 
-// 업종 분류 깊이 — 맵은 ︿﹀ 알약과 누적 선택, 그룹은 원형 손잡이와 단일 선택을 쓴다.
+// 업종 분류 깊이(맵)·단계(그룹) — 손잡이는 둘 다 원형 하나다. 맵은 손잡이까지 위 칸이 함께 켜지고(누적), 그룹은 손잡이가 닿은 칸 하나만 켜진다(단일).
 function DepthStairSelect({
   depth,
   labels,
+  label,
   onChange,
   disabled = false,
   maxSelectableIndex,
@@ -517,6 +518,7 @@ function DepthStairSelect({
 }: {
   depth: number
   labels: string[]
+  label: string
   onChange: (index: number) => void
   disabled?: boolean
   maxSelectableIndex: number
@@ -545,7 +547,7 @@ function DepthStairSelect({
   return (
     <div
       role="group"
-      aria-label="업종 분류 깊이"
+      aria-label={label}
       aria-disabled={disabled || undefined}
       className={`relative ${disabled ? 'pointer-events-none' : ''}`}
       style={{ height: stairHeight(labels.length) }}
@@ -575,10 +577,19 @@ function DepthStairSelect({
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: single ? 0 : stairCenterOf(depth - 1) - stairCenterOf(0) }} />
+        {/* 단일 선택(그룹)은 막대 위 단계마다 눈금 점을 찍어 "세 자리 중 하나를 고른다"로 보이게 한다. 누적(맵)은 눈금 없이 이어진 막대가 채워진다. */}
+        {single && labels.map((tickLabel, index) => (
+          <span
+            key={tickLabel}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ui-border"
+            style={{ top: stairCenterOf(index), opacity: index > maxSelectableIndex ? 0.35 : 1 }}
+          />
+        ))}
         <span
           role="slider"
           tabIndex={disabled ? -1 : 0}
-          aria-label="업종 분류 깊이"
+          aria-label={label}
           aria-disabled={disabled || undefined}
           aria-orientation="vertical"
           aria-valuemin={1}
@@ -590,14 +601,9 @@ function DepthStairSelect({
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
             else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
           }}
-          className={`${STAIR_HANDLE_BASE} ${single ? 'size-3' : 'h-6 w-3 flex-col gap-2'} border-brand bg-brand-surface`}
+          className={`${STAIR_HANDLE_BASE} size-3 border-brand bg-brand-surface`}
           style={{ top: stairCenterOf(depth - 1) }}
-        >
-          {!single && <>
-            <StairChevron direction="up" />
-            <StairChevron direction="down" />
-          </>}
-        </span>
+        />
       </div>
     </div>
   )
@@ -1107,7 +1113,7 @@ function SingleValueSlider({
 // 새 섹션 컴포넌트를 하나 추가해서 끼워 넣기만 하면 되고, 여기 다른 섹션이나 SettingsPanel 껍데기
 // 자체는 안 건드려도 된다.
 
-// 그룹 페이지 "업종 분류 깊이" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다. 맵 설정의 업종 분류 깊이와 같은 계단 모양이지만 켬/끔 스위치가 없고, 고른 단계 하나만 켜진다.
+// 그룹 페이지 "업종 분류 단계" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다. 맵 설정의 업종 분류 깊이와 같은 계단 모양이지만 켬/끔 스위치가 없고, 고른 단계 하나만 켜진다.
 // 분류 자체에 하위 단계가 없으면(거래소 분류 KRX·NXT) 대분류만 고를 수 있다. 저장된 값은 건드리지 않고 화면에서만 막는다.
 export function SettingsGroupDepthSection({
   depth,
@@ -1122,14 +1128,15 @@ export function SettingsGroupDepthSection({
     <div className="settings-first-depth-level settings-auto-item text-sm">
       <div className="flex max-w-[16rem] items-center justify-between">
         <span className="flex items-center text-left text-ui-white">
-          <SettingTitle className="text-[15px]">업종 분류 깊이</SettingTitle>
+          <SettingTitle className="text-[15px]">업종 분류 단계</SettingTitle>
         </span>
       </div>
-      <SettingDescription>그래프에 표시할 업종 분류의 단계</SettingDescription>
+      <SettingDescription>그래프 막대가 가리킬 단계 하나 선택</SettingDescription>
       <div className="settings-control-inset">
         <DepthStairSelect
           depth={Math.min(depth, selectableDepth)}
           labels={DEPTH_LABELS}
+          label="업종 분류 단계"
           onChange={index => onChange(index + 1)}
           maxSelectableIndex={selectableDepth - 1}
           single
@@ -1477,11 +1484,12 @@ export function SettingsSectorLevelSection({
                 compact
               />
             </div>
-            <SettingDescription dimmed={!sectorLevelEnabled}>선택한 단계까지 업종을 세분화해 표시</SettingDescription>
+            <SettingDescription dimmed={!sectorLevelEnabled}>선택한 단계까지 모두 표시</SettingDescription>
             <div className={`settings-control-inset ${sectorLevelEnabled ? '' : 'opacity-35'}`}>
               <DepthStairSelect
                 depth={depthValue}
                 labels={depthMetricLabels}
+                label="업종 분류 깊이"
                 onChange={index => onChangeMaxDepth(index + 1)}
                 disabled={!sectorLevelEnabled}
                 maxSelectableIndex={selectableDepth - 1}

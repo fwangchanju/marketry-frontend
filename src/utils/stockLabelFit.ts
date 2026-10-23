@@ -68,7 +68,7 @@ const GROUP_PREFIXES = [
   '삼성', '현대', '롯데', '한화', '두산', '포스코', '한진', '효성', '코오롱', '신세계', '대한', '대우', '한솔', '동국', '동원', '동양', '세아', '금호',
   '카카오', '에코프로', '미래에셋', '키움', '유진', '대신', '교보', '메리츠', '하나', '신한', '우리', '한국', '부국', '한양', '아모레', '이수', '서울', '한미', '삼양', '삼천리', '태광',
   '아시아나', '파마', '서진', '셀트리온', '경동', '비에이치', '제주', '쌍용', '한라', '녹십자', '영원', '대웅', '일진', '가온', '한온', '한전', '고려', '보령', '일동', '동서', '종근당', '하림',
-  '주성', '동진', '해성', '원익', '파크', '리노', '티씨', '케이씨', '피에스케이', '이오',
+  '주성', '동진', '해성', '원익', '파크', '리노', '티씨', '케이씨', '피에스케이', '이오', '삼화',
 ]
 const isAsciiChar = (ch: string) => /[\x21-\x7E]/.test(ch)
 
@@ -89,7 +89,7 @@ function groupSplitPositions(chars: string[]): number[] {
 const DESCRIPTOR_WORDS = [
   '테라퓨틱스', '노믹스', '게임즈', '데이타', '데이터', '네오룩스', '시스템즈', '시스템', '솔루션즈', '솔루션', '테크놀로지', '인더스트리즈', '인더스트리',
   '엔터테인먼트', '엔터', '네트웍스', '글로벌', '코리아', '인터내셔널', '코퍼레이션', '컴퍼니', '바이오', '제약', '약품', '파마', '헬스케어', '메디칼', '메디컬', '사이언스',
-  '증권', '소프트웨어', '소프트', '정보통신', '일렉트릭', '에너지', '머티리얼즈', '머티리얼', '로보틱스', '디스플레이', '반도체', '엔지니어링', '이엔씨',
+  '증권', '소프트웨어', '소프트', '정보통신', '일렉트릭', '에너지', '머티리얼즈', '머티리얼', '로보틱스', '디스플레이', '반도체', '엔지니어링', '이엔씨', '콘덴서',
 ].sort((a, b) => b.length - a.length)
 
 function descriptorSplitPosition(chars: string[]): number | null {
@@ -103,8 +103,53 @@ function descriptorSplitPosition(chars: string[]): number | null {
 // 알파벳을 한글로 읽어 쓴 사명(비에이치=BH, 케이씨=KC, 엔씨=NC)의 글자 이름. 이름 앞쪽에 이런 글자가 2개 이상 이어지면 한 묶음으로 보고 묶음 가운데는 나누지 않는다.
 const LETTER_NAMES = [
   '더블유', '에이치', '에이', '에프', '에스', '제이', '케이', '아이', '제트', '엑스', '와이', '브이', '아르',
-  '엘', '엠', '엔', '비', '씨', '디', '이', '지', '피', '티', '유', '큐', '알', '오',
+  '엘', '엠', '엔', '앤', '비', '씨', '디', '이', '지', '피', '티', '유', '큐', '알', '오',
 ].sort((a, b) => b.length - a.length)
+
+// 글자가 끝까지 한글 알파벳 이름으로만 읽히면 몇 개로 읽히는지, 아니면 null이다.
+function letterCount(text: string): number | null {
+  if (text === '') return 0
+  for (const letter of LETTER_NAMES) {
+    if (!text.startsWith(letter)) continue
+    const rest = letterCount(text.slice(letter.length))
+    if (rest !== null) return rest + 1
+  }
+  return null
+}
+
+// 한글 알파벳 이름처럼 읽히지만 그 안을 나누면 안 되는 흔한 단어(서린바/이오가 아니라 서린/바이오, 고스트스/튜디오가 아니라 고스트/스튜디오).
+const LETTER_LOOKALIKE_WORDS = ['바이오', '스튜디오', '메디아이', '나비엔']
+
+// 이름 끝이 한글 알파벳 이름 2개 이상으로 끝나고 그 앞이 있으면 그 묶음 앞을 돌려준다(강동/씨앤엘, 세미/티에스, 상신/이디피). 한글과 알파벳 사명의 경계라
+// 영문·한글 경계처럼 두 줄의 글자 수 차이와 상관없이 쓴다. 이름 전체가 알파벳 이름이면(에스에이엠티) 경계가 없어서 쓰지 않고, 흔한 단어의 한가운데를 가르는 자리도 쓰지 않는다.
+// 모음 하나짜리 알파벳(이·오·유) 뒤에 두 글자 알파벳(에스·에이·에프)이 이어지면 앞 글자와 한 음절로 읽혔을 가능성이 커서(크레오/에스지, 자이/에스앤디) 그 묶음은 뒤로 미룬다.
+// 뒤에 한 글자 알파벳이 이어지면(삼영/이엔씨, 효성/오앤비) 알파벳으로 읽는다.
+// 가장 긴 묶음을 잡되, 앞이 한 글자뿐이면 묶음이 3개 이상일 때만 쓴다(샘/씨엔에스는 나누고 인디/에프는 나누지 않는다).
+const VOWEL_LETTER_NAMES = ['이', '오', '유']
+
+function trailingLetterClusterPosition(chars: string[]): number | null {
+  const name = chars.join('')
+  if (letterCount(name) !== null) return null
+  const candidates: Array<{ start: number; startsWithVowelLetter: boolean }> = []
+  for (let start = 1; start < chars.length; start += 1) {
+    const cluster = chars.slice(start).join('')
+    const count = letterCount(cluster)
+    if (count === null || count < 2 || (start < 2 && count < 3)) continue
+    const splitsWord = LETTER_LOOKALIKE_WORDS.some(word => {
+      for (let at = name.indexOf(word); at !== -1; at = name.indexOf(word, at + 1)) {
+        if (at < start && start < at + word.length) return true
+      }
+      return false
+    })
+    if (splitsWord) continue
+    const firstLetter = LETTER_NAMES.find(letter => cluster.startsWith(letter))
+    const secondLetter = LETTER_NAMES.find(letter => cluster.startsWith(letter, firstLetter?.length ?? 0))
+    const startsWithVowelLetter =
+      firstLetter !== undefined && VOWEL_LETTER_NAMES.includes(firstLetter) && (secondLetter?.length ?? 0) > 1
+    candidates.push({ start, startsWithVowelLetter })
+  }
+  return (candidates.find(candidate => !candidate.startsWithVowelLetter) ?? candidates[0])?.start ?? null
+}
 
 // 이름 맨 앞에서부터 한글 알파벳 이름이 이어지는 만큼 읽어, 각 글자가 끝나는 자리(글자 수)를 돌려준다. 글자가 2개 미만이면 null이다(이스케, 에이스침대 같은 일반 이름을 건드리지 않으려는 것).
 function letterClusterBoundaries(chars: string[]): number[] | null {
@@ -120,13 +165,18 @@ function letterClusterBoundaries(chars: string[]): number[] | null {
   return boundaries.length >= 2 ? boundaries : null
 }
 
-// 이름 뒤에 붙는 우선주 표시·지주사 접미어 앞에서 줄을 나눈다(현대차/2우B, 삼성물산/우B, 신한/지주, 한화/홀딩스, 한국금융/지주우). 우선주는 표시가 분명한 1우B·2우B·우B만 보고, 맨 끝이 그냥 '우'인 이름(삼성전자우)은 떼지 않는다. 앞부분이 2글자 이상일 때만 접미어로 본다.
+// 이름 뒤에 붙는 우선주 표시·지주사 접미어 앞에서 줄을 나눈다(현대차/2우B, 삼성물산/우B, 신한/지주, 한화/홀딩스, 한국금융/지주우). 앞부분이 2글자 이상일 때만 접미어로 본다.
+// 맨 끝이 그냥 '우'인 이름(삼성전자우, 계양전기우)은 앞부분이 3글자 이상일 때만 떼고, '로우'로 끝나는 이름(에코글로우, 이오플로우)은 우선주가 아니라서 떼지 않는다.
+const PLAIN_PREFERRED_MIN_BASE_LENGTH = 3
+
 function suffixSplitPosition(chars: string[]): number | null {
   const name = chars.join('')
-  const match = name.match(/((?:홀딩스|홀딩|지주회사|지주)우?|\d우[A-C]?|우[A-C])$/)
+  const match = name.match(/((?:홀딩스|홀딩|지주회사|지주)우?|\d우[A-C]?|우[A-C]?)$/)
   if (!match) return null
+  const isPlainPreferred = match[0] === '우'
+  if (isPlainPreferred && name.endsWith('로우')) return null
   const position = Array.from(name.slice(0, name.length - match[0].length)).length
-  return position >= 2 ? position : null
+  return position >= (isPlainPreferred ? PLAIN_PREFERRED_MIN_BASE_LENGTH : 2) ? position : null
 }
 
 // 공백이나 그룹명 뒤에서 나눴을 때 두 줄의 글자 수 차이가 이만큼 이하면 그 자리를 쓴다. 차이가 더 크면 균형 있게 나눈다(롯데에너지/머티리얼즈).
@@ -152,7 +202,8 @@ function splitCandidates(chars: string[]) {
   // 한글 알파벳 묶음 끝(케이씨/텍, 엔씨/소프트)과 끝 단어 앞(넥슨/게임즈)도 그룹명 뒤처럼 글자 수 차이가 3 이하일 때 쓴다.
   const clusterSplit = cluster && clusterEnd < chars.length ? [clusterEnd] : []
   const descriptorAt = descriptorSplitPosition(chars)
-  const atMeaning = Array.from(new Set([...atScriptEdge, ...closeEnough([...groupSplitPositions(chars), ...clusterSplit, ...(descriptorAt === null ? [] : [descriptorAt])].filter(i => all.includes(i)))])).sort((a, b) => a - b)
+  const trailingCluster = trailingLetterClusterPosition(chars)
+  const atMeaning = Array.from(new Set([...atScriptEdge, ...(trailingCluster === null || !all.includes(trailingCluster) ? [] : [trailingCluster]), ...closeEnough([...groupSplitPositions(chars), ...clusterSplit, ...(descriptorAt === null ? [] : [descriptorAt])].filter(i => all.includes(i)))])).sort((a, b) => a - b)
   const suffixAt = suffixSplitPosition(chars)
   const atSuffix = suffixAt !== null && all.includes(suffixAt) ? [suffixAt] : []
   return { all, atSpaces, atMeaning, atSuffix }
