@@ -157,7 +157,7 @@ function SummaryBadge({ children, className = '' }: { children: ReactNode; class
 }
 
 const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
-const DEFAULT_HOME_FRAME_ORDER = ['시장 요약', '시장 지도', '그룹 등락률 (%)']
+const DEFAULT_HOME_FRAME_ORDER = ['시장 요약', '요약 지도', '그룹 등락률 (%)']
 
 function SortableHomeFrame({ title, captureId, index, children, captureUntil, showHeader = true, insetHeader = false }: { title: string; captureId: string; index: number; children: ReactNode | ((dragBadge: ReactNode) => ReactNode); captureUntil?: string; showHeader?: boolean; insetHeader?: boolean }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
@@ -220,9 +220,11 @@ export default function MarketSummaryPage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
+  // 예전 이름('시장 지도')으로 저장된 순서도 새 이름('요약 지도')의 같은 자리로 읽는다.
+  const savedHomeFrameOrder = homeFrameOrder.map(title => (title === '시장 지도' ? '요약 지도' : title))
   const safeHomeFrameOrder = [
-    ...homeFrameOrder.filter((title, index) => DEFAULT_HOME_FRAME_ORDER.includes(title) && homeFrameOrder.indexOf(title) === index),
-    ...DEFAULT_HOME_FRAME_ORDER.filter(title => !homeFrameOrder.includes(title)),
+    ...savedHomeFrameOrder.filter((title, index) => DEFAULT_HOME_FRAME_ORDER.includes(title) && savedHomeFrameOrder.indexOf(title) === index),
+    ...DEFAULT_HOME_FRAME_ORDER.filter(title => !savedHomeFrameOrder.includes(title)),
   ]
   const handleFrameDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return
@@ -489,7 +491,7 @@ export default function MarketSummaryPage() {
   // 홈의 세 틀(제목·캡처 이름·본문) — 화면과 3:4 캡처용 판이 같은 본문을 쓴다.
   const homeFrames = [
               {
-                title: '시장 지도',
+                title: '요약 지도',
                 captureId: 'market-map',
                 body: (
                   <OverviewMap items={overview.items} colorScale={colorScale} onSelect={handleSelectSector} />
@@ -702,7 +704,7 @@ export default function MarketSummaryPage() {
           screenshotTarget={screenshotTarget}
           fixedHomeCaptureRef={fixedCaptureRef}
           frameCaptureOptions={safeHomeFrameOrder.map((title, selectedSlot) => {
-            const captureId = title === '시장 지도' ? 'market-map' : title === '그룹 등락률 (%)' ? 'group-change-rate' : 'market-summary'
+            const captureId = title === '요약 지도' ? 'market-map' : title === '그룹 등락률 (%)' ? 'group-change-rate' : 'market-summary'
             return {
               id: captureId,
               label: ['좌측', '중앙', '우측'][selectedSlot],

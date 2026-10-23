@@ -21,7 +21,7 @@ import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 // 공통 스냅샷 날짜·시간도 FONT_BAR_TIME에서 동일한 숫자 폭을 명시한다.
 function PageNumberStyle() {
   const { pathname } = useLocation()
-  const useTabularNumbers = pathname === '/group' || pathname.startsWith('/group/')
+  const useTabularNumbers = pathname === '/graph' || pathname.startsWith('/graph/')
     || pathname === '/custom' || pathname.startsWith('/custom/')
 
   useLayoutEffect(() => {
@@ -34,7 +34,7 @@ function PageNumberStyle() {
 
 // 시장이 주소 조각으로 오기 전의 옛 주소(/map?market=KOSPI)를 지금 주소(/map/kospi)로 옮긴다.
 // ?market=은 경로 조각보다 먼저 지워지므로 그대로 두면 값이 사라진다 — 시장 값을 경로로 바꾸고, 나머지 쿼리와 해시는 그대로 둔다.
-function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/group' }) {
+function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   const { search, hash } = useLocation()
   const params = new URLSearchParams(search)
   const marketParam = params.get('market')
@@ -46,7 +46,7 @@ function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/group' }) {
 
 function LegacyGroupRedirect() {
   const { pathname, search, hash } = useLocation()
-  const groupPath = pathname.replace(/^\/(?:sector|industry)(?=\/|$)/, '/group')
+  const groupPath = pathname.replace(/^\/(?:group|sector|industry)(?=\/|$)/, '/graph')
   return <Navigate to={`${groupPath}${search}${hash}`} replace />
 }
 
@@ -75,10 +75,12 @@ export default function App() {
           <Route path="/map/kospi" element={<MapPage />} />
           <Route path="/map/kosdaq" element={<MapPage />} />
           <Route path="/map/allstock" element={<MapPage />} />
-          <Route path="/group" element={<LegacyMarketRedirect basePath="/group" />} />
-          <Route path="/group/kospi" element={<GroupPage />} />
-          <Route path="/group/kosdaq" element={<GroupPage />} />
-          <Route path="/group/allstock" element={<GroupPage />} />
+          <Route path="/graph" element={<LegacyMarketRedirect basePath="/graph" />} />
+          <Route path="/graph/kospi" element={<GroupPage />} />
+          <Route path="/graph/kosdaq" element={<GroupPage />} />
+          <Route path="/graph/allstock" element={<GroupPage />} />
+          <Route path="/group" element={<LegacyGroupRedirect />} />
+          <Route path="/group/*" element={<LegacyGroupRedirect />} />
           <Route path="/sector" element={<LegacyGroupRedirect />} />
           <Route path="/sector/*" element={<LegacyGroupRedirect />} />
           <Route path="/industry" element={<LegacyGroupRedirect />} />

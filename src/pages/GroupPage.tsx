@@ -335,7 +335,7 @@ export default function GroupPage() {
           <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-                <ToolbarModeText page="GROUP" label={MARKET_LABEL[market]} />
+                <ToolbarModeText page="GRAPH" label={MARKET_LABEL[market]} />
                 {/* 로딩 원이나 오류 문구가 보이는 동안에도 시계·시간대·누적/별도·분류명을 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                   <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
@@ -468,7 +468,7 @@ export default function GroupPage() {
               {...settingsModalProps}
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
-              pageLabel="Group"
+              pageLabel="Graph"
               sectionOrder={['graph', 'composition', 'colors']}
               stockCountLabel={stockCountLabel}
               taxonomyAtBottom
