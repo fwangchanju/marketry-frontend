@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'member' | 'custom-edit'
+export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'member' | 'experiment' | 'custom-edit'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
@@ -76,7 +76,15 @@ const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
       <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
     </>
   ),
-  // 특별 회원·관리자 탭 — 머리와 어깨를 그린 사람 모양이다. 두 탭은 색으로만 구분한다.
+  // 실험 탭(특별 회원 전용) — 실험용 삼각 플라스크 모양이다.
+  experiment: (
+    <>
+      <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" />
+      <path d="M8.5 2h7" />
+      <path d="M7 16h10" />
+    </>
+  ),
+  // 관리자 탭 — 머리와 어깨를 그린 사람 모양이다.
   member: (
     <>
       <circle cx="12" cy="8" r="4" />
