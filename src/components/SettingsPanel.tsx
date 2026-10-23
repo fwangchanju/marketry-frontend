@@ -1721,6 +1721,47 @@ export function SettingsSectorLevelSection({
 }
 
 // 지도 페이지 관리자 전용 미사용 탭의 종목 정보 설정. 기존 설정 키와 지도 동작은 유지한다.
+// 실험 탭의 "종목 이동" — 지도에서 종목 박스를 끌어 다른 업종에 놓으면 화면에서만 옮겨 그린다(서버·브라우저에 저장하지 않고, 다른 페이지로 가거나 새로고침하면 원래대로).
+export function SettingsStockMoveSection({
+  enabled,
+  onChange,
+}: {
+  enabled: boolean
+  onChange: (enabled: boolean) => void
+}) {
+  return (
+    <div className="settings-plain-button-item h-[180px] text-sm text-ui-white">
+      <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
+        <span className="settings-plain-title">종목 이동</span>
+        <SettingHelpBubble label="종목 이동" description={"종목을 끌어 다른 업종에 놓으면\n화면에서만 옮겨 보입니다.\n저장되지 않으며 다른 페이지로\n가면 원래대로 돌아갑니다."} />
+      </span>
+      <SettingDescription>종목을 끌어 다른 업종으로 이동</SettingDescription>
+      <div
+        role="radiogroup"
+        aria-label="종목 이동"
+        className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]"
+      >
+        <SlidingHighlight count={2} index={enabled ? 1 : 0} className="rounded-[4px] border border-brand bg-brand-surface" />
+        {[
+          { label: '끄기', value: false },
+          { label: '켜기', value: true },
+        ].map(option => (
+          <button
+            key={option.label}
+            type="button"
+            role="radio"
+            aria-checked={enabled === option.value}
+            onClick={() => onChange(option.value)}
+            className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${enabled === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function SettingsStockPopupSection({
   stockPopupOnHover,
   onChangeStockPopupOnHover,
@@ -1772,7 +1813,7 @@ function toWonLabel(won: number): string {
   return `${(won / 1e8).toLocaleString('ko-KR')}억`
 }
 
-// 지도 페이지 관리자 전용 미사용 탭의 "텍스트 표시 기준" — 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
+// 지도 페이지 실험 탭(특별 회원 전용)의 "텍스트 표시 기준" — 값은 저장하지 않고 이 탭의 메모리에만 둔다(useTransientSetting).
 export function SettingsTextThresholdSection({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
     <div className="settings-text-threshold-item h-[180px] text-sm">
@@ -1883,8 +1924,8 @@ const DIRECTION_OPTIONS: { value: StockChangeFilter; label: string }[] = [
   { value: 'falling', label: '하락' },
 ]
 
-// 지도 페이지 관리자 전용 미사용 탭의 "업종 등락 방향" — 항목 높이 180px, 제목 번호는 settings-plain-content가 매긴다.
-// 값은 서버에 저장하지 않고 이 브라우저에만 둔다(utils/browserSetting.ts).
+// 지도 페이지 실험 탭(특별 회원 전용)의 "업종 등락 방향" — 항목 높이 180px, 제목 번호는 settings-plain-content가 매긴다.
+// 값은 저장하지 않고 이 탭의 메모리에만 둔다(useTransientSetting).
 export function SettingsSectorChangeSection({
   value,
   onChange,

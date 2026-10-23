@@ -1258,3 +1258,8 @@ a { color: var(--accent-light); text-decoration: none; }
 .settings-panel-tab-content :is(.settings-market-value, .settings-second-exclude, .settings-first-color, .settings-second-strong-color) .settings-section-num {
   color: var(--brand);
 }
+
+/* 실험 탭 "종목 이동"이 켜져 있는 동안 종목 박스에 잡는 손 커서를 보여 준다(홈 화면 항목 끌기와 같다). */
+.stock-move-enabled .treemap-stock {
+  cursor: grab;
+}

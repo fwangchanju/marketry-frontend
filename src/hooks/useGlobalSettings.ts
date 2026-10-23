@@ -9,7 +9,7 @@ import { useNxtOnlyWindow } from '@/hooks/useNxtOnlyWindow'
 import { useAfterHoursControlsVisible } from '@/hooks/useTradingSession'
 import { isAfterHoursSelectable as isAfterHoursSelectableAt } from '@/utils/tradingWindow'
 import type { ChangeRateChoice, ChangeRateMode } from '@/api/treemap'
-import { useBrowserSetting } from '@/utils/browserSetting'
+import { useTransientSetting } from './useTransientSetting'
 import { usePageSetting } from './usePageSetting'
 import { useRouteAwareMarket } from './useRouteAwareMarket'
 import { useIsLoggedIn, useSession } from './useSession'
@@ -216,8 +216,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting('treemap.depthMetricMaxIndex', defaults.depthMetricMaxIndex)
   // avgChangeRateUseSimple은 섹터 랭킹에 사용한다. 강세 업종은 업종 탭 표시 지표를 따른다.
   // 종목 박스가 전체 트리맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다(섹터 헤더와는 무관).
-  // 3-3 텍스트 표시 기준은 지도 페이지의 관리자 전용 미사용 탭에서 조정한다 — 서버 저장 없이 이 브라우저에만 둔다.
-  const [boxLabelMinAreaPercent] = useBrowserSetting('treemap.boxLabelMinAreaPercent', defaults.boxLabelMinAreaPercent)
+  // 실험 탭의 3-3 텍스트 표시 기준은 저장하지 않는다(새로고침하면 기본값).
+  const [boxLabelMinAreaPercent] = useTransientSetting('treemap.boxLabelMinAreaPercent', defaults.boxLabelMinAreaPercent)
   // 종목 박스에 이름만/등락률만/둘 다/끄기 중 뭘 보여줄지 — 기본은 둘 다(기존 동작 유지, 배열 앞에
   // "끄기"가 추가되면서 both의 인덱스가 2에서 3으로 밀림).
   const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting('treemap.stockLabelModeIndex', defaults.stockLabelModeIndex)
@@ -230,7 +230,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [decimalPlacesIndex, setDecimalPlacesIndex] = usePageSetting('treemap.decimalPlacesIndex', defaults.decimalPlacesIndex)
   // 종목 박스 설명 팝업을 여는 방식 — false=우클릭(기존 동작), true=커서를 박스 위로 옮길 때. 섹터(대/중/소분류)
   // 팝업은 이 설정과 무관하게 항상 우클릭이다.
-  const [stockPopupOnHover, setStockPopupOnHover] = usePageSetting('treemap.stockPopupOnHover', defaults.stockPopupOnHover)
+  const [stockPopupOnHover, setStockPopupOnHover] = useTransientSetting('treemap.stockPopupOnHover', defaults.stockPopupOnHover)
   const decimalPlaces = decimalPlacesIndex
   // 시가총액 구간 범위 필터 — 마켓맵/섹터 랭킹 화면이 세션스토리지 키를 공유한다(useMarketValueTierRange 참고).
   // 시가총액 구간 필터는 분류 체계와 무관한 표시 설정이라 두 분류 모두에서 적용한다.
@@ -253,11 +253,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   )
   // 섹터 제외를 목록별로 켜고 끄는 게 아니라, 제외 적용 자체를 통째로 켜고 끄는 마스터 스위치.
   const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting('treemap.sectorFilterEnabled', defaults.sectorFilterEnabled)
-  const [stockChangeFilter, setStockChangeFilter] = usePageSetting<StockChangeFilter>('treemap.stockChangeFilter', defaults.stockChangeFilter)
-  // 1-2 업종 등락 방향은 지도 페이지의 관리자 전용 미사용 탭에서 조정한다 — 서버 저장 없이 이 브라우저에만 둔다. 저장된 값이 이상하면 기본값을 쓴다.
-  const [storedSectorChangeFilter] = useBrowserSetting<SectorChangeFilter>('treemap.sectorChangeFilter', defaults.sectorChangeFilter)
+  const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<StockChangeFilter>('treemap.stockChangeFilter', defaults.stockChangeFilter)
+  // 실험 탭의 업종 등락 방향·깊이는 저장하지 않는다(새로고침하면 기본값).
+  const [storedSectorChangeFilter] = useTransientSetting<SectorChangeFilter>('treemap.sectorChangeFilter', defaults.sectorChangeFilter)
   const sectorChangeFilter: SectorChangeFilter = storedSectorChangeFilter === 'rising' || storedSectorChangeFilter === 'falling' ? storedSectorChangeFilter : 'all'
-  const [storedSectorChangeDepth] = useBrowserSetting('treemap.sectorChangeDepth', defaults.sectorChangeDepth)
+  const [storedSectorChangeDepth] = useTransientSetting('treemap.sectorChangeDepth', defaults.sectorChangeDepth)
   const sectorChangeDepth = Number.isInteger(storedSectorChangeDepth) && storedSectorChangeDepth >= 0 ? storedSectorChangeDepth : 0
   // null = 제한 없음(전체 뎁스 표시). 슬라이더의 실제 상한(availableMaxDepth)은 트리 계산 후에 나온다.
   // 기본값 2(렌더러 스크린샷 기준 화면에 맞춤).

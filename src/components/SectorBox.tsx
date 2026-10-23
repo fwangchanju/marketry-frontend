@@ -173,6 +173,8 @@ export default function SectorBox({
         // 상속), 그래서 둘의 공통 조상인 여기(box-content)에 한 번만 건다.
         '--treemap-base-color': isTopPick ? strongIndustryColor : headerStyle.baseColor,
       } as CSSProperties}
+      data-sector-id={sector.sectorId}
+      data-sector-name={sector.sectorName}
       className={`treemap-sector-box box-content ${isPinned ? 'is-pinned' : ''}`}
     >
       {/* 강조 테두리 — border(박스를 4px 키워서 지도 맨 아래·오른쪽 끝에서 잘렸다)가 아니라 박스 안쪽 가장자리에 덮어 그리는 층이다.

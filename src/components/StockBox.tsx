@@ -105,6 +105,8 @@ export default function StockBox({
         color: isLightColor(backgroundColor) ? 'var(--ui-surface)' : undefined,
         '--treemap-base-color': backgroundColor,
       } as CSSProperties}
+      data-stock-code={item.stockCode}
+      data-stock-name={name}
       onContextMenu={e => {
         e.preventDefault()
         e.stopPropagation()
