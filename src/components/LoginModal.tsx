@@ -30,10 +30,10 @@ export default function LoginModal({ returnTo, hideMessage = false, onClose }: P
 
   return (
     <div className="fixed inset-0 z-50 bg-ui-background/70" onClick={onClose}>
-      {/* 어두운 배경은 화면 전체를 덮고, 창은 메인 영역 안의 가운데에 놓는다(메인 영역이 없는 화면에서는 화면 가운데). */}
+      {/* 가로는 메인 영역 가운데, 세로는 NXT 안내창처럼 전체 화면 가운데에 놓는다. */}
       <div
         className={`flex items-center justify-center ${mainAreaRect ? 'absolute' : 'h-full w-full'}`}
-        style={mainAreaRect ? { left: mainAreaRect.left, top: mainAreaRect.top, width: mainAreaRect.width, height: mainAreaRect.height } : undefined}
+        style={mainAreaRect ? { left: mainAreaRect.left, top: 0, width: mainAreaRect.width, height: '100dvh' } : undefined}
       >
       <div
         className="w-[calc(100%-2rem)] max-w-sm select-none border border-ui-border bg-[var(--surface)] p-6"

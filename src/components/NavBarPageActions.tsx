@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ScreenshotIcon, MaximizeIcon, MinimizeIcon, RefreshIcon, SettingsIcon } from '@/components/icons/AppIcons'
+import { ScreenshotIcon, MaximizeIcon, MinimizeIcon, RefreshIcon, SettingsIcon, TrashIcon } from '@/components/icons/AppIcons'
+import { appAlert, appConfirm } from '@/utils/appDialogBus'
 
 interface Props {
   onRefresh: () => void | Promise<unknown>
@@ -130,9 +131,30 @@ export default function NavBarPageActions({
   onToggleFullscreen,
   showRefresh = true,
 }: Props) {
+  const resetBrowserStorage = async () => {
+    if (!await appConfirm('이 브라우저에 저장된 Marketry 값을 모두 지우고 새로고침하시겠습니까?\n저장하지 않은 변경사항은 사라집니다. 로그인 상태와 서버 저장값은 유지됩니다.', { title: '브라우저 저장값 초기화' })) return
+    try {
+      // 키를 나열하지 않아 앞으로 localStorage/sessionStorage에 추가되는 기능도 함께 초기화한다.
+      localStorage.clear()
+      sessionStorage.clear()
+      window.location.reload()
+    } catch {
+      void appAlert('브라우저 저장값을 초기화하지 못했습니다.', { title: '초기화 실패' })
+    }
+  }
+
   return (
     <>
       {showRefresh && <PageRefreshButton onRefresh={onRefresh} isRefreshing={isRefreshing} />}
+      {onOpenShare && <button
+        type="button"
+        aria-label="브라우저 저장값 초기화"
+        data-hint="브라우저 저장값 초기화"
+        className={`flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] ${ICON_FRAME_CLASS}`}
+        onClick={() => void resetBrowserStorage()}
+      >
+        <TrashIcon className="h-5 w-5" strokeWidth={1.6} aria-hidden="true" />
+      </button>}
       {onOpenShare && <button
         type="button"
         aria-label="스크린샷"

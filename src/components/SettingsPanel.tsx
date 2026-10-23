@@ -2460,7 +2460,14 @@ export default function SettingsPanel({
       window.removeEventListener('resize', realign)
     }
   })
-  const [activeSection, setActiveSection] = useState<SettingsPanelSectionId>(sectionOrder?.[0] ?? 'composition')
+  const tabStorageKey = `marketry:settings-panel-tab:${pageLabel ?? 'Settings'}`
+  const [activeSection, setActiveSection] = useState<SettingsPanelSectionId>(() => {
+    try {
+      return (localStorage.getItem(tabStorageKey) as SettingsPanelSectionId | null) ?? sectionOrder?.[0] ?? 'composition'
+    } catch {
+      return sectionOrder?.[0] ?? 'composition'
+    }
+  })
   // 닫힐 때 사라지는 모습을 보여주려고, isOpen이 꺼져도 닫기 애니메이션이 끝날 때까지는 화면에 남겨 둔다.
   // animated는 열림 상태가 한 번이라도 바뀐 뒤에만 켜서, 페이지를 처음 열 때 이미 열려 있는 설정창은 애니메이션 없이 보인다.
   const [mounted, setMounted] = useState(isOpen)
@@ -2623,6 +2630,7 @@ export default function SettingsPanel({
                 onClick={() => {
                   if (section.id === 'plain') return
                   setActiveSection(section.id)
+                  try { localStorage.setItem(tabStorageKey, section.id) } catch { /* 저장소 접근이 막혀도 탭 전환은 유지한다. */ }
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
                   ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
