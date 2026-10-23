@@ -13,8 +13,8 @@ export function collectItems(node: TreemapSectorNode): TreemapItem[] {
   return items
 }
 
-// 섹터(하위 전체 포함)의 등락률 평균 — 백엔드가 예전에 집계 테이블에 저장하던 규칙과 같게 계산한다
-// (marketry-backend collectItems). 거르는 건 marketValueTier가 excludedTierLabels에 있는
+// 섹터(하위 전체 포함)의 등락률 평균 — 백엔드 집계(SectorTierAggregationService.collectItems)와 같은 규칙으로
+// 계산한다. 거르는 건 marketValueTier가 excludedTierLabels에 있는
 // 것 하나뿐이다 — 하위 제외 섹터도, 시가총액 0인 종목도 전부 더한다. 지도 헤더·업종 톱픽·섹터
 // 그래프·텔레그램 캡션이 전부 이 값을 봐야 화면 숫자가 일치한다. 반드시 필터 전 원본 노드에 적용해야
 // 한다 — 필터로 거른 뒤의 items/children으로 새로 만든 노드에 적용하면 이 규칙이 깨진다.

@@ -27,7 +27,6 @@ import { isAdminSession } from '@/utils/adminAccess'
 
 export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'special' | 'graph'
 const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage'])
-// 특별 회원과 운영자만 보는 탭(실험) — 색은 특별 회원 표시색(웜 골드)이다.
 const SPECIAL_SECTIONS: ReadonlySet<string> = new Set(['special'])
 
 interface SettingsPanelGroupProps {

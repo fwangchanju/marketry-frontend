@@ -181,7 +181,7 @@ function revealMobileCapture(cloned: Node, keepPageLabel = false) {
     const changeRateButton = changeRateSelector?.querySelector<HTMLButtonElement>('[data-change-rate-mode]')
     if (changeRateButton && changeRateSelector) {
       leftContent.querySelector('[aria-label="등락률 기준 선택"]')?.remove()
-      // 지금 툴바의 칩 모양 그대로 두고 메뉴 동작만 뺀다. 보라색 바탕 칩은 예전 모양이라 쓰지 않는다.
+      // 지금 툴바의 칩 모양 그대로 두고 메뉴 동작만 뺀다.
       changeRateButton.removeAttribute('aria-expanded')
       changeRateButton.removeAttribute('aria-haspopup')
       changeRateButton.style.pointerEvents = 'none'

@@ -1,7 +1,6 @@
 import type { TaxonomyKey } from '@/utils/taxonomyNames'
 
 // ─── 지도 배치 기본값 ───────────────────────────────────────────────────────────
-// 2026-10-04에 "순서 우선 + 가로 늘리기 1.6"을 써 보다가 같은 날 "모양 우선 + 늘리기 없음"으로 되돌렸다.
 //   다시 쓰려면: DEFAULT_MAP_TILE을 'binary'로, DEFAULT_STRETCH의 세 값을 모두 1.6으로 바꾼다. 다른 파일은 고치지 않는다.
 // 이름: 모양 우선 = squarify(박스를 정사각형에 가깝게 놓는다), 순서 우선 = binary(시가총액 큰 순서가 배치에서도 이어진다).
 export type MapTileMethod = 'squarify' | 'binary'
@@ -10,7 +9,7 @@ export const DEFAULT_MAP_TILE: MapTileMethod = 'squarify'
 const DEFAULT_STRETCH = { KRX: 1, MARKETRY: 1, MINE: 1 } as const
 
 // 비교용 주소 덮어쓰기(저장되지 않는다) — 주소 끝에 붙이면 기본값 대신 그 값으로 한 번 본다.
-//   ?tile=squarify          예전 방식(모양 우선)으로 보기
+//   ?tile=squarify          모양 우선으로 보기
 //   ?tile=binary            순서 우선
 //   ?stretch=1              모든 분류의 가로 늘리기를 1(없음)로 보기, 값은 1~3
 //   ?stretchKRX=2.2         거래소만 덮어쓰기 (?stretchMARKETRY=, ?stretchMINE= 도 같다)

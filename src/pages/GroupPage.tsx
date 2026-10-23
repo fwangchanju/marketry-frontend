@@ -265,7 +265,7 @@ export default function GroupPage() {
       const nowAverage = computeSectorAverage(node, excludedMarketValueTiers)
       const nowValue = avgChangeRateUseSimple ? nowAverage.simpleAvg : nowAverage.weightedAvg
       // 새 트리는 종목이 하나도 없는 최상위 섹터도 노드로 준다 — 그런 섹터는 평균이 null이라
-      // 두 그래프 모두에서 뺀다(옛 /api/sector는 애초에 그런 섹터를 안 내려줬다).
+      // 두 그래프 모두에서 뺀다.
       if (nowValue === null) continue
       currentEntries.push({ key: sectorKey(pathKey), sectorName: node.sectorName, value: nowValue })
 

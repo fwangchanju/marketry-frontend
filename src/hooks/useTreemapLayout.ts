@@ -57,8 +57,7 @@ export function sectorHeaderFontSize(depth: number): number {
   return SECTOR_HEADER_FONT_SIZES[Math.min(depth, SECTOR_HEADER_FONT_SIZES.length - 1)]
 }
 
-// 헤더 높이는 폰트 크기에 항상 비례한다 — 원래 대분류 폰트가 16px일 때 높이가 28px이었던 비율(1.75배)을
-// 그대로 기준 삼아, 지금 폰트 크기(SECTOR_HEADER_FONT_SIZES)가 얼마든 그 비율만큼의 높이를 준다. 폰트
+// 헤더 높이는 폰트 크기에 항상 비례한다 — 폰트 크기(SECTOR_HEADER_FONT_SIZES)가 얼마든 아래 비율만큼의 높이를 준다. 폰트
 // 크기를 바꾸면 높이도 자동으로 같은 비율로 줄어들거나 커지는 구조. SectorBox의 실제
 // 렌더링 높이도 이 함수를 그대로 써서 레이아웃 계산과 화면이 어긋나지 않게 한다.
 const SECTOR_HEADER_HEIGHT_RATIO = 20 / 16

@@ -342,7 +342,7 @@
   --brand-surface: #20635d;
   --sub-yellow: #e6d04a;
   --sub-purple: #b39ddb;
-  --sub-gold: #d6a45a; /* 관리자 전용 표시 색(웜 골드) — --admin-only가 이 색을 가리킨다 */
+  --sub-gold: #d6a45a; /* 관리자 전용 표시 색 — --admin-only가 이 색을 가리킨다 */
   --ui-background: #0a0a0a;
   --ui-surface: #1a1a1a;
   --ui-panel: #2a2a2a;
@@ -368,7 +368,7 @@
   --status-error-ink: color-mix(in srgb, var(--status-error) 65%, var(--ui-background));
   --status-error-text: color-mix(in srgb, var(--status-error) 80%, var(--ui-white));
   --status-error-hover: var(--status-error);
-  /* 관리자 전용 표시 색 — 골드(sub-gold) 하나, 마우스 올림·선택은 흰색 쪽으로 밝힌 단계. 특별 회원 표시는 애프터 마켓과 같은 보라(sub-purple)다. */
+  /* 관리자 전용 표시 색 — sub-gold 하나, 마우스 올림·선택은 흰색 쪽으로 밝힌 단계. 특별 회원 표시는 애프터 마켓과 같은 sub-purple이다. */
   --admin-only: var(--sub-gold);
   --admin-only-hover: color-mix(in srgb, var(--sub-gold) 65%, var(--ui-white));
 
