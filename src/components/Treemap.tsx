@@ -323,7 +323,7 @@ export default function Treemap({
       }
     }
     prevDepthRef.current = depth
-  }, [depth, groups])
+  }, [depth])
 
   // breadcrumb 클릭 전에 현재 하위 화면을 스냅샷으로 기억해 복귀 애니메이션에 쓴다.
   useEffect(() => {
