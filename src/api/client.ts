@@ -28,6 +28,7 @@ export function markSessionAnonymous() {
     authenticated: false,
     userId: null,
     email: null,
+    issuer: null,
     role: null,
     nickname: null,
     profileImageVersion: null,

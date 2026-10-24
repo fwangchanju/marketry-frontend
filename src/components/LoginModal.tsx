@@ -12,7 +12,7 @@ interface Props {
   returnTo: string
   // true면 안내 문구를 보여주지 않는다(오른쪽 위 로그인 버튼으로 연 경우).
   hideMessage?: boolean
-  loginError?: 'cancelled' | 'oauth_failed' | null
+  loginError?: 'cancelled' | 'oauth_failed' | 'email_required' | null
   onClose: () => void
 }
 
@@ -65,7 +65,11 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
         )}
         {loginError && (
           <p role="alert" className="mt-2 text-sm text-status-error-text">
-            {loginError === 'cancelled' ? '로그인이 취소되었습니다.' : '로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.'}
+            {loginError === 'cancelled'
+              ? '로그인이 취소되었습니다.'
+              : loginError === 'email_required'
+                ? '이메일 제공에 동의해야 로그인할 수 있습니다.'
+                : '로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.'}
           </p>
         )}
         <div className="mt-6 flex flex-col gap-2">

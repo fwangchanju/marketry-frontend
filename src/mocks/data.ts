@@ -322,10 +322,11 @@ export const customSnapshots = [
 
 // 로그인 여부/로그인 사용자 정보를 흉내 내는 목업 전역 상태 — dev:mock에서 새로고침해도 유지되도록
 // 모듈 스코프에 둔다(탭을 닫으면 사라짐, 실제 백엔드 쿠키와 달리 서버 재시작 개념이 없음).
-export const mockAuth: { authenticated: boolean; userId: number; email: string; role: 'USER' | 'ADMIN' } = {
+export const mockAuth: { authenticated: boolean; userId: number; email: string; issuer: string; role: 'USER' | 'ADMIN' } = {
   authenticated: false,
   userId: 1,
   email: 'dev@example.com',
+  issuer: 'https://accounts.google.com',
   role: 'USER',
 }
 
