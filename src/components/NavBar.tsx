@@ -78,10 +78,10 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   }, [isProfileMenuOpen])
 
   // 계정 메뉴가 열려 있는 동안만 헤더를 아래 줄(아이콘 줄, z-30)보다 위에 둔다 — 안 그러면 메뉴 위쪽이 그 줄에 가려진다.
-  // 메뉴 줄은 헤더 아래로 8.5px 겹친다. 배너 자리로 상단 바탕이 90px까지 늘어서 메뉴 줄을 4.5px 내렸고, 로고·프로필도 위 여백(pt-[9px])으로 같이 4.5px 내려 원래 간격을 지킨다. 로고 줄 배경은 유지하고 겹치는 메뉴 줄은 가리지 않게 아래쪽을 투명하게 둔다.
+  // 메뉴 줄은 헤더 아래로 6.5px 겹친다. 배너 자리로 상단 바탕이 90px까지 늘어서 메뉴 줄을 6.5px 내렸다(로고·프로필은 그대로라 위 여백이 늘지 않는다). 로고 줄 배경은 유지하고 겹치는 메뉴 줄은 가리지 않게 아래쪽을 투명하게 둔다.
   return (
     <>
-    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 pt-[9px] ${isProfileMenuOpen ? 'z-40 bg-[linear-gradient(to_bottom,var(--ui-surface)_57.5px,transparent_57.5px)]' : 'z-20 bg-ui-surface'}`}>
+    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40 bg-[linear-gradient(to_bottom,var(--ui-surface)_59.5px,transparent_59.5px)]' : 'z-20 bg-ui-surface'}`}>
       <Link
         to="/"
         aria-label="홈으로 이동: 지도 전체 종목"

@@ -146,8 +146,9 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   }
 
   return (
-    <div className="relative z-30 -top-[8.5px] mb-2 flex h-8 after:absolute after:inset-x-0 after:top-full after:h-[2.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs">
-      <div ref={barRef} data-nav-menus className="flex h-8 items-center gap-3">
+    <div className="relative z-30 -top-[6.5px] mb-2 flex h-8 after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs">
+      {/* 메뉴 글자 줄을 오른쪽 아이콘 줄(메뉴 줄보다 3.5px 아래에 있다)과 같은 높이로 맞추려고 3.5px 내린다. */}
+      <div ref={barRef} data-nav-menus className="flex h-8 translate-y-[3.5px] items-center gap-3">
         {links.map(link => (
           <div
             key={link.to}
