@@ -49,6 +49,7 @@ export function readDraft(key: string): { found: boolean; value?: unknown } {
 }
 
 export function writeDraft(key: string, value: unknown) {
+  if (memoryDrafts.has(key) && Object.is(memoryDrafts.get(key), value)) return
   memoryDrafts.set(key, value)
   notify()
 }

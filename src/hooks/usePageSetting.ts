@@ -26,7 +26,11 @@ export function usePageSetting<T>(key: string, initialValue: T): [T, Dispatch<Se
 
   const setValue = useCallback<Dispatch<SetStateAction<T>>>(
     next => {
-      writeDraft(key, typeof next === 'function' ? (next as (prev: T) => T)(value) : next)
+      const nextValue = typeof next === 'function' ? (next as (prev: T) => T)(value) : next
+      // 현재 선택된 라디오·토글을 다시 누르는 것은 설정 변경이 아니다. 같은 값을
+      // draft로 기록하면 저장 버튼에 미저장 점이 잘못 표시된다.
+      if (Object.is(nextValue, value)) return
+      writeDraft(key, nextValue)
     },
     [value, key],
   )
