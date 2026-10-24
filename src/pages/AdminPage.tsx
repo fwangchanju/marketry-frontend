@@ -27,6 +27,7 @@ export default function AdminPage() {
   const [summaryTarget, setSummaryTarget] = useState<HTMLElement | null>(null)
   const [specialTarget, setSpecialTarget] = useState<HTMLElement | null>(null)
   const [nicknameTarget, setNicknameTarget] = useState<HTMLElement | null>(null)
+  const [paginationTarget, setPaginationTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
 
@@ -72,10 +73,10 @@ export default function AdminPage() {
             ) : !isAdmin ? (
               <p className="text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
-              <AdminMembers key={session!.userId} userId={session!.userId!} summaryContainer={summaryTarget} specialContainer={specialTarget} nicknameContainer={nicknameTarget} />
+              <AdminMembers key={session!.userId} userId={session!.userId!} summaryContainer={summaryTarget} specialContainer={specialTarget} nicknameContainer={nicknameTarget} paginationContainer={paginationTarget} />
             )}
             </div>
-            <DisclaimerFooter />
+            <DisclaimerFooter rightContent={<div ref={setPaginationTarget} className="flex h-7 shrink-0 items-end justify-end" />} />
           </div>
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>

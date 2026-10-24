@@ -9,6 +9,7 @@ import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
 import { isLocalGuestMode, isLocalSignupEnabled, LOCAL_TEST_MEMBER_USER_ID } from '@/utils/localDevLogin'
 import { isAdminSession } from '@/utils/adminAccess'
 import { displayEmail } from '@/utils/displayEmail'
+import ActiveBannerSlot from '@/components/ActiveBannerSlot'
 
 // 모든 페이지에서 항상 똑같이 고정되는 최상단 바 — 홈 이동과 로그인 상태/프로필 메뉴를 담당한다.
 // 로그인 버튼은 NavSubBar 우측 "일괄변경"류 accent 버튼(nes-btn + var(--accent))과 같은 톤을 쓰고,
@@ -185,6 +186,7 @@ export default function NavBar({ hideAccount = false, staticMode = false }: { hi
       )}
       </div>
     </header>
+    {!staticMode && <ActiveBannerSlot />}
     </>
   )
 }

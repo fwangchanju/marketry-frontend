@@ -246,6 +246,7 @@ export const AuthSessionResponseSchema = z.object({
   authenticated: z.boolean(),
   userId: z.number().nullable(),
   email: z.string().nullable(),
+  issuer: z.string().nullable().optional(),
   role: AuthRoleSchema.nullable(),
   // 프로필 닉네임과 사진 버전(없으면 null).
   nickname: z.string().nullish(),

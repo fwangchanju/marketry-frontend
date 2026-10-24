@@ -1,4 +1,4 @@
-import { useLayoutEffect, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import MarketSummaryPage from './pages/MarketSummaryPage'
 import MapPage from './pages/MapPage'
@@ -19,6 +19,30 @@ import HoverHintLayer from './components/HoverHintLayer'
 import MobileNotice from './components/MobileNotice'
 import { marketRoute } from '@/utils/marketRoute'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
+import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
+
+function ClientMetricsReporter() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const page = metricPageFromPath(pathname)
+    if (!page) return
+    const startedAt = performance.now()
+    let secondFrame = 0
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => reportClientMetric(page, 'PAGE_LOAD', performance.now() - startedAt))
+    })
+    const onError = () => reportClientMetric(page, 'CLIENT_ERROR')
+    window.addEventListener('error', onError)
+    window.addEventListener('unhandledrejection', onError)
+    return () => {
+      cancelAnimationFrame(firstFrame)
+      cancelAnimationFrame(secondFrame)
+      window.removeEventListener('error', onError)
+      window.removeEventListener('unhandledrejection', onError)
+    }
+  }, [pathname])
+  return null
+}
 
 // 페이지 전체와 document.body로 포털 렌더링한 메뉴/팝업에 같은 숫자 폭 규칙을 적용한다.
 // 공통 스냅샷 날짜·시간도 FONT_BAR_TIME에서 동일한 숫자 폭을 명시한다.
@@ -65,6 +89,7 @@ function MobileGate({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <ClientMetricsReporter />
       <AppDialogHost />
       <HoverHintLayer />
       <MobileGate>
