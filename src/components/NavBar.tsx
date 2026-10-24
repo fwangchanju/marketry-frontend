@@ -5,6 +5,8 @@ import { useLoginGate } from '@/hooks/useLoginGate'
 import ProfileAvatar from '@/components/ProfileAvatar'
 import { UserIcon } from '@/components/icons/AppIcons'
 import MarketryLogo from '@/components/MarketryLogo'
+import AdBannerSlot from '@/components/AdBannerSlot'
+import DevTestBanner from '@/components/DevTestBanner'
 import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
 import { isLocalGuestMode, isLocalSignupEnabled, LOCAL_TEST_MEMBER_USER_ID } from '@/utils/localDevLogin'
 import { isAdminSession } from '@/utils/adminAccess'
@@ -78,6 +80,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   // 계정 메뉴가 열려 있는 동안만 헤더를 아래 줄(아이콘 줄, z-30)보다 위에 둔다 — 안 그러면 메뉴 위쪽이 그 줄에 가려진다.
   // 메뉴 줄은 헤더 아래로 13px 겹친다. 로고 줄 배경은 유지하고 겹치는 메뉴 줄은 가리지 않게 아래쪽을 투명하게 둔다.
   return (
+    <>
     <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40 bg-[linear-gradient(to_bottom,var(--ui-surface)_53px,transparent_53px)]' : 'z-20 bg-ui-surface'}`}>
       <Link
         to="/"
@@ -86,16 +89,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       >
         <MarketryLogo layout="horizontalClean" className="h-auto w-[min(13rem,calc(100vw-10rem))]" />
       </Link>
-      {/* 로컬 개발 서버에서만 보이는 표시 — 운영과 헷갈리지 않게 한다. import.meta.env.DEV는 운영 빌드에서 항상 false라 운영에는 나오지 않는다. */}
-      {isLocalSignupEnabled() && (
-        <span
-          aria-label="로컬 서버"
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-admin-only px-2.5 py-1 text-sm font-bold leading-none text-ui-background"
-        >
-          로컬 서버
-        </span>
-      )}
-      <div className="flex items-center gap-3">
+      <div data-account-area className="flex items-center gap-3">
       {hideAccount ? null : (
       // 비로그인의 사람 모양 칸과 로그인한 프로필 사진 칸은 크기와 자리가 같아서, 로그인 상태가 바뀌어도 오른쪽 위 모양이 달라지지 않는다.
       <div className="flex items-center justify-end gap-3">
@@ -193,5 +187,8 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       )}
       </div>
     </header>
+    {/* 로컬 개발 화면에서만 시험용 광고를 끼워 자리를 확인한다. 운영에서는 isLocalDev가 항상 false라 자리는 비어 있다. */}
+    <AdBannerSlot>{size => (isLocalDev ? <DevTestBanner size={size} /> : null)}</AdBannerSlot>
+    </>
   )
 }
