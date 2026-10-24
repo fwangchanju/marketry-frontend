@@ -246,6 +246,8 @@ export const AuthSessionResponseSchema = z.object({
   authenticated: z.boolean(),
   userId: z.number().nullable(),
   email: z.string().nullable(),
+  // OAuth 제공자(롤링 배포 중인 구버전 응답과 로컬 세션은 없을 수 있다).
+  issuer: z.string().nullish(),
   role: AuthRoleSchema.nullable(),
   // 프로필 닉네임과 사진 버전(없으면 null).
   nickname: z.string().nullish(),

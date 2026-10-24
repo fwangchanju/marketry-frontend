@@ -148,6 +148,7 @@ const ANONYMOUS_SESSION: AuthSessionResponse = {
   authenticated: false,
   userId: null,
   email: null,
+  issuer: null,
   role: null,
   nickname: null,
   profileImageVersion: null,
