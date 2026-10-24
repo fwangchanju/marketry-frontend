@@ -2,6 +2,7 @@ import axios, { type InternalAxiosRequestConfig } from 'axios'
 import { AuthSessionResponseSchema, type AuthSessionResponse } from '@/types/api'
 import queryClient from './queryClient'
 import { authKeys } from '@/hooks/queryKeys'
+import { setLocalGuestMode } from '@/utils/localDevLogin'
 
 const client = axios.create({
   baseURL: '/api',
@@ -20,6 +21,8 @@ let refreshPromise: Promise<AuthSessionResponse> | null = null
 let lastRefreshAt = 0
 
 export function markSessionAnonymous() {
+  // 로컬 개발 화면에서는 로그인이 풀리면 새로고침해도 다시 자동 로그인되지 않고 GUEST로 남긴다.
+  if (import.meta.env.DEV) setLocalGuestMode(true)
   queryClient.setQueryData(authKeys.session(), {
     authenticated: false,
     userId: null,

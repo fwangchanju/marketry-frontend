@@ -40,6 +40,16 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       : localGuestMode ? 'GUEST' : null
     : null
   const accountDisplayName = localAccountLabel || session?.nickname || '내 계정'
+  // 로컬 개발 화면 전용 — 지금 어느 계정(ADMIN·TEST·GUEST)인지 프로필 칸 왼쪽에 보여 준다. 운영에는 없다.
+  const localAccountBadge = localAccountLabel && (
+    <span
+      role="img"
+      aria-label={`현재 계정: ${localAccountLabel}`}
+      className={`mr-2 rounded px-2.5 py-1 text-sm font-bold leading-none ${localAccountLabel === 'ADMIN' ? 'bg-admin-only text-ui-background' : 'bg-ui-control text-ui-white'}`}
+    >
+      {localAccountLabel}
+    </span>
+  )
   // dev-login도 구글 로그인과 같은 15분짜리 접근 토큰을 발급하므로, localAutoLogin 여부와 무관하게
   // 로그인 상태면 동일하게 선제 갱신한다.
   useSessionKeepAlive((session?.authenticated ?? false) && !isDevSignupPending)
@@ -92,8 +102,10 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       {isLoading ? (
         // 세션 확인 중에는 로그인 버튼도 프로필 아이콘도 아닌 빈 틀만 둔다 — 새로고침 직후 잠깐 로그인한 모양이 비쳤다가 로그아웃 모양으로 바뀌는 깜빡임을 막는다. 크기와 자리는 둘과 같다.
         <div aria-hidden="true" className="relative -top-[2.5px] mr-0.5 size-[38px] rounded-[12%] bg-ui-surface" />
-      ) : isLoggedOut && !isLocalDev ? (
-        // 비로그인은 프로필 사진 자리에 사람 모양 칸을 보여주고, 누르면 바로 로그인 창이 열린다.
+      ) : isLoggedOut ? (
+        // 비로그인은 프로필 사진 자리에 사람 모양 칸을 보여주고, 누르면 바로 로그인 창이 열린다. 로컬에서는 앞에 GUEST 표시가 붙는다.
+        <div className="flex items-center">
+        {localAccountBadge}
         <button
           type="button"
           aria-label="로그인"
@@ -103,26 +115,19 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
         >
           <UserIcon aria-hidden="true" strokeWidth={1.25} className="size-[26px]" />
         </button>
+        </div>
       ) : (
       <div ref={profileMenuRef} className="relative flex items-center">
-        {localAccountLabel && (
-          <span
-            role="img"
-            aria-label={`현재 계정: ${localAccountLabel}`}
-            className={`mr-2 rounded px-2.5 py-1 text-sm font-bold leading-none ${localAccountLabel === 'ADMIN' ? 'bg-admin-only text-ui-background' : 'bg-ui-control text-ui-white'}`}
-          >
-            {localAccountLabel}
-          </span>
-        )}
+        {localAccountBadge}
         <button
           ref={profileButtonRef}
           type="button"
-          aria-label={isProfileMenuOpen ? '계정 메뉴 닫기' : isLoggedOut ? '로컬 계정 메뉴 열기' : '계정 메뉴 열기'}
+          aria-label={isProfileMenuOpen ? '계정 메뉴 닫기' : '계정 메뉴 열기'}
           aria-expanded={isProfileMenuOpen}
           onClick={() => setIsProfileMenuOpen(open => !open)}
-          className={`relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center overflow-hidden rounded-[12%] border-0 p-0 ring-2 ring-transparent hover:ring-ui-border focus-visible:outline-none focus-visible:ring-[var(--accent)] ${session?.authenticated ? 'bg-transparent' : 'bg-ui-control text-ui-text'}`}
+          className={`relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center overflow-hidden rounded-[12%] border-0 p-0 ring-2 ring-transparent hover:ring-ui-border focus-visible:outline-none focus-visible:ring-[var(--accent)] bg-transparent`}
         >
-          {session?.authenticated ? <ProfileAvatar className="size-full object-cover" /> : <UserIcon aria-hidden="true" strokeWidth={1.25} className="size-[26px]" />}
+          <ProfileAvatar className="size-full object-cover" />
         </button>
         {isProfileMenuOpen && (
           <div className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pb-2 text-ui-white shadow-2xl shadow-ui-background/70">
@@ -160,22 +165,8 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                   </button>
                 </div>
               </>
-            ) : isLocalDev ? (
-              <div className="px-3 py-2 text-sm">
-                <p className="m-0 font-semibold">GUEST</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileMenuOpen(false)
-                    requireLogin(`${pathname}${search}${hash}`, { hideMessage: true })
-                  }}
-                  className="mt-2 h-7 w-full rounded-[5px] border border-ui-border bg-transparent text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-white/10 focus:bg-ui-white/10"
-                >
-                  로그인
-                </button>
-              </div>
             ) : null}
-            {/* 계정 전환은 로그인한 뒤에만 보인다 — 관리자로 들어와야 테스트 계정을 쓸 수 있다(GUEST는 위의 로그인 팝업이 관리자로 로그인한다). */}
+            {/* 계정 전환은 로그인한 뒤에만 보인다 — 관리자로 들어와야 테스트 계정을 쓸 수 있다(GUEST는 프로필 칸을 누르면 바로 뜨는 로그인 팝업이 관리자로 로그인한다). */}
             {isLocalDev && session?.authenticated && (
               <div className="mx-3 mt-2 flex flex-col gap-1.5 border-t border-ui-border pt-2">
                 {(['admin', 'test'] as const)

@@ -182,6 +182,9 @@ export function useWithdrawAccount() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: withdrawAccount,
-    onSuccess: () => clearSessionData(queryClient),
+    onSuccess: () => {
+      if (import.meta.env.DEV) setLocalGuestMode(true)
+      clearSessionData(queryClient)
+    },
   })
 }
