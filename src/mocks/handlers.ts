@@ -67,10 +67,11 @@ export const handlers = [
       : new HttpResponse(data.mockProfile.image, { headers: { 'Content-Type': 'image/jpeg' } }),
   ),
   // ── 인증(가입/로그인 전환) ────────────────────────────────────────────
-  // 실제 Google OAuth 대신, dev:mock에서는 이 요청 자체를 "로그인 성공"으로 취급하고 곧바로
+  http.get('/api/auth/social/providers', () => HttpResponse.json({ google: true, naver: true, kakao: true })),
+  // 실제 OAuth 대신, dev:mock에서는 이 요청 자체를 "로그인 성공"으로 취급하고 곧바로
   // returnTo로 리다이렉트한다 — LoginModal의 <a href>가 실제 페이지 이동을 트리거하므로 여기서도
   // 진짜 302로 응답해야 브라우저가 실제로 그 경로로 이동한다.
-  http.get('/api/auth/google', ({ request }) => {
+  http.get(/\/api\/auth\/(google|naver|kakao)$/, ({ request }) => {
     const url = new URL(request.url)
     const returnTo = url.searchParams.get('returnTo') || '/'
     data.mockAuth.authenticated = true

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getAdminMemberSummary, getAdminMembers, resetMembersNickname, setMembersSpecial } from '@/api/adminMembers'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
-import { GoogleLogoIcon } from '@/components/icons/AppIcons'
+import { GoogleLogoIcon, KakaoLogoIcon, NaverLogoIcon } from '@/components/icons/AppIcons'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import StockSortHeader from '@/components/StockSortHeader'
 import Toolbar from '@/components/Toolbar'
@@ -40,7 +40,7 @@ type MemberGrade = (typeof GRADE_VALUES)[number]
 const gradeLabelOf = (value: string) => (value === 'ADMIN' ? '관리자' : value === 'SPECIAL' ? '특별 회원' : '일반 회원')
 const GRADE_COLOR_CLASS: Record<MemberGrade, string> = { ADMIN: 'text-admin-only', SPECIAL: 'text-[var(--sub-purple)]', USER: 'text-ui-text' }
 const gradeOf = (member: { role: string; special: boolean }): MemberGrade => (member.role === 'ADMIN' ? 'ADMIN' : member.special ? 'SPECIAL' : 'USER')
-// 로그인 연동 — 구글 로그인이면 구글 로고만 보이고, 그 밖(시스템·로컬 테스트 회원)은 줄표로 둔다.
+// 로그인 연동 — OAuth 제공자별 표시. 그 밖(시스템·로컬 테스트 회원)은 줄표로 둔다.
 const GOOGLE_ISSUER = 'https://accounts.google.com'
 const CHECKBOX_COLUMN_WIDTH = `${STOCK_CHECKBOX_COLUMN_PX}px`
 // 종목 표 체크박스 칸과 같은 폭·여백이다.
@@ -262,6 +262,10 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
                     <span role="img" aria-label="구글" className="mx-auto flex h-5 w-5 items-center justify-center rounded-[3px] bg-ui-white">
                       <GoogleLogoIcon className="h-3.5 w-3.5" />
                     </span>
+                  ) : member.issuer === 'https://nid.naver.com' ? (
+                    <span role="img" aria-label="네이버" className="mx-auto flex h-5 w-5 items-center justify-center rounded-[3px] bg-[#03a94d] text-white"><NaverLogoIcon className="h-3.5 w-3.5" /></span>
+                  ) : member.issuer === 'https://kauth.kakao.com' ? (
+                    <span role="img" aria-label="카카오" className="mx-auto flex h-5 w-5 items-center justify-center rounded-[3px] bg-[#fee500]"><KakaoLogoIcon className="h-3.5 w-3.5" /></span>
                   ) : '-'}
                 </td>
                 <td className="break-normal whitespace-nowrap px-2 text-left">{displayEmail(member.email) || <span className="text-ui-muted">미등록</span>}</td>

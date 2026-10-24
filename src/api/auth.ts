@@ -6,6 +6,28 @@ import { AuthSessionResponseSchema } from '@/types/api'
 export const googleLoginUrl = (returnTo: string) =>
   `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`
 
+export const naverLoginUrl = (returnTo: string) =>
+  `/api/auth/naver?returnTo=${encodeURIComponent(returnTo)}`
+
+export const kakaoLoginUrl = (returnTo: string) =>
+  `/api/auth/kakao?returnTo=${encodeURIComponent(returnTo)}`
+
+export interface SocialProviderAvailability {
+  google: boolean
+  naver: boolean
+  kakao: boolean
+}
+
+export const getSocialProviderAvailability = (): Promise<SocialProviderAvailability> =>
+  client.get('/auth/social/providers').then(response => {
+    const data = response.data as Partial<SocialProviderAvailability> | null
+    return {
+      google: data?.google === true,
+      naver: data?.naver === true,
+      kakao: data?.kakao === true,
+    }
+  })
+
 // 로그인하지 않은 방문자가 어디서 들어왔는지 서버가 구분할 수 있게 세션을 물을 때 같이 실어 보낸다 — 이전 페이지는 주소가 아니라 도메인(origin)까지만,
 // 주소의 utm_source는 짧은 글자만 보낸다. 서버가 받는 Referer는 우리 사이트 자신이라 쓸 수 없다.
 const MAX_SOURCE_LENGTH = 40
