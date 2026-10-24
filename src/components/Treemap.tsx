@@ -57,9 +57,6 @@ interface RelativeRect {
   height: number
 }
 
-// 사라지는(줌인 땐 옛 화면, 줌아웃 땐 방금까지 보던 화면) 스냅샷을 실제 화면 위에 겹쳐 그렸다가
-// 트랜지션 끝나면 치우는 "고스트" 레이어. direction에 따라 실제 콘텐츠보다 위/아래 어느 쪽에 그릴지가 다르다
-// (줌인: 실제 콘텐츠가 고스트를 덮으며 커짐 / 줌아웃: 고스트가 실제 콘텐츠를 덮은 채 줄어들며 사라짐).
 interface GhostOverlay {
   sectors: LaidOutSector[]
   depth: number
@@ -69,7 +66,6 @@ interface GhostOverlay {
 
 const ZOOM_IN_DURATION = 500
 const ZOOM_OUT_DURATION = 440
-// 처음에 빠르게 튀어나오고 끝에서 부드럽게 멈추는 곡선 — 누른 박스에서 "터져 나오는" 느낌을 준다.
 const ZOOM_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)'
 // 진입은 시작이 부드러운 표준 곡선 — 빠르게 튀어나가는 곡선을 쓰면 첫 프레임에서 박스가 툭 튀어나와 보인다.
 const ZOOM_IN_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
@@ -77,11 +73,8 @@ const ZOOM_IN_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
 const ZOOM_IN_FADE_RATIO = 0.35
 // 진입/복귀 때 주변(형제) 화면에 덮는 어두운 막 — 누른 박스만 밝게 남아서 "여기서 시작했다"는 인상을 준다.
 const DIM_OPACITY = 0.55
-// 진입 때 옛 화면이 누른 박스를 중심으로 이 배율까지 커지며 사라진다 — 나갈 때 큰 화면이 줄어드는 움직임과 대칭.
-const OLD_SCREEN_SCALE = 1.15
 const DIM_IN_DURATION = 120 // 진입: 막이 어두워지는 시간(이후 나머지 시간 동안 걷힌다)
 const noop = () => {}
-
 function toRelativeRect(rect: DOMRect, containerRect: DOMRect): RelativeRect {
   return {
     left: (rect.left - containerRect.left) / containerRect.width,
@@ -133,9 +126,9 @@ export default function Treemap({
   const [popup, setPopup] = useState<PopupState | null>(null)
   // 실제(현재) 콘텐츠 wrapper에 거는 transform/opacity — 줌인일 때만 쓴다(작게 시작해서 꽉 차게 커짐).
   const [zoomStyle, setZoomStyle] = useState<React.CSSProperties | undefined>(undefined)
+  const [ghost, setGhost] = useState<GhostOverlay | null>(null)
   // 사라지는 옛 화면을 실제 콘텐츠 위/아래에 겹쳐 그리는 고스트 — 형제 섹터들이 순간 사라지지 않고
   // 서서히 페이드아웃(줌인)/줄어들며 사라지도록(줌아웃) 보여준다.
-  const [ghost, setGhost] = useState<GhostOverlay | null>(null)
   // 주변을 어둡게 덮는 막 — zIndex 0은 실제 콘텐츠 아래(진입: 커지는 박스는 덮지 않고 고스트만 어둡게),
   // 5는 실제 콘텐츠 위·복귀 고스트(10) 아래(복귀: 위쪽 화면이 덮여 있다가 걷힌다).
   const [dim, setDim] = useState<{ zIndex: number; style: React.CSSProperties } | null>(null)
@@ -145,9 +138,9 @@ export default function Treemap({
   // onPointerMove) 꺼진다. CSS :active는 버튼을 구분 못 해서
   // 우클릭(팝업) 프레스 중에도 같이 켜지므로, 이 "누르는 순간"은 JS로 처리한다.
   const [suppressSectorHoverBorder, setSuppressSectorHoverBorder] = useState(false)
+  const entryRectsRef = useRef<Map<number, RelativeRect>>(new Map())
   // 섹터 진입(클릭) 시점에 스크린샷으로 찍은 "그 박스가 화면에서 차지하던 위치" — 뎁스별로 기억해뒀다가
   // 다시 나갈 때 정확히 그 자리로 줄어드는 반대 애니메이션에 재사용한다.
-  const entryRectsRef = useRef<Map<number, RelativeRect>>(new Map())
   // 클릭~실제 path 반영(재렌더) 사이에 잠깐 들고 있는 값들 — 클릭 시점엔 아직 depth/groups가 안 바뀌어
   // 있어서, 새 depth로 렌더된 뒤(useLayoutEffect)에야 확정해서 쓴다.
   const pendingEnterRectRef = useRef<RelativeRect | null>(null)
@@ -219,9 +212,8 @@ export default function Treemap({
     }
   }, [popup])
 
-  // 섹터 클릭 시점의(=아직 이전 뎁스 화면인 상태의) 박스 위치와, 지금 화면 전체(형제 포함) 스냅샷을
-  // 미리 잡아두고 실제 이동을 요청한다. 새 뎁스로 리렌더된 뒤 아래 useLayoutEffect가 이 값들을 읽어서
-  // "그 자리에서 확대되면서, 형제들은 서서히 사라지는" 애니메이션을 만든다.
+  // 섹터 클릭 시점의 박스 위치를 잡아두고 실제 이동을 요청한다. 새 뎁스로 리렌더된 뒤
+  // 아래 useLayoutEffect가 그 자리에서 새 화면을 확대한다.
   const handleSelectSector = (sectorName: string, rect: DOMRect) => {
     setSuppressSectorHoverBorder(true)
     const containerRect = containerRef.current?.getBoundingClientRect()
@@ -239,8 +231,8 @@ export default function Treemap({
       // 줌인: 이번 뎁스 진입에 쓰인 rect를 건너뛴 구간 전부에 저장해두고(나중에 되감기용 — "전체" 화면에서는
       // 세부 섹터를 바로 클릭해서 여러 뎁스를 한 번에 건너뛸 수 있다), 방금 새로 그려진(꽉 찬 크기)
       // 실제 콘텐츠를 그 rect 자리/크기로 순간 이동시켰다가 다음 프레임에 원래 크기로 트랜지션한다 —
-      // FLIP(First-Last-Invert-Play) 기법. 옛 화면 스냅샷은 고스트로 실제 콘텐츠 아래 깔아서, 실제
-      // 콘텐츠가 커지며 덮어가는 동안 형제들이 서서히 페이드아웃하듯 보이게 한다.
+      // FLIP(First-Last-Invert-Play) 기법. 이전 화면을 복제하지 않고 새 화면만 선택 카드 자리에서
+      // 전체 크기로 확장한다.
       const pendingRect = pendingEnterRectRef.current
       const snapshot = outgoingSnapshotRef.current
       pendingEnterRectRef.current = null
@@ -252,16 +244,15 @@ export default function Treemap({
         const originX = (pendingRect.left + pendingRect.width / 2) * containerRect.width
         const originY = (pendingRect.top + pendingRect.height / 2) * containerRect.height
         const ghostOrigin = `${originX}px ${originY}px`
-        setGhost(
-          snapshot
-            ? {
-                sectors: snapshot.sectors,
-                depth: snapshot.depth,
-                direction: 'in',
-                style: { opacity: 1, transform: 'none', transformOrigin: ghostOrigin, transition: 'none' },
-              }
-            : null,
-        )
+        // 전체 화면(depth 0)에서 분류 화면으로 진입할 때는 이전 전체 지도 고스트를 생략한다.
+        // 새 화면의 선택 위치 확대와 이후 단계 전환·복귀 애니메이션은 유지한다.
+        const skipEntryGhost = prevDepthRef.current === 0 && depth > 0
+        setGhost(snapshot && !skipEntryGhost ? {
+          sectors: snapshot.sectors,
+          depth: snapshot.depth,
+          direction: 'in',
+          style: { opacity: 1, transform: 'none', transformOrigin: ghostOrigin, transition: 'none' },
+        } : null)
         setZoomStyle({
           transform: toShrinkTransform(pendingRect, containerRect),
           opacity: 0,
@@ -269,19 +260,14 @@ export default function Treemap({
         })
         setDim({ zIndex: 0, style: { opacity: 0, transition: 'none' } })
         requestAnimationFrame(() => {
-          setGhost(prev =>
-            prev
-              ? {
-                  ...prev,
-                  style: {
-                    opacity: 0,
-                    transform: `scale(${OLD_SCREEN_SCALE})`,
-                    transformOrigin: ghostOrigin,
-                    transition: `opacity ${ZOOM_IN_DURATION}ms ease-out, transform ${ZOOM_IN_DURATION}ms ${ZOOM_IN_EASE}`,
-                  },
-                }
-              : null,
-          )
+          setGhost(prev => prev ? {
+            ...prev,
+            style: {
+              opacity: 0,
+              transformOrigin: ghostOrigin,
+              transition: `opacity ${ZOOM_IN_DURATION}ms ease-out`,
+            },
+          } : null)
           setZoomStyle({
             transform: 'none',
             opacity: 1,
@@ -304,11 +290,6 @@ export default function Treemap({
         }
       }
     } else if (depth < prevDepthRef.current) {
-      // 줌아웃: onZoomOutComplete가 이미 실제 이동을 끝낸 뒤라(아래 useEffect에서 이동 전에 스냅샷만
-      // 먼저 떠둠), 지금 sectors는 이미 "더 얕은 뎁스"의 실제 콘텐츠(형제 포함)다. 방금까지 보던
-      // 화면(스냅샷)을 고스트로 그 위에 통째로 덮어 씌운 채, 나갈 때 썼던 rect 자리로 줄이면서
-      // 페이드아웃시켜 걷어내고, 배경(실제 콘텐츠)도 같은 시간 동안 페이드인시켜 둘이 하나의
-      // 전환처럼 이어지게 한다(배경만 트랜지션 없이 툭 나타나면 고스트랑 따로 노는 것처럼 보였다).
       const rect = entryRectsRef.current.get(depth)
       const snapshot = outgoingSnapshotRef.current
       outgoingSnapshotRef.current = null
@@ -324,18 +305,14 @@ export default function Treemap({
         requestAnimationFrame(() => {
           setDim({ zIndex: 5, style: { opacity: 0, transition: `opacity ${ZOOM_OUT_DURATION}ms ease-in` } })
           setZoomStyle({ opacity: 1, transition: `opacity ${ZOOM_OUT_DURATION}ms ease-in` })
-          setGhost(prev =>
-            prev
-              ? {
-                  ...prev,
-                  style: {
-                    transform: toShrinkTransform(rect, containerRect),
-                    opacity: 0,
-                    transition: `transform ${ZOOM_OUT_DURATION}ms ${ZOOM_EASE}, opacity ${ZOOM_OUT_DURATION}ms ease-in`,
-                  },
-                }
-              : null,
-          )
+          setGhost(prev => prev ? {
+            ...prev,
+            style: {
+              transform: toShrinkTransform(rect, containerRect),
+              opacity: 0,
+              transition: `transform ${ZOOM_OUT_DURATION}ms ${ZOOM_EASE}, opacity ${ZOOM_OUT_DURATION}ms ease-in`,
+            },
+          } : null)
         })
         const timer = window.setTimeout(() => {
           setGhost(null)
@@ -348,9 +325,7 @@ export default function Treemap({
     prevDepthRef.current = depth
   }, [depth, groups])
 
-  // 줌아웃 트리거 — breadcrumb 클릭으로 부모가 zoomOutRequestDepth를 지정하면, 지금(=곧 사라질) 화면의
-  // 스냅샷을 먼저 떠두고 바로 실제 이동을 요청한다. 실제 애니메이션은 위 useLayoutEffect가 depth가
-  // 줄어든 걸 감지해서 재생한다(이동이 이미 끝난 뒤라 실제 콘텐츠가 밑에 다 그려져 있는 상태).
+  // breadcrumb 클릭 전에 현재 하위 화면을 스냅샷으로 기억해 복귀 애니메이션에 쓴다.
   useEffect(() => {
     if (zoomOutRequestDepth == null) return
     outgoingSnapshotRef.current = { sectors, depth }
@@ -378,15 +353,16 @@ export default function Treemap({
       }}
       onPointerLeave={() => setSuppressSectorHoverBorder(false)}
     >
-      {/* 줌인일 땐 고스트(옛 화면)를 실제 콘텐츠보다 아래(zIndex -1)에 깔아서, 커지는 실제 콘텐츠가
-          덮어가며 형제들을 가리게 하고, 줌아웃일 땐 반대로 위(zIndex 10)에 덮어서 줄어들며 걷히게 한다.
-          transform-origin은 항상 '0 0'으로 고정 — zoomStyle 쪽 객체에 넣으면 identity로 바뀔 때 origin
-          값이 통째로 빠지면서 브라우저가 origin까지 같이 보간해버려(중앙으로 드리프트), 줌이 클릭 지점이
-          아니라 화면 중앙에서 일어나는 것처럼 보이는 버그가 있었다. */}
       {ghost && (
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ transformOrigin: '0 0', zIndex: ghost.direction === 'out' ? 10 : -1, ...ghost.style }}
+          style={{
+            transformOrigin: '0 0',
+            zIndex: ghost.direction === 'out' ? 10 : -1,
+            contain: 'layout paint style',
+            willChange: 'transform, opacity',
+            ...ghost.style,
+          }}
         >
           {ghost.sectors.map(sector => (
             <SectorBox
@@ -415,8 +391,8 @@ export default function Treemap({
           ))}
         </div>
       )}
-      {dim && <div className="pointer-events-none absolute inset-0 bg-ui-background" style={{ zIndex: dim.zIndex, ...dim.style }} />}
-      <div className="absolute inset-0" style={{ transformOrigin: '0 0', ...zoomStyle }}>
+      {dim && <div className="pointer-events-none absolute inset-0 bg-ui-background" style={{ zIndex: dim.zIndex, willChange: 'opacity', ...dim.style }} />}
+      <div className="absolute inset-0" style={{ transformOrigin: '0 0', willChange: 'transform, opacity', ...zoomStyle }}>
         {sectors.map(sector => (
           <SectorBox
             key={sector.sectorName}
