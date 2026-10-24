@@ -1,7 +1,7 @@
 import { useCallback, useEffect, type Dispatch, type SetStateAction } from 'react'
 import { useCustomPreferences } from './useCustomPreferences'
 import { useIsLoggedIn } from './useSession'
-import { readDraft, registerDraftKey, useDraftVersion, writeDraft } from '@/utils/settingsDraft'
+import { clearDraft, readDraft, registerDraftKey, useDraftVersion, writeDraft } from '@/utils/settingsDraft'
 
 // 화면 설정(마켓맵/섹터 페이지의 옵션 사이드바 값 등) 하나를 다루는 훅 — useState와 같은 [value, setValue] 시그니처.
 //
@@ -22,17 +22,24 @@ export function usePageSetting<T>(key: string, initialValue: T): [T, Dispatch<Se
   const draft = readDraft(key)
   const useServer = isLoggedIn && isLoaded
   const hasServerValue = useServer && preferences !== undefined && Object.hasOwn(preferences, key)
-  const value = draft.found ? (draft.value as T) : hasServerValue ? (preferences![key] as T) : initialValue
+  const savedValue = hasServerValue ? (preferences![key] as T) : initialValue
+  const value = draft.found ? (draft.value as T) : savedValue
 
   const setValue = useCallback<Dispatch<SetStateAction<T>>>(
     next => {
       const nextValue = typeof next === 'function' ? (next as (prev: T) => T)(value) : next
-      // 현재 선택된 라디오·토글을 다시 누르는 것은 설정 변경이 아니다. 같은 값을
-      // draft로 기록하면 저장 버튼에 미저장 점이 잘못 표시된다.
-      if (Object.is(nextValue, value)) return
+      const currentDraft = readDraft(key)
+      // 포인터 드래그는 시작할 때의 setter를 계속 쓴다. 시작값으로 돌아오면 그
+      // setter의 value와 같더라도, 이미 만든 draft는 버려야 화면도 원래 값으로
+      // 돌아간다. 아직 draft가 없는 제자리 클릭만 무시한다.
+      if (Object.is(nextValue, savedValue)) {
+        if (currentDraft.found) clearDraft(key)
+        return
+      }
+      if (currentDraft.found && Object.is(currentDraft.value, nextValue)) return
       writeDraft(key, nextValue)
     },
-    [value, key],
+    [value, key, savedValue],
   )
 
   return [value, setValue]
