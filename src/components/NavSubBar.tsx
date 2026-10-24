@@ -70,13 +70,14 @@ const NAV_ICON_EXTENT: Record<NavIconName, { cx: number; cy: number; size: numbe
   member: { cx: 12, cy: 12.5, size: 17 },
 }
 
+// 광고 배너(AdBannerSlot)가 메뉴에 걸릴 만큼 화면이 좁으면 배너 자리가 html에 data-nav-compact를 달아서 글자 앞 아이콘을 숨기고 메뉴 폭을 줄인다.
 function NavIcon({ icon }: { icon: NavIconName }) {
   const { cx, cy, size } = NAV_ICON_EXTENT[icon]
   const side = size + 2
   return (
     <SettingsSectionIcon
       icon={icon}
-      className="-translate-y-[1.4px] h-[18px] w-[18px]"
+      className="-translate-y-[1.4px] h-[18px] w-[18px] [html[data-nav-compact]_&]:hidden"
       viewBox={`${cx - side / 2} ${cy - side / 2} ${side} ${side}`}
       strokeWidth={(NAV_ICON_STROKE_PX * side) / NAV_ICON_PX}
     />
@@ -145,8 +146,8 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   }
 
   return (
-    <div className="relative z-30 -top-[13px] flex h-8 after:absolute after:inset-x-0 after:top-full after:h-[2.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs">
-      <div ref={barRef} className="flex h-8 items-center gap-3">
+    <div className="relative z-30 -top-[8.5px] mb-2 flex h-8 after:absolute after:inset-x-0 after:top-full after:h-[2.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs">
+      <div ref={barRef} data-nav-menus className="flex h-8 items-center gap-3">
         {links.map(link => (
           <div
             key={link.to}
