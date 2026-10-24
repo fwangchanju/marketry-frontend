@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminMessagePage from './pages/AdminMessagePage'
+import AdminBannerPage from './pages/AdminBannerPage'
 import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
 import HoverHintLayer from './components/HoverHintLayer'
@@ -101,11 +102,12 @@ export default function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           {/* 관리자 전용 — 관리자가 아니면 페이지 안에서 홈으로 보낸다. */}
-          {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 메시지로 나뉜다. */}
+          {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 텔레그램, 배너로 나뉜다. */}
           <Route path="/admin" element={<Navigate to="/admin/member" replace />} />
           <Route path="/admin/member" element={<AdminPage />} />
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           <Route path="/admin/message" element={<AdminMessagePage />} />
+          <Route path="/admin/banner" element={<AdminBannerPage />} />
           <Route path="/admin/chart" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
