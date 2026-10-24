@@ -54,7 +54,7 @@ export default function MarketryPublishControls() {
 
   const handlePublish = async () => {
     const confirmed = await appConfirm(
-      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n내 분류를 MARKETRY 분류로 업데이트하시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`,
+      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n내 기준을 MARKETRY 분류로 업데이트하시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`,
       { adminOnly: true, title: 'MARKETRY 업데이트' },
     )
     if (!confirmed) return

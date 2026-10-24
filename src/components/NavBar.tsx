@@ -6,7 +6,9 @@ import ProfileAvatar from '@/components/ProfileAvatar'
 import { UserIcon } from '@/components/icons/AppIcons'
 import MarketryLogo from '@/components/MarketryLogo'
 import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
-import { isLocalSignupEnabled } from '@/utils/localDevLogin'
+import { isLocalGuestMode, isLocalSignupEnabled, LOCAL_TEST_MEMBER_USER_ID } from '@/utils/localDevLogin'
+import { isAdminSession } from '@/utils/adminAccess'
+import { displayEmail } from '@/utils/displayEmail'
 
 // 모든 페이지에서 항상 똑같이 고정되는 최상단 바 — 홈 이동과 로그인 상태/프로필 메뉴를 담당한다.
 // 로그인 버튼은 NavSubBar 우측 "일괄변경"류 accent 버튼(nes-btn + var(--accent))과 같은 톤을 쓰고,
@@ -26,6 +28,28 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   useLocalDevLogin()
   // 세션 확인이 끝났고 로그인하지 않은 상태 — 확인 중(isLoading)에는 깜빡임 없이 프로필 아이콘을 유지한다.
   const isLoggedOut = !isLoading && !session?.authenticated
+  const isLocalDev = isLocalSignupEnabled()
+  const localGuestMode = isLocalDev && isLocalGuestMode()
+  const localAccountLabel = isLocalDev
+    ? session?.authenticated
+      ? isAdminSession(session)
+        ? 'ADMIN'
+        : session.userId === LOCAL_TEST_MEMBER_USER_ID
+          ? 'TEST'
+          : null
+      : localGuestMode ? 'GUEST' : null
+    : null
+  const accountDisplayName = localAccountLabel || session?.nickname || '내 계정'
+  // 로컬 개발 화면 전용 — 지금 어느 계정(ADMIN·TEST·GUEST)인지 프로필 칸 왼쪽에 보여 준다. 운영에는 없다.
+  const localAccountBadge = localAccountLabel && (
+    <span
+      role="img"
+      aria-label={`현재 계정: ${localAccountLabel}`}
+      className={`mr-2 rounded px-2.5 py-1 text-sm font-bold leading-none ${localAccountLabel === 'ADMIN' ? 'bg-admin-only text-ui-background' : 'bg-ui-control text-ui-white'}`}
+    >
+      {localAccountLabel}
+    </span>
+  )
   // dev-login도 구글 로그인과 같은 15분짜리 접근 토큰을 발급하므로, localAutoLogin 여부와 무관하게
   // 로그인 상태면 동일하게 선제 갱신한다.
   useSessionKeepAlive((session?.authenticated ?? false) && !isDevSignupPending)
@@ -79,7 +103,9 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
         // 세션 확인 중에는 로그인 버튼도 프로필 아이콘도 아닌 빈 틀만 둔다 — 새로고침 직후 잠깐 로그인한 모양이 비쳤다가 로그아웃 모양으로 바뀌는 깜빡임을 막는다. 크기와 자리는 둘과 같다.
         <div aria-hidden="true" className="relative -top-[2.5px] mr-0.5 size-[38px] rounded-[12%] bg-ui-surface" />
       ) : isLoggedOut ? (
-        // 비로그인은 프로필 사진 자리에 사람 모양 칸을 보여주고, 누르면 바로 로그인 창이 열린다.
+        // 비로그인은 프로필 사진 자리에 사람 모양 칸을 보여주고, 누르면 바로 로그인 창이 열린다. 로컬에서는 앞에 GUEST 표시가 붙는다.
+        <div className="flex items-center">
+        {localAccountBadge}
         <button
           type="button"
           aria-label="로그인"
@@ -89,15 +115,17 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
         >
           <UserIcon aria-hidden="true" strokeWidth={1.25} className="size-[26px]" />
         </button>
+        </div>
       ) : (
       <div ref={profileMenuRef} className="relative flex items-center">
+        {localAccountBadge}
         <button
           ref={profileButtonRef}
           type="button"
           aria-label={isProfileMenuOpen ? '계정 메뉴 닫기' : '계정 메뉴 열기'}
           aria-expanded={isProfileMenuOpen}
           onClick={() => setIsProfileMenuOpen(open => !open)}
-          className="relative -top-[2.5px] mr-0.5 size-[38px] overflow-hidden rounded-[12%] border-0 bg-transparent p-0 ring-2 ring-transparent hover:ring-ui-border focus-visible:outline-none focus-visible:ring-[var(--accent)]"
+          className={`relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center overflow-hidden rounded-[12%] border-0 p-0 ring-2 ring-transparent hover:ring-ui-border focus-visible:outline-none focus-visible:ring-[var(--accent)] bg-transparent`}
         >
           <ProfileAvatar className="size-full object-cover" />
         </button>
@@ -110,8 +138,8 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                 <div className="flex items-center gap-3 border-b border-ui-border px-4 py-3 text-sm">
                   <ProfileAvatar className="size-10 shrink-0 object-cover" />
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{session.nickname || '내 계정'}</p>
-                    <p className="mt-1 truncate text-ui-muted">{session.email || `사용자 ${session.userId}`}</p>
+                    <p className="truncate font-semibold">{accountDisplayName}</p>
+                    <p className="mt-1 truncate text-ui-muted">{displayEmail(session.email) || `사용자 ${session.userId}`}</p>
                   </div>
                 </div>
                 {/* 마켓 메뉴와 같은 상태색 규칙: 기본은 팝업 바탕, 호버는 옅은 회색, 현재 페이지는 청록 포인트다. */}
@@ -136,25 +164,27 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                     로그아웃
                   </button>
                 </div>
-                {/* 로컬 개발 전용 — 로그인 상태와 상관없이 관리자 계정 또는 테스트 회원으로 로그인한다. */}
-                {isLocalSignupEnabled() && (
-                  <div className="mx-3 mt-2 flex flex-col gap-1.5 border-t border-ui-border pt-2">
-                    {(['admin', 'test'] as const).map(account => (
-                      <button
-                        key={account}
-                        type="button"
-                        onClick={() => handleDevLogin(account)}
-                        disabled={isLoading || isDevSignupPending}
-                        className="h-7 w-full rounded-[5px] border-0 bg-admin-only text-[13px] font-medium text-ui-background transition-colors hover:bg-admin-only-hover disabled:opacity-50"
-                      >
-                        {isDevSignupPending ? '전환 중…' : account === 'admin' ? '관리자 계정으로 로그인' : '테스트 계정으로 로그인'}
-                      </button>
-                    ))}
-                    {devSignupError && <p role="alert" className="mt-0.5 text-xs text-status-error-ink">{devSignupError}</p>}
-                  </div>
-                )}
               </>
             ) : null}
+            {/* 계정 전환은 로그인한 뒤에만 보인다 — 관리자로 들어와야 테스트 계정을 쓸 수 있다(GUEST는 프로필 칸을 누르면 바로 뜨는 로그인 팝업이 관리자로 로그인한다). */}
+            {isLocalDev && session?.authenticated && (
+              <div className="mx-3 mt-2 flex flex-col gap-1.5 border-t border-ui-border pt-2">
+                {(['admin', 'test'] as const)
+                  .filter(account => account.toUpperCase() !== localAccountLabel)
+                  .map(account => (
+                  <button
+                    key={account}
+                    type="button"
+                    onClick={() => handleDevLogin(account)}
+                    disabled={isLoading || isDevSignupPending}
+                    className={`h-7 w-full rounded-[5px] border-0 text-[13px] font-medium transition-colors disabled:opacity-50 ${account === 'admin' ? 'bg-admin-only text-ui-background hover:bg-admin-only-hover' : 'bg-ui-control text-ui-white hover:bg-ui-control-hover'}`}
+                  >
+                    {isDevSignupPending ? '전환 중…' : account === 'admin' ? '관리자 계정으로 전환' : '테스트 계정으로 전환'}
+                  </button>
+                ))}
+                {devSignupError && <p role="alert" className="mt-0.5 text-xs text-status-error-ink">{devSignupError}</p>}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -1,7 +1,10 @@
 // 로컬 개발 서버의 자동 로그인(VITE_LOCAL_AUTO_LOGIN=1) 사용 여부. 개발 중 비로그인 화면을 확인할 수 있도록
 // 주소에 ?guest=1을 붙여 열면 자동 로그인을 건너뛰고(이미 로그인된 상태면 한 번 로그아웃하고) 비로그인으로 시작한다.
-// 그 상태는 탭을 닫을 때까지 유지되고, ?guest=0으로 열면 다시 자동 로그인으로 돌아간다. 운영 빌드에는 영향이 없다.
+// 그 상태는 브라우저에 저장돼 새 탭에서도 유지되고(로그아웃해도 같다), ADMIN·TEST 전환이나 ?guest=0으로 열면 다시 자동 로그인으로 돌아간다. 운영 빌드에는 영향이 없다.
 const GUEST_MODE_STORAGE_KEY = 'dev.guestMode'
+
+// 백엔드 AuthService의 로컬 테스트 회원 고정 ID와 맞춘다.
+export const LOCAL_TEST_MEMBER_USER_ID = 800001
 
 export function isLocalSignupEnabled(): boolean {
   return import.meta.env.DEV && import.meta.env.MODE !== 'mock' &&
@@ -17,11 +20,25 @@ export function isLocalGuestMode(): boolean {
   if (!isLocalAutoLoginConfigured()) return false
   try {
     const param = new URLSearchParams(window.location.search).get('guest')
-    if (param === '1') sessionStorage.setItem(GUEST_MODE_STORAGE_KEY, '1')
-    else if (param === '0') sessionStorage.removeItem(GUEST_MODE_STORAGE_KEY)
-    return sessionStorage.getItem(GUEST_MODE_STORAGE_KEY) === '1'
+    if (param === '1') setLocalGuestMode(true)
+    else if (param === '0') setLocalGuestMode(false)
+    if (param === '1' || param === '0') {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('guest')
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+    }
+    return localStorage.getItem(GUEST_MODE_STORAGE_KEY) === '1'
   } catch {
     return false
+  }
+}
+
+export function setLocalGuestMode(enabled: boolean): void {
+  try {
+    if (enabled) localStorage.setItem(GUEST_MODE_STORAGE_KEY, '1')
+    else localStorage.removeItem(GUEST_MODE_STORAGE_KEY)
+  } catch {
+    // 저장소 접근이 막혀도 개발 메뉴에서 계정 전환은 계속 시도한다.
   }
 }
 

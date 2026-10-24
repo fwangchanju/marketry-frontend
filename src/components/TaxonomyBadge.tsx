@@ -10,10 +10,10 @@ export default function TaxonomyBadge({ taxonomy }: { taxonomy: TaxonomyKey }) {
     // 그룹·커스텀의 body에 적용된 tabular-nums를 상속하지 않아 페이지마다 이름 폭이 달라지지 않게 한다.
     <span className="flex min-w-0 items-center justify-end normal-nums">
       <span className="toolbar-badge flex h-6 min-w-0 overflow-hidden rounded-none">
-        <span className="flex min-w-0 items-center bg-[var(--brand)] px-1.5 font-semibold text-ui-background">
+        <span className="flex min-w-0 items-center bg-[var(--brand)] px-1.5 text-base font-semibold text-ui-background">
           <span className="truncate">{title}</span>
         </span>
-        <span className="flex shrink-0 items-center whitespace-nowrap bg-[var(--brand-surface)] px-1.5 text-[13px] font-semibold text-ui-white">분류</span>
+        <span className="flex shrink-0 items-center whitespace-nowrap bg-[var(--brand-surface)] px-1.5 text-[14px] font-semibold text-ui-white">분류</span>
       </span>
     </span>
   )
