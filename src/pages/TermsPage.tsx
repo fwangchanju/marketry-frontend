@@ -1,5 +1,6 @@
-// 이용약관 — 개인정보처리방침과 같은 정적 공개 페이지(세션·데이터 API를 부르지 않는다).
-const CONTACT_EMAIL = 'fwangchanju1@gmail.com'
+// 이용약관 — 개인정보처리방침과 같은 공개 정적 문서. 공통 화면 틀은 쓰되 세션·데이터 API는 부르지 않는다.
+import DocumentPageLayout from '@/components/DocumentPageLayout'
+const CONTACT_EMAIL = 'marketry2026@gmail.com'
 
 const SERVICE_NAME = 'MARKETRY'
 const SERVICE_DOMAIN = 'marketry.co.kr'
@@ -11,16 +12,12 @@ const LIST = 'mt-2 list-inside list-disc space-y-1 text-sm leading-relaxed text-
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-20 flex h-12 items-center bg-ui-surface px-4 shadow-lg">
-        <a href="/" className="text-sm font-bold text-ui-white">
-          {SERVICE_NAME}
-        </a>
-      </header>
-
-      <div className="mx-auto max-w-2xl px-4 py-10">
-        <div className="nes-container is-dark">
-          <h1 className="text-2xl font-bold text-ui-white">이용약관</h1>
+    <DocumentPageLayout title="TERMS">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-ui-white">
+            <span aria-hidden="true" className="h-7 w-1 shrink-0 rounded-sm bg-brand" />
+            이용약관
+          </h1>
           <p className="mt-2 text-sm text-ui-text">시행일: {EFFECTIVE_DATE}</p>
 
           <section className="mt-8">
@@ -80,7 +77,7 @@ export default function TermsPage() {
             <h2 className={SECTION_TITLE}>7. 개인정보</h2>
             <p className={BODY}>
               개인정보는{' '}
-              <a href="/privacy" className="text-[var(--accent)] hover:underline">
+              <a href="/info/privacy" className="text-[var(--accent)] hover:underline">
                 개인정보처리방침
               </a>
               에 따라 처리합니다.
@@ -97,7 +94,6 @@ export default function TermsPage() {
             </p>
           </section>
         </div>
-      </div>
-    </div>
+    </DocumentPageLayout>
   )
 }

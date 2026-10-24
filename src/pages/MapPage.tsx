@@ -31,7 +31,7 @@ import Treemap from '@/components/Treemap'
 import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ChangeRateBar from '@/components/ChangeRateBar'
-import DisclaimerNotice from '@/components/DisclaimerNotice'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
@@ -785,12 +785,7 @@ export default function MapPage() {
                 </div>
               )}
               {/* 등락률 색상 범례 — 지도 우하단에 오른쪽 끝에 붙여 둔다. 이 줄만큼 지도 아래쪽이 올라온다. 로딩·오류·빈 화면에서도 면책 문구와 함께 맨 아래에 그대로 둔다. */}
-              <div className="flex h-7 shrink-0 items-end justify-between gap-3">
-                <div className="flex h-7 min-w-0 items-end">
-                  <DisclaimerNotice />
-                </div>
-                <ChangeRateBar swatches={settingsModalProps.legendSwatches} />
-              </div>
+              <DisclaimerFooter rightContent={<ChangeRateBar swatches={settingsModalProps.legendSwatches} />} />
               </div>
             </div>
           {/* 모니터 캡처에서는 모바일용 트리맵을 만들지 않아 화면 렌더링과 DOM 복제 비용을 줄인다. */}

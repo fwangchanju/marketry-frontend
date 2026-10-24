@@ -4,16 +4,25 @@ import { isAxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { GoogleLogoIcon } from '@/components/icons/AppIcons'
 import NavBar from '@/components/NavBar'
+import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
+import PageInfoPanel from '@/components/PageInfoPanel'
+import PageMainFrame from '@/components/PageMainFrame'
+import ScreenshotModal from '@/components/ScreenshotModal'
 import Spinner from '@/components/Spinner'
 import ProfileAvatar from '@/components/ProfileAvatar'
+import Toolbar from '@/components/Toolbar'
+import ToolbarModeText from '@/components/ToolbarModeText'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { useLoginGate } from '@/hooks/useLoginGate'
+import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useCheckNickname, useDeleteProfileImage, useUpdateNickname, useUploadProfileImage } from '@/hooks/useProfile'
 import { useLogout, useSession, useWithdrawAccount } from '@/hooks/useSession'
 import { appConfirm } from '@/utils/appDialogBus'
 import { displayEmail } from '@/utils/displayEmail'
 import { checkProfileImageFile, resizeProfileImage, PROFILE_IMAGE_MAX_UPLOAD_BYTES } from '@/utils/resizeProfileImage'
+import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 
 // 이메일·닉네임·프로필 사진 항목은 모두 같은 높이(가장 큰 프로필 사진 항목: 위아래 여백 12px씩 + 제목 20px + 간격 8px + 사진 64px + 간격 8px + 안내 16px = 140px, 위 구분선 1px)이고, 내용은 세로 가운데에 둔다.
 const ITEM_CLASS = 'flex min-h-[141px] flex-col justify-center border-t border-ui-border py-3'
@@ -47,11 +56,31 @@ export default function ProfilePage() {
   const uploadImage = useUploadProfileImage()
   const deleteImage = useDeleteProfileImage()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const screenshotRef = useRef<HTMLElement>(null)
   const [nicknameInput, setNicknameInput] = useState('')
   const [nicknameMessage, setNicknameMessage] = useState<{ kind: 'error' | 'done'; text: string } | null>(null)
   const [imageMessage, setImageMessage] = useState<{ kind: 'error' | 'done'; text: string } | null>(null)
   const [isImageBusy, setIsImageBusy] = useState(false)
   const [nicknameFocused, setNicknameFocused] = useState(false)
+  const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
+
+  const handleCopy = async (previewSrc: string | null) => {
+    if (!previewSrc && !screenshotRef.current) return
+    setCopyStatus('copying')
+    try {
+      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
+      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
+      setCopyStatus('copied')
+    } catch {
+      setCopyStatus('error')
+    } finally {
+      setTimeout(() => setCopyStatus('idle'), 2000)
+    }
+  }
+  const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
   // 세션에서 닉네임을 받아오면(또는 등록 후 바뀌면) 입력칸을 그 값으로 맞춘다.
   const savedNickname = session?.authenticated ? (session.nickname ?? '') : ''
@@ -192,12 +221,31 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col text-ui-white">
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background text-ui-white">
       <NavBar />
-      <NavSubBar />
-      {/* 메뉴 아래 남는 영역의 한가운데에 박스를 둔다. */}
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-4 py-10">
-        <section className="rounded-lg border border-ui-border bg-ui-surface p-8">
+      <NavSubBar
+        actions={
+          <NavBarPageActions
+            onRefresh={() => undefined}
+            isRefreshing={false}
+            showRefresh={false}
+            isNativeFullscreen={isNativeFullscreen}
+            onToggleFullscreen={handleToggleNativeFullscreen}
+            onToggleSettings={() => setIsSettingsOpen(open => !open)}
+            isSettingsOpen={isSettingsOpen}
+            onOpenShare={() => setIsShareOpen(true)}
+            isScreenshotOpen={isShareOpen}
+          />
+        }
+      />
+      <div className="flex min-h-0 flex-1">
+        <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
+        <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+          <Toolbar>
+            <ToolbarModeText page="ACCOUNT" label="PROFILE" />
+          </Toolbar>
+          <PageMainFrame className="p-8">
+            <section>
           {isError ? (
             // 다른 화면의 불러오기 실패와 같은 오류 원(문구와 "다시 시도")으로 보여 준다.
             <div className="flex justify-center py-4">
@@ -337,8 +385,27 @@ export default function ProfilePage() {
               </div>
             </>
           ) : null}
-        </section>
-      </main>
+            </section>
+          </PageMainFrame>
+          <DisclaimerFooter />
+        </main>
+        {isSettingsOpen && <div className="flex shrink-0 pt-[4px]">
+          <PageInfoPanel title="Account" tabLabel="PROFILE" icon="member">
+            <p>이메일, 닉네임, 프로필 사진을 관리합니다.</p>
+            <p className="mt-4">닉네임은 등록한 뒤 7일에 한 번 바꿀 수 있습니다.</p>
+          </PageInfoPanel>
+        </div>}
+        </div>
+      </div>
+      {isShareOpen && (
+        <ScreenshotModal
+          onClose={() => setIsShareOpen(false)}
+          onCopy={handleCopy}
+          copyLabel={copyLabel}
+          isCopying={copyStatus === 'copying'}
+          screenshotTarget={screenshotRef.current}
+        />
+      )}
     </div>
   )
 }
