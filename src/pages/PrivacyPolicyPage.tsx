@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
             <ul className={LIST}>
               <li>Google 로그인 시: Google 계정 식별자(sub), 발급자(issuer), 이메일 주소</li>
               <li>이용자가 직접 입력하거나 올린 정보: 닉네임, 프로필 사진</li>
-              <li>이용자가 저장한 정보: 화면 설정, 내 업종 분류, 저장해 둔 스냅샷</li>
+              <li>이용자가 저장한 정보: 화면 설정, 내 기준, 저장해 둔 스냅샷</li>
               <li>서비스 이용 중 자동으로 생기는 정보: 마지막으로 접속한 시각, 접속한 날짜 기록(하루에 한 번 이상 접속했는지)</li>
             </ul>
           </section>
@@ -85,8 +85,8 @@ export default function PrivacyPolicyPage() {
           <section className="mt-8">
             <h2 className={SECTION_TITLE}>6. 보관 기간 및 파기</h2>
             <p className={BODY}>
-              수집한 개인정보는 탈퇴하기 전까지 보관합니다. 1년 동안 접속하지 않은 계정은 삭제합니다. 프로필 화면에서
-              탈퇴하면 이메일·닉네임·프로필 사진·저장한 설정·분류·스냅샷·접속 기록을 즉시 삭제하며 복구할 수 없습니다.
+              수집한 개인정보는 탈퇴하기 전까지 보관합니다. 1년 동안 접속하지 않은 계정은 삭제될 수 있습니다. 프로필 화면에서
+              탈퇴하면 이메일·닉네임·프로필 사진·저장한 설정·내 기준·스냅샷·접속 기록을 즉시 삭제하며 복구할 수 없습니다.
               프로필 사진은 프로필 화면에서 직접 지울 수도 있습니다.
             </p>
             <p className={BODY}>

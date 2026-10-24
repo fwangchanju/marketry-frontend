@@ -57,8 +57,8 @@
 | 가리키는 것 | 코드 이름 | 화면 이름 |
 |---|---|---|
 | 사각형으로 쪼갠 지도 그림 | `Treemap` | 트리맵 |
-| MARKETRY / 거래소 / 내 분류 선택 | `Taxonomy` (`TaxonomyKey`, `useTaxonomySelection`, `SettingsTaxonomySelector`) | **Basis** (설정창 제목) |
-| 분류 값 | `MARKETRY` · `KRX` · `MINE` · `NXT` | MARKETRY · 거래소 · 내 분류 |
+| MARKETRY / 거래소 / 내 기준 선택 | `Taxonomy` (`TaxonomyKey`, `useTaxonomySelection`, `SettingsTaxonomySelector`) | **Basis** (설정창 제목) |
+| 분류 값 | `MARKETRY` · `KRX` · `MINE` · `NXT` | MARKETRY · 거래소 · 내 기준 |
 | 페이지 | `MapPage` · `GroupPage` · `CustomPage` | Map · Graph · Custom (`GroupPage`의 화면 이름이 Graph, 주소는 `/graph`) |
 | 상단 영역의 메뉴 줄 | `NavSubBar` | 메뉴 줄 |
 | 상단 영역 메뉴(Map·Graph·Custom)에 커서를 올리면 뜨는 목록 (Map·Graph는 시장, Custom은 업종·종목) | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |
@@ -139,7 +139,7 @@
 운영자만 쓰는 것은 일부러 일반 규칙(한글·청록)에서 벗어나 **눈에 띄게** 만든다. 이것이 유일하게 허용하는 예외다.
 
 - Custom 페이지 설정창의 `⚠ ADMIN` 띠와 `UPDATE`·`ROLLBACK` 버튼은 영어 대문자·빨간색이다(MARKETRY 맵을 바꾸는 작업이라 실수로 누르지 않게 튀게 둔다). 롤백 목록 줄은 `[시각]`만 보여 주고, 알림창·확인창 제목은 한글("업데이트 완료", "롤백 완료")이다.
-- 운영자 전용 표시 색은 골드(`--admin-only`, 올림·선택은 밝힌 `--admin-only-hover`) 하나다. 상단 Admin 메뉴, 설정창 관리자 탭과 제목, 프로필 팝업의 테스트 회원 전환 버튼, 운영자 확인창(테두리·제목·버튼)에 쓴다.
+- 운영자 전용 표시 색은 골드(`--admin-only`, 올림·선택은 밝힌 `--admin-only-hover`) 하나다. 상단 Admin 메뉴, 설정창 관리자 탭과 제목, 프로필 팝업의 ADMIN 전환 버튼(TEST·GUEST 버튼과 배지는 중립 회색), 운영자 확인창(테두리·제목·버튼)에 쓴다.
 - 운영자 전용 설정창 탭의 항목도 공통 구조(`n) 헤더` → `- 설명` → 버튼 영역, 높이 180px, 첫 항목 위치는 다른 탭과 같은 y)를 따른다.
 
 ## 툴팁 규칙

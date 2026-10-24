@@ -7,7 +7,7 @@ import { getLastRefreshAt, markSessionAnonymous, refreshSessionOnce } from '@/ap
 import { authKeys } from './queryKeys'
 import { STATIC_REFERENCE_CACHE } from './cacheConfig'
 import { cancelPendingPreferenceSave } from './useCustomPreferences'
-import { isLocalAutoLoginEnabled, isLocalGuestMode, setTestMemberActive } from '@/utils/localDevLogin'
+import { isLocalAutoLoginEnabled, isLocalGuestMode, setLocalGuestMode, setTestMemberActive } from '@/utils/localDevLogin'
 import type { AuthSessionResponse } from '@/types/api'
 
 const KEEP_ALIVE_REFRESH_MS = 10 * 60_000
@@ -170,7 +170,10 @@ export function useLogout() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: logout,
-    onSuccess: () => clearSessionData(queryClient),
+    onSuccess: () => {
+      if (import.meta.env.DEV) setLocalGuestMode(true)
+      clearSessionData(queryClient)
+    },
   })
 }
 

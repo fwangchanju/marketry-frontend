@@ -12,6 +12,7 @@ import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCheckNickname, useDeleteProfileImage, useUpdateNickname, useUploadProfileImage } from '@/hooks/useProfile'
 import { useLogout, useSession, useWithdrawAccount } from '@/hooks/useSession'
 import { appConfirm } from '@/utils/appDialogBus'
+import { displayEmail } from '@/utils/displayEmail'
 import { checkProfileImageFile, resizeProfileImage, PROFILE_IMAGE_MAX_UPLOAD_BYTES } from '@/utils/resizeProfileImage'
 
 // 이메일·닉네임·프로필 사진 항목은 모두 같은 높이(가장 큰 프로필 사진 항목: 위아래 여백 12px씩 + 제목 20px + 간격 8px + 사진 64px + 간격 8px + 안내 16px = 140px, 위 구분선 1px)이고, 내용은 세로 가운데에 둔다.
@@ -171,7 +172,7 @@ export default function ProfilePage() {
 
   // 회원 탈퇴 — 확인을 한 번 더 받고, 서버가 데이터를 지우면 홈으로 보낸다. 관리자는 버튼 자체를 보이지 않는다.
   const handleWithdraw = async () => {
-    const confirmed = await appConfirm('탈퇴하면 이메일, 닉네임, 프로필 사진, 내 분류와 설정이 모두 즉시 지워지며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?', { title: '회원 탈퇴' })
+    const confirmed = await appConfirm('탈퇴하면 이메일, 닉네임, 프로필 사진, 내 기준과 설정이 모두 즉시 지워지며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?', { title: '회원 탈퇴' })
     if (!confirmed) return
     try {
       await withdraw.mutateAsync()
@@ -216,7 +217,7 @@ export default function ProfilePage() {
                   <span className="flex size-5 shrink-0 items-center justify-center rounded bg-ui-white">
                     <GoogleLogoIcon className="size-3.5" />
                   </span>
-                  <span className="break-all">{session.email || '등록된 이메일 없음'}</span>
+                  <span className="break-normal">{displayEmail(session.email) || '등록된 이메일 없음'}</span>
                 </p>
               </div>
               <div className={ITEM_CLASS}>

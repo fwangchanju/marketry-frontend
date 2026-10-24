@@ -178,7 +178,7 @@ export default function CustomPage() {
     }
     if (emptyGuideShownModeRef.current === mode) return
     emptyGuideShownModeRef.current = mode
-    void appAlert('먼저 업종 페이지(Custom > Sector)에서 업종을 추가하세요. 그리고 종목 페이지(Custom > Stock)로 가서 종목을 분류해보세요.', { title: '내 분류 시작하기' })
+    void appAlert('먼저 업종 페이지(Custom > Sector)에서 업종을 추가하세요. 그리고 종목 페이지(Custom > Stock)로 가서 종목을 분류해보세요.', { title: '내 기준 시작하기' })
   }, [isEmptyMineData, mode])
 
   const actions = (
@@ -324,13 +324,13 @@ export default function CustomPage() {
                     <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
                     {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
                   </>
-                ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 분류만 가능</span></span></div>}
+                ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 기준만 가능</span></span></div>}
               </SettingsPanelGroup>
               {isAdmin && <SettingsPanelGroup section="adminOps">
                 <div className="settings-plain-content">
                   <div className="settings-ops-item h-[180px] text-sm">
                     <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
-                    <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">내 분류를 MARKETRY 분류로 업데이트·롤백</p>
+                    <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">내 기준을 MARKETRY 분류로 업데이트·롤백</p>
                     <div className="settings-button-area mt-4 max-w-[16rem] translate-y-[6px] settings-control-inset"><MarketryPublishControls /></div>
                   </div>
                 </div>

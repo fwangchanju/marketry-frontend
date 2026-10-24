@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getAdminMemberSummary, getAdminMembers, resetMembersNickname, setMembersSpecial } from '@/api/adminMembers'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
-import { DownloadIcon, GoogleLogoIcon } from '@/components/icons/AppIcons'
+import { GoogleLogoIcon } from '@/components/icons/AppIcons'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import StockSortHeader from '@/components/StockSortHeader'
 import Toolbar from '@/components/Toolbar'
@@ -11,10 +11,9 @@ import ToolbarModeText from '@/components/ToolbarModeText'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
-import { exportRowsToExcel } from '@/utils/exportExcel'
-import { fileTimestamp } from '@/utils/fileTimestamp'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
+import { displayEmail } from '@/utils/displayEmail'
 
 const PAGE_SIZE = 50
 const controlClass = 'h-6 shrink-0 whitespace-nowrap border-0 bg-[var(--ui-panel)] px-2 text-sm font-normal text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)] disabled:opacity-40'
@@ -43,22 +42,18 @@ const GRADE_COLOR_CLASS: Record<MemberGrade, string> = { ADMIN: 'text-admin-only
 const gradeOf = (member: { role: string; special: boolean }): MemberGrade => (member.role === 'ADMIN' ? 'ADMIN' : member.special ? 'SPECIAL' : 'USER')
 // 로그인 연동 — 구글 로그인이면 구글 로고만 보이고, 그 밖(시스템·로컬 테스트 회원)은 줄표로 둔다.
 const GOOGLE_ISSUER = 'https://accounts.google.com'
-const providerLabelOf = (issuer: string | null) => (issuer === GOOGLE_ISSUER ? '구글' : '')
 const CHECKBOX_COLUMN_WIDTH = `${STOCK_CHECKBOX_COLUMN_PX}px`
 // 종목 표 체크박스 칸과 같은 폭·여백이다.
 const CHECKBOX_CELL_STYLE = { width: CHECKBOX_COLUMN_WIDTH, minWidth: CHECKBOX_COLUMN_WIDTH, maxWidth: CHECKBOX_COLUMN_WIDTH, paddingLeft: 0, paddingRight: 0 } as const
 // 입력을 멈추고 이 시간이 지나면 검색한다(검색 버튼 없이 바로 찾는다).
 const SEARCH_DELAY_MS = 300
-// 내보내기에서 이어 받는 최대 페이지 수 — 회원 수가 이만큼 늘면 서버에서 한 번에 내려 주는 방식으로 바꾼다.
-const MAX_EXPORT_PAGES = 200
-
 function formatTime(value: string | null) {
   if (!value) return '기록 없음'
   // 서버의 LocalDateTime은 한국 시각이다. 브라우저 시간대로 재해석하지 않는다.
   return value.replace('T', ' ').slice(0, 19)
 }
 
-export default function AdminMembers({ userId, summaryContainer, exportContainer, specialContainer, nicknameContainer }: { userId: number; summaryContainer: HTMLElement | null; exportContainer: HTMLElement | null; specialContainer: HTMLElement | null; nicknameContainer: HTMLElement | null }) {
+export default function AdminMembers({ userId, summaryContainer, specialContainer, nicknameContainer }: { userId: number; summaryContainer: HTMLElement | null; specialContainer: HTMLElement | null; nicknameContainer: HTMLElement | null }) {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
   const [query, setQuery] = useState('')
@@ -91,7 +86,6 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
     staleTime: 30_000,
     retry: false,
   })
-  const [isExporting, setIsExporting] = useState(false)
   const [isChangingSpecial, setIsChangingSpecial] = useState(false)
   const [isResettingNickname, setIsResettingNickname] = useState(false)
   // 체크한 회원 — 검색·정렬·필터·페이지를 바꾸면 비운다(보이는 목록 기준이다).
@@ -104,44 +98,6 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
     setSort(current => current?.key !== key ? { key, order: 'asc' } : current.order === 'asc' ? { key, order: 'desc' } : null)
     setPage(0)
     clearSelection()
-  }
-  // 지금 검색·필터·정렬이 걸린 목록 전체를 엑셀로 받는다(페이지마다 50명씩 이어서 받아 합친다).
-  const handleExport = async () => {
-    if (total === 0) {
-      appAlert('다운로드할 회원이 없습니다.\n검색어와 필터를 확인해 주세요.', { title: '다운로드 불가' })
-      return
-    }
-    setIsExporting(true)
-    try {
-      // 체크한 회원이 있으면 그 회원만, 없으면 지금 조건의 전체 목록을 받는다.
-      const items = []
-      if (selectedIds.size > 0) {
-        items.push(...(members.data?.items ?? []).filter(member => selectedIds.has(member.id)))
-      } else {
-        for (let nextPage = 0; items.length < total && nextPage < MAX_EXPORT_PAGES; nextPage += 1) {
-          const result = await getAdminMembers({ query, role, sort: appliedSort.key, order: appliedSort.order, page: nextPage })
-          if (result.items.length === 0) break
-          items.push(...result.items)
-        }
-      }
-      await exportRowsToExcel(`MEMBERS-${fileTimestamp()}.xlsx`, '회원', items.map(member => ({
-        '아이디': member.id,
-        연동: providerLabelOf(member.issuer),
-        이메일: member.email ?? '',
-        닉네임: member.nickname ?? '',
-        권한: gradeLabelOf(gradeOf(member)),
-        '회원 가입': formatTime(member.createdAt),
-        '최근 접속': members.data?.accessTrackingAvailable ? formatTime(member.lastAccessAt) : '수집 전',
-        '30일 접속': member.accessDays ?? 0,
-      })), {
-        alignByHeader: { '아이디': 'right', 연동: 'center', 권한: 'center', '회원 가입': 'center', '최근 접속': 'center', '30일 접속': 'right' },
-        fixedWidths: { '아이디': 10, 연동: 10, 이메일: 40, 닉네임: 20, 권한: 12, '회원 가입': 22, '최근 접속': 22, '30일 접속': 12 },
-      })
-    } catch {
-      appAlert('엑셀 파일을 만들지 못했습니다.\n다시 시도해 주세요.', { title: '다운로드 실패' })
-    } finally {
-      setIsExporting(false)
-    }
   }
   // 체크한 회원을 특별 회원으로 지정하거나 해제한다 — 일반 권한 회원만 가능하다(서버도 같은 규칙으로 막는다).
   const handleChangeSpecial = async (special: boolean) => {
@@ -246,9 +202,9 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
       </Toolbar>
       <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-auto border border-ui-border" aria-busy={members.isFetching}>
         {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
-        <table className="nes-table is-dark custom-page-table w-full min-w-[990px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
-          <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 64 }} /><col /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /><col style={{ width: 90 }} /></colgroup>
-          <thead className="sticky top-0 z-10">
+        <table className="nes-table is-dark custom-page-table w-full min-w-[1150px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
+          <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 64 }} /><col style={{ width: 300 }} /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /><col style={{ width: 90 }} /></colgroup>
+          <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th
                 className="cursor-pointer bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white"
@@ -297,7 +253,7 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
             {members.isError || noRoleSelected || members.isPending || members.data.items.length === 0 ? null : members.data.items.map((member, index) => (
               <tr key={member.id} {...rowProps(index)} className={`cursor-pointer ${selectedIds.has(member.id) ? 'bg-[var(--brand)]/15' : 'hover:bg-[var(--brand)]/10'}`}>
                 <td className="text-center" style={CHECKBOX_CELL_STYLE}>
-                  <input type="checkbox" aria-label={`${member.email ?? member.id} 선택`} className="mx-auto my-0 block thin-check" checked={selectedIds.has(member.id)} onChange={() => {}} />
+                  <input type="checkbox" aria-label={`${displayEmail(member.email) ?? member.id} 선택`} className="mx-auto my-0 block thin-check" checked={selectedIds.has(member.id)} onChange={() => {}} />
                 </td>
                 <td className="px-2 text-right tabular-nums text-ui-muted">{member.id}</td>
                 <td className="px-2 text-center text-ui-muted">
@@ -308,8 +264,8 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
                     </span>
                   ) : '-'}
                 </td>
-                <td className="break-all px-2 text-left">{member.email || <span className="text-ui-muted">미등록</span>}</td>
-                <td className="break-all px-2 text-left">{member.nickname || <span className="text-ui-muted">미설정</span>}</td>
+                <td className="break-normal whitespace-nowrap px-2 text-left">{displayEmail(member.email) || <span className="text-ui-muted">미등록</span>}</td>
+                <td className="break-normal px-2 text-left">{member.nickname || <span className="text-ui-muted">미설정</span>}</td>
                 <td className={`px-2 text-center ${GRADE_COLOR_CLASS[gradeOf(member)]}`}>{gradeLabelOf(gradeOf(member))}</td>
                 <td className="px-2 text-center tabular-nums text-ui-text">{formatTime(member.createdAt)}</td>
                 <td className="px-2 text-center tabular-nums text-ui-text">{members.data.accessTrackingAvailable ? formatTime(member.lastAccessAt) : '수집 전'}</td>
@@ -350,26 +306,6 @@ export default function AdminMembers({ userId, summaryContainer, exportContainer
           </div>
         </div>,
         summaryContainer,
-      )}
-      {exportContainer && createPortal(
-        <div className="settings-custom-control">
-          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">목록 내보내기</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">체크한 회원 또는 검색·필터 목록을 엑셀로</p>
-          <div className="mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset grid-cols-1 gap-[6px]">
-            <button
-              type="button"
-              onClick={() => void handleExport()}
-              disabled={isExporting}
-              className="flex h-[25px] items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
-              data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
-              aria-label="엑셀 다운로드"
-            >
-              <DownloadIcon className="h-4 w-4 text-ui-text" />
-              {isExporting ? '생성 중…' : '다운로드'}
-            </button>
-          </div>
-        </div>,
-        exportContainer,
       )}
       {specialContainer && createPortal(
         <div className="settings-custom-control">

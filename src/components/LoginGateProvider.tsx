@@ -5,8 +5,6 @@ import { isLocalAutoLoginEnabled } from '@/utils/localDevLogin'
 
 // App 루트에서 한 번만 감싼다 — 어느 화면에서든 useLoginGate()로 같은 팝업을 띄울 수 있다.
 export default function LoginGateProvider({ children }: { children: ReactNode }) {
-  // 로컬 자동 로그인이 켜져 있으면 팝업 대신 자동으로 로그인되므로 팝업을 열지 않는다(?guest=1이면 정상으로 연다).
-  const localAutoLogin = isLocalAutoLoginEnabled()
   const [returnTo, setReturnTo] = useState<string | null>(null)
   const [hideMessage, setHideMessage] = useState(false)
 
@@ -14,12 +12,14 @@ export default function LoginGateProvider({ children }: { children: ReactNode })
   const dismissWaiterRef = useRef<((dismissed: boolean) => void) | null>(null)
 
   const requireLogin = useCallback((path: string, options?: { hideMessage?: boolean }) => {
-    if (localAutoLogin) return Promise.resolve(false)
+    // 로컬 자동 로그인이 켜져 있으면 팝업 대신 자동으로 로그인되므로 팝업을 열지 않는다(게스트 상태면 정상으로 연다).
+    // 로그아웃·계정 전환으로 게스트 상태가 렌더 없이 바뀌므로 누를 때마다 다시 확인한다.
+    if (isLocalAutoLoginEnabled()) return Promise.resolve(false)
     dismissWaiterRef.current?.(false)
     setHideMessage(options?.hideMessage ?? false)
     setReturnTo(path)
     return new Promise<boolean>(resolve => { dismissWaiterRef.current = resolve })
-  }, [localAutoLogin])
+  }, [])
   const close = useCallback(() => {
     setReturnTo(null)
     dismissWaiterRef.current?.(true)
@@ -30,7 +30,7 @@ export default function LoginGateProvider({ children }: { children: ReactNode })
   return (
     <LoginGateContext.Provider value={value}>
       {children}
-      {!localAutoLogin && returnTo !== null && <LoginModal returnTo={returnTo} hideMessage={hideMessage} onClose={close} />}
+      {returnTo !== null && <LoginModal returnTo={returnTo} hideMessage={hideMessage} onClose={close} />}
     </LoginGateContext.Provider>
   )
 }

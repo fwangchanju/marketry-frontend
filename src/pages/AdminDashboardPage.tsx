@@ -155,7 +155,7 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <PlannedChartFrame title="첫 분류 완료율" note="가입 후 7일 안에 종목을 직접 내 분류에 배정한 회원 비율" />
+                  <PlannedChartFrame title="첫 분류 완료율" note="가입 후 7일 안에 종목을 직접 내 기준에 배정한 회원 비율" />
                   <ChartFrame
                     title="접속 회원 수"
                     note="하루에 접속한 서로 다른 회원 수"

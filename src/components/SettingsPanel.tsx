@@ -2582,7 +2582,7 @@ export default function SettingsPanel({
       >
         <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
           <path
-            d={isOnLeft ? 'M13.5 3v10M2 8h9M7.5 4.5 11 8l-3.5 3.5' : 'M2.5 3v10M14 8H5M8.5 4.5 5 8l3.5 3.5'}
+            d={isOnLeft ? 'M6 3.5 10.5 8 6 12.5' : 'M10 3.5 5.5 8 10 12.5'}
             fill="none"
             stroke="currentColor"
             strokeWidth={1.5}

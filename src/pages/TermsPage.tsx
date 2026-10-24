@@ -27,7 +27,7 @@ export default function TermsPage() {
             <h2 className={SECTION_TITLE}>1. 서비스</h2>
             <p className={BODY}>
               {SERVICE_NAME}({SERVICE_DOMAIN})는 개인이 운영하는 시장 데이터 조회·시각화 서비스입니다. 로그인하지 않아도
-              대부분의 화면을 볼 수 있고, Google로 로그인하면 설정과 내 분류를 저장할 수 있습니다. 이 약관은 서비스를 이용하는
+              대부분의 화면을 볼 수 있고, Google로 로그인하면 설정과 내 기준을 저장할 수 있습니다. 이 약관은 서비스를 이용하는
               모든 분께 적용됩니다.
             </p>
           </section>

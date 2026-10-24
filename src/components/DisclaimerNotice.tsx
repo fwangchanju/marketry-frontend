@@ -30,7 +30,7 @@ const DATA_SOURCES: { source: string; items: string[] }[] = [
   },
   { source: 'NEXTRADE', items: ['NXT 거래 가능 종목 (키움증권 데이터가 없을 때만)'] },
   { source: 'MARKETRY', items: ['종목·업종 분류'] },
-  { source: '사용자', items: ['내 분류'] },
+  { source: '사용자', items: ['내 기준'] },
 ]
 
 // 말풍선이 화면 가장자리에서 띄우는 최소 간격.
