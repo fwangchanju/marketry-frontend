@@ -295,8 +295,8 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
       {summaryContainer && createPortal(
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">회원 현황</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">전체 · 특별 회원 · 최근 7일 신규 가입·접속</p>
-          <div className="settings-button-area mt-4 grid max-w-[16rem] settings-control-inset grid-cols-2 gap-x-4 gap-y-1.5 text-[13px] tabular-nums">
+          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">전체 · 특별 회원 · 최근 7일 신규 가입·접속</p>
+          <div className="settings-button-area mt-4 grid max-w-full settings-control-inset grid-cols-2 gap-x-4 gap-y-1.5 text-[13px] tabular-nums">
             {([['전체', summary.data?.total], ['특별 회원', summary.data?.specials], ['7일 신규', summary.data?.joinedRecently], ['7일 접속', summary.data?.accessedRecently]] as const).map(([label, value]) => (
               <span key={label} className="flex items-baseline justify-between gap-2 whitespace-nowrap">
                 <span className="text-ui-white">{label}</span>
@@ -310,8 +310,8 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
       {specialContainer && createPortal(
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">특별 회원 지정</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">체크한 회원을 특별 회원으로 지정·해제</p>
-          <div className="mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset grid-cols-2 gap-[6px]">
+          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">체크한 회원을 특별 회원으로 지정·해제</p>
+          <div className="mt-4 grid max-w-full translate-y-[6px] settings-control-inset grid-cols-2 gap-[6px]">
             {([['지정', true], ['해제', false]] as const).map(([label, special]) => (
               <button
                 key={label}
@@ -331,8 +331,8 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
       {nicknameContainer && createPortal(
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">닉네임 지우기</h2>
-          <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">체크한 회원의 닉네임을 지웁니다</p>
-          <div className="mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset grid-cols-1 gap-[6px]">
+          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">체크한 회원의 닉네임을 지웁니다</p>
+          <div className="mt-4 grid max-w-full translate-y-[6px] settings-control-inset grid-cols-1 gap-[6px]">
             <button
               type="button"
               onClick={() => void handleResetNickname()}

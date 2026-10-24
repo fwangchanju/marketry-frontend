@@ -326,13 +326,13 @@ export default function GroupPage() {
         {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
         <div
           ref={settingsRowRef}
-          className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white"
+          className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white"
         >
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
               항상 같은 폭을 유지하게 한다(지도 페이지와 동일) — 내부 그래프가 넘치면 이 컬럼
               안에서만 처리된다. */}
-          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
+          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.SECTOR} data-capture-ready={isDataCaptureReady} className="mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="GRAPH" label={MARKET_LABEL[market]} />

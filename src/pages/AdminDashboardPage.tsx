@@ -107,8 +107,8 @@ export default function AdminDashboardPage() {
         }
       />
       <div className="flex min-h-0 flex-1">
-        <div className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
-          <div ref={screenshotRef} data-main-area className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
+        <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+          <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
             {isLoading ? (
               <p role="status" className="m-auto text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p>
             ) : !isAdmin ? (
@@ -219,14 +219,14 @@ export default function AdminDashboardPage() {
                     <div className="settings-ops-item h-[180px] text-sm">
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">접속 추이 기간</h2>
-                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">접속 회원 수 차트에 보여 줄 기간</p>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">접속 회원 수 차트에 보여 줄 기간</p>
                         <SettingsSegmentedControl label="접속 추이 기간" options={PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={period} onChange={setPeriod} />
                       </div>
                     </div>
                     <div className="settings-ops-item h-[180px] text-sm">
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">가입 추이 기간</h2>
-                        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">가입·누적·방문자 차트에 보여 줄 기간</p>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">가입·누적·방문자 차트에 보여 줄 기간</p>
                         <SettingsSegmentedControl label="가입 추이 기간" options={SIGNUP_PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={signupPeriod} onChange={setSignupPeriod} />
                       </div>
                     </div>
