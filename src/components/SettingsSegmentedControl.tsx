@@ -7,28 +7,32 @@ export default function SettingsSegmentedControl<T extends string | number | boo
   options,
   value,
   onChange,
+  disabled = false,
 }: {
   label: string
   options: readonly { value: T; label: string }[]
   value: T
   onChange: (value: T) => void
+  disabled?: boolean
 }) {
   return (
     <div
       role="radiogroup"
       aria-label={label}
+      aria-disabled={disabled || undefined}
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
-      className="relative mt-4 grid max-w-full translate-y-[6px] settings-control-inset gap-[6px]"
+      className={`relative mt-4 grid max-w-full translate-y-[6px] settings-control-inset gap-[6px] ${disabled ? 'opacity-35' : ''}`}
     >
       <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
       {options.map(option => (
         <button
           key={String(option.value)}
           type="button"
+          disabled={disabled}
           role="radio"
           aria-checked={value === option.value}
           onClick={() => onChange(option.value)}
-          className={`relative z-10 min-h-[25px] justify-center rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms] ${value === option.value ? '' : 'settings-chip-hover'}`}
+          className={`relative z-10 min-h-[25px] justify-center rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms] ${value === option.value ? '' : 'settings-chip-hover'} disabled:cursor-not-allowed`}
         >
           {option.label}
         </button>

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { isAxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { GoogleLogoIcon, KakaoLogoIcon, NaverLogoIcon } from '@/components/icons/AppIcons'
+import AuthProviderIcon from '@/components/AuthProviderIcon'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -261,19 +261,7 @@ export default function ProfilePage() {
               <div className={ITEM_CLASS}>
                 <p className="text-base text-ui-text">이메일</p>
                 <p className="mt-2 flex items-center gap-2 text-base">
-                  {session.issuer === 'https://accounts.google.com' ? (
-                    <span role="img" aria-label="Google" className="flex size-5 shrink-0 items-center justify-center rounded bg-ui-white">
-                      <GoogleLogoIcon className="size-3.5" />
-                    </span>
-                  ) : session.issuer === 'https://nid.naver.com' ? (
-                    <span role="img" aria-label="네이버" className="flex size-5 shrink-0 items-center justify-center rounded-[3px] bg-[#03a94d] text-white">
-                      <NaverLogoIcon className="size-3.5" />
-                    </span>
-                  ) : session.issuer === 'https://kauth.kakao.com' ? (
-                    <span role="img" aria-label="카카오" className="flex size-5 shrink-0 items-center justify-center rounded-[3px] bg-[#fee500]">
-                      <KakaoLogoIcon className="size-3.5" />
-                    </span>
-                  ) : null}
+                  <AuthProviderIcon issuer={session.issuer} />
                   <span className="break-normal">{displayEmail(session.email) || '등록된 이메일 없음'}</span>
                 </p>
               </div>

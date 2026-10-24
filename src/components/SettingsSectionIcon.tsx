@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
+import { IconAd, IconBellRinging, IconDeviceDesktopAnalytics, IconMail, IconUsersGroup } from '@tabler/icons-react'
 
-export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'home' | 'member' | 'experiment' | 'custom-edit' | 'document' | 'mail'
+export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'dashboard' | 'home' | 'member' | 'members' | 'experiment' | 'custom-edit' | 'document' | 'mail' | 'megaphone' | 'ad'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
@@ -12,13 +13,7 @@ interface SettingsSectionIconProps {
 
 // 설정창 메뉴 줄의 아이콘 — 상단 영역 아이콘과 같은 선 아이콘이다(24×24 격자, 선 끝·꺾임 둥글게).
 // 업종 분류·색상은 Lucide(network·palette), 종목 구성·종목 박스는 Tabler(chart-treemap·text-size) 모양이다.
-const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
-  mail: (
-    <>
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="m4 7 8 6 8-6" />
-    </>
-  ),
+const ICON_SHAPES: Record<Exclude<SettingsSectionIconName, 'dashboard' | 'megaphone' | 'ad' | 'mail' | 'members'>, ReactNode> = {
   document: (
     <>
       <path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" />
@@ -110,6 +105,12 @@ const ICON_SHAPES: Record<SettingsSectionIconName, ReactNode> = {
 // 30px로 그릴 때 선 1.1이 화면에서 약 1.35px로 보여 상단 영역 아이콘의 굵기(docs/ui-areas.md "아이콘 규칙")와 같다.
 // 크기를 바꾸면 선 값도 `굵기 × 24 ÷ 크기`로 맞춰야 한다.
 export default function SettingsSectionIcon({ icon, className = 'h-[30px] w-[30px]', strokeWidth = 1.1, viewBox = '0 0 24 24' }: SettingsSectionIconProps) {
+  const libraryIconProps = { 'aria-hidden': true as const, size: 30, stroke: strokeWidth, className: `shrink-0 ${className}` }
+  if (icon === 'dashboard') return <IconDeviceDesktopAnalytics {...libraryIconProps} />
+  if (icon === 'members') return <IconUsersGroup {...libraryIconProps} />
+  if (icon === 'megaphone') return <IconBellRinging {...libraryIconProps} />
+  if (icon === 'ad') return <IconAd {...libraryIconProps} />
+  if (icon === 'mail') return <IconMail {...libraryIconProps} />
   return (
     <svg
       aria-hidden="true"

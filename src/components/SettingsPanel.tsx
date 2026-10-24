@@ -25,8 +25,8 @@ import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { isAdminSession } from '@/utils/adminAccess'
 
-export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'special' | 'graph'
-const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage'])
+export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'adminBannerAd' | 'adminBannerNotice' | 'special' | 'graph'
+const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage', 'adminBannerAd', 'adminBannerNotice'])
 const SPECIAL_SECTIONS: ReadonlySet<string> = new Set(['special'])
 
 interface SettingsPanelGroupProps {
@@ -190,6 +190,9 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   // 실험 탭 — 안 쓰는 기능·시험 중인 기능을 모아 두는 탭이다. 보이는 것도 쓰는 것도 특별 회원과 운영자뿐이다.
   { id: 'special', label: '실험', icon: 'experiment' },
   { id: 'custom', label: '커스텀', icon: 'custom-edit' },
+  // 배너 관리 전용 탭 — 기존 탭 번호를 바꾸지 않도록 뒤에 둔다.
+  { id: 'adminBannerAd', label: '광고', icon: 'ad' },
+  { id: 'adminBannerNotice', label: '공지', icon: 'megaphone' },
 ]
 
 // 탭 제목에는 숫자를 표시하지 않지만 안내 말풍선에는 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
@@ -2341,6 +2344,9 @@ interface Props {
   plainTabLabel?: string
   plainTabIcon?: SettingsSectionIconName
   sectionOrder?: readonly SettingsPanelSectionId[]
+  sectionIconOverrides?: Partial<Record<SettingsPanelSectionId, SettingsSectionIconName>>
+  sectionLabelOverrides?: Partial<Record<SettingsPanelSectionId, string>>
+  onSectionChange?: (section: SettingsPanelSectionId) => void
   taxonomyAtBottom?: boolean
   // Basis 줄이 없는 페이지(관리자)에서 좌우 이동 탭을 다른 페이지와 같은 높이에 둔다.
   fixedSideTab?: boolean
@@ -2386,6 +2392,9 @@ export default function SettingsPanel({
   pageLabel,
   showPreferenceActions = true,
   sectionOrder,
+  sectionIconOverrides,
+  sectionLabelOverrides,
+  onSectionChange,
   taxonomyAtBottom = false,
   fixedSideTab = false,
   headerRight,
@@ -2513,6 +2522,10 @@ export default function SettingsPanel({
     availableSections.sort((a, b) => sectionOrder.indexOf(a.id) - sectionOrder.indexOf(b.id))
   }
   const selectedSection = availableSections.find(section => section.id === activeSection) ?? availableSections[0]
+  const selectedSectionId = selectedSection?.id
+  useEffect(() => {
+    if (selectedSectionId) onSectionChange?.(selectedSectionId)
+  }, [onSectionChange, selectedSection, selectedSectionId])
   const menuSections = plainContent && plainTabLabel
     ? [{ id: 'plain' as const, label: plainTabLabel, icon: plainTabIcon ?? null }]
     : availableSections
@@ -2619,6 +2632,7 @@ export default function SettingsPanel({
       <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[68px] shrink-0 items-stretch border-b border-ui-border bg-ui-panel px-1">
           {menuSections.map(section => {
             const selected = section.id === 'plain' || section.id === selectedSection?.id
+            const icon = section.id === 'plain' ? section.icon : sectionIconOverrides?.[section.id] ?? section.icon
             return (
               <button
                 key={section.id}
@@ -2630,18 +2644,19 @@ export default function SettingsPanel({
                 onClick={() => {
                   if (section.id === 'plain') return
                   setActiveSection(section.id)
+                  onSectionChange?.(section.id)
                   try { localStorage.setItem(tabStorageKey, section.id) } catch { /* 저장소 접근이 막혀도 탭 전환은 유지한다. */ }
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
                   ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
-                {section.icon ? <SettingsSectionIcon
-                  icon={section.icon}
-                  className={`h-[30px] w-[30px] ${section.icon === 'industry' ? 'scale-90' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
-                  strokeWidth={section.icon === 'industry' ? 1.22 : 1.1}
+                {icon ? <SettingsSectionIcon
+                  icon={icon}
+                  className={`h-[30px] w-[30px] ${icon === 'industry' ? 'scale-90' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
+                  strokeWidth={icon === 'industry' ? 1.22 : 1.1}
                 /> : <span aria-hidden="true" className="h-[30px] w-[30px] shrink-0" />}
-                <span className="max-w-full truncate font-bold">{section.label}</span>
+                <span className="max-w-full truncate font-bold">{section.id === 'plain' ? section.label : sectionLabelOverrides?.[section.id] ?? section.label}</span>
                 <span
                   aria-hidden="true"
                   className={`absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'bg-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'bg-[var(--sub-purple)]' : 'bg-brand'} transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`}
@@ -2669,7 +2684,7 @@ export default function SettingsPanel({
           data-align-second-heading={taxonomyAtBottom || undefined}
           aria-busy={waitingForPreferences || undefined}
           inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-[22px] text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : SPECIAL_SECTIONS.has(selectedSection.id) ? 'settings-special-section' : ''} ${
+          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-[22px] text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' || selectedSection.id === 'adminBannerAd' || selectedSection.id === 'adminBannerNotice' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : SPECIAL_SECTIONS.has(selectedSection.id) ? 'settings-special-section' : ''} ${
             isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
           }`}
         >

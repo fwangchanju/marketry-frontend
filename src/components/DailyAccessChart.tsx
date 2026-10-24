@@ -1,3 +1,5 @@
+import { formatCount } from '@/utils/formatCount'
+
 // 날짜 글자 — 칸이 좁아지면 줄인다. 7일 이하는 월/일, 20일까지는 일만, 그보다 많으면 눈금 간격마다 월/일만 적는다(나머지는 비운다).
 function dateLabel(date: string, index: number, total: number) {
   const month = Number(date.slice(5, 7))
@@ -18,7 +20,7 @@ export default function DailyAccessChart({ rows, ariaLabelPrefix = '접속 회�
     <div className={`flex h-full min-h-[140px] w-full items-end ${dense ? 'gap-px' : 'gap-1'}`} role="img" aria-label={`최근 ${rows.length}일 ${ariaLabelPrefix}`}>
       {rows.map((row, index) => (
         <div key={row.date} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
-          <span className="text-xs leading-none tabular-nums text-ui-text">{row.members === 0 ? '' : row.members}</span>
+          <span className="text-xs leading-none tabular-nums text-ui-text">{row.members === 0 ? '' : formatCount(row.members)}</span>
           <span
             className="w-full rounded-[2px] bg-[var(--brand)]"
             style={{ height: `${Math.max(row.members > 0 ? 6 : 2, (row.members / max) * 100)}%`, maxWidth: 40, maxHeight: 'calc(100% - 40px)', opacity: row.members > 0 ? 1 : 0.25 }}

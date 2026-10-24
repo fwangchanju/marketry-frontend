@@ -1,4 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { isAxiosError } from 'axios'
+import MarketryLogo from '@/components/MarketryLogo'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
@@ -6,18 +9,146 @@ import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
-import EmptyMessage from '@/components/EmptyMessage'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import { useSession } from '@/hooks/useSession'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
+import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { approveBanner, adminBannerImageUrl, deleteBannerDraft, getActiveBanner, getAdminBanners, saveBannerDraft, type BannerCampaign, type BannerDraftInput } from '@/api/adminBanners'
+import { SaveIcon, UploadIcon } from '@/components/icons/AppIcons'
 
-// 관리자 전용 배너 페이지 — 화면 맨 위 배너 자리에 들어갈 광고·공지를 관리하는 곳이다. 지금은 껍데기만 있다.
-// 앞으로 넣을 것(백엔드 저장이 필요해서 아직 안 만들었다): 배너 켜기·끄기, 종류(광고·공지) 선택, 문구 입력.
-// 배너 자리 자체는 AdBannerSlot(728×90, 좁으면 468×60, 더 좁으면 숨김)이며 지금은 어디에도 끼워 두지 않았다.
-// 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용해야 한다. 관리자가 아니면 안내 문구만 보여 준다.
+const DEFAULT_TEXT = 'MARKETRY 공지사항을 확인해 주세요.'
+const INPUT_CLASS = 'h-8 w-full rounded border border-ui-border bg-ui-background px-2 text-sm text-ui-white outline-none focus:border-brand'
+const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-full items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35'
+
+function kstInputValue(epoch = Date.now()): string {
+  return new Date(epoch).toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T').slice(0, 16)
+}
+
+function inputDateTime(value: string): string {
+  return value ? value.slice(0, 16) : ''
+}
+
+function formatDatePart(value: string): string {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}/)
+  return match ? `${match[1]}.${match[2]}.${match[3]}.` : ''
+}
+
+function formatTimePart(value: string): string {
+  const match = value.match(/^\d{4}-\d{2}-\d{2}T(\d{2}:\d{2})/)
+  return match?.[1] ?? ''
+}
+
+function parseDateTime24(value: string): string | null {
+  const match = value.match(/^\s*(\d{4})[./-]\s*(\d{1,2})[./-]\s*(\d{1,2})\.?\s+(\d{1,2}):(\d{2})\s*$/)
+  if (!match) return null
+  const [, yearText, monthText, dayText, hourText, minuteText] = match
+  const year = Number(yearText), month = Number(monthText), day = Number(dayText), hour = Number(hourText), minute = Number(minuteText)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day || hour > 23 || minute > 59) return null
+  return `${yearText}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
+function DateTime24Field({ label, value, disabled, onChange }: { label: string; value: string; disabled: boolean; onChange: (value: string) => void }) {
+  const [dateText, setDateText] = useState(formatDatePart(value))
+  const [timeText, setTimeText] = useState(formatTimePart(value))
+  useEffect(() => {
+    setDateText(formatDatePart(value))
+    setTimeText(formatTimePart(value))
+  }, [value])
+  const commitParts = (date: string, time: string) => {
+    const parsed = parseDateTime24(`${date} ${time}`)
+    if (parsed) onChange(parsed)
+    else if (!date.trim() && !time.trim()) onChange('')
+  }
+
+  return (
+    <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,105px)_50px] gap-2">
+      <input aria-label={`${label} 날짜`} type="text" inputMode="numeric" disabled={disabled} value={dateText} placeholder="yyyy.mm.dd." onChange={event => {
+        const next = event.target.value
+        setDateText(next)
+        commitParts(next, timeText)
+      }} className="h-[25px] min-w-0 rounded border border-ui-border bg-ui-background px-1 text-center text-[13px] font-mono tabular-nums text-ui-white outline-none focus:border-brand disabled:opacity-50" />
+      <input aria-label={`${label} 시각 (HH:mm)`} type="text" inputMode="numeric" disabled={disabled} value={timeText} placeholder="hh:mm" onChange={event => {
+        const next = event.target.value
+        setTimeText(next)
+        commitParts(dateText, next)
+      }} className="h-[25px] w-full rounded border border-ui-border bg-ui-background px-1 text-center text-[13px] font-mono tabular-nums text-ui-white outline-none focus:border-brand disabled:opacity-50" />
+    </div>
+  )
+}
+
+function displayDateTime(value: string): string {
+  return value.replace('T', ' ').slice(0, 16)
+}
+
+function parseKstDateTime(value: string): number {
+  return Date.parse(`${value}:00+09:00`)
+}
+
+function initialDraft(): BannerDraftInput {
+  return { id: null, type: 'NOTICE', title: '서비스 안내', text: DEFAULT_TEXT, linkUrl: '', startsAt: kstInputValue(), endsAt: '', file: null }
+}
+
+function statusLabel(status: BannerCampaign['status']) {
+  switch (status) {
+    case 'DRAFT': return '임시'
+    case 'SCHEDULED': return '예약'
+    case 'LIVE': return '게시 중'
+    case 'ENDED': return '종료'
+  }
+}
+
+function campaignImageUrl(campaign: BannerCampaign) {
+  return adminBannerImageUrl(campaign.id, campaign.updatedAt)
+}
+
+function BannerPreview({ draft, savedCampaign, liveTitle, hasLiveBanner }: { draft: BannerDraftInput; savedCampaign?: BannerCampaign; liveTitle?: string | null; hasLiveBanner: boolean }) {
+  const hasPendingApproval = !savedCampaign || savedCampaign.status === 'DRAFT'
+  const localImageUrl = useMemo(() => draft.file ? URL.createObjectURL(draft.file) : null, [draft.file])
+  useEffect(() => () => { if (localImageUrl) URL.revokeObjectURL(localImageUrl) }, [localImageUrl])
+  const visitorStatus = hasLiveBanner ? `실제 방문자에게는 ${liveTitle ? `“${liveTitle}” 배너가` : '현재 배너가'} 계속 표시됩니다.` : '현재 실제 게시 배너는 없습니다.'
+  return (
+    <div className="w-full min-w-0 shrink-0 border border-ui-border bg-ui-background">
+      <div className="flex min-h-10 items-center gap-3 border-b border-ui-border bg-ui-surface px-3 text-xs">
+        <span className="inline-flex h-[25px] shrink-0 items-center rounded-sm border border-admin-only px-2 text-[14px] leading-none font-semibold text-admin-only">{hasPendingApproval ? 'TEST · 관리자 미리보기' : savedCampaign ? statusLabel(savedCampaign.status) : 'TEST'}</span>
+        <span className="min-w-0 truncate text-ui-muted">{hasPendingApproval ? visitorStatus : '승인된 배너가 표시됩니다.'}</span>
+      </div>
+      <div className="relative h-[90px] bg-ui-surface">
+        <div className="absolute inset-x-4 top-0 flex h-[90px] items-center justify-between">
+          <MarketryLogo layout="horizontalClean" className="h-auto w-44 shrink-0" />
+          <div className="mx-3 flex h-[90px] min-w-0 max-w-[728px] flex-1 items-center justify-center">
+            {draft.type === 'AD' ? (
+                localImageUrl ? (
+                <img src={localImageUrl} alt={draft.title || '광고 배너 미리보기'} className="h-full w-full object-contain" />
+              ) : savedCampaign?.hasImage ? (
+                <img src={campaignImageUrl(savedCampaign)} alt={draft.title || '광고 배너 미리보기'} className="h-full w-full object-contain" />
+              ) : (
+                <span className="flex h-[90px] w-full items-center justify-center border border-dashed border-ui-border text-xs text-ui-muted">광고 이미지를 선택하면 이 위치에서 미리 볼 수 있습니다.</span>
+              )
+            ) : (
+              <div className="flex h-[90px] w-full items-center justify-between gap-4 overflow-hidden bg-brand-surface px-5 text-ui-white">
+                <div className="min-w-0">
+                  <p className="m-0 truncate text-sm font-bold">{draft.title || '공지 제목'}</p>
+                  <p className="m-0 truncate text-xs text-ui-white/80">{draft.text || '문구를 입력하면 바로 미리보기에 반영됩니다.'}</p>
+                </div>
+                {draft.linkUrl && <span className="shrink-0 text-xs font-bold text-brand">자세히 보기 ›</span>}
+              </div>
+            )}
+          </div>
+          <div aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded border border-ui-border text-ui-muted">◯</div>
+        </div>
+      </div>
+      <div className="flex h-8 items-center gap-5 border-t border-ui-border bg-ui-surface px-4 text-xs text-ui-muted">
+        <span className="text-ui-white">⌂ Home</span><span>▦ Map</span><span>▥ Graph</span><span>✎ Custom</span><span className="text-admin-only">♙ Admin</span>
+      </div>
+      {draft.linkUrl && <p className="m-0 truncate border-t border-ui-border px-3 py-1 text-[10px] text-ui-muted">연결 주소: {draft.linkUrl}</p>}
+    </div>
+  )
+}
+
 export default function AdminBannerPage() {
   const { data: session, isLoading } = useSession()
   const isAdmin = isAdminSession(session)
@@ -26,7 +157,70 @@ export default function AdminBannerPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
+  const [activeType, setActiveType] = useState<BannerDraftInput['type']>('NOTICE')
+  const [drafts, setDrafts] = useState<Record<BannerDraftInput['type'], BannerDraftInput>>(() => ({
+    AD: { ...initialDraft(), type: 'AD', title: '', text: '' },
+    NOTICE: initialDraft(),
+  }))
+  const [savedFlags, setSavedFlags] = useState<Record<BannerDraftInput['type'], boolean>>({ AD: false, NOTICE: false })
+  const [savedCampaigns, setSavedCampaigns] = useState<Partial<Record<BannerDraftInput['type'], BannerCampaign>>>({})
   const screenshotRef = useRef<HTMLDivElement>(null)
+  const client = useQueryClient()
+
+  const campaigns = useQuery({ queryKey: ['admin-banners'], queryFn: ({ signal }) => getAdminBanners(signal), enabled: isAdmin, retry: false })
+  const activeBanner = useQuery({ queryKey: ['banners', 'active'], queryFn: ({ signal }) => getActiveBanner(signal), enabled: isAdmin, retry: false })
+  const draft = drafts[activeType]
+  const isDraftSaved = savedFlags[activeType]
+  const savedCampaign = savedCampaigns[activeType]
+  const listedCampaign = useMemo(() => campaigns.data?.find(item => item.id === draft.id), [campaigns.data, draft.id])
+  const selectedCampaign = listedCampaign ?? savedCampaign
+  const canEdit = !selectedCampaign || selectedCampaign.status === 'DRAFT'
+  const isDirty = !isDraftSaved
+
+  const saveMutation = useMutation({
+    mutationFn: saveBannerDraft,
+    onSuccess: async item => {
+      setSavedCampaigns(value => ({ ...value, [item.type]: item }))
+      setDrafts(value => ({ ...value, [item.type]: { ...value[item.type], id: item.id, file: null } }))
+      setSavedFlags(value => ({ ...value, [item.type]: true }))
+      await client.invalidateQueries({ queryKey: ['admin-banners'] })
+      void appAlert('배너 시안을 저장했습니다. 실제 공개 전 테스트 미리보기에서 확인해 주세요.', { title: '저장 완료' })
+    },
+    onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.message ?? '입력 내용을 확인하고 다시 시도해 주세요.') : '입력 내용을 확인하고 다시 시도해 주세요.', { title: '저장 실패' }),
+  })
+  const approveMutation = useMutation({
+    mutationFn: approveBanner,
+    onSuccess: async item => {
+      setSavedCampaigns(value => ({ ...value, [item.type]: item }))
+      setSavedFlags(value => ({ ...value, [item.type]: true }))
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ['admin-banners'] }),
+        client.invalidateQueries({ queryKey: ['banners', 'active'] }),
+      ])
+      void appAlert(item.status === 'SCHEDULED' ? '선택한 시각에 배너가 교체되도록 예약했습니다.' : '배너를 실제 상단 영역에 반영했습니다.', { title: '승인 완료' })
+    },
+    onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.message ?? '시간이 겹치는 배너가 있는지 확인해 주세요.') : '배너 승인에 실패했습니다. 잠시 후 다시 시도해 주세요.', { title: '승인 실패' }),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: deleteBannerDraft,
+    onSuccess: async () => {
+      setDrafts(value => ({ ...value, [activeType]: { ...initialDraft(), type: activeType, ...(activeType === 'AD' ? { title: '', text: '' } : {}) } }))
+      setSavedCampaigns(value => ({ ...value, [activeType]: undefined }))
+      setSavedFlags(value => ({ ...value, [activeType]: false }))
+      await client.invalidateQueries({ queryKey: ['admin-banners'] })
+    },
+    onError: () => void appAlert('임시 배너를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.', { title: '삭제 실패' }),
+  })
+
+  useEffect(() => {
+    for (const item of Object.values(savedCampaigns)) {
+      if (!item) continue
+      const refreshed = campaigns.data?.find(campaign => campaign.id === item.id)
+      if (refreshed && (refreshed.status !== item.status || refreshed.updatedAt !== item.updatedAt)) {
+        setSavedCampaigns(value => ({ ...value, [refreshed.type]: refreshed }))
+      }
+    }
+  }, [campaigns.data, savedCampaigns])
 
   const handleCopy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotRef.current) return
@@ -42,6 +236,115 @@ export default function AdminBannerPage() {
     }
   }
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
+  const changeDraft = (patch: Partial<BannerDraftInput>) => {
+    setDrafts(value => ({ ...value, [activeType]: { ...value[activeType], ...patch } }))
+    setSavedFlags(value => ({ ...value, [activeType]: false }))
+  }
+  const handleSave = () => {
+    if (!canEdit || saveMutation.isPending) return
+    if (!draft.title.trim() || !draft.startsAt || (draft.type === 'NOTICE' && !draft.text.trim()) || (draft.type === 'AD' && !draft.file && !savedCampaign?.hasImage)) {
+      void appAlert('제목, 문구 또는 광고 이미지와 게시 시작 시각을 확인해 주세요.', { title: '입력 확인' })
+      return
+    }
+    saveMutation.mutate(draft)
+  }
+  const handleApprove = async () => {
+    if (!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending) return
+    const replacementAt = displayDateTime(draft.startsAt)
+    if (!await appConfirm(`테스트 미리보기를 확인했습니다. ${replacementAt} (한국 시간)에 이 배너를 실제 방문자에게 공개하시겠습니까?`, { title: '배너 실제 반영' })) return
+    approveMutation.mutate(draft.id)
+  }
+  const selectCampaign = (item: BannerCampaign) => {
+    setActiveType(item.type)
+    setSavedCampaigns(value => ({ ...value, [item.type]: item }))
+    setSavedFlags(value => ({ ...value, [item.type]: true }))
+    setDrafts(value => ({ ...value, [item.type]: {
+      id: item.id,
+      type: item.type,
+      title: item.title,
+      text: item.text ?? '',
+      linkUrl: item.linkUrl ?? '',
+      startsAt: inputDateTime(item.startsAt),
+      endsAt: inputDateTime(item.endsAt ?? ''),
+      file: null,
+    } }))
+  }
+  const startNewDraft = () => {
+    setSavedCampaigns(value => ({ ...value, [activeType]: undefined }))
+    setDrafts(value => ({ ...value, [activeType]: { ...initialDraft(), type: activeType, ...(activeType === 'AD' ? { title: '', text: '' } : {}) } }))
+    setSavedFlags(value => ({ ...value, [activeType]: false }))
+  }
+  const handleDelete = async () => {
+    if (!draft.id || selectedCampaign?.status !== 'DRAFT') return
+    if (await appConfirm('이 임시 배너를 삭제하시겠습니까?', { title: '배너 삭제' })) deleteMutation.mutate(draft.id)
+  }
+
+  const handlePickFile = (file: File | undefined) => {
+    if (!file) return
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      void appAlert('PNG 또는 JPEG 이미지 파일을 선택해 주세요.', { title: '파일 형식 확인' })
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      void appAlert('배너 이미지는 2MB 이하만 올릴 수 있습니다.', { title: '파일 크기 확인' })
+      return
+    }
+    changeDraft({ file })
+  }
+
+  const isStartingSoon = draft.startsAt && parseKstDateTime(draft.startsAt) > Date.now()
+  const campaignsList = (campaigns.data ?? []).filter(item => item.type === activeType)
+  const campaignSlots = Array.from({ length: 5 }, (_, index) => campaignsList[index])
+  const settingsFields = (
+    <div className="settings-plain-content">
+      <div className="settings-ops-item h-[180px] text-sm">
+        <div className="settings-custom-control">
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">내용</h2>
+          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">{activeType === 'AD' ? '광고 제목과 이미지를 등록합니다.' : '공지 제목과 문구를 입력합니다.'}</p>
+          <div className="settings-control-inset mt-auto mb-auto flex flex-col gap-1">
+            <label className="block text-[11px] leading-3 text-ui-muted">제목<input aria-label="배너 제목" maxLength={100} disabled={!canEdit} value={draft.title} onChange={event => changeDraft({ title: event.target.value })} className={`${INPUT_CLASS} mt-0.5`} /></label>
+            {activeType === 'NOTICE' ? (
+              <label className="block text-[11px] leading-3 text-ui-muted">공지 문구<textarea aria-label="공지 문구" maxLength={200} disabled={!canEdit} value={draft.text} onChange={event => changeDraft({ text: event.target.value })} className="mt-0.5 h-9 w-full resize-none rounded border border-ui-border bg-ui-background p-1.5 text-xs text-ui-white outline-none focus:border-brand disabled:opacity-50" /></label>
+            ) : (
+              <label className="flex h-[25px] cursor-pointer items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white settings-chip-hover has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-35">
+                <UploadIcon aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+                {draft.file?.name ?? (savedCampaign?.hasImage ? '이미지 교체' : '배너 이미지 선택')}
+                <input type="file" accept="image/png,image/jpeg" disabled={!canEdit} onChange={event => handlePickFile(event.target.files?.[0])} className="sr-only" />
+              </label>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="settings-ops-item h-[180px] text-sm">
+        <div className="settings-custom-control">
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">연결 주소</h2>
+          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">선택하면 배너를 눌러 해당 주소로 이동합니다.</p>
+          <div className="settings-control-inset mt-auto mb-auto"><input aria-label="연결 주소" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} placeholder="https://" className={INPUT_CLASS} /></div>
+        </div>
+      </div>
+      <div className="settings-ops-item h-[180px] text-sm">
+        <div className="settings-custom-control">
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">교체 일정</h2>
+          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">한국 시간에 실제 배너가 교체됩니다.</p>
+          <div className="settings-control-inset mt-auto mb-auto flex flex-col gap-1">
+            <label className="flex items-center gap-2 text-[11px] leading-3 text-ui-muted"><span className="inline-flex h-[25px] shrink-0 items-center rounded-[4px] bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white">시작</span><DateTime24Field label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} /></label>
+            <label className="flex items-center gap-2 text-[11px] leading-3 text-ui-muted"><span className="inline-flex h-[25px] shrink-0 items-center rounded-[4px] bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white">종료</span><DateTime24Field label="교체 종료" disabled={!canEdit} value={draft.endsAt} onChange={endsAt => changeDraft({ endsAt })} /></label>
+          </div>
+        </div>
+      </div>
+      <div className="settings-ops-item h-[180px] text-sm">
+        <div className="settings-custom-control">
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">테스트 · 승인</h2>
+          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">테스트 미리보기는 관리자에게만 보입니다.</p>
+          <div className="settings-control-inset mt-auto mb-auto flex flex-col gap-2">
+            <button type="button" disabled={!canEdit || saveMutation.isPending || !isDirty} onClick={handleSave} className={SETTINGS_ACTION_CLASS}><SaveIcon aria-hidden="true" className="h-4 w-4" />시안 저장</button>
+            <button type="button" disabled={!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending} onClick={() => void handleApprove()} className={SETTINGS_ACTION_CLASS}>{isStartingSoon ? '승인 후 예약' : '승인 후 실제 반영'}</button>
+            {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className={SETTINGS_ACTION_CLASS}>임시 시안 삭제</button>}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
@@ -49,8 +352,8 @@ export default function AdminBannerPage() {
       <NavSubBar
         actions={
           <NavBarPageActions
-            onRefresh={() => undefined}
-            isRefreshing={false}
+            onRefresh={() => { void campaigns.refetch(); void activeBanner.refetch() }}
+            isRefreshing={campaigns.isFetching || activeBanner.isFetching}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
             showRefresh={false}
@@ -69,12 +372,43 @@ export default function AdminBannerPage() {
             ) : !isAdmin ? (
               <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
-              <section aria-label="배너" className="flex min-h-0 flex-1 w-full flex-col text-sm">
+              <section aria-label="배너 운영" className="flex min-h-0 flex-1 w-full flex-col text-sm">
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="BANNER" />
                 </Toolbar>
-                <div className="relative min-h-0 flex-1">
-                  <EmptyMessage message="준비 중입니다." topClass="top-0" />
+                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-2 pb-1">
+                  <div className="flex shrink-0 items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <h1 className="m-0 text-lg font-bold text-ui-white">배너 운영</h1>
+                      <p className="m-0 mt-1 text-xs text-ui-muted">수정 → 테스트 → 승인 후 실제 반영 · 게시 슬롯에는 한 번에 하나만 표시됩니다.</p>
+                    </div>
+                    <button type="button" onClick={startNewDraft} className="toolbar-badge-control h-[25px] shrink-0 border-0 bg-brand-surface px-3 text-sm font-bold text-ui-white hover:bg-brand-surface-hover">새 배너</button>
+                  </div>
+                  <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+                    <BannerPreview draft={draft} savedCampaign={selectedCampaign} liveTitle={activeBanner.data?.title} hasLiveBanner={activeBanner.data?.active ?? false} />
+                    <div className="flex shrink-0 flex-col overflow-hidden border border-ui-border">
+                      <div className="flex h-8 shrink-0 items-center justify-between border-b border-ui-border px-2">
+                        <span className="font-bold">배너 슬롯 <span className="text-ui-muted">{campaigns.isError && campaigns.data === undefined ? '—' : Math.min(campaignsList.length, 5)}/5</span></span>
+                        <span className={`text-xs ${campaigns.isError && campaigns.data === undefined ? 'text-status-error-text' : 'text-ui-muted'}`}>{campaigns.isError && campaigns.data === undefined ? '목록 연결 오류 · 슬롯 상태 확인 불가' : '게시 중인 배너는 다음 예약 시작 시각에 교체됩니다.'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        {campaignSlots.map((item, index) => {
+                          const unavailable = campaigns.isError && campaigns.data === undefined
+                          const loading = campaigns.isPending && campaigns.data === undefined
+                          const emptyLabel = unavailable ? '상태 확인 불가' : loading ? '불러오는 중' : '비어 있음'
+                          return (
+                            <button key={item?.id ?? `empty-${activeType}-${index}`} type="button" disabled={!item} onClick={() => item && selectCampaign(item)} aria-label={item ? `${statusLabel(item.status)} 배너 ${item.title} 편집` : `배너 슬롯 ${index + 1} · ${emptyLabel}`} className={`flex h-12 w-full items-center gap-3 border-0 border-b border-ui-border px-3 text-left text-sm last:border-b-0 ${item ? `cursor-pointer hover:bg-[var(--brand)]/10 ${draft.id === item.id ? 'bg-[var(--brand)]/15' : 'bg-transparent'}` : 'cursor-default bg-transparent'}`}>
+                              <MarketryLogo layout="horizontalClean" className="h-auto w-24 shrink-0" />
+                              <span className="min-w-0 flex-1 truncate">
+                                {item ? activeType === 'AD' ? item.hasImage ? '광고 이미지 등록됨' : `${item.title} · 이미지 없음` : `${item.title}${item.text ? ` · ${item.text}` : ''}` : <span className="text-ui-muted">배너 슬롯 {index + 1} · {emptyLabel}</span>}
+                              </span>
+                              <span className={`inline-flex h-[25px] shrink-0 items-center rounded-sm border px-2 text-[13px] font-semibold leading-none ${item ? 'border-admin-only text-admin-only' : 'border-ui-border text-ui-muted'}`}>{item ? statusLabel(item.status) : unavailable ? '확인 불가' : loading ? '로딩' : '미등록'}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
             )}
@@ -83,18 +417,21 @@ export default function AdminBannerPage() {
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
               <SettingsPanel
-                pageLabel="Admin"
+                pageLabel="Banner"
                 showPreferenceActions={false}
                 fixedSideTab
                 isOpen={isSettingsOpen}
                 onOpenChange={setIsSettingsOpen}
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
-                sectionOrder={['adminManage']}
+                sectionOrder={['adminBannerNotice', 'adminBannerAd']}
+                onSectionChange={section => {
+                  if (section === 'adminBannerAd') setActiveType('AD')
+                  if (section === 'adminBannerNotice') setActiveType('NOTICE')
+                }}
               >
-                <SettingsPanelGroup section="adminManage">
-                  <div className="settings-plain-content" />
-                </SettingsPanelGroup>
+                <SettingsPanelGroup section="adminBannerAd">{settingsFields}</SettingsPanelGroup>
+                <SettingsPanelGroup section="adminBannerNotice">{settingsFields}</SettingsPanelGroup>
               </SettingsPanel>
             </div>
           )}

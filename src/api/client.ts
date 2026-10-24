@@ -3,6 +3,7 @@ import { AuthSessionResponseSchema, type AuthSessionResponse } from '@/types/api
 import queryClient from './queryClient'
 import { authKeys } from '@/hooks/queryKeys'
 import { setLocalGuestMode } from '@/utils/localDevLogin'
+import { metricPageFromPath, reportClientMetric } from '@/utils/clientMetrics'
 
 const client = axios.create({
   baseURL: '/api',
@@ -68,6 +69,8 @@ client.interceptors.response.use(
   async error => {
     const config = error?.config as RetriableConfig | undefined
     const status = error?.response?.status
+    const page = metricPageFromPath(window.location.pathname)
+    if (page && (status === undefined || status >= 500)) reportClientMetric(page, 'CLIENT_ERROR')
     const isAuthEndpoint = typeof config?.url === 'string' && config.url.includes('/auth/')
 
     if (status !== 401 || !config || config._retriedAfterRefresh || isAuthEndpoint) {

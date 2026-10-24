@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getAdminAccessFrequency, getAdminDailyAccess, getAdminSignups, getAdminVisitorSources, getAdminVisitors } from '@/api/adminMembers'
+import { getAdminDashboardMetrics } from '@/api/adminDashboard'
 import DailyAccessChart from '@/components/DailyAccessChart'
 import FrameBadge from '@/components/FrameBadge'
 import GrowthLineChart from '@/components/GrowthLineChart'
@@ -12,7 +13,7 @@ import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import SettingsSegmentedControl from '@/components/SettingsSegmentedControl'
 import Toolbar from '@/components/Toolbar'
-import StackedDailyChart, { type StackedDailyRow } from '@/components/StackedDailyChart'
+import StackedDailyChart, { StackedDailyLegend, type StackedDailyRow } from '@/components/StackedDailyChart'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -20,6 +21,7 @@ import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
+import { formatCount } from '@/utils/formatCount'
 
 // 모든 차트가 같이 쓰는 기간(일) — 서버의 일별 접속 조회 한도(90일)를 넘지 않는다. 접속 빈도만 최근 30일로 고정이다.
 const PERIOD_OPTIONS = [7, 14, 30, 90] as const
@@ -28,6 +30,7 @@ const DASHBOARD_CARD_MIN_HEIGHT = 280
 const DASHBOARD_GRID_GAP = 12
 // 접속 빈도 구간의 막대 색 — 자주 올수록 진한 청록이고, 한 번도 안 온 회원은 흐린 회색이다.
 const VISITOR_SOURCE_LABELS = { NAVER: '네이버', GOOGLE: '구글', DIRECT: '직접', OTHER: '기타' } as const
+const DASHBOARD_PAGE_LABELS: Record<string, string> = { HOME: 'Home', MAP: 'Map', GRAPH: 'Graph', CUSTOM: 'Custom' }
 const FREQUENCY_BAR_CLASSES = ['bg-ui-muted', 'bg-[var(--brand)]/35', 'bg-[var(--brand)]/55', 'bg-[var(--brand)]/80', 'bg-[var(--brand)]']
 
 // 관리자 전용 대시보드 — 회원 명단(/admin/member)과 떨어뜨려 회원 이용 현황을 작은 차트 여러 개로 모아 본다(홈 화면의 틀처럼 한 칸에 차트 하나).
@@ -99,6 +102,13 @@ export default function AdminDashboardPage() {
     staleTime: 30_000,
     retry: false,
   })
+  const dashboardMetrics = useQuery({
+    queryKey: ['admin-dashboard-metrics', session?.userId, period],
+    queryFn: ({ signal }) => getAdminDashboardMetrics(period, signal),
+    enabled: isAdmin,
+    staleTime: 30_000,
+    retry: false,
+  })
   const handleCopy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotRef.current) return
     setCopyStatus('copying')
@@ -149,43 +159,43 @@ export default function AdminDashboardPage() {
                   className="grid min-h-0 flex-1 auto-rows-[280px] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3 overflow-auto"
                   style={{ gridTemplateRows: `repeat(${dashboardRowSize.count}, ${dashboardRowSize.height}px)` }}
                 >
-                  <ChartFrame title="총 방문자" note="회원 + 비회원 합산">
+                  <ChartFrame title="총 방문자" headerContent={<StackedDailyLegend />}>
                     {visitors.isError || dailyAccess.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                      <DashboardMetricError />
                     ) : visitors.data && dailyAccess.data ? (
-                      <StackedDailyChart rows={totalVisitorRows(visitors.data, dailyAccess.data)} />
+                      <StackedDailyChart rows={totalVisitorRows(visitors.data, dailyAccess.data)} showLegend={false} />
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <ChartFrame title="방문자 수" note="로그인하지 않고 들어온 사람">
+                  <ChartFrame title="방문자 수" note="비회원 방문">
                     {visitors.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                      <DashboardMetricError />
                     ) : visitors.data ? (
                       <DailyAccessChart rows={visitors.data.map(row => ({ date: row.date, members: row.visitors }))} ariaLabelPrefix="비회원 방문자 수" />
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <ChartFrame title="신규 가입" note="가입한 회원 수">
+                  <ChartFrame title="신규 가입" note="가입 회원 수">
                     {signups.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                      <DashboardMetricError />
                     ) : signups.data ? (
                       <DailyAccessChart rows={signups.data.map(row => ({ date: row.date, members: row.joined }))} ariaLabelPrefix="신규 가입" />
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <ChartFrame title="가입 전환율" note="방문자 중 가입한 비율">
+                  <ChartFrame title="가입 전환율" note="방문자 가입률">
                     {visitors.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                      <DashboardMetricError />
                     ) : visitors.data ? (
                       totalVisitors === 0 ? (
                         <p className="m-0 w-full self-center text-center text-sm text-ui-text">아직 센 방문자가 없습니다.</p>
                       ) : (
                         <div className="flex w-full flex-col items-center gap-2 self-center">
                           <span className="text-5xl font-bold leading-none tabular-nums text-ui-white">{((totalJoined / totalVisitors) * 100).toFixed(1)}%</span>
-                          <span className="text-xs font-medium text-ui-white">방문자 {totalVisitors.toLocaleString()}명 중 {totalJoined.toLocaleString()}명 가입</span>
+                          <span className="text-xs font-medium text-ui-white">방문자 {formatCount(totalVisitors)}명 중 {formatCount(totalJoined)}명 가입</span>
                           <span className="text-xs text-ui-muted">방문자를 세기 시작한 {countedDays.length}일 기준</span>
                         </div>
                       )
@@ -193,9 +203,9 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <ChartFrame title="유입 경로" note="비회원이 어디서 들어왔나">
+                  <ChartFrame title="유입 경로" note="비회원 유입 경로">
                     {visitorSources.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                      <DashboardMetricError />
                     ) : visitorSources.data ? (
                       <HorizontalBarsChart
                         ariaLabel="유입 경로 분포"
@@ -212,22 +222,26 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <PlannedChartFrame title="첫 분류 완료율" note="가입 7일 안에 내 기준을 설정한 회원 비율" />
+                  <ChartFrame title="첫 분류 완료율" note="가입 7일 내 첫 종목 분류 비율">
+                    {dashboardMetrics.isError ? <DashboardMetricError /> : dashboardMetrics.data ? (
+                      <RateMetric numerator={dashboardMetrics.data.classifiedMembers} denominator={dashboardMetrics.data.classificationEligibleMembers} emptyText="관찰 가능한 가입자가 없습니다." />
+                    ) : <DashboardMetricLoading />}
+                  </ChartFrame>
                   <ChartFrame
                     title="접속 회원 수"
-                    note="접속한 서로 다른 회원 수"
+                    note="일별 접속 회원 수"
                   >
                     {dailyAccess.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                      <DashboardMetricError />
                     ) : dailyAccess.data ? (
                       <DailyAccessChart rows={dailyAccess.data} />
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <ChartFrame title="접속 빈도" note="최근 30일 중 며칠 접속했나 · 구간별 회원 수">
+                  <ChartFrame title="접속 빈도" note="최근 30일 접속일별 회원 수">
                     {accessFrequency.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                      <DashboardMetricError />
                     ) : accessFrequency.data ? (
                       <HorizontalBarsChart
                         ariaLabel="접속 빈도 분포"
@@ -244,17 +258,35 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <PlannedChartFrame title="7일 재방문율" note="가입 다음 날부터 7일 안에 다시 접속한 회원 비율" />
-                  <ChartFrame title="누적 회원 수" note="가입 시점부터 쌓인 전체 회원 수">
+                  <ChartFrame title="7일 재방문율" note="가입 후 7일 내 재방문 비율">
+                    {dashboardMetrics.isError ? <DashboardMetricError /> : dashboardMetrics.data ? (
+                      <RateMetric numerator={dashboardMetrics.data.returningMembers} denominator={dashboardMetrics.data.revisitEligibleMembers} emptyText="7일 접속 기록이 쌓이는 중입니다." />
+                    ) : <DashboardMetricLoading />}
+                  </ChartFrame>
+                  <ChartFrame title="누적 회원 수" note="전체 누적 회원 수">
                     {signups.isError ? (
-                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                      <DashboardMetricError />
                     ) : signups.data ? (
                       <GrowthLineChart rows={signups.data} />
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <PlannedChartFrame title="화면 속도·오류" note="주요 화면의 지연·오류와 모바일 지도 캡처 시간" />
+                  <ChartFrame title="화면 속도·오류" note="화면별 첫 렌더링·오류, 지도 캡처 시간">
+                    {dashboardMetrics.isError ? <DashboardMetricError /> : dashboardMetrics.data ? (
+                      <div className="w-full self-center px-1">
+                        <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 border-b border-ui-border pb-1 text-[10px] text-ui-muted"><span>화면</span><span>첫 렌더링 평균</span><span>오류</span></div>
+                        {dashboardMetrics.data.pages.length ? dashboardMetrics.data.pages.map(row => (
+                          <div key={row.page} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
+                            <span>{DASHBOARD_PAGE_LABELS[row.page] ?? row.page}</span>
+                            <span className="tabular-nums">{row.pageLoads ? `${row.averageLoadMs} ms` : '—'}</span>
+                            <span className="min-w-5 text-right tabular-nums">{formatCount(row.clientErrors)}</span>
+                          </div>
+                        )) : <p className="m-0 py-3 text-center text-xs text-ui-muted">화면 지표를 수집하는 중입니다.</p>}
+                        <div className="mt-3 flex items-center justify-between gap-2 text-xs"><span className="text-ui-muted">모바일 지도 캡처 평균</span><span className="font-medium tabular-nums text-ui-white">{dashboardMetrics.data.mobileCaptures ? `${dashboardMetrics.data.averageMobileCaptureMs} ms · ${formatCount(dashboardMetrics.data.mobileCaptures)}회` : '기록 대기'}</span></div>
+                      </div>
+                    ) : <DashboardMetricLoading />}
+                  </ChartFrame>
                 </div>
               </section>
             )}
@@ -263,7 +295,7 @@ export default function AdminDashboardPage() {
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
               <SettingsPanel
-                pageLabel="Admin"
+                pageLabel="Dashboard"
                 showPreferenceActions={false}
                 fixedSideTab
                 isOpen={isSettingsOpen}
@@ -271,13 +303,15 @@ export default function AdminDashboardPage() {
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
                 sectionOrder={['adminManage']}
+                sectionIconOverrides={{ adminManage: 'dashboard' }}
+                sectionLabelOverrides={{ adminManage: '대시보드' }}
               >
                 <SettingsPanelGroup section="adminManage">
                   <div className="settings-plain-content">
                     <div className="settings-ops-item h-[180px] text-sm">
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">기간</h2>
-                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">모든 차트에 보여 줄 기간(접속 빈도는 최근 30일 고정)</p>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">모든 차트에 보여 줄 기간</p>
                         <SettingsSegmentedControl label="기간" options={PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={period} onChange={setPeriod} />
                       </div>
                     </div>
@@ -307,20 +341,40 @@ function totalVisitorRows(visitors: { date: string; visitors: number }[], member
   return visitors.map(row => ({ date: row.date, guests: row.visitors, members: memberCounts.get(row.date) ?? 0 }))
 }
 
-// 차트 한 칸 — 왼쪽 위에 제목 배지(홈 화면의 틀 제목과 같은 짙은 청록), 오른쪽 위에 조작, 그 아래에 설명과 차트를 둔다.
-function ChartFrame({ title, note, actions, children }: { title: string; note: string; actions?: ReactNode; children: ReactNode }) {
+// 차트 한 칸 — 제목 배지 오른쪽에 짧은 설명을 두고, 아래에는 차트를 둔다.
+function ChartFrame({ title, note, headerContent, actions, children }: { title: string; note?: string; headerContent?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
     <section aria-label={title} className="flex min-h-0 flex-col border border-ui-border p-[7px]">
       <div className="flex shrink-0 items-center justify-between gap-2">
-        <FrameBadge>{title}</FrameBadge>
+        <div className="flex min-w-0 items-center gap-2">
+          <FrameBadge>{title}</FrameBadge>
+          {headerContent}
+          {note && <p className="m-0 min-w-0 truncate text-xs font-medium leading-tight text-ui-white">{note}</p>}
+        </div>
         {actions}
       </div>
-      <p className="m-0 mt-2 shrink-0 text-xs font-medium text-ui-white">{note}</p>
       <div className="mt-3 flex min-h-0 flex-1 items-end">{children}</div>
     </section>
   )
 }
 
-function PlannedChartFrame({ title, note }: { title: string; note: string }) {
-  return <ChartFrame title={title} note={note}><p className="m-auto text-sm text-ui-muted">추가 예정</p></ChartFrame>
+function DashboardMetricError() {
+  return <p role="alert" className="m-auto text-sm text-ui-text">불러오지 못했습니다.</p>
+}
+
+function DashboardMetricLoading() {
+  return <p role="status" className="m-auto text-sm text-ui-text">불러오는 중입니다.</p>
+}
+
+function RateMetric({ numerator, denominator, emptyText }: { numerator: number; denominator: number; emptyText: string }) {
+  if (!denominator) return <p className="m-auto text-sm text-ui-muted">{emptyText}</p>
+  return (
+    <div className="flex w-full flex-col items-center gap-3 self-center">
+      <span className="text-5xl font-bold leading-none tabular-nums text-ui-white">{((numerator / denominator) * 100).toFixed(1)}%</span>
+      <span className="text-xs font-medium text-ui-white">{formatCount(numerator)}명 / {formatCount(denominator)}명</span>
+      <div className="h-2 w-4/5 overflow-hidden rounded-full bg-ui-control" role="img" aria-label={`${((numerator / denominator) * 100).toFixed(1)}퍼센트`}>
+        <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (numerator / denominator) * 100)}%` }} />
+      </div>
+    </div>
+  )
 }

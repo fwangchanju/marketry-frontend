@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { createPortal } from 'react-dom'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getAdminMemberSummary, getAdminMembers, resetMembersNickname, setMembersSpecial } from '@/api/adminMembers'
+import { getAdminMembers, resetMembersNickname, setMembersSpecial } from '@/api/adminMembers'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
-import { GoogleLogoIcon, KakaoLogoIcon, NaverLogoIcon } from '@/components/icons/AppIcons'
+import AuthProviderIcon from '@/components/AuthProviderIcon'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import StockSortHeader from '@/components/StockSortHeader'
 import Toolbar from '@/components/Toolbar'
@@ -14,9 +14,10 @@ import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
 import { displayEmail } from '@/utils/displayEmail'
+import { isAuthProviderIssuer } from '@/utils/authProvider'
 
 const PAGE_SIZE = 50
-const controlClass = 'h-6 shrink-0 whitespace-nowrap border-0 bg-[var(--ui-panel)] px-2 text-sm font-normal text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)] disabled:opacity-40'
+const controlClass = 'flex h-5 min-w-9 shrink-0 items-center justify-center whitespace-nowrap rounded-sm border border-brand bg-brand px-1.5 text-[11px] font-semibold leading-none text-ui-background outline-none transition-colors hover:brightness-110 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-75'
 type SortKey = 'id' | 'issuer' | 'email' | 'nickname' | 'role' | 'createdAt' | 'lastAccessAt'
 type SortOrder = 'asc' | 'desc'
 // 로딩 원에서 숫자 세기가 끝나면 나오는 "다시 시도" 버튼(Spinner)과 같은 모양이다.
@@ -41,7 +42,6 @@ const gradeLabelOf = (value: string) => (value === 'ADMIN' ? '관리자' : value
 const GRADE_COLOR_CLASS: Record<MemberGrade, string> = { ADMIN: 'text-admin-only', SPECIAL: 'text-[var(--sub-purple)]', USER: 'text-ui-text' }
 const gradeOf = (member: { role: string; special: boolean }): MemberGrade => (member.role === 'ADMIN' ? 'ADMIN' : member.special ? 'SPECIAL' : 'USER')
 // 로그인 연동 — OAuth 제공자별 표시. 그 밖(시스템·로컬 테스트 회원)은 줄표로 둔다.
-const GOOGLE_ISSUER = 'https://accounts.google.com'
 const CHECKBOX_COLUMN_WIDTH = `${STOCK_CHECKBOX_COLUMN_PX}px`
 // 종목 표 체크박스 칸과 같은 폭·여백이다.
 const CHECKBOX_CELL_STYLE = { width: CHECKBOX_COLUMN_WIDTH, minWidth: CHECKBOX_COLUMN_WIDTH, maxWidth: CHECKBOX_COLUMN_WIDTH, paddingLeft: 0, paddingRight: 0 } as const
@@ -53,7 +53,7 @@ function formatTime(value: string | null) {
   return value.replace('T', ' ').slice(0, 19)
 }
 
-export default function AdminMembers({ userId, summaryContainer, specialContainer, nicknameContainer }: { userId: number; summaryContainer: HTMLElement | null; specialContainer: HTMLElement | null; nicknameContainer: HTMLElement | null }) {
+export default function AdminMembers({ userId, specialContainer, nicknameContainer, paginationContainer }: { userId: number; specialContainer: HTMLElement | null; nicknameContainer: HTMLElement | null; paginationContainer: HTMLElement | null }) {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
   const [query, setQuery] = useState('')
@@ -80,12 +80,6 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
     : members.isPending ? '회원 정보를 불러오는 중입니다.'
     : members.data?.items.length === 0 ? (query || excludedRoles.size > 0 ? '조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.')
     : null
-  const summary = useQuery({
-    queryKey: ['admin-member-summary', userId],
-    queryFn: ({ signal }) => getAdminMemberSummary(signal),
-    staleTime: 30_000,
-    retry: false,
-  })
   const [isChangingSpecial, setIsChangingSpecial] = useState(false)
   const [isResettingNickname, setIsResettingNickname] = useState(false)
   // 체크한 회원 — 검색·정렬·필터·페이지를 바꾸면 비운다(보이는 목록 기준이다).
@@ -113,10 +107,7 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
     try {
       await setMembersSpecial(selected.map(member => member.id), special)
       clearSelection()
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['admin-members'] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-member-summary'] }),
-      ])
+      await queryClient.invalidateQueries({ queryKey: ['admin-members'] })
     } catch {
       appAlert('특별 회원을 바꾸지 못했습니다.\n잠시 후 다시 시도해 주세요.', { title: '변경 실패' })
     } finally {
@@ -198,7 +189,6 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
             ) : null}
           />
         </div>
-        <button type="button" className={`toolbar-badge ml-2 ${controlClass}`} disabled={members.isFetching} onClick={() => { void members.refetch() }}>{members.isFetching ? '조회 중…' : '새로고침'}</button>
       </Toolbar>
       <div className="flex min-h-0 flex-1 flex-col border border-ui-border">
       <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-auto" aria-busy={members.isFetching}>
@@ -251,23 +241,14 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
             </tr>
           </thead>
           <tbody className="select-text">
-            {members.isError || noRoleSelected || members.isPending || members.data.items.length === 0 ? null : members.data.items.map((member, index) => (
-              <tr key={member.id} {...rowProps(index)} className={`cursor-pointer ${selectedIds.has(member.id) ? 'bg-[var(--brand)]/15' : 'hover:bg-[var(--brand)]/10'}`}>
+            {members.isError || noRoleSelected || members.isPending || members.data.items.length === 0 ? null : members.data.items.map((member, index) => {
+              return <tr key={member.id} {...rowProps(index)} className={`cursor-pointer ${selectedIds.has(member.id) ? 'bg-[var(--brand)]/15' : 'hover:bg-[var(--brand)]/10'}`}>
                 <td className="text-center" style={CHECKBOX_CELL_STYLE}>
                   <input type="checkbox" aria-label={`${displayEmail(member.email) ?? member.id} 선택`} className="mx-auto my-0 block thin-check" checked={selectedIds.has(member.id)} onChange={() => {}} />
                 </td>
                 <td className="px-2 text-right tabular-nums text-ui-muted">{member.id}</td>
                 <td className="px-2 text-center text-ui-muted">
-                  {member.issuer === GOOGLE_ISSUER ? (
-                    // 구글 로고는 색을 바꾸지 않고 흰 칸 위에 둔다(로그인 창과 같다).
-                    <span role="img" aria-label="구글" className="mx-auto flex h-5 w-5 items-center justify-center rounded-[3px] bg-ui-white">
-                      <GoogleLogoIcon className="h-3.5 w-3.5" />
-                    </span>
-                  ) : member.issuer === 'https://nid.naver.com' ? (
-                    <span role="img" aria-label="네이버" className="mx-auto flex h-5 w-5 items-center justify-center rounded-[3px] bg-[#03a94d] text-white"><NaverLogoIcon className="h-3.5 w-3.5" /></span>
-                  ) : member.issuer === 'https://kauth.kakao.com' ? (
-                    <span role="img" aria-label="카카오" className="mx-auto flex h-5 w-5 items-center justify-center rounded-[3px] bg-[#fee500]"><KakaoLogoIcon className="h-3.5 w-3.5" /></span>
-                  ) : '-'}
+                  {isAuthProviderIssuer(member.issuer) ? <AuthProviderIcon issuer={member.issuer} className="mx-auto" /> : '-'}
                 </td>
                 <td className="break-normal whitespace-nowrap px-2 text-left">{displayEmail(member.email) || <span className="text-ui-muted">미등록</span>}</td>
                 <td className="break-normal px-2 text-left">{member.nickname || <span className="text-ui-muted">미설정</span>}</td>
@@ -276,7 +257,7 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
                 <td className="px-2 text-center tabular-nums text-ui-text">{members.data.accessTrackingAvailable ? formatTime(member.lastAccessAt) : '수집 전'}</td>
                 <td className="px-2 text-right tabular-nums text-ui-text">{member.accessDays ?? 0}일</td>
               </tr>
-            ))}
+            })}
           </tbody>
         </table>
         {!members.isError && centerMessage && (
@@ -289,30 +270,15 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
           </div>
         )}
       </div>
-      <div className="flex h-7 shrink-0 items-center justify-between gap-2 text-xs text-ui-muted">
-        <span aria-hidden="true" />
-        <div className="flex items-center gap-2">
+      {paginationContainer && createPortal(
+        <div className="flex h-7 items-end gap-1.5 pb-[4px] text-[11px] leading-none text-ui-muted">
           <button type="button" className={controlClass} disabled={page === 0 || members.isFetching} onClick={() => { setPage(value => value - 1); clearSelection() }}>이전</button>
-          <span aria-live="polite">{page + 1} / {pages}</span>
+          <span aria-live="polite" className="inline-flex h-5 items-center text-sm font-medium leading-none tabular-nums text-ui-white">{page + 1} / {pages}</span>
           <button type="button" className={controlClass} disabled={!members.data || members.isError || page + 1 >= pages || members.isFetching} onClick={() => { setPage(value => value + 1); clearSelection() }}>다음</button>
-        </div>
-      </div>
-      </div>
-      {summaryContainer && createPortal(
-        <div className="settings-custom-control">
-          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">회원 현황</h2>
-          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">전체 · 특별 회원 · 최근 7일 신규 가입·접속</p>
-          <div className="settings-button-area mt-4 grid max-w-full settings-control-inset grid-cols-2 gap-x-4 gap-y-1.5 text-[13px] tabular-nums">
-            {([['전체', summary.data?.total], ['특별 회원', summary.data?.specials], ['7일 신규', summary.data?.joinedRecently], ['7일 접속', summary.data?.accessedRecently]] as const).map(([label, value]) => (
-              <span key={label} className="flex items-baseline justify-between gap-2 whitespace-nowrap">
-                <span className="text-ui-white">{label}</span>
-                <span className="font-medium text-ui-text">{value === undefined ? '-' : `${value.toLocaleString()}명`}</span>
-              </span>
-            ))}
-          </div>
         </div>,
-        summaryContainer,
+        paginationContainer,
       )}
+      </div>
       {specialContainer && createPortal(
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">특별 회원 지정</h2>
