@@ -156,8 +156,8 @@ export default function AdminMessagePage() {
         }
       />
       <div className="flex min-h-0 flex-1">
-        <div className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
-          <div ref={screenshotRef} data-main-area className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
+        <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+          <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
             {isLoading ? (
               <p role="status" className="m-auto text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p>
             ) : !isAdmin ? (
@@ -230,15 +230,15 @@ export default function AdminMessagePage() {
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">텔레그램 발송</h2>
-                            <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">정기 리포트를 텔레그램으로 보낼지</p>
+                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">정기 리포트를 텔레그램으로 보낼지</p>
                             <SettingsSegmentedControl label="텔레그램 발송" options={SEND_OPTIONS} value={draft.enabled} onChange={value => updateDraft({ enabled: value })} />
                           </div>
                         </div>
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 시작</h2>
-                            <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">메시지 첫 발송 시각</p>
-                            <div className="mt-3 flex max-w-[16rem] translate-y-[6px] settings-control-inset justify-center">
+                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">메시지 첫 발송 시각</p>
+                            <div className="mt-3 flex max-w-full translate-y-[6px] settings-control-inset justify-center">
                               <DigitalClockPicker label="발송 시작" hour={saved.startHour} minute={draft.sectorSendMinute} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendMinute: value })} />
                             </div>
                           </div>
@@ -246,8 +246,8 @@ export default function AdminMessagePage() {
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 간격</h2>
-                            <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">시장 요약/시장 지도를 몇 분마다 보낼지</p>
-                            <div className="mt-1 flex max-w-[16rem] translate-y-[6px] settings-control-inset items-center justify-center">
+                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">시장 요약/시장 지도를 몇 분마다 보낼지</p>
+                            <div className="mt-1 flex max-w-full translate-y-[6px] settings-control-inset items-center justify-center">
                               <MinuteDial label="발송 간격" size={100} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
                             </div>
                           </div>

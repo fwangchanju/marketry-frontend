@@ -63,8 +63,8 @@ export default function AdminPage() {
         }
       />
       <div className="flex min-h-0 flex-1">
-        <div className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
-          <div ref={screenshotRef} data-main-area className="relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-ui-background text-ui-white">
+        <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+          <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-ui-background text-ui-white">
             {isLoading ? (
               <p role="status" className="text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p>
             ) : !isAdmin ? (

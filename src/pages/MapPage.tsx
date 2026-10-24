@@ -46,6 +46,7 @@ import type { DisplayGroup } from '@/hooks/useTreemapLayout'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { CAPTURE_ID } from '@/utils/captureIds'
+import { HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
@@ -156,7 +157,7 @@ function revealMobileCapture(cloned: Node, keepPageLabel = false) {
   const toolbarRight = cloned.querySelector<HTMLElement>('.main-toolbar > div:last-child')
   if (mobileCapture && toolbarLeft) {
     const toolbar = document.createElement('div')
-    toolbar.className = 'main-toolbar relative mt-[2.25px] mb-0 flex h-7 w-full shrink-0 items-center overflow-hidden bg-ui-background/70 text-sm font-bold text-ui-white'
+    toolbar.className = 'main-toolbar home-capture-toolbar relative mt-[3px] mb-0 flex h-7 w-full shrink-0 items-center overflow-hidden bg-ui-background/70 text-sm font-bold text-ui-white'
     const leftContent = toolbarLeft.cloneNode(true) as HTMLElement
     leftContent.style.minWidth = '0'
     leftContent.style.overflow = 'hidden'
@@ -198,11 +199,25 @@ function revealMobileCapture(cloned: Node, keepPageLabel = false) {
     toolbar.append(leftContent)
     if (toolbarRight) {
       const rightContent = toolbarRight.cloneNode(true) as HTMLElement
-      rightContent.style.minWidth = '0'
+      rightContent.style.minWidth = 'max-content'
       rightContent.style.width = 'max-content'
-      rightContent.style.maxWidth = '100%'
+      rightContent.style.maxWidth = 'none'
+      rightContent.style.flexShrink = '0'
+      rightContent.style.overflow = 'visible'
+      const badgeWrapper = rightContent.firstElementChild as HTMLElement | null
+      if (badgeWrapper) {
+        badgeWrapper.style.width = 'max-content'
+        badgeWrapper.style.minWidth = 'max-content'
+        badgeWrapper.style.maxWidth = 'none'
+      }
+      rightContent.querySelectorAll<HTMLElement>('.toolbar-badge, .toolbar-badge > span, .toolbar-badge .truncate').forEach(node => {
+        node.style.minWidth = 'max-content'
+        node.style.maxWidth = 'none'
+        node.style.overflow = 'visible'
+        node.style.textOverflow = 'clip'
+      })
       toolbar.style.display = 'grid'
-      toolbar.style.gridTemplateColumns = 'minmax(0, 1fr) auto'
+      toolbar.style.gridTemplateColumns = 'minmax(0, 1fr) max-content'
       toolbar.style.columnGap = '4px'
       leftContent.style.width = '100%'
       leftContent.style.minWidth = '0'
@@ -611,12 +626,12 @@ export default function MapPage() {
         {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
         <div
           ref={settingsRowRef}
-          className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 bg-ui-background"
+          className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 bg-ui-background"
         >
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
               항상 같은 폭을 유지하게 한다 — 내부 콘텐츠(트리맵)가 넘치면 이 컬럼 안에서만 처리된다. */}
-          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
             {/* 왼쪽은 마켓·기간·시계·시간대 묶음, 오른쪽 끝은 프로필(사진 + 거래소·MARKETRY). 두 묶음이 같은 줄에서 서로 밀어내므로
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
@@ -782,8 +797,8 @@ export default function MapPage() {
               data-map-mobile-capture-frame
               data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
               data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
-              // 스크린샷 창의 복제본은 아래 4px를 이미지에서 잘라 내므로 그만큼 더 길게 두고, 렌더러가 찍는 판은 화면 왼쪽 위에 딱 맞게 두고 시장 요약 이미지와 같은 810×1080으로 맞춘다.
-              style={{ opacity: 0, width: isMobileCaptureMode ? 'calc(100dvh * 3 / 4)' : 'calc(100dvh * 3 / 4 + 8px)', height: isMobileCaptureMode ? '100dvh' : 'calc(100dvh + 4px)', padding: '4px 4px 0', boxSizing: 'border-box' }}
+              // 홈 부분 캡처와 같은 810×1080 판을 쓴다. 스크린샷 창은 이미지 끝에서 하단 4px를 자르므로 높이만 4px 더 둔다.
+              style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${HOME_CAPTURE_FRAME_HEIGHT + (isMobileCaptureMode ? 0 : 4)}px`, padding: '4px 4px 0', boxSizing: 'border-box' }}
               className={`pointer-events-none ${isMobileCaptureMode ? 'fixed z-[200]' : 'absolute z-[60]'} left-0 top-0 bg-ui-background`}
             >
             <div
@@ -792,7 +807,7 @@ export default function MapPage() {
               style={{ opacity: 0, width: '100%', height: '100%' }}
               className="flex flex-col bg-ui-background"
             >
-              <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[2.25px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
+              <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
               <div aria-hidden="true" className="h-2 shrink-0" />
               {path.length > 0 && (
                 <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">

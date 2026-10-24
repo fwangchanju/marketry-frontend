@@ -78,10 +78,10 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   }, [isProfileMenuOpen])
 
   // 계정 메뉴가 열려 있는 동안만 헤더를 아래 줄(아이콘 줄, z-30)보다 위에 둔다 — 안 그러면 메뉴 위쪽이 그 줄에 가려진다.
-  // 메뉴 줄은 헤더 아래로 6.5px 겹친다. 배너 자리로 상단 바탕이 90px까지 늘어서 메뉴 줄을 6.5px 내렸다(로고·프로필은 그대로라 위 여백이 늘지 않는다). 로고 줄 배경은 유지하고 겹치는 메뉴 줄은 가리지 않게 아래쪽을 투명하게 둔다.
+  // 로고·프로필은 이 60px 줄(위 4px 띄움)의 중심선(32px)에 두고, 28px 메뉴 줄이 바로 아래에서 이어진다.
   return (
     <>
-    <header className={`sticky top-0 flex h-16 items-center justify-between px-4 ${isProfileMenuOpen ? 'z-40 bg-[linear-gradient(to_bottom,var(--ui-surface)_59.5px,transparent_59.5px)]' : 'z-20 bg-ui-surface'}`}>
+    <header className={`sticky top-0 flex h-[60px] items-center justify-between bg-ui-surface px-4 pt-[4px] ${isProfileMenuOpen ? 'z-40' : 'z-20'}`}>
       <Link
         to="/"
         aria-label="홈으로 이동: 지도 전체 종목"
@@ -95,7 +95,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       <div className="flex items-center justify-end gap-3">
       {isLoading ? (
         // 세션 확인 중에는 로그인 버튼도 프로필 아이콘도 아닌 빈 틀만 둔다 — 새로고침 직후 잠깐 로그인한 모양이 비쳤다가 로그아웃 모양으로 바뀌는 깜빡임을 막는다. 크기와 자리는 둘과 같다.
-        <div aria-hidden="true" className="relative -top-[2.5px] mr-0.5 size-[38px] rounded-[12%] bg-ui-surface" />
+        <div aria-hidden="true" className="relative -top-[2px] size-[38px] rounded-[12%] bg-ui-surface" />
       ) : isLoggedOut ? (
         // 비로그인은 프로필 사진 자리에 사람 모양 칸을 보여주고, 누르면 바로 로그인 창이 열린다. 로컬에서는 앞에 GUEST 표시가 붙는다.
         <div className="flex items-center">
@@ -105,7 +105,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           aria-label="로그인"
           data-hint="로그인"
           onClick={() => requireLogin(`${pathname}${search}${hash}`, { hideMessage: true })}
-          className="relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center rounded-[12%] border-0 bg-ui-control p-0 text-ui-text transition-colors hover:bg-ui-control-hover"
+          className="relative -top-[2px] flex size-[38px] items-center justify-center rounded-[12%] border-0 bg-ui-control p-0 text-ui-text transition-colors hover:bg-ui-control-hover"
         >
           <UserIcon aria-hidden="true" strokeWidth={1.25} className="size-[26px]" />
         </button>
@@ -119,7 +119,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
           aria-label={isProfileMenuOpen ? '계정 메뉴 닫기' : '계정 메뉴 열기'}
           aria-expanded={isProfileMenuOpen}
           onClick={() => setIsProfileMenuOpen(open => !open)}
-          className={`relative -top-[2.5px] mr-0.5 flex size-[38px] items-center justify-center overflow-hidden rounded-[12%] border-0 p-0 ring-2 ring-transparent hover:ring-ui-border focus-visible:outline-none focus-visible:ring-[var(--accent)] bg-transparent`}
+          className={`relative -top-[2px] flex size-[38px] items-center justify-center overflow-hidden rounded-[12%] border-0 p-0 ring-2 ring-transparent hover:ring-ui-border focus-visible:outline-none focus-visible:ring-[var(--accent)] bg-transparent`}
         >
           <ProfileAvatar className="size-full object-cover" />
         </button>

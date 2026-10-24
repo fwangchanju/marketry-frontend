@@ -44,7 +44,7 @@ SettingsPanelGroup.displayName = 'SettingsPanelGroup'
 // 한 줄(16px) + 위 간격(4px)이라 높이를 20px로 계산해서 index.css의 탭 정렬 값을 맞춘다.
 // dimmed: 그 항목의 토글이 꺼져 있을 때 제목 줄만 밝게 두고 설명과 조작부를 함께 옅게 한다(조작부는 호출부가 옅게 한다).
 function SettingDescription({ children, dimmed = false }: { children: ReactNode; dimmed?: boolean }) {
-  return <p className={`settings-description mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-muted ${dimmed ? 'opacity-35' : ''}`}>{children}</p>
+  return <p className={`settings-description mt-1 max-w-full text-xs/4 font-medium text-ui-muted ${dimmed ? 'opacity-35' : ''}`}>{children}</p>
 }
 
 // 좌우 이동 탭을 "Basis" 줄 높이로 옮기고, 그 줄 위에 구분선이 있으면(아래쪽 Basis) 탭을 그 선까지 키운 뒤 아래도 같은 길이만큼 대칭으로
@@ -1127,7 +1127,7 @@ export function SettingsGroupDepthSection({
 }) {
   return (
     <div className="settings-first-depth-level settings-auto-item text-sm">
-      <div className="flex max-w-[16rem] items-center justify-between">
+      <div className="flex max-w-full items-center justify-between">
         <span className="flex items-center text-left text-ui-white">
           <SettingTitle className="text-[15px]">업종 분류 단계</SettingTitle>
         </span>
@@ -1166,7 +1166,7 @@ export function SettingsAverageModeSection({
   ]
   return (
     <div className="settings-first-depth-level settings-graph-item text-sm">
-      <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
+      <div className="flex max-w-full items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준</span>
         <span className="relative inline-flex">
           <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
@@ -1175,7 +1175,7 @@ export function SettingsAverageModeSection({
       </div>
       <div className={`settings-average-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
-        <div className="settings-control-inset mt-auto mb-auto max-w-[16rem]">
+        <div className="settings-control-inset mt-auto mb-auto max-w-full">
           <div aria-hidden="true" className="grid grid-cols-2 items-center gap-[6px] text-ui-muted">
             {options.map(option => (
               <SettingsSectionIcon
@@ -1238,7 +1238,7 @@ export function SettingsBeforeMinutesSection({
   return (
     <div className="settings-second-depth-metric settings-graph-item relative mt-6 text-sm">
       {disabled && <BlockedClickHint className="inset-0">기간 등락률을 보는 동안에는<br />N분 전 대비를 사용할 수 없습니다.</BlockedClickHint>}
-      <div className="flex max-w-[16rem] items-center justify-between text-left text-[15px] font-medium leading-[22px]">
+      <div className="flex max-w-full items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`flex items-center gap-1 ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>
           <span className="settings-plain-title">비교 시점</span>
         </span>
@@ -1281,7 +1281,7 @@ function SettingsTaxonomySelector({
   const isSelected = (key: TaxonomyKey) => (key === 'KRX' ? isExchange : taxonomy === key)
 
   return (
-    <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-4 pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
+    <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
       <p data-map-select-title className="font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none">
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
@@ -1469,7 +1469,7 @@ export function SettingsSectorLevelSection({
       {showTaxonomy && <div className={showDivider ? 'mt-6 pt-8' : ''}>
         <div>
           <div className="settings-first-depth-level settings-auto-item text-sm">
-            <div className="flex max-w-[16rem] items-center justify-between">
+            <div className="flex max-w-full items-center justify-between">
               <span className="flex items-center text-left text-ui-white">
                 <SettingTitle className="text-[15px]" help>업종 분류 깊이</SettingTitle>
                 <SettingHelpBubble
@@ -1499,7 +1499,7 @@ export function SettingsSectorLevelSection({
           </div>
           <div className="settings-second-depth-metric settings-auto-item relative text-sm mt-6">
             <div className={`settings-auto-content ${isDepthMetricDisabled ? 'opacity-35' : ''}`}>
-              <div className="flex max-w-[16rem] items-center justify-between">
+              <div className="flex max-w-full items-center justify-between">
                 <span className="flex items-center text-left text-ui-white">
                   <SettingTitle className="text-[15px]">업종 지표</SettingTitle>
                 </span>
@@ -1521,10 +1521,10 @@ export function SettingsSectorLevelSection({
                 badge="업종명"
                 outlinedChevron
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
-                className={`max-w-[16rem] settings-control-inset ${depthMetricEnabled ? '' : 'opacity-35'}`}
+                className={`max-w-full settings-control-inset ${depthMetricEnabled ? '' : 'opacity-35'}`}
               />
               {/* 업종 지표 버튼이 지도에서 종목 상자 위(업종 머리글)에 놓인다는 것을 보여 주는 가짜 상자 — 누를 수 없는 그림이라 회색 선으로만 그린다. */}
-              <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-[16rem] ${depthMetricEnabled ? '' : 'opacity-35'}`}>
+              <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-full ${depthMetricEnabled ? '' : 'opacity-35'}`}>
                 <div className="relative h-[62px] rounded-b-[4px] border-x-2 border-b-2 border-ui-control">
                   <span className="absolute inset-y-0 left-[42%] border-l-2 border-ui-control" />
                   <span className="absolute left-[42%] right-0 top-1/2 border-t-2 border-ui-control" />
@@ -1609,7 +1609,7 @@ export function SettingsSectorLevelSection({
       {showStockDisplay && <div className={showTaxonomy ? 'mt-6 pt-8' : 'pt-0'}>
         <div>
           <div className="settings-second-stock-label settings-auto-item text-sm mt-2">
-            <div className="flex max-w-[16rem] items-center justify-between">
+            <div className="flex max-w-full items-center justify-between">
               <span className="flex items-center text-left text-ui-white">
                 <SettingTitle className="text-[15px]">박스 내 표기</SettingTitle>
               </span>
@@ -1624,7 +1624,7 @@ export function SettingsSectorLevelSection({
             <div className={stockLabelEnabled ? '' : 'opacity-35'}>
               <SettingDescription>박스 안에 표시할 내용</SettingDescription>
             </div>
-            <div className={`settings-control-inset max-w-[16rem] ${stockLabelEnabled ? '' : 'opacity-35'}`}>
+            <div className={`settings-control-inset max-w-full ${stockLabelEnabled ? '' : 'opacity-35'}`}>
               {/* 1-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
               <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                 <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
@@ -1673,12 +1673,12 @@ export function SettingsSectorLevelSection({
               } : undefined}
             >
               <div className={`settings-auto-content ${isDecimalPlacesDisabled ? 'opacity-35' : ''}`}>
-              <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
+              <span className="flex max-w-full items-center text-left text-[15px] text-ui-white">
                 <SettingTitle>등락률 소수점</SettingTitle>
               </span>
               <SettingDescription>종목 등락률의 소수점 자릿수</SettingDescription>
               {/* 3-2)와 같은 가짜 종목 상자 — 세 칸이 0·1·2자리 눈금이고, 슬라이더 손잡이가 각 칸 가운데에 멈춘다. */}
-              <div className="settings-control-inset max-w-[16rem]">
+              <div className="settings-control-inset max-w-full">
                 <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                   <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
                 </div>
@@ -1731,7 +1731,7 @@ export function SettingsStockMoveSection({
 }) {
   return (
     <div className="settings-plain-button-item h-[180px] text-sm text-ui-white">
-      <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
+      <span className="flex max-w-full items-center text-left text-[15px] text-ui-white">
         <span className="settings-plain-title">종목 이동</span>
         <SettingHelpBubble label="종목 이동" description={"종목을 끌어 다른 업종에 놓으면\n화면에서만 옮겨 보입니다.\n저장되지 않으며 다른 페이지로\n가면 원래대로 돌아갑니다."} />
       </span>
@@ -1739,7 +1739,7 @@ export function SettingsStockMoveSection({
       <div
         role="radiogroup"
         aria-label="종목 이동"
-        className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]"
+        className="relative mt-[18px] grid max-w-full settings-control-inset grid-cols-2 gap-[6px]"
       >
         <SlidingHighlight count={2} index={enabled ? 1 : 0} className="rounded-[4px] border border-brand bg-brand-surface" />
         {[
@@ -1771,7 +1771,7 @@ export function SettingsStockPopupSection({
 }) {
   return (
     <div className="settings-plain-button-item h-[180px] text-sm text-ui-white">
-      <span className="flex max-w-[16rem] items-center text-left text-[15px] text-ui-white">
+      <span className="flex max-w-full items-center text-left text-[15px] text-ui-white">
         <span className="settings-plain-title">종목 정보</span>
         <SettingHelpBubble label="종목 정보" description={"업종 정보는 우클릭으로만\n열 수 있습니다."} />
       </span>
@@ -1779,7 +1779,7 @@ export function SettingsStockPopupSection({
       <div
         role="radiogroup"
         aria-label="종목 정보 여는 방식"
-        className="relative mt-[18px] grid max-w-[16rem] settings-control-inset grid-cols-2 gap-[6px]"
+        className="relative mt-[18px] grid max-w-full settings-control-inset grid-cols-2 gap-[6px]"
       >
         <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[4px] border border-brand bg-brand-surface" />
         {[
@@ -1817,7 +1817,7 @@ function toWonLabel(won: number): string {
 export function SettingsTextThresholdSection({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
     <div className="settings-text-threshold-item h-[180px] text-sm">
-      <div className="flex max-w-[16rem] items-center justify-between">
+      <div className="flex max-w-full items-center justify-between">
         <span className="flex items-center text-left text-[15px] text-ui-white">
           <span className="settings-plain-title">텍스트 표시 기준</span>
           <SettingHelpBubble label="텍스트 표시 기준" description={"기준 퍼센트는 지도 전체 면적 대비\n종목 박스 면적입니다."} />
@@ -1950,7 +1950,7 @@ export function SettingsSectorChangeSection({
       <SettingDescription>상승·하락 업종만 표시</SettingDescription>
       <div className="settings-button-area flex flex-col justify-center">
         {/* 전체·상승·하락 버튼 줄은 버튼 영역의 가운데에 두고, 단계 드롭박스는 그 바로 위 오른쪽 끝에 얹는다(버튼 위치에 영향을 주지 않는다). */}
-        <div className="relative max-w-[16rem] settings-control-inset">
+        <div className="relative max-w-full settings-control-inset">
           <div className="absolute bottom-full right-0 mb-2 grid w-full grid-cols-3 gap-[6px]">
             <SettingsDropdown
               options={DEPTH_LABELS.map((label, index) => ({
@@ -2003,7 +2003,7 @@ export function SettingsStockChangeSection({
       </p>
       <SettingDescription>상승·하락 종목만 표시</SettingDescription>
       <div className="settings-button-area flex flex-col justify-center">
-        <div className="relative max-w-[16rem] settings-control-inset">
+        <div className="relative max-w-full settings-control-inset">
           <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative grid grid-cols-3 gap-[6px]">
             <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
             {DIRECTION_OPTIONS.map(option => (
@@ -2111,7 +2111,7 @@ export function SettingsTopPickSection({
   return (
     <div className="settings-second-top-pick settings-auto-item relative text-sm mt-6">
       <div className={`settings-auto-content ${isTopPickDisabled ? 'opacity-35' : ''}`}>
-        <div className="flex max-w-[16rem] items-center justify-between">
+        <div className="flex max-w-full items-center justify-between">
           <span className="flex items-center text-left text-ui-white">
             <SettingTitle className="text-[15px]" help>상위 업종 강조</SettingTitle>
             <SettingHelpBubble
@@ -2594,7 +2594,7 @@ export default function SettingsPanel({
     )}
     <div
       data-settings-panel
-      className="relative tabular-nums select-none flex w-72 shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-ui-panel"
+      className="relative tabular-nums select-none flex w-[300px] shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-ui-panel"
       style={{ '--accent': 'var(--panel-gray)', '--accent-hover': 'var(--ui-white)', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
     >
       {/* 윗선을 3px 올려 헤더를 늘리고 아래 구분선은 유지한다. 내용은 세로 중간에 둔다. */}
@@ -2655,7 +2655,7 @@ export default function SettingsPanel({
       <div aria-busy={isPreferenceFeedbackActive || undefined} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="contents" inert={isPreferenceFeedbackActive || undefined}>
       {plainContent && (
-        <div role={plainTabLabel ? 'tabpanel' : undefined} id={plainTabLabel ? 'settings-panel-plain' : undefined} aria-labelledby={plainTabLabel ? 'settings-tab-plain' : undefined} data-align-second-heading className="settings-section-list settings-plain-content settings-panel-tab-content min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-8 text-sm">
+        <div role={plainTabLabel ? 'tabpanel' : undefined} id={plainTabLabel ? 'settings-panel-plain' : undefined} aria-labelledby={plainTabLabel ? 'settings-tab-plain' : undefined} data-align-second-heading className="settings-section-list settings-plain-content settings-panel-tab-content min-h-0 flex-1 overflow-y-auto px-[22px] pt-3 pb-8 text-sm">
           {plainContent}
         </div>
       )}
@@ -2669,7 +2669,7 @@ export default function SettingsPanel({
           data-align-second-heading={taxonomyAtBottom || undefined}
           aria-busy={waitingForPreferences || undefined}
           inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-4 text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : SPECIAL_SECTIONS.has(selectedSection.id) ? 'settings-special-section' : ''} ${
+          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-[22px] text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : SPECIAL_SECTIONS.has(selectedSection.id) ? 'settings-special-section' : ''} ${
             isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
           }`}
         >

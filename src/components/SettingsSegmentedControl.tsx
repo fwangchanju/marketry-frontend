@@ -18,7 +18,7 @@ export default function SettingsSegmentedControl<T extends string | number | boo
       role="radiogroup"
       aria-label={label}
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
-      className="relative mt-4 grid max-w-[16rem] translate-y-[6px] settings-control-inset gap-[6px]"
+      className="relative mt-4 grid max-w-full translate-y-[6px] settings-control-inset gap-[6px]"
     >
       <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
       {options.map(option => (

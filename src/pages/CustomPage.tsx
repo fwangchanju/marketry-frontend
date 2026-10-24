@@ -219,7 +219,7 @@ export default function CustomPage() {
           위치 재검토가 더 필요해서 일단 뺐다 — 다시 넣을 땐 이 컴포넌트를 재사용하면 된다. */}
       <div className="flex min-h-0 flex-1">
         {/* 공유 스크린샷(screenshotRef)는 [세 번째 바+본문] 열만 찍는다 — 설정 사이드바는 스크린샷에 넣지 않는다. */}
-        <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[10.5px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+        <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서 창을 좁혀도 사이드바(w-80)가 항상 같은
               폭을 유지하게 한다(지도/섹터/요약 페이지와 동일). */}
           <div
@@ -228,9 +228,9 @@ export default function CustomPage() {
               setEmptyMessageArea(node)
             }}
             data-main-area
-            className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white"
+            className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white"
           >
-            <div className="main-toolbar mt-[2.25px] mb-[8.25px] flex h-7 w-full shrink-0 items-center justify-between bg-ui-background/70 text-sm font-bold text-ui-white">
+            <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 w-full shrink-0 items-center justify-between bg-ui-background/70 text-sm font-bold text-ui-white">
               <div className="flex h-full shrink-0 items-center gap-2">
                 <ToolbarModeText page="CUSTOM" label={mode === 'stock' ? 'STOCK' : 'SECTOR'} />
               </div>
@@ -330,8 +330,8 @@ export default function CustomPage() {
                 <div className="settings-plain-content">
                   <div className="settings-ops-item h-[180px] text-sm">
                     <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
-                    <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs font-medium text-ui-muted">내 기준을 MARKETRY 분류로 업데이트·롤백</p>
-                    <div className="settings-button-area mt-4 max-w-[16rem] translate-y-[6px] settings-control-inset"><MarketryPublishControls /></div>
+                    <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">내 기준을 MARKETRY 분류로 업데이트·롤백</p>
+                    <div className="settings-button-area mt-4 max-w-full translate-y-[6px] settings-control-inset"><MarketryPublishControls /></div>
                   </div>
                 </div>
               </SettingsPanelGroup>}

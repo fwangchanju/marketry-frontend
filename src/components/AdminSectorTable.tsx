@@ -869,8 +869,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       <>
       <section aria-label="업종 추가" className="settings-item settings-custom-control">
         <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 추가</h2>
-        <p className="settings-description m-0 mt-1 max-w-[16rem] text-xs/4 font-medium text-ui-muted">업종명을 입력한 뒤 엔터</p>
-        <div className="flex min-w-0 max-w-[16rem] settings-control-inset items-center gap-2">
+        <p className="settings-description m-0 mt-1 max-w-full text-xs/4 font-medium text-ui-muted">업종명을 입력한 뒤 엔터</p>
+        <div className="flex min-w-0 max-w-full settings-control-inset items-center gap-2">
           <SectorNameInput
             wrapperClassName="flex min-w-0 flex-1"
             value={newName}
