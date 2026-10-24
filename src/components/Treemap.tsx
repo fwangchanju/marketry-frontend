@@ -139,8 +139,6 @@ export default function Treemap({
   // 주변을 어둡게 덮는 막 — zIndex 0은 실제 콘텐츠 아래(진입: 커지는 박스는 덮지 않고 고스트만 어둡게),
   // 5는 실제 콘텐츠 위·복귀 고스트(10) 아래(복귀: 위쪽 화면이 덮여 있다가 걷힌다).
   const [dim, setDim] = useState<{ zIndex: number; style: React.CSSProperties } | null>(null)
-  // 진입 때 커지는 박스 테두리 강조 — 실제 콘텐츠 wrapper 안에 그려서 박스와 함께 커지며 옅어진다.
-  const [startHighlight, setStartHighlight] = useState<React.CSSProperties | null>(null)
   // 좌클릭으로 줌인이 시작될 때 헤더 hover 테두리가 잠깐 반짝이지 않게 끈다 — onHeaderPressStart
   // (헤더 pointerdown, 왼쪽 버튼만)로 눌리는 즉시 켜고, handleSelectSector(click, 줌인 시작)에서도
   // 다시 켠다(중복이지만 무해). 줌 애니메이션이 끝나고 사용자가 다시 마우스를 움직이면(아래
@@ -264,7 +262,6 @@ export default function Treemap({
               }
             : null,
         )
-        setStartHighlight({ opacity: 1, transition: 'none' })
         setZoomStyle({
           transform: toShrinkTransform(pendingRect, containerRect),
           opacity: 0,
@@ -285,7 +282,6 @@ export default function Treemap({
                 }
               : null,
           )
-          setStartHighlight({ opacity: 0, transition: `opacity ${ZOOM_IN_DURATION}ms ease-out` })
           setZoomStyle({
             transform: 'none',
             opacity: 1,
@@ -300,7 +296,6 @@ export default function Treemap({
         const timer = window.setTimeout(() => {
           setGhost(null)
           setDim(null)
-          setStartHighlight(null)
         }, ZOOM_IN_DURATION)
         prevDepthRef.current = depth
         return () => {
@@ -422,12 +417,6 @@ export default function Treemap({
       )}
       {dim && <div className="pointer-events-none absolute inset-0 bg-ui-background" style={{ zIndex: dim.zIndex, ...dim.style }} />}
       <div className="absolute inset-0" style={{ transformOrigin: '0 0', ...zoomStyle }}>
-        {startHighlight && (
-          <div
-            className="pointer-events-none absolute inset-0 z-[5]"
-            style={{ boxShadow: `inset 0 0 0 10px ${strongIndustryColor}`, ...startHighlight }}
-          />
-        )}
         {sectors.map(sector => (
           <SectorBox
             key={sector.sectorName}

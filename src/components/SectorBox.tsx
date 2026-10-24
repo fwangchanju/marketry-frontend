@@ -1,9 +1,8 @@
-import { useRef, type CSSProperties } from 'react'
+import { memo, useRef, type CSSProperties } from 'react'
 import StockBox from './StockBox'
 import type { PopupContent } from './Popup'
 import { sectorHeaderFontSize, sectorHeaderHeight, PADDING, type LaidOutSector } from '@/hooks/useTreemapLayout'
 import { TAB_GAP, toJoEokDecimal, toPctSigned } from '@/utils/format'
-import type { TreemapItem } from '@/types/api'
 import type { ColorScaleConfig } from '@/utils/treemapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 
@@ -50,14 +49,6 @@ interface Props {
   depth?: number
 }
 
-// 이 섹터 태그에 등락률 평균/상승·하락·보합을 보여주려면, 하위 섹터까지 포함한
-// 모든 종목이 필요하다(sector.boxes는 이 뎁스 바로 아래 종목만 담고 있음).
-function collectSectorItems(sector: LaidOutSector): TreemapItem[] {
-  const items = sector.boxes.map(box => box.item)
-  for (const sub of sector.subSectors) items.push(...collectSectorItems(sub))
-  return items
-}
-
 function isInDepthRange(range: [number, number] | null, depth: number): boolean {
   return range !== null && depth >= range[0] && depth <= range[1]
 }
@@ -74,7 +65,7 @@ function sectorHeaderStyle(depth: number) {
   return SECTOR_HEADER_STYLES[Math.min(depth, SECTOR_HEADER_STYLES.length - 1)]
 }
 
-export default function SectorBox({
+function SectorBox({
   sector,
   onSelectSector,
   onOpenPopup,
@@ -118,11 +109,8 @@ export default function SectorBox({
       tooltip: false,
     }, target)
   }
-  const items = collectSectorItems(sector)
   const isTopPick = topPickSectorKeys.has(JSON.stringify([sector.sectorId, sector.sectorName])) && !sector.isSelf
-  const advancerCount = items.filter(item => item.changeRate > 0).length
-  const declinerCount = items.filter(item => item.changeRate < 0).length
-  const unchangedCount = items.length - advancerCount - declinerCount
+  const { advancerCount, declinerCount, unchangedCount } = sector
   // 선택한 한 항목의 값만 이름 없이 표시한다.
   const headerParts = [
     isInDepthRange(weightedAvgDepthRange, depth) && sector.weightedAvgChangeRate !== null
@@ -262,7 +250,7 @@ export default function SectorBox({
         </>
       )}
       {sector.subSectors.map(sub => (
-        <SectorBox
+        <MemoizedSectorBox
           key={sub.sectorName}
           sector={sub}
           onSelectSector={onSelectSector}
@@ -310,3 +298,9 @@ export default function SectorBox({
     </div>
   )
 }
+
+// 고스트 지도는 전환 중 opacity·transform만 바뀐다. 그 상태 변경마다 중첩된 업종·종목 박스 전체를
+// 다시 계산하지 않도록, 동일 props의 하위 트리는 그대로 재사용한다.
+const MemoizedSectorBox = memo(SectorBox)
+
+export default MemoizedSectorBox

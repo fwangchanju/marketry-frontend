@@ -30,6 +30,9 @@ export interface LaidOutSector {
   totalMarketValue: number
   weightedAvgChangeRate: number | null
   simpleAvgChangeRate: number | null
+  advancerCount: number
+  declinerCount: number
+  unchangedCount: number
   isSelf: boolean
   x: number
   y: number
@@ -187,6 +190,9 @@ export function useTreemapLayout(
       const ny0 = node.y0 ?? 0
       const boxes: LaidOutStockBox[] = []
       const subSectors: LaidOutSector[] = []
+      let advancerCount = 0
+      let declinerCount = 0
+      let unchangedCount = 0
 
       for (const child of node.children ?? []) {
         if (child.data.item) {
@@ -201,8 +207,15 @@ export function useTreemapLayout(
             height: boxHeight,
             areaPercent: ((boxWidth * boxHeight) / (width * height)) * 100,
           })
+          if (child.data.item.changeRate > 0) advancerCount += 1
+          else if (child.data.item.changeRate < 0) declinerCount += 1
+          else unchangedCount += 1
         } else {
-          subSectors.push(toLaidOutSector(child, node, nodeReal, nodeReal.x0, ny0))
+          const subSector = toLaidOutSector(child, node, nodeReal, nodeReal.x0, ny0)
+          subSectors.push(subSector)
+          advancerCount += subSector.advancerCount
+          declinerCount += subSector.declinerCount
+          unchangedCount += subSector.unchangedCount
         }
       }
 
@@ -212,6 +225,9 @@ export function useTreemapLayout(
         totalMarketValue: node.data.totalMarketValue ?? 0,
         weightedAvgChangeRate: node.data.weightedAvgChangeRate ?? null,
         simpleAvgChangeRate: node.data.simpleAvgChangeRate ?? null,
+        advancerCount,
+        declinerCount,
+        unchangedCount,
         isSelf: node.data.name === selfSectorName,
         x: nodeReal.x0 - originX,
         y: ny0 - originY,
