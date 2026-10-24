@@ -69,6 +69,13 @@ export function getAdminVisitors(days: number, signal?: AbortSignal) {
   return client.get('/admin/members/visitors', { params: { days }, signal }).then(response => VisitorDailySchema.parse(response.data))
 }
 
+const VisitorSourceSchema = z.array(z.object({ source: z.enum(['NAVER', 'GOOGLE', 'DIRECT', 'OTHER']), visitors: z.number() }))
+
+// 최근 N일(오늘 포함)의 비회원 방문을 유입 경로별로 센 값 — 네 경로가 모두 오고, 경로를 기록하기 전의 방문은 빠진다.
+export function getAdminVisitorSources(days: number, signal?: AbortSignal) {
+  return client.get('/admin/members/visitor-sources', { params: { days }, signal }).then(response => VisitorSourceSchema.parse(response.data))
+}
+
 const AccessFrequencySchema = z.array(z.object({ label: z.string(), members: z.number() }))
 
 // 최근 30일 중 접속한 날 수 구간별 회원 수.

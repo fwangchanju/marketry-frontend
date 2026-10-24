@@ -6,8 +6,24 @@ import { AuthSessionResponseSchema } from '@/types/api'
 export const googleLoginUrl = (returnTo: string) =>
   `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`
 
+// 로그인하지 않은 방문자가 어디서 들어왔는지 서버가 구분할 수 있게 세션을 물을 때 같이 실어 보낸다 — 이전 페이지는 주소가 아니라 도메인(origin)까지만,
+// 주소의 utm_source는 짧은 글자만 보낸다. 서버가 받는 Referer는 우리 사이트 자신이라 쓸 수 없다.
+const MAX_SOURCE_LENGTH = 40
+
+function visitHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {}
+  try {
+    if (document.referrer) headers['X-Visit-Referrer'] = new URL(document.referrer).origin
+  } catch {
+    // 읽을 수 없는 이전 페이지 주소는 보내지 않는다(서버는 없는 것으로 본다).
+  }
+  const utmSource = new URLSearchParams(window.location.search).get('utm_source')
+  if (utmSource && /^[\w.-]+$/.test(utmSource) && utmSource.length <= MAX_SOURCE_LENGTH) headers['X-Visit-Source'] = utmSource
+  return headers
+}
+
 export const getSession = () =>
-  client.get('/auth/session').then(r => AuthSessionResponseSchema.parse(r.data))
+  client.get('/auth/session', { headers: visitHeaders() }).then(r => AuthSessionResponseSchema.parse(r.data))
 
 export const logout = () => client.post('/auth/logout')
 
