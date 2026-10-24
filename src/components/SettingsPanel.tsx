@@ -2524,9 +2524,9 @@ export default function SettingsPanel({
   const animationClass = !animated ? '' : isOpen ? `settings-panel-enter-${sideName}` : `settings-panel-leave-${sideName} pointer-events-none`
 
   // 바꾼 값은 임시값이라 저장을 눌러야 서버에 올라간다. 초기화는 임시값을 버리고 저장값으로 돌아간다. 비로그인은 저장할 곳이 없어 로그인 창을 띄운다.
-  // 오른쪽으로 3px 당겨(-mr-[3px]) 저장 아이콘이 위쪽 상단 바의 설정 아이콘과 같은 세로줄에 오게 한다.
+  // 오른쪽으로 7px 당겨(-mr-[7px]) 되돌리기·저장 아이콘의 중심을 상단 F11·설정 아이콘 중심선에 맞춘다.
   const preferenceActions = showPreferenceActions ? (
-    <div className="-mr-[3px] ml-auto flex shrink-0 items-center gap-1">
+    <div className="-mr-[7px] ml-auto flex shrink-0 items-center gap-1">
       <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
           if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(discardDrafts)
         }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
@@ -2607,7 +2607,7 @@ export default function SettingsPanel({
             {pageLabel ?? '설정'}
           </p>
           {stockCountLabel && (
-            <span className="flex h-7 w-[7rem] shrink-0 items-center whitespace-nowrap text-sm leading-none text-ui-muted">
+            <span className="flex h-7 w-[7.5rem] shrink-0 items-center whitespace-nowrap text-sm leading-none text-ui-muted">
               <CountLabelWithBadge label={stockCountLabel} alignEnd />
             </span>
           )}

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getAdminAccessFrequency, getAdminDailyAccess, getAdminSignups, getAdminVisitorSources, getAdminVisitors } from '@/api/adminMembers'
 import DailyAccessChart from '@/components/DailyAccessChart'
@@ -24,6 +24,8 @@ import { isAdminSession } from '@/utils/adminAccess'
 // 모든 차트가 같이 쓰는 기간(일) — 서버의 일별 접속 조회 한도(90일)를 넘지 않는다. 접속 빈도만 최근 30일로 고정이다.
 const PERIOD_OPTIONS = [7, 14, 30, 90] as const
 type Period = (typeof PERIOD_OPTIONS)[number]
+const DASHBOARD_CARD_MIN_HEIGHT = 280
+const DASHBOARD_GRID_GAP = 12
 // 접속 빈도 구간의 막대 색 — 자주 올수록 진한 청록이고, 한 번도 안 온 회원은 흐린 회색이다.
 const VISITOR_SOURCE_LABELS = { NAVER: '네이버', GOOGLE: '구글', DIRECT: '직접', OTHER: '기타' } as const
 const FREQUENCY_BAR_CLASSES = ['bg-ui-muted', 'bg-[var(--brand)]/35', 'bg-[var(--brand)]/55', 'bg-[var(--brand)]/80', 'bg-[var(--brand)]']
@@ -38,8 +40,25 @@ export default function AdminDashboardPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
-  const [period, setPeriod] = useState<Period>(30)
+  const [period, setPeriod] = useState<Period>(14)
   const screenshotRef = useRef<HTMLDivElement>(null)
+  const dashboardGridRef = useRef<HTMLDivElement>(null)
+  const [dashboardRowSize, setDashboardRowSize] = useState({ count: 1, height: DASHBOARD_CARD_MIN_HEIGHT })
+
+  useLayoutEffect(() => {
+    const grid = dashboardGridRef.current
+    if (!grid) return
+    const updateRows = () => {
+      const availableHeight = grid.clientHeight
+      const count = Math.max(1, Math.floor((availableHeight + DASHBOARD_GRID_GAP) / (DASHBOARD_CARD_MIN_HEIGHT + DASHBOARD_GRID_GAP)))
+      const height = Math.max(DASHBOARD_CARD_MIN_HEIGHT, (availableHeight - DASHBOARD_GRID_GAP * (count - 1)) / count)
+      setDashboardRowSize(previous => previous.count === count && previous.height === height ? previous : { count, height })
+    }
+    const observer = new ResizeObserver(updateRows)
+    observer.observe(grid)
+    updateRows()
+    return () => observer.disconnect()
+  }, [isAdmin, isLoading])
   const dailyAccess = useQuery({
     queryKey: ['admin-member-daily-access', session?.userId, period],
     queryFn: ({ signal }) => getAdminDailyAccess(period, signal),
@@ -125,7 +144,11 @@ export default function AdminDashboardPage() {
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="DASHBOARD" />
                 </Toolbar>
-                <div className="grid min-h-0 flex-1 auto-rows-[minmax(280px,1fr)] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3 overflow-auto pb-1">
+                <div
+                  ref={dashboardGridRef}
+                  className="grid min-h-0 flex-1 auto-rows-[280px] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3 overflow-auto"
+                  style={{ gridTemplateRows: `repeat(${dashboardRowSize.count}, ${dashboardRowSize.height}px)` }}
+                >
                   <ChartFrame title="총 방문자" note="회원 + 비회원 합산">
                     {visitors.isError || dailyAccess.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
