@@ -16,9 +16,7 @@ interface Props {
   onClose: () => void
 }
 
-// ScreenshotModal과 동일한 팝업 톤(어두운 배경 오버레이 + var(--surface) 패널, nes-btn 버튼)을
-// 그대로 재사용한다 — 새 시각 스타일을 만들지 않는다. 강조 버튼도 기존 accent 토큰(노랑)만 쓰고
-// 로그인 버튼에는 브랜드 서브색을 사용한다.
+// ScreenshotModal과 동일한 어두운 팝업 패널을 사용하고, Google 공식 버튼은 흰 배경으로 표시한다.
 export default function LoginModal({ returnTo, hideMessage = false, loginError = null, onClose }: Props) {
   const mainAreaRect = useMainAreaRect(true)
   const googleLinkRef = useRef<HTMLAnchorElement>(null)
@@ -78,10 +76,9 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             ref={googleLinkRef}
             onClick={isLocalDev ? event => { event.preventDefault(); if (!isDevLoginPending) void loginAs('admin') } : undefined}
             aria-label="Google 로그인"
-            className="relative flex items-stretch overflow-hidden rounded-lg bg-[var(--brand-surface)] text-sm font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)]"
+            className="relative flex items-stretch overflow-hidden rounded-lg bg-ui-white text-sm font-bold text-[#202124] transition-colors hover:bg-[#f1f3f4]"
           >
-            {/* 구글 로고는 색을 바꾸지 않고 흰 칸 위에 그대로 둔다(구글 브랜드 규정). 흰 칸은 버튼 왼쪽 끝에 붙고 나머지는 청록 칸이다(분류 배지와 같은 두 칸 모양). */}
-            <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center bg-ui-white">
+            <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
               <GoogleLogoIcon className="h-[18px] w-[18px]" />
             </span>
             <span className="w-full px-10 py-2 text-center">Google</span>
@@ -119,15 +116,6 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             닫기
           </button>
         </div>
-        <p className="mt-4 text-center text-xs text-ui-muted">
-          <a href="/info/terms" className="hover:text-ui-text">
-            이용약관
-          </a>
-          {' · '}
-          <a href="/info/privacy" className="hover:text-ui-text">
-            개인정보처리방침
-          </a>
-        </p>
       </div>
       </div>
     </div>
