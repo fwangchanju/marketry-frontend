@@ -1,4 +1,4 @@
-// 가로 막대 — 항목마다 이름·막대·사람 수를 한 줄에 둔다. 가장 큰 값이 가득 찬 길이다. 0명인 항목은 흐린 얇은 막대로 둔다.
+// 가로 막대 — 항목마다 이름·막대·사람 수를 한 줄에 둔다. 가장 큰 값이 가득 찬 길이다. 0명인 항목은 숫자 없이 흐린 얇은 막대로만 둔다.
 export interface HorizontalBarRow {
   key: string
   label: string
@@ -17,7 +17,7 @@ export default function HorizontalBarsChart({ rows, ariaLabel, labelWidth = 64 }
           <span className="flex h-5 min-w-0 flex-1 items-center">
             <span className={`block h-full rounded-[2px] ${row.barClass}`} style={{ width: `${Math.max(row.count > 0 ? 3 : 0.5, (row.count / max) * 100)}%`, opacity: row.count > 0 ? 1 : 0.25 }} />
           </span>
-          <span className="w-[44px] shrink-0 text-sm tabular-nums text-ui-white">{row.count.toLocaleString()}명</span>
+          <span className="w-[44px] shrink-0 text-sm tabular-nums text-ui-white">{row.count > 0 ? `${row.count.toLocaleString()}명` : ''}</span>
         </div>
       ))}
     </div>

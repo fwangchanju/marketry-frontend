@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getAdminAccessFrequency, getAdminDailyAccess, getAdminSignups, getAdminVisitors } from '@/api/adminMembers'
+import { getAdminAccessFrequency, getAdminDailyAccess, getAdminSignups, getAdminVisitorSources, getAdminVisitors } from '@/api/adminMembers'
 import DailyAccessChart from '@/components/DailyAccessChart'
 import FrameBadge from '@/components/FrameBadge'
 import GrowthLineChart from '@/components/GrowthLineChart'
@@ -12,6 +12,7 @@ import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import SettingsSegmentedControl from '@/components/SettingsSegmentedControl'
 import Toolbar from '@/components/Toolbar'
+import StackedDailyChart, { type StackedDailyRow } from '@/components/StackedDailyChart'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
@@ -19,12 +20,11 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
 
-const PERIOD_OPTIONS = [14, 30] as const
+// 모든 차트가 같이 쓰는 기간(일) — 서버의 일별 접속 조회 한도(90일)를 넘지 않는다. 접속 빈도만 최근 30일로 고정이다.
+const PERIOD_OPTIONS = [7, 14, 30, 90] as const
 type Period = (typeof PERIOD_OPTIONS)[number]
-// 가입 추이 차트에 보여 줄 수 있는 기간(일).
-const SIGNUP_PERIOD_OPTIONS = [30, 90, 180] as const
-type SignupPeriod = (typeof SIGNUP_PERIOD_OPTIONS)[number]
 // 접속 빈도 구간의 막대 색 — 자주 올수록 진한 청록이고, 한 번도 안 온 회원은 흐린 회색이다.
+const VISITOR_SOURCE_LABELS = { NAVER: '네이버', GOOGLE: '구글', DIRECT: '직접', OTHER: '기타' } as const
 const FREQUENCY_BAR_CLASSES = ['bg-ui-muted', 'bg-[var(--brand)]/35', 'bg-[var(--brand)]/55', 'bg-[var(--brand)]/80', 'bg-[var(--brand)]']
 
 // 관리자 전용 대시보드 — 회원 명단(/admin/member)과 떨어뜨려 회원 이용 현황을 작은 차트 여러 개로 모아 본다(홈 화면의 틀처럼 한 칸에 차트 하나).
@@ -37,8 +37,7 @@ export default function AdminDashboardPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
-  const [period, setPeriod] = useState<Period>(14)
-  const [signupPeriod, setSignupPeriod] = useState<SignupPeriod>(90)
+  const [period, setPeriod] = useState<Period>(30)
   const screenshotRef = useRef<HTMLDivElement>(null)
   const dailyAccess = useQuery({
     queryKey: ['admin-member-daily-access', session?.userId, period],
@@ -49,15 +48,15 @@ export default function AdminDashboardPage() {
   })
 
   const signups = useQuery({
-    queryKey: ['admin-member-signups', session?.userId, signupPeriod],
-    queryFn: ({ signal }) => getAdminSignups(signupPeriod, signal),
+    queryKey: ['admin-member-signups', session?.userId, period],
+    queryFn: ({ signal }) => getAdminSignups(period, signal),
     enabled: isAdmin,
     staleTime: 30_000,
     retry: false,
   })
   const visitors = useQuery({
-    queryKey: ['admin-member-visitors', session?.userId, signupPeriod],
-    queryFn: ({ signal }) => getAdminVisitors(signupPeriod, signal),
+    queryKey: ['admin-member-visitors', session?.userId, period],
+    queryFn: ({ signal }) => getAdminVisitors(period, signal),
     enabled: isAdmin,
     staleTime: 30_000,
     retry: false,
@@ -66,6 +65,13 @@ export default function AdminDashboardPage() {
   const countedDays = (visitors.data ?? []).filter(row => row.visitors > 0)
   const totalVisitors = countedDays.reduce((sum, row) => sum + row.visitors, 0)
   const totalJoined = countedDays.reduce((sum, row) => sum + row.joined, 0)
+  const visitorSources = useQuery({
+    queryKey: ['admin-member-visitor-sources', session?.userId, period],
+    queryFn: ({ signal }) => getAdminVisitorSources(period, signal),
+    enabled: isAdmin,
+    staleTime: 30_000,
+    retry: false,
+  })
   const accessFrequency = useQuery({
     queryKey: ['admin-member-access-frequency', session?.userId],
     queryFn: ({ signal }) => getAdminAccessFrequency(signal),
@@ -119,8 +125,17 @@ export default function AdminDashboardPage() {
                   <ToolbarModeText page="ADMIN" label="DASHBOARD" />
                 </Toolbar>
                 {/* 차트 한 개가 한 칸 — 화면을 가득 채우지 않고 칸 크기는 고정이며, 차트가 늘면 칸이 옆·아래로 늘어난다. */}
-                <div className="grid min-h-0 flex-1 auto-rows-[280px] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] content-start gap-3 overflow-auto pb-1">
-                  <ChartFrame title="방문자 수" note={`로그인하지 않고 들어온 사람 · 하루 기준 · 최근 ${signupPeriod}일`}>
+                <div className="grid min-h-0 flex-1 auto-rows-[minmax(280px,1fr)] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3 overflow-auto pb-1">
+                  <ChartFrame title="총 방문자" note="회원 + 비회원 합산">
+                    {visitors.isError || dailyAccess.isError ? (
+                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                    ) : visitors.data && dailyAccess.data ? (
+                      <StackedDailyChart rows={totalVisitorRows(visitors.data, dailyAccess.data)} />
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
+                  <ChartFrame title="방문자 수" note="로그인하지 않고 들어온 사람">
                     {visitors.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                     ) : visitors.data ? (
@@ -129,7 +144,7 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <ChartFrame title="신규 가입" note={`하루에 가입한 회원 수 · 최근 ${signupPeriod}일`}>
+                  <ChartFrame title="신규 가입" note="가입한 회원 수">
                     {signups.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                     ) : signups.data ? (
@@ -138,7 +153,7 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <ChartFrame title="가입 전환율" note={`방문자 중 가입한 비율 · 최근 ${signupPeriod}일`}>
+                  <ChartFrame title="가입 전환율" note="방문자 중 가입한 비율">
                     {visitors.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                     ) : visitors.data ? (
@@ -155,10 +170,29 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
-                  <PlannedChartFrame title="첫 분류 완료율" note="가입 후 7일 안에 종목을 직접 내 기준에 배정한 회원 비율" />
+                  <ChartFrame title="유입 경로" note="비회원이 어디서 들어왔나">
+                    {visitorSources.isError ? (
+                      <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                    ) : visitorSources.data ? (
+                      <HorizontalBarsChart
+                        ariaLabel="유입 경로 분포"
+                        labelWidth={64}
+                        rows={visitorSources.data.map(row => ({
+                          key: row.source,
+                          label: VISITOR_SOURCE_LABELS[row.source],
+                          count: row.visitors,
+                          barClass: 'bg-[var(--brand)]',
+                          textClass: 'text-ui-text',
+                        }))}
+                      />
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
+                  <PlannedChartFrame title="첫 분류 완료율" note="가입 7일 안에 내 기준을 설정한 회원 비율" />
                   <ChartFrame
                     title="접속 회원 수"
-                    note="하루에 접속한 서로 다른 회원 수"
+                    note="접속한 서로 다른 회원 수"
                   >
                     {dailyAccess.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
@@ -188,7 +222,7 @@ export default function AdminDashboardPage() {
                     )}
                   </ChartFrame>
                   <PlannedChartFrame title="7일 재방문율" note="가입 다음 날부터 7일 안에 다시 접속한 회원 비율" />
-                  <ChartFrame title="누적 회원 수" note={`가입 시점부터 쌓인 전체 회원 수 · 최근 ${signupPeriod}일`}>
+                  <ChartFrame title="누적 회원 수" note="가입 시점부터 쌓인 전체 회원 수">
                     {signups.isError ? (
                       <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                     ) : signups.data ? (
@@ -218,16 +252,9 @@ export default function AdminDashboardPage() {
                   <div className="settings-plain-content">
                     <div className="settings-ops-item h-[180px] text-sm">
                       <div className="settings-custom-control">
-                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">접속 추이 기간</h2>
-                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">접속 회원 수 차트에 보여 줄 기간</p>
-                        <SettingsSegmentedControl label="접속 추이 기간" options={PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={period} onChange={setPeriod} />
-                      </div>
-                    </div>
-                    <div className="settings-ops-item h-[180px] text-sm">
-                      <div className="settings-custom-control">
-                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">가입 추이 기간</h2>
-                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">가입·누적·방문자 차트에 보여 줄 기간</p>
-                        <SettingsSegmentedControl label="가입 추이 기간" options={SIGNUP_PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={signupPeriod} onChange={setSignupPeriod} />
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">기간</h2>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">모든 차트에 보여 줄 기간(접속 빈도는 최근 30일 고정)</p>
+                        <SettingsSegmentedControl label="기간" options={PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={period} onChange={setPeriod} />
                       </div>
                     </div>
                   </div>
@@ -248,6 +275,12 @@ export default function AdminDashboardPage() {
       )}
     </div>
   )
+}
+
+// 날짜별 비회원 방문자 수와 그날 접속한 회원 수를 한 줄로 묶는다. 같은 사람이 같은 날 비회원으로 들어왔다가 로그인하면 두 번 센다.
+function totalVisitorRows(visitors: { date: string; visitors: number }[], members: { date: string; members: number }[]): StackedDailyRow[] {
+  const memberCounts = new Map(members.map(row => [row.date, row.members]))
+  return visitors.map(row => ({ date: row.date, guests: row.visitors, members: memberCounts.get(row.date) ?? 0 }))
 }
 
 // 차트 한 칸 — 왼쪽 위에 제목 배지(홈 화면의 틀 제목과 같은 짙은 청록), 오른쪽 위에 조작, 그 아래에 설명과 차트를 둔다.
