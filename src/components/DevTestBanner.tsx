@@ -1,6 +1,6 @@
 import type { AdBannerSize } from '@/components/AdBannerSlot'
 
-// 로컬 개발 화면에서만 배너 자리(AdBannerSlot)에 끼우는 가짜 광고 — 자리와 간격을 눈으로 보려는 시험용이다. 운영에는 나오지 않는다.
+// 배너 자리(AdBannerSlot)에 끼우는 가짜 광고 — 자리와 간격을 눈으로 보려는 시험용이다. 운영에도 나오며, 안에 "시험용" 표시를 적어 둔다. 실제 광고가 정해지면 지운다.
 export default function DevTestBanner({ size }: { size: AdBannerSize }) {
   const isSmall = size.height < 90
   return (

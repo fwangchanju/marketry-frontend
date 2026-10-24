@@ -187,8 +187,8 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       )}
       </div>
     </header>
-    {/* 로컬 개발 화면에서만 시험용 광고를 끼워 자리를 확인한다. 운영에서는 isLocalDev가 항상 false라 자리는 비어 있다. */}
-    <AdBannerSlot>{size => (isLocalDev ? <DevTestBanner size={size} /> : null)}</AdBannerSlot>
+    {/* 실제 광고가 정해지기 전까지 시험용 광고를 끼워 자리를 확인한다. 운영에도 나온다. 광고 회사가 정해지면 이 자리를 실제 광고로 바꾼다. */}
+    <AdBannerSlot>{size => <DevTestBanner size={size} />}</AdBannerSlot>
     </>
   )
 }
