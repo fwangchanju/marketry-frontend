@@ -146,7 +146,7 @@ export default function NavSubBar({ actions, onReselectCurrent }: Props) {
   }
 
   return (
-    <div className="relative z-30 -top-[13px] mb-2 flex h-8 after:absolute after:inset-x-0 after:top-full after:h-[2.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs">
+    <div className="relative z-30 -top-[8.5px] mb-2 flex h-8 after:absolute after:inset-x-0 after:top-full after:h-[2.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs">
       <div ref={barRef} data-nav-menus className="flex h-8 items-center gap-3">
         {links.map(link => (
           <div
