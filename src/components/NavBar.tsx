@@ -15,8 +15,8 @@ import { displayEmail } from '@/utils/displayEmail'
 // 로그인한 사용자는 우측 아바타에서 계정 메뉴를 연다.
 // 오류에는 UI 상태색을 쓰고 등락률 데이터색과 구분한다.
 // hideAccount가 true면 오른쪽의 로그인 버튼/프로필 아이콘을 숨기고 로고만 보여준다(비로그인이 프로필 페이지에 들어왔을 때).
-export default function NavBar({ hideAccount = false }: { hideAccount?: boolean }) {
-  const { data: session, isLoading } = useSession()
+export default function NavBar({ hideAccount = false, staticMode = false }: { hideAccount?: boolean; staticMode?: boolean }) {
+  const { data: session, isLoading } = useSession(!staticMode)
   const { pathname, search, hash } = useLocation()
   const { requireLogin } = useLoginGate()
   const logout = useLogout()
@@ -25,7 +25,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
   const { isPending: isDevSignupPending, error: devSignupError, loginAs: handleDevLogin } = useTestMemberToggle()
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profileButtonRef = useRef<HTMLButtonElement>(null)
-  useLocalDevLogin()
+  useLocalDevLogin(!staticMode)
   // 세션 확인이 끝났고 로그인하지 않은 상태 — 확인 중(isLoading)에는 깜빡임 없이 프로필 아이콘을 유지한다.
   const isLoggedOut = !isLoading && !session?.authenticated
   const isLocalDev = isLocalSignupEnabled()

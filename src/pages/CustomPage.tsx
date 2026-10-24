@@ -12,6 +12,7 @@ import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import ToolbarModeText from '@/components/ToolbarModeText'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useTaxonomySelection, type TaxonomySelection } from '@/hooks/useTaxonomySelection'
@@ -297,6 +298,7 @@ export default function CustomPage() {
               </div>
             </div>
             </EmptyMessageAreaContext.Provider>
+            <DisclaimerFooter />
           </div>
           <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel

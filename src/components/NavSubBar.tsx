@@ -40,7 +40,7 @@ const CUSTOM_LINK: MenuLink = {
   ],
 }
 
-// 관리자 계정에만 보이는 Admin 메뉴 — 회원 명단(MEMBER), 대시보드(DASHBOARD, 차트 모음), 텔레그램(TELEGRAM, 주소는 /admin/message), 배너(BANNER)로 나뉜다.
+// 관리자 계정에만 보이는 Admin 메뉴 — 회원 명단(MEMBER), 대시보드(DASHBOARD, 차트 모음), 메시지(MESSAGE, 주소는 /admin/message), 배너(BANNER)로 나뉜다.
 const ADMIN_LINK: MenuLink = {
   to: '/admin/member',
   label: 'Admin',
@@ -49,7 +49,7 @@ const ADMIN_LINK: MenuLink = {
   options: [
     { label: 'MEMBER', to: '/admin/member' },
     { label: 'DASHBOARD', to: '/admin/dashboard' },
-    { label: 'TELEGRAM', to: '/admin/message' },
+    { label: 'MESSAGE', to: '/admin/message' },
     { label: 'BANNER', to: '/admin/banner' },
   ],
 }
@@ -93,14 +93,16 @@ interface Props {
   actions?: ReactNode
   // 지금 보는 항목을 목록에서 다시 고르면 이동 대신 이걸 부른다(지도: 드릴다운 맨 위로). 안 넘기면 아무 일도 하지 않는다.
   onReselectCurrent?: () => void
+  // 공개 문서의 Google OAuth 동의 화면에서는 세션 API를 호출하지 않는다.
+  staticMode?: boolean
 }
 
 // 탭 메뉴(왼쪽) + 페이지별 옵션 버튼(오른쪽)을 한 줄에 같이 보여주는 바.
-export default function NavSubBar({ actions, onReselectCurrent }: Props) {
+export default function NavSubBar({ actions, onReselectCurrent, staticMode = false }: Props) {
   const location = useLocation()
   const navigate = useNavigate()
   // 관리자 계정에만 Admin 메뉴가 더 보인다 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
-  const { data: session, isLoading: isSessionLoading } = useSession()
+  const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
   const links = isAdmin ? [...BASE_LINKS, CUSTOM_LINK, ADMIN_LINK] : [...BASE_LINKS, CUSTOM_LINK]
   const [openTo, setOpenTo] = useState<string | null>(null)

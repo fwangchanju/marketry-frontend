@@ -1,0 +1,84 @@
+import { useRef, useState, type ReactNode } from 'react'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
+import type { SettingsSectionIconName } from '@/components/SettingsSectionIcon'
+import NavBar from '@/components/NavBar'
+import NavBarPageActions from '@/components/NavBarPageActions'
+import NavSubBar from '@/components/NavSubBar'
+import PageInfoPanel from '@/components/PageInfoPanel'
+import PageMainFrame from '@/components/PageMainFrame'
+import ScreenshotModal from '@/components/ScreenshotModal'
+import Toolbar from '@/components/Toolbar'
+import ToolbarModeText from '@/components/ToolbarModeText'
+import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
+import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
+
+// 공개 문서도 다른 화면과 같은 헤더·계정·메뉴·툴바·하단 정보줄을 쓴다.
+export default function DocumentPageLayout({ title, children, panelIcon = 'document' }: { title: string; children: ReactNode; panelIcon?: SettingsSectionIconName }) {
+  const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
+  const screenshotRef = useRef<HTMLElement>(null)
+  const handleCopy = async (previewSrc: string | null) => {
+    if (!previewSrc && !screenshotRef.current) return
+    setCopyStatus('copying')
+    try {
+      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
+      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
+      setCopyStatus('copied')
+    } catch {
+      setCopyStatus('error')
+    } finally {
+      setTimeout(() => setCopyStatus('idle'), 2000)
+    }
+  }
+  const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
+
+  return (
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background text-ui-white">
+      <NavBar />
+      <NavSubBar
+        actions={
+          <NavBarPageActions
+            onRefresh={() => undefined}
+            isRefreshing={false}
+            showRefresh={false}
+            isNativeFullscreen={isNativeFullscreen}
+            onToggleFullscreen={handleToggleNativeFullscreen}
+            onToggleSettings={() => setIsSettingsOpen(open => !open)}
+            isSettingsOpen={isSettingsOpen}
+            onOpenShare={() => setIsShareOpen(true)}
+            isScreenshotOpen={isShareOpen}
+          />
+        }
+      />
+      <div className="flex min-h-0 flex-1">
+        <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
+        <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+          <Toolbar>
+            <ToolbarModeText page="INFO" label={title} />
+          </Toolbar>
+          {/* SOURCE 기준의 공통 바깥 테두리만 쓴다. 문서별 카드 테두리는 겹치지 않는다. */}
+          <PageMainFrame className="p-6">{children}</PageMainFrame>
+          <DisclaimerFooter />
+        </main>
+        {isSettingsOpen && <div className="flex shrink-0 pt-[4px]">
+          <PageInfoPanel title="Info" tabLabel={title} icon={panelIcon}>
+            <p>MARKETRY 서비스 안내 문서입니다.</p>
+            <p className="mt-4">본문은 왼쪽 영역에서 확인할 수 있습니다.</p>
+          </PageInfoPanel>
+        </div>}
+        </div>
+      </div>
+      {isShareOpen && (
+        <ScreenshotModal
+          onClose={() => setIsShareOpen(false)}
+          onCopy={handleCopy}
+          copyLabel={copyLabel}
+          isCopying={copyStatus === 'copying'}
+          screenshotTarget={screenshotRef.current}
+        />
+      )}
+    </div>
+  )
+}

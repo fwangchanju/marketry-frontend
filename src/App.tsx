@@ -6,6 +6,8 @@ import GroupPage from './pages/GroupPage'
 import CustomPage from './pages/CustomPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
+import SourcePage from './pages/SourcePage'
+import ContactPage from './pages/ContactPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
@@ -52,11 +54,11 @@ function LegacyGroupRedirect() {
 }
 
 // 모바일(폭 768px 미만)에서는 화면 대신 안내만 보여 준다. 세션·시세 요청도 보내지 않도록 앱 맨 바깥에서 가린다.
-// /privacy는 구글 로그인 동의 화면에 등록된 공개 페이지라 모바일에서도 열린다.
+// 개인정보처리방침은 Google OAuth 동의 화면에 등록된 공개 페이지라 모바일에서도 열린다.
 function MobileGate({ children }: { children: ReactNode }) {
   const isNarrow = useIsNarrowScreen()
   const { pathname } = useLocation()
-  if (isNarrow && pathname !== '/privacy') return <MobileNotice />
+  if (isNarrow && pathname !== '/privacy' && pathname !== '/info/privacy') return <MobileNotice />
   return <>{children}</>
 }
 
@@ -96,13 +98,20 @@ export default function App() {
           {/* 기존 링크와 로그인 returnTo 호환을 위해 이전 주소는 새 주소로 보낸다. */}
           <Route path="/admin/sector" element={<Navigate to="/custom/sector" replace />} />
           <Route path="/admin/stock" element={<Navigate to="/custom/stock" replace />} />
-          {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수
-              있어야 하고, 세션/시세 등 데이터 API를 호출하지 않는 순수 정적 페이지다. */}
-          <Route path="/privacy" element={<PrivacyPolicyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
+          {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}
+          <Route path="/info" element={<Navigate to="/info/source" replace />} />
+          <Route path="/info/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/info/terms" element={<TermsPage />} />
+          <Route path="/info/source" element={<SourcePage />} />
+          <Route path="/info/contact" element={<ContactPage />} />
+          {/* 이전 주소와 Google OAuth에 등록된 /privacy 주소도 새 정보 경로로 보낸다. */}
+          <Route path="/privacy" element={<Navigate to="/info/privacy" replace />} />
+          <Route path="/terms" element={<Navigate to="/info/terms" replace />} />
+          <Route path="/source" element={<Navigate to="/info/source" replace />} />
+          <Route path="/contact" element={<Navigate to="/info/contact" replace />} />
           <Route path="/profile" element={<ProfilePage />} />
           {/* 관리자 전용 — 관리자가 아니면 페이지 안에서 홈으로 보낸다. */}
-          {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 텔레그램, 배너로 나뉜다. */}
+          {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 메시지, 배너로 나뉜다. */}
           <Route path="/admin" element={<Navigate to="/admin/member" replace />} />
           <Route path="/admin/member" element={<AdminPage />} />
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />

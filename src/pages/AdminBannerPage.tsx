@@ -5,6 +5,7 @@ import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage from '@/components/EmptyMessage'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import { useSession } from '@/hooks/useSession'
@@ -68,7 +69,7 @@ export default function AdminBannerPage() {
             ) : !isAdmin ? (
               <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
-              <section aria-label="배너" className="flex h-full min-h-0 w-full flex-col text-sm">
+              <section aria-label="배너" className="flex min-h-0 flex-1 w-full flex-col text-sm">
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="BANNER" />
                 </Toolbar>
@@ -77,6 +78,7 @@ export default function AdminBannerPage() {
                 </div>
               </section>
             )}
+            <DisclaimerFooter />
           </div>
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>

@@ -14,6 +14,7 @@ import SettingsSegmentedControl from '@/components/SettingsSegmentedControl'
 import Toolbar from '@/components/Toolbar'
 import StackedDailyChart, { type StackedDailyRow } from '@/components/StackedDailyChart'
 import ToolbarModeText from '@/components/ToolbarModeText'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
@@ -120,11 +121,10 @@ export default function AdminDashboardPage() {
             ) : !isAdmin ? (
               <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
-              <section aria-label="회원 대시보드" className="flex h-full min-h-0 w-full flex-col text-sm">
+              <section aria-label="회원 대시보드" className="flex min-h-0 flex-1 w-full flex-col text-sm">
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="DASHBOARD" />
                 </Toolbar>
-                {/* 차트 한 개가 한 칸 — 화면을 가득 채우지 않고 칸 크기는 고정이며, 차트가 늘면 칸이 옆·아래로 늘어난다. */}
                 <div className="grid min-h-0 flex-1 auto-rows-[minmax(280px,1fr)] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3 overflow-auto pb-1">
                   <ChartFrame title="총 방문자" note="회원 + 비회원 합산">
                     {visitors.isError || dailyAccess.isError ? (
@@ -235,6 +235,7 @@ export default function AdminDashboardPage() {
                 </div>
               </section>
             )}
+            <DisclaimerFooter />
           </div>
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>

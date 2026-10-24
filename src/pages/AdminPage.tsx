@@ -4,6 +4,7 @@ import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import AdminMembers from '@/components/AdminMembers'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import { useSession } from '@/hooks/useSession'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -64,7 +65,8 @@ export default function AdminPage() {
       />
       <div className="flex min-h-0 flex-1">
         <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
-          <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-ui-background text-ui-white">
+          <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
+            <div className="flex min-h-0 flex-1 items-center justify-center">
             {isLoading ? (
               <p role="status" className="text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p>
             ) : !isAdmin ? (
@@ -72,6 +74,8 @@ export default function AdminPage() {
             ) : (
               <AdminMembers key={session!.userId} userId={session!.userId!} summaryContainer={summaryTarget} specialContainer={specialTarget} nicknameContainer={nicknameTarget} />
             )}
+            </div>
+            <DisclaimerFooter />
           </div>
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
