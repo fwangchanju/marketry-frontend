@@ -146,8 +146,8 @@ function findRawNodeByPath(nodes: TreemapSectorNode[], path: string[]): TreemapS
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 
-// keepPageLabel: 렌더러가 찍는 판(텔레그램)은 ALL STOCK 배지 위의 페이지 라벨(MAP)을 남긴다. 스크린샷 창의 모바일 캡처는 겹치지 않게 숨긴다.
-function revealMobileCapture(cloned: Node, keepPageLabel = false) {
+// keepPageLabel: ALL STOCK 배지 위의 페이지 라벨(MAP)을 남긴다(텔레그램 판·스크린샷 창 모두, 홈 판의 HOME과 같은 모양). false를 주면 숨긴다.
+function revealMobileCapture(cloned: Node, keepPageLabel = true) {
   if (!(cloned instanceof Element)) return
   const mobileFrame = cloned.querySelector<HTMLElement>('[data-map-mobile-capture-frame]')
   if (mobileFrame) mobileFrame.style.opacity = '1'
@@ -158,6 +158,9 @@ function revealMobileCapture(cloned: Node, keepPageLabel = false) {
   if (mobileCapture && toolbarLeft) {
     const toolbar = document.createElement('div')
     toolbar.className = 'main-toolbar home-capture-toolbar relative mt-[3px] mb-0 flex h-7 w-full shrink-0 items-center overflow-hidden bg-ui-background/70 text-sm font-bold text-ui-white'
+    // 복제본에 새로 넣는 요소는 클래스 스타일이 적용되지 않으므로 홈 판 툴바와 같은 위치·정렬은 인라인으로 준다.
+    toolbar.style.marginTop = '5px'
+    toolbar.style.alignItems = 'center'
     const leftContent = toolbarLeft.cloneNode(true) as HTMLElement
     leftContent.style.minWidth = '0'
     leftContent.style.overflow = 'hidden'
