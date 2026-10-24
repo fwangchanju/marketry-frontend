@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 import { isAdminSession } from './adminAccess.ts'
 
@@ -37,6 +38,6 @@ test('세션 role을 adminAccess.ts 밖에서 직접 ADMIN과 비교하지 않�
       }
     }
   }
-  walk(new URL('..', import.meta.url).pathname)
+  walk(join(dirname(fileURLToPath(import.meta.url)), '..'))
   assert.deepEqual(found, [], '관리자 판단은 isAdminSession()을 쓴다')
 })

@@ -322,3 +322,20 @@ export function GoogleLogoIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
+// 로그인 제공자의 고유 심볼은 일반 선 아이콘과 구분한다.
+export function NaverLogoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path fill="currentColor" d="M16.27 12.88 7.54 0H0v24h7.73V11.12L16.46 24H24V0h-7.73v12.88Z" />
+    </svg>
+  )
+}
+
+export function KakaoLogoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path fill="#000000" d="M12 3C6.48 3 2 6.55 2 10.93c0 2.84 1.87 5.33 4.68 6.72l-.95 3.45a.45.45 0 0 0 .68.49l4.07-2.7c.5.07 1 .11 1.52.11 5.52 0 10-3.55 10-7.93S17.52 3 12 3Z" />
+    </svg>
+  )
+}

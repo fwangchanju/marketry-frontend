@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { googleLoginUrl } from '@/api/auth'
-import { GoogleLogoIcon } from '@/components/icons/AppIcons'
+import { useQuery } from '@tanstack/react-query'
+import { getSocialProviderAvailability, googleLoginUrl, kakaoLoginUrl, naverLoginUrl } from '@/api/auth'
+import { GoogleLogoIcon, KakaoLogoIcon, NaverLogoIcon } from '@/components/icons/AppIcons'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
 import { isLocalSignupEnabled } from '@/utils/localDevLogin'
@@ -11,15 +12,22 @@ interface Props {
   returnTo: string
   // true면 안내 문구를 보여주지 않는다(오른쪽 위 로그인 버튼으로 연 경우).
   hideMessage?: boolean
+  loginError?: 'cancelled' | 'oauth_failed' | null
   onClose: () => void
 }
 
 // ScreenshotModal과 동일한 팝업 톤(어두운 배경 오버레이 + var(--surface) 패널, nes-btn 버튼)을
 // 그대로 재사용한다 — 새 시각 스타일을 만들지 않는다. 강조 버튼도 기존 accent 토큰(노랑)만 쓰고
 // 로그인 버튼에는 브랜드 서브색을 사용한다.
-export default function LoginModal({ returnTo, hideMessage = false, onClose }: Props) {
+export default function LoginModal({ returnTo, hideMessage = false, loginError = null, onClose }: Props) {
   const mainAreaRect = useMainAreaRect(true)
   const googleLinkRef = useRef<HTMLAnchorElement>(null)
+  const { data: providers } = useQuery({
+    queryKey: ['auth', 'social-providers'],
+    queryFn: getSocialProviderAvailability,
+    retry: false,
+    staleTime: 5 * 60_000,
+  })
   // 로컬 서버에는 Google 로그인 설정이 없어(503) 버튼이 막다른 길이라, 로컬 화면에서는 관리자 계정으로 바로 로그인한다. 운영에는 영향이 없다.
   const isLocalDev = isLocalSignupEnabled()
   const { isPending: isDevLoginPending, error: devLoginError, loginAs } = useTestMemberToggle()
@@ -57,6 +65,11 @@ export default function LoginModal({ returnTo, hideMessage = false, onClose }: P
             로그인 후 이용 가능합니다.
           </p>
         )}
+        {loginError && (
+          <p role="alert" className="mt-2 text-sm text-status-error-text">
+            {loginError === 'cancelled' ? '로그인이 취소되었습니다.' : '로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.'}
+          </p>
+        )}
         <div className="mt-6 flex flex-col gap-2">
           {/* 실제 페이지 이동(전체 새로고침)이어야 하므로 버튼 클릭 핸들러가 아니라 일반 링크로 연다 —
               XHR로 처리하면 쿠키를 세팅하는 리다이렉트 체인이 브라우저 주소창에서 진행되지 않는다. */}
@@ -73,6 +86,30 @@ export default function LoginModal({ returnTo, hideMessage = false, onClose }: P
             </span>
             <span className="w-full px-10 py-2 text-center">Google</span>
           </a>
+          {providers?.naver && (
+            <a
+              href={naverLoginUrl(returnTo)}
+              aria-label="네이버 로그인"
+              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#03a94d] text-sm font-bold text-white transition-opacity hover:opacity-90"
+            >
+              <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
+                <NaverLogoIcon className="h-[18px] w-[18px] text-white" />
+              </span>
+              <span className="w-full px-10 py-2 text-center">네이버 로그인</span>
+            </a>
+          )}
+          {providers?.kakao && (
+            <a
+              href={kakaoLoginUrl(returnTo)}
+              aria-label="카카오 로그인"
+              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#fee500] text-sm font-bold text-[#191919] transition-opacity hover:opacity-90"
+            >
+              <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
+                <KakaoLogoIcon className="h-[18px] w-[18px]" />
+              </span>
+              <span className="w-full px-10 py-2 text-center">카카오 로그인</span>
+            </a>
+          )}
           {devLoginError && <p role="alert" className="m-0 text-xs text-status-error-ink">{devLoginError}</p>}
           <button
             type="button"
