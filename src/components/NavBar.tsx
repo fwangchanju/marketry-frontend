@@ -5,8 +5,6 @@ import { useLoginGate } from '@/hooks/useLoginGate'
 import ProfileAvatar from '@/components/ProfileAvatar'
 import { UserIcon } from '@/components/icons/AppIcons'
 import MarketryLogo from '@/components/MarketryLogo'
-import AdBannerSlot from '@/components/AdBannerSlot'
-import DevTestBanner from '@/components/DevTestBanner'
 import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
 import { isLocalGuestMode, isLocalSignupEnabled, LOCAL_TEST_MEMBER_USER_ID } from '@/utils/localDevLogin'
 import { isAdminSession } from '@/utils/adminAccess'
@@ -187,8 +185,6 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
       )}
       </div>
     </header>
-    {/* 실제 광고가 정해지기 전까지 시험용 광고를 끼워 자리를 확인한다. 운영에도 나온다. 광고 회사가 정해지면 이 자리를 실제 광고로 바꾼다. */}
-    <AdBannerSlot>{size => <DevTestBanner size={size} />}</AdBannerSlot>
     </>
   )
 }
