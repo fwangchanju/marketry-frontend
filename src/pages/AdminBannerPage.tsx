@@ -6,6 +6,7 @@ import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
+import SettingsSegmentedControl from '@/components/SettingsSegmentedControl'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
@@ -63,7 +64,7 @@ function BannerPreview({ draft, savedCampaign, liveTitle, hasLiveBanner }: { dra
   return (
     <div className="w-full min-w-0 shrink-0 border border-ui-border bg-ui-background">
       <div className="flex min-h-10 items-center gap-3 border-b border-ui-border bg-ui-surface px-3 text-xs">
-        <span className="shrink-0 rounded border border-admin-only px-2 py-1 font-bold text-admin-only">{hasPendingApproval ? 'TEST · 관리자 미리보기' : savedCampaign ? statusLabel(savedCampaign.status) : 'TEST'}</span>
+        <span className="inline-flex h-6 shrink-0 items-center rounded-sm border border-admin-only px-2 text-[14px] leading-none font-semibold text-admin-only">{hasPendingApproval ? 'TEST · 관리자 미리보기' : savedCampaign ? statusLabel(savedCampaign.status) : 'TEST'}</span>
         <span className="min-w-0 truncate text-ui-muted">{hasPendingApproval ? visitorStatus : '승인된 배너가 표시됩니다.'}</span>
       </div>
       <div className="relative h-[90px] bg-ui-surface">
@@ -269,7 +270,7 @@ export default function AdminBannerPage() {
                       <h1 className="m-0 text-lg font-bold text-ui-white">배너 운영</h1>
                       <p className="m-0 mt-1 text-xs text-ui-muted">수정 → 테스트 → 승인 후 실제 반영 · 게시 슬롯에는 한 번에 하나만 표시됩니다.</p>
                     </div>
-                    <button type="button" onClick={startNewDraft} className="toolbar-badge-control h-7 shrink-0 border-0 bg-brand-surface px-3 text-sm font-bold text-ui-white hover:bg-brand-surface-hover">새 배너</button>
+                    <button type="button" onClick={startNewDraft} className="toolbar-badge-control h-6 shrink-0 border-0 bg-brand-surface px-3 text-sm font-bold text-ui-white hover:bg-brand-surface-hover">새 배너</button>
                   </div>
                   <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
                     <BannerPreview draft={draft} savedCampaign={selectedCampaign} liveTitle={activeBanner.data?.title} hasLiveBanner={activeBanner.data?.active ?? false} />
@@ -329,9 +330,13 @@ export default function AdminBannerPage() {
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">배너 종류</h2>
                         <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">광고 이미지 또는 공지 문구</p>
                         <div className="mt-auto mb-auto flex flex-col gap-2">
-                          <div className="flex gap-2">
-                            {(['AD', 'NOTICE'] as const).map(type => <button key={type} type="button" disabled={!canEdit} onClick={() => changeDraft({ type })} className={`h-7 flex-1 rounded border px-2 text-xs ${draft.type === type ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-transparent text-ui-muted'} disabled:opacity-50`}>{type === 'AD' ? '광고' : '공지'}</button>)}
-                          </div>
+                          <SettingsSegmentedControl
+                            label="배너 종류"
+                            options={[{ value: 'AD', label: '광고' }, { value: 'NOTICE', label: '공지' }]}
+                            value={draft.type}
+                            onChange={type => changeDraft({ type })}
+                            disabled={!canEdit}
+                          />
                           <label className="block text-xs text-ui-muted">연결 주소(선택)<input aria-label="연결 주소" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} placeholder="https:// 또는 /경로" className={`${INPUT_CLASS} mt-1`} /></label>
                         </div>
                       </div>
@@ -345,7 +350,7 @@ export default function AdminBannerPage() {
                           {draft.type === 'NOTICE' ? (
                             <label className="block text-[11px] leading-3 text-ui-muted">공지 문구<textarea aria-label="공지 문구" maxLength={200} disabled={!canEdit} value={draft.text} onChange={event => changeDraft({ text: event.target.value })} className="mt-0.5 h-9 w-full resize-none rounded border border-ui-border bg-ui-background p-1.5 text-xs text-ui-white outline-none focus:border-brand disabled:opacity-50" /></label>
                           ) : (
-                            <label className="flex h-8 cursor-pointer items-center justify-center gap-1 rounded border border-ui-border bg-ui-background text-xs text-ui-white hover:border-brand has-[:disabled]:opacity-50">
+                            <label className="flex h-[25px] cursor-pointer items-center justify-center gap-1 rounded-[4px] border border-ui-border bg-ui-background px-2 text-[13px]/4 text-ui-white hover:border-brand has-[:disabled]:opacity-35">
                               <UploadIcon aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
                               {draft.file?.name ?? (savedCampaign?.hasImage ? '이미지 교체' : '배너 이미지 선택')}
                               <input type="file" accept="image/png,image/jpeg" disabled={!canEdit} onChange={event => handlePickFile(event.target.files?.[0])} className="sr-only" />
@@ -370,9 +375,9 @@ export default function AdminBannerPage() {
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">테스트 · 승인</h2>
                         <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">테스트 미리보기는 관리자에게만 보입니다.</p>
                         <div className="mt-auto mb-auto flex flex-col gap-2">
-                          <button type="button" disabled={!canEdit || saveMutation.isPending || !isDirty} onClick={handleSave} className="flex h-8 items-center justify-center gap-2 rounded border border-ui-border bg-ui-control text-xs font-bold text-ui-white disabled:opacity-40"><SaveIcon aria-hidden="true" className="h-4 w-4" />시안 저장</button>
-                          <button type="button" disabled={!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending} onClick={() => void handleApprove()} className="h-8 rounded border-0 bg-admin-only px-2 text-xs font-bold text-ui-background disabled:opacity-40">{isStartingSoon ? '승인 후 예약' : '승인 후 실제 반영'}</button>
-                          {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className="h-7 rounded border border-ui-border bg-transparent text-xs text-ui-muted hover:text-ui-white disabled:opacity-40">임시 시안 삭제</button>}
+                          <button type="button" disabled={!canEdit || saveMutation.isPending || !isDirty} onClick={handleSave} className="flex h-[25px] items-center justify-center gap-1.5 rounded-[4px] border border-ui-border bg-ui-control text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35"><SaveIcon aria-hidden="true" className="h-4 w-4" />시안 저장</button>
+                          <button type="button" disabled={!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending} onClick={() => void handleApprove()} className="h-[25px] rounded-[4px] border-0 bg-admin-only px-2 text-[13px] leading-[1.3] font-medium text-ui-background hover:bg-admin-only-hover disabled:cursor-not-allowed disabled:opacity-35">{isStartingSoon ? '승인 후 예약' : '승인 후 실제 반영'}</button>
+                          {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className="h-[25px] rounded-[4px] border border-ui-border bg-transparent px-2 text-[13px] leading-[1.3] font-medium text-ui-muted settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35">임시 시안 삭제</button>}
                         </div>
                       </div>
                     </div>
