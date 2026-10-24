@@ -45,7 +45,9 @@ function reconcileCustomModeStorage(session: AuthSessionResponse) {
   }
 }
 
-export function useSession() {
+// 공개 문서 화면은 Google OAuth 동의 화면에서도 열려야 하므로, 공통 상단바 모양은 쓰되
+// 세션 API를 호출하지 않는 선택지를 둔다.
+export function useSession(enabled = true) {
   return useQuery({
     queryKey: authKeys.session(),
     queryFn: async () => {
@@ -54,6 +56,7 @@ export function useSession() {
       return session
     },
     ...STATIC_REFERENCE_CACHE,
+    enabled,
     retry: false,
   })
 }
@@ -73,22 +76,22 @@ let guestLogoutAttempted = false
 // POST /auth/dev-login을 한 번 호출해 구글 로그인과 동일한 쿠키를 심고, 반환된 세션을 쿼리
 // 캐시에 바로 반영한다(새로고침 없이 로그인 상태가 된다). 실패하면(백엔드가 prod 프로필로 떠
 // 있거나 OWNER_USER_ID가 로컬 DB에 없는 경우 등) 콘솔 경고만 남기고 익명 상태로 남는다.
-export function useLocalDevLogin() {
+export function useLocalDevLogin(enabled = true) {
   const localAutoLogin = isLocalAutoLoginEnabled()
   const localGuestMode = isLocalGuestMode()
-  const { data: session, isLoading } = useSession()
+  const { data: session, isLoading } = useSession(enabled)
   const queryClient = useQueryClient()
   const logoutMutation = useLogout()
 
   // 비로그인 확인 모드(?guest=1)로 열었는데 이전에 심어진 로그인 쿠키로 로그인돼 있으면 한 번 로그아웃한다.
   useEffect(() => {
-    if (!localGuestMode || isLoading || !session?.authenticated || guestLogoutAttempted) return
+    if (!enabled || !localGuestMode || isLoading || !session?.authenticated || guestLogoutAttempted) return
     guestLogoutAttempted = true
     logoutMutation.mutate()
-  }, [localGuestMode, isLoading, session?.authenticated, logoutMutation])
+  }, [enabled, localGuestMode, isLoading, session?.authenticated, logoutMutation])
 
   useEffect(() => {
-    if (!localAutoLogin || isLoading || session?.authenticated || devLoginAttempted) return
+    if (!enabled || !localAutoLogin || isLoading || session?.authenticated || devLoginAttempted) return
     devLoginAttempted = true
 
     devLogin()
@@ -106,7 +109,7 @@ export function useLocalDevLogin() {
           error,
         )
       })
-  }, [localAutoLogin, isLoading, session?.authenticated, queryClient])
+  }, [enabled, localAutoLogin, isLoading, session?.authenticated, queryClient])
 }
 
 // 접근 토큰(15분)이 페이지를 켜둔 채로 만료되면 시세 폴링 같은 GET은 비로그인도 200이라 401이 안

@@ -1,10 +1,7 @@
-// 개인정보처리방침 — OAuth 동의 화면에 등록하는 공개 페이지라 로그인 여부와 무관하게 누구나
-// 볼 수 있어야 하고, 세션/시세 등 어떤 데이터 API도 호출하지 않아야 한다(NavBar는 useSession으로
-// 세션 조회 API를 부르므로 여기서는 쓰지 않는다). 그래서 이 페이지는 다른 페이지의 훅을 전혀 쓰지
-// 않는 순수 정적 컴포넌트다. 톤은 LoginModal(어두운 배경, var(--surface) 패널, 흰 제목 + 회색 본문,
-// accent만 강조에 사용)을 그대로 따르고, 등락률 전용 색(red/blue 계열)은 쓰지 않는다.
-//
-const CONTACT_EMAIL = 'fwangchanju1@gmail.com'
+// 개인정보처리방침 — Google OAuth 동의 화면에 등록한 공개 문서다. 누구나 볼 수 있고,
+// 공통 상단 계정 영역은 현재 로그인 상태에 따라 표시한다.
+import DocumentPageLayout from '@/components/DocumentPageLayout'
+const CONTACT_EMAIL = 'marketry2026@gmail.com'
 
 const SERVICE_NAME = 'MARKETRY'
 const SERVICE_DOMAIN = 'marketry.co.kr'
@@ -16,16 +13,12 @@ const LIST = 'mt-2 list-inside list-disc space-y-1 text-sm leading-relaxed text-
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-20 flex h-12 items-center bg-ui-surface px-4 shadow-lg">
-        <a href="/" className="text-sm font-bold text-ui-white">
-          {SERVICE_NAME}
-        </a>
-      </header>
-
-      <div className="mx-auto max-w-2xl px-4 py-10">
-        <div className="nes-container is-dark">
-          <h1 className="text-2xl font-bold text-ui-white">개인정보처리방침</h1>
+    <DocumentPageLayout title="PRIVACY">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-ui-white">
+            <span aria-hidden="true" className="h-7 w-1 shrink-0 rounded-sm bg-brand" />
+            개인정보처리방침
+          </h1>
           <p className="mt-2 text-sm text-ui-text">시행일: {EFFECTIVE_DATE}</p>
 
           <section className="mt-8">
@@ -123,7 +116,6 @@ export default function PrivacyPolicyPage() {
             </ul>
           </section>
         </div>
-      </div>
-    </div>
+    </DocumentPageLayout>
   )
 }

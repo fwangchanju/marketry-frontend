@@ -200,7 +200,8 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
         </div>
         <button type="button" className={`toolbar-badge ml-2 ${controlClass}`} disabled={members.isFetching} onClick={() => { void members.refetch() }}>{members.isFetching ? '조회 중…' : '새로고침'}</button>
       </Toolbar>
-      <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-auto border border-ui-border" aria-busy={members.isFetching}>
+      <div className="flex min-h-0 flex-1 flex-col border border-ui-border">
+      <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-auto" aria-busy={members.isFetching}>
         {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
         <table className="nes-table is-dark custom-page-table w-full min-w-[1150px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
           <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 64 }} /><col style={{ width: 300 }} /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /><col style={{ width: 90 }} /></colgroup>
@@ -295,6 +296,7 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
           <span aria-live="polite">{page + 1} / {pages}</span>
           <button type="button" className={controlClass} disabled={!members.data || members.isError || page + 1 >= pages || members.isFetching} onClick={() => { setPage(value => value + 1); clearSelection() }}>다음</button>
         </div>
+      </div>
       </div>
       {summaryContainer && createPortal(
         <div className="settings-custom-control">

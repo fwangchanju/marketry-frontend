@@ -23,7 +23,7 @@ import { ClockIcon } from '@/components/icons/AppIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
-import DisclaimerNotice from '@/components/DisclaimerNotice'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import ToolbarChip from '@/components/ToolbarChip'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
@@ -455,12 +455,7 @@ export default function GroupPage() {
               </div>
             </div>
             {/* 아래 줄 — 지도 페이지와 같은 높이(28px)로 왼쪽에 면책조항, 오른쪽 끝에 등락률 색상 범례를 둔다. 로딩 중에도 제자리에 둔다. */}
-            <div className="flex h-7 shrink-0 items-end justify-between gap-3">
-              <div className="flex h-7 min-w-0 items-end">
-                <DisclaimerNotice />
-              </div>
-              <ChangeRateBar swatches={settingsModalProps.legendSwatches} />
-            </div>
+            <DisclaimerFooter rightContent={<ChangeRateBar swatches={settingsModalProps.legendSwatches} />} />
           </div>
           {/* 설정창 윗선을 지도 페이지와 같은 높이로 맞춘다 — 지도 페이지에서 실제로 맞춘 모양(설정창 윗선이 위쪽 바 윗선보다 3px 아래)을 따른다. 이 칸은 바보다 5.25px 위에서 시작하므로 5.25 + 3 - 1(눈으로 맞춘 보정) = 7.25px이지만, 지도 페이지의 설정창 칸이 7px이라 실제로는 같은 7px을 띄운다. 아래는 붙인다. */}
           <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>

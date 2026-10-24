@@ -120,11 +120,11 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
           </button>
         </div>
         <p className="mt-4 text-center text-xs text-ui-muted">
-          <a href="/terms" className="hover:text-ui-text">
+          <a href="/info/terms" className="hover:text-ui-text">
             이용약관
           </a>
           {' · '}
-          <a href="/privacy" className="hover:text-ui-text">
+          <a href="/info/privacy" className="hover:text-ui-text">
             개인정보처리방침
           </a>
         </p>

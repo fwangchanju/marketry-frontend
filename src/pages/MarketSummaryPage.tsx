@@ -29,7 +29,7 @@ import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
-import DisclaimerNotice from '@/components/DisclaimerNotice'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import type { MarketOverviewTrendItem, TreemapSectorNode } from '@/types/api'
@@ -627,12 +627,7 @@ export default function MarketSummaryPage() {
             )}
           </div>
           {/* 아래 줄 — 지도·그룹 페이지와 같은 높이(28px)로 왼쪽에 면책조항, 오른쪽 끝에 등락률 색상 범례를 둔다. 로딩 중에도 제자리에 둔다. */}
-          <div data-capture-full-width-align className="flex h-7 shrink-0 items-end justify-between gap-3">
-            <div className="flex h-7 min-w-0 items-end">
-              <DisclaimerNotice />
-            </div>
-            <ChangeRateBar swatches={settingsModalProps.legendSwatches} />
-          </div>
+          <DisclaimerFooter captureFullWidthAlign rightContent={<ChangeRateBar swatches={settingsModalProps.legendSwatches} />} />
         </div>
         {/* 홈·그룹·맵이 함께 쓰는 종목 구성과 색상 설정. */}
         <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>

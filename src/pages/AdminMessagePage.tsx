@@ -20,6 +20,7 @@ import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import SettingsSegmentedControl from '@/components/SettingsSegmentedControl'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
+import DisclaimerFooter from '@/components/DisclaimerFooter'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
@@ -167,11 +168,12 @@ export default function AdminMessagePage() {
             ) : !isAdmin ? (
               <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
-              <section aria-label="메시지" className="flex h-full min-h-0 w-full flex-col text-sm">
+              <section aria-label="메시지" className="flex min-h-0 flex-1 w-full flex-col text-sm">
                 <Toolbar>
-                  <ToolbarModeText page="ADMIN" label="TELEGRAM" />
+                  <ToolbarModeText page="ADMIN" label="MESSAGE" />
                 </Toolbar>
-                <div className="flex min-h-0 flex-1 items-stretch gap-1 overflow-auto pb-1">
+                {/* 메시지 미리보기 외곽선을 지도·그래프 본문과 같은 하단선에 맞춘다. */}
+                <div className="flex min-h-0 flex-1 items-stretch gap-1 overflow-auto">
                   {setting.isError ? (
                     <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                   ) : saved ? (
@@ -221,6 +223,7 @@ export default function AdminMessagePage() {
                 </div>
               </section>
             )}
+            <DisclaimerFooter />
           </div>
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
