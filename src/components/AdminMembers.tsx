@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { createPortal } from 'react-dom'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getAdminMemberSummary, getAdminMembers, resetMembersNickname, setMembersSpecial } from '@/api/adminMembers'
+import { getAdminMembers, resetMembersNickname, setMembersSpecial } from '@/api/adminMembers'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import AuthProviderIcon from '@/components/AuthProviderIcon'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
@@ -53,7 +53,7 @@ function formatTime(value: string | null) {
   return value.replace('T', ' ').slice(0, 19)
 }
 
-export default function AdminMembers({ userId, summaryContainer, specialContainer, nicknameContainer, paginationContainer }: { userId: number; summaryContainer: HTMLElement | null; specialContainer: HTMLElement | null; nicknameContainer: HTMLElement | null; paginationContainer: HTMLElement | null }) {
+export default function AdminMembers({ userId, specialContainer, nicknameContainer, paginationContainer }: { userId: number; specialContainer: HTMLElement | null; nicknameContainer: HTMLElement | null; paginationContainer: HTMLElement | null }) {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
   const [query, setQuery] = useState('')
@@ -80,12 +80,6 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
     : members.isPending ? '회원 정보를 불러오는 중입니다.'
     : members.data?.items.length === 0 ? (query || excludedRoles.size > 0 ? '조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.')
     : null
-  const summary = useQuery({
-    queryKey: ['admin-member-summary', userId],
-    queryFn: ({ signal }) => getAdminMemberSummary(signal),
-    staleTime: 30_000,
-    retry: false,
-  })
   const [isChangingSpecial, setIsChangingSpecial] = useState(false)
   const [isResettingNickname, setIsResettingNickname] = useState(false)
   // 체크한 회원 — 검색·정렬·필터·페이지를 바꾸면 비운다(보이는 목록 기준이다).
@@ -113,10 +107,7 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
     try {
       await setMembersSpecial(selected.map(member => member.id), special)
       clearSelection()
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['admin-members'] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-member-summary'] }),
-      ])
+      await queryClient.invalidateQueries({ queryKey: ['admin-members'] })
     } catch {
       appAlert('특별 회원을 바꾸지 못했습니다.\n잠시 후 다시 시도해 주세요.', { title: '변경 실패' })
     } finally {
@@ -288,21 +279,6 @@ export default function AdminMembers({ userId, summaryContainer, specialContaine
         paginationContainer,
       )}
       </div>
-      {summaryContainer && createPortal(
-        <div className="settings-custom-control">
-          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">회원 현황</h2>
-          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">전체 · 특별 회원 · 최근 7일 신규 가입·접속</p>
-          <div className="settings-button-area mt-4 grid max-w-full settings-control-inset grid-cols-2 gap-x-4 gap-y-1.5 text-[13px] tabular-nums">
-            {([['전체', summary.data?.total], ['특별 회원', summary.data?.specials], ['7일 신규', summary.data?.joinedRecently], ['7일 접속', summary.data?.accessedRecently]] as const).map(([label, value]) => (
-              <span key={label} className="flex items-baseline justify-between gap-2 whitespace-nowrap">
-                <span className="text-ui-white">{label}</span>
-                <span className="font-medium text-ui-text">{value === undefined ? '-' : `${value.toLocaleString()}명`}</span>
-              </span>
-            ))}
-          </div>
-        </div>,
-        summaryContainer,
-      )}
       {specialContainer && createPortal(
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">특별 회원 지정</h2>

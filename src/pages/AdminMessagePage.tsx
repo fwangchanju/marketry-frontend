@@ -179,7 +179,7 @@ export default function AdminMessagePage() {
                   ) : saved ? (
                     <div className="flex min-h-0 w-full flex-col border border-ui-border p-[7px]">
                       <div className="flex h-[26px] shrink-0 items-center gap-3">
-                        <FrameBadge>텔레그램 정기 발송</FrameBadge>
+                        <FrameBadge>텔레그램</FrameBadge>
                         {!saved.saved && <span className="text-base font-semibold leading-none text-ui-white">저장된 설정이 없어 꺼져 있고, 시각은 서버 기본값입니다.</span>}
                         <span className="text-sm text-ui-muted">실제 발송된 메시지 샘플입니다.</span>
                       </div>
@@ -228,7 +228,7 @@ export default function AdminMessagePage() {
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
               <SettingsPanel
-                pageLabel="Admin"
+                pageLabel="Message"
                 showPreferenceActions={false}
                 fixedSideTab
                 isOpen={isSettingsOpen}
@@ -236,6 +236,8 @@ export default function AdminMessagePage() {
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
                 sectionOrder={['adminManage']}
+                sectionIconOverrides={{ adminManage: 'mail' }}
+                sectionLabelOverrides={{ adminManage: '메시지' }}
                 headerRight={headerActions}
               >
                 <SettingsPanelGroup section="adminManage">

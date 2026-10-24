@@ -24,7 +24,6 @@ export default function AdminPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
   // 설정창 항목은 회원 표가 그려 준다(검색·정렬·필터 상태가 표에 있어서) — 자리만 여기서 만든다.
-  const [summaryTarget, setSummaryTarget] = useState<HTMLElement | null>(null)
   const [specialTarget, setSpecialTarget] = useState<HTMLElement | null>(null)
   const [nicknameTarget, setNicknameTarget] = useState<HTMLElement | null>(null)
   const [paginationTarget, setPaginationTarget] = useState<HTMLElement | null>(null)
@@ -73,7 +72,7 @@ export default function AdminPage() {
             ) : !isAdmin ? (
               <p className="text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
-              <AdminMembers key={session!.userId} userId={session!.userId!} summaryContainer={summaryTarget} specialContainer={specialTarget} nicknameContainer={nicknameTarget} paginationContainer={paginationTarget} />
+              <AdminMembers key={session!.userId} userId={session!.userId!} specialContainer={specialTarget} nicknameContainer={nicknameTarget} paginationContainer={paginationTarget} />
             )}
             </div>
             <DisclaimerFooter rightContent={<div ref={setPaginationTarget} className="flex h-7 shrink-0 items-end justify-end" />} />
@@ -81,7 +80,7 @@ export default function AdminPage() {
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
               <SettingsPanel
-                pageLabel="Admin"
+                pageLabel="Member"
                 showPreferenceActions={false}
                 fixedSideTab
                 isOpen={isSettingsOpen}
@@ -89,10 +88,11 @@ export default function AdminPage() {
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
                 sectionOrder={['adminManage']}
+                sectionIconOverrides={{ adminManage: 'members' }}
+                sectionLabelOverrides={{ adminManage: '유저 관리' }}
               >
                 <SettingsPanelGroup section="adminManage">
                   <div className="settings-plain-content">
-                    <div ref={setSummaryTarget} className="settings-ops-item h-[180px] text-sm" />
                     <div ref={setSpecialTarget} className="settings-ops-item h-[180px] text-sm" />
                     <div ref={setNicknameTarget} className="settings-ops-item h-[180px] text-sm" />
                   </div>

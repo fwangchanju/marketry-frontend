@@ -295,7 +295,7 @@ export default function AdminDashboardPage() {
           {isAdmin && (
             <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
               <SettingsPanel
-                pageLabel="Admin"
+                pageLabel="Dashboard"
                 showPreferenceActions={false}
                 fixedSideTab
                 isOpen={isSettingsOpen}
@@ -303,13 +303,15 @@ export default function AdminDashboardPage() {
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
                 sectionOrder={['adminManage']}
+                sectionIconOverrides={{ adminManage: 'dashboard' }}
+                sectionLabelOverrides={{ adminManage: '대시보드' }}
               >
                 <SettingsPanelGroup section="adminManage">
                   <div className="settings-plain-content">
                     <div className="settings-ops-item h-[180px] text-sm">
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">기간</h2>
-                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">모든 차트에 보여 줄 기간(접속 빈도는 최근 30일 고정)</p>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">모든 차트에 보여 줄 기간</p>
                         <SettingsSegmentedControl label="기간" options={PERIOD_OPTIONS.map(option => ({ value: option, label: `${option}일` }))} value={period} onChange={setPeriod} />
                       </div>
                     </div>
