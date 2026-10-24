@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 import {
-  commitDrafts, discardDrafts, readDraft, registerDraftKey,
+  clearDraft, commitDrafts, discardDrafts, readDraft, registerDraftKey,
   unregisterDraftParticipant, updateDraftParticipant, writeDraft,
 } from './settingsDraft.ts'
 
@@ -63,6 +63,12 @@ test('상단 되돌리기는 색상과 일반 설정을 함께 복원한다', ()
   })
   discardDrafts()
   assert.equal(color, '저장값')
+  assert.equal(readDraft(settingKey).found, false)
+})
+
+test('원래 저장값으로 돌아온 draft를 제거한다', () => {
+  writeDraft(settingKey, 7)
+  clearDraft(settingKey)
   assert.equal(readDraft(settingKey).found, false)
 })
 

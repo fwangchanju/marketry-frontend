@@ -49,6 +49,7 @@ export function readDraft(key: string): { found: boolean; value?: unknown } {
 }
 
 export function writeDraft(key: string, value: unknown) {
+  if (memoryDrafts.has(key) && Object.is(memoryDrafts.get(key), value)) return
   memoryDrafts.set(key, value)
   notify()
 }
@@ -57,13 +58,14 @@ function activeDraftKeys(): string[] {
   return [...registeredKeys].filter(key => readDraft(key).found)
 }
 
-function removeDraft(key: string) {
-  memoryDrafts.delete(key)
+export function clearDraft(key: string, notifySubscribers = true) {
+  const removed = memoryDrafts.delete(key)
+  if (removed && notifySubscribers) notify()
 }
 
 export function discardDrafts() {
   participants.forEach(participant => { if (participant.hasChanges) participant.discard() })
-  activeDraftKeys().forEach(removeDraft)
+  activeDraftKeys().forEach(key => clearDraft(key, false))
   notify()
 }
 
@@ -75,7 +77,7 @@ export async function commitDrafts(save: (entries: Array<[string, unknown]>) => 
   for (const participant of pending) await participant.save()
   if (entries.length > 0) await save(entries)
   // 저장하는 동안 사용자가 다시 바꾼 값은 남겨 둔다.
-  entries.forEach(([key, value]) => { if (readDraft(key).value === value) removeDraft(key) })
+  entries.forEach(([key, value]) => { if (readDraft(key).value === value) clearDraft(key, false) })
   notify()
 }
 
