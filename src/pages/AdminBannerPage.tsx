@@ -61,7 +61,7 @@ function BannerPreview({ draft, savedCampaign, liveTitle, hasLiveBanner }: { dra
   useEffect(() => () => { if (localImageUrl) URL.revokeObjectURL(localImageUrl) }, [localImageUrl])
   const visitorStatus = hasLiveBanner ? `실제 방문자에게는 ${liveTitle ? `“${liveTitle}” 배너가` : '현재 배너가'} 계속 표시됩니다.` : '현재 실제 게시 배너는 없습니다.'
   return (
-    <div className="min-w-0 flex-1 border border-ui-border bg-ui-background">
+    <div className="w-full min-w-0 shrink-0 border border-ui-border bg-ui-background">
       <div className="flex min-h-10 items-center gap-3 border-b border-ui-border bg-ui-surface px-3 text-xs">
         <span className="shrink-0 rounded border border-admin-only px-2 py-1 font-bold text-admin-only">{hasPendingApproval ? 'TEST · 관리자 미리보기' : savedCampaign ? statusLabel(savedCampaign.status) : 'TEST'}</span>
         <span className="min-w-0 truncate text-ui-muted">{hasPendingApproval ? visitorStatus : '승인된 배너가 표시됩니다.'}</span>
@@ -280,7 +280,7 @@ export default function AdminBannerPage() {
                       </div>
                       <div className="min-h-0 flex-1 overflow-auto">
                         {campaigns.isError ? (
-                          <p role="alert" className="m-0 p-3 text-sm text-status-error-text">배너 목록을 불러오지 못했습니다.</p>
+                          <p role="alert" className="m-0 flex h-full items-center justify-center p-3 text-center text-sm text-status-error-text">배너 목록을 불러오지 못했습니다.</p>
                         ) : campaigns.isPending ? (
                           <p role="status" className="m-0 p-3 text-sm text-ui-muted">배너 목록을 불러오는 중입니다.</p>
                         ) : campaignsList.length === 0 ? (
@@ -325,41 +325,55 @@ export default function AdminBannerPage() {
                 <SettingsPanelGroup section="adminManage">
                   <div className="settings-plain-content">
                     <div className="settings-ops-item h-[180px] text-sm">
-                      <h2 className="m-0 font-bold">1) 배너 종류</h2>
-                      <p className="m-0 mt-2 text-ui-muted">- 광고 이미지 또는 공지 문구</p>
-                      <div className="mt-3 flex gap-2">
-                        {(['AD', 'NOTICE'] as const).map(type => <button key={type} type="button" disabled={!canEdit} onClick={() => changeDraft({ type })} className={`h-7 flex-1 rounded border px-2 text-xs ${draft.type === type ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-transparent text-ui-muted'} disabled:opacity-50`}>{type === 'AD' ? '광고' : '공지'}</button>)}
+                      <div className="settings-custom-control">
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">배너 종류</h2>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">광고 이미지 또는 공지 문구</p>
+                        <div className="mt-auto mb-auto flex flex-col gap-2">
+                          <div className="flex gap-2">
+                            {(['AD', 'NOTICE'] as const).map(type => <button key={type} type="button" disabled={!canEdit} onClick={() => changeDraft({ type })} className={`h-7 flex-1 rounded border px-2 text-xs ${draft.type === type ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-transparent text-ui-muted'} disabled:opacity-50`}>{type === 'AD' ? '광고' : '공지'}</button>)}
+                          </div>
+                          <label className="block text-xs text-ui-muted">연결 주소(선택)<input aria-label="연결 주소" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} placeholder="https:// 또는 /경로" className={`${INPUT_CLASS} mt-1`} /></label>
+                        </div>
                       </div>
-                      <label className="mt-2 block text-xs text-ui-muted">연결 주소(선택)<input aria-label="연결 주소" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} placeholder="https:// 또는 /경로" className={`${INPUT_CLASS} mt-1`} /></label>
                     </div>
                     <div className="settings-ops-item h-[180px] text-sm">
-                      <h2 className="m-0 font-bold">2) 내용</h2>
-                      <p className="m-0 mt-1 text-xs/4 text-ui-muted">- 입력 내용은 미리보기에 바로 반영됩니다.</p>
-                      <label className="mt-1 block text-[11px] leading-3 text-ui-muted">제목<input aria-label="배너 제목" maxLength={100} disabled={!canEdit} value={draft.title} onChange={event => changeDraft({ title: event.target.value })} className={`${INPUT_CLASS} mt-0.5`} /></label>
-                      {draft.type === 'NOTICE' ? (
-                        <label className="mt-1 block text-[11px] leading-3 text-ui-muted">공지 문구<textarea aria-label="공지 문구" maxLength={200} disabled={!canEdit} value={draft.text} onChange={event => changeDraft({ text: event.target.value })} className="mt-0.5 h-9 w-full resize-none rounded border border-ui-border bg-ui-background p-1.5 text-xs text-ui-white outline-none focus:border-brand disabled:opacity-50" /></label>
-                      ) : (
-                        <label className="mt-1 flex h-8 cursor-pointer items-center justify-center gap-1 rounded border border-ui-border bg-ui-background text-xs text-ui-white hover:border-brand has-[:disabled]:opacity-50">
-                          <UploadIcon aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-                          {draft.file?.name ?? (savedCampaign?.hasImage ? '이미지 교체' : '배너 이미지 선택')}
-                          <input type="file" accept="image/png,image/jpeg" disabled={!canEdit} onChange={event => handlePickFile(event.target.files?.[0])} className="sr-only" />
-                        </label>
-                      )}
+                      <div className="settings-custom-control">
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">내용</h2>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">입력 내용은 미리보기에 바로 반영됩니다.</p>
+                        <div className="mt-auto mb-auto flex flex-col gap-1">
+                          <label className="block text-[11px] leading-3 text-ui-muted">제목<input aria-label="배너 제목" maxLength={100} disabled={!canEdit} value={draft.title} onChange={event => changeDraft({ title: event.target.value })} className={`${INPUT_CLASS} mt-0.5`} /></label>
+                          {draft.type === 'NOTICE' ? (
+                            <label className="block text-[11px] leading-3 text-ui-muted">공지 문구<textarea aria-label="공지 문구" maxLength={200} disabled={!canEdit} value={draft.text} onChange={event => changeDraft({ text: event.target.value })} className="mt-0.5 h-9 w-full resize-none rounded border border-ui-border bg-ui-background p-1.5 text-xs text-ui-white outline-none focus:border-brand disabled:opacity-50" /></label>
+                          ) : (
+                            <label className="flex h-8 cursor-pointer items-center justify-center gap-1 rounded border border-ui-border bg-ui-background text-xs text-ui-white hover:border-brand has-[:disabled]:opacity-50">
+                              <UploadIcon aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+                              {draft.file?.name ?? (savedCampaign?.hasImage ? '이미지 교체' : '배너 이미지 선택')}
+                              <input type="file" accept="image/png,image/jpeg" disabled={!canEdit} onChange={event => handlePickFile(event.target.files?.[0])} className="sr-only" />
+                            </label>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="settings-ops-item h-[180px] text-sm">
-                      <h2 className="m-0 font-bold">3) 교체 일정</h2>
-                      <p className="m-0 mt-1 text-xs/4 text-ui-muted">- 한국 시간에 실제 배너가 교체됩니다.</p>
-                      <label className="mt-1 block text-[11px] leading-3 text-ui-muted">교체 시작 날짜·시각<input type="datetime-local" disabled={!canEdit} value={draft.startsAt} onChange={event => changeDraft({ startsAt: event.target.value })} className={`${INPUT_CLASS} mt-0.5`} /></label>
-                      <label className="mt-1 block text-[11px] leading-3 text-ui-muted">교체 종료 날짜·시각(선택)<input type="datetime-local" disabled={!canEdit} value={draft.endsAt} onChange={event => changeDraft({ endsAt: event.target.value })} className={`${INPUT_CLASS} mt-0.5`} /></label>
-                      <p className="m-0 mt-0.5 text-[10px]/3 text-ui-muted">종료 시 다음 예약 배너로 바뀝니다.</p>
+                      <div className="settings-custom-control">
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">교체 일정</h2>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">한국 시간에 실제 배너가 교체됩니다.</p>
+                        <div className="mt-auto mb-auto flex flex-col gap-1">
+                          <label className="block text-[11px] leading-3 text-ui-muted">교체 시작 날짜·시각<input type="datetime-local" disabled={!canEdit} value={draft.startsAt} onChange={event => changeDraft({ startsAt: event.target.value })} className={`${INPUT_CLASS} mt-0.5`} /></label>
+                          <label className="block text-[11px] leading-3 text-ui-muted">교체 종료 날짜·시각(선택)<input type="datetime-local" disabled={!canEdit} value={draft.endsAt} onChange={event => changeDraft({ endsAt: event.target.value })} className={`${INPUT_CLASS} mt-0.5`} /></label>
+                          <p className="m-0 text-[10px]/3 text-ui-muted">종료 시 다음 예약 배너로 바뀝니다.</p>
+                        </div>
+                      </div>
                     </div>
                     <div className="settings-ops-item h-[180px] text-sm">
-                      <h2 className="m-0 font-bold">4) 테스트 · 승인</h2>
-                      <p className="m-0 mt-2 text-ui-muted">- 테스트 미리보기는 관리자에게만 보입니다.</p>
-                      <div className="mt-3 flex flex-col gap-2">
-                        <button type="button" disabled={!canEdit || saveMutation.isPending || !isDirty} onClick={handleSave} className="flex h-8 items-center justify-center gap-2 rounded border border-ui-border bg-ui-control text-xs font-bold text-ui-white disabled:opacity-40"><SaveIcon aria-hidden="true" className="h-4 w-4" />시안 저장</button>
-                        <button type="button" disabled={!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending} onClick={() => void handleApprove()} className="h-8 rounded border-0 bg-admin-only px-2 text-xs font-bold text-ui-background disabled:opacity-40">{isStartingSoon ? '승인 후 예약' : '승인 후 실제 반영'}</button>
-                        {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className="h-7 rounded border border-ui-border bg-transparent text-xs text-ui-muted hover:text-ui-white disabled:opacity-40">임시 시안 삭제</button>}
+                      <div className="settings-custom-control">
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">테스트 · 승인</h2>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">테스트 미리보기는 관리자에게만 보입니다.</p>
+                        <div className="mt-auto mb-auto flex flex-col gap-2">
+                          <button type="button" disabled={!canEdit || saveMutation.isPending || !isDirty} onClick={handleSave} className="flex h-8 items-center justify-center gap-2 rounded border border-ui-border bg-ui-control text-xs font-bold text-ui-white disabled:opacity-40"><SaveIcon aria-hidden="true" className="h-4 w-4" />시안 저장</button>
+                          <button type="button" disabled={!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending} onClick={() => void handleApprove()} className="h-8 rounded border-0 bg-admin-only px-2 text-xs font-bold text-ui-background disabled:opacity-40">{isStartingSoon ? '승인 후 예약' : '승인 후 실제 반영'}</button>
+                          {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className="h-7 rounded border border-ui-border bg-transparent text-xs text-ui-muted hover:text-ui-white disabled:opacity-40">임시 시안 삭제</button>}
+                        </div>
                       </div>
                     </div>
                   </div>
