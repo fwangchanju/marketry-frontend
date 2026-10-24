@@ -161,7 +161,7 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                 </div>
               </>
             ) : isLocalDev ? (
-              <div className="border-b border-ui-border px-3 py-2 text-sm">
+              <div className="px-3 py-2 text-sm">
                 <p className="m-0 font-semibold">GUEST</p>
                 <button
                   type="button"
@@ -171,11 +171,12 @@ export default function NavBar({ hideAccount = false }: { hideAccount?: boolean 
                   }}
                   className="mt-2 h-7 w-full rounded-[5px] border border-ui-border bg-transparent text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-white/10 focus:bg-ui-white/10"
                 >
-                  Google 로그인
+                  로그인
                 </button>
               </div>
             ) : null}
-            {isLocalDev && (
+            {/* 계정 전환은 로그인한 뒤에만 보인다 — 관리자로 들어와야 테스트 계정을 쓸 수 있다(GUEST는 위의 로그인 팝업이 관리자로 로그인한다). */}
+            {isLocalDev && session?.authenticated && (
               <div className="mx-3 mt-2 flex flex-col gap-1.5 border-t border-ui-border pt-2">
                 {(['admin', 'test'] as const)
                   .filter(account => account.toUpperCase() !== localAccountLabel)

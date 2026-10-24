@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import { googleLoginUrl } from '@/api/auth'
 import { GoogleLogoIcon } from '@/components/icons/AppIcons'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
+import { useTestMemberToggle } from '@/hooks/useTestMemberToggle'
+import { isLocalSignupEnabled } from '@/utils/localDevLogin'
 
 interface Props {
   // 로그인 성공 후 백엔드가 돌려보낼 프론트 경로("/"로 시작). 로그인 팝업을 연 지점(메뉴 클릭,
@@ -18,6 +20,9 @@ interface Props {
 export default function LoginModal({ returnTo, hideMessage = false, onClose }: Props) {
   const mainAreaRect = useMainAreaRect(true)
   const googleLinkRef = useRef<HTMLAnchorElement>(null)
+  // 로컬 서버에는 Google 로그인 설정이 없어(503) 버튼이 막다른 길이라, 로컬 화면에서는 관리자 계정으로 바로 로그인한다. 운영에는 영향이 없다.
+  const isLocalDev = isLocalSignupEnabled()
+  const { isPending: isDevLoginPending, error: devLoginError, loginAs } = useTestMemberToggle()
   // 확인창처럼 열리자마자 주 버튼에 포커스를 둬서 Enter로 바로 로그인하고 Tab으로 닫기로 넘어간다. 링크에는 autoFocus가 듣지 않아 직접 옮긴다.
   useEffect(() => { googleLinkRef.current?.focus() }, [])
   useEffect(() => {
@@ -58,6 +63,7 @@ export default function LoginModal({ returnTo, hideMessage = false, onClose }: P
           <a
             href={googleLoginUrl(returnTo)}
             ref={googleLinkRef}
+            onClick={isLocalDev ? event => { event.preventDefault(); if (!isDevLoginPending) void loginAs('admin') } : undefined}
             aria-label="Google 로그인"
             className="relative flex items-stretch overflow-hidden rounded-lg bg-[var(--brand-surface)] text-sm font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)]"
           >
@@ -67,6 +73,7 @@ export default function LoginModal({ returnTo, hideMessage = false, onClose }: P
             </span>
             <span className="w-full px-10 py-2 text-center">Google</span>
           </a>
+          {devLoginError && <p role="alert" className="m-0 text-xs text-status-error-ink">{devLoginError}</p>}
           <button
             type="button"
             onClick={onClose}
