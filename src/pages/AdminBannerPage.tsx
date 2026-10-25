@@ -23,9 +23,9 @@ import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/sc
 import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { approveBanner, adminBannerImageUrl, deleteBannerDraft, getAdminBanners, getBannerRotationSetting, saveBannerDraft, saveBannerRotationSetting, type BannerCampaign, type BannerDraftInput } from '@/api/adminBanners'
-import { CalendarIcon, ClockIcon, CloseIcon, SaveIcon, UploadIcon } from '@/components/icons/AppIcons'
-import { SlidingHighlight } from '@/components/SlidingHighlight'
-import SettingsDropdown from '@/components/SettingsDropdown'
+import { CloseIcon, UploadIcon } from '@/components/icons/AppIcons'
+import BannerDatePicker from '@/components/BannerDatePicker'
+import BannerTimePicker from '@/components/BannerTimePicker'
 
 const INPUT_CLASS = 'h-[25px] w-full min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:border-brand placeholder:text-ui-muted disabled:opacity-35'
 const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35'
@@ -51,80 +51,41 @@ function addDaysToDateTime(value: string, days: number): string {
 
 function formatDatePart(value: string): string {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}/)
-  return match ? `${match[1]}.${match[2]}.${match[3]}` : ''
+  if (!match) return ''
+  const date = new Date(`${match[1]}-${match[2]}-${match[3]}T12:00:00+09:00`)
+  const weekday = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(date)
+  return `${match[1]}. ${match[2]}. ${match[3]}. (${weekday})`
 }
 
 function formatTimePart(value: string): string {
   const match = value.match(/^\d{4}-\d{2}-\d{2}T(\d{2}:\d{2})/)
-  if (!match) return ''
-  const hour = Number(match[1].slice(0, 2))
-  return String(hour % 12 || 12).padStart(2, '0') + match[1].slice(2)
-}
-
-function isPmPart(value: string): boolean {
-  const match = value.match(/^\d{4}-\d{2}-\d{2}T(\d{2}):\d{2}/)
-  return match ? Number(match[1]) >= 12 : false
-}
-
-function parseDateTime12(value: string, isPm: boolean): string | null {
-  const match = value.match(/^\s*(\d{4})[./-]\s*(\d{1,2})[./-]\s*(\d{1,2})\.?\s+(\d{1,2}):(\d{2})\s*$/)
-  if (!match) return null
-  const [, yearText, monthText, dayText, hourText, minuteText] = match
-  const year = Number(yearText), month = Number(monthText), day = Number(dayText), hour12 = Number(hourText), minute = Number(minuteText)
-  const date = new Date(Date.UTC(year, month - 1, day))
-  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day || hour12 < 1 || hour12 > 12 || minute > 59) return null
-  const hour = (hour12 % 12) + (isPm ? 12 : 0)
-  return `${yearText}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+  return match?.[1] ?? ''
 }
 
 function DateTimeField({ label, value, disabled, onChange }: { label: string; value: string; disabled: boolean; onChange: (value: string) => void }) {
-  const [dateText, setDateText] = useState(formatDatePart(value))
-  const [timeText, setTimeText] = useState(formatTimePart(value))
-  const [isPm, setIsPm] = useState(isPmPart(value))
-  const lastEmittedValue = useRef(value)
-  const commitParts = (date: string, time: string) => {
-    const parsed = parseDateTime12(`${date} ${time}`, isPm)
-    const nextValue = parsed ?? ''
-    if (nextValue === lastEmittedValue.current) return
-    lastEmittedValue.current = nextValue
-    onChange(nextValue)
-  }
+  const selectedDate = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0] ?? null
 
   return (
-    <div className={`flex h-8 w-full min-w-0 items-center rounded-[4px] border border-transparent bg-[var(--ui-control)] px-1 focus-within:border-brand ${disabled ? 'opacity-35' : ''}`}>
-      <CalendarIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-ui-muted" />
-      <input aria-label={`${label} 날짜`} type="text" inputMode="numeric" disabled={disabled} value={dateText} placeholder="yyyy.mm.dd" onChange={event => {
-        const next = event.target.value
-        setDateText(next)
-        commitParts(next, timeText)
-      }} className="h-full min-w-0 flex-1 border-0 bg-transparent px-1 text-center text-[13px] font-medium tabular-nums text-ui-white outline-none placeholder:text-ui-muted" />
-      <span aria-hidden="true" className="h-4 w-px shrink-0 bg-ui-white/10" />
-      <SettingsDropdown
-        options={[{ key: 'am', label: '오전' }, { key: 'pm', label: '오후' }]}
-        value={isPm ? 'pm' : 'am'}
-        onChange={meridiem => {
-        const nextIsPm = meridiem === 'pm'
-        setIsPm(nextIsPm)
-        const parsed = parseDateTime12(`${dateText} ${timeText}`, nextIsPm)
-        const nextValue = parsed ?? ''
-        if (nextValue !== lastEmittedValue.current) {
-          lastEmittedValue.current = nextValue
-          onChange(nextValue)
-        }
-        }}
-        ariaLabel={`${label} 오전/오후`}
+    <div className="flex h-[25px] w-full min-w-0 items-center gap-1">
+      <BannerDatePicker
+        label={label}
+        displayValue={formatDatePart(value)}
+        selectedDate={selectedDate}
         disabled={disabled}
-        smallChevron
-        centerLabel
-        className="w-[64px] shrink-0"
+        onSelect={date => {
+          const nextValue = `${date}T00:00`
+          onChange(nextValue)
+        }}
       />
-      <span aria-hidden="true" className="h-4 w-px shrink-0 bg-ui-white/10" />
-      <ClockIcon aria-hidden="true" className="ml-1 h-3.5 w-3.5 shrink-0 text-ui-muted" />
-      <input aria-label={`${label} 시각 (12시간)`} type="text" inputMode="numeric" maxLength={5} disabled={disabled} value={timeText} placeholder="hh:mm" onChange={event => {
-        const next = event.target.value
-        setTimeText(next)
-        commitParts(dateText, next)
-      }} className="h-full w-[56px] shrink-0 border-0 bg-transparent pl-1 text-center text-[13px] font-medium tabular-nums text-ui-white outline-none placeholder:text-ui-muted" />
+      <BannerTimePicker
+        label={label}
+        value={formatTimePart(value)}
+        disabled={disabled || !selectedDate}
+        onChange={time => {
+          const nextValue = `${selectedDate}T${time}`
+          onChange(nextValue)
+        }}
+      />
     </div>
   )
 }
@@ -195,35 +156,6 @@ function normalizeBannerLink(value: string): string {
   if (!link || /^https?:\/\/$/i.test(link)) return ''
   if (/^https?:\/\//i.test(link) || link.startsWith('/')) return link
   return `https://${link}`
-}
-
-const BANNER_TEXT_SCALES = [80, 100, 120] as const
-
-function BannerTextScalePicker({ value, textBold, disabled, onChange }: { value: number; textBold: boolean; disabled: boolean; onChange: (value: number) => void }) {
-  return (
-    <div aria-label="공지 글자 크기" aria-disabled={disabled || undefined} role="radiogroup" className={`relative grid h-7 grid-cols-3 gap-[2px] ${disabled ? 'opacity-35' : ''}`}>
-      <SlidingHighlight gap={2} count={BANNER_TEXT_SCALES.length} index={BANNER_TEXT_SCALES.indexOf(value as typeof BANNER_TEXT_SCALES[number])} className="rounded-[4px] border border-brand bg-brand-surface" />
-      {BANNER_TEXT_SCALES.map(scale => (
-        <button key={scale} type="button" role="radio" aria-checked={value === scale} disabled={disabled} onClick={() => onChange(scale)} className="relative z-10 flex h-full items-center justify-center rounded-[4px] border-0 bg-transparent px-1 text-[12px] leading-none text-ui-white transition-colors disabled:cursor-not-allowed">
-          <span style={{ fontSize: `${12 * scale / 100}px` }} className={textBold ? 'font-bold' : 'font-medium'}>{scale === 100 ? '기본' : scale === 80 ? '작게' : '크게'}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function BannerTextWeightPicker({ value, disabled, onChange }: { value: boolean; disabled: boolean; onChange: (value: boolean) => void }) {
-  const options = [{ value: false, label: '보통' }, { value: true, label: '굵게' }]
-  return (
-    <div aria-label="공지 글자 굵기" aria-disabled={disabled || undefined} role="radiogroup" className={`relative grid h-7 grid-cols-2 gap-[2px] ${disabled ? 'opacity-35' : ''}`}>
-      <SlidingHighlight gap={2} count={options.length} index={value ? 1 : 0} className="rounded-[4px] border border-brand bg-brand-surface" />
-      {options.map(option => (
-        <button key={String(option.value)} type="button" role="radio" aria-checked={value === option.value} disabled={disabled} onClick={() => onChange(option.value)} className="relative z-10 flex h-full items-center justify-center rounded-[4px] border-0 bg-transparent px-1 text-[12px] leading-none text-ui-white transition-colors disabled:cursor-not-allowed">
-          <span className={option.value ? 'font-bold' : 'font-medium'}>{option.label}</span>
-        </button>
-      ))}
-    </div>
-  )
 }
 
 function campaignImageUrl(campaign: BannerCampaign) {
@@ -319,6 +251,13 @@ export default function AdminBannerPage() {
   const campaigns = useQuery({ queryKey: ['admin-banners'], queryFn: ({ signal }) => getAdminBanners(signal), enabled: isAdmin, retry: false, refetchInterval: showCampaignList ? 30_000 : false })
   const rotationSetting = useQuery({ queryKey: ['admin-banners', 'rotation-setting'], queryFn: ({ signal }) => getBannerRotationSetting(signal), enabled: isAdmin, retry: false })
   const draft = drafts[activeType]
+  const displayedEndAt = draft.endsAt || addDaysToDateTime(draft.startsAt, 30)
+  const endPresets = [
+    { key: '7d', label: '7일', value: addDaysToDateTime(draft.startsAt, 7) },
+    { key: '14d', label: '14일', value: addDaysToDateTime(draft.startsAt, 14) },
+    { key: '30d', label: '30일', value: addDaysToDateTime(draft.startsAt, 30) },
+  ]
+  const selectedEndPreset = endPresets.find(preset => preset.value && preset.value === displayedEndAt)?.key
   const isDraftSaved = savedFlags[activeType]
   const savedCampaign = savedCampaigns[activeType]
   const listedCampaign = useMemo(() => campaigns.data?.find(item => item.id === draft.id), [campaigns.data, draft.id])
@@ -417,7 +356,7 @@ export default function AdminBannerPage() {
       void appAlert('제목, 문구 또는 광고 이미지와 게시 시작 시각을 확인해 주세요.', { title: '입력 확인' })
       return
     }
-    saveMutation.mutate({ ...draft, linkUrl: normalizeBannerLink(draft.linkUrl) })
+    saveMutation.mutate({ ...draft, endsAt: displayedEndAt, linkUrl: normalizeBannerLink(draft.linkUrl) })
   }
   const handleApproveCampaign = async (item: BannerCampaign, previewBody?: HTMLElement) => {
     if (item.status !== 'DRAFT' || approveMutation.isPending) return
@@ -644,28 +583,6 @@ export default function AdminBannerPage() {
                                 }} style={{ height: `${bannerTextMetrics.inputHeight}px`, fontSize: `${bannerTextMetrics.fontSize}px`, lineHeight: `${bannerTextMetrics.lineHeight}px`, paddingTop: '6px', paddingBottom: '6px' }} className={`${INPUT_CLASS.replace('h-[25px]', 'h-auto')} resize-none overflow-y-auto`} />
                               </label>
                               {noticeLimitMessage && <p role="status" className="m-0 text-sm leading-5 text-status-error-text">{noticeLimitMessage}</p>}
-                              <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-center gap-4">
-                                <div className="min-w-0">
-                                  <BannerTextScalePicker value={draft.textScalePercent} textBold={draft.textBold} disabled={!canEdit} onChange={textScalePercent => {
-                                    if (fitsNoticeBanner(draft.text, textScalePercent, draft.textBold)) {
-                                      changeDraft({ textScalePercent })
-                                      setNoticeLimitMessage('')
-                                    } else {
-                                      setNoticeLimitMessage('내용을 줄인 뒤 더 큰 글자 크기를 선택해 주세요.')
-                                    }
-                                  }} />
-                                </div>
-                                <div className="min-w-0">
-                                  <BannerTextWeightPicker value={draft.textBold} disabled={!canEdit} onChange={textBold => {
-                                    if (fitsNoticeBanner(draft.text, draft.textScalePercent, textBold)) {
-                                      changeDraft({ textBold })
-                                      setNoticeLimitMessage('')
-                                    } else {
-                                      setNoticeLimitMessage('내용을 줄인 뒤 굵기를 변경해 주세요.')
-                                    }
-                                  }} />
-                                </div>
-                              </div>
                             </div>
                           ) : (
                             <div className="h-[25px] w-fit max-w-full overflow-x-auto overflow-y-hidden">
@@ -699,27 +616,25 @@ export default function AdminBannerPage() {
                     <InfoSection number="2" title="게시 일정">
                       <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-3" style={{ maxWidth: `${bannerTextAreaWidth + 32}px` }}>
                         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-                          <label className="flex min-w-0 flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white"><span>시작</span><DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} /></label>
-                          <div className="flex min-w-0 flex-col gap-1">
-                            <div className="flex min-w-0 flex-wrap items-center justify-between gap-1 text-[15px]/[22px] font-medium text-ui-white">
-                              <span>종료 <span className="font-normal text-ui-muted">(선택)</span></span>
+                          <div className="flex min-w-0 max-w-[210px] flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white"><span className="flex h-[25px] items-center">시작</span><DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} /></div>
+                          <div className="flex min-w-0 max-w-[210px] flex-col gap-1">
+                            <div className="flex h-[25px] min-w-0 items-center justify-between gap-1 text-[15px]/[22px] font-medium text-ui-white">
+                              <span>종료</span>
                               <div className="flex shrink-0 items-center gap-1">
-                                {[7, 14, 30].map(days => <button key={days} type="button" disabled={!canEdit || !draft.startsAt || saveMutation.isPending} onClick={() => {
-                                  const endsAt = addDaysToDateTime(draft.startsAt, days)
-                                  if (endsAt) {
-                                    changeDraft({ endsAt })
-                                    setEndDatePresetGeneration(value => value + 1)
-                                  }
-                                }} className={`${SETTINGS_ACTION_CLASS} px-1.5`}>{days}일</button>)}
+                              {endPresets.map(preset => <button key={preset.key} type="button" disabled={!canEdit || !preset.value || saveMutation.isPending} aria-pressed={selectedEndPreset === preset.key} onClick={() => {
+                                if (preset.value) {
+                                  changeDraft({ endsAt: preset.value })
+                                  setEndDatePresetGeneration(value => value + 1)
+                                }
+                              }} className={`flex h-[22px] shrink-0 items-center justify-center rounded-[4px] border-0 px-1 text-[13px]/[16px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35 ${selectedEndPreset === preset.key ? 'bg-brand-surface hover:bg-brand-surface-hover' : 'bg-[var(--ui-control)] hover:bg-ui-control-hover'}`}>{preset.label}</button>)}
                               </div>
                             </div>
-                            <DateTimeField label="교체 종료" disabled={!canEdit} value={draft.endsAt} onChange={endsAt => changeDraft({ endsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends-${endDatePresetGeneration}`} />
+                            <DateTimeField label="교체 종료" disabled={!canEdit} value={displayedEndAt} onChange={endsAt => changeDraft({ endsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends-${endDatePresetGeneration}`} />
                           </div>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ui-border pt-3">
-                          <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={`${FINAL_ACTION_CLASS} min-w-[100px]`}><SaveIcon aria-hidden="true" className="h-4 w-4" />{selectedCampaign?.status === 'DRAFT' || !selectedCampaign ? '저장 (미공개)' : '저장'}</button>
+                          <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={FINAL_ACTION_CLASS}>{selectedCampaign?.status === 'DRAFT' || !selectedCampaign ? '저장 (미공개)' : '저장'}</button>
                           {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>등록 취소</button>}
-                          <span className="min-w-0 flex-1 text-right text-xs leading-relaxed text-ui-muted">한국 시간 기준</span>
                         </div>
                       </div>
                     </InfoSection>
