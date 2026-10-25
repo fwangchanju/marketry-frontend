@@ -18,12 +18,11 @@ export default function ContactPage() {
           </InfoCallout>
           <div className="mt-4 border border-ui-border bg-ui-panel p-5">
             <p className="text-xs font-bold text-ui-muted">이메일</p>
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
-              className="mt-2 inline-flex min-h-10 items-center border border-brand bg-brand-surface px-4 text-sm font-bold text-ui-white hover:bg-brand-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            <span
+              className="mt-2 inline-flex min-h-10 items-center border border-brand bg-brand-surface px-4 text-sm font-bold text-ui-white"
             >
               {CONTACT_EMAIL}
-            </a>
+            </span>
           </div>
         </InfoSection>
       </article>
