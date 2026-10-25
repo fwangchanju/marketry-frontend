@@ -7,7 +7,7 @@ export default function PageMainFrame({ children, className = '' }: { children: 
     // main-settings-row가 이미 좌우 4px 여백을 만든다. 여기서 다시 px-4를 주면 SOURCE
     // 외곽선이 본문 안쪽으로 16px 더 밀리므로, 테두리는 메인 영역 가장자리에서 바로 시작한다.
     <div className="min-h-0 flex-1">
-      <div className={`h-full overflow-y-auto border border-ui-border bg-ui-background ${className}`}>{children}</div>
+      <div className={`page-main-scroll h-full overflow-y-auto border border-ui-border bg-ui-background ${className}`}>{children}</div>
     </div>
   )
 }
