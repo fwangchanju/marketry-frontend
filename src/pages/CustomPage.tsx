@@ -326,7 +326,7 @@ export default function CustomPage() {
                     <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
                     {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
                   </>
-                ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 기준만 가능</span></span></div>}
+                ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 기준 모드만 쓰기 가능</span></span></div>}
               </SettingsPanelGroup>
               {isAdmin && <SettingsPanelGroup section="adminOps">
                 <div className="settings-plain-content">

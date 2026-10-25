@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import MarketryLogo from '@/components/MarketryLogo'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import sampleImage from '@/assets/telegram-home-sample.png'
 import sampleMapImage from '@/assets/telegram-map-sample.png'
@@ -10,7 +9,6 @@ import {
   type TelegramSendSettingInput,
 } from '@/api/adminTelegram'
 import DigitalClockPicker from '@/components/DigitalClockPicker'
-import FrameBadge from '@/components/FrameBadge'
 import MinuteDial from '@/components/MinuteDial'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
@@ -18,6 +16,8 @@ import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import SettingsSegmentedControl from '@/components/SettingsSegmentedControl'
+import { InfoPageHeading, InfoSection } from '@/components/InfoDocument'
+import PageMainFrame from '@/components/PageMainFrame'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
@@ -29,10 +29,9 @@ import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
 
-// 예시 메시지의 시각 — 샘플 이미지 툴바에 찍힌 시각(20:00)과 같게 텔레그램처럼 오전·오후로 적는다.
-const SAMPLE_TIME = '오후 8:00'
-
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
+const SAMPLE_TIME = '오후 8:00'
+const SAMPLE_CAPTION = '헬스케어 +1.74% / S7 +0.99%'
 
 function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
   return {
@@ -41,9 +40,6 @@ function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
     sectorSendIntervalMinutes: setting.sectorSendIntervalMinutes,
   }
 }
-
-// 샘플 이미지와 같이 나가는 메시지 예시 — 그룹 등락률이 가장 높은 상위 업종 2개이고, 등락률 기준이 누적이라 종가·애프터 태그는 붙지 않는다.
-const SAMPLE_CAPTION = '헬스케어 +1.74% / S7 +0.99%'
 
 // 서버가 저장할 때 하는 검사와 같은 기준 — 어긋난 값은 저장 버튼을 막아 서버 오류를 피한다.
 function isValidDraft(draft: TelegramSendSettingInput, setting: TelegramSendSetting) {
@@ -168,60 +164,42 @@ export default function AdminMessagePage() {
             ) : !isAdmin ? (
               <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p>
             ) : (
-              <section aria-label="메시지" className="flex min-h-0 flex-1 w-full flex-col text-sm">
+              <>
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="MESSAGE" />
                 </Toolbar>
-                {/* 메시지 미리보기 외곽선을 지도·그래프 본문과 같은 하단선에 맞춘다. */}
-                <div className="flex min-h-0 flex-1 items-stretch gap-1 overflow-auto">
-                  {setting.isError ? (
-                    <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
-                  ) : saved ? (
-                    <div className="flex min-h-0 w-full flex-col border border-ui-border p-[7px]">
-                      <div className="flex h-[26px] shrink-0 items-center gap-3">
-                        <FrameBadge>텔레그램</FrameBadge>
-                        {!saved.saved && <span className="text-base font-semibold leading-none text-ui-white">저장된 설정이 없어 꺼져 있고, 시각은 서버 기본값입니다.</span>}
-                        <span className="text-sm text-ui-muted">실제 발송된 메시지 샘플입니다.</span>
-                      </div>
-                      {/* 텔레그램 대화창처럼 보이는 예시 — 한 메시지에 이미지 두 장이 앨범으로 나가고(왼쪽 시장 요약=홈 화면, 오른쪽 시장 지도=지도 페이지 모바일 캡처) 그 아래에 캡션이 붙는다.
-                          캡션은 서버 캡션 형식(SectorRankingTextBuilder.buildMapCaption)과 같은 모양이며 샘플 이미지의 값이다. 수집에 실패하면 개발자에게 따로 알림이 간다. */}
-                      <div className="mt-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-ui-surface">
-                        <div className="flex shrink-0 items-center justify-between bg-ui-panel px-5 py-2.5">
-                          <div className="flex flex-col gap-0.5">
-                            <MarketryLogo layout="horizontalClean" className="h-auto w-36" />
-                            <span className="text-sm text-ui-muted">구독자 2명</span>
+                <PageMainFrame className="p-6">
+                  <article aria-label="메시지" className="mx-auto min-h-full w-full max-w-4xl space-y-5">
+                    <InfoPageHeading
+                      title="메시지"
+                      summary="텔레그램 정기 리포트의 발송 모습을 미리 봅니다. 발송 여부와 시각은 설정창에서 조정합니다."
+                    />
+                    <InfoSection number="1" title="발송 미리보기">
+                      {setting.isError ? (
+                        <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
+                      ) : saved ? (
+                        <div className="w-full rounded-2xl rounded-bl-md bg-ui-control p-1">
+                          <p className="m-0 px-3 pb-1 pt-1.5 text-lg font-medium text-[var(--sub-yellow)]">MARKETRY</p>
+                          <div className="grid grid-cols-2 items-start gap-0.5 overflow-hidden rounded-[10px]">
+                            <img src={sampleImage} alt="텔레그램 발송 이미지 예시 — 시장 요약" className="block h-auto w-full" draggable={false} />
+                            <img src={sampleMapImage} alt="텔레그램 발송 이미지 예시 — 시장 지도" className="block h-auto w-full" draggable={false} />
                           </div>
-                          <span className="text-sm text-admin-only">t.me/MARKETRY2026</span>
-                        </div>
-                        <div className="flex min-h-0 flex-1 items-center justify-center px-5">
-                          <div className="flex items-end gap-3">
-                            <div className="w-fit max-w-full rounded-2xl rounded-bl-md bg-ui-control p-1">
-                              <p className="m-0 px-3 pb-1 pt-1.5 text-lg font-medium text-[var(--sub-yellow)]">MARKETRY</p>
-                              <div className="flex gap-0.5 overflow-hidden rounded-[10px]">
-                                <img src={sampleImage} alt="텔레그램으로 나가는 이미지 예시 — 시장 요약(시장 지도와 그룹 등락률)" className="block h-[min(calc(100dvh-420px),600px)] w-auto" draggable={false} />
-                                <img src={sampleMapImage} alt="텔레그램으로 나가는 이미지 예시 — 시장 지도" className="block h-[min(calc(100dvh-420px),600px)] w-auto" draggable={false} />
-                              </div>
-                              <div className="flex items-end justify-between gap-8 px-3 pb-1.5 pt-2">
-                                <p className="m-0 whitespace-pre-line text-lg leading-snug text-ui-white">{SAMPLE_CAPTION}</p>
-                                <span className="flex shrink-0 items-center gap-1.5 text-sm text-ui-text">
-                                  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
-                                  2
-                                  <span>{SAMPLE_TIME}</span>
-                                </span>
-                              </div>
-                            </div>
-                            <span aria-hidden="true" className="mb-1 flex size-11 shrink-0 items-center justify-center rounded-full bg-ui-control text-ui-text">
-                              <svg viewBox="0 0 24 24" className="size-5 fill-current"><path d="M14 4v4.5C8.5 9 5 12 4 18c2.5-3 5.5-4.2 10-4.5V18l7-7Z" /></svg>
+                          <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
+                            <p className="m-0 text-lg leading-snug text-ui-white">{SAMPLE_CAPTION}</p>
+                            <span className="flex shrink-0 items-center gap-1.5 text-sm text-ui-text">
+                              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+                              2
+                              <span>{SAMPLE_TIME}</span>
                             </span>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
-                  )}
-                </div>
-              </section>
+                      ) : (
+                        <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                      )}
+                    </InfoSection>
+                  </article>
+                </PageMainFrame>
+              </>
             )}
             <DisclaimerFooter />
           </div>

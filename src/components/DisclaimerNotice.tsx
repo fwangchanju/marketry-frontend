@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 // 면책조항 — 지도·그룹 페이지 왼쪽 아래 첫 줄에, 정보 링크는 둘째 줄에 각각 10px로 보여준다.
 // 한 줄이 칸보다 길면 줄임표로 자른다(마우스를 올려도 전체 문구를 띄우지 않는다).
 // 둘째 줄은 저작권·약관·개인정보처리방침·데이터·문의 순서로 보여 준다.
@@ -12,13 +14,13 @@ export default function DisclaimerNotice() {
         <span className="block h-[10px] truncate">
           <span>© 2026 MARKETRY</span>
           <span aria-hidden="true" className="px-1 text-ui-white/40">·</span>
-          <a href="/info/terms" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">이용약관</a>
+          <Link to="/info/terms" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">이용약관</Link>
           <span aria-hidden="true" className="px-1 text-ui-white/40">·</span>
-          <a href="/info/privacy" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">개인정보처리방침</a>
+          <Link to="/info/privacy" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">개인정보처리방침</Link>
           <span aria-hidden="true" className="px-1 text-ui-white/40">·</span>
-          <a href="/info/source" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">데이터</a>
+          <Link to="/info/source" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">데이터</Link>
           <span aria-hidden="true" className="px-1 text-ui-white/40">·</span>
-          <a href="/info/contact" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">문의</a>
+          <Link to="/info/contact" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">문의</Link>
         </span>
       </span>
     </p>

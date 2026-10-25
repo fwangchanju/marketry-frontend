@@ -26,7 +26,7 @@ const PROCESSING_RULES: { title: string; description: string }[] = [
 
 export default function SourcePage() {
   return (
-    <DocumentPageLayout title="SOURCE" panelDescription="시장 정보의 출처와 화면에 표시하는 기준을 설명합니다.">
+    <DocumentPageLayout title="SOURCE" panelDescription="시장 데이터의 출처와 기준입니다.">
       <article className="mx-auto max-w-4xl space-y-5">
         <InfoPageHeading
           title="데이터"

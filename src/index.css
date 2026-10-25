@@ -991,6 +991,7 @@ a { color: var(--accent-light); text-decoration: none; }
 .settings-panel-tab-content[data-align-second-heading] .settings-exclude-list {
   flex: 1;
   min-height: 0;
+  scrollbar-gutter: stable;
   /* 20px 항목 4개 + 4px 간격 3개. 남는 버튼 영역 안에서 세로 중간에 둔다. */
   margin-block: auto;
   overscroll-behavior-y: contain;
@@ -1057,6 +1058,10 @@ a { color: var(--accent-light); text-decoration: none; }
   width: 19px;
   font-variant-numeric: tabular-nums;
   white-space: pre;
+}
+.settings-plain-content .settings-plain-title-no-number::before {
+  counter-increment: none;
+  content: none;
 }
 .settings-admin-section .settings-plain-title {
   color: var(--admin-only);
@@ -1272,6 +1277,13 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 
 :is(.column-filter-options, .sector-popup-options, .change-history-list) { scrollbar-gutter: stable; }
+
+/* 업종 제외·배너 목록은 macOS에서도 스크롤 트랙과 손잡이를 항상 보이게 공통 컴포넌트가 직접 그린다. */
+.always-visible-scroll-viewport {
+  scrollbar-width: none;
+  overscroll-behavior-y: contain;
+}
+.always-visible-scroll-viewport::-webkit-scrollbar { display: none; }
 
 /* 문서·계정 본문과 설정창·열 필터의 스크롤 영역은 같은 가는 스크롤바를 쓴다. 맥 기본 스크롤바는 스크롤할 때만 보여 내용이 잘린 것처럼 보일 수 있다.
    브라우저를 확대하면 설정 탭 내용도 넘쳐서 스크롤이 생긴다. */

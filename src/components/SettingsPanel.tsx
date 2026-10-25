@@ -1,5 +1,6 @@
 import { SlidingHighlight } from '@/components/SlidingHighlight'
 import { CountLabelWithBadge } from '@/components/KindBadge'
+import AlwaysVisibleScrollArea from '@/components/AlwaysVisibleScrollArea'
 import { Children, Fragment, createContext, isValidElement, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
@@ -2033,9 +2034,9 @@ export function SettingsExcludeSection({
 
         />
         <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
-        <div
+        <AlwaysVisibleScrollArea
           inert={!sectorFilterEnabled}
-          className={`settings-control-inset settings-exclude-list mt-[7px] flex max-h-[92px] flex-col gap-1 overflow-y-auto ${sectorFilterEnabled ? '' : 'opacity-35'}`}
+          className={`settings-control-inset settings-exclude-list mt-[7px] h-[92px] max-h-[92px] flex-shrink-0 ${sectorFilterEnabled ? '' : 'opacity-35'}`}
         >
             {excludedSectors.map(sector => (
               // 지도 위쪽 이동 경로의 되돌아가기 버튼과 같은 모양 — 이름 앞에 되돌아가기 표시가 붙은 한 버튼이다.
@@ -2054,7 +2055,7 @@ export function SettingsExcludeSection({
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
               </button>
             ))}
-        </div>
+        </AlwaysVisibleScrollArea>
       </div>
     </div>
   )

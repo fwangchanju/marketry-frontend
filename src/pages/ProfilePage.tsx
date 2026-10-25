@@ -111,8 +111,11 @@ export default function ProfilePage() {
       return
     }
     setNicknameMessage(null)
+    let isCheckingAvailability = false
     try {
+      isCheckingAvailability = true
       const { available } = await checkNickname.mutateAsync(nickname)
+      isCheckingAvailability = false
       if (!available) {
         setNicknameMessage({ kind: 'error', text: '이미 사용 중인 닉네임입니다.' })
         return
@@ -126,13 +129,22 @@ export default function ProfilePage() {
     } catch (error) {
       const status = isAxiosError(error) ? error.response?.status : undefined
       const errorCode = isAxiosError(error) ? (error.response?.data as { errorCode?: string } | undefined)?.errorCode : undefined
+      if (isCheckingAvailability) {
+        if (status === 400 && errorCode === NICKNAME_RESERVED_CODE) {
+          setNicknameMessage({ kind: 'error', text: '사용할 수 없는 닉네임입니다.' })
+        } else if (status === 409 && errorCode === NICKNAME_CHANGE_LIMITED_CODE) {
+          setNicknameMessage({ kind: 'error', text: '닉네임은 7일에 한 번만 바꿀 수 있습니다.' })
+          void refetch()
+        } else {
+          const detail = isAxiosError(error) ? (error.response?.data as { detail?: string } | undefined)?.detail : undefined
+          setNicknameMessage({ kind: 'error', text: detail || '닉네임 사용 가능 여부를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.' })
+        }
+        return
+      }
       if (status === 409 && errorCode === NICKNAME_CHANGE_LIMITED_CODE) {
-        setNicknameMessage({ kind: 'error', text: '닉네임은 7일에 한 번만 바꿀 수 있습니다.' })
         void refetch()
-      } else if (status === 409) setNicknameMessage({ kind: 'error', text: '이미 사용 중인 닉네임입니다.' })
-      else if (status === 400 && errorCode === NICKNAME_RESERVED_CODE) setNicknameMessage({ kind: 'error', text: '사용할 수 없는 닉네임입니다.' })
-      else if (status === 400) setNicknameMessage({ kind: 'error', text: NICKNAME_RULE_MESSAGE })
-      else setNicknameMessage({ kind: 'error', text: '닉네임을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.' })
+      }
+      // API 실패는 전역 요청 실패 팝업에서 안내한다. 같은 사유를 입력창 아래에 중복 표시하지 않는다.
     }
   }
 
@@ -259,11 +271,11 @@ export default function ProfilePage() {
               <section aria-labelledby="profile-account-heading" className="-mt-3 overflow-hidden border border-ui-border bg-ui-panel">
                 <header className="border-b border-ui-border px-4 py-3">
                   <h2 id="profile-account-heading" className="m-0 text-base font-bold text-ui-white">계정 정보</h2>
-                  <p className="m-0 mt-1 text-xs text-ui-muted">로그인에 사용한 계정입니다.</p>
+                  <p className="m-0 mt-1 text-sm leading-relaxed text-ui-text">로그인에 사용한 계정입니다.</p>
                 </header>
                 <div className="flex min-w-0 items-center gap-4 px-4 py-4">
                   <div className="min-w-0">
-                    <p className="m-0 text-xs font-medium text-ui-muted">이메일</p>
+                    <p className="m-0 text-sm font-medium text-ui-text">이메일</p>
                     <p className="m-0 mt-1 flex min-w-0 items-center gap-2 text-base text-ui-white">
                       <AuthProviderIcon issuer={session.issuer} />
                       <span className="break-all">{displayEmail(session.email) || '등록된 이메일 없음'}</span>
@@ -276,7 +288,7 @@ export default function ProfilePage() {
               <section aria-labelledby="profile-nickname-heading" className="min-w-0 border border-ui-border bg-ui-panel p-4">
                 <header className="mb-4">
                   <h2 id="profile-nickname-heading" className="m-0 text-base font-bold text-ui-white">닉네임</h2>
-                  <p className="m-0 mt-1 text-xs leading-relaxed text-ui-muted">다른 회원에게 표시되는 이름입니다.</p>
+                  <p className="m-0 mt-1 text-sm leading-relaxed text-ui-text">다른 회원에게 표시되는 이름입니다.</p>
                 </header>
                 <form onSubmit={handleSaveNickname}>
                   <label htmlFor="profile-nickname" className="sr-only">닉네임</label>
@@ -306,7 +318,7 @@ export default function ProfilePage() {
                       {checkNickname.isPending ? '확인 중...' : updateNickname.isPending ? '등록 중...' : '확인'}
                     </button>
                   </div>
-                  <p className="mt-2 text-xs leading-relaxed text-ui-muted">확인을 누르면 사용 가능 여부를 확인한 뒤 등록합니다.</p>
+                  <p className="mt-2 text-sm leading-relaxed text-ui-text">확인을 누르면 사용 가능 여부를 확인한 뒤 등록합니다.</p>
                   {/* 결과·제한 사유 문구가 뜰 자리를 늘 비워 둔다 — 문구가 나타나도 입력칸이 움직이지 않게 한다. */}
                   <div className="mt-2 min-h-6">
                     {nicknameLiveText ? (
@@ -327,7 +339,7 @@ export default function ProfilePage() {
               <section aria-labelledby="profile-photo-heading" className="min-w-0 border border-ui-border bg-ui-panel p-4">
                 <header className="mb-4">
                   <h2 id="profile-photo-heading" className="m-0 text-base font-bold text-ui-white">프로필 사진</h2>
-                  <p className="m-0 mt-1 text-xs leading-relaxed text-ui-muted">계정 메뉴와 서비스 화면에 표시됩니다.</p>
+                  <p className="m-0 mt-1 text-sm leading-relaxed text-ui-text">계정 메뉴와 서비스 화면에 표시됩니다.</p>
                 </header>
                 <div className="flex min-w-0 items-center gap-4">
                   <ProfileAvatar className="size-16 shrink-0 object-cover" />
@@ -365,7 +377,7 @@ export default function ProfilePage() {
                     {imageMessage.text}
                   </p>
                 ) : (
-                  <p className="m-0 mt-4 min-h-5 text-xs leading-relaxed text-ui-muted">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
+                  <p className="m-0 mt-4 min-h-5 text-sm leading-relaxed text-ui-text">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
                 )}
               </section>
               </div>
@@ -374,7 +386,7 @@ export default function ProfilePage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 id="profile-account-actions-heading" className="m-0 text-base font-bold text-ui-white">계정 관리</h2>
-                    <p className="m-0 mt-1 text-xs text-ui-muted">로그아웃하거나 서비스 이용을 종료할 수 있습니다.</p>
+                    <p className="m-0 mt-1 text-sm leading-relaxed text-ui-text">로그아웃하거나 서비스 이용을 종료할 수 있습니다.</p>
                   </div>
                   <div className="flex items-center gap-2">
                   <button
@@ -407,10 +419,7 @@ export default function ProfilePage() {
           <DisclaimerFooter />
         </main>
         {isSettingsOpen && <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <PageInfoPanel title="Account" tabLabel="PROFILE" icon="member" isOnLeft={isOnLeft} onToggleSide={toggleSide}>
-            <p>로그인 계정의 이메일과 프로필 정보를 관리합니다.</p>
-            <p className="mt-4 border-l-2 border-brand bg-ui-background px-3 py-2">등록한 닉네임은 7일에 한 번만 바꿀 수 있습니다.</p>
-          </PageInfoPanel>
+          <PageInfoPanel title="Account" tabLabel="PROFILE" description="이메일과 프로필을 관리합니다." note="닉네임 변경은 7일마다 가능합니다." icon="member" isOnLeft={isOnLeft} onToggleSide={toggleSide} />
         </div>}
         </div>
       </div>

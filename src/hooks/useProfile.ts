@@ -15,7 +15,8 @@ export function useUpdateNickname() {
 
 // 등록 전에 이 닉네임을 쓸 수 있는지 서버에 묻는다(저장하지 않는다).
 export function useCheckNickname() {
-  return useMutation({ mutationFn: checkNicknameAvailability })
+  // 검색 결과는 입력창 바로 아래에서 안내하므로 공통 요청 실패 팝업은 띄우지 않는다.
+  return useMutation({ mutationFn: checkNicknameAvailability, meta: { skipGlobalError: true } })
 }
 
 export function useUploadProfileImage() {

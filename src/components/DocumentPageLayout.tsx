@@ -65,10 +65,7 @@ export default function DocumentPageLayout({ title, children, panelIcon = 'docum
           <DisclaimerFooter />
         </main>
         {isSettingsOpen && <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <PageInfoPanel title="Info" tabLabel={title} icon={panelIcon} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
-            <p>{panelDescription}</p>
-            <p className="mt-4">본문은 메인 영역에서 확인할 수 있습니다.</p>
-          </PageInfoPanel>
+          <PageInfoPanel title="Info" tabLabel={title} description={panelDescription} icon={panelIcon} isOnLeft={isOnLeft} onToggleSide={toggleSide} />
         </div>}
         </div>
       </div>
