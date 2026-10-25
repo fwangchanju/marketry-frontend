@@ -16,6 +16,8 @@ export const BannerCampaignSchema = z.object({
   updatedAt: z.string(),
   hasImage: z.boolean(),
   imageContentType: z.string().nullable(),
+  textScalePercent: z.number().default(100),
+  textBold: z.boolean().default(false),
 })
 
 export const ActiveBannerSchema = z.object({
@@ -28,6 +30,8 @@ export const ActiveBannerSchema = z.object({
   imageUrl: z.string().nullable(),
   imageContentType: z.string().nullable(),
   nextRefreshAt: z.string().nullable(),
+  textScalePercent: z.number().default(100),
+  textBold: z.boolean().default(false),
 })
 
 export type BannerCampaign = z.infer<typeof BannerCampaignSchema>
@@ -38,6 +42,8 @@ export interface BannerDraftInput {
   type: BannerCampaign['type']
   title: string
   text: string
+  textScalePercent: number
+  textBold: boolean
   linkUrl: string
   startsAt: string
   endsAt: string
@@ -57,6 +63,8 @@ export function saveBannerDraft(input: BannerDraftInput): Promise<BannerCampaign
   form.append('type', input.type)
   form.append('title', input.title)
   form.append('text', input.text)
+  form.append('textScalePercent', String(input.textScalePercent))
+  form.append('textBold', String(input.textBold))
   form.append('linkUrl', input.linkUrl)
   form.append('startsAt', input.startsAt)
   form.append('endsAt', input.endsAt)
