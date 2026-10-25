@@ -34,8 +34,15 @@ export const ActiveBannerSchema = z.object({
   textBold: z.boolean().default(false),
 })
 
+export const BannerRotationSettingSchema = z.object({
+  intervalSeconds: z.number(),
+  saved: z.boolean(),
+  updatedAt: z.string().nullable(),
+})
+
 export type BannerCampaign = z.infer<typeof BannerCampaignSchema>
 export type ActiveBanner = z.infer<typeof ActiveBannerSchema>
+export type BannerRotationSetting = z.infer<typeof BannerRotationSettingSchema>
 
 export interface BannerDraftInput {
   id: number | null
@@ -56,6 +63,14 @@ export function getAdminBanners(signal?: AbortSignal): Promise<BannerCampaign[]>
 
 export function getActiveBanner(signal?: AbortSignal): Promise<ActiveBanner> {
   return client.get('/banners/active', { signal }).then(response => ActiveBannerSchema.parse(response.data))
+}
+
+export function getBannerRotationSetting(signal?: AbortSignal): Promise<BannerRotationSetting> {
+  return client.get('/admin/banners/rotation-setting', { signal }).then(response => BannerRotationSettingSchema.parse(response.data))
+}
+
+export function saveBannerRotationSetting(intervalSeconds: number): Promise<BannerRotationSetting> {
+  return client.put('/admin/banners/rotation-setting', { intervalSeconds }).then(response => BannerRotationSettingSchema.parse(response.data))
 }
 
 export function saveBannerDraft(input: BannerDraftInput): Promise<BannerCampaign> {

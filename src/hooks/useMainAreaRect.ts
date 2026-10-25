@@ -17,15 +17,31 @@ export function useMainAreaRect(isActive: boolean): MainAreaRect | null {
     if (!element) return
     const measure = () => {
       const box = element.getBoundingClientRect()
-      setRect({ left: box.left, top: box.top, width: box.width, height: box.height })
+      // Dialog는 viewport 좌표로 배치되므로, 화면 밖으로 밀린 메인 영역 좌표를 그대로 쓰면
+      // 팝업도 화면 밖에 렌더링된다. 현재 보이는 viewport 안쪽으로 영역을 제한한다.
+      const viewportWidth = document.documentElement.clientWidth
+      const left = Math.max(0, Math.min(box.left, viewportWidth))
+      const right = Math.max(left, Math.min(box.right, viewportWidth))
+      const width = right - left
+      if (width < 1) {
+        setRect(null)
+        return
+      }
+      setRect({ left, top: 0, width, height: window.innerHeight })
     }
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(element)
     window.addEventListener('resize', measure)
+    document.addEventListener('scroll', measure, true)
+    window.visualViewport?.addEventListener('resize', measure)
+    window.visualViewport?.addEventListener('scroll', measure)
     return () => {
       observer.disconnect()
       window.removeEventListener('resize', measure)
+      document.removeEventListener('scroll', measure, true)
+      window.visualViewport?.removeEventListener('resize', measure)
+      window.visualViewport?.removeEventListener('scroll', measure)
       setRect(null)
     }
   }, [isActive])

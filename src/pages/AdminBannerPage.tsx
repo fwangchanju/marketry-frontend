@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { BannerImage, NoticeBanner } from '@/components/BannerContent'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import AlwaysVisibleScrollArea from '@/components/AlwaysVisibleScrollArea'
+import SettingsSegmentedControl from '@/components/SettingsSegmentedControl'
+import BannerTypeBadge from '@/components/BannerTypeBadge'
 import PageMainFrame from '@/components/PageMainFrame'
-import { InfoCallout, InfoPageHeading, InfoSection } from '@/components/InfoDocument'
+import { InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
@@ -19,13 +22,15 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
-import { approveBanner, adminBannerImageUrl, deleteBannerDraft, getActiveBanner, getAdminBanners, saveBannerDraft, type BannerCampaign, type BannerDraftInput } from '@/api/adminBanners'
-import { SaveIcon, UploadIcon } from '@/components/icons/AppIcons'
-import AdBannerSlot from '@/components/AdBannerSlot'
+import { approveBanner, adminBannerImageUrl, deleteBannerDraft, getAdminBanners, getBannerRotationSetting, saveBannerDraft, saveBannerRotationSetting, type BannerCampaign, type BannerDraftInput } from '@/api/adminBanners'
+import { CalendarIcon, ClockIcon, CloseIcon, SaveIcon, UploadIcon } from '@/components/icons/AppIcons'
 import { SlidingHighlight } from '@/components/SlidingHighlight'
+import SettingsDropdown from '@/components/SettingsDropdown'
 
 const INPUT_CLASS = 'h-[25px] w-full min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:border-brand placeholder:text-ui-muted disabled:opacity-35'
 const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35'
+const FINAL_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-brand-surface px-3 text-[13px]/4 font-semibold text-ui-white transition-colors hover:bg-brand-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-35'
+const BANNER_ROTATION_INTERVALS = [5, 10, 15, 30, 60] as const
 
 function kstInputValue(epoch = Date.now()): string {
   return new Date(epoch).toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T').slice(0, 16)
@@ -35,9 +40,18 @@ function inputDateTime(value: string): string {
   return value ? value.slice(0, 16) : ''
 }
 
+function addDaysToDateTime(value: string, days: number): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value)
+  if (!match) return ''
+  const [, year, month, day, hour, minute] = match
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day) + days, Number(hour), Number(minute)))
+  const pad = (number: number) => String(number).padStart(2, '0')
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`
+}
+
 function formatDatePart(value: string): string {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}/)
-  return match ? `${match[1]}.${match[2]}.${match[3]}.` : ''
+  return match ? `${match[1]}.${match[2]}.${match[3]}` : ''
 }
 
 function formatTimePart(value: string): string {
@@ -77,14 +91,19 @@ function DateTimeField({ label, value, disabled, onChange }: { label: string; va
   }
 
   return (
-    <div className="grid min-w-0 flex-1 grid-cols-[minmax(82px,92px)_32px_52px] gap-0.5">
-      <input aria-label={`${label} 날짜`} type="text" inputMode="numeric" disabled={disabled} value={dateText} placeholder="yyyy.mm.dd." onChange={event => {
+    <div className={`flex h-8 w-full min-w-0 items-center rounded-[4px] border border-transparent bg-[var(--ui-control)] px-1 focus-within:border-brand ${disabled ? 'opacity-35' : ''}`}>
+      <CalendarIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-ui-muted" />
+      <input aria-label={`${label} 날짜`} type="text" inputMode="numeric" disabled={disabled} value={dateText} placeholder="yyyy.mm.dd" onChange={event => {
         const next = event.target.value
         setDateText(next)
         commitParts(next, timeText)
-      }} className="h-[25px] min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-1 text-center text-[13px] tabular-nums text-ui-white outline-none focus:border-brand disabled:opacity-35" />
-      <select aria-label={`${label} 오전/오후`} disabled={disabled} value={isPm ? 'pm' : 'am'} onChange={event => {
-        const nextIsPm = event.target.value === 'pm'
+      }} className="h-full min-w-0 flex-1 border-0 bg-transparent px-1 text-center text-[13px] font-medium tabular-nums text-ui-white outline-none placeholder:text-ui-muted" />
+      <span aria-hidden="true" className="h-4 w-px shrink-0 bg-ui-white/10" />
+      <SettingsDropdown
+        options={[{ key: 'am', label: '오전' }, { key: 'pm', label: '오후' }]}
+        value={isPm ? 'pm' : 'am'}
+        onChange={meridiem => {
+        const nextIsPm = meridiem === 'pm'
         setIsPm(nextIsPm)
         const parsed = parseDateTime12(`${dateText} ${timeText}`, nextIsPm)
         const nextValue = parsed ?? ''
@@ -92,37 +111,101 @@ function DateTimeField({ label, value, disabled, onChange }: { label: string; va
           lastEmittedValue.current = nextValue
           onChange(nextValue)
         }
-      }} className="h-[25px] w-[32px] appearance-none rounded-[4px] border border-transparent bg-[var(--ui-control)] p-0 text-center text-[11px] font-medium text-ui-white outline-none focus:border-brand disabled:opacity-35">
-        <option value="am">오전</option>
-        <option value="pm">오후</option>
-      </select>
-      <input aria-label={`${label} 시각 (12시간)`} type="text" inputMode="numeric" disabled={disabled} value={timeText} placeholder="hh:mm" onChange={event => {
+        }}
+        ariaLabel={`${label} 오전/오후`}
+        disabled={disabled}
+        smallChevron
+        centerLabel
+        className="w-[64px] shrink-0"
+      />
+      <span aria-hidden="true" className="h-4 w-px shrink-0 bg-ui-white/10" />
+      <ClockIcon aria-hidden="true" className="ml-1 h-3.5 w-3.5 shrink-0 text-ui-muted" />
+      <input aria-label={`${label} 시각 (12시간)`} type="text" inputMode="numeric" maxLength={5} disabled={disabled} value={timeText} placeholder="hh:mm" onChange={event => {
         const next = event.target.value
         setTimeText(next)
         commitParts(dateText, next)
-      }} className="h-[25px] w-full rounded-[4px] border border-transparent bg-[var(--ui-control)] px-1 text-center text-[13px] tabular-nums text-ui-white outline-none focus:border-brand disabled:opacity-35" />
+      }} className="h-full w-[56px] shrink-0 border-0 bg-transparent pl-1 text-center text-[13px] font-medium tabular-nums text-ui-white outline-none placeholder:text-ui-muted" />
     </div>
   )
 }
 
-function displayDateTime(value: string): string {
-  return value.replace('T', ' ').slice(0, 16)
+function formatScheduledAt(value: string): string {
+  // 서버의 LocalDateTime은 시간대가 없는 문자열이므로 KST로 해석한다.
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
+  const date = new Date(hasTimezone ? value : `${value}+09:00`)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(date)
+}
+
+function fitsNoticeBanner(text: string, textScalePercent = 100, textBold = false, sourceBody?: HTMLElement): boolean {
+  if (!text) return true
+  const body = sourceBody ?? document.querySelector<HTMLElement>('[data-banner-draft-preview] [data-banner-text-body]') ?? document.querySelector<HTMLElement>('[data-ad-banner-slot] [data-banner-text-body]')
+  const bannerSlot = body?.closest<HTMLElement>('[data-ad-banner-slot]') ?? (sourceBody ? null : document.querySelector<HTMLElement>('[data-ad-banner-slot]'))
+  if (!body || (!bannerSlot && !sourceBody)) return true
+
+  const bodyStyle = getComputedStyle(body)
+  // 목록 미리보기는 실제 배너 자리 밖에 있지만 항상 728×90 규격으로 그린다.
+  const bannerHeight = Number(bannerSlot?.dataset.adBannerSlot?.split('x')[1] ?? 90)
+  const compact = bannerHeight < 90
+  const fontSize = (compact ? 10 : 12) * textScalePercent / 100
+  const lineHeight = fontSize * 1.25
+  const titleLineHeight = (compact ? 12 : 14) * 1.25
+  const maxLines = Math.max(1, Math.floor((bannerHeight - titleLineHeight) / lineHeight))
+  if (!maxLines || !lineHeight) return true
+
+  const measure = document.createElement('p')
+  // A zero-width sentinel makes a trailing newline occupy the blank line the textarea would create.
+  measure.textContent = `${text}\u200b`
+  Object.assign(measure.style, {
+    position: 'fixed',
+    left: '-10000px',
+    top: '0',
+    display: 'block',
+    width: `${body.getBoundingClientRect().width}px`,
+    margin: '0',
+    overflow: 'visible',
+    fontFamily: bodyStyle.fontFamily,
+    fontSize: `${fontSize}px`,
+    fontWeight: textBold ? '700' : '400',
+    fontStyle: bodyStyle.fontStyle,
+    lineHeight: `${lineHeight}px`,
+    letterSpacing: bodyStyle.letterSpacing,
+    whiteSpace: bodyStyle.whiteSpace,
+    wordBreak: bodyStyle.wordBreak,
+    overflowWrap: bodyStyle.overflowWrap,
+    textIndent: bodyStyle.textIndent,
+    visibility: 'hidden',
+  })
+  document.body.append(measure)
+  const renderedSize = measure.getBoundingClientRect()
+  const fitsVisibleArea = renderedSize.height <= maxLines * lineHeight + 0.5 && measure.scrollWidth <= measure.clientWidth + 1
+  measure.remove()
+  return fitsVisibleArea
 }
 
 function initialDraft(): BannerDraftInput {
-  return { id: null, type: 'NOTICE', title: '', text: '', textScalePercent: 100, textBold: false, linkUrl: 'http://', startsAt: kstInputValue(), endsAt: '', file: null }
+  return { id: null, type: 'NOTICE', title: '', text: '', textScalePercent: 100, textBold: false, linkUrl: 'https://', startsAt: kstInputValue(), endsAt: '', file: null }
+}
+
+function normalizeBannerLink(value: string): string {
+  const link = value.trim()
+  if (!link || /^https?:\/\/$/i.test(link)) return ''
+  if (/^https?:\/\//i.test(link) || link.startsWith('/')) return link
+  return `https://${link}`
 }
 
 const BANNER_TEXT_SCALES = [80, 100, 120] as const
 
 function BannerTextScalePicker({ value, textBold, disabled, onChange }: { value: number; textBold: boolean; disabled: boolean; onChange: (value: number) => void }) {
   return (
-    <div aria-label="공지 글자 크기" aria-disabled={disabled || undefined} role="radiogroup" className={`relative grid h-[60px] grid-cols-3 gap-[2px] ${disabled ? 'opacity-35' : ''}`}>
-      <SlidingHighlight square bottomRadius={4} gap={2} count={BANNER_TEXT_SCALES.length} index={BANNER_TEXT_SCALES.indexOf(value as typeof BANNER_TEXT_SCALES[number])} className="border border-brand bg-brand-surface" />
+    <div aria-label="공지 글자 크기" aria-disabled={disabled || undefined} role="radiogroup" className={`relative grid h-7 grid-cols-3 gap-[2px] ${disabled ? 'opacity-35' : ''}`}>
+      <SlidingHighlight gap={2} count={BANNER_TEXT_SCALES.length} index={BANNER_TEXT_SCALES.indexOf(value as typeof BANNER_TEXT_SCALES[number])} className="rounded-[4px] border border-brand bg-brand-surface" />
       {BANNER_TEXT_SCALES.map(scale => (
-        <button key={scale} type="button" role="radio" aria-checked={value === scale} disabled={disabled} onClick={() => onChange(scale)} className="relative z-10 flex h-full flex-col items-center justify-center gap-1 rounded-none border-0 bg-transparent px-1 text-ui-white transition-colors disabled:cursor-not-allowed">
-          <span style={{ fontSize: `${12 * scale / 100}px` }} className={`leading-tight ${textBold ? 'font-bold' : 'font-medium'}`}>공지 문구</span>
-          <span className="text-[11px] leading-none">{scale === 100 ? '기본' : scale === 80 ? '작게' : '크게'}</span>
+        <button key={scale} type="button" role="radio" aria-checked={value === scale} disabled={disabled} onClick={() => onChange(scale)} className="relative z-10 flex h-full items-center justify-center rounded-[4px] border-0 bg-transparent px-1 text-[12px] leading-none text-ui-white transition-colors disabled:cursor-not-allowed">
+          <span style={{ fontSize: `${12 * scale / 100}px` }} className={textBold ? 'font-bold' : 'font-medium'}>{scale === 100 ? '기본' : scale === 80 ? '작게' : '크게'}</span>
         </button>
       ))}
     </div>
@@ -132,49 +215,46 @@ function BannerTextScalePicker({ value, textBold, disabled, onChange }: { value:
 function BannerTextWeightPicker({ value, disabled, onChange }: { value: boolean; disabled: boolean; onChange: (value: boolean) => void }) {
   const options = [{ value: false, label: '보통' }, { value: true, label: '굵게' }]
   return (
-    <div aria-label="공지 글자 굵기" aria-disabled={disabled || undefined} role="radiogroup" className={`relative grid h-[60px] grid-cols-2 gap-[2px] ${disabled ? 'opacity-35' : ''}`}>
-      <SlidingHighlight square bottomRadius={4} gap={2} count={options.length} index={value ? 1 : 0} className="border border-brand bg-brand-surface" />
+    <div aria-label="공지 글자 굵기" aria-disabled={disabled || undefined} role="radiogroup" className={`relative grid h-7 grid-cols-2 gap-[2px] ${disabled ? 'opacity-35' : ''}`}>
+      <SlidingHighlight gap={2} count={options.length} index={value ? 1 : 0} className="rounded-[4px] border border-brand bg-brand-surface" />
       {options.map(option => (
-        <button key={String(option.value)} type="button" role="radio" aria-checked={value === option.value} disabled={disabled} onClick={() => onChange(option.value)} className={`relative z-10 flex h-full flex-col items-center justify-center gap-1 rounded-none border-0 bg-transparent px-1 text-ui-white transition-colors disabled:cursor-not-allowed`}>
-          <span className={`text-[13px] leading-4 ${option.value ? 'font-bold' : 'font-medium'}`}>공지 문구</span>
-          <span className="text-[11px] leading-none">{option.label}</span>
+        <button key={String(option.value)} type="button" role="radio" aria-checked={value === option.value} disabled={disabled} onClick={() => onChange(option.value)} className="relative z-10 flex h-full items-center justify-center rounded-[4px] border-0 bg-transparent px-1 text-[12px] leading-none text-ui-white transition-colors disabled:cursor-not-allowed">
+          <span className={option.value ? 'font-bold' : 'font-medium'}>{option.label}</span>
         </button>
       ))}
     </div>
   )
 }
 
-function statusLabel(status: BannerCampaign['status']) {
-  switch (status) {
-    case 'DRAFT': return '임시'
-    case 'SCHEDULED': return '예약'
-    case 'LIVE': return '게시 중'
-    case 'ENDED': return '종료'
-  }
-}
-
 function campaignImageUrl(campaign: BannerCampaign) {
   return adminBannerImageUrl(campaign.id, campaign.updatedAt)
 }
 
-interface BannerTextMetrics { width: number; fontSize: number; lineHeight: number; maxLines: number }
+interface BannerTextMetrics { width: number; fontSize: number; lineHeight: number; maxLines: number; inputHeight: number }
 
 function BannerDraftSlot({ draft, savedCampaign, onMetricsChange }: { draft: BannerDraftInput; savedCampaign?: BannerCampaign; onMetricsChange: (metrics: BannerTextMetrics) => void }) {
+  const previewSlotRef = useRef<HTMLDivElement>(null)
   const localImageUrl = useMemo(() => draft.file ? URL.createObjectURL(draft.file) : null, [draft.file])
   useEffect(() => () => { if (localImageUrl) URL.revokeObjectURL(localImageUrl) }, [localImageUrl])
   const imageUrl = localImageUrl ?? (savedCampaign?.hasImage ? campaignImageUrl(savedCampaign) : null)
   const linkUrl = draft.linkUrl.trim() === 'http://' ? '' : draft.linkUrl.trim()
   useEffect(() => {
-    const textArea = document.querySelector<HTMLElement>('[data-ad-banner-slot] [data-banner-text-area]')
-    const textBody = document.querySelector<HTMLElement>('[data-ad-banner-slot] [data-banner-text-body]')
+    const bannerSlot = previewSlotRef.current
+    const textArea = bannerSlot?.querySelector<HTMLElement>('[data-banner-text-area]')
+    const textBody = bannerSlot?.querySelector<HTMLElement>('[data-banner-text-body]')
     if (!textArea) return
     const updateMetrics = () => {
       const bodyStyle = textBody ? getComputedStyle(textBody) : null
+      const bannerHeight = Number(bannerSlot?.dataset.adBannerSlot?.split('x')[1] ?? 90)
+      const lineHeight = Number.parseFloat(bodyStyle?.lineHeight ?? '15')
+      const maxLines = Number(textBody?.dataset.bannerMaxLines ?? Math.floor((bannerHeight - (bannerHeight < 90 ? 15 : 17.5)) / lineHeight))
       onMetricsChange({
         width: textArea.getBoundingClientRect().width,
         fontSize: Number.parseFloat(bodyStyle?.fontSize ?? '12'),
-        lineHeight: Number.parseFloat(bodyStyle?.lineHeight ?? '15'),
-        maxLines: Number(textBody?.dataset.bannerMaxLines ?? 4),
+        lineHeight,
+        maxLines,
+        // Fit the textarea to the rows the live banner preview can display, including padding and border.
+        inputHeight: Math.ceil(maxLines * lineHeight + 14),
       })
     }
     updateMetrics()
@@ -184,27 +264,33 @@ function BannerDraftSlot({ draft, savedCampaign, onMetricsChange }: { draft: Ban
     return () => observer.disconnect()
   }, [draft.type, draft.textScalePercent, onMetricsChange])
   return (
-    <AdBannerSlot>
-      {size => draft.type === 'NOTICE'
-        ? <NoticeBanner title={draft.title || '서비스 안내'} text={draft.text || '공지사항을 확인해 주세요.'} linkUrl={linkUrl || null} size={size} preview textScalePercent={draft.textScalePercent} textBold={draft.textBold} />
+    <div ref={previewSlotRef} aria-hidden="true" inert data-ad-banner-slot="728x90" data-banner-draft-preview="" className="pointer-events-none fixed left-[-10000px] top-0 h-[90px] w-[728px] overflow-hidden">
+      {draft.type === 'NOTICE'
+        ? <NoticeBanner title={draft.title || '서비스 안내'} text={draft.text || '공지사항을 확인해 주세요.'} linkUrl={linkUrl || null} size={{ width: 728, height: 90 }} preview textScalePercent={draft.textScalePercent} textBold={draft.textBold} />
         : imageUrl
-          ? <BannerImage src={imageUrl} title={draft.title || '광고 배너'} size={size} />
+          ? <BannerImage src={imageUrl} title={draft.title || '광고 배너'} size={{ width: 728, height: 90 }} linkUrl={linkUrl || null} preview />
           : <div className="flex h-full w-full items-center justify-center bg-ui-panel text-sm text-ui-muted">광고 이미지를 선택해 주세요.</div>}
-    </AdBannerSlot>
+    </div>
   )
 }
 
 export default function AdminBannerPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const { data: session, isLoading } = useSession()
   const isAdmin = isAdminSession(session)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const [isShareOpen, setIsShareOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
+  const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const [activeType, setActiveType] = useState<BannerDraftInput['type']>('NOTICE')
+  const [showCampaignList, setShowCampaignList] = useState(() => (location.state as { bannerCampaignView?: string } | null)?.bannerCampaignView === 'list')
   const [bannerTextAreaWidth, setBannerTextAreaWidth] = useState(640)
-  const [bannerTextMetrics, setBannerTextMetrics] = useState<BannerTextMetrics>({ width: 640, fontSize: 12, lineHeight: 15, maxLines: 4 })
+  const [bannerTextMetrics, setBannerTextMetrics] = useState<BannerTextMetrics>({ width: 640, fontSize: 12, lineHeight: 15, maxLines: 4, inputHeight: 74 })
+  const [endDatePresetGeneration, setEndDatePresetGeneration] = useState(0)
+  const bannerFileInputRef = useRef<HTMLInputElement>(null)
+  const [noticeLimitMessage, setNoticeLimitMessage] = useState('')
   const [drafts, setDrafts] = useState<Record<BannerDraftInput['type'], BannerDraftInput>>(() => ({
     AD: { ...initialDraft(), type: 'AD', title: '', text: '' },
     NOTICE: initialDraft(),
@@ -221,28 +307,41 @@ export default function AdminBannerPage() {
     setBannerTextMetrics(previous => Object.keys(next).every(key => previous[key as keyof BannerTextMetrics] === next[key as keyof BannerTextMetrics]) ? previous : next)
   }, [])
 
-  const campaigns = useQuery({ queryKey: ['admin-banners'], queryFn: ({ signal }) => getAdminBanners(signal), enabled: isAdmin, retry: false })
-  const activeBanner = useQuery({ queryKey: ['banners', 'active'], queryFn: ({ signal }) => getActiveBanner(signal), enabled: isAdmin, retry: false })
+  const pushCampaignView = (view: 'list' | 'editor') => {
+    const currentState = location.state && typeof location.state === 'object' ? location.state as Record<string, unknown> : {}
+    navigate(`${location.pathname}${location.search}${location.hash}`, { state: { ...currentState, bannerCampaignView: view } })
+  }
+
+  useEffect(() => {
+    setShowCampaignList((location.state as { bannerCampaignView?: string } | null)?.bannerCampaignView === 'list')
+  }, [location.state])
+
+  const campaigns = useQuery({ queryKey: ['admin-banners'], queryFn: ({ signal }) => getAdminBanners(signal), enabled: isAdmin, retry: false, refetchInterval: showCampaignList ? 30_000 : false })
+  const rotationSetting = useQuery({ queryKey: ['admin-banners', 'rotation-setting'], queryFn: ({ signal }) => getBannerRotationSetting(signal), enabled: isAdmin, retry: false })
   const draft = drafts[activeType]
   const isDraftSaved = savedFlags[activeType]
   const savedCampaign = savedCampaigns[activeType]
   const listedCampaign = useMemo(() => campaigns.data?.find(item => item.id === draft.id), [campaigns.data, draft.id])
   const selectedCampaign = listedCampaign ?? savedCampaign
-  const canEdit = !selectedCampaign || selectedCampaign.status === 'DRAFT'
+  const canEdit = true
   const isDirty = !isDraftSaved
   const isDraftValid = Boolean(draft.title.trim() && draft.startsAt && (draft.type === 'NOTICE' ? draft.text.trim() : draft.file || savedCampaign?.hasImage))
 
   const saveMutation = useMutation({
     mutationFn: saveBannerDraft,
+    meta: { skipGlobalError: true },
     onSuccess: async item => {
       setSavedCampaigns(value => ({ ...value, [item.type]: item }))
-      setDrafts(value => ({ ...value, [item.type]: { ...value[item.type], id: item.id, linkUrl: item.linkUrl ?? '', file: null } }))
+      setDrafts(value => ({ ...value, [item.type]: { ...value[item.type], id: item.id, linkUrl: item.linkUrl ?? 'https://', file: null } }))
       setSavedFlags(value => ({ ...value, [item.type]: true }))
       setEditedFlags(value => ({ ...value, [item.type]: false }))
-      await client.invalidateQueries({ queryKey: ['admin-banners'] })
-      void appAlert('배너를 등록했습니다. 다른 페이지에서 관리자 미리보기를 확인한 뒤 전체 공개를 실행해 주세요.', { title: '등록 완료' })
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ['admin-banners'] }),
+        client.invalidateQueries({ queryKey: ['banners', 'active'] }),
+      ])
+      void appAlert(item.status === 'DRAFT' ? '배너를 미공개로 저장했습니다. 목록에서 공개할 수 있습니다.' : '공개 배너 내용을 저장했습니다.', { title: '저장 완료' })
     },
-    onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.message ?? '입력 내용을 확인하고 다시 시도해 주세요.') : '입력 내용을 확인하고 다시 시도해 주세요.', { title: '저장 실패' }),
+    onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.detail ?? error.response?.data?.message ?? '입력 내용을 확인하고 다시 시도해 주세요.') : '입력 내용을 확인하고 다시 시도해 주세요.', { title: '저장 실패' }),
   })
   const approveMutation = useMutation({
     mutationFn: approveBanner,
@@ -255,7 +354,7 @@ export default function AdminBannerPage() {
       ])
       void appAlert(item.status === 'SCHEDULED' ? '선택한 시각에 배너가 교체되도록 예약했습니다.' : '배너를 실제 상단 영역에 반영했습니다.', { title: '승인 완료' })
     },
-    onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.message ?? '시간이 겹치는 배너가 있는지 확인해 주세요.') : '배너 승인에 실패했습니다. 잠시 후 다시 시도해 주세요.', { title: '승인 실패' }),
+    onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.detail ?? error.response?.data?.message ?? '배너를 공개하지 못했습니다. 입력 내용을 확인해 주세요.') : '배너 공개에 실패했습니다. 잠시 후 다시 시도해 주세요.', { title: '공개 실패' }),
   })
   const deleteMutation = useMutation({
     mutationFn: deleteBannerDraft,
@@ -267,6 +366,16 @@ export default function AdminBannerPage() {
       await client.invalidateQueries({ queryKey: ['admin-banners'] })
     },
     onError: () => void appAlert('임시 배너를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.', { title: '삭제 실패' }),
+  })
+  const saveRotationSettingMutation = useMutation({
+    mutationFn: saveBannerRotationSetting,
+    meta: { skipGlobalError: true },
+    onSuccess: async setting => {
+      client.setQueryData(['admin-banners', 'rotation-setting'], setting)
+      await client.invalidateQueries({ queryKey: ['banners', 'active'] })
+      void appAlert(`공개 배너 전환 간격을 ${setting.intervalSeconds}초로 저장했습니다.`, { title: '저장 완료' })
+    },
+    onError: () => void appAlert('배너 전환 간격을 저장하지 못했습니다. 다시 시도해 주세요.', { title: '저장 실패' }),
   })
 
   useEffect(() => {
@@ -300,46 +409,94 @@ export default function AdminBannerPage() {
   }
   const handleSave = () => {
     if (!canEdit || saveMutation.isPending) return
+    if (activeType === 'NOTICE' && !fitsNoticeBanner(draft.text, draft.textScalePercent, draft.textBold)) {
+      setNoticeLimitMessage('현재 내용이 배너 표시 한도를 넘습니다. 내용을 줄인 뒤 저장해 주세요.')
+      return
+    }
     if (!draft.title.trim() || !draft.startsAt || (draft.type === 'NOTICE' && !draft.text.trim()) || (draft.type === 'AD' && !draft.file && !savedCampaign?.hasImage)) {
       void appAlert('제목, 문구 또는 광고 이미지와 게시 시작 시각을 확인해 주세요.', { title: '입력 확인' })
       return
     }
-    saveMutation.mutate({ ...draft, linkUrl: draft.linkUrl.trim() === 'http://' ? '' : draft.linkUrl })
+    saveMutation.mutate({ ...draft, linkUrl: normalizeBannerLink(draft.linkUrl) })
   }
-  const handleApprove = async () => {
-    if (!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending) return
-    const replacementAt = displayDateTime(draft.startsAt)
+  const handleApproveCampaign = async (item: BannerCampaign, previewBody?: HTMLElement) => {
+    if (item.status !== 'DRAFT' || approveMutation.isPending) return
+    if (item.type === 'NOTICE' && !fitsNoticeBanner(item.text ?? '', item.textScalePercent, item.textBold, previewBody)) {
+      void appAlert('현재 내용이 배너 표시 한도를 넘습니다. 해당 배너를 수정한 뒤 다시 공개해 주세요.', { title: '배너 표시 확인' })
+      return
+    }
+    const replacementAt = formatScheduledAt(item.startsAt)
     if (!await appConfirm(`등록한 배너를 ${replacementAt} (한국 시간)에 모든 방문자에게 공개하시겠습니까?`, { title: '배너 전체 공개' })) return
-    approveMutation.mutate(draft.id)
+    approveMutation.mutate(item.id)
   }
   const confirmDiscard = (type: BannerDraftInput['type']) => !editedFlags[type] || appConfirm('저장하지 않은 변경 내용을 버리시겠습니까?', { title: '변경 내용 버리기' })
+  const draftFromCampaign = (item: BannerCampaign): BannerDraftInput => ({
+    id: item.id,
+    type: item.type,
+    title: item.title,
+    text: item.text ?? '',
+    textScalePercent: item.textScalePercent,
+    textBold: item.textBold,
+    linkUrl: item.linkUrl ?? 'https://',
+    startsAt: inputDateTime(item.startsAt),
+    endsAt: inputDateTime(item.endsAt ?? ''),
+    file: null,
+  })
+  const discardDraft = (type: BannerDraftInput['type']) => {
+    const current = drafts[type]
+    const saved = current.id
+      ? campaigns.data?.find(item => item.id === current.id) ?? savedCampaigns[type]
+      : undefined
+    setEditedFlags(value => ({ ...value, [type]: false }))
+    setDraftGeneration(value => value + 1)
+    setSavedCampaigns(value => ({ ...value, [type]: saved }))
+    setSavedFlags(value => ({ ...value, [type]: Boolean(saved) }))
+    setDrafts(value => ({
+      ...value,
+      [type]: saved ? draftFromCampaign(saved) : { ...initialDraft(), type, ...(type === 'AD' ? { title: '', text: '' } : {}) },
+    }))
+  }
+  const openCampaignList = async () => {
+    if (!showCampaignList && !await confirmDiscard(activeType)) return
+    if (!showCampaignList && editedFlags[activeType]) discardDraft(activeType)
+    if (!showCampaignList) pushCampaignView('list')
+    setShowCampaignList(true)
+  }
   const selectCampaign = async (item: BannerCampaign) => {
-    if (!await confirmDiscard(item.type)) return
+    if (!await confirmDiscard(item.type)) return false
+    if (showCampaignList) pushCampaignView('editor')
     setEditedFlags(value => ({ ...value, [item.type]: false }))
     setDraftGeneration(value => value + 1)
     setActiveType(item.type)
+    setShowCampaignList(false)
     setSavedCampaigns(value => ({ ...value, [item.type]: item }))
     setSavedFlags(value => ({ ...value, [item.type]: true }))
-    setDrafts(value => ({ ...value, [item.type]: {
-      id: item.id,
-      type: item.type,
-      title: item.title,
-      text: item.text ?? '',
-      textScalePercent: item.textScalePercent,
-      textBold: item.textBold,
-      linkUrl: item.linkUrl ?? '',
-      startsAt: inputDateTime(item.startsAt),
-      endsAt: inputDateTime(item.endsAt ?? ''),
-      file: null,
-    } }))
+    setDrafts(value => ({ ...value, [item.type]: draftFromCampaign(item) }))
+    return true
   }
-  const startNewDraft = async () => {
-    if (!await confirmDiscard(activeType)) return
-    setEditedFlags(value => ({ ...value, [activeType]: false }))
+  const startNewDraft = async (type: BannerDraftInput['type']) => {
+    if (!await confirmDiscard(type)) return
+    if (showCampaignList) pushCampaignView('editor')
     setDraftGeneration(value => value + 1)
-    setSavedCampaigns(value => ({ ...value, [activeType]: undefined }))
-    setDrafts(value => ({ ...value, [activeType]: { ...initialDraft(), type: activeType, ...(activeType === 'AD' ? { title: '', text: '' } : {}) } }))
-    setSavedFlags(value => ({ ...value, [activeType]: false }))
+    setEditedFlags(value => ({ ...value, [type]: false }))
+    setSavedFlags(value => ({ ...value, [type]: false }))
+    setSavedCampaigns(value => ({ ...value, [type]: undefined }))
+    setDrafts(value => ({
+      ...value,
+      [type]: { ...initialDraft(), type, ...(type === 'AD' ? { title: '', text: '' } : {}) },
+    }))
+    setActiveType(type)
+    setShowCampaignList(false)
+  }
+  const openType = async (type: BannerDraftInput['type']) => {
+    if (showCampaignList) {
+      await startNewDraft(type)
+      return
+    }
+    if (type === activeType) return
+    if (!await confirmDiscard(activeType)) return
+    if (editedFlags[activeType]) discardDraft(activeType)
+    setActiveType(type)
   }
   const handleDelete = async () => {
     if (!draft.id || selectedCampaign?.status !== 'DRAFT') return
@@ -359,48 +516,53 @@ export default function AdminBannerPage() {
     changeDraft({ file })
   }
 
-  const campaignsList = (campaigns.data ?? []).filter(item => item.type === activeType)
-  const campaignSlots = Array.from({ length: Math.max(5, campaignsList.length) }, (_, index) => campaignsList[index])
-  const visitorStatus = activeBanner.isError
-    ? '실제 게시 상태를 불러오지 못했습니다.'
-    : activeBanner.isPending ? '실제 게시 상태를 불러오는 중입니다.'
-      : activeBanner.data?.active ? `현재 게시 중: ${activeBanner.data.title ?? '배너'}` : '현재 게시 중인 배너가 없습니다.'
-  const settingsFields = (
-    <div className="settings-plain-content">
-      <div className="settings-ops-item h-[180px] text-sm">
-        <div className="settings-custom-control">
-          <h2 className="settings-plain-title settings-plain-title-no-number m-0 flex items-center text-[15px] font-medium leading-[22px] text-ui-white">
-            <span aria-hidden="true" className="mr-1.5 inline-flex h-5 items-center rounded-sm bg-admin-only px-1.5 text-[11px] font-semibold leading-none text-ui-background">{activeType === 'AD' ? '광고' : '공지'}</span>
-            배너 목록
-          </h2>
-          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">선택해 내용을 불러옵니다. {campaigns.isError && campaigns.data === undefined ? '목록을 불러오지 못했습니다.' : `${Math.min(campaignsList.length, 5)}/5`}</p>
-          <AlwaysVisibleScrollArea className="settings-control-inset settings-exclude-list mt-[7px] h-[92px] max-h-[92px] min-h-0">
-            {campaignSlots.map((item, index) => {
-              const unavailable = campaigns.isError && campaigns.data === undefined
-              const loading = campaigns.isPending && campaigns.data === undefined
-              const emptyLabel = unavailable ? '—' : loading ? '불러오는 중…' : '빈 슬롯'
-              return (
-                <button key={item?.id ?? `empty-${activeType}-${index}`} type="button" disabled={!item} onClick={() => { if (item) void selectCampaign(item) }} aria-pressed={item ? draft.id === item.id : undefined} aria-label={item ? `${statusLabel(item.status)} ${activeType === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집` : `${activeType === 'AD' ? '광고' : '공지'} 배너 슬롯 · ${emptyLabel}`} className={`flex h-5 w-full shrink-0 items-center gap-1.5 rounded-[4px] border-0 px-1.5 text-left text-[13px] font-medium ${item ? `cursor-pointer text-ui-white hover:bg-[var(--brand)]/10 ${draft.id === item.id ? 'bg-[var(--brand)]/20' : 'bg-transparent'}` : 'cursor-default bg-transparent text-ui-muted'}`}>
-                  <span aria-hidden="true" className="inline-flex h-4 shrink-0 items-center justify-center rounded-sm bg-admin-only px-1 text-[10px] font-semibold leading-none text-ui-background">{activeType === 'AD' ? '광고' : '공지'}</span>
-                  <span className="min-w-0 flex-1 truncate">{item ? activeType === 'AD' ? item.hasImage ? `${item.title} · 이미지 등록됨` : `${item.title} · 이미지 없음` : `${item.title}${item.text ? ` · ${item.text}` : ''}` : emptyLabel}</span>
-                  {item && <span className="shrink-0 text-ui-muted">{statusLabel(item.status)}</span>}
-                </button>
-              )
-            })}
-          </AlwaysVisibleScrollArea>
-        </div>
+  const campaignsList = campaigns.data ?? []
+  const registeredCampaigns = campaignsList.filter(item => item.status === 'LIVE' || item.status === 'SCHEDULED')
+  const unpublishedCampaigns = campaignsList.filter(item => item.status === 'DRAFT')
+  const endedCampaigns = campaignsList.filter(item => item.status === 'ENDED')
+  const isMutating = saveMutation.isPending || approveMutation.isPending || deleteMutation.isPending
+  const renderCampaignCards = (items: BannerCampaign[], emptyMessage: string) => {
+    if (campaigns.isPending) return <p role="status" className="m-0">배너 목록을 불러오는 중입니다.</p>
+    if (campaigns.isError && campaigns.data === undefined) return <p role="alert" className="m-0">배너 목록을 불러오지 못했습니다.</p>
+    if (!items.length) return <p role="status" className="m-0">{emptyMessage}</p>
+    return (
+      <div className="flex flex-col gap-1">
+        {items.map(item => (
+          <div key={item.id} data-banner-campaign-card="" className="flex w-full flex-col gap-2 border border-ui-border bg-ui-panel p-3">
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+              <span className="flex min-w-0 items-center gap-2">
+                <BannerTypeBadge type={item.type} size="normal" />
+                <span className="max-w-[240px] truncate font-medium text-ui-white">{item.title}</span>
+              </span>
+              <span className="shrink-0 tabular-nums text-ui-muted">게시 {formatScheduledAt(item.startsAt)} ~ {item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}</span>
+            </div>
+            <button type="button" disabled={isMutating} onClick={() => void selectCampaign(item)} aria-label={`${item.type === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집`} className="mx-auto flex h-[90px] w-full max-w-[728px] items-center justify-center overflow-hidden border border-ui-border p-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-wait">
+              {item.type === 'NOTICE'
+                ? <NoticeBanner title={item.title} text={item.text ?? ''} linkUrl={item.linkUrl} size={{ width: 728, height: 90 }} preview textScalePercent={item.textScalePercent} textBold={item.textBold} />
+                : item.hasImage
+                  ? <BannerImage src={campaignImageUrl(item)} title={item.title} size={{ width: 728, height: 90 }} linkUrl={item.linkUrl} preview />
+                  : <span className="flex h-full w-full items-center justify-center bg-ui-background text-sm text-ui-muted">광고 이미지 없음</span>}
+            </button>
+            {item.status === 'DRAFT' && <div className="flex items-center justify-end border-t border-ui-border pt-2">
+              <button type="button" disabled={isMutating} onClick={event => {
+                const previewBody = event.currentTarget.closest('[data-banner-campaign-card]')?.querySelector<HTMLElement>('[data-banner-text-body]')
+                void handleApproveCampaign(item, previewBody ?? undefined)
+              }} className={`${FINAL_ACTION_CLASS} min-w-[100px]`}>전체 공개</button>
+            </div>}
+          </div>
+        ))}
       </div>
-    </div>
-  )
-
+    )
+  }
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
-      <NavBar bannerSlot={isAdmin ? <BannerDraftSlot draft={draft} savedCampaign={selectedCampaign} onMetricsChange={updateBannerTextMetrics} /> : undefined} />
+      {isAdmin && <BannerDraftSlot draft={draft} savedCampaign={selectedCampaign} onMetricsChange={updateBannerTextMetrics} />}
+      <NavBar />
       <NavSubBar
         actions={
           <NavBarPageActions
-            onRefresh={() => { void campaigns.refetch(); void activeBanner.refetch() }}
-            isRefreshing={campaigns.isFetching || activeBanner.isFetching}
+            onRefresh={() => { void campaigns.refetch() }}
+            isRefreshing={campaigns.isFetching}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
             showRefresh={false}
@@ -426,86 +588,145 @@ export default function AdminBannerPage() {
                 <PageMainFrame className="p-6">
                   <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl space-y-5">
                     <InfoPageHeading
-                      title={activeType === 'NOTICE' ? '공지' : '광고'}
-                      summary="내용과 게시 일정을 설정하고 상단 미리보기에서 표시 형태를 확인합니다."
+                      title="배너"
+                      summary={showCampaignList ? '등록한 공지·광고를 한곳에서 보고 선택해 수정합니다.' : draft.id ? `${activeType === 'NOTICE' ? '공지' : '광고'} 배너를 ${canEdit ? '수정' : '확인'}하고 있습니다.` : '새 배너 내용을 입력하거나 목록에서 기존 배너를 선택합니다.'}
+                      actions={(
+                        <>
+                          <button type="button" aria-pressed={showCampaignList} onClick={() => void openCampaignList()} className={`${SETTINGS_ACTION_CLASS} px-2 ${showCampaignList ? 'bg-brand-surface' : ''}`}>목록</button>
+                          <button type="button" aria-pressed={!showCampaignList && activeType === 'NOTICE'} onClick={() => openType('NOTICE')} className={`${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'NOTICE' ? 'bg-brand-surface' : ''}`}>공지</button>
+                          <button type="button" aria-pressed={!showCampaignList && activeType === 'AD'} onClick={() => openType('AD')} className={`${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'AD' ? 'bg-brand-surface' : ''}`}>광고</button>
+                        </>
+                      )}
                     />
-                    <InfoCallout title="현재 공개 상태">{visitorStatus}</InfoCallout>
-
+                    {showCampaignList ? (
+                      <AlwaysVisibleScrollArea className="h-[min(75vh,680px)] max-h-[680px]">
+                        <div className="flex flex-col gap-3">
+                          <InfoSection number="1" title={`등록 (${campaigns.isError && campaigns.data === undefined ? '—' : registeredCampaigns.length}개)`}>
+                            {renderCampaignCards(registeredCampaigns, '등록 항목이 없습니다.')}
+                          </InfoSection>
+                          <InfoSection number="2" title={`미공개 (${campaigns.isError && campaigns.data === undefined ? '—' : unpublishedCampaigns.length}개)`}>
+                            {renderCampaignCards(unpublishedCampaigns, '미공개 항목이 없습니다.')}
+                          </InfoSection>
+                          <InfoSection number="3" title={`종료 (${campaigns.isError && campaigns.data === undefined ? '—' : endedCampaigns.length}개)`}>
+                            {renderCampaignCards(endedCampaigns, '종료 항목이 없습니다.')}
+                          </InfoSection>
+                        </div>
+                      </AlwaysVisibleScrollArea>
+                    ) : (
+                      <>
                     <InfoSection number="1" title="배너 내용">
-                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-4" style={{ maxWidth: `${bannerTextAreaWidth + 32}px` }}>
-                        <div className="flex w-full flex-col gap-3">
-                          <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
-                            <span>제목</span>
-                            <input aria-label="배너 제목" placeholder="서비스 안내" maxLength={100} disabled={!canEdit} value={draft.title} onChange={event => changeDraft({ title: event.target.value })} className={INPUT_CLASS} />
-                          </label>
+                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-4" style={{ maxWidth: `${bannerTextAreaWidth + 36}px` }}>
+                        <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
+                          <span>제목</span>
+                          <input aria-label="배너 제목" placeholder="서비스 안내" maxLength={100} disabled={!canEdit} value={draft.title} onChange={event => changeDraft({ title: event.target.value })} className={INPUT_CLASS} />
+                        </label>
+                        <div className="mt-3 border-t border-ui-border pt-3">
                           {activeType === 'NOTICE' ? (
-                            <>
-                              <div className="grid grid-cols-[minmax(0,3fr)_minmax(120px,2fr)] gap-2">
-                                <label className="flex min-w-0 flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
-                                  <span>글자 크기</span>
-                                  <BannerTextScalePicker value={draft.textScalePercent} textBold={draft.textBold} disabled={!canEdit} onChange={textScalePercent => changeDraft({ textScalePercent })} />
-                                </label>
-                                <label className="flex min-w-0 flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
-                                  <span>굵기</span>
-                                  <BannerTextWeightPicker value={draft.textBold} disabled={!canEdit} onChange={textBold => changeDraft({ textBold })} />
-                                </label>
-                              </div>
+                            <div className="flex w-full flex-col gap-3">
                               <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
-                                <span>공지 문구</span>
-                                <span className="relative block h-[108px]">
-                                  <textarea aria-label="공지 문구" aria-describedby="banner-text-limit-help" placeholder="공지사항을 확인해 주세요." maxLength={200} disabled={!canEdit} value={draft.text} onChange={event => changeDraft({ text: event.target.value })} style={{ fontSize: `${bannerTextMetrics.fontSize}px`, lineHeight: `${bannerTextMetrics.lineHeight}px`, paddingTop: '8px', paddingBottom: '8px' }} className={`${INPUT_CLASS.replace('h-[25px]', 'h-full')} resize-none overflow-y-auto py-2`} />
-                                  <span aria-hidden="true" className="pointer-events-none absolute left-2 right-2 h-px -translate-y-1/2" style={{ top: `${9 + bannerTextMetrics.lineHeight * bannerTextMetrics.maxLines}px`, backgroundImage: 'repeating-linear-gradient(to right, color-mix(in srgb, var(--brand) 60%, transparent) 0 2px, transparent 2px 5px)', transform: 'translateY(-50%) scaleY(.5)' }} />
-                                </span>
-                                <span id="banner-text-limit-help" className="text-sm leading-relaxed text-ui-muted">점선 아래 문구는 상단 배너에서 말줄임 표시됩니다.</span>
+                                <span>내용</span>
+                                <textarea aria-label="내용" placeholder="내용을 입력해 주세요." maxLength={200} disabled={!canEdit} value={draft.text} onKeyDown={event => {
+                                  if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
+                                  const { value, selectionStart, selectionEnd } = event.currentTarget
+                                  const nextText = `${value.slice(0, selectionStart)}\n${value.slice(selectionEnd)}`
+                                  if (!fitsNoticeBanner(nextText, draft.textScalePercent, draft.textBold)) {
+                                    event.preventDefault()
+                                    setNoticeLimitMessage('현재 배너에 표시할 수 있는 분량을 모두 입력했습니다.')
+                                  }
+                                }} onChange={event => {
+                                  const nextText = event.currentTarget.value
+                                  if (fitsNoticeBanner(nextText, draft.textScalePercent, draft.textBold)) {
+                                    changeDraft({ text: nextText })
+                                    setNoticeLimitMessage('')
+                                  } else {
+                                    setNoticeLimitMessage('현재 배너에 표시할 수 있는 분량을 모두 입력했습니다.')
+                                  }
+                                }} style={{ height: `${bannerTextMetrics.inputHeight}px`, fontSize: `${bannerTextMetrics.fontSize}px`, lineHeight: `${bannerTextMetrics.lineHeight}px`, paddingTop: '6px', paddingBottom: '6px' }} className={`${INPUT_CLASS.replace('h-[25px]', 'h-auto')} resize-none overflow-y-auto`} />
                               </label>
-                            </>
+                              {noticeLimitMessage && <p role="status" className="m-0 text-sm leading-5 text-status-error-text">{noticeLimitMessage}</p>}
+                              <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-center gap-4">
+                                <div className="min-w-0">
+                                  <BannerTextScalePicker value={draft.textScalePercent} textBold={draft.textBold} disabled={!canEdit} onChange={textScalePercent => {
+                                    if (fitsNoticeBanner(draft.text, textScalePercent, draft.textBold)) {
+                                      changeDraft({ textScalePercent })
+                                      setNoticeLimitMessage('')
+                                    } else {
+                                      setNoticeLimitMessage('내용을 줄인 뒤 더 큰 글자 크기를 선택해 주세요.')
+                                    }
+                                  }} />
+                                </div>
+                                <div className="min-w-0">
+                                  <BannerTextWeightPicker value={draft.textBold} disabled={!canEdit} onChange={textBold => {
+                                    if (fitsNoticeBanner(draft.text, draft.textScalePercent, textBold)) {
+                                      changeDraft({ textBold })
+                                      setNoticeLimitMessage('')
+                                    } else {
+                                      setNoticeLimitMessage('내용을 줄인 뒤 굵기를 변경해 주세요.')
+                                    }
+                                  }} />
+                                </div>
+                              </div>
+                            </div>
                           ) : (
-                            <label className="flex h-[25px] w-fit cursor-pointer items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white settings-chip-hover has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-35">
-                              <UploadIcon aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-                              {draft.file?.name ?? (savedCampaign?.hasImage ? '이미지 교체' : '배너 이미지 선택')}
-                              <input type="file" accept="image/png,image/jpeg" disabled={!canEdit} onChange={event => handlePickFile(event.target.files?.[0])} className="sr-only" />
-                            </label>
+                            <div className="h-[25px] w-fit max-w-full overflow-x-auto overflow-y-hidden">
+                              <div className="flex h-[25px] w-max items-center">
+                                <label className={`flex h-[25px] w-fit cursor-pointer items-center justify-center gap-1.5 border-0 bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white settings-chip-hover has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-35 ${draft.file ? 'rounded-l-[4px] rounded-r-none' : 'rounded-[4px]'}`}>
+                                  <UploadIcon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={1.8} />
+                                  <span className="whitespace-nowrap">{draft.file?.name ?? (savedCampaign?.hasImage ? '이미지 교체' : '배너 이미지 선택')}</span>
+                                  <input ref={bannerFileInputRef} type="file" accept="image/png,image/jpeg" disabled={!canEdit} onChange={event => handlePickFile(event.target.files?.[0])} className="sr-only" />
+                                </label>
+                                {draft.file && <button type="button" aria-label="선택한 배너 이미지 제거" disabled={!canEdit} onClick={() => {
+                                  changeDraft({ file: null })
+                                  if (bannerFileInputRef.current) bannerFileInputRef.current.value = ''
+                                }} className="flex h-[25px] w-6 shrink-0 items-center justify-center rounded-r-[4px] border-0 bg-[var(--ui-control)] pr-1 text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35"><CloseIcon aria-hidden="true" className="h-3.5 w-3.5" /></button>}
+                              </div>
+                            </div>
                           )}
+                        </div>
+                        <div className="mt-3 border-t border-ui-border pt-3">
                           <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
-                            <span>연결 주소</span>
-                            <input aria-label="연결 주소" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} onBlur={event => { if (!event.currentTarget.value.trim()) changeDraft({ linkUrl: 'http://' }) }} className={INPUT_CLASS} />
-                            <span className="text-sm font-normal leading-relaxed text-ui-muted">선택하면 배너를 눌러 해당 주소로 이동합니다.</span>
+                            <span>연결 <span className="font-normal text-ui-muted">(선택)</span></span>
+                            <input aria-label="연결 (선택)" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} onBlur={event => {
+                              const normalized = normalizeBannerLink(event.target.value) || 'https://'
+                              if (normalized !== draft.linkUrl) changeDraft({ linkUrl: normalized })
+                            }} className={INPUT_CLASS} />
+                            <span className="text-sm font-normal leading-relaxed text-ui-muted">입력하면 배너를 눌러 해당 주소로 이동합니다.</span>
                           </label>
                         </div>
                       </div>
                     </InfoSection>
 
                     <InfoSection number="2" title="게시 일정">
-                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-4" style={{ maxWidth: `${bannerTextAreaWidth + 32}px` }}>
-                        <p className="m-0 text-sm leading-relaxed text-ui-muted">한국 시간 기준으로 배너가 시작되고 종료됩니다.</p>
-                        <div className="mt-4 flex w-full flex-col gap-4">
-                        <fieldset className="m-0 min-w-0 border-0 p-0">
-                          <legend className="sr-only">교체 일정</legend>
-                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <label className="flex min-w-0 flex-col gap-1 text-[13px] font-medium text-ui-white"><span>시작</span><DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} /></label>
-                            <label className="flex min-w-0 flex-col gap-1 text-[13px] font-medium text-ui-white"><span>종료 <span className="font-normal text-ui-muted">(선택)</span></span><DateTimeField label="교체 종료" disabled={!canEdit} value={draft.endsAt} onChange={endsAt => changeDraft({ endsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends`} /></label>
+                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-3" style={{ maxWidth: `${bannerTextAreaWidth + 32}px` }}>
+                        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+                          <label className="flex min-w-0 flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white"><span>시작</span><DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} /></label>
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <div className="flex min-w-0 flex-wrap items-center justify-between gap-1 text-[15px]/[22px] font-medium text-ui-white">
+                              <span>종료 <span className="font-normal text-ui-muted">(선택)</span></span>
+                              <div className="flex shrink-0 items-center gap-1">
+                                {[7, 14, 30].map(days => <button key={days} type="button" disabled={!canEdit || !draft.startsAt || saveMutation.isPending} onClick={() => {
+                                  const endsAt = addDaysToDateTime(draft.startsAt, days)
+                                  if (endsAt) {
+                                    changeDraft({ endsAt })
+                                    setEndDatePresetGeneration(value => value + 1)
+                                  }
+                                }} className={`${SETTINGS_ACTION_CLASS} px-1.5`}>{days}일</button>)}
+                              </div>
+                            </div>
+                            <DateTimeField label="교체 종료" disabled={!canEdit} value={draft.endsAt} onChange={endsAt => changeDraft({ endsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends-${endDatePresetGeneration}`} />
                           </div>
-                        </fieldset>
-                        <div className="flex flex-wrap items-center gap-2 border-t border-ui-border pt-4">
-                          <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}><SaveIcon aria-hidden="true" className="h-4 w-4" />등록</button>
-                          <button type="button" disabled={!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending} onClick={() => void handleApprove()} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>전체 공개</button>
-                          {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>등록 취소</button>}
-                          <span className="min-w-0 flex-1 text-right text-sm leading-relaxed text-ui-muted">저장 후 전체 공개할 수 있습니다.</span>
                         </div>
-                      </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ui-border pt-3">
+                          <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={`${FINAL_ACTION_CLASS} min-w-[100px]`}><SaveIcon aria-hidden="true" className="h-4 w-4" />{selectedCampaign?.status === 'DRAFT' || !selectedCampaign ? '저장 (미공개)' : '저장'}</button>
+                          {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>등록 취소</button>}
+                          <span className="min-w-0 flex-1 text-right text-xs leading-relaxed text-ui-muted">한국 시간 기준</span>
+                        </div>
                       </div>
                     </InfoSection>
 
-                    <InfoSection number="3" title="배너 슬롯">
-                    <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-2 border border-ui-border bg-ui-panel px-4 py-3" style={{ maxWidth: `${bannerTextAreaWidth + 32}px` }}>
-                      <div>
-                        <span className="font-medium text-ui-white">사용 중</span>
-                        <span className="ml-2 text-sm tabular-nums text-ui-muted">{campaigns.isError && campaigns.data === undefined ? '—' : Math.min(campaignsList.length, 5)}/5</span>
-                        <p className="m-0 mt-1 text-sm leading-relaxed text-ui-muted">게시 중인 배너는 다음 예약 시작 시각에 교체됩니다.</p>
-                      </div>
-                      <button type="button" onClick={() => void startNewDraft()} className="h-[25px] shrink-0 rounded-[4px] border-0 bg-[var(--ui-control)] px-2 text-[13px] text-ui-white settings-chip-hover">새 배너</button>
-                    </div>
-                    </InfoSection>
+                      </>
+                    )}
+
                   </article>
                 </PageMainFrame>
               </>
@@ -521,14 +742,48 @@ export default function AdminBannerPage() {
                 onOpenChange={setIsSettingsOpen}
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
-                sectionOrder={['adminBannerNotice', 'adminBannerAd']}
-                onSectionChange={section => {
-                  if (section === 'adminBannerAd') setActiveType('AD')
-                  if (section === 'adminBannerNotice') setActiveType('NOTICE')
-                }}
+                sectionOrder={['adminBanner']}
               >
-                <SettingsPanelGroup section="adminBannerAd">{settingsFields}</SettingsPanelGroup>
-                <SettingsPanelGroup section="adminBannerNotice">{settingsFields}</SettingsPanelGroup>
+                <SettingsPanelGroup section="adminBanner">
+                    <div className="settings-plain-content">
+                    {([
+                      { title: '등록', description: '공개·예약된 배너', items: registeredCampaigns, empty: '등록 항목이 없습니다.' },
+                      { title: '미공개', description: '미공개된 배너로 임시 등록', items: unpublishedCampaigns, empty: '미공개 항목이 없습니다.' },
+                      { title: '종료', description: '게재가 종료된 배너', items: endedCampaigns, empty: '종료 항목이 없습니다.' },
+                    ] as const).map(section => (
+                      <div key={section.title} className="settings-ops-item h-[180px] text-sm">
+                        <div className="settings-custom-control">
+                          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">{section.title}</h2>
+                          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">{section.description}</p>
+                          <AlwaysVisibleScrollArea className="settings-control-inset h-[92px] max-h-[92px] flex-shrink-0">
+                            {campaigns.isPending ? <span className="text-ui-muted">목록을 불러오는 중입니다.</span>
+                              : campaigns.isError && campaigns.data === undefined ? <span role="alert" className="text-ui-muted">목록을 불러오지 못했습니다.</span>
+                                : section.items.length ? section.items.map(item => (
+                                  <button key={item.id} type="button" onClick={() => { void selectCampaign(item) }} className="flex h-5 w-full min-w-0 shrink-0 items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35 focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand">
+                                    <BannerTypeBadge type={item.type} />
+                                    <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                                  </button>
+                                )) : <span className="text-ui-muted">{section.empty}</span>}
+                          </AlwaysVisibleScrollArea>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="settings-ops-item h-[180px] text-sm">
+                      <div className="settings-custom-control">
+                        <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">배너 전환 간격</h2>
+                        <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">공개 배너가 순서대로 바뀌는 간격</p>
+                        <SettingsSegmentedControl
+                          label="배너 전환 간격"
+                          options={BANNER_ROTATION_INTERVALS.map(interval => ({ value: interval, label: `${interval}초` }))}
+                          value={rotationSetting.data?.intervalSeconds ?? 0}
+                          onChange={interval => saveRotationSettingMutation.mutate(interval)}
+                          disabled={saveRotationSettingMutation.isPending}
+                        />
+                        {rotationSetting.isError && <p role="alert" className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">설정을 불러오지 못했습니다. 간격을 선택해 다시 저장해 주세요.</p>}
+                      </div>
+                    </div>
+                  </div>
+                </SettingsPanelGroup>
               </SettingsPanel>
             </div>
           )}

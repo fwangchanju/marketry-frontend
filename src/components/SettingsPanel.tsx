@@ -28,8 +28,8 @@ import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { isAdminSession } from '@/utils/adminAccess'
 
-export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'adminBannerAd' | 'adminBannerNotice' | 'special' | 'graph'
-const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage', 'adminBannerAd', 'adminBannerNotice'])
+export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'adminBanner' | 'special' | 'graph'
+const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage', 'adminBanner'])
 const SPECIAL_SECTIONS: ReadonlySet<string> = new Set(['special'])
 
 interface SettingsPanelGroupProps {
@@ -170,8 +170,7 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'special', label: '실험', icon: 'experiment' },
   { id: 'custom', label: '커스텀', icon: 'custom-edit' },
   // 배너 관리 전용 탭 — 기존 탭 번호를 바꾸지 않도록 뒤에 둔다.
-  { id: 'adminBannerAd', label: '광고', icon: 'ad' },
-  { id: 'adminBannerNotice', label: '공지', icon: 'megaphone' },
+  { id: 'adminBanner', label: '배너', icon: 'ad' },
 ]
 
 // 탭 제목에는 숫자를 표시하지 않지만 안내 말풍선에는 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
@@ -186,7 +185,7 @@ type SettingItemId =
   | 'depthLevel' | 'depthMetric' | 'depthRange' | 'topPick'
   | 'marketValueRange' | 'stockChange' | 'excludeSector'
   | 'boxSize' | 'boxLabel' | 'decimalPlaces'
-  | 'colorScale' | 'strongColor'
+  | 'colorScale' | 'strongColor' | 'bannerList' | 'bannerUnpublished' | 'bannerEnded' | 'bannerRotation'
 
 const SETTING_ITEM_POSITIONS: Partial<Record<SettingItemId, { section: SettingsPanelSectionId; item: number }>> = {
   marketValueRange: { section: 'composition', item: 1 },
@@ -201,6 +200,10 @@ const SETTING_ITEM_POSITIONS: Partial<Record<SettingItemId, { section: SettingsP
   colorScale: { section: 'colors', item: 1 },
   strongColor: { section: 'colors', item: 2 },
   topPick: { section: 'colors', item: 3 },
+  bannerList: { section: 'adminBanner', item: 1 },
+  bannerUnpublished: { section: 'adminBanner', item: 2 },
+  bannerEnded: { section: 'adminBanner', item: 3 },
+  bannerRotation: { section: 'adminBanner', item: 4 },
 }
 
 // "2-1" 같은 설정 위치 번호.
@@ -2552,7 +2555,7 @@ export default function SettingsPanel({
             {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Graph에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
             {/* 아래 Basis 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
             <span aria-hidden="true" className={`mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm ${isAdminPage ? 'bg-admin-only' : 'bg-brand'}`} />
-            {pageLabel ?? '설정'}
+            {isAdminPage ? 'Admin' : pageLabel ?? '설정'}
           </p>
           {stockCountLabel && (
             <span className="flex h-7 w-[7.5rem] shrink-0 items-center whitespace-nowrap text-sm leading-none text-ui-muted">
@@ -2619,7 +2622,7 @@ export default function SettingsPanel({
           data-align-second-heading={taxonomyAtBottom || undefined}
           aria-busy={waitingForPreferences || undefined}
           inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-[22px] text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' || selectedSection.id === 'adminBannerAd' || selectedSection.id === 'adminBannerNotice' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : SPECIAL_SECTIONS.has(selectedSection.id) ? 'settings-special-section' : ''} ${
+          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-[22px] text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' || selectedSection.id === 'adminBanner' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : SPECIAL_SECTIONS.has(selectedSection.id) ? 'settings-special-section' : ''} ${
             isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
           }`}
         >
