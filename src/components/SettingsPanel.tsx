@@ -1528,7 +1528,7 @@ export function SettingsSectorLevelSection({
               />
               {/* 업종 지표 버튼이 지도에서 종목 상자 위(업종 머리글)에 놓인다는 것을 보여 주는 가짜 상자 — 누를 수 없는 그림이라 회색 선으로만 그린다. */}
               <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-full ${depthMetricEnabled ? '' : 'opacity-35'}`}>
-                <div className="relative h-[62px] rounded-b-[4px] border-x-2 border-b-2 border-ui-control">
+                <div className="relative h-[63px] rounded-b-[4px] border-x-2 border-b-2 border-ui-control pb-px">
                   <span className="absolute inset-y-0 left-[42%] border-l-2 border-ui-control" />
                   <span className="absolute left-[42%] right-0 top-1/2 border-t-2 border-ui-control" />
                   <span className="absolute left-0 top-[58%] w-[42%] border-t-2 border-ui-control" />
@@ -1632,8 +1632,8 @@ export function SettingsSectorLevelSection({
               <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                 <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
               </div>
-              <div className="h-[62px] px-px pb-px pt-[2px]">
-            <div role="radiogroup" aria-label="박스 내 표기" className="relative grid h-full w-full grid-cols-3 gap-[2px]">
+              <div className="px-px pb-px pt-[2px]">
+            <div role="radiogroup" aria-label="박스 내 표기" className="relative grid h-[60px] w-full grid-cols-3 gap-[2px]">
               <SlidingHighlight square bottomRadius={4} gap={2} count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="border border-brand bg-brand-surface" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
                 const value = index + 1
@@ -2495,6 +2495,7 @@ export default function SettingsPanel({
   // 관리자 전용 탭은 호출부가 실수로 넘겨도 관리자 세션이 아니면 그리지 않는다(서버도 /api/admin/**은 ADMIN만 허용한다).
   const session = useSession().data
   const isAdminSessionNow = isAdminSession(session)
+  const isAdminPage = isAdminSessionNow && ['Banner', 'Dashboard', 'Message'].includes(pageLabel ?? '')
   const isSpecialSession = isAdminSessionNow || session?.special === true
   const childNodes = Children.toArray(children)
   const sectionContent = new Map<SettingsPanelSectionId, ReactNode[]>()
@@ -2616,7 +2617,7 @@ export default function SettingsPanel({
           <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
             {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Graph에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
             {/* 아래 Basis 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
-            <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
+            <span aria-hidden="true" className={`mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm ${isAdminPage ? 'bg-admin-only' : 'bg-brand'}`} />
             {pageLabel ?? '설정'}
           </p>
           {stockCountLabel && (
@@ -2648,13 +2649,13 @@ export default function SettingsPanel({
                   try { localStorage.setItem(tabStorageKey, section.id) } catch { /* 저장소 접근이 막혀도 탭 전환은 유지한다. */ }
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 pt-2 pb-3 text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
+                  ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/55 hover:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
                 {icon ? <SettingsSectionIcon
                   icon={icon}
-                  className={`h-[30px] w-[30px] ${icon === 'industry' ? 'scale-90' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? 'text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
-                  strokeWidth={icon === 'industry' ? 1.22 : 1.1}
+                  className={`h-[30px] w-[30px] transition-colors ${icon === 'industry' ? 'scale-90' : icon === 'ad' ? 'scale-[1.2]' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/55 group-hover:text-admin-only group-focus-visible:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
+                  strokeWidth={icon === 'industry' ? 1.22 : icon === 'ad' ? 0.92 : 1.1}
                 /> : <span aria-hidden="true" className="h-[30px] w-[30px] shrink-0" />}
                 <span className="max-w-full truncate font-bold">{section.id === 'plain' ? section.label : sectionLabelOverrides?.[section.id] ?? section.label}</span>
                 <span

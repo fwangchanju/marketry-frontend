@@ -255,7 +255,7 @@ export default function AdminMessagePage() {
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 시작</h2>
                             <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">메시지 첫 발송 시각</p>
-                            <div className="mt-3 flex max-w-full translate-y-[6px] settings-control-inset justify-center">
+                            <div className="mt-auto mb-auto flex max-w-full settings-control-inset justify-center">
                               <DigitalClockPicker label="발송 시작" hour={saved.startHour} minute={draft.sectorSendMinute} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendMinute: value })} />
                             </div>
                           </div>
@@ -264,7 +264,7 @@ export default function AdminMessagePage() {
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 간격</h2>
                             <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">시장 요약/시장 지도를 몇 분마다 보낼지</p>
-                            <div className="mt-1 flex max-w-full translate-y-[6px] settings-control-inset items-center justify-center">
+                            <div className="mt-auto mb-auto flex max-w-full settings-control-inset items-center justify-center">
                               <MinuteDial label="발송 간격" size={100} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
                             </div>
                           </div>

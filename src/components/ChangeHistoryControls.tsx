@@ -148,9 +148,9 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
   }
 
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       <p className="settings-description m-0 mt-1 text-xs font-medium text-ui-muted">변경 내역 실행 취소·다시 실행</p>
-      <div ref={rowRef} className="mt-4 grid max-w-full translate-y-[6px] settings-control-inset grid-cols-2 gap-[6px]">
+      <div ref={rowRef} className="mt-auto mb-auto grid max-w-full settings-control-inset grid-cols-2 gap-[6px]">
         {pill('undo')}
         {pill('redo')}
       </div>

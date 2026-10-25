@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useSession, useLogout, useSessionKeepAlive, useLocalDevLogin } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
@@ -16,7 +16,7 @@ import ActiveBannerSlot from '@/components/ActiveBannerSlot'
 // 로그인한 사용자는 우측 아바타에서 계정 메뉴를 연다.
 // 오류에는 UI 상태색을 쓰고 등락률 데이터색과 구분한다.
 // hideAccount가 true면 오른쪽의 로그인 버튼/프로필 아이콘을 숨기고 로고만 보여준다(비로그인이 프로필 페이지에 들어왔을 때).
-export default function NavBar({ hideAccount = false, staticMode = false }: { hideAccount?: boolean; staticMode?: boolean }) {
+export default function NavBar({ hideAccount = false, staticMode = false, bannerSlot }: { hideAccount?: boolean; staticMode?: boolean; bannerSlot?: ReactNode | null }) {
   const { data: session, isLoading } = useSession(!staticMode)
   const { pathname, search, hash } = useLocation()
   const { requireLogin } = useLoginGate()
@@ -186,7 +186,7 @@ export default function NavBar({ hideAccount = false, staticMode = false }: { hi
       )}
       </div>
     </header>
-    {!staticMode && <ActiveBannerSlot />}
+    {!staticMode && (bannerSlot === undefined ? <ActiveBannerSlot /> : bannerSlot)}
     </>
   )
 }

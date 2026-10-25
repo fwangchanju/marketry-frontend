@@ -14,7 +14,7 @@ import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
 import { displayEmail } from '@/utils/displayEmail'
-import { isAuthProviderIssuer } from '@/utils/authProvider'
+import { AUTH_PROVIDER_ISSUERS, isAuthProviderIssuer } from '@/utils/authProvider'
 
 const PAGE_SIZE = 50
 const controlClass = 'flex h-5 min-w-9 shrink-0 items-center justify-center whitespace-nowrap rounded-sm border border-brand bg-brand px-1.5 text-[11px] font-semibold leading-none text-ui-background outline-none transition-colors hover:brightness-110 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-75'
@@ -41,6 +41,11 @@ type MemberGrade = (typeof GRADE_VALUES)[number]
 const gradeLabelOf = (value: string) => (value === 'ADMIN' ? '관리자' : value === 'SPECIAL' ? '특별 회원' : '일반 회원')
 const GRADE_COLOR_CLASS: Record<MemberGrade, string> = { ADMIN: 'text-admin-only', SPECIAL: 'text-[var(--sub-purple)]', USER: 'text-ui-text' }
 const gradeOf = (member: { role: string; special: boolean }): MemberGrade => (member.role === 'ADMIN' ? 'ADMIN' : member.special ? 'SPECIAL' : 'USER')
+const NO_PROVIDER = 'NONE'
+const ISSUER_VALUES = [AUTH_PROVIDER_ISSUERS.naver, AUTH_PROVIDER_ISSUERS.kakao, AUTH_PROVIDER_ISSUERS.google, NO_PROVIDER] as const
+const issuerLabelOf = (value: string) => value === NO_PROVIDER
+  ? '(없음)'
+  : value === AUTH_PROVIDER_ISSUERS.naver ? '네이버' : value === AUTH_PROVIDER_ISSUERS.kakao ? '카카오' : '구글'
 // 로그인 연동 — OAuth 제공자별 표시. 그 밖(시스템·로컬 테스트 회원)은 줄표로 둔다.
 const CHECKBOX_COLUMN_WIDTH = `${STOCK_CHECKBOX_COLUMN_PX}px`
 // 종목 표 체크박스 칸과 같은 폭·여백이다.
@@ -53,39 +58,52 @@ function formatTime(value: string | null) {
   return value.replace('T', ' ').slice(0, 19)
 }
 
+function daysSinceLastAccess(value: string | null): number | null {
+  if (!value) return null
+  const [todayYear, todayMonth, todayDay] = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' }).split('-').map(Number)
+  const [lastYear, lastMonth, lastDay] = value.slice(0, 10).split('-').map(Number)
+  const today = Date.UTC(todayYear, todayMonth - 1, todayDay)
+  const lastAccessDay = Date.UTC(lastYear, lastMonth - 1, lastDay)
+  return Math.max(0, Math.floor((today - lastAccessDay) / 86_400_000))
+}
+
 export default function AdminMembers({ userId, specialContainer, nicknameContainer, paginationContainer }: { userId: number; specialContainer: HTMLElement | null; nicknameContainer: HTMLElement | null; paginationContainer: HTMLElement | null }) {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
   const [query, setQuery] = useState('')
   const [excludedRoles, setExcludedRoles] = useState<ReadonlySet<string>>(new Set())
+  const [excludedIssuers, setExcludedIssuers] = useState<ReadonlySet<string>>(new Set())
   const [page, setPage] = useState(0)
   const [sort, setSort] = useState<{ key: SortKey; order: SortOrder } | null>(null)
   const appliedSort = sort ?? DEFAULT_SORT
   const stockSearchWidthPx = useStockSearchWidth()
   const includedRoles = GRADE_VALUES.filter(value => !excludedRoles.has(value))
   const role = includedRoles.length === GRADE_VALUES.length ? '' : includedRoles.join(',')
+  const includedIssuers = ISSUER_VALUES.filter(value => !excludedIssuers.has(value))
+  const issuer = includedIssuers.length === ISSUER_VALUES.length ? '' : includedIssuers.join(',')
   // 모든 권한을 뺐으면 보여 줄 회원이 없다 — 서버에 묻지 않는다.
   const noRoleSelected = includedRoles.length === 0
+  const noIssuerSelected = includedIssuers.length === 0
   const members = useQuery({
-    queryKey: ['admin-members', userId, query, role, appliedSort.key, appliedSort.order, page],
-    queryFn: ({ signal }) => getAdminMembers({ query, role, sort: appliedSort.key, order: appliedSort.order, page }, signal),
-    enabled: !noRoleSelected,
+    queryKey: ['admin-members', userId, query, role, issuer, appliedSort.key, appliedSort.order, page],
+    queryFn: ({ signal }) => getAdminMembers({ query, role, issuer, sort: appliedSort.key, order: appliedSort.order, page }, signal),
+    enabled: !noRoleSelected && !noIssuerSelected,
     // 검색·정렬·필터를 바꿀 때 표가 비었다 다시 차지 않고 이전 목록을 둔 채 바뀐다.
     placeholderData: keepPreviousData,
     staleTime: 30_000,
     retry: false,
   })
   // 표에 줄이 없을 때 표 영역 한가운데에 보여 주는 안내(오류는 따로 그린다).
-  const centerMessage = noRoleSelected ? '조건에 맞는 회원이 없습니다.'
+  const centerMessage = noRoleSelected || noIssuerSelected ? '조건에 맞는 회원이 없습니다.'
     : members.isPending ? '회원 정보를 불러오는 중입니다.'
-    : members.data?.items.length === 0 ? (query || excludedRoles.size > 0 ? '조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.')
+    : members.data?.items.length === 0 ? (query || excludedRoles.size > 0 || excludedIssuers.size > 0 ? '조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.')
     : null
   const [isChangingSpecial, setIsChangingSpecial] = useState(false)
   const [isResettingNickname, setIsResettingNickname] = useState(false)
   // 체크한 회원 — 검색·정렬·필터·페이지를 바꾸면 비운다(보이는 목록 기준이다).
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set())
   const clearSelection = () => setSelectedIds(new Set())
-  const total = noRoleSelected ? 0 : members.data?.total ?? 0
+  const total = noRoleSelected || noIssuerSelected ? 0 : members.data?.total ?? 0
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   // 같은 열을 계속 누르면 오름차순 → 내림차순 → 정렬 해제 순으로 돈다(종목 표와 같다).
   const handleSort = (key: SortKey) => {
@@ -165,6 +183,11 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
     setPage(0)
     clearSelection()
   }
+  const changeExcludedIssuers = (next: ReadonlySet<string>) => {
+    setExcludedIssuers(next)
+    setPage(0)
+    clearSelection()
+  }
 
   return (
     <section aria-label="회원 정보" className="flex h-full min-h-0 w-full flex-col text-sm">
@@ -178,10 +201,10 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
             onChange={changeSearch}
             placeholder="이메일 · 닉네임"
             ariaLabel="회원 검색"
-            afterInput={excludedRoles.size > 0 ? (
+            afterInput={excludedRoles.size > 0 || excludedIssuers.size > 0 ? (
               <button
                 type="button"
-                onClick={() => changeExcludedRoles(new Set())}
+                onClick={() => { changeExcludedRoles(new Set()); changeExcludedIssuers(new Set()) }}
                 className="toolbar-badge flex h-6 items-center whitespace-nowrap rounded border border-ui-border bg-transparent px-2 text-sm font-normal text-ui-text transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
               >
                 필터 초기화
@@ -194,7 +217,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
       <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-auto" aria-busy={members.isFetching}>
         {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
         <table className="nes-table is-dark custom-page-table w-full min-w-[1150px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
-          <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 64 }} /><col style={{ width: 300 }} /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /><col style={{ width: 90 }} /></colgroup>
+          <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 96 }} /><col style={{ width: 268 }} /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /><col style={{ width: 90 }} /></colgroup>
           <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th
@@ -212,7 +235,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
               <th
                 key={label}
                 scope="col"
-                aria-sort={sort?.key === key ? (sort.order === 'asc' ? 'ascending' : 'descending') : undefined}
+                aria-sort={appliedSort.key === key ? (appliedSort.order === 'asc' ? 'ascending' : 'descending') : undefined}
                 className="cursor-pointer bg-[var(--ui-panel)] px-2 text-center font-bold text-ui-white"
                 onClick={() => handleSort(key)}
                 tabIndex={0}
@@ -220,8 +243,19 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
               >
                 <StockSortHeader
                   label={label}
-                  state={sort?.key === key ? sort.order : null}
-                  filter={key === 'role' ? (
+                  state={appliedSort.key === key ? appliedSort.order : null}
+                  filter={key === 'issuer' ? (
+                    <ColumnFilterButton
+                      label={label}
+                      getOptions={() => ISSUER_VALUES}
+                      optionOrder={ISSUER_VALUES}
+                      labelOf={issuerLabelOf}
+                      excluded={excludedIssuers}
+                      onToggle={value => changeExcludedIssuers(new Set(excludedIssuers.has(value) ? [...excludedIssuers].filter(item => item !== value) : [...excludedIssuers, value]))}
+                      onSelectAll={() => changeExcludedIssuers(new Set())}
+                      onSelectNone={values => changeExcludedIssuers(new Set(values))}
+                    />
+                  ) : key === 'role' ? (
                     <ColumnFilterButton
                       label={label}
                       getOptions={() => GRADE_VALUES}
@@ -236,12 +270,13 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
                 />
               </th>
             ))}
-              {/* 정렬하지 않는 열 — 일별 접속 기록에서 세므로 서버 정렬 기준이 없다. */}
-              <th scope="col" className="bg-[var(--ui-panel)] px-2 text-center font-bold text-ui-white">30일 접속</th>
+              {/* 마지막 접속 날짜에서 계산하는 값이라 별도 정렬 기준은 두지 않는다. */}
+              <th scope="col" className="whitespace-nowrap bg-[var(--ui-panel)] px-2 text-center font-bold text-ui-white">미접속 기간</th>
             </tr>
           </thead>
           <tbody className="select-text">
-            {members.isError || noRoleSelected || members.isPending || members.data.items.length === 0 ? null : members.data.items.map((member, index) => {
+            {members.isError || noRoleSelected || noIssuerSelected || members.isPending || members.data.items.length === 0 ? null : members.data.items.map((member, index) => {
+              const inactiveDays = daysSinceLastAccess(member.lastAccessAt)
               return <tr key={member.id} {...rowProps(index)} className={`cursor-pointer ${selectedIds.has(member.id) ? 'bg-[var(--brand)]/15' : 'hover:bg-[var(--brand)]/10'}`}>
                 <td className="text-center" style={CHECKBOX_CELL_STYLE}>
                   <input type="checkbox" aria-label={`${displayEmail(member.email) ?? member.id} 선택`} className="mx-auto my-0 block thin-check" checked={selectedIds.has(member.id)} onChange={() => {}} />
@@ -255,7 +290,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
                 <td className={`px-2 text-center ${GRADE_COLOR_CLASS[gradeOf(member)]}`}>{gradeLabelOf(gradeOf(member))}</td>
                 <td className="px-2 text-center tabular-nums text-ui-text">{formatTime(member.createdAt)}</td>
                 <td className="px-2 text-center tabular-nums text-ui-text">{members.data.accessTrackingAvailable ? formatTime(member.lastAccessAt) : '수집 전'}</td>
-                <td className="px-2 text-right tabular-nums text-ui-text">{member.accessDays ?? 0}일</td>
+                <td className="px-2 text-right tabular-nums text-ui-text">{inactiveDays === null ? '기록 없음' : `${inactiveDays}일`}</td>
               </tr>
             })}
           </tbody>
@@ -283,7 +318,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">특별 회원 지정</h2>
           <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">체크한 회원을 특별 회원으로 지정·해제</p>
-          <div className="mt-4 grid max-w-full translate-y-[6px] settings-control-inset grid-cols-2 gap-[6px]">
+          <div className="grid max-w-full settings-control-inset grid-cols-2 gap-[6px]">
             {([['지정', true], ['해제', false]] as const).map(([label, special]) => (
               <button
                 key={label}
@@ -304,7 +339,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">닉네임 지우기</h2>
           <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">체크한 회원의 닉네임을 지웁니다</p>
-          <div className="mt-4 grid max-w-full translate-y-[6px] settings-control-inset grid-cols-1 gap-[6px]">
+          <div className="grid max-w-full settings-control-inset grid-cols-1 gap-[6px]">
             <button
               type="button"
               onClick={() => void handleResetNickname()}
