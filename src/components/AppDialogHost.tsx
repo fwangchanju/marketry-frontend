@@ -1,4 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
 import { getCurrentAppDialog, resolveCurrentAppDialog, subscribeAppDialogs } from '@/utils/appDialogBus'
 import { HINT_BUBBLE_COLOR_CLASS, POPUP_SIZE_CLASS } from './hintBubbleStyle'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
@@ -45,7 +46,7 @@ export default function AppDialogHost() {
   }
 
   // 바깥(어두운 배경)을 눌러도 닫히지 않는다 — 반드시 버튼이나 Esc로 답해야 한다.
-  return (
+  return createPortal((
     <div className="fixed inset-0 z-[100] bg-ui-background/70" onPointerDown={handleBlockedPointerDown}>
       {/* NXT 안내창과 같이 가로는 메인 영역 가운데, 세로는 전체 화면 가운데에 놓는다. */}
       <div
@@ -92,5 +93,5 @@ export default function AppDialogHost() {
       </section>
       </div>
     </div>
-  )
+  ), document.body)
 }

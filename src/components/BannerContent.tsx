@@ -23,6 +23,9 @@ export function NoticeBanner({ title, text, linkUrl, size, preview = false, text
 }
 
 
-export function BannerImage({ src, title, size }: { src: string; title: string; size: AdBannerSize }) {
-  return <img src={src} alt={title} className="h-full w-full object-contain" width={size.width} height={size.height} />
+export function BannerImage({ src, title, size, linkUrl, preview = false }: { src: string; title: string; size: AdBannerSize; linkUrl?: string | null; preview?: boolean }) {
+  const image = <img src={src} alt={title} className="h-full w-full object-contain" width={size.width} height={size.height} />
+  return linkUrl && !preview
+    ? <a href={linkUrl} className="block h-full w-full no-underline">{image}</a>
+    : image
 }

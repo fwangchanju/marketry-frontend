@@ -185,7 +185,7 @@ type SettingItemId =
   | 'depthLevel' | 'depthMetric' | 'depthRange' | 'topPick'
   | 'marketValueRange' | 'stockChange' | 'excludeSector'
   | 'boxSize' | 'boxLabel' | 'decimalPlaces'
-  | 'colorScale' | 'strongColor'
+  | 'colorScale' | 'strongColor' | 'bannerList' | 'bannerUnpublished' | 'bannerEnded' | 'bannerRotation'
 
 const SETTING_ITEM_POSITIONS: Partial<Record<SettingItemId, { section: SettingsPanelSectionId; item: number }>> = {
   marketValueRange: { section: 'composition', item: 1 },
@@ -200,6 +200,10 @@ const SETTING_ITEM_POSITIONS: Partial<Record<SettingItemId, { section: SettingsP
   colorScale: { section: 'colors', item: 1 },
   strongColor: { section: 'colors', item: 2 },
   topPick: { section: 'colors', item: 3 },
+  bannerList: { section: 'adminBanner', item: 1 },
+  bannerUnpublished: { section: 'adminBanner', item: 2 },
+  bannerEnded: { section: 'adminBanner', item: 3 },
+  bannerRotation: { section: 'adminBanner', item: 4 },
 }
 
 // "2-1" 같은 설정 위치 번호.
