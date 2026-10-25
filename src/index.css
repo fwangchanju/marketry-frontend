@@ -750,10 +750,10 @@ a { color: var(--accent-light); text-decoration: none; }
 }
 
 /* 슬라이더·선택 버튼 같은 조작 요소(버튼 영역)는 설명 앞의 "- " 위치(왼쪽 19px)에서 시작하고, 오른쪽 끝은 우측 토글의
-   왼쪽 끝선(18px 남김)에 맞춰 폭을 211px로 통일한다(사이드 버튼은 이 영역 오른쪽 바깥에 놓는다). */
+   왼쪽 끝선(19px 남김)에 맞춰 폭을 210px로 통일한다(사이드 버튼은 이 영역 오른쪽 바깥에 놓는다). */
 .settings-panel-tab-content .settings-control-inset {
   margin-left: 19px;
-  margin-right: 18px;
+  margin-right: 19px;
 }
 
 /* 설정 탭에서 모든 슬라이더 트랙의 실제 폭을 같게 유지한다. */
@@ -817,6 +817,10 @@ a { color: var(--accent-light); text-decoration: none; }
   min-height: 0;
   padding-bottom: 12px;
   flex-direction: column;
+}
+/* 운영 항목은 바깥 항목이 구분선 위 12px을 이미 비운다. 안쪽에서도 다시 비우면 자동 가운데가 6px 위로 밀린다. */
+.settings-ops-item > .settings-custom-control {
+  padding-bottom: 0;
 }
 .settings-custom-control > .settings-plain-title {
   margin-bottom: 0;

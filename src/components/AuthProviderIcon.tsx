@@ -24,11 +24,12 @@ interface Props {
   className?: string
 }
 
-// 로그인 제공자 표시는 프로필과 관리자 회원 목록에서 같은 20px 칸·14px 로고를 쓴다.
+// 로그인 제공자 표시는 프로필과 관리자 회원 목록에서 같은 20px 칸을 쓴다. 네이버 N은 형태가 빽빽해 12px, 카카오·구글은 14px로 보인다.
 export default function AuthProviderIcon({ issuer, className = '' }: Props) {
   if (!isAuthProviderIssuer(issuer)) return null
   const provider = PROVIDERS[issuer as keyof typeof PROVIDERS]
   const Icon = provider.Icon
+  const iconSize = issuer === AUTH_PROVIDER_ISSUERS.naver ? 'h-3 w-3' : 'h-3.5 w-3.5'
 
   return (
     <span
@@ -36,7 +37,7 @@ export default function AuthProviderIcon({ issuer, className = '' }: Props) {
       aria-label={provider.label}
       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] ${provider.className} ${className}`}
     >
-      <Icon className="h-3.5 w-3.5" />
+      <Icon className={iconSize} />
     </span>
   )
 }

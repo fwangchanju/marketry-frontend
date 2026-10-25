@@ -15,7 +15,7 @@ export default function GrowthLineChart({ rows }: { rows: { date: string; total:
   const points = rows.map((row, index) => `${x(index).toFixed(1)},${y(row.total).toFixed(1)}`).join(' ')
   const last = rows[rows.length - 1]
   const lastY = y(last.total)
-  const valueLabelY = lastY < 34 ? lastY + 14 : lastY - 6
+  const valueLabelY = lastY - 6
   const label = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`
   const middle = rows[Math.floor((rows.length - 1) / 2)]
   return (

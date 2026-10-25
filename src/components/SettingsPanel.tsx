@@ -1528,7 +1528,7 @@ export function SettingsSectorLevelSection({
               />
               {/* 업종 지표 버튼이 지도에서 종목 상자 위(업종 머리글)에 놓인다는 것을 보여 주는 가짜 상자 — 누를 수 없는 그림이라 회색 선으로만 그린다. */}
               <div aria-hidden="true" className={`settings-control-inset pointer-events-none max-w-full ${depthMetricEnabled ? '' : 'opacity-35'}`}>
-                <div className="relative h-[62px] rounded-b-[4px] border-x-2 border-b-2 border-ui-control">
+                <div className="relative h-[63px] rounded-b-[4px] border-x-2 border-b-2 border-ui-control pb-px">
                   <span className="absolute inset-y-0 left-[42%] border-l-2 border-ui-control" />
                   <span className="absolute left-[42%] right-0 top-1/2 border-t-2 border-ui-control" />
                   <span className="absolute left-0 top-[58%] w-[42%] border-t-2 border-ui-control" />
@@ -1632,8 +1632,8 @@ export function SettingsSectorLevelSection({
               <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                 <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
               </div>
-              <div className="h-[62px] px-px pb-px pt-[2px]">
-            <div role="radiogroup" aria-label="박스 내 표기" className="relative grid h-full w-full grid-cols-3 gap-[2px]">
+              <div className="px-px pb-px pt-[2px]">
+            <div role="radiogroup" aria-label="박스 내 표기" className="relative grid h-[60px] w-full grid-cols-3 gap-[2px]">
               <SlidingHighlight square bottomRadius={4} gap={2} count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="border border-brand bg-brand-surface" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
                 const value = index + 1

@@ -83,7 +83,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             className="relative flex items-stretch overflow-hidden rounded-lg bg-ui-white text-sm font-bold text-[#202124] transition-colors hover:bg-[#f1f3f4]"
           >
             <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
-              <GoogleLogoIcon className="h-[18px] w-[18px]" />
+              <GoogleLogoIcon className="h-3.5 w-3.5" />
             </span>
             <span className="w-full px-10 py-2 text-center">Google</span>
           </a>
@@ -94,7 +94,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
               className="relative flex items-stretch overflow-hidden rounded-lg bg-[#03a94d] text-sm font-bold text-white transition-opacity hover:opacity-90"
             >
               <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
-                <NaverLogoIcon className="h-[18px] w-[18px] text-white" />
+                <NaverLogoIcon className="h-3 w-3 text-white" />
               </span>
               <span className="w-full px-10 py-2 text-center">네이버 로그인</span>
             </a>
@@ -106,7 +106,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
               className="relative flex items-stretch overflow-hidden rounded-lg bg-[#fee500] text-sm font-bold text-[#191919] transition-opacity hover:opacity-90"
             >
               <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
-                <KakaoLogoIcon className="h-[18px] w-[18px]" />
+                <KakaoLogoIcon className="h-3.5 w-3.5" />
               </span>
               <span className="w-full px-10 py-2 text-center">카카오 로그인</span>
             </a>
