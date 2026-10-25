@@ -118,7 +118,9 @@ function DateTimeField({ label, value, disabled, onChange }: { label: string; va
 }
 
 function formatScheduledAt(value: string): string {
-  const date = new Date(value)
+  // 서버의 LocalDateTime은 시간대가 없는 문자열이므로 KST로 해석한다.
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
+  const date = new Date(hasTimezone ? value : `${value}+09:00`)
   if (Number.isNaN(date.getTime())) return value
   return new Intl.DateTimeFormat('ko-KR', {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -130,9 +132,10 @@ function fitsNoticeBanner(text: string, textScalePercent = 100, textBold = false
   if (!text) return true
   const body = sourceBody ?? document.querySelector<HTMLElement>('[data-ad-banner-slot] [data-banner-text-body]')
   const bannerSlot = body?.closest<HTMLElement>('[data-ad-banner-slot]') ?? (sourceBody ? null : document.querySelector<HTMLElement>('[data-ad-banner-slot]'))
-  if (!body || !bannerSlot) return true
+  if (!body || (!bannerSlot && !sourceBody)) return true
 
   const bodyStyle = getComputedStyle(body)
+  // 목록 미리보기는 실제 배너 자리 밖에 있지만 항상 728×90 규격으로 그린다.
   const bannerHeight = Number(bannerSlot?.dataset.adBannerSlot?.split('x')[1] ?? 90)
   const compact = bannerHeight < 90
   const fontSize = (compact ? 10 : 12) * textScalePercent / 100
@@ -503,13 +506,7 @@ export default function AdminBannerPage() {
                                         <span className="max-w-[240px] truncate font-medium text-ui-white">{item.title}</span>
                                         <CampaignStatusBadge status={item.status} />
                                       </span>
-                                      <span className="flex shrink-0 items-center gap-2">
-                                        <span className="tabular-nums text-ui-muted">게시 {formatScheduledAt(item.startsAt)} ~ {item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}</span>
-                                        {item.status === 'DRAFT' && <button type="button" disabled={isMutating} onClick={event => {
-                                          const previewBody = event.currentTarget.closest('[data-banner-campaign-card]')?.querySelector<HTMLElement>('[data-banner-text-body]')
-                                          void handleApproveCampaign(item, previewBody ?? undefined)
-                                        }} className={`${SETTINGS_ACTION_CLASS} px-2`}>전체 공개</button>}
-                                      </span>
+                                      <span className="shrink-0 tabular-nums text-ui-muted">게시 {formatScheduledAt(item.startsAt)} ~ {item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}</span>
                                     </div>
                                     <button key={`preview-${item.id}`} type="button" disabled={isMutating} onClick={() => void selectCampaign(item)} aria-label={`${item.type === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집`} className="mx-auto flex h-[90px] w-full max-w-[728px] items-center justify-center overflow-hidden border border-ui-border p-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-wait">
                                       {item.type === 'NOTICE'
@@ -518,6 +515,12 @@ export default function AdminBannerPage() {
                                           ? <BannerImage src={campaignImageUrl(item)} title={item.title} size={{ width: 728, height: 90 }} />
                                           : <span className="flex h-full w-full items-center justify-center bg-ui-background text-sm text-ui-muted">광고 이미지 없음</span>}
                                     </button>
+                                    {item.status === 'DRAFT' && <div className="flex items-center border-t border-ui-border pt-2">
+                                      <button type="button" disabled={isMutating} onClick={event => {
+                                        const previewBody = event.currentTarget.closest('[data-banner-campaign-card]')?.querySelector<HTMLElement>('[data-banner-text-body]')
+                                        void handleApproveCampaign(item, previewBody ?? undefined)
+                                      }} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>전체 공개</button>
+                                    </div>}
                                   </div>
                                 ))}
                               </AlwaysVisibleScrollArea>
