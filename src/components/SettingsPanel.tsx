@@ -9,6 +9,8 @@ import type { StockChangeFilter, SectorChangeFilter } from '@/hooks/useFilteredT
 import { hexToHsl, type ColorScaleConfig } from '@/utils/treemapColorScale'
 import TreemapColorThresholdEditorPanel, { type ColorThresholdEditorProps } from '@/components/TreemapColorThresholdEditorPanel'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
+import SettingsPanelSideToggle from '@/components/SettingsPanelSideToggle'
+import { SETTINGS_PANEL_TAB_ICON_CLASS, SettingsPanelHeader, SettingsPanelTabList } from '@/components/SettingsPanelChrome'
 import SettingsDropdown from '@/components/SettingsDropdown'
 import { HistoryIcon, RefreshIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import type { MarketValueTierItem } from '@/types/api'
@@ -45,30 +47,6 @@ SettingsPanelGroup.displayName = 'SettingsPanelGroup'
 // dimmed: 그 항목의 토글이 꺼져 있을 때 제목 줄만 밝게 두고 설명과 조작부를 함께 옅게 한다(조작부는 호출부가 옅게 한다).
 function SettingDescription({ children, dimmed = false }: { children: ReactNode; dimmed?: boolean }) {
   return <p className={`settings-description mt-1 max-w-full text-xs/4 font-medium text-ui-muted ${dimmed ? 'opacity-35' : ''}`}>{children}</p>
-}
-
-// 좌우 이동 탭을 "Basis" 줄 높이로 옮기고, 그 줄 위에 구분선이 있으면(아래쪽 Basis) 탭을 그 선까지 키운 뒤 아래도 같은 길이만큼 대칭으로
-// 키운다. 그릴 때마다 재는 값이라 상태가 아니라 DOM에 바로 쓴다(상태로 두면 다시 그리기가 이어진다). 해당 줄이 없으면 가운데·기본 크기로 둔다.
-// Basis 줄이 없는 페이지(관리자)에서 좌우 이동 탭을 다른 페이지(Basis 줄에 맞춘 자리)와 같은 곳에 두는 값 — 설정창 아래 끝에서 66px 위, 높이 50px.
-const SIDE_TAB_FROM_BOTTOM = 66
-const SIDE_TAB_HEIGHT = 50
-
-function alignSideTab(outerElement: HTMLElement | null, tab: HTMLElement | null, fixedLikeBasis = false) {
-  if (!outerElement || !tab) return
-  const outer = outerElement.getBoundingClientRect()
-  const title = outerElement.querySelector('[data-map-select-title]')?.getBoundingClientRect()
-  if (!title && fixedLikeBasis) {
-    // 탭은 style.top이 탭의 가운데 줄(위에서 -50% 이동)이라, 탭의 아래 끝이 설정창 아래 끝에서 66px 위에 오도록 가운데 줄을 구한다.
-    const parentTop = (tab.offsetParent as HTMLElement | null)?.getBoundingClientRect().top ?? outer.top
-    tab.style.top = `${Math.round(outer.bottom - SIDE_TAB_FROM_BOTTOM - SIDE_TAB_HEIGHT / 2 - parentTop)}px`
-    tab.style.height = `${SIDE_TAB_HEIGHT}px`
-    return
-  }
-  const topLine = outerElement.querySelector('[data-map-select-top-line]')?.getBoundingClientRect()
-  const center = title ? title.top + title.height / 2 : null
-  tab.style.top = center === null ? '' : `${Math.round(center - outer.top)}px`
-  const half = center !== null && topLine ? Math.round(center - topLine.top) : null
-  tab.style.height = half !== null && half > 16 ? `${half * 2}px` : ''
 }
 
 // 도움말 말풍선이 설정창 가장자리에서 띄우는 최소 간격.
@@ -1284,13 +1262,13 @@ function SettingsTaxonomySelector({
   const isSelected = (key: TaxonomyKey) => (key === 'KRX' ? isExchange : taxonomy === key)
 
   return (
-    <div data-map-select-top-line={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
+    <div data-settings-side-toggle-top-anchor={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
       <p data-map-select-title className="font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none">
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
         {TAXONOMY_SELECT_TITLE}
       </p>
-      <div role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 gap-[6px]">
+      <div data-settings-side-toggle-bottom-anchor role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 gap-[6px]">
         <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[4px] border border-brand-surface bg-brand" />
         {options.map(option => (
           <button
@@ -2348,8 +2326,6 @@ interface Props {
   sectionLabelOverrides?: Partial<Record<SettingsPanelSectionId, string>>
   onSectionChange?: (section: SettingsPanelSectionId) => void
   taxonomyAtBottom?: boolean
-  // Basis 줄이 없는 페이지(관리자)에서 좌우 이동 탭을 다른 페이지와 같은 높이에 둔다.
-  fixedSideTab?: boolean
   // 설정창 헤더 오른쪽 끝에 놓을 표시(관리자 페이지의 경고 표시 등).
   headerRight?: ReactNode
   // 하단 Basis 선택 아래에 표시할 종목 분류 최종 변경 시각(지도 상단 표기와 같은 형식).
@@ -2396,7 +2372,6 @@ export default function SettingsPanel({
   sectionLabelOverrides,
   onSectionChange,
   taxonomyAtBottom = false,
-  fixedSideTab = false,
   headerRight,
   snapshotTime,
   taxonomySection = 'industry',
@@ -2450,25 +2425,6 @@ export default function SettingsPanel({
     return () => clearTimeout(timer)
   }, [isLoggedIn, preferencesLoaded])
   // 좌우 이동 탭은 "Basis" 줄(앞에 색 막대가 있는 줄)의 높이에 맞춘다. 그 줄이 없으면 가운데에 둔다.
-  const outerRef = useRef<HTMLDivElement>(null)
-  const sideTabRef = useRef<HTMLButtonElement>(null)
-  // 설정창 안 내용(분류 선택 줄의 위치, 창 높이)이 바뀔 수 있어 그릴 때마다 다시 잰다. 전체화면처럼 다시 그리지 않고 크기만 바뀌는 경우는
-  // 크기 변화를 지켜보다가 다시 잰다.
-  useLayoutEffect(() => {
-    alignSideTab(outerRef.current, sideTabRef.current, fixedSideTab)
-  })
-  useEffect(() => {
-    const outer = outerRef.current
-    if (!outer) return
-    const realign = () => alignSideTab(outerRef.current, sideTabRef.current, fixedSideTab)
-    const observer = new ResizeObserver(realign)
-    observer.observe(outer)
-    window.addEventListener('resize', realign)
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('resize', realign)
-    }
-  })
   const tabStorageKey = `marketry:settings-panel-tab:${pageLabel ?? 'Settings'}`
   const [activeSection, setActiveSection] = useState<SettingsPanelSectionId>(() => {
     try {
@@ -2581,38 +2537,15 @@ export default function SettingsPanel({
 
   return (
     // 바깥 감싸개: 지도 쪽 가장자리 가운데에 튀어나오는 좌우 이동 탭을 패널(overflow-hidden) 밖에 그리려고 둔다. 슬라이드 애니메이션도 여기에 붙는다.
-    <div ref={outerRef} data-settings-panel-shell className={`relative z-20 mb-[4px] flex shrink-0 ${animationClass}`}>
-    {onToggleSide && (
-      <button
-        type="button"
-        onClick={onToggleSide}
-        aria-label={isOnLeft ? '설정창을 오른쪽으로 이동' : '설정창을 왼쪽으로 이동'}
-        data-hint={isOnLeft ? '설정창을 오른쪽으로 이동' : '설정창을 왼쪽으로 이동'}
-        ref={sideTabRef}
-        style={{ backgroundColor: TAXONOMY_BACKGROUND_COLOR }}
-        className={`absolute top-1/2 z-10 flex h-8 w-[14px] -translate-y-1/2 items-center justify-center border border-ui-border p-0 text-ui-muted hover:text-brand focus-visible:text-brand ${
-          isOnLeft ? '-right-[13px] rounded-r-lg border-l-0' : '-left-[13px] rounded-l-lg border-r-0'
-        }`}
-      >
-        <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
-          <path
-            d={isOnLeft ? 'M6 3.5 10.5 8 6 12.5' : 'M10 3.5 5.5 8 10 12.5'}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-    )}
+    <div data-settings-panel-shell className={`relative z-20 mb-[4px] flex shrink-0 ${animationClass}`}>
+    {onToggleSide && <SettingsPanelSideToggle isOnLeft={isOnLeft} onToggleSide={onToggleSide} />}
     <div
       data-settings-panel
       className="relative tabular-nums select-none flex w-[300px] shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-ui-panel"
       style={{ '--accent': 'var(--panel-gray)', '--accent-hover': 'var(--ui-white)', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
     >
       {/* 메인 툴바의 줄 높이(상하 여백 포함 39px)에 맞춘다. 제목과 헤더 조작부는 28px 안에서 세로 가운데 둔다. */}
-      <div className="flex h-[39px] shrink-0 items-center border-b border-ui-border px-4">
+      <SettingsPanelHeader>
         <div className="flex min-w-0 items-center gap-2">
           <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
             {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Graph에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
@@ -2628,9 +2561,9 @@ export default function SettingsPanel({
         </div>
         {preferenceActions}
         {headerRight && <div className="-mr-[3px] ml-auto flex shrink-0 items-center">{headerRight}</div>}
-      </div>
+      </SettingsPanelHeader>
       {menuSections.length > 0 && (
-      <nav role="tablist" aria-label={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'} className="flex h-[58px] shrink-0 items-stretch border-b border-ui-border bg-ui-panel px-1">
+      <SettingsPanelTabList ariaLabel={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'}>
           {menuSections.map(section => {
             const selected = section.id === 'plain' || section.id === selectedSection?.id
             const icon = section.id === 'plain' ? section.icon : sectionIconOverrides?.[section.id] ?? section.icon
@@ -2654,9 +2587,9 @@ export default function SettingsPanel({
               >
                 {icon ? <SettingsSectionIcon
                   icon={icon}
-                  className={`h-6 w-6 transition-colors ${icon === 'industry' ? 'scale-90' : icon === 'ad' ? 'scale-[1.2]' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/55 group-hover:text-admin-only group-focus-visible:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
+                  className={`${SETTINGS_PANEL_TAB_ICON_CLASS} transition-colors ${icon === 'industry' ? 'scale-90' : icon === 'ad' ? 'scale-[1.2]' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/55 group-hover:text-admin-only group-focus-visible:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
                   strokeWidth={icon === 'industry' ? 1.22 : icon === 'ad' ? 0.92 : 1.1}
-                /> : <span aria-hidden="true" className="h-6 w-6 shrink-0" />}
+                /> : <span aria-hidden="true" className={`${SETTINGS_PANEL_TAB_ICON_CLASS} shrink-0`} />}
                 <span className="max-w-full truncate font-bold">{section.id === 'plain' ? section.label : sectionLabelOverrides?.[section.id] ?? section.label}</span>
                 <span
                   aria-hidden="true"
@@ -2665,7 +2598,7 @@ export default function SettingsPanel({
               </button>
             )
           })}
-        </nav>
+      </SettingsPanelTabList>
       )}
       {/* 로딩은 헤더·탭과 하단 업종 분류 사이의 설정 본문 영역만 덮는다. */}
       <div aria-busy={isPreferenceFeedbackActive || undefined} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">

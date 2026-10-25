@@ -22,7 +22,7 @@ import AdBannerSlot from '@/components/AdBannerSlot'
 import { SlidingHighlight } from '@/components/SlidingHighlight'
 
 const INPUT_CLASS = 'h-[25px] w-full min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:border-brand placeholder:text-ui-muted disabled:opacity-35'
-const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-full items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35'
+const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35'
 
 function kstInputValue(epoch = Date.now()): string {
   return new Date(epoch).toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T').slice(0, 16)
@@ -417,13 +417,24 @@ export default function AdminBannerPage() {
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="BANNER" />
                 </Toolbar>
-                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 pb-2">
-                  <section aria-labelledby="banner-content-heading" className="flex shrink-0 flex-col gap-2 py-2">
-                    <div>
-                      <h1 id="banner-content-heading" className="m-0 text-base font-medium">내용</h1>
-                      <p className="m-0 mt-1 text-xs text-ui-muted">입력하면 상단 배너에 바로 표시됩니다. 등록한 배너는 관리자에게만 보이고, 전체 공개 후 방문자에게 표시됩니다. <span role="status">{visitorStatus}</span></p>
-                    </div>
-                    <div className="flex w-full flex-col gap-3" style={{ maxWidth: `${bannerTextAreaWidth}px` }}>
+                <div className="page-main-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+                  <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+                    <header className="flex flex-wrap items-start justify-between gap-3 border-b border-ui-border py-3">
+                      <div>
+                        <h1 className="m-0 text-lg font-bold text-ui-white">{activeType === 'NOTICE' ? '공지 배너' : '광고 배너'}</h1>
+                        <p className="m-0 mt-1 text-xs leading-relaxed text-ui-muted">내용과 일정을 설정하고 상단 미리보기에서 확인하세요.</p>
+                      </div>
+                      <div role="status" className="max-w-full border-l-2 border-brand bg-ui-panel px-3 py-2 text-xs leading-relaxed text-ui-text">
+                        <span className="mr-1 font-bold text-ui-white">현재 공개 상태</span>{visitorStatus}
+                      </div>
+                    </header>
+
+                    <section aria-labelledby="banner-content-heading" className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel" style={{ maxWidth: `${bannerTextAreaWidth + 32}px` }}>
+                      <header className="border-b border-ui-border px-4 py-3">
+                        <h2 id="banner-content-heading" className="m-0 text-base font-bold text-ui-white">배너 내용</h2>
+                        <p className="m-0 mt-1 text-xs leading-relaxed text-ui-muted">등록 후에는 관리자에게만 보이며, 전체 공개하면 방문자에게 표시됩니다.</p>
+                      </header>
+                      <div className="flex w-full flex-col gap-3 p-4">
                       <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
                         <span>제목</span>
                         <input aria-label="배너 제목" placeholder="서비스 안내" maxLength={100} disabled={!canEdit} value={draft.title} onChange={event => changeDraft({ title: event.target.value })} className={INPUT_CLASS} />
@@ -461,24 +472,39 @@ export default function AdminBannerPage() {
                         <input aria-label="연결 주소" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} onBlur={event => { if (!event.currentTarget.value.trim()) changeDraft({ linkUrl: 'http://' }) }} className={INPUT_CLASS} />
                         <span className="text-xs font-normal leading-4 text-ui-muted">선택하면 배너를 눌러 해당 주소로 이동합니다.</span>
                       </label>
-                      <fieldset className="m-0 min-w-0 border-0 p-0">
-                        <legend className="mb-1 text-[15px] leading-[22px] font-medium text-ui-white">교체 일정</legend>
-                        <div className="grid grid-cols-2 gap-2">
-                          <label className="flex min-w-0 flex-col gap-1 text-[13px] font-medium text-ui-white"><span>시작</span><DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} /></label>
-                          <label className="flex min-w-0 flex-col gap-1 text-[13px] font-medium text-ui-white"><span>종료</span><DateTimeField label="교체 종료" disabled={!canEdit} value={draft.endsAt} onChange={endsAt => changeDraft({ endsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends`} /></label>
-                        </div>
-                        <p className="m-0 mt-1 text-xs font-normal text-ui-muted">한국 시간 기준으로 실제 배너가 교체됩니다.</p>
-                      </fieldset>
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}><SaveIcon aria-hidden="true" className="h-4 w-4" />등록</button>
-                        <button type="button" disabled={!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending} onClick={() => void handleApprove()} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>전체 공개</button>
-                        {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>등록 취소</button>}
-                      </div>
                     </div>
-                  </section>
-                  <div className="flex h-8 shrink-0 items-center justify-between border-b border-ui-white/10">
-                    <span className="font-medium">배너 슬롯 <span className="text-ui-muted">{campaigns.isError && campaigns.data === undefined ? '—' : Math.min(campaignsList.length, 5)}/5</span><span className="ml-2 text-xs font-normal text-ui-muted">게시 중인 배너는 다음 예약 시작 시각에 교체됩니다.</span></span>
-                    <button type="button" onClick={() => void startNewDraft()} className="h-[25px] shrink-0 rounded-[4px] border-0 bg-[var(--ui-control)] px-2 text-[13px] text-ui-white settings-chip-hover">새 배너</button>
+                    </section>
+
+                    <section aria-labelledby="banner-schedule-heading" className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel" style={{ maxWidth: `${bannerTextAreaWidth + 32}px` }}>
+                      <header className="border-b border-ui-border px-4 py-3">
+                        <h2 id="banner-schedule-heading" className="m-0 text-base font-bold text-ui-white">게시 일정</h2>
+                        <p className="m-0 mt-1 text-xs leading-relaxed text-ui-muted">한국 시간 기준으로 배너가 시작되고 종료됩니다.</p>
+                      </header>
+                      <div className="flex w-full flex-col gap-4 p-4">
+                        <fieldset className="m-0 min-w-0 border-0 p-0">
+                          <legend className="sr-only">교체 일정</legend>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <label className="flex min-w-0 flex-col gap-1 text-[13px] font-medium text-ui-white"><span>시작</span><DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} /></label>
+                            <label className="flex min-w-0 flex-col gap-1 text-[13px] font-medium text-ui-white"><span>종료 <span className="font-normal text-ui-muted">(선택)</span></span><DateTimeField label="교체 종료" disabled={!canEdit} value={draft.endsAt} onChange={endsAt => changeDraft({ endsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends`} /></label>
+                          </div>
+                        </fieldset>
+                        <div className="flex flex-wrap items-center gap-2 border-t border-ui-border pt-4">
+                          <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}><SaveIcon aria-hidden="true" className="h-4 w-4" />등록</button>
+                          <button type="button" disabled={!draft.id || !isDraftSaved || selectedCampaign?.status !== 'DRAFT' || approveMutation.isPending} onClick={() => void handleApprove()} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>전체 공개</button>
+                          {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>등록 취소</button>}
+                          <span className="min-w-0 flex-1 text-right text-xs text-ui-muted">저장 후 전체 공개할 수 있습니다.</span>
+                        </div>
+                      </div>
+                    </section>
+
+                    <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-2 border border-ui-border bg-ui-panel px-4 py-3" style={{ maxWidth: `${bannerTextAreaWidth + 32}px` }}>
+                      <div>
+                        <span className="font-medium text-ui-white">배너 슬롯</span>
+                        <span className="ml-2 text-sm tabular-nums text-ui-muted">{campaigns.isError && campaigns.data === undefined ? '—' : Math.min(campaignsList.length, 5)}/5</span>
+                        <p className="m-0 mt-1 text-xs text-ui-muted">게시 중인 배너는 다음 예약 시작 시각에 교체됩니다.</p>
+                      </div>
+                      <button type="button" onClick={() => void startNewDraft()} className="h-[25px] shrink-0 rounded-[4px] border-0 bg-[var(--ui-control)] px-2 text-[13px] text-ui-white settings-chip-hover">새 배너</button>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -490,7 +516,6 @@ export default function AdminBannerPage() {
               <SettingsPanel
                 pageLabel="Banner"
                 showPreferenceActions={false}
-                fixedSideTab
                 isOpen={isSettingsOpen}
                 onOpenChange={setIsSettingsOpen}
                 isOnLeft={isSettingsOnLeft}

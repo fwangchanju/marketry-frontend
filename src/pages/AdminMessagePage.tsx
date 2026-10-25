@@ -230,7 +230,6 @@ export default function AdminMessagePage() {
               <SettingsPanel
                 pageLabel="Message"
                 showPreferenceActions={false}
-                fixedSideTab
                 isOpen={isSettingsOpen}
                 onOpenChange={setIsSettingsOpen}
                 isOnLeft={isSettingsOnLeft}

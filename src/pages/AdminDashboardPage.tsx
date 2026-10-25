@@ -297,7 +297,6 @@ export default function AdminDashboardPage() {
               <SettingsPanel
                 pageLabel="Dashboard"
                 showPreferenceActions={false}
-                fixedSideTab
                 isOpen={isSettingsOpen}
                 onOpenChange={setIsSettingsOpen}
                 isOnLeft={isSettingsOnLeft}
