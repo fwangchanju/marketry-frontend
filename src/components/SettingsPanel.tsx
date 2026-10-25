@@ -2495,7 +2495,7 @@ export default function SettingsPanel({
   // 관리자 전용 탭은 호출부가 실수로 넘겨도 관리자 세션이 아니면 그리지 않는다(서버도 /api/admin/**은 ADMIN만 허용한다).
   const session = useSession().data
   const isAdminSessionNow = isAdminSession(session)
-  const isAdminPage = isAdminSessionNow && ['Banner', 'Dashboard', 'Message'].includes(pageLabel ?? '')
+  const isAdminPage = isAdminSessionNow && ['Banner', 'Dashboard', 'Member', 'Message'].includes(pageLabel ?? '')
   const isSpecialSession = isAdminSessionNow || session?.special === true
   const childNodes = Children.toArray(children)
   const sectionContent = new Map<SettingsPanelSectionId, ReactNode[]>()
