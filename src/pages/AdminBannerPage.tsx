@@ -72,7 +72,7 @@ function DateTimeField({ label, value, disabled, onChange }: { label: string; va
   }
 
   return (
-    <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,92px)_28px_43px] gap-1">
+    <div className="grid min-w-0 flex-1 grid-cols-[minmax(82px,92px)_32px_52px] gap-0.5">
       <input aria-label={`${label} 날짜`} type="text" inputMode="numeric" disabled={disabled} value={dateText} placeholder="yyyy.mm.dd." onChange={event => {
         const next = event.target.value
         setDateText(next)
@@ -87,7 +87,7 @@ function DateTimeField({ label, value, disabled, onChange }: { label: string; va
           lastEmittedValue.current = nextValue
           onChange(nextValue)
         }
-      }} className="h-[25px] w-[28px] appearance-none rounded-[4px] border border-transparent bg-[var(--ui-control)] p-0 text-center text-[11px] font-medium text-ui-white outline-none focus:border-brand disabled:opacity-35">
+      }} className="h-[25px] w-[32px] appearance-none rounded-[4px] border border-transparent bg-[var(--ui-control)] p-0 text-center text-[11px] font-medium text-ui-white outline-none focus:border-brand disabled:opacity-35">
         <option value="am">오전</option>
         <option value="pm">오후</option>
       </select>
