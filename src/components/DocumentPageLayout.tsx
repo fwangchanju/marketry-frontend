@@ -13,7 +13,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 
 // 공개 문서도 다른 화면과 같은 헤더·계정·메뉴·툴바·하단 정보줄을 쓴다.
-export default function DocumentPageLayout({ title, children, panelIcon = 'document' }: { title: string; children: ReactNode; panelIcon?: SettingsSectionIconName }) {
+export default function DocumentPageLayout({ title, children, panelIcon = 'document', panelDescription = 'MARKETRY 서비스 안내 문서입니다.' }: { title: string; children: ReactNode; panelIcon?: SettingsSectionIconName; panelDescription?: string }) {
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
@@ -58,14 +58,14 @@ export default function DocumentPageLayout({ title, children, panelIcon = 'docum
           <Toolbar>
             <ToolbarModeText page="INFO" label={title} />
           </Toolbar>
-          {/* SOURCE 기준의 공통 바깥 테두리만 쓴다. 문서별 카드 테두리는 겹치지 않는다. */}
+          {/* 공통 바깥 프레임 안에서 InfoDocument의 제목·구획·정보 행 양식을 사용한다. */}
           <PageMainFrame className="p-6">{children}</PageMainFrame>
           <DisclaimerFooter />
         </main>
         {isSettingsOpen && <div className="flex shrink-0 pt-[4px]">
           <PageInfoPanel title="Info" tabLabel={title} icon={panelIcon}>
-            <p>MARKETRY 서비스 안내 문서입니다.</p>
-            <p className="mt-4">본문은 왼쪽 영역에서 확인할 수 있습니다.</p>
+            <p>{panelDescription}</p>
+            <p className="mt-4">본문은 메인 영역에서 확인할 수 있습니다.</p>
           </PageInfoPanel>
         </div>}
         </div>

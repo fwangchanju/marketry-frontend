@@ -16,7 +16,7 @@ interface Props {
   onClose: () => void
 }
 
-// ScreenshotModal과 동일한 어두운 팝업 패널을 사용하고, Google 공식 버튼은 흰 배경으로 표시한다.
+// ScreenshotModal과 같은 어두운 팝업 패널을 쓰고, 구글 로고의 원색이 보이도록 흰 배경으로 표시한다.
 export default function LoginModal({ returnTo, hideMessage = false, loginError = null, onClose }: Props) {
   const mainAreaRect = useMainAreaRect(true)
   const googleLinkRef = useRef<HTMLAnchorElement>(null)
@@ -79,13 +79,13 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             href={googleLoginUrl(returnTo)}
             ref={googleLinkRef}
             onClick={isLocalDev ? event => { event.preventDefault(); if (!isDevLoginPending) void loginAs('admin') } : undefined}
-            aria-label="Google 로그인"
+            aria-label="구글 로그인"
             className="relative flex items-stretch overflow-hidden rounded-lg bg-ui-white text-sm font-bold text-[#202124] transition-colors hover:bg-[#f1f3f4]"
           >
             <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
               <GoogleLogoIcon className="h-3.5 w-3.5" />
             </span>
-            <span className="w-full px-10 py-2 text-center">Google</span>
+            <span className="w-full px-10 py-2 text-center">구글 로그인</span>
           </a>
           {providers?.naver && (
             <a
