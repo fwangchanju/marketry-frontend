@@ -1059,10 +1059,6 @@ a { color: var(--accent-light); text-decoration: none; }
   font-variant-numeric: tabular-nums;
   white-space: pre;
 }
-.settings-plain-content .settings-plain-title-no-number::before {
-  counter-increment: none;
-  content: none;
-}
 .settings-admin-section .settings-plain-title {
   color: var(--admin-only);
   /* 일반 탭의 번호 제목(.settings-section-num)과 같은 22px 줄 높이 — 없으면 15px 글자가 21.43px이 되어 헤더 아래가 어긋난다. */

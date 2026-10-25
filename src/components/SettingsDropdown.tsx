@@ -33,11 +33,13 @@ interface Props<K extends string> {
   compact?: boolean
   // 꺽쇠를 고른 칸과 같은 색 조합으로 그린다(안쪽 짙은 청록 + 청록 외곽선).
   outlinedChevron?: boolean
+  // 작은 입력 그룹 안에서 기본 선택 화살표를 쓴다.
+  smallChevron?: boolean
   centerLabel?: boolean
   className?: string
 }
 
-export default function SettingsDropdown<K extends string>({ options, value, onChange, ariaLabel, disabled = false, badge, compact = false, outlinedChevron = false, centerLabel = false, className = '' }: Props<K>) {
+export default function SettingsDropdown<K extends string>({ options, value, onChange, ariaLabel, disabled = false, badge, compact = false, outlinedChevron = false, smallChevron = false, centerLabel = false, className = '' }: Props<K>) {
   const [isOpen, setIsOpen] = useState(false)
   // 닫힌 버튼의 배지 폭 — 열린 목록의 글자를 고른 값 글자(배지 오른쪽)와 같은 세로줄에 맞추는 데 쓴다.
   const [badgeWidth, setBadgeWidth] = useState(0)
@@ -71,7 +73,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
         {outlinedChevron ? (
           <SettingsOutlinedChevronIcon className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         ) : (
-          <ChevronDownIcon strokeWidth={3.5} className={`${compact ? 'h-3 w-3' : 'h-[18px] w-[18px]'} shrink-0 text-brand transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDownIcon strokeWidth={smallChevron ? 2 : 3.5} className={`${smallChevron ? 'h-3 w-3 text-ui-muted' : compact ? 'h-3 w-3 text-brand' : 'h-[18px] w-[18px] text-brand'} shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         )}
       </button>
       {isOpen && position && createPortal(

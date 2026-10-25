@@ -1,14 +1,17 @@
 import type { ReactNode } from 'react'
 
-export function InfoPageHeading({ title, summary, effectiveDate }: { title: string; summary: string; effectiveDate?: string }) {
+export function InfoPageHeading({ title, summary, effectiveDate, actions }: { title: string; summary: string; effectiveDate?: string; actions?: ReactNode }) {
   return (
     <header className="mb-7 border-b border-ui-border pb-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex min-w-0 items-center gap-2 text-2xl font-bold text-ui-white">
           <span aria-hidden="true" className="h-7 w-1 shrink-0 rounded-sm bg-brand" />
           {title}
         </h1>
-        {effectiveDate && <p className="inline-flex shrink-0 whitespace-nowrap border border-ui-border bg-ui-panel px-2 py-1 text-xs text-ui-muted">시행일 {effectiveDate}</p>}
+        {(effectiveDate || actions) && <div className="flex shrink-0 items-center gap-2">
+          {actions}
+          {effectiveDate && <p className="inline-flex shrink-0 whitespace-nowrap border border-ui-border bg-ui-panel px-2 py-1 text-xs text-ui-muted">시행일 {effectiveDate}</p>}
+        </div>}
       </div>
       <p className="mt-3 text-sm leading-relaxed text-ui-text">{summary}</p>
     </header>
