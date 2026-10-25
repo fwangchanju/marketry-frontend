@@ -82,7 +82,6 @@ export default function AdminPage() {
               <SettingsPanel
                 pageLabel="Member"
                 showPreferenceActions={false}
-                fixedSideTab
                 isOpen={isSettingsOpen}
                 onOpenChange={setIsSettingsOpen}
                 isOnLeft={isSettingsOnLeft}

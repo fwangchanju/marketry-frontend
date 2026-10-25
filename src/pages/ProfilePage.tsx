@@ -14,9 +14,11 @@ import ProfileAvatar from '@/components/ProfileAvatar'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
+import { InfoPageHeading } from '@/components/InfoDocument'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
+import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useCheckNickname, useDeleteProfileImage, useUpdateNickname, useUploadProfileImage } from '@/hooks/useProfile'
 import { useLogout, useSession, useWithdrawAccount } from '@/hooks/useSession'
 import { appConfirm } from '@/utils/appDialogBus'
@@ -24,8 +26,6 @@ import { displayEmail } from '@/utils/displayEmail'
 import { checkProfileImageFile, resizeProfileImage, PROFILE_IMAGE_MAX_UPLOAD_BYTES } from '@/utils/resizeProfileImage'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 
-// 이메일·닉네임·프로필 사진 항목은 모두 같은 높이(가장 큰 프로필 사진 항목: 위아래 여백 12px씩 + 제목 20px + 간격 8px + 사진 64px + 간격 8px + 안내 16px = 140px, 위 구분선 1px)이고, 내용은 세로 가운데에 둔다.
-const ITEM_CLASS = 'flex min-h-[141px] flex-col justify-center border-t border-ui-border py-3'
 const NICKNAME_MAX_LENGTH = 12
 const NICKNAME_PATTERN = /^[가-힣A-Za-z0-9]{2,12}$/
 // 입력하는 동안 바로 알려 주는 제한 사유(빨간 글자) — 문제가 없으면 null.
@@ -63,6 +63,7 @@ export default function ProfilePage() {
   const [isImageBusy, setIsImageBusy] = useState(false)
   const [nicknameFocused, setNicknameFocused] = useState(false)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+  const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
@@ -110,8 +111,11 @@ export default function ProfilePage() {
       return
     }
     setNicknameMessage(null)
+    let isCheckingAvailability = false
     try {
+      isCheckingAvailability = true
       const { available } = await checkNickname.mutateAsync(nickname)
+      isCheckingAvailability = false
       if (!available) {
         setNicknameMessage({ kind: 'error', text: '이미 사용 중인 닉네임입니다.' })
         return
@@ -125,13 +129,22 @@ export default function ProfilePage() {
     } catch (error) {
       const status = isAxiosError(error) ? error.response?.status : undefined
       const errorCode = isAxiosError(error) ? (error.response?.data as { errorCode?: string } | undefined)?.errorCode : undefined
+      if (isCheckingAvailability) {
+        if (status === 400 && errorCode === NICKNAME_RESERVED_CODE) {
+          setNicknameMessage({ kind: 'error', text: '사용할 수 없는 닉네임입니다.' })
+        } else if (status === 409 && errorCode === NICKNAME_CHANGE_LIMITED_CODE) {
+          setNicknameMessage({ kind: 'error', text: '닉네임은 7일에 한 번만 바꿀 수 있습니다.' })
+          void refetch()
+        } else {
+          const detail = isAxiosError(error) ? (error.response?.data as { detail?: string } | undefined)?.detail : undefined
+          setNicknameMessage({ kind: 'error', text: detail || '닉네임 사용 가능 여부를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.' })
+        }
+        return
+      }
       if (status === 409 && errorCode === NICKNAME_CHANGE_LIMITED_CODE) {
-        setNicknameMessage({ kind: 'error', text: '닉네임은 7일에 한 번만 바꿀 수 있습니다.' })
         void refetch()
-      } else if (status === 409) setNicknameMessage({ kind: 'error', text: '이미 사용 중인 닉네임입니다.' })
-      else if (status === 400 && errorCode === NICKNAME_RESERVED_CODE) setNicknameMessage({ kind: 'error', text: '사용할 수 없는 닉네임입니다.' })
-      else if (status === 400) setNicknameMessage({ kind: 'error', text: NICKNAME_RULE_MESSAGE })
-      else setNicknameMessage({ kind: 'error', text: '닉네임을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.' })
+      }
+      // API 실패는 전역 요청 실패 팝업에서 안내한다. 같은 사유를 입력창 아래에 중복 표시하지 않는다.
     }
   }
 
@@ -239,13 +252,13 @@ export default function ProfilePage() {
         }
       />
       <div className="flex min-h-0 flex-1">
-        <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
+        <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           <Toolbar>
             <ToolbarModeText page="ACCOUNT" label="PROFILE" />
           </Toolbar>
-          <PageMainFrame className="p-8">
-            <section>
+          <PageMainFrame className="p-6">
+            <section className="mx-auto w-full max-w-4xl">
           {isError ? (
             // 다른 화면의 불러오기 실패와 같은 오류 원(문구와 "다시 시도")으로 보여 준다.
             <div className="flex justify-center py-4">
@@ -253,24 +266,33 @@ export default function ProfilePage() {
             </div>
           ) : session?.authenticated ? (
             <>
-              {/* 캡처 창·설정창 제목처럼 제목 앞에 청록 막대를 둔다. */}
-              <h2 className="font-roboto-latin mb-4 flex h-7 items-center text-lg font-bold leading-none">
-                <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-[var(--brand)]" />
-                Account
-              </h2>
-              <div className={ITEM_CLASS}>
-                <p className="text-base text-ui-text">이메일</p>
-                <p className="mt-2 flex items-center gap-2 text-base">
-                  <AuthProviderIcon issuer={session.issuer} />
-                  <span className="break-normal">{displayEmail(session.email) || '등록된 이메일 없음'}</span>
-                </p>
-              </div>
-              <div className={ITEM_CLASS}>
+              <InfoPageHeading title="내 프로필" summary="로그인 계정과 프로필 정보를 확인하고 관리합니다." />
+
+              <section aria-labelledby="profile-account-heading" className="-mt-3 overflow-hidden border border-ui-border bg-ui-panel">
+                <header className="border-b border-ui-border px-4 py-3">
+                  <h2 id="profile-account-heading" className="m-0 text-base font-bold text-ui-white">계정 정보</h2>
+                  <p className="m-0 mt-1 text-sm leading-relaxed text-ui-text">로그인에 사용한 계정입니다.</p>
+                </header>
+                <div className="flex min-w-0 items-center gap-4 px-4 py-4">
+                  <div className="min-w-0">
+                    <p className="m-0 text-sm font-medium text-ui-text">이메일</p>
+                    <p className="m-0 mt-1 flex min-w-0 items-center gap-2 text-base text-ui-white">
+                      <AuthProviderIcon issuer={session.issuer} />
+                      <span className="break-all">{displayEmail(session.email) || '등록된 이메일 없음'}</span>
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <div className="mt-4 grid min-w-0 gap-4 md:grid-cols-2">
+              <section aria-labelledby="profile-nickname-heading" className="min-w-0 border border-ui-border bg-ui-panel p-4">
+                <header className="mb-4">
+                  <h2 id="profile-nickname-heading" className="m-0 text-base font-bold text-ui-white">닉네임</h2>
+                  <p className="m-0 mt-1 text-sm leading-relaxed text-ui-text">다른 회원에게 표시되는 이름입니다.</p>
+                </header>
                 <form onSubmit={handleSaveNickname}>
-                  <label htmlFor="profile-nickname" className="text-base text-ui-text">
-                    닉네임
-                  </label>
-                  <div className="mt-2 flex gap-2">
+                  <label htmlFor="profile-nickname" className="sr-only">닉네임</label>
+                  <div className="flex flex-wrap gap-2">
                     <input
                       id="profile-nickname"
                       value={nicknameInput}
@@ -286,7 +308,7 @@ export default function ProfilePage() {
                       autoComplete="off"
                       placeholder="2~12자"
                       // 12자 너비 — 가장 넓은 영문 대문자 12자(약 154px, 글자 13px)도 들어가는 184px(좌우 안쪽 여백 12px·테두리 1px 포함).
-                      className="w-[11.5rem] h-7 rounded border border-ui-border bg-ui-surface px-3 text-[13px] text-ui-white outline-none focus:border-ui-border focus:placeholder:text-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                      className="h-7 w-[11.5rem] max-w-full rounded border border-ui-border bg-ui-surface px-3 text-[13px] text-ui-white outline-none focus:border-ui-border focus:placeholder:text-transparent disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <button
                       type="submit"
@@ -296,9 +318,9 @@ export default function ProfilePage() {
                       {checkNickname.isPending ? '확인 중...' : updateNickname.isPending ? '등록 중...' : '확인'}
                     </button>
                   </div>
-                  <p className="mt-2 text-sm font-medium text-ui-text">먼저, 닉네임이 등록 가능한지 확인합니다.</p>
+                  <p className="mt-2 text-sm leading-relaxed text-ui-text">확인을 누르면 사용 가능 여부를 확인한 뒤 등록합니다.</p>
                   {/* 결과·제한 사유 문구가 뜰 자리를 늘 비워 둔다 — 문구가 나타나도 입력칸이 움직이지 않게 한다. */}
-                  <div className="mt-2 h-6">
+                  <div className="mt-2 min-h-6">
                     {nicknameLiveText ? (
                       <p role="alert" className="text-sm text-status-error-text">{nicknameLiveText}</p>
                     ) : nicknameMessage ? (
@@ -312,13 +334,16 @@ export default function ProfilePage() {
                     ) : null}
                   </div>
                 </form>
-              </div>
-              <div className={ITEM_CLASS}>
-                <p className="text-base text-ui-text">프로필 사진</p>
-                <div className="mt-2 flex items-center gap-5">
+              </section>
+
+              <section aria-labelledby="profile-photo-heading" className="min-w-0 border border-ui-border bg-ui-panel p-4">
+                <header className="mb-4">
+                  <h2 id="profile-photo-heading" className="m-0 text-base font-bold text-ui-white">프로필 사진</h2>
+                  <p className="m-0 mt-1 text-sm leading-relaxed text-ui-text">계정 메뉴와 서비스 화면에 표시됩니다.</p>
+                </header>
+                <div className="flex min-w-0 items-center gap-4">
                   <ProfileAvatar className="size-16 shrink-0 object-cover" />
-                  {/* 두 버튼을 세로로 쌓고(너비는 글자에 맞추며 두 버튼이 같은 너비가 된다) 프로필 사진 높이를 두 버튼 높이의 합인 64px(28 + 간격 8 + 28)에 맞춘다. 삭제 버튼이 없을 때는 등록 버튼이 사진 높이의 세로 가운데에 온다. */}
-                  <div className="flex h-16 flex-col justify-center gap-2">
+                  <div className="flex min-w-0 flex-col items-start gap-2">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -346,18 +371,24 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
-                {/* 안내 줄 자리에서 결과 문구로 바뀌어서(줄 수 그대로) 문구가 떠도 항목 높이가 변하지 않는다. */}
+                {/* 상태 문구가 바뀌어도 카드가 갑자기 크게 움직이지 않도록 최소 높이를 유지한다. */}
                 {imageMessage ? (
-                  <p role={imageMessage.kind === 'error' ? 'alert' : 'status'} className={`mb-4 mt-3 text-sm font-medium ${imageMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
+                  <p role={imageMessage.kind === 'error' ? 'alert' : 'status'} className={`m-0 mt-4 min-h-5 text-sm font-medium ${imageMessage.kind === 'error' ? 'text-status-error-text' : 'text-status-success'}`}>
                     {imageMessage.text}
                   </p>
                 ) : (
-                  <p className="mb-4 mt-3 text-sm font-medium text-ui-text">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
+                  <p className="m-0 mt-4 min-h-5 text-sm leading-relaxed text-ui-text">JPG, PNG · 10MB 이하 · 가운데 정사각형으로 잘라 저장합니다.</p>
                 )}
+              </section>
               </div>
-              <div className="border-t border-ui-border pt-4">
-                {/* 로그아웃은 왼쪽, 회원 탈퇴는 같은 줄의 오른쪽 끝에 둔다. 관리자는 탈퇴 버튼이 없다. */}
-                <div className="flex items-center justify-between gap-3">
+
+              <section aria-labelledby="profile-account-actions-heading" className="mt-4 border border-ui-border bg-ui-panel p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 id="profile-account-actions-heading" className="m-0 text-base font-bold text-ui-white">계정 관리</h2>
+                    <p className="m-0 mt-1 text-sm leading-relaxed text-ui-text">로그아웃하거나 서비스 이용을 종료할 수 있습니다.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -376,21 +407,19 @@ export default function ProfilePage() {
                       {withdraw.isPending ? '탈퇴 처리 중...' : '회원 탈퇴'}
                     </button>
                   )}
+                  </div>
                 </div>
-                {logout.isError && <p role="alert" className="mt-3 text-base text-status-error-text">로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
-                {withdraw.isError && <p role="alert" className="mt-3 text-base text-status-error-text">탈퇴하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
-              </div>
+                {logout.isError && <p role="alert" className="m-0 mt-3 text-sm text-status-error-text">로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
+                {withdraw.isError && <p role="alert" className="m-0 mt-3 text-sm text-status-error-text">탈퇴하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>}
+              </section>
             </>
           ) : null}
             </section>
           </PageMainFrame>
           <DisclaimerFooter />
         </main>
-        {isSettingsOpen && <div className="flex shrink-0 pt-[4px]">
-          <PageInfoPanel title="Account" tabLabel="PROFILE" icon="member">
-            <p>이메일, 닉네임, 프로필 사진을 관리합니다.</p>
-            <p className="mt-4">닉네임은 등록한 뒤 7일에 한 번 바꿀 수 있습니다.</p>
-          </PageInfoPanel>
+        {isSettingsOpen && <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
+          <PageInfoPanel title="Account" tabLabel="PROFILE" description="이메일과 프로필을 관리합니다." note="닉네임 변경은 7일마다 가능합니다." icon="member" isOnLeft={isOnLeft} onToggleSide={toggleSide} />
         </div>}
         </div>
       </div>

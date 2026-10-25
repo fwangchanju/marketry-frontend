@@ -1,4 +1,5 @@
 import DocumentPageLayout from '@/components/DocumentPageLayout'
+import { Link } from 'react-router-dom'
 import { INFO_LIST, InfoCallout, InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 
 const CONTACT_EMAIL = 'marketry2026@gmail.com'
@@ -6,7 +7,7 @@ const EFFECTIVE_DATE = '2026-10-25'
 
 export default function TermsPage() {
   return (
-    <DocumentPageLayout title="TERMS" panelDescription="서비스 이용 기준과 회원 가입·탈퇴에 관한 약속을 안내합니다.">
+    <DocumentPageLayout title="TERMS" panelDescription="서비스 이용과 회원 기준을 안내합니다.">
       <article className="mx-auto max-w-4xl space-y-5">
         <InfoPageHeading
           title="이용약관"
@@ -64,9 +65,9 @@ export default function TermsPage() {
         <InfoSection number="6" title="개인정보">
           <p>
             개인정보는{' '}
-            <a href="/info/privacy" className="font-bold text-[var(--accent)] hover:underline">
+            <Link to="/info/privacy" className="font-bold text-[var(--accent)] hover:underline">
               개인정보처리방침
-            </a>
+            </Link>
             에 따라 처리합니다.
           </p>
         </InfoSection>

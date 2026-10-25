@@ -5,7 +5,7 @@ const CONTACT_EMAIL = 'marketry2026@gmail.com'
 
 export default function ContactPage() {
   return (
-    <DocumentPageLayout title="CONTACT" panelIcon="mail" panelDescription="서비스 이용과 데이터, 개인정보 관련 문의를 이메일로 받습니다.">
+    <DocumentPageLayout title="CONTACT" panelIcon="mail" panelDescription="문의 방법과 이메일을 안내합니다.">
       <article className="mx-auto flex min-h-full w-full max-w-4xl flex-col">
         <InfoPageHeading
           title="문의"

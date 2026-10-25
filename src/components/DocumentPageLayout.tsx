@@ -10,11 +10,13 @@ import ScreenshotModal from '@/components/ScreenshotModal'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
+import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 
 // 공개 문서도 다른 화면과 같은 헤더·계정·메뉴·툴바·하단 정보줄을 쓴다.
 export default function DocumentPageLayout({ title, children, panelIcon = 'document', panelDescription = 'MARKETRY 서비스 안내 문서입니다.' }: { title: string; children: ReactNode; panelIcon?: SettingsSectionIconName; panelDescription?: string }) {
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+  const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
@@ -53,7 +55,7 @@ export default function DocumentPageLayout({ title, children, panelIcon = 'docum
         }
       />
       <div className="flex min-h-0 flex-1">
-        <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
+        <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           <Toolbar>
             <ToolbarModeText page="INFO" label={title} />
@@ -62,11 +64,8 @@ export default function DocumentPageLayout({ title, children, panelIcon = 'docum
           <PageMainFrame className="p-6">{children}</PageMainFrame>
           <DisclaimerFooter />
         </main>
-        {isSettingsOpen && <div className="flex shrink-0 pt-[4px]">
-          <PageInfoPanel title="Info" tabLabel={title} icon={panelIcon}>
-            <p>{panelDescription}</p>
-            <p className="mt-4">본문은 메인 영역에서 확인할 수 있습니다.</p>
-          </PageInfoPanel>
+        {isSettingsOpen && <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
+          <PageInfoPanel title="Info" tabLabel={title} description={panelDescription} icon={panelIcon} isOnLeft={isOnLeft} onToggleSide={toggleSide} />
         </div>}
         </div>
       </div>

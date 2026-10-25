@@ -8,7 +8,7 @@ const EFFECTIVE_DATE = '2026-10-25'
 
 export default function PrivacyPolicyPage() {
   return (
-    <DocumentPageLayout title="PRIVACY" panelDescription="수집하는 정보와 이용 목적, 보관 기간, 이용자의 권리를 확인할 수 있습니다.">
+    <DocumentPageLayout title="PRIVACY" panelDescription="개인정보 수집·이용·보관 기준입니다.">
       <article className="mx-auto max-w-4xl space-y-5">
         <InfoPageHeading
           title="개인정보처리방침"
