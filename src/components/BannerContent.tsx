@@ -8,11 +8,11 @@ export function NoticeBanner({ title, text, linkUrl, size, preview = false, text
   const titleLineHeight = (compact ? 12 : 14) * 1.25
   const maxLines = Math.max(1, Math.floor((size.height - titleLineHeight) / lineHeight))
   const content = (
-    <div className={`flex h-full w-full items-center gap-3 overflow-hidden bg-brand-surface text-ui-white tracking-normal ${compact ? 'px-3' : 'px-5'}`}>
-      <span aria-hidden="true" className={`shrink-0 rounded-[4px] bg-brand px-1.5 py-1 font-bold text-ui-background ${compact ? 'text-xs' : 'text-sm'}`}>공지</span>
+    <div className={`flex h-full w-full items-center gap-3 overflow-hidden bg-ui-popup text-ui-background tracking-normal ${compact ? 'px-3' : 'px-5'}`}>
+      <span aria-hidden="true" className={`shrink-0 rounded-[4px] bg-ui-control px-1.5 py-1 font-bold text-ui-white ${compact ? 'text-xs' : 'text-sm'}`}>공지</span>
       <div data-banner-text-area="" className="min-w-0 flex-1">
         <p data-banner-title="" className={`m-0 truncate font-bold leading-tight ${compact ? 'text-xs' : 'text-sm'}`}>{title}</p>
-        {text && <p data-banner-text-body="" data-banner-max-lines={maxLines} className={`m-0 whitespace-pre-line text-ui-white/80 [display:-webkit-box] [-webkit-box-orient:vertical] [overflow:hidden] [overflow-wrap:anywhere] ${textBold ? 'font-bold' : 'font-normal'}`} style={{ fontSize: `${fontSize}px`, lineHeight: `${lineHeight}px`, WebkitLineClamp: maxLines }}>{text}</p>}
+        {text && <p data-banner-text-body="" data-banner-max-lines={maxLines} className={`m-0 whitespace-pre-line text-ui-background/80 [display:-webkit-box] [-webkit-box-orient:vertical] [overflow:hidden] [overflow-wrap:anywhere] ${textBold ? 'font-bold' : 'font-normal'}`} style={{ fontSize: `${fontSize}px`, lineHeight: `${lineHeight}px`, WebkitLineClamp: maxLines }}>{text}</p>}
       </div>
       <span aria-hidden={!linkUrl || undefined} className={`shrink-0 whitespace-nowrap font-bold ${linkUrl ? 'text-brand' : 'invisible'} ${compact ? 'text-[10px]' : 'text-xs'}`}>자세히 보기 ›</span>
     </div>

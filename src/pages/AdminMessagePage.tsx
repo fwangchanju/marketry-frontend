@@ -99,11 +99,11 @@ export default function AdminMessagePage() {
     mutationFn: sendTelegramReportOnce,
     meta: { skipGlobalError: true },
     onSuccess: () => {
-      void appAlert('오늘 최신 데이터로 홈 리포트를 텔레그램에 보냈습니다.', { adminOnly: true, title: '발송 완료' })
+      void appAlert('가장 최근 공통 스냅샷으로 홈 리포트를 텔레그램에 보냈습니다.', { adminOnly: true, title: '발송 완료' })
     },
     onError: error => {
       const message = isAxiosError(error) && error.response?.status === 409
-        ? '오늘 최신 공통 스냅샷이 없어 발송하지 않았습니다.'
+        ? '발송할 공통 스냅샷이 없어 보내지 않았습니다.'
         : '캡처 또는 텔레그램 전송에 실패했습니다. 다시 시도해 주세요.'
       void appAlert(message, { adminOnly: true, title: '발송 실패' })
     },
@@ -142,7 +142,7 @@ export default function AdminMessagePage() {
   }
   const handleSendOnce = async () => {
     if (sendOnce.isPending) return
-    if (await appConfirm('정기 발송 설정과 관계없이 오늘 최신 데이터로 홈 리포트를 한 번 전송합니다.', { title: '1회 발송' })) {
+    if (await appConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '1회 발송' })) {
       sendOnce.mutate()
     }
   }
@@ -190,17 +190,24 @@ export default function AdminMessagePage() {
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="MESSAGE" />
                 </Toolbar>
-                <PageMainFrame className="p-6">
+                <PageMainFrame
+                  className="p-0"
+                  fixedHeader={(
+                    <div className="mx-auto w-full max-w-4xl">
+                      <InfoPageHeading
+                        flushBottom
+                        title="텔레그램"
+                        summary="국내증시 지도를 텔레그램 메시지로 받아봅니다. 발송 여부와 시각은 설정창에서 조정합니다."
+                      />
+                    </div>
+                  )}
+                >
                   <article aria-label="메시지" className="mx-auto min-h-full w-full max-w-4xl space-y-5">
-                    <InfoPageHeading
-                      title="텔레그램"
-                      summary="국내증시 지도를 텔레그램 메시지로 받아봅니다. 발송 여부와 시각은 설정창에서 조정합니다."
-                    />
                     <InfoSection number="1" title="발송 미리보기">
                       {setting.isError ? (
                         <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                       ) : saved ? (
-                        <div className="w-full rounded-2xl rounded-bl-md bg-ui-control p-1">
+                        <div className="mx-auto w-full max-w-2xl rounded-2xl rounded-bl-md bg-ui-control p-1">
                           <p className="m-0 px-3 pb-1 pt-1.5 text-lg font-medium text-[var(--sub-yellow)]">MARKETRY</p>
                           <div className="grid grid-cols-2 items-start gap-0.5 overflow-hidden rounded-[10px]">
                             <img src={sampleImage} alt="텔레그램 발송 이미지 예시 — 시장 요약" className="block h-auto w-full" draggable={false} />
@@ -208,10 +215,10 @@ export default function AdminMessagePage() {
                           </div>
                           <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
                             <p className="m-0 text-lg leading-snug text-ui-white">{SAMPLE_CAPTION}</p>
-                            <span className="flex shrink-0 items-center gap-1.5 text-sm text-ui-text">
+                            <span className="flex shrink-0 items-center gap-1.5 text-lg text-ui-text">
                               <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                               2
-                              <span>{SAMPLE_TIME}</span>
+                              <span className="ml-1.5">{SAMPLE_TIME}</span>
                             </span>
                           </div>
                         </div>
@@ -245,14 +252,14 @@ export default function AdminMessagePage() {
                       <>
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
-                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">1) 정기발송</h2>
+                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">정기발송</h2>
                             <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">정기 리포트를 텔레그램으로 보낼지</p>
                             <SettingsSegmentedControl label="정기발송" options={SEND_OPTIONS} value={draft.enabled} onChange={value => updateDraft({ enabled: value })} />
                           </div>
                         </div>
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
-                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">2) 정기발송 시작</h2>
+                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">정기발송 시작</h2>
                             <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">정기 리포트 첫 발송 시각</p>
                             <div className="mt-auto mb-auto flex max-w-full settings-control-inset justify-center">
                               <DigitalClockPicker label="정기발송 시작" hour={saved.startHour} minute={draft.sectorSendMinute} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendMinute: value })} />
@@ -261,13 +268,13 @@ export default function AdminMessagePage() {
                         </div>
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
-                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">3) 정기발송 간격</h2>
+                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">정기발송 간격</h2>
                             <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">정기 홈 리포트를 몇 분마다 보낼지</p>
                             <div className="mt-auto mb-auto grid max-w-full grid-cols-[minmax(0,1fr)_100px_minmax(0,1fr)] items-center settings-control-inset">
                               <div className="col-start-2">
                                 <IntervalDial label="정기발송 간격" unit="분" size={100} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
                               </div>
-                              <span className="col-start-3 ml-3 inline-flex h-5 w-[42px] shrink-0 items-center justify-center rounded-[4px] bg-brand-surface px-1.5 text-xs font-semibold leading-none tabular-nums text-ui-white" aria-live="polite">
+                              <span className="col-start-3 ml-3 inline-flex h-5 w-[42px] shrink-0 items-center justify-center rounded-[4px] bg-ui-control px-1.5 text-xs font-semibold leading-none tabular-nums text-ui-white" aria-live="polite">
                                 {draft.sectorSendIntervalMinutes}분
                               </span>
                             </div>
@@ -275,15 +282,15 @@ export default function AdminMessagePage() {
                         </div>
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
-                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">4) 지금 1회 발송</h2>
-                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">정기 설정과 관계없이 오늘 최신 데이터로 한 번 보냅니다.</p>
-                            <div className="mt-auto mb-auto flex max-w-full settings-control-inset">
+                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">지금 1회 발송</h2>
+                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">정기 설정과 관계없이 가장 최근 데이터로 한 번 보냅니다.</p>
+                            <div className="mt-auto mb-auto flex max-w-full settings-control-inset justify-center">
                               <button
                                 type="button"
                                 disabled={sendOnce.isPending}
                                 aria-busy={sendOnce.isPending}
                                 onClick={() => void handleSendOnce()}
-                                className="flex h-8 w-full items-center justify-center rounded-[4px] border-0 bg-brand-surface px-3 text-[13px] font-semibold text-ui-white transition-colors hover:bg-brand-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-35"
+                                className="flex h-[25px] w-fit shrink-0 items-center justify-center rounded-[4px] border border-brand bg-brand-surface px-3 text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-35"
                               >
                                 {sendOnce.isPending ? '발송 중…' : '지금 1회 발송'}
                               </button>

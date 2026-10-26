@@ -5,13 +5,13 @@ const CONTACT_EMAIL = 'marketry2026@gmail.com'
 
 export default function ContactPage() {
   return (
-    <DocumentPageLayout title="CONTACT" panelIcon="mail" panelDescription="문의 방법과 이메일을 안내합니다.">
+    <DocumentPageLayout
+      title="CONTACT"
+      panelIcon="mail"
+      panelDescription="문의 방법과 이메일을 안내합니다."
+      heading={<InfoPageHeading flushBottom title="문의" summary="서비스 이용, 데이터 정정, 개인정보 관련 요청은 이메일로 보내 주세요." />}
+    >
       <article className="mx-auto flex min-h-full w-full max-w-4xl flex-col">
-        <InfoPageHeading
-          title="문의"
-          summary="서비스 이용, 데이터 정정, 개인정보 관련 요청은 이메일로 보내 주세요."
-        />
-
         <InfoSection number="1" title="이메일 문의">
           <InfoCallout title="MARKETRY 문의처">
             문의 내용을 확인할 수 있도록 어떤 화면에서 무엇을 하셨는지 함께 적어 주세요. 개인정보 관련 요청은 개인정보처리방침도 확인해 주세요.

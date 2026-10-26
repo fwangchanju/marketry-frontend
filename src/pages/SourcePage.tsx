@@ -26,13 +26,18 @@ const PROCESSING_RULES: { title: string; description: string }[] = [
 
 export default function SourcePage() {
   return (
-    <DocumentPageLayout title="SOURCE" panelDescription="시장 데이터의 출처와 기준입니다.">
-      <article className="mx-auto max-w-4xl space-y-5">
+    <DocumentPageLayout
+      title="SOURCE"
+      panelDescription="시장 데이터의 출처와 기준입니다."
+      heading={(
         <InfoPageHeading
+          flushBottom
           title="데이터"
           summary="MARKETRY는 아래 출처의 정보를 가공해 시장 지도를 보여 줍니다. 데이터는 오류가 있거나 늦게 반영될 수 있으며 투자 참고용으로만 제공합니다."
         />
-
+      )}
+    >
+      <article className="mx-auto max-w-4xl space-y-5">
         <InfoSection number="1" title="데이터 출처">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {DATA_SOURCES.map(({ source, category, items }) => (

@@ -1183,9 +1183,7 @@ export function SettingsAverageModeSection({
                   aria-checked={selected}
                   onClick={() => onChange(option.value)}
                   disabled={!enabled}
-                  className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-                    selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
-                  }`}
+                  className={`settings-choice-hover relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap text-ui-white transition-colors duration-[500ms]`}
                 >
                   {option.label}
                 </button>
@@ -1281,9 +1279,7 @@ function SettingsTaxonomySelector({
             role="radio"
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
-            className={`relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap transition-colors duration-[500ms] ${
-              isSelected(option.key) ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white settings-chip-hover'
-            }`}
+            className={`settings-choice-hover relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap transition-colors duration-[500ms] ${isSelected(option.key) ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white'}`}
           >
             {option.label}
           </button>
@@ -1628,9 +1624,7 @@ export function SettingsSectorLevelSection({
                     aria-checked={selected}
                     disabled={!stockLabelEnabled}
                     onClick={() => onChangeStockLabelModeIndex(value)}
-                    className={`relative z-10 h-full rounded-none ${index === 0 ? 'rounded-bl-[4px]' : index === STOCK_LABEL_MODE_LABELS.length - 1 ? 'rounded-br-[4px]' : ''} border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] disabled:cursor-not-allowed ${
-                      selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
-                    }`}
+                    className={`settings-choice-hover relative z-10 h-full rounded-none ${index === 0 ? 'rounded-bl-[4px]' : index === STOCK_LABEL_MODE_LABELS.length - 1 ? 'rounded-br-[4px]' : ''} border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms] disabled:cursor-not-allowed`}
                   >
                     {label === '모두' ? (
                       <span className="flex flex-col items-center gap-0.5">
@@ -1737,7 +1731,7 @@ export function SettingsStockMoveSection({
             role="radio"
             aria-checked={enabled === option.value}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${enabled === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+            className="settings-choice-hover relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms]"
           >
             {option.label}
           </button>
@@ -1779,9 +1773,7 @@ export function SettingsStockPopupSection({
               role="radio"
               aria-checked={selected}
               onClick={() => onChangeStockPopupOnHover(option.onHover)}
-              className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${
-              selected ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'
-            }`}
+              className="settings-choice-hover relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms]"
             >
               {option.label}
             </button>
@@ -1962,7 +1954,7 @@ export function SettingsSectorChangeSection({
                 role="radio"
                 aria-checked={value === option.value}
                 onClick={() => onChange(option.value)}
-                className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+                className="settings-choice-hover relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms]"
               >
                 {option.label}
               </button>
@@ -1998,7 +1990,7 @@ export function SettingsStockChangeSection({
                 role="radio"
                 aria-checked={value === option.value}
                 onClick={() => onChange(option.value)}
-                className={`relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium transition-colors duration-[500ms] ${value === option.value ? 'text-ui-white' : 'text-ui-white hover:text-ui-white settings-chip-hover'}`}
+                className="settings-choice-hover relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms]"
               >
                 {option.label}
               </button>

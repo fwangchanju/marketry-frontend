@@ -99,7 +99,6 @@ export default function AppDialogHost() {
           <PopupKindBadge kind={dialog.kind === 'alert' ? '정보' : dialog.kind === 'warning' ? '주의' : '확인'} />
           <span>
             {dialog.title}
-            {dialog.adminOnly && ' ⚠'}
           </span>
         </h2>
         <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-ui-background">

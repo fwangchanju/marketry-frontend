@@ -1281,8 +1281,13 @@ a { color: var(--accent-light); text-decoration: none; }
 *::-webkit-scrollbar-track { background: color-mix(in srgb, var(--ui-white) 10%, transparent); border-radius: 3px; }
 *::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ui-white) 35%, transparent); border: 0; border-radius: 3px; }
 
-/* 설정창 회색 칩(선택 버튼의 안 고른 칸, 실행 버튼, 목록 줄)에 마우스를 올리면 강조색을 30%만 얹어 은은하게 밝힌다. 비활성 버튼에는 적용하지 않는다. */
+/* 독립 실행 버튼·회색 칩의 호버. 선택형 버튼은 settings-choice-hover에서 상태에 따라 제어한다. */
 .settings-chip-hover:not(:disabled):hover {
+  background-image: linear-gradient(color-mix(in srgb, var(--accent) 35%, transparent), color-mix(in srgb, var(--accent) 35%, transparent));
+}
+
+/* 선택형 칩은 현재 선택되지 않은(눌러 바꿀 수 있는) 항목에만 호버를 보여 준다. */
+.settings-choice-hover:not(:disabled):not([aria-disabled="true"]):is([aria-checked="false"], [aria-pressed="false"]):hover {
   background-image: linear-gradient(color-mix(in srgb, var(--accent) 35%, transparent), color-mix(in srgb, var(--accent) 35%, transparent));
 }
 
