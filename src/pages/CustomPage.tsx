@@ -13,6 +13,7 @@ import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
+import { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useTaxonomySelection, type TaxonomySelection } from '@/hooks/useTaxonomySelection'
@@ -168,20 +169,20 @@ export default function CustomPage() {
   const copyLabel =
     copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
-  // 내 분류에 업종이 하나도 없는 처음 상태 — 업종 화면이면 업종 추가 입력칸을 강조하고, 업종·종목 두 화면 모두 들어올 때 안내 팝업을 띄운다.
+  // 내 분류에 업종이 하나도 없는 처음 상태 — 업종 화면이면 업종 추가 입력칸을 강조하고, 시작 안내 팝업은 빈 상태 동안 한 번 띄운다.
   const isEmptyMineData = !isReadOnlySheet && isLoggedIn && !isSectorsLoading && sectors?.length === 0
   const isEmptyMine = isEmptyMineData && mode === 'sector'
-  // 화면(업종·종목)마다 들어올 때 한 번 — 데이터가 다시 불러와져도 반복해서 뜨지 않는다.
-  const emptyGuideShownModeRef = useRef<string | null>(null)
+  // 내 분류가 비어 있는 동안 업종·종목 두 화면을 오가도 안내창은 한 번만 띄운다.
+  const emptyGuideShownRef = useRef(false)
   useEffect(() => {
     if (!isEmptyMineData) {
-      emptyGuideShownModeRef.current = null
+      emptyGuideShownRef.current = false
       return
     }
-    if (emptyGuideShownModeRef.current === mode) return
-    emptyGuideShownModeRef.current = mode
+    if (emptyGuideShownRef.current) return
+    emptyGuideShownRef.current = true
     void appAlert('먼저 업종 페이지(Custom > Sector)에서 업종을 추가하세요. 그리고 종목 페이지(Custom > Stock)로 가서 종목을 분류해보세요.', { title: '내 기준 시작하기' })
-  }, [isEmptyMineData, mode])
+  }, [isEmptyMineData])
 
   const actions = (
     <NavBarPageActions
@@ -352,6 +353,14 @@ export default function CustomPage() {
           copyLabel={copyLabel}
           isCopying={copyStatus === 'copying'}
           screenshotTarget={screenshotRef.current}
+          captureReady={!isPageLoading && (mode !== 'stock' || !isStockSectorsLoading)}
+          emptyPreview={!isReadOnlySheet && isLoggedIn && !isSectorsLoading && !isSectorsError &&
+            !isStockSectorsLoading && !isStockSectorsError &&
+            (stockSectors?.items ?? []).every(item => item.sectorId == null) ? (
+              <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
+                <CustomPageBadgeLink onClick={() => setIsShareOpen(false)} />
+              </EmptyLogoMessage>
+            ) : undefined}
         />
       )}
     </div>

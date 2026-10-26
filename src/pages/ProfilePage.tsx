@@ -21,7 +21,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useCheckNickname, useDeleteProfileImage, useUpdateNickname, useUploadProfileImage } from '@/hooks/useProfile'
 import { useLogout, useSession, useWithdrawAccount } from '@/hooks/useSession'
-import { appConfirm } from '@/utils/appDialogBus'
+import { appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { displayEmail } from '@/utils/displayEmail'
 import { checkProfileImageFile, resizeProfileImage, PROFILE_IMAGE_MAX_UPLOAD_BYTES } from '@/utils/resizeProfileImage'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
@@ -214,7 +214,7 @@ export default function ProfilePage() {
 
   // 회원 탈퇴 — 확인을 한 번 더 받고, 서버가 데이터를 지우면 홈으로 보낸다. 관리자는 버튼 자체를 보이지 않는다.
   const handleWithdraw = async () => {
-    const confirmed = await appConfirm('탈퇴하면 이메일, 닉네임, 프로필 사진, 내 기준과 설정이 모두 즉시 지워지며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?', { title: '회원 탈퇴' })
+    const confirmed = await appWarnConfirm('탈퇴하면 이메일, 닉네임, 프로필 사진, 내 기준과 설정이 모두 즉시 지워지며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?', { title: '회원 탈퇴' })
     if (!confirmed) return
     try {
       await withdraw.mutateAsync()
@@ -402,7 +402,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={handleWithdraw}
                       disabled={withdraw.isPending}
-                      className="h-7 rounded-[5px] border border-ui-border bg-transparent px-4 text-[13px] font-medium text-status-error-text transition-colors hover:bg-ui-control disabled:cursor-wait disabled:opacity-50"
+                      className="h-7 rounded-[5px] border-0 bg-[#BC2F2F] px-4 text-[13px] font-medium text-ui-white transition-[filter,opacity] hover:brightness-110 disabled:cursor-wait disabled:opacity-50"
                     >
                       {withdraw.isPending ? '탈퇴 처리 중...' : '회원 탈퇴'}
                     </button>

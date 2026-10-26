@@ -9,7 +9,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useQueryClient } from '@tanstack/react-query'
 import type { SectorItem, StockSectorListItem } from '@/types/api'
 import { toCount, toJoEokDecimal, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { findAliasConflict } from '@/utils/aliasConflict'
 import { ClassificationUploadError, buildUploadPlan, readClassificationFile } from '@/utils/classificationUpload'
 import { getErrorDetail } from '@/utils/errorMessage'
@@ -1498,7 +1498,7 @@ export default function AdminStockTable({
   }
 
   const handleResetCustomClassification = async () => {
-    const confirmed = await appConfirm(
+    const confirmed = await appWarnConfirm(
       '업종 목록과 종목 분류 초기화합니다.\n진행하시겠습니까?',
       { title: '업종·종목 초기화' },
     )
@@ -1694,7 +1694,7 @@ export default function AdminStockTable({
               type="button"
               onClick={() => void handleResetCustomClassification()}
               disabled={resetCustomClassificationMutation.isPending || isUploading || isExporting || !hasCustomClassification}
-              className="flex h-[25px] items-center justify-center gap-1 rounded-[4px] border-0 bg-[var(--ui-control)] px-3 text-[13px] leading-[1.3] font-medium text-status-error-text transition-colors hover:bg-[var(--status-error-ink)] hover:text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
+              className="flex h-[25px] items-center justify-center gap-1 rounded-[4px] border-0 bg-[#BC2F2F] px-3 text-[13px] leading-[1.3] font-medium text-ui-white transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
               aria-label="업종과 종목 분류 초기화"
             >
               초기화

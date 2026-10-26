@@ -16,9 +16,9 @@ export const EMPTY_MINE_MESSAGE = '내 마음대로 시장 지도를 만들어 �
 const MESSAGE_CLASS = 'pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center whitespace-pre-line px-6 text-center text-base text-ui-text'
 
 // 원 안(로딩 숫자·"다시 시도"가 오는 자리)에 놓는 "바로 가기" 배지 링크(커스텀 페이지의 업종 화면(대·중·소분류를 먼저 만드는 곳)으로 이동) — 눌러서 커스텀 페이지로 이동한다. 크기는 로딩 화면의 "다시 시도" 버튼(Spinner, 기본 원 320px 기준)과 같다. 안내 영역은 마우스를 받지 않으므로 링크만 다시 받게 한다.
-export function CustomPageBadgeLink() {
+export function CustomPageBadgeLink({ onClick }: { onClick?: () => void }) {
   return (
-    <Link to="/custom/sector" className="pointer-events-auto inline-block whitespace-nowrap rounded border-0 bg-[var(--brand-surface)] px-[8.3px] py-[2.6px] text-[13.6px] font-bold text-ui-white no-underline transition-colors hover:brightness-125">
+    <Link to="/custom/sector" onClick={onClick} className="pointer-events-auto inline-block whitespace-nowrap rounded border-0 bg-[var(--brand-surface)] px-[8.3px] py-[2.6px] text-[13.6px] font-bold text-ui-white no-underline transition-colors hover:brightness-125">
       바로 가기
     </Link>
   )

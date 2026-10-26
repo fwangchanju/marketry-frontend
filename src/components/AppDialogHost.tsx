@@ -13,6 +13,7 @@ export default function AppDialogHost() {
 
   useEffect(() => {
     if (!dialog) return
+    sectionRef.current?.focus()
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -55,16 +56,17 @@ export default function AppDialogHost() {
       >
       <section
         ref={sectionRef}
+        tabIndex={-1}
         onDragStart={event => event.preventDefault()}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="app-dialog-title"
         aria-describedby="app-dialog-message"
         // 색은 설정창 말풍선·NXT 안내창과 같은 크림색 계열이다.
-        className={`select-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-admin-only' : ''}`}
+        className={`select-none outline-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-admin-only' : ''}`}
       >
         <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-admin-only' : 'text-ui-background'}`}>
-          <PopupKindBadge kind={dialog.kind === 'confirm' ? '확인' : '알림'} />
+          <PopupKindBadge kind={dialog.kind === 'alert' ? '정보' : dialog.kind === 'warning' ? '경고' : '확인'} />
           <span>
             {dialog.title}
             {dialog.adminOnly && ' ⚠'}
@@ -76,18 +78,17 @@ export default function AppDialogHost() {
           {dialog.followupMessage && <><br />{dialog.followupMessage}</>}
         </p>
         <div className="mt-auto flex justify-end gap-2 pt-3">
-          {dialog.kind === 'confirm' && (
-            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover">
+          {dialog.kind !== 'alert' && (
+            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover focus:outline-[1px] focus:outline-solid focus:outline-offset-1 focus:outline-brand-surface">
               취소
             </button>
           )}
           <button
             type="button"
-            autoFocus
             onClick={() => resolveCurrentAppDialog(true)}
-            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold transition-colors ${dialog.adminOnly ? 'bg-admin-only text-ui-background hover:bg-admin-only-hover' : 'bg-brand-surface text-ui-white hover:bg-brand-surface-hover'}`}
+            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold focus:outline-[1px] focus:outline-solid focus:outline-offset-1 ${dialog.kind === 'warning' ? 'bg-[#BC2F2F] text-ui-white transition-[filter] hover:brightness-110 focus:outline-[#BC2F2F]' : dialog.kind === 'alert' ? 'bg-ui-selection text-ui-surface transition-colors hover:bg-ui-control-hover focus:outline-brand-surface' : 'bg-brand-surface text-ui-white transition-colors hover:bg-brand-surface-hover focus:outline-brand-surface'}`}
           >
-            {dialog.kind === 'confirm' ? '확인' : '닫기'}
+            {dialog.kind === 'alert' ? '닫기' : '확인'}
           </button>
         </div>
       </section>

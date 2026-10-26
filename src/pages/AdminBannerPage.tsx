@@ -21,7 +21,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { approveBanner, adminBannerImageUrl, cancelBannerSchedule, deleteBannerCampaign, endBannerCampaign, getAdminBanners, getBannerRotationSetting, saveBannerDraft, saveBannerRotationSetting, type BannerCampaign, type BannerDraftInput } from '@/api/adminBanners'
 import { CloseIcon, HistoryIcon, SaveIcon, UploadIcon } from '@/components/icons/AppIcons'
 import BannerDatePicker from '@/components/BannerDatePicker'
@@ -580,11 +580,11 @@ export default function AdminBannerPage() {
   }
   const handleDelete = async () => {
     if (!draft.id || selectedCampaign?.status !== 'ENDED') return
-    if (await appConfirm('종료된 이 배너를 삭제하시겠습니까?', { title: '배너 삭제' })) deleteMutation.mutate(draft.id)
+    if (await appWarnConfirm('종료된 이 배너를 삭제하시겠습니까?', { title: '배너 삭제' })) deleteMutation.mutate(draft.id)
   }
   const handleEnd = async () => {
     if (!draft.id || selectedCampaign?.status !== 'LIVE' || isDirty) return
-    if (await appConfirm('현재 게재 중인 배너를 지금 종료하시겠습니까?', { title: '배너 종료' })) endMutation.mutate(draft.id)
+    if (await appWarnConfirm('현재 게재 중인 배너를 지금 종료하시겠습니까?', { title: '배너 종료' })) endMutation.mutate(draft.id)
   }
   const handleCancelScheduled = async () => {
     if (!draft.id || selectedCampaign?.status !== 'SCHEDULED' || isDirty) return
@@ -799,8 +799,8 @@ export default function AdminBannerPage() {
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-ui-border pt-3">
                           <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={`${EDITOR_ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>{!draft.id ? '저장 (미공개)' : selectedCampaign?.status === 'DRAFT' || selectedCampaign?.status === 'ENDED' ? '수정' : '저장'}</button>
                           {draft.id && selectedCampaign?.status === 'SCHEDULED' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleCancelScheduled()} className={`${EDITOR_ACTION_CLASS} bg-[var(--ui-control)] font-medium hover:bg-ui-control-hover focus-visible:outline-brand`}>예약 취소</button>}
-                          {draft.id && selectedCampaign?.status === 'LIVE' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleEnd()} className={`${EDITOR_ACTION_CLASS} bg-[var(--status-error-ink)] font-medium hover:bg-[var(--status-error)] focus-visible:outline-[var(--status-error)]`}>종료</button>}
-                          {draft.id && selectedCampaign?.status === 'ENDED' && <button type="button" disabled={isMutating} onClick={() => void handleDelete()} className={`${EDITOR_ACTION_CLASS} bg-[var(--status-error-ink)] font-medium hover:bg-[var(--status-error)] focus-visible:outline-[var(--status-error)]`}>삭제</button>}
+                          {draft.id && selectedCampaign?.status === 'LIVE' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleEnd()} className={`${EDITOR_ACTION_CLASS} bg-[#BC2F2F] font-medium hover:brightness-110 focus-visible:outline-[#BC2F2F]`}>종료</button>}
+                          {draft.id && selectedCampaign?.status === 'ENDED' && <button type="button" disabled={isMutating} onClick={() => void handleDelete()} className={`${EDITOR_ACTION_CLASS} bg-[#BC2F2F] font-medium hover:brightness-110 focus-visible:outline-[#BC2F2F]`}>삭제</button>}
                         </div>
                       </div>
                     </InfoSection>

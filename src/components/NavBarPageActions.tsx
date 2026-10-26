@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ScreenshotIcon, MaximizeIcon, MinimizeIcon, RefreshIcon, SettingsIcon, SpiralResetIcon } from '@/components/icons/AppIcons'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 
 interface Props {
   onRefresh: () => void | Promise<unknown>
@@ -132,7 +132,7 @@ export default function NavBarPageActions({
   showRefresh = true,
 }: Props) {
   const resetBrowserStorage = async () => {
-    if (!await appConfirm('브라우저에 저장된 값을 모두 초기화 하시겠습니까?', {
+    if (!await appWarnConfirm('브라우저에 저장된 값을 모두 초기화 하시겠습니까?', {
       title: '브라우저 저장값 초기화',
       mutedMessage: '(예시: 설정창 위치, 설정 탭 선택, 캡처창 선택)',
       followupMessage: '서버 저장값은 그대로 유지됩니다.',

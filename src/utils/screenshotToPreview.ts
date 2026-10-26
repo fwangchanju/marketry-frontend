@@ -1,7 +1,8 @@
-import { domToPng } from 'modern-screenshot'
+import { domToPng, type Options as ScreenshotOptions } from 'modern-screenshot'
 import { fontCssFor } from './captureFonts'
 import { shareScreenshotOptions } from './screenshotScale'
 import { reportClientMetric } from './clientMetrics'
+import { withScreenshotSandbox } from './screenshotSandbox'
 
 type CloneCaptureOptions = {
   onCloneEachNode?: ((cloned: Node) => void | Promise<void>) | null
@@ -49,7 +50,8 @@ export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector
     : null
   const toolbar = mobileFrame ? el.querySelector<HTMLElement>('.main-toolbar') : null
   const fontCss = await fontCssFor(mobileFrame && toolbar ? [mobileFrame, toolbar] : el)
-  const dataUrl = await domToPng(el, yieldDuringCapture(fontCss ? { ...options, font: { cssText: fontCss } } : options))
+  const captureOptions = fontCss ? { ...options, font: { cssText: fontCss } } : options
+  const dataUrl = await withScreenshotSandbox(el.ownerDocument, sandbox => domToPng(el, yieldDuringCapture({ ...captureOptions, sandbox } as ScreenshotOptions & { sandbox: HTMLIFrameElement })))
   if (regionSelector !== '[data-map-mobile-capture-frame]') return dataUrl
 
   // 이전 프레임 높이에서 남은 하단 여백을 캡처 이미지 자체에서 4 CSS px 더 잘라낸다.
@@ -82,5 +84,6 @@ export async function screenshotFixedHomeFrameToDataUrl(root: HTMLElement, selec
   if (frame.offsetWidth !== HOME_CAPTURE_FRAME_WIDTH || frame.offsetHeight !== HOME_CAPTURE_FRAME_HEIGHT) throw new Error('Fixed home capture size is invalid')
   const options = { ...shareScreenshotOptions(frame), scale: 1 }
   const fontCss = await fontCssFor(frame)
-  return domToPng(frame, yieldDuringCapture(fontCss ? { ...options, font: { cssText: fontCss } } : options))
+  const captureOptions = fontCss ? { ...options, font: { cssText: fontCss } } : options
+  return withScreenshotSandbox(frame.ownerDocument, sandbox => domToPng(frame, yieldDuringCapture({ ...captureOptions, sandbox } as ScreenshotOptions & { sandbox: HTMLIFrameElement })))
 }
