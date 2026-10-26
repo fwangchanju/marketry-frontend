@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BannerImage, NoticeBanner } from '@/components/BannerContent'
+import BannerPreview from '@/components/BannerPreview'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import AlwaysVisibleScrollArea from '@/components/AlwaysVisibleScrollArea'
-import SettingsSegmentedControl from '@/components/SettingsSegmentedControl'
+import IntervalDial from '@/components/IntervalDial'
 import BannerTypeBadge from '@/components/BannerTypeBadge'
 import PageMainFrame from '@/components/PageMainFrame'
 import { InfoPageHeading, InfoSection } from '@/components/InfoDocument'
@@ -22,15 +22,15 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
-import { approveBanner, adminBannerImageUrl, deleteBannerDraft, getAdminBanners, getBannerRotationSetting, saveBannerDraft, saveBannerRotationSetting, type BannerCampaign, type BannerDraftInput } from '@/api/adminBanners'
-import { CloseIcon, UploadIcon } from '@/components/icons/AppIcons'
+import { approveBanner, adminBannerImageUrl, cancelBannerSchedule, deleteBannerCampaign, endBannerCampaign, getAdminBanners, getBannerRotationSetting, saveBannerDraft, saveBannerRotationSetting, type BannerCampaign, type BannerDraftInput } from '@/api/adminBanners'
+import { CloseIcon, HistoryIcon, SaveIcon, UploadIcon } from '@/components/icons/AppIcons'
 import BannerDatePicker from '@/components/BannerDatePicker'
 import BannerTimePicker from '@/components/BannerTimePicker'
 
 const INPUT_CLASS = 'h-[25px] w-full min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:border-brand placeholder:text-ui-muted disabled:opacity-35'
 const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35'
 const FINAL_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-brand-surface px-3 text-[13px]/4 font-semibold text-ui-white transition-colors hover:bg-brand-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-35'
-const BANNER_ROTATION_INTERVALS = [5, 10, 15, 30, 60] as const
+const EDITOR_ACTION_CLASS = 'flex h-[25px] w-[90px] shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 px-1.5 text-[13px]/4 font-semibold text-ui-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-35'
 
 function kstInputValue(epoch = Date.now()): string {
   return new Date(epoch).toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T').slice(0, 16)
@@ -147,6 +147,27 @@ function fitsNoticeBanner(text: string, textScalePercent = 100, textBold = false
   return fitsVisibleArea
 }
 
+function fitsNoticeTitle(title: string, width: number, font: string): boolean {
+  if (!title || width <= 0) return true
+  const probe = document.createElement('span')
+  probe.style.cssText = `position:fixed;left:-10000px;top:0;display:inline-block;width:max-content;white-space:pre;visibility:hidden;font:${font};font-kerning:normal;`
+  probe.textContent = title
+  document.body.append(probe)
+  const textWidth = probe.getBoundingClientRect().width
+  probe.remove()
+  return textWidth <= width
+}
+
+function truncateNoticeTitle(title: string, width: number, font: string): string {
+  let fitted = ''
+  for (const character of title) {
+    const next = fitted + character
+    if (!fitsNoticeTitle(next, width, font)) break
+    fitted = next
+  }
+  return fitted
+}
+
 function initialDraft(): BannerDraftInput {
   return { id: null, type: 'NOTICE', title: '', text: '', textScalePercent: 100, textBold: false, linkUrl: 'https://', startsAt: kstInputValue(), endsAt: '', file: null }
 }
@@ -162,26 +183,31 @@ function campaignImageUrl(campaign: BannerCampaign) {
   return adminBannerImageUrl(campaign.id, campaign.updatedAt)
 }
 
-interface BannerTextMetrics { width: number; fontSize: number; lineHeight: number; maxLines: number; inputHeight: number }
+interface BannerTextMetrics { width: number; titleWidth: number; titleFont: string; fontSize: number; lineHeight: number; maxLines: number; inputHeight: number }
 
 function BannerDraftSlot({ draft, savedCampaign, onMetricsChange }: { draft: BannerDraftInput; savedCampaign?: BannerCampaign; onMetricsChange: (metrics: BannerTextMetrics) => void }) {
   const previewSlotRef = useRef<HTMLDivElement>(null)
   const localImageUrl = useMemo(() => draft.file ? URL.createObjectURL(draft.file) : null, [draft.file])
   useEffect(() => () => { if (localImageUrl) URL.revokeObjectURL(localImageUrl) }, [localImageUrl])
   const imageUrl = localImageUrl ?? (savedCampaign?.hasImage ? campaignImageUrl(savedCampaign) : null)
-  const linkUrl = draft.linkUrl.trim() === 'http://' ? '' : draft.linkUrl.trim()
   useEffect(() => {
     const bannerSlot = previewSlotRef.current
     const textArea = bannerSlot?.querySelector<HTMLElement>('[data-banner-text-area]')
+    const title = bannerSlot?.querySelector<HTMLElement>('[data-banner-title]')
     const textBody = bannerSlot?.querySelector<HTMLElement>('[data-banner-text-body]')
     if (!textArea) return
     const updateMetrics = () => {
+      const titleStyle = title ? getComputedStyle(title) : null
       const bodyStyle = textBody ? getComputedStyle(textBody) : null
       const bannerHeight = Number(bannerSlot?.dataset.adBannerSlot?.split('x')[1] ?? 90)
       const lineHeight = Number.parseFloat(bodyStyle?.lineHeight ?? '15')
       const maxLines = Number(textBody?.dataset.bannerMaxLines ?? Math.floor((bannerHeight - (bannerHeight < 90 ? 15 : 17.5)) / lineHeight))
       onMetricsChange({
         width: textArea.getBoundingClientRect().width,
+        titleWidth: title?.getBoundingClientRect().width ?? 0,
+        // CanvasRenderingContext2D.font does not accept CSS font shorthand with a line-height.
+        // Build a valid canvas font so title input limits match the visible preview width.
+        titleFont: titleStyle ? `${titleStyle.fontWeight} ${titleStyle.fontSize} ${titleStyle.fontFamily}` : '700 14px sans-serif',
         fontSize: Number.parseFloat(bodyStyle?.fontSize ?? '12'),
         lineHeight,
         maxLines,
@@ -192,17 +218,43 @@ function BannerDraftSlot({ draft, savedCampaign, onMetricsChange }: { draft: Ban
     updateMetrics()
     const observer = new ResizeObserver(updateMetrics)
     observer.observe(textArea)
+    if (title) observer.observe(title)
     if (textBody) observer.observe(textBody)
     return () => observer.disconnect()
   }, [draft.type, draft.textScalePercent, onMetricsChange])
   return (
     <div ref={previewSlotRef} aria-hidden="true" inert data-ad-banner-slot="728x90" data-banner-draft-preview="" className="pointer-events-none fixed left-[-10000px] top-0 h-[90px] w-[728px] overflow-hidden">
-      {draft.type === 'NOTICE'
-        ? <NoticeBanner title={draft.title || '서비스 안내'} text={draft.text || '공지사항을 확인해 주세요.'} linkUrl={linkUrl || null} size={{ width: 728, height: 90 }} preview textScalePercent={draft.textScalePercent} textBold={draft.textBold} />
-        : imageUrl
-          ? <BannerImage src={imageUrl} title={draft.title || '광고 배너'} size={{ width: 728, height: 90 }} linkUrl={linkUrl || null} preview />
-          : <div className="flex h-full w-full items-center justify-center bg-ui-panel text-sm text-ui-muted">광고 이미지를 선택해 주세요.</div>}
+      <BannerPreview type={draft.type} title={draft.title} text={draft.text} imageUrl={imageUrl} size={{ width: 728, height: 90 }} textScalePercent={draft.textScalePercent} textBold={draft.textBold} emptyMessage="광고 이미지를 선택해 주세요." className="border-0 bg-transparent" framed={false} />
     </div>
+  )
+}
+
+function BannerEditorPreviews({ draft, campaign }: { draft: BannerDraftInput; campaign?: BannerCampaign }) {
+  const [draftImage, setDraftImage] = useState<{ file: File; url: string } | null>(null)
+  useEffect(() => {
+    if (!draft.file) return
+    const file = draft.file
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') setDraftImage({ file, url: reader.result })
+    }
+    reader.readAsDataURL(file)
+    return () => reader.abort()
+  }, [draft.file])
+
+  return (
+    <section aria-label="배너 저장 전 미리보기" className="mx-auto flex w-full max-w-[728px] min-w-0 flex-col gap-1">
+      <h2 className="m-0 text-sm font-medium text-ui-muted">{campaign ? '수정 내용 (저장 전 미리보기)' : '신규 등록 미리보기'}</h2>
+      <BannerPreview
+        type={draft.type}
+        title={draft.title}
+        text={draft.text}
+        imageUrl={draftImage?.file === draft.file ? draftImage.url : campaign?.hasImage ? campaignImageUrl(campaign) : null}
+        textScalePercent={draft.textScalePercent}
+        textBold={draft.textBold}
+        emptyMessage="광고 이미지를 선택해 주세요."
+      />
+    </section>
   )
 }
 
@@ -217,10 +269,10 @@ export default function AdminBannerPage() {
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const [activeType, setActiveType] = useState<BannerDraftInput['type']>('NOTICE')
-  const [showCampaignList, setShowCampaignList] = useState(() => (location.state as { bannerCampaignView?: string } | null)?.bannerCampaignView === 'list')
-  const [bannerTextAreaWidth, setBannerTextAreaWidth] = useState(640)
-  const [bannerTextMetrics, setBannerTextMetrics] = useState<BannerTextMetrics>({ width: 640, fontSize: 12, lineHeight: 15, maxLines: 4, inputHeight: 74 })
+  const [showCampaignList, setShowCampaignList] = useState(() => (location.state as { bannerCampaignView?: string } | null)?.bannerCampaignView !== 'editor')
+  const [bannerTextMetrics, setBannerTextMetrics] = useState<BannerTextMetrics>({ width: 640, titleWidth: 600, titleFont: '700 14px sans-serif', fontSize: 12, lineHeight: 15, maxLines: 4, inputHeight: 74 })
   const [endDatePresetGeneration, setEndDatePresetGeneration] = useState(0)
+  const [rotationDraft, setRotationDraft] = useState<number | null>(null)
   const bannerFileInputRef = useRef<HTMLInputElement>(null)
   const [noticeLimitMessage, setNoticeLimitMessage] = useState('')
   const [drafts, setDrafts] = useState<Record<BannerDraftInput['type'], BannerDraftInput>>(() => ({
@@ -235,7 +287,6 @@ export default function AdminBannerPage() {
   const client = useQueryClient()
   const updateBannerTextMetrics = useCallback((metrics: BannerTextMetrics) => {
     const next = { ...metrics, width: Math.round(metrics.width) }
-    setBannerTextAreaWidth(previous => previous === next.width ? previous : next.width)
     setBannerTextMetrics(previous => Object.keys(next).every(key => previous[key as keyof BannerTextMetrics] === next[key as keyof BannerTextMetrics]) ? previous : next)
   }, [])
 
@@ -245,11 +296,14 @@ export default function AdminBannerPage() {
   }
 
   useEffect(() => {
-    setShowCampaignList((location.state as { bannerCampaignView?: string } | null)?.bannerCampaignView === 'list')
+    setShowCampaignList((location.state as { bannerCampaignView?: string } | null)?.bannerCampaignView !== 'editor')
   }, [location.state])
 
   const campaigns = useQuery({ queryKey: ['admin-banners'], queryFn: ({ signal }) => getAdminBanners(signal), enabled: isAdmin, retry: false, refetchInterval: showCampaignList ? 30_000 : false })
   const rotationSetting = useQuery({ queryKey: ['admin-banners', 'rotation-setting'], queryFn: ({ signal }) => getBannerRotationSetting(signal), enabled: isAdmin, retry: false })
+  const savedRotationInterval = rotationSetting.data?.intervalSeconds ?? 10
+  const rotationInterval = rotationDraft ?? savedRotationInterval
+  const isRotationDirty = rotationInterval !== savedRotationInterval
   const draft = drafts[activeType]
   const displayedEndAt = draft.endsAt || addDaysToDateTime(draft.startsAt, 30)
   const endPresets = [
@@ -295,27 +349,98 @@ export default function AdminBannerPage() {
     },
     onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.detail ?? error.response?.data?.message ?? '배너를 공개하지 못했습니다. 입력 내용을 확인해 주세요.') : '배너 공개에 실패했습니다. 잠시 후 다시 시도해 주세요.', { title: '공개 실패' }),
   })
+  const cancelScheduleMutation = useMutation({
+    mutationFn: cancelBannerSchedule,
+    onSuccess: async item => {
+      client.setQueryData<BannerCampaign[]>(['admin-banners'], current => current?.map(campaign => campaign.id === item.id ? item : campaign))
+      setSavedCampaigns(value => ({ ...value, [item.type]: item }))
+      setDrafts(value => ({ ...value, [item.type]: draftFromCampaign(item) }))
+      setSavedFlags(value => ({ ...value, [item.type]: true }))
+      setEditedFlags(value => ({ ...value, [item.type]: false }))
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ['admin-banners'] }),
+        client.invalidateQueries({ queryKey: ['banners', 'active'] }),
+      ])
+      void appAlert('예약을 취소해 미공개로 옮겼습니다. 다시 등록하려면 목록에서 등록을 눌러 주세요.', { title: '예약 취소 완료' })
+    },
+    onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.detail ?? error.response?.data?.message ?? '예약을 취소하지 못했습니다. 다시 시도해 주세요.') : '예약을 취소하지 못했습니다. 다시 시도해 주세요.', { title: '예약 취소 실패' }),
+  })
+  const endMutation = useMutation({
+    mutationFn: endBannerCampaign,
+    meta: { skipGlobalError: true },
+    onSuccess: async item => {
+      client.setQueryData<BannerCampaign[]>(['admin-banners'], current => current?.map(campaign => campaign.id === item.id ? item : campaign))
+      setSavedCampaigns(value => ({ ...value, [item.type]: item }))
+      setDrafts(value => ({ ...value, [item.type]: draftFromCampaign(item) }))
+      setSavedFlags(value => ({ ...value, [item.type]: true }))
+      setEditedFlags(value => ({ ...value, [item.type]: false }))
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ['admin-banners'] }),
+        client.invalidateQueries({ queryKey: ['banners', 'active'] }),
+      ])
+      void appAlert('배너 게재를 종료했습니다.', { title: '종료 완료' })
+    },
+    onError: error => {
+      const status = isAxiosError(error) ? error.response?.status : undefined
+      const fallback = status === 404
+        ? '배너 종료 기능을 찾을 수 없습니다. 서버 업데이트 후 다시 시도해 주세요.'
+        : status === 409
+          ? '게재 중인 배너만 종료할 수 있습니다.'
+          : '배너를 종료하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+      const message = isAxiosError(error) ? error.response?.data?.detail ?? error.response?.data?.message ?? fallback : fallback
+      void appAlert(String(message), { title: '종료 실패' })
+    },
+  })
   const deleteMutation = useMutation({
-    mutationFn: deleteBannerDraft,
+    mutationFn: deleteBannerCampaign,
     onSuccess: async () => {
       setDraftGeneration(value => value + 1)
       setDrafts(value => ({ ...value, [activeType]: { ...initialDraft(), type: activeType, ...(activeType === 'AD' ? { title: '', text: '' } : {}) } }))
       setSavedCampaigns(value => ({ ...value, [activeType]: undefined }))
       setSavedFlags(value => ({ ...value, [activeType]: false }))
-      await client.invalidateQueries({ queryKey: ['admin-banners'] })
+      setEditedFlags(value => ({ ...value, [activeType]: false }))
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ['admin-banners'] }),
+        client.invalidateQueries({ queryKey: ['banners', 'active'] }),
+      ])
+      void appAlert('배너를 삭제했습니다.', { title: '삭제 완료' })
     },
-    onError: () => void appAlert('임시 배너를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.', { title: '삭제 실패' }),
+    onError: () => void appAlert('배너를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.', { title: '삭제 실패' }),
   })
   const saveRotationSettingMutation = useMutation({
     mutationFn: saveBannerRotationSetting,
     meta: { skipGlobalError: true },
     onSuccess: async setting => {
       client.setQueryData(['admin-banners', 'rotation-setting'], setting)
+      setRotationDraft(null)
       await client.invalidateQueries({ queryKey: ['banners', 'active'] })
       void appAlert(`공개 배너 전환 간격을 ${setting.intervalSeconds}초로 저장했습니다.`, { title: '저장 완료' })
     },
     onError: () => void appAlert('배너 전환 간격을 저장하지 못했습니다. 다시 시도해 주세요.', { title: '저장 실패' }),
   })
+  const handleDiscardRotationSetting = async () => {
+    if (!isRotationDirty || saveRotationSettingMutation.isPending) return
+    if (await appConfirm('배너 전환 간격을 저장된 값으로 되돌리시겠습니까?', { title: '되돌리기' })) {
+      setRotationDraft(null)
+    }
+  }
+  const handleSaveRotationSetting = async () => {
+    if (!isRotationDirty || rotationSetting.isPending || saveRotationSettingMutation.isPending) return
+    if (await appConfirm(`배너 전환 간격을 ${rotationInterval}초로 저장하시겠습니까?`, { title: '저장하기' })) {
+      saveRotationSettingMutation.mutate(rotationInterval)
+    }
+  }
+  const rotationHeaderActions = (
+    <div className="flex items-center gap-1">
+      <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={rotationSetting.isPending || saveRotationSettingMutation.isPending} onClick={() => void handleDiscardRotationSetting()} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
+        <HistoryIcon className="h-5 w-5" aria-hidden="true" />
+      </button>
+      <button type="button" aria-label="저장" data-hint="변경값으로 저장하기" disabled={rotationSetting.isPending || saveRotationSettingMutation.isPending} onClick={() => void handleSaveRotationSetting()} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
+        {isRotationDirty && <span aria-hidden="true" className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-brand" />}
+        <SaveIcon className="h-5 w-5" aria-hidden="true" />
+      </button>
+    </div>
+  )
 
   useEffect(() => {
     for (const item of Object.values(savedCampaigns)) {
@@ -365,7 +490,7 @@ export default function AdminBannerPage() {
       return
     }
     const replacementAt = formatScheduledAt(item.startsAt)
-    if (!await appConfirm(`등록한 배너를 ${replacementAt} (한국 시간)에 모든 방문자에게 공개하시겠습니까?`, { title: '배너 전체 공개' })) return
+    if (!await appConfirm(`등록한 배너를 ${replacementAt}에 모든 방문자에게 공개하시겠습니까?`, { title: '배너 전체 공개' })) return
     approveMutation.mutate(item.id)
   }
   const confirmDiscard = (type: BannerDraftInput['type']) => !editedFlags[type] || appConfirm('저장하지 않은 변경 내용을 버리시겠습니까?', { title: '변경 내용 버리기' })
@@ -438,8 +563,16 @@ export default function AdminBannerPage() {
     setActiveType(type)
   }
   const handleDelete = async () => {
-    if (!draft.id || selectedCampaign?.status !== 'DRAFT') return
-    if (await appConfirm('이 임시 배너를 삭제하시겠습니까?', { title: '배너 삭제' })) deleteMutation.mutate(draft.id)
+    if (!draft.id || selectedCampaign?.status !== 'ENDED') return
+    if (await appConfirm('종료된 이 배너를 삭제하시겠습니까?', { title: '배너 삭제' })) deleteMutation.mutate(draft.id)
+  }
+  const handleEnd = async () => {
+    if (!draft.id || selectedCampaign?.status !== 'LIVE' || isDirty) return
+    if (await appConfirm('현재 게재 중인 배너를 지금 종료하시겠습니까?', { title: '배너 종료' })) endMutation.mutate(draft.id)
+  }
+  const handleCancelScheduled = async () => {
+    if (!draft.id || selectedCampaign?.status !== 'SCHEDULED' || isDirty) return
+    if (await appConfirm('예약을 취소하고 배너를 미공개로 옮기시겠습니까? 목록에서 다시 등록할 수 있습니다.', { title: '예약 취소' })) cancelScheduleMutation.mutate(draft.id)
   }
 
   const handlePickFile = (file: File | undefined) => {
@@ -459,7 +592,7 @@ export default function AdminBannerPage() {
   const registeredCampaigns = campaignsList.filter(item => item.status === 'LIVE' || item.status === 'SCHEDULED')
   const unpublishedCampaigns = campaignsList.filter(item => item.status === 'DRAFT')
   const endedCampaigns = campaignsList.filter(item => item.status === 'ENDED')
-  const isMutating = saveMutation.isPending || approveMutation.isPending || deleteMutation.isPending
+  const isMutating = saveMutation.isPending || approveMutation.isPending || cancelScheduleMutation.isPending || endMutation.isPending || deleteMutation.isPending
   const renderCampaignCards = (items: BannerCampaign[], emptyMessage: string) => {
     if (campaigns.isPending) return <p role="status" className="m-0">배너 목록을 불러오는 중입니다.</p>
     if (campaigns.isError && campaigns.data === undefined) return <p role="alert" className="m-0">배너 목록을 불러오지 못했습니다.</p>
@@ -475,18 +608,14 @@ export default function AdminBannerPage() {
               </span>
               <span className="shrink-0 tabular-nums text-ui-muted">게시 {formatScheduledAt(item.startsAt)} ~ {item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}</span>
             </div>
-            <button type="button" disabled={isMutating} onClick={() => void selectCampaign(item)} aria-label={`${item.type === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집`} className="mx-auto flex h-[90px] w-full max-w-[728px] items-center justify-center overflow-hidden border border-ui-border p-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-wait">
-              {item.type === 'NOTICE'
-                ? <NoticeBanner title={item.title} text={item.text ?? ''} linkUrl={item.linkUrl} size={{ width: 728, height: 90 }} preview textScalePercent={item.textScalePercent} textBold={item.textBold} />
-                : item.hasImage
-                  ? <BannerImage src={campaignImageUrl(item)} title={item.title} size={{ width: 728, height: 90 }} linkUrl={item.linkUrl} preview />
-                  : <span className="flex h-full w-full items-center justify-center bg-ui-background text-sm text-ui-muted">광고 이미지 없음</span>}
+            <button type="button" disabled={isMutating} onClick={() => void selectCampaign(item)} aria-label={`${item.type === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집`} className="mx-auto flex h-[90px] w-full max-w-[728px] items-center justify-center overflow-hidden border-0 bg-transparent p-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-wait">
+              <BannerPreview type={item.type} title={item.title} text={item.text ?? ''} imageUrl={item.hasImage ? campaignImageUrl(item) : null} textScalePercent={item.textScalePercent} textBold={item.textBold} />
             </button>
             {item.status === 'DRAFT' && <div className="flex items-center justify-end border-t border-ui-border pt-2">
               <button type="button" disabled={isMutating} onClick={event => {
                 const previewBody = event.currentTarget.closest('[data-banner-campaign-card]')?.querySelector<HTMLElement>('[data-banner-text-body]')
                 void handleApproveCampaign(item, previewBody ?? undefined)
-              }} className={`${FINAL_ACTION_CLASS} min-w-[100px]`}>전체 공개</button>
+              }} className={`${FINAL_ACTION_CLASS} min-w-[100px]`}>등록</button>
             </div>}
           </div>
         ))}
@@ -527,8 +656,9 @@ export default function AdminBannerPage() {
                 <PageMainFrame className="p-6">
                   <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl space-y-5">
                     <InfoPageHeading
-                      title="배너"
+                      title={showCampaignList ? '목록' : activeType === 'NOTICE' ? '공지' : '광고'}
                       summary={showCampaignList ? '등록한 공지·광고를 한곳에서 보고 선택해 수정합니다.' : draft.id ? `${activeType === 'NOTICE' ? '공지' : '광고'} 배너를 ${canEdit ? '수정' : '확인'}하고 있습니다.` : '새 배너 내용을 입력하거나 목록에서 기존 배너를 선택합니다.'}
+                      sticky
                       actions={(
                         <>
                           <button type="button" aria-pressed={showCampaignList} onClick={() => void openCampaignList()} className={`${SETTINGS_ACTION_CLASS} px-2 ${showCampaignList ? 'bg-brand-surface' : ''}`}>목록</button>
@@ -553,11 +683,25 @@ export default function AdminBannerPage() {
                       </AlwaysVisibleScrollArea>
                     ) : (
                       <>
+                    <BannerEditorPreviews draft={draft} campaign={draft.id ? selectedCampaign : undefined} />
                     <InfoSection number="1" title="배너 내용">
-                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-4" style={{ maxWidth: `${bannerTextAreaWidth + 36}px` }}>
+                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-4" style={{ maxWidth: `${bannerTextMetrics.width + 34}px` }}>
                         <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
                           <span>제목</span>
-                          <input aria-label="배너 제목" placeholder="서비스 안내" maxLength={100} disabled={!canEdit} value={draft.title} onChange={event => changeDraft({ title: event.target.value })} className={INPUT_CLASS} />
+                          <input aria-label="배너 제목" placeholder="제목을 입력해 주세요." maxLength={100} disabled={!canEdit} value={draft.title} onChange={event => {
+                            const nextTitle = event.currentTarget.value
+                            if ((event.nativeEvent as InputEvent).isComposing) {
+                              changeDraft({ title: nextTitle })
+                              return
+                            }
+                            if (activeType === 'NOTICE' && !fitsNoticeTitle(nextTitle, bannerTextMetrics.titleWidth, bannerTextMetrics.titleFont)) return
+                            changeDraft({ title: nextTitle })
+                          }} onCompositionEnd={event => {
+                            if (activeType !== 'NOTICE') return
+                            const title = event.currentTarget.value
+                            const fittedTitle = truncateNoticeTitle(title, bannerTextMetrics.titleWidth, bannerTextMetrics.titleFont)
+                            if (fittedTitle !== title) changeDraft({ title: fittedTitle })
+                          }} style={{ width: `${bannerTextMetrics.width}px`, maxWidth: '100%' }} className={INPUT_CLASS} />
                         </label>
                         <div className="mt-3 border-t border-ui-border pt-3">
                           {activeType === 'NOTICE' ? (
@@ -580,7 +724,7 @@ export default function AdminBannerPage() {
                                   } else {
                                     setNoticeLimitMessage('현재 배너에 표시할 수 있는 분량을 모두 입력했습니다.')
                                   }
-                                }} style={{ height: `${bannerTextMetrics.inputHeight}px`, fontSize: `${bannerTextMetrics.fontSize}px`, lineHeight: `${bannerTextMetrics.lineHeight}px`, paddingTop: '6px', paddingBottom: '6px' }} className={`${INPUT_CLASS.replace('h-[25px]', 'h-auto')} resize-none overflow-y-auto`} />
+                                }} style={{ width: `${bannerTextMetrics.width}px`, maxWidth: '100%', height: `${bannerTextMetrics.inputHeight}px`, fontSize: `${bannerTextMetrics.fontSize}px`, lineHeight: `${bannerTextMetrics.lineHeight}px`, paddingTop: '6px', paddingBottom: '6px' }} className={`${INPUT_CLASS.replace('h-[25px]', 'h-auto')} resize-none overflow-y-auto`} />
                               </label>
                               {noticeLimitMessage && <p role="status" className="m-0 text-sm leading-5 text-status-error-text">{noticeLimitMessage}</p>}
                             </div>
@@ -603,7 +747,7 @@ export default function AdminBannerPage() {
                         <div className="mt-3 border-t border-ui-border pt-3">
                           <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
                             <span>연결 <span className="font-normal text-ui-muted">(선택)</span></span>
-                            <input aria-label="연결 (선택)" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} onBlur={event => {
+                            <input aria-label="연결 (선택)" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} style={{ width: `${bannerTextMetrics.width}px`, maxWidth: '100%' }} onBlur={event => {
                               const normalized = normalizeBannerLink(event.target.value) || 'https://'
                               if (normalized !== draft.linkUrl) changeDraft({ linkUrl: normalized })
                             }} className={INPUT_CLASS} />
@@ -614,27 +758,33 @@ export default function AdminBannerPage() {
                     </InfoSection>
 
                     <InfoSection number="2" title="게시 일정">
-                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-3" style={{ maxWidth: `${bannerTextAreaWidth + 32}px` }}>
-                        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-                          <div className="flex min-w-0 max-w-[210px] flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white"><span className="flex h-[25px] items-center">시작</span><DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} /></div>
-                          <div className="flex min-w-0 max-w-[210px] flex-col gap-1">
-                            <div className="flex h-[25px] min-w-0 items-center justify-between gap-1 text-[15px]/[22px] font-medium text-ui-white">
-                              <span>종료</span>
-                              <div className="flex shrink-0 items-center gap-1">
-                              {endPresets.map(preset => <button key={preset.key} type="button" disabled={!canEdit || !preset.value || saveMutation.isPending} aria-pressed={selectedEndPreset === preset.key} onClick={() => {
-                                if (preset.value) {
-                                  changeDraft({ endsAt: preset.value })
-                                  setEndDatePresetGeneration(value => value + 1)
-                                }
-                              }} className={`flex h-[22px] shrink-0 items-center justify-center rounded-[4px] border-0 px-1 text-[13px]/[16px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35 ${selectedEndPreset === preset.key ? 'bg-brand-surface hover:bg-brand-surface-hover' : 'bg-[var(--ui-control)] hover:bg-ui-control-hover'}`}>{preset.label}</button>)}
-                              </div>
-                            </div>
+                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-3" style={{ maxWidth: `${bannerTextMetrics.width + 34}px` }}>
+                        <div className="grid w-full grid-cols-1 items-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                          <div className="flex min-w-0 flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white">
+                            <span className="flex h-[25px] items-center">시작</span>
+                            <DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} />
+                          </div>
+                          <div className="flex min-w-0 flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white">
+                            <span className="flex h-[25px] items-center">종료</span>
                             <DateTimeField label="교체 종료" disabled={!canEdit} value={displayedEndAt} onChange={endsAt => changeDraft({ endsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends-${endDatePresetGeneration}`} />
                           </div>
+                          <div className="flex min-w-0 flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white">
+                            <span className="flex h-[25px] items-center">기간</span>
+                            <div className="flex h-[22px] items-center gap-1 sm:justify-end">
+                            {endPresets.map(preset => <button key={preset.key} type="button" disabled={!canEdit || !preset.value || saveMutation.isPending} aria-pressed={selectedEndPreset === preset.key} onClick={() => {
+                              if (preset.value) {
+                                changeDraft({ endsAt: preset.value })
+                                setEndDatePresetGeneration(value => value + 1)
+                              }
+                            }} className={`flex h-[22px] w-[42px] shrink-0 items-center justify-center rounded-[4px] border-0 px-0 text-[13px]/[16px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35 ${selectedEndPreset === preset.key ? 'bg-brand-surface hover:bg-brand-surface-hover' : 'bg-[var(--ui-control)] hover:bg-ui-control-hover'}`}>{preset.label}</button>)}
+                            </div>
+                          </div>
                         </div>
-                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ui-border pt-3">
-                          <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={FINAL_ACTION_CLASS}>{selectedCampaign?.status === 'DRAFT' || !selectedCampaign ? '저장 (미공개)' : '저장'}</button>
-                          {draft.id && selectedCampaign?.status === 'DRAFT' && <button type="button" disabled={deleteMutation.isPending} onClick={() => void handleDelete()} className={`${SETTINGS_ACTION_CLASS} min-w-[100px] px-3`}>등록 취소</button>}
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-ui-border pt-3">
+                          <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={`${EDITOR_ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>{!draft.id ? '저장 (미공개)' : selectedCampaign?.status === 'DRAFT' || selectedCampaign?.status === 'ENDED' ? '수정' : '저장'}</button>
+                          {draft.id && selectedCampaign?.status === 'SCHEDULED' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleCancelScheduled()} className={`${EDITOR_ACTION_CLASS} bg-[var(--ui-control)] font-medium hover:bg-ui-control-hover focus-visible:outline-brand`}>예약 취소</button>}
+                          {draft.id && selectedCampaign?.status === 'LIVE' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleEnd()} className={`${EDITOR_ACTION_CLASS} bg-[var(--status-error-ink)] font-medium hover:bg-[var(--status-error)] focus-visible:outline-[var(--status-error)]`}>종료</button>}
+                          {draft.id && selectedCampaign?.status === 'ENDED' && <button type="button" disabled={isMutating} onClick={() => void handleDelete()} className={`${EDITOR_ACTION_CLASS} bg-[var(--status-error-ink)] font-medium hover:bg-[var(--status-error)] focus-visible:outline-[var(--status-error)]`}>삭제</button>}
                         </div>
                       </div>
                     </InfoSection>
@@ -658,13 +808,14 @@ export default function AdminBannerPage() {
                 isOnLeft={isSettingsOnLeft}
                 onToggleSide={toggleSettingsSide}
                 sectionOrder={['adminBanner']}
+                headerRight={rotationHeaderActions}
               >
                 <SettingsPanelGroup section="adminBanner">
                     <div className="settings-plain-content">
                     {([
-                      { title: '등록', description: '공개·예약된 배너', items: registeredCampaigns, empty: '등록 항목이 없습니다.' },
-                      { title: '미공개', description: '미공개된 배너로 임시 등록', items: unpublishedCampaigns, empty: '미공개 항목이 없습니다.' },
-                      { title: '종료', description: '게재가 종료된 배너', items: endedCampaigns, empty: '종료 항목이 없습니다.' },
+                      { title: '등록', description: '공개·예약된 배너', items: registeredCampaigns },
+                      { title: '미공개', description: '미공개된 배너로 임시 등록', items: unpublishedCampaigns },
+                      { title: '종료', description: '게재가 종료된 배너', items: endedCampaigns },
                     ] as const).map(section => (
                       <div key={section.title} className="settings-ops-item h-[180px] text-sm">
                         <div className="settings-custom-control">
@@ -678,7 +829,7 @@ export default function AdminBannerPage() {
                                     <BannerTypeBadge type={item.type} />
                                     <span className="min-w-0 flex-1 truncate">{item.title}</span>
                                   </button>
-                                )) : <span className="text-ui-muted">{section.empty}</span>}
+                                )) : null}
                           </AlwaysVisibleScrollArea>
                         </div>
                       </div>
@@ -687,13 +838,22 @@ export default function AdminBannerPage() {
                       <div className="settings-custom-control">
                         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">배너 전환 간격</h2>
                         <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">공개 배너가 순서대로 바뀌는 간격</p>
-                        <SettingsSegmentedControl
-                          label="배너 전환 간격"
-                          options={BANNER_ROTATION_INTERVALS.map(interval => ({ value: interval, label: `${interval}초` }))}
-                          value={rotationSetting.data?.intervalSeconds ?? 0}
-                          onChange={interval => saveRotationSettingMutation.mutate(interval)}
-                          disabled={saveRotationSettingMutation.isPending}
-                        />
+                        <div className="mt-auto mb-auto grid max-w-full grid-cols-[minmax(0,1fr)_100px_minmax(0,1fr)] items-center settings-control-inset">
+                          <div className="col-start-2">
+                            <IntervalDial
+                              label="배너 전환 간격"
+                              unit="초"
+                              size={100}
+                              value={rotationInterval}
+                              step={5}
+                              disabled={rotationSetting.isPending || saveRotationSettingMutation.isPending}
+                              onChange={setRotationDraft}
+                            />
+                          </div>
+                          <span className="col-start-3 ml-3 inline-flex h-5 w-[42px] shrink-0 items-center justify-center rounded-[4px] bg-brand-surface px-1.5 text-xs font-semibold leading-none tabular-nums text-ui-white" aria-live="polite">
+                            {rotationInterval}초
+                          </span>
+                        </div>
                         {rotationSetting.isError && <p role="alert" className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">설정을 불러오지 못했습니다. 간격을 선택해 다시 저장해 주세요.</p>}
                       </div>
                     </div>

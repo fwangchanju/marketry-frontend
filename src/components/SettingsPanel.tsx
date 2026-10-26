@@ -2503,7 +2503,7 @@ export default function SettingsPanel({
     <div className="-mr-[7px] ml-auto flex shrink-0 items-center gap-1">
       <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
           if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(discardDrafts)
-        }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
+        }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
         <HistoryIcon className="h-5 w-5" aria-hidden="true" />
       </button>
       <button
@@ -2528,7 +2528,7 @@ export default function SettingsPanel({
               .finally(() => setIsSavingPreferences(false))
           })
         }}
-        className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50"
+        className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50"
       >
         {hasDrafts && <span aria-hidden="true" className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-brand" />}
         {/* 좌우 대칭 디스켓 — 위쪽 셔터와 아래쪽 라벨이 가운데에 있고 접힌 모서리가 없다. 오른쪽 위 청록 점(변경 있음)과 겹치는 모양이 없다. */}
@@ -2564,7 +2564,7 @@ export default function SettingsPanel({
           )}
         </div>
         {preferenceActions}
-        {headerRight && <div className="-mr-[3px] ml-auto flex shrink-0 items-center">{headerRight}</div>}
+        {headerRight && <div className="-mr-[7px] ml-auto flex shrink-0 items-center">{headerRight}</div>}
       </SettingsPanelHeader>
       {menuSections.length > 0 && (
       <SettingsPanelTabList ariaLabel={pageLabel ? `${pageLabel} 설정 분류` : '설정 분류'}>
