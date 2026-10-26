@@ -29,3 +29,7 @@ export function getTelegramSendSetting(signal?: AbortSignal) {
 export function saveTelegramSendSetting(input: TelegramSendSettingInput) {
   return client.put('/admin/telegram-settings', input).then(response => TelegramSendSettingSchema.parse(response.data))
 }
+
+export function sendTelegramReportOnce() {
+  return client.post('/admin/telegram-settings/send-once').then(() => undefined)
+}
