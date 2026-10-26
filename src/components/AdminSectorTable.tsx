@@ -696,7 +696,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                           }
                           remove(sector.id, sector.name)
                         }}
-                        className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[#BC2F2F] focus-visible:text-[#BC2F2F]"
+                        className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-[#BC2F2F] outline-none hover:brightness-110 focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#BC2F2F]"
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
