@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import {
   getSectors,
+  resetCustomClassification,
   createSector,
   renameSector,
   reparentSector,
@@ -44,6 +45,19 @@ export function useCustomSectors(options?: { enabled?: boolean }) {
     queryFn: getSectors,
     enabled: options?.enabled ?? true,
     ...INFREQUENT_DATA_CACHE,
+  })
+}
+
+export function useResetCustomClassification() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: resetCustomClassification,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() })
+      invalidateCustomTaxonomy(queryClient)
+    },
+    meta: { skipGlobalError: true },
   })
 }
 

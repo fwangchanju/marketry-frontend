@@ -3,6 +3,26 @@ import { fontCssFor } from './captureFonts'
 import { shareScreenshotOptions } from './screenshotScale'
 import { reportClientMetric } from './clientMetrics'
 
+type CloneCaptureOptions = {
+  onCloneEachNode?: ((cloned: Node) => void | Promise<void>) | null
+}
+
+// 큰 지도를 복제하는 동안 메인 스레드가 오래 붙잡히면 로딩 시계와 회전 표시가 멈춘다.
+// 복제 작업을 약 50ms마다 양보해 브라우저가 화면·타이머를 갱신하게 한다.
+function yieldDuringCapture<T extends CloneCaptureOptions>(options: T) {
+  const onCloneEachNode = options.onCloneEachNode
+  let lastYieldAt = performance.now()
+  return {
+    ...options,
+    onCloneEachNode: async (cloned: Node) => {
+      await onCloneEachNode?.(cloned)
+      if (performance.now() - lastYieldAt < 50) return
+      await new Promise<void>(resolve => window.setTimeout(resolve, 0))
+      lastYieldAt = performance.now()
+    },
+  }
+}
+
 async function cropMobileCaptureBottom(dataUrl: string, cropPixels: number): Promise<string> {
   const image = new Image()
   image.src = dataUrl
@@ -29,7 +49,7 @@ export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector
     : null
   const toolbar = mobileFrame ? el.querySelector<HTMLElement>('.main-toolbar') : null
   const fontCss = await fontCssFor(mobileFrame && toolbar ? [mobileFrame, toolbar] : el)
-  const dataUrl = await domToPng(el, fontCss ? { ...options, font: { cssText: fontCss } } : options)
+  const dataUrl = await domToPng(el, yieldDuringCapture(fontCss ? { ...options, font: { cssText: fontCss } } : options))
   if (regionSelector !== '[data-map-mobile-capture-frame]') return dataUrl
 
   // 이전 프레임 높이에서 남은 하단 여백을 캡처 이미지 자체에서 4 CSS px 더 잘라낸다.
@@ -62,5 +82,5 @@ export async function screenshotFixedHomeFrameToDataUrl(root: HTMLElement, selec
   if (frame.offsetWidth !== HOME_CAPTURE_FRAME_WIDTH || frame.offsetHeight !== HOME_CAPTURE_FRAME_HEIGHT) throw new Error('Fixed home capture size is invalid')
   const options = { ...shareScreenshotOptions(frame), scale: 1 }
   const fontCss = await fontCssFor(frame)
-  return domToPng(frame, fontCss ? { ...options, font: { cssText: fontCss } } : options)
+  return domToPng(frame, yieldDuringCapture(fontCss ? { ...options, font: { cssText: fontCss } } : options))
 }

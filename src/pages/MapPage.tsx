@@ -917,6 +917,12 @@ export default function MapPage() {
           copyLabel={copyLabel}
           isCopying={copyStatus === 'copying'}
           screenshotTarget={screenshotRef.current}
+          captureReady={!isLoading}
+          emptyPreview={isMineEmpty && !isLoading && !isError ? (
+            <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
+              <CustomPageBadgeLink />
+            </EmptyLogoMessage>
+          ) : undefined}
           mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }}
           onMobileSelectionChange={setIsMobileScreenshotSelected}
         />

@@ -549,6 +549,7 @@ export default function MarketSummaryPage() {
   const orderedHomeFrames = [...homeFrames].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title))
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
+  const isMineEmpty = settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0)
   // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 준비됐다고 하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
   const isMobileCaptureLoaded = !isLoading && !isError && Boolean(data?.snapshotTime) && marketSummary !== undefined
   const isMobileCaptureReady = useSettled(isMobileCaptureLoaded, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
@@ -596,7 +597,7 @@ export default function MarketSummaryPage() {
               <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
                 <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
               </div>
-            ) : settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0) ? (
+            ) : isMineEmpty ? (
               // 내 분류가 비어 있으면 지도·그룹 페이지와 같은 안내(원·로고·바로 가기)를 홈 전체에 보여 준다 — 원은 위 로딩 원과 같은 자리다.
               <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
                 <CustomPageBadgeLink />
@@ -662,7 +663,11 @@ export default function MarketSummaryPage() {
         >
           <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
           <div className="flex min-h-0 flex-1 gap-1">
-            {mobileCaptureFrames.map(frame => (
+            {isMobileCaptureLoaded && isMineEmpty ? (
+              <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
+                <CustomPageBadgeLink />
+              </EmptyLogoMessage>
+            ) : mobileCaptureFrames.map(frame => (
               <CaptureFrame key={frame.captureId} title={frame.title} className="min-w-0 flex-1">
                 {frame.body as ReactNode}
               </CaptureFrame>
@@ -683,7 +688,11 @@ export default function MarketSummaryPage() {
               <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: HOME_CAPTURE_FRAME_WIDTH }}>
                 <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
                 <CaptureFrame title={frame.title === '시장 요약' ? '코스피' : frame.title} className="min-h-0 flex-1">
-                  {frame.body as ReactNode}
+                  {isMineEmpty ? (
+                    <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
+                      <CustomPageBadgeLink />
+                    </EmptyLogoMessage>
+                  ) : frame.body as ReactNode}
                 </CaptureFrame>
               </div>
             ))}
@@ -697,6 +706,12 @@ export default function MarketSummaryPage() {
           copyLabel={copyLabel}
           isCopying={copyStatus === 'copying'}
           screenshotTarget={screenshotTarget}
+          captureReady={!isLoading}
+          emptyPreview={isMineEmpty && !isLoading && !isError ? (
+            <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
+              <CustomPageBadgeLink />
+            </EmptyLogoMessage>
+          ) : undefined}
           fixedHomeCaptureRef={fixedCaptureRef}
           frameCaptureOptions={safeHomeFrameOrder.map((title, selectedSlot) => {
             const captureId = title === '요약 지도' ? 'market-map' : title === '그룹 등락률 (%)' ? 'group-change-rate' : 'market-summary'

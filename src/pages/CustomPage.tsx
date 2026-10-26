@@ -57,6 +57,7 @@ export default function CustomPage() {
   // 종목 화면의 실행취소·다시실행 아이콘이 들어갈 설정창 안의 자리.
   const [stockHistoryTarget, setStockHistoryTarget] = useState<HTMLDivElement | null>(null)
   const [stockExcelTarget, setStockExcelTarget] = useState<HTMLDivElement | null>(null)
+  const [stockResetTarget, setStockResetTarget] = useState<HTMLDivElement | null>(null)
   const [stockBulkTarget, setStockBulkTarget] = useState<HTMLDivElement | null>(null)
   // 비로그인이 내 분류를 누르면 로그인 안내만 띄우고, 보던 분류에 그대로 머문다.
   const handleSelectSheet = (next: TaxonomySelection) => {
@@ -280,6 +281,7 @@ export default function CustomPage() {
                     toolbarContainer={toolbarContainer}
                     historyContainer={stockHistoryTarget}
                     excelContainer={stockExcelTarget}
+                    resetContainer={stockResetTarget}
                     bulkContainer={stockBulkTarget}
                     onCountLabelChange={setCountLabel}
                     nxtStockCodes={nxtStockCodes}
@@ -325,6 +327,7 @@ export default function CustomPage() {
                     {mode === 'stock' && <div ref={setStockBulkTarget} className="settings-item" />}
                     <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
                     {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
+                    {mode === 'stock' && <div ref={setStockResetTarget} className="settings-item" />}
                   </>
                 ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 기준 모드만 쓰기 가능</span></span></div>}
               </SettingsPanelGroup>

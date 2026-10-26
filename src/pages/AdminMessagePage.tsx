@@ -172,7 +172,7 @@ export default function AdminMessagePage() {
                   <article aria-label="메시지" className="mx-auto min-h-full w-full max-w-4xl space-y-5">
                     <InfoPageHeading
                       title="텔레그램"
-                      summary="텔레그램 정기 리포트의 발송 모습을 미리 봅니다. 발송 여부와 시각은 설정창에서 조정합니다."
+                      summary="국내증시 지도를 텔레그램 메시지로 받아봅니다. 발송 여부와 시각은 설정창에서 조정합니다."
                     />
                     <InfoSection number="1" title="발송 미리보기">
                       {setting.isError ? (

@@ -76,7 +76,6 @@ function HistoryListPopup<T extends { id: string }>({
                 onPick(action.id)
                 setIsOpen(false)
               }}
-              data-hint={`${index + 1}단계 ${direction === 'undo' ? '실행 취소' : '다시 실행'}`}
               className={`flex h-6 w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-2 py-0 text-left text-[13px] font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white'}`}
             >
               <span className={`w-4 shrink-0 text-right text-xs tabular-nums ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-muted'}`}>{direction === 'undo' ? '-' : '+'}{index + 1}</span>
@@ -118,7 +117,6 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
             }}
             disabled={isEmpty}
             className={`flex w-5 shrink-0 items-center justify-center settings-chip-hover border-0 border-r border-ui-white/20 bg-transparent p-0 text-ui-white disabled:cursor-not-allowed ${isListOpen ? '!bg-[var(--accent)]/35' : ''}`}
-            data-hint={`${label} 목록`}
             aria-label={`${label} 목록`}
           >
             <ChevronDownIcon className="h-3.5 w-3.5" />
@@ -128,10 +126,9 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
             onClick={isUndo ? onUndo : onRedo}
             disabled={isEmpty}
             className={`settings-chip-hover flex min-w-0 flex-1 items-center justify-center gap-1 border-0 bg-transparent px-1.5 text-[13px]/4 font-medium text-ui-white disabled:cursor-not-allowed`}
-            data-hint={`${label} (${isUndo ? 'Ctrl+Z' : 'Ctrl+Y'})`}
             aria-label={label}
           >
-            <span className="truncate">{label}{isEmpty ? '' : ` (${stack.length})`}</span>
+            <span className="truncate">{label}</span>
           </button>
         </div>
         <HistoryListPopup
