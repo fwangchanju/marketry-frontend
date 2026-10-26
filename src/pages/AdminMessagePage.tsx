@@ -207,7 +207,7 @@ export default function AdminMessagePage() {
                       {setting.isError ? (
                         <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                       ) : saved ? (
-                        <div className="w-full rounded-2xl rounded-bl-md bg-ui-control p-1">
+                        <div className="mx-auto w-full max-w-2xl rounded-2xl rounded-bl-md bg-ui-control p-1">
                           <p className="m-0 px-3 pb-1 pt-1.5 text-lg font-medium text-[var(--sub-yellow)]">MARKETRY</p>
                           <div className="grid grid-cols-2 items-start gap-0.5 overflow-hidden rounded-[10px]">
                             <img src={sampleImage} alt="텔레그램 발송 이미지 예시 — 시장 요약" className="block h-auto w-full" draggable={false} />
@@ -215,10 +215,10 @@ export default function AdminMessagePage() {
                           </div>
                           <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
                             <p className="m-0 text-lg leading-snug text-ui-white">{SAMPLE_CAPTION}</p>
-                            <span className="flex shrink-0 items-center gap-1.5 text-sm text-ui-text">
+                            <span className="flex shrink-0 items-center gap-1.5 text-lg text-ui-text">
                               <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                               2
-                              <span>{SAMPLE_TIME}</span>
+                              <span className="ml-1.5">{SAMPLE_TIME}</span>
                             </span>
                           </div>
                         </div>
