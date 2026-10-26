@@ -6,6 +6,7 @@ import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { useQueryClient } from '@tanstack/react-query'
 import type { SectorItem, StockSectorListItem } from '@/types/api'
 import { toCount, toJoEokDecimal, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
@@ -14,7 +15,7 @@ import { ClassificationUploadError, buildUploadPlan, pathKey, readClassification
 import { getErrorDetail } from '@/utils/errorMessage'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
-import { useAssignStockSector, useBulkAssignStockSector, useCreateSector, useUpdateStockAlias } from '@/hooks/useTreemapCustom'
+import { invalidateCustomTaxonomy, useAssignStockSector, useBulkAssignStockSector, useCreateSector, useUpdateStockAlias } from '@/hooks/useTreemapCustom'
 import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
@@ -32,6 +33,7 @@ import SelectionHintBubble from '@/components/SelectionHintBubble'
 import ColumnFilterButton, { SectorOrderToggle } from '@/components/ColumnFilterButton'
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
+import { customTreemapKeys } from '@/hooks/queryKeys'
 import { DownloadIcon, UploadIcon } from './icons/AppIcons'
 import { isAdminSession } from '@/utils/adminAccess'
 
@@ -895,6 +897,7 @@ export default function AdminStockTable({
   isError = false,
   onRetry,
 }: Props) {
+  const queryClient = useQueryClient()
   const [sortKey, setSortKey] = usePersistedState<SortKey | null>('adminStockTable.sortKey', DEFAULT_SORT_KEY)
   const [sortDirection, setSortDirection] = usePersistedState<SortDirection>('adminStockTable.sortDirection', 'desc')
   const [isPending, startTransition] = useTransition()
@@ -904,8 +907,8 @@ export default function AdminStockTable({
 
   const assignStockSector = useAssignStockSector()
   const bulkAssignStockSector = useBulkAssignStockSector()
-  const uploadAssignStockSector = useBulkAssignStockSector({ skipGlobalError: true })
-  const createSectorMutation = useCreateSector({ skipGlobalError: true })
+  const uploadAssignStockSector = useBulkAssignStockSector({ skipGlobalError: true, deferInvalidation: true })
+  const createSectorMutation = useCreateSector({ skipGlobalError: true, deferInvalidation: true })
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
@@ -1425,6 +1428,13 @@ export default function AdminStockTable({
     const failed: string[] = []
     let applying = false
     let requestPending = false
+    let sectorCreationAttempted = false
+    let stockAssignmentAttempted = false
+    let uploadRequestCount = 0
+    const paceUploadRequest = async () => {
+      if (uploadRequestCount > 0) await new Promise<void>(resolve => window.setTimeout(resolve, 100))
+      uploadRequestCount++
+    }
     try {
       const rows = await readClassificationFile(file)
       if (rows.length === 0) {
@@ -1452,6 +1462,8 @@ export default function AdminStockTable({
       for (const path of plan.newSectors) {
         const parentId = path.length === 1 ? null : idByPath.get(pathKey(path.slice(0, -1)))
         if (parentId === undefined) throw new Error('상위 업종을 찾을 수 없습니다.')
+        await paceUploadRequest()
+        sectorCreationAttempted = true
         requestPending = true
         const created = await createSectorMutation.mutateAsync({ name: path[path.length - 1], parentId })
         requestPending = false
@@ -1464,6 +1476,8 @@ export default function AdminStockTable({
         const before = new Map(itemsRef.current.map(item => [item.stockCode, item.sectorId]))
         for (let start = 0; start < group.stockCodes.length; start += 500) {
           const chunk = group.stockCodes.slice(start, start + 500)
+          await paceUploadRequest()
+          stockAssignmentAttempted = true
           requestPending = true
           const result = await uploadAssignStockSector.mutateAsync({ stockCodes: chunk, sectorId })
           requestPending = false
@@ -1493,6 +1507,11 @@ export default function AdminStockTable({
         appAlert('엑셀을 읽지 못했습니다.\n파일 형식과 열 이름을 확인해 주세요.', { title: '파일 확인' })
       }
     } finally {
+      const refreshes: Promise<void>[] = []
+      if (sectorCreationAttempted) refreshes.push(queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() }))
+      if (stockAssignmentAttempted && requestPending) refreshes.push(queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() }))
+      if (sectorCreationAttempted || stockAssignmentAttempted) refreshes.push(invalidateCustomTaxonomy(queryClient))
+      await Promise.all(refreshes)
       setIsUploading(false)
     }
   }
