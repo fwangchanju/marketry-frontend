@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
-export function InfoPageHeading({ title, summary, effectiveDate, actions, sticky = false }: { title: string; summary: string; effectiveDate?: string; actions?: ReactNode; sticky?: boolean }) {
+export function InfoPageHeading({ title, summary, effectiveDate, actions, sticky = false, flushBottom = false }: { title: string; summary: string; effectiveDate?: string; actions?: ReactNode; sticky?: boolean; flushBottom?: boolean }) {
   return (
-    <header className={`${sticky ? 'sticky top-0 z-20 mb-0 bg-ui-background' : 'mb-7'} border-b border-ui-border pb-5`}>
+    <header className={`${sticky ? 'sticky top-0 z-20 bg-ui-background' : ''} ${sticky || flushBottom ? 'mb-0' : 'mb-7'} border-b border-ui-border pb-5`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex min-w-0 items-center gap-2 text-2xl font-bold text-ui-white">
           <span aria-hidden="true" className="h-7 w-1 shrink-0 rounded-sm bg-brand" />

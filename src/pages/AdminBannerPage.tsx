@@ -694,11 +694,13 @@ export default function AdminBannerPage() {
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="BANNER" />
                 </Toolbar>
-                <PageMainFrame className="p-6">
-                  <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl space-y-5">
+                <PageMainFrame scrollable={false} className="p-0">
+                  <div className="relative z-10 shrink-0 bg-ui-background px-6 pt-6">
+                    <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl">
                     <InfoPageHeading
-                      title={showCampaignList ? '목록' : activeType === 'NOTICE' ? '공지' : '광고'}
-                      summary={showCampaignList ? '게시·대기·종료 상태별로 공지·광고를 확인하고 수정합니다.' : draft.id ? `${activeType === 'NOTICE' ? '공지' : '광고'} 배너를 ${canEdit ? '수정' : '확인'}하고 있습니다.` : '새 배너 내용을 입력하거나 목록에서 기존 배너를 선택합니다.'}
+                      flushBottom
+                      title="배너 운영"
+                      summary="목록에서 공지·광고를 확인하거나 새 배너를 작성합니다."
                       actions={(
                         <>
                           <button type="button" aria-pressed={showCampaignList} onClick={() => void openCampaignList()} className={`${SETTINGS_ACTION_CLASS} px-2 ${showCampaignList ? 'bg-brand-surface' : ''}`}>목록</button>
@@ -707,6 +709,11 @@ export default function AdminBannerPage() {
                         </>
                       )}
                     />
+                    </article>
+                  </div>
+                  <div className="min-h-0 flex-1 px-6 pb-6 pt-7">
+                    <div className="page-main-scroll h-full overflow-y-auto">
+                  <article aria-label="배너 운영 콘텐츠" className="mx-auto w-full max-w-4xl space-y-5">
                     {showCampaignList ? (
                       <div className="flex flex-col gap-3">
                         <InfoSection number="1" title={`게시 (${campaigns.isError && campaigns.data === undefined ? '—' : postedCampaigns.length}개)`}>
@@ -833,6 +840,8 @@ export default function AdminBannerPage() {
                     )}
 
                   </article>
+                    </div>
+                  </div>
                 </PageMainFrame>
               </>
             )}
