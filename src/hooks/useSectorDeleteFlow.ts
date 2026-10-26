@@ -2,14 +2,14 @@ import { isAxiosError } from 'axios'
 import { useSectorDeletePreview, useDeleteSector } from './useTreemapCustom'
 import type { StockSectorItem } from '@/types/api'
 import { getErrorDetail } from '@/utils/errorMessage'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 
 function confirmDeletable(sectorName: string, deletableSectors: string[]) {
   // 하위 업종이 많아도 한 줄에 들어가게 앞의 3개만 적는다.
   const list = deletableSectors.length === 0
     ? '없음'
     : `${deletableSectors.slice(0, 3).map(name => `[${name}]`).join(' ')}${deletableSectors.length > 3 ? ` 외 ${deletableSectors.length - 3}개` : ''}`
-  return appConfirm(`[${sectorName}]\n삭제하시겠습니까?\n하위 업종 ${list}`, { title: '업종 삭제' })
+  return appWarnConfirm(`[${sectorName}]\n삭제하시겠습니까?\n하위 업종 ${list}`, { title: '업종 삭제' })
 }
 
 function alertBlocked(sectorName: string, blockingStocks: StockSectorItem[]) {

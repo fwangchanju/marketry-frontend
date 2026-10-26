@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { appConfirm } from '@/utils/appDialogBus'
+import { appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import {
   useSnapshots,
   useCurrentSnapshot,
@@ -37,7 +37,7 @@ export default function AdminVersionSaveSection() {
   }
 
   const handleDelete = async (id: number, versionLabel: string) => {
-    if (!await appConfirm(`[${versionLabel}]\n삭제하시겠습니까?`, { title: '버전 삭제' })) return
+    if (!await appWarnConfirm(`[${versionLabel}]\n삭제하시겠습니까?`, { title: '버전 삭제' })) return
     deleteVersion.mutate(id)
     if (selectedId === id) {
       setSelectedId(null)

@@ -1,5 +1,5 @@
 import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { CaptureWidthError, HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH, screenshotElementToDataUrl, screenshotFixedHomeFrameToDataUrl } from '@/utils/screenshotToPreview'
 import { captureRegionRect, fullScreenshotSize } from '@/utils/screenshotScale'
 import { CheckIcon, CopyIcon, HomeFrameCaptureIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
@@ -15,6 +15,8 @@ interface Props {
   copyLabel: string
   isCopying: boolean
   screenshotTarget: HTMLElement | null
+  captureReady?: boolean
+  emptyPreview?: ReactNode
   fixedHomeCaptureRef?: { current: HTMLElement | null }
   // 지도에서 전체 화면(모니터)과 지도 영역(모바일)을 고르는 버튼을 표시한다.
   mobileRegionOption?: { label: string; selector: string; mode?: 'through-right-edge' | 'element' | 'content'; onCloneNode?: (cloned: Node) => void; monitorHorizontalPadding?: number }
@@ -54,6 +56,8 @@ export default function ScreenshotModal({
   copyLabel,
   isCopying,
   screenshotTarget,
+  captureReady = true,
+  emptyPreview,
   fixedHomeCaptureRef,
   mobileRegionOption,
   onMobileSelectionChange,
@@ -63,6 +67,8 @@ export default function ScreenshotModal({
   const [contextPreviewSrc, setContextPreviewSrc] = useState<string | null>(null)
   const [captureError, setCaptureError] = useState<string | null>(null)
   const [captureAttempt, setCaptureAttempt] = useState(0)
+  const emptyPreviewRef = useRef<HTMLDivElement>(null)
+  const hasEmptyPreview = emptyPreview != null
   // 스크린샷 창은 마지막으로 고른 캡처 범위로 열고, 고른 적이 없거나 지금 페이지에 없는 범위면 전체 화면(모니터) 캡처로 연다.
   const choiceKey = captureChoiceKey(Boolean(mobileRegionOption), Boolean(frameCaptureOptions))
   const [selectedCapture, setSelectedCapture] = useState<string | null>(() =>
@@ -90,12 +96,19 @@ export default function ScreenshotModal({
   // 항목(프레임) 캡처로 열 때 팝업은 항목 하나가 아니라 전체 화면 위에 그 자리를 표시하는 그림을 보여 주므로, 처음 크기도 selectCapture와 같이 전체 화면 비율로 잡는다.
   // 모바일 캡처로 열 때는 그 틀이 팝업이 열린 뒤에 생기므로 아직 재지 못한다 — 홈 부분 캡처와 같은 고정 크기(810×1080)에 하단 자르기 전 4px만 더해 미리 잡는다.
   const [previewRatio, setPreviewRatio] = useState<number | null>(() => {
+    if (hasEmptyPreview) return 948 / 964
     if (selectedFrame) return elementRatio(screenshotTarget, undefined, undefined, fullPreviewPadding)
     if (selectedCapture === 'mobile' && regionSelector && !screenshotTarget?.querySelector(regionSelector)) {
       return HOME_CAPTURE_FRAME_WIDTH / (HOME_CAPTURE_FRAME_HEIGHT + 4)
     }
     return elementRatio(screenshotTarget, regionSelector, regionMode, horizontalPadding)
   })
+  useEffect(() => {
+    if (hasEmptyPreview) setPreviewRatio(948 / 964)
+    setPreviewSrc(null)
+    setContextPreviewSrc(null)
+    setCaptureError(null)
+  }, [hasEmptyPreview])
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -108,6 +121,7 @@ export default function ScreenshotModal({
   }, [onClose])
 
   useEffect(() => {
+    if (!captureReady) return
     // 스크린샷 작업이 무거워서 같은 프레임에서 바로 시작하면 모달이 뜨는 페인트 자체가 밀린다.
     // 두 번의 requestAnimationFrame으로 모달(+스피너)이 먼저 그려진 뒤에 스크린샷을 시작한다.
     let cancelled = false
@@ -123,18 +137,18 @@ export default function ScreenshotModal({
     const timeoutId = window.setTimeout(() => failCapture('캡처 시간이 초과되었습니다. 다시 시도해 주세요.'), 10_000)
     const captureWhenReady = () => {
       if (cancelled || finished) return
-      if (regionSelector && selectedCapture === 'mobile' && screenshotTarget && !screenshotTarget.querySelector(regionSelector) && missingMobileFrames++ < 10) {
+      if (!hasEmptyPreview && regionSelector && selectedCapture === 'mobile' && screenshotTarget && !screenshotTarget.querySelector(regionSelector) && missingMobileFrames++ < 10) {
         // 저장된 모바일 선택으로 열면 부모가 모바일 판을 한 번 더 렌더링해야 한다.
         rafId = requestAnimationFrame(captureWhenReady)
         return
       }
-      if (!screenshotTarget || (regionSelector && !screenshotTarget.querySelector(regionSelector))) {
+      if (!hasEmptyPreview && (!screenshotTarget || (regionSelector && !screenshotTarget.querySelector(regionSelector)))) {
         window.clearTimeout(timeoutId)
         failCapture('캡처할 영역이 없습니다.')
         return
       }
       // 모바일용 지도는 별도 크기로 다시 배치한다. ResizeObserver가 새 레이아웃을 계산할 때까지 기다린다.
-      if (onCloneNode && !screenshotTarget.querySelector('[data-map-mobile-capture] [data-treemap-layout-ready="true"]')) {
+      if (!hasEmptyPreview && onCloneNode && screenshotTarget && !screenshotTarget.querySelector('[data-map-mobile-capture] [data-treemap-layout-ready="true"]')) {
         rafId = requestAnimationFrame(captureWhenReady)
         return
       }
@@ -142,7 +156,19 @@ export default function ScreenshotModal({
         try {
           // 프레임 선택 중에는 전체 화면을 배경으로 먼저 보여주고, 선택 프레임은 별도로 캡처해 복사한다.
           let context: string | null = null
-          if (showContextPreview) {
+          if (hasEmptyPreview) {
+            const emptyElement = emptyPreviewRef.current
+            if (!emptyElement) throw new Error('Empty preview is unavailable')
+            const dataUrl = await screenshotElementToDataUrl(emptyElement)
+            if (!cancelled && !finished) {
+              finished = true
+              window.clearTimeout(timeoutId)
+              setPreviewSrc(dataUrl)
+            }
+            return
+          }
+          if (!screenshotTarget) throw new Error('Screenshot target is unavailable')
+          if (showContextPreview && screenshotTarget) {
             context = await screenshotElementToDataUrl(screenshotTarget, undefined, undefined, undefined, fullPreviewPadding)
             if (cancelled || finished) return
             setContextPreviewSrc(context)
@@ -175,7 +201,7 @@ export default function ScreenshotModal({
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(rafId)
     }
-  }, [screenshotTarget, fixedHomeCaptureRef, selectedCapture, regionSelector, regionMode, onCloneNode, horizontalPadding, fullPreviewPadding, showContextPreview, captureAttempt])
+  }, [captureReady, hasEmptyPreview, screenshotTarget, fixedHomeCaptureRef, selectedCapture, regionSelector, regionMode, onCloneNode, horizontalPadding, fullPreviewPadding, showContextPreview, captureAttempt])
 
   const retryCapture = () => {
     setPreviewSrc(null)
@@ -256,7 +282,15 @@ export default function ScreenshotModal({
           </button>
         </div>
         <div className="flex flex-col p-4">
-        {displayPreviewSrc ? (
+        {emptyPreview ? (
+          <div
+            ref={emptyPreviewRef}
+            className="flex shrink-0 items-center justify-center overflow-hidden bg-ui-background"
+            style={fitWidth && previewRatio ? { width: fitWidth, aspectRatio: previewRatio } : { width: 'min(calc(100vw - 4rem), 30rem)', aspectRatio: previewRatio ?? 948 / 964 }}
+          >
+            {emptyPreview}
+          </div>
+        ) : displayPreviewSrc ? (
           <div className="relative max-w-full self-center overflow-hidden" style={fitWidth ? { width: fitWidth } : undefined}>
             <img
               src={displayPreviewSrc}

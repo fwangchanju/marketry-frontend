@@ -53,7 +53,7 @@ function Notice({ active, window, ready, nodes }: Props) {
       className="pointer-events-none fixed top-0 z-30 flex h-dvh items-center justify-center p-4"
     >
       <section role="status" aria-labelledby={titleId} className={`${HINT_BUBBLE_COLOR_CLASS} ${POPUP_SIZE_CLASS} pointer-events-auto select-none`}>
-        <h2 id={titleId} className="flex items-center text-base font-bold text-ui-background"><PopupKindBadge kind="안내" />{window.fromMinutes < 12 * 60 ? '프리 마켓' : '애프터 마켓'}</h2>
+        <h2 id={titleId} className="flex items-center text-base font-bold text-ui-background"><PopupKindBadge kind="정보" />{window.fromMinutes < 12 * 60 ? '프리 마켓' : '애프터 마켓'}</h2>
         <p className="mt-3 break-keep text-sm leading-relaxed text-ui-background">
           {window.label.replace(/ /g, '')}에는 NXT 종목만 표시됩니다.
           <br />
@@ -61,7 +61,7 @@ function Notice({ active, window, ready, nodes }: Props) {
           {window.fromMinutes >= 12 * 60 && <><br />종가 확인은 상단 애프터 마켓 배지 우측 버튼을 이용하세요.</>}
         </p>
         <div className="mt-auto flex justify-end pt-3">
-          <button type="button" onClick={() => setDismissed(true)} className="rounded-lg border-0 bg-[var(--brand-surface)] px-4 py-2 text-sm font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)]">닫기</button>
+          <button type="button" onClick={() => setDismissed(true)} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm font-bold text-ui-surface transition-colors hover:bg-ui-control-hover">닫기</button>
         </div>
       </section>
     </div>

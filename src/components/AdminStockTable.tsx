@@ -9,13 +9,13 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useQueryClient } from '@tanstack/react-query'
 import type { SectorItem, StockSectorListItem } from '@/types/api'
 import { toCount, toJoEokDecimal, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { findAliasConflict } from '@/utils/aliasConflict'
-import { ClassificationUploadError, buildUploadPlan, pathKey, readClassificationFile } from '@/utils/classificationUpload'
+import { ClassificationUploadError, buildUploadPlan, readClassificationFile } from '@/utils/classificationUpload'
 import { getErrorDetail } from '@/utils/errorMessage'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
-import { invalidateCustomTaxonomy, useAssignStockSector, useBulkAssignStockSector, useCreateSector, useUpdateStockAlias } from '@/hooks/useTreemapCustom'
+import { invalidateCustomTaxonomy, useAssignStockSector, useBulkAssignStockSector, useResetCustomClassification, useUpdateStockAlias } from '@/hooks/useTreemapCustom'
 import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
@@ -36,6 +36,8 @@ import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { customTreemapKeys } from '@/hooks/queryKeys'
 import { DownloadIcon, UploadIcon } from './icons/AppIcons'
 import { isAdminSession } from '@/utils/adminAccess'
+import { isAxiosError } from 'axios'
+import { uploadClassification } from '@/api/custom'
 
 interface Props {
   items: StockSectorListItem[]
@@ -49,6 +51,8 @@ interface Props {
   historyContainer?: HTMLElement | null
   // 설정창의 "엑셀" 항목 자리 — 있으면 다운로드 버튼을 이 안에 그린다.
   excelContainer?: HTMLElement | null
+  // 설정창의 "초기화" 항목 자리 — 업종 목록과 종목 분류를 초기화하는 버튼을 그린다.
+  resetContainer?: HTMLElement | null
   // 설정창의 "일괄 변경" 항목 자리 — 대·중·소분류 일괄 변경 버튼을 이 안에 그린다.
   bulkContainer?: HTMLElement | null
   // 검색창 옆에 두던 "N/N종목" 개수를 받아 갈 곳 — 페이지가 설정창 머리글에 그려 준다.
@@ -890,6 +894,7 @@ export default function AdminStockTable({
   toolbarContainer,
   historyContainer,
   excelContainer,
+  resetContainer,
   bulkContainer,
   onCountLabelChange,
   nxtStockCodes = NO_NXT_CODES,
@@ -907,10 +912,10 @@ export default function AdminStockTable({
 
   const assignStockSector = useAssignStockSector()
   const bulkAssignStockSector = useBulkAssignStockSector()
-  const uploadAssignStockSector = useBulkAssignStockSector({ skipGlobalError: true, deferInvalidation: true })
-  const createSectorMutation = useCreateSector({ skipGlobalError: true, deferInvalidation: true })
+  const resetCustomClassificationMutation = useResetCustomClassification()
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [isApplyingUpload, setIsApplyingUpload] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const updateAlias = useUpdateStockAlias()
   // 약칭 지정은 관리자 전용이다 — 관리자의 약칭은 MARKETRY로 올릴 내용에만 쓰이고, 다른 사용자의 데이터는 건드리지 않는다.
@@ -1428,13 +1433,7 @@ export default function AdminStockTable({
     const failed: string[] = []
     let applying = false
     let requestPending = false
-    let sectorCreationAttempted = false
-    let stockAssignmentAttempted = false
-    let uploadRequestCount = 0
-    const paceUploadRequest = async () => {
-      if (uploadRequestCount > 0) await new Promise<void>(resolve => window.setTimeout(resolve, 100))
-      uploadRequestCount++
-    }
+    let uploadAttempted = false
     try {
       const rows = await readClassificationFile(file)
       if (rows.length === 0) {
@@ -1445,62 +1444,43 @@ export default function AdminStockTable({
       // 창이 길어지지 않게 개수만 한 줄씩 적는다 — 건너뛰는 종목은 비어 있음·대분류 없음·목록에 없는 코드를 합친 수다.
       const skippedCount = plan.blankCount + plan.invalidCount + plan.unknownCodes.length
       if (plan.changedCount === 0) {
-        const parts = [plan.unchangedCount > 0 && `이미 같은 분류 ${plan.unchangedCount}개`, skippedCount > 0 && `건너뜀 ${skippedCount}개`].filter(Boolean)
+        const parts = [plan.unchangedCount > 0 && `이미 같은 분류 ${toCount(plan.unchangedCount)}개`, skippedCount > 0 && `건너뜀 ${toCount(skippedCount)}개`].filter(Boolean)
         appAlert(`바뀌는 종목이 없습니다.${parts.length > 0 ? `\n${parts.join(' · ')}` : ''}`, { title: '적용 없음' })
         return
       }
-      const parts = [plan.newSectors.length > 0 && `새로 만들 분류 ${plan.newSectors.length}개`, skippedCount > 0 && `건너뜀 ${skippedCount}개`].filter(Boolean)
       const summary = [
-        `변경되는 종목은 ${plan.changedCount}개입니다.`,
-        ...(parts.length > 0 ? [parts.join(' · ')] : []),
-        '적용하시겠습니까?',
+        `업종: ${toCount(plan.newSectors.length)}개`,
+        `업종을 분류한 종목: ${toCount(plan.changedCount)}개`,
+        '이대로 적용할까요?',
       ].join('\n')
       if (!(await appConfirm(summary, { title: '엑셀 적용' }))) return
 
       applying = true
-      const idByPath = plan.existingIdByPath
-      for (const path of plan.newSectors) {
-        const parentId = path.length === 1 ? null : idByPath.get(pathKey(path.slice(0, -1)))
-        if (parentId === undefined) throw new Error('상위 업종을 찾을 수 없습니다.')
-        await paceUploadRequest()
-        sectorCreationAttempted = true
-        requestPending = true
-        const created = await createSectorMutation.mutateAsync({ name: path[path.length - 1], parentId })
-        requestPending = false
-        createdCount++
-        idByPath.set(pathKey(path), created.id)
-      }
-      for (const group of plan.assignments) {
-        const sectorId = idByPath.get(pathKey(group.path))
-        if (sectorId === undefined) throw new Error('변경할 업종을 찾을 수 없습니다.')
-        const before = new Map(itemsRef.current.map(item => [item.stockCode, item.sectorId]))
-        for (let start = 0; start < group.stockCodes.length; start += 500) {
-          const chunk = group.stockCodes.slice(start, start + 500)
-          await paceUploadRequest()
-          stockAssignmentAttempted = true
-          requestPending = true
-          const result = await uploadAssignStockSector.mutateAsync({ stockCodes: chunk, sectorId })
-          requestPending = false
-          failed.push(...result.failedStockCodes)
-          const entries = chunk
-            .filter(stockCode => !result.failedStockCodes.includes(stockCode))
-            .map(stockCode => ({ stockCode, before: before.get(stockCode) }))
-            .filter((entry): entry is { stockCode: string; before: number } => entry.before != null && entry.before !== sectorId)
-          appliedCount += chunk.length - result.failedStockCodes.length
-          if (entries.length > 0) pushUndo({ type: 'bulkSector', sectorName: group.path.join(' > '), after: sectorId, entries })
-        }
+      setIsApplyingUpload(true)
+      const before = new Map(itemsRef.current.map(item => [item.stockCode, item.sectorId]))
+      uploadAttempted = true
+      requestPending = true
+      const result = await uploadClassification(plan.assignments)
+      requestPending = false
+      createdCount = result.createdSectorCount
+      failed.push(...result.failedStockCodes)
+      for (const group of result.appliedAssignments) {
+        appliedCount += group.stockCodes.length
+        const entries = group.stockCodes
+          .map(stockCode => ({ stockCode, before: before.get(stockCode) }))
+          .filter((entry): entry is { stockCode: string; before: number } => entry.before != null && entry.before !== group.sectorId)
+        if (entries.length > 0) pushUndo({ type: 'bulkSector', sectorName: group.path.join(' > '), after: group.sectorId, entries })
       }
       appAlert(`바뀐 종목 ${appliedCount}개\n새로 만든 업종 ${createdCount}개${failed.length > 0 ? `\n반영되지 않은 종목 ${failed.length}개\n${failed.join(', ')}` : ''}`, { title: failed.length > 0 ? '일부 적용' : '적용 완료' })
     } catch (error) {
       if (error instanceof ClassificationUploadError) {
         appAlert(error.message, { title: '파일 확인' })
+      } else if (isAxiosError(error) && error.response?.status === 429) {
+        appAlert('업로드는 1시간에 3회까지 가능합니다.', { title: '업로드 제한' })
       } else if (applying) {
         appAlert([
-          '엑셀 적용이 중단됐습니다.',
-          `반영 확인된 종목 ${appliedCount}개 · 생성 확인된 업종 ${createdCount}개`,
-          ...(failed.length > 0 ? [`반영되지 않은 종목 ${failed.length}개: ${failed.join(', ')}`] : []),
-          '이미 반영된 내용은 유지됩니다.',
-          ...(requestPending ? ['중단된 요청은 서버에 반영됐을 수 있습니다. 목록을 새로 확인한 뒤 다시 업로드해 주세요.'] : []),
+          '엑셀 적용을 완료하지 못했습니다.',
+          ...(requestPending ? ['서버 반영 여부를 확인한 뒤 목록을 새로고침해 주세요.'] : []),
           getErrorDetail(error),
         ].join('\n'), { title: '적용 중단' })
       } else {
@@ -1508,11 +1488,27 @@ export default function AdminStockTable({
       }
     } finally {
       const refreshes: Promise<void>[] = []
-      if (sectorCreationAttempted) refreshes.push(queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() }))
-      if (stockAssignmentAttempted && requestPending) refreshes.push(queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() }))
-      if (sectorCreationAttempted || stockAssignmentAttempted) refreshes.push(invalidateCustomTaxonomy(queryClient))
+      if (uploadAttempted) refreshes.push(queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() }))
+      if (uploadAttempted) refreshes.push(queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() }))
+      if (uploadAttempted) refreshes.push(invalidateCustomTaxonomy(queryClient))
       await Promise.all(refreshes)
+      setIsApplyingUpload(false)
       setIsUploading(false)
+    }
+  }
+
+  const handleResetCustomClassification = async () => {
+    const confirmed = await appWarnConfirm(
+      '업종 목록과 종목 분류 초기화합니다.\n진행하시겠습니까?',
+      { title: '업종·종목 초기화' },
+    )
+    if (!confirmed) return
+    try {
+      await resetCustomClassificationMutation.mutateAsync()
+      setUndoStack([])
+      setRedoStack([])
+    } catch {
+      await appAlert('업종 목록과 종목 분류를 초기화하지 못했습니다.', { title: '초기화 실패' })
     }
   }
 
@@ -1524,7 +1520,7 @@ export default function AdminStockTable({
     }
     setIsExporting(true)
     try {
-      const filename = `INDUSTRY-${fileTimestamp()}.xlsx`
+      const filename = `[MARKETRY-업종분류] ${fileTimestamp()}.xlsx`
       const rows = sorted.map(item => {
         const display = displayByStockCode.get(item.stockCode)!
         return {
@@ -1630,8 +1626,17 @@ export default function AdminStockTable({
 
 
   useReportCountLabel(`${toCount(sorted.length)}/${toCount(items.length)}종목`, onCountLabelChange)
+  const hasCustomClassification = sectors.length > 0 || items.some(item => item.sectorId != null)
   return (
     <div ref={rootRef} className="relative flex h-full min-h-0 flex-col">
+      {isApplyingUpload && (
+        <div role="status" aria-live="polite" aria-busy="true" className="absolute inset-0 z-40 flex items-center justify-center bg-ui-background">
+          <div className="relative flex flex-col items-center">
+            <Spinner showElapsed className="h-[min(20rem,60vmin)] w-[min(20rem,60vmin)]" />
+            <span className="absolute left-1/2 top-full mt-4 -translate-x-1/2 whitespace-nowrap text-base text-ui-text">처리 중입니다.<br />1분 내외 소요.</span>
+          </div>
+        </div>
+      )}
       {toolbarContainer && createPortal(toolbar, toolbarContainer)}
       {historyContainer && createPortal(
         <div className="settings-custom-control">
@@ -1648,9 +1653,8 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={() => void handleExportExcel()}
-              disabled={isExporting || isUploading}
+              disabled={isExporting || isUploading || resetCustomClassificationMutation.isPending}
               className="flex h-[25px] items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
-              data-hint={'엑셀 다운로드\n필터가 적용된 목록'}
               aria-label="엑셀 다운로드"
             >
               <DownloadIcon className="h-4 w-4 text-ui-text" />
@@ -1659,13 +1663,12 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={() => uploadInputRef.current?.click()}
-              disabled={isUploading || isExporting}
+              disabled={isUploading || isExporting || resetCustomClassificationMutation.isPending}
               className="flex h-[25px] items-center justify-center gap-1 settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
-              data-hint={'엑셀 업로드\n종목 분류 일괄 변경'}
               aria-label="엑셀 업로드"
             >
               <UploadIcon className="h-4 w-4 text-ui-text" />
-              {isUploading ? '처리 중…' : '업로드'}
+              업로드
             </button>
             <input
               ref={uploadInputRef}
@@ -1681,6 +1684,24 @@ export default function AdminStockTable({
           </div>
         </div>,
         excelContainer,
+      )}
+      {resetContainer && createPortal(
+        <div className="settings-custom-control">
+          <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">초기화</h2>
+          <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">업종 목록과 종목 분류를 초기화</p>
+          <div className="settings-control-inset flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => void handleResetCustomClassification()}
+              disabled={resetCustomClassificationMutation.isPending || isUploading || isExporting || !hasCustomClassification}
+              className="flex h-[25px] items-center justify-center gap-1 rounded-[4px] border-0 bg-[#BC2F2F] px-3 text-[13px] leading-[1.3] font-medium text-ui-white transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+              aria-label="업종과 종목 분류 초기화"
+            >
+              초기화
+            </button>
+          </div>
+        </div>,
+        resetContainer,
       )}
       {bulkContainer && createPortal(
         <div className="settings-custom-control">

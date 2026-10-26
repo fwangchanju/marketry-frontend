@@ -506,6 +506,12 @@ export default function GroupPage() {
           copyLabel={copyLabel}
           isCopying={copyStatus === 'copying'}
           screenshotTarget={screenshotRef.current}
+          captureReady={!isLoading && (source !== 'MINE' || Boolean(displayNow))}
+          emptyPreview={source === 'MINE' && !isLoading && !isError && displayNow && displayNow.items.every(node => collectItems(node).length === 0) ? (
+            <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
+              <CustomPageBadgeLink />
+            </EmptyLogoMessage>
+          ) : undefined}
         />
       )}
     </div>

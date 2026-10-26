@@ -21,7 +21,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { approveBanner, adminBannerImageUrl, cancelBannerSchedule, deleteBannerCampaign, endBannerCampaign, getAdminBanners, getBannerRotationSetting, saveBannerDraft, saveBannerRotationSetting, type BannerCampaign, type BannerDraftInput } from '@/api/adminBanners'
 import { CloseIcon, HistoryIcon, SaveIcon, UploadIcon } from '@/components/icons/AppIcons'
 import BannerDatePicker from '@/components/BannerDatePicker'
@@ -29,7 +29,6 @@ import BannerTimePicker from '@/components/BannerTimePicker'
 
 const INPUT_CLASS = 'h-[25px] w-full min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:border-brand placeholder:text-ui-muted disabled:opacity-35'
 const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35'
-const FINAL_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-brand-surface px-3 text-[13px]/4 font-semibold text-ui-white transition-colors hover:bg-brand-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-35'
 const EDITOR_ACTION_CLASS = 'flex h-[25px] w-[90px] shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 px-1.5 text-[13px]/4 font-semibold text-ui-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-35'
 
 function kstInputValue(epoch = Date.now()): string {
@@ -99,6 +98,22 @@ function formatScheduledAt(value: string): string {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
     hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(date)
+}
+
+function isScheduledStart(value: string): boolean {
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
+  const timestamp = Date.parse(hasTimezone ? value : `${value}+09:00`)
+  return Number.isFinite(timestamp) && timestamp > Date.now()
+}
+
+function formatStartCountdown(value: string): string {
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
+  const timestamp = Date.parse(hasTimezone ? value : `${value}+09:00`)
+  if (!Number.isFinite(timestamp) || timestamp <= Date.now()) return ''
+  const remaining = timestamp - Date.now()
+  if (remaining >= 86_400_000) return `${Math.ceil(remaining / 86_400_000)}일 뒤`
+  const hours = Math.max(1, Math.ceil(remaining / 3_600_000))
+  return `${hours}시간 뒤`
 }
 
 function compareCampaignEndAtLatestFirst(a: BannerCampaign, b: BannerCampaign): number {
@@ -253,8 +268,7 @@ function BannerEditorPreviews({ draft, campaign }: { draft: BannerDraftInput; ca
   }, [draft.file])
 
   return (
-    <section aria-label="배너 저장 전 미리보기" className="mx-auto flex w-full max-w-[728px] min-w-0 flex-col gap-1">
-      <h2 className="m-0 text-sm font-medium text-ui-muted">{campaign ? '수정 내용 (저장 전 미리보기)' : '신규 등록 미리보기'}</h2>
+    <div className="mx-auto w-full max-w-[728px] min-w-0">
       <BannerPreview
         type={draft.type}
         title={draft.title}
@@ -264,7 +278,7 @@ function BannerEditorPreviews({ draft, campaign }: { draft: BannerDraftInput; ca
         textBold={draft.textBold}
         emptyMessage="광고 이미지를 선택해 주세요."
       />
-    </section>
+    </div>
   )
 }
 
@@ -329,11 +343,24 @@ export default function AdminBannerPage() {
   const canEdit = true
   const isDirty = !isDraftSaved
   const isDraftValid = Boolean(draft.title.trim() && draft.startsAt && (draft.type === 'NOTICE' ? draft.text.trim() : draft.file || savedCampaign?.hasImage))
+  const saveButtonLabel = selectedCampaign?.status === 'LIVE' || selectedCampaign?.status === 'SCHEDULED'
+    ? '저장'
+    : selectedCampaign?.status === 'ENDED'
+      ? isScheduledStart(draft.startsAt) ? '재예약' : '다시 게시'
+      : isScheduledStart(draft.startsAt) ? '예약' : '게시'
 
   const saveMutation = useMutation({
-    mutationFn: saveBannerDraft,
+    mutationFn: async (input: BannerDraftInput) => {
+      const item = await saveBannerDraft(input)
+      if (item.status !== 'DRAFT') return { item, publishError: null }
+      try {
+        return { item: await approveBanner(item.id), publishError: null }
+      } catch (publishError) {
+        return { item, publishError }
+      }
+    },
     meta: { skipGlobalError: true },
-    onSuccess: async item => {
+    onSuccess: async ({ item, publishError }) => {
       setSavedCampaigns(value => ({ ...value, [item.type]: item }))
       setDrafts(value => ({ ...value, [item.type]: { ...value[item.type], id: item.id, linkUrl: item.linkUrl ?? 'https://', file: null } }))
       setSavedFlags(value => ({ ...value, [item.type]: true }))
@@ -344,22 +371,27 @@ export default function AdminBannerPage() {
         client.invalidateQueries({ queryKey: ['admin-banners'] }),
         client.invalidateQueries({ queryKey: ['banners', 'active'] }),
       ])
-      void appAlert(item.status === 'DRAFT' ? '배너를 미공개로 저장했습니다. 목록에서 공개할 수 있습니다.' : '공개 배너 내용을 저장했습니다.', { title: '저장 완료' })
+      if (publishError) {
+        void appAlert('내용은 대기 목록에 보관했습니다. 대기 목록에서 다시 게시하거나 예약해 주세요.', { title: '게시 실패' })
+        return
+      }
+      const wasEnded = selectedCampaign?.status === 'ENDED'
+      const message = item.status === 'SCHEDULED'
+        ? wasEnded ? '배너를 다시 예약했습니다.' : '배너 게시를 예약했습니다.'
+        : item.status === 'LIVE'
+          ? wasEnded ? '배너를 다시 게시했습니다.' : '배너를 게시했습니다.'
+          : '배너 내용을 저장했습니다.'
+      const title = item.status === 'SCHEDULED'
+        ? wasEnded ? '재예약 완료' : '예약 완료'
+        : item.status === 'LIVE'
+          ? wasEnded ? '다시 게시 완료' : '게시 완료'
+          : '저장 완료'
+      void appAlert(message, { title })
     },
-    onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.detail ?? error.response?.data?.message ?? '입력 내용을 확인하고 다시 시도해 주세요.') : '입력 내용을 확인하고 다시 시도해 주세요.', { title: '저장 실패' }),
-  })
-  const approveMutation = useMutation({
-    mutationFn: approveBanner,
-    onSuccess: async item => {
-      setSavedCampaigns(value => ({ ...value, [item.type]: item }))
-      setSavedFlags(value => ({ ...value, [item.type]: true }))
-      await Promise.all([
-        client.invalidateQueries({ queryKey: ['admin-banners'] }),
-        client.invalidateQueries({ queryKey: ['banners', 'active'] }),
-      ])
-      void appAlert(item.status === 'SCHEDULED' ? '선택한 시각에 배너가 교체되도록 예약했습니다.' : '배너를 실제 상단 영역에 반영했습니다.', { title: '승인 완료' })
+    onError: error => {
+      void client.invalidateQueries({ queryKey: ['admin-banners'] })
+      void appAlert(isAxiosError(error) ? String(error.response?.data?.detail ?? error.response?.data?.message ?? '입력 내용을 확인하고 다시 시도해 주세요.') : '입력 내용을 확인하고 다시 시도해 주세요.', { title: '게시 또는 저장 실패' })
     },
-    onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.detail ?? error.response?.data?.message ?? '배너를 공개하지 못했습니다. 입력 내용을 확인해 주세요.') : '배너 공개에 실패했습니다. 잠시 후 다시 시도해 주세요.', { title: '공개 실패' }),
   })
   const cancelScheduleMutation = useMutation({
     mutationFn: cancelBannerSchedule,
@@ -373,7 +405,7 @@ export default function AdminBannerPage() {
         client.invalidateQueries({ queryKey: ['admin-banners'] }),
         client.invalidateQueries({ queryKey: ['banners', 'active'] }),
       ])
-      void appAlert('예약을 취소해 미공개로 옮겼습니다. 다시 등록하려면 목록에서 등록을 눌러 주세요.', { title: '예약 취소 완료' })
+      void appAlert('예약을 취소했습니다. 대기 목록에서 다시 게시하거나 예약할 수 있습니다.', { title: '예약 취소 완료' })
     },
     onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.detail ?? error.response?.data?.message ?? '예약을 취소하지 못했습니다. 다시 시도해 주세요.') : '예약을 취소하지 못했습니다. 다시 시도해 주세요.', { title: '예약 취소 실패' }),
   })
@@ -487,7 +519,7 @@ export default function AdminBannerPage() {
     setSavedFlags(value => ({ ...value, [activeType]: false }))
     setEditedFlags(value => ({ ...value, [activeType]: true }))
   }
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canEdit || saveMutation.isPending) return
     if (activeType === 'NOTICE' && !fitsNoticeBanner(draft.text, draft.textScalePercent, draft.textBold)) {
       setNoticeLimitMessage('현재 내용이 배너 표시 한도를 넘습니다. 내용을 줄인 뒤 저장해 주세요.')
@@ -497,17 +529,14 @@ export default function AdminBannerPage() {
       void appAlert('제목, 문구 또는 광고 이미지와 게시 시작 시각을 확인해 주세요.', { title: '입력 확인' })
       return
     }
-    saveMutation.mutate({ ...draft, endsAt: displayedEndAt, linkUrl: normalizeBannerLink(draft.linkUrl) })
-  }
-  const handleApproveCampaign = async (item: BannerCampaign, previewBody?: HTMLElement) => {
-    if (item.status !== 'DRAFT' || approveMutation.isPending) return
-    if (item.type === 'NOTICE' && !fitsNoticeBanner(item.text ?? '', item.textScalePercent, item.textBold, previewBody)) {
-      void appAlert('현재 내용이 배너 표시 한도를 넘습니다. 해당 배너를 수정한 뒤 다시 공개해 주세요.', { title: '배너 표시 확인' })
-      return
+    const willPublish = !selectedCampaign || selectedCampaign.status === 'DRAFT' || selectedCampaign.status === 'ENDED'
+    if (willPublish) {
+      const action = selectedCampaign?.status === 'ENDED'
+        ? isScheduledStart(draft.startsAt) ? '재예약' : '다시 게시'
+        : isScheduledStart(draft.startsAt) ? '예약' : '게시'
+      if (!await appConfirm(`${formatScheduledAt(draft.startsAt)}에 배너를 모든 방문자에게 ${action}하시겠습니까?`, { title: `배너 ${action}` })) return
     }
-    const replacementAt = formatScheduledAt(item.startsAt)
-    if (!await appConfirm(`등록한 배너를 ${replacementAt}에 모든 방문자에게 공개하시겠습니까?`, { title: '배너 전체 공개' })) return
-    approveMutation.mutate(item.id)
+    saveMutation.mutate({ ...draft, endsAt: displayedEndAt, linkUrl: normalizeBannerLink(draft.linkUrl) })
   }
   const confirmDiscard = (type: BannerDraftInput['type']) => !editedFlags[type] || appConfirm('저장하지 않은 변경 내용을 버리시겠습니까?', { title: '변경 내용 버리기' })
   const draftFromCampaign = (item: BannerCampaign): BannerDraftInput => ({
@@ -580,15 +609,15 @@ export default function AdminBannerPage() {
   }
   const handleDelete = async () => {
     if (!draft.id || selectedCampaign?.status !== 'ENDED') return
-    if (await appConfirm('종료된 이 배너를 삭제하시겠습니까?', { title: '배너 삭제' })) deleteMutation.mutate(draft.id)
+    if (await appWarnConfirm('종료된 이 배너를 삭제하시겠습니까?', { title: '배너 삭제' })) deleteMutation.mutate(draft.id)
   }
   const handleEnd = async () => {
     if (!draft.id || selectedCampaign?.status !== 'LIVE' || isDirty) return
-    if (await appConfirm('현재 게재 중인 배너를 지금 종료하시겠습니까?', { title: '배너 종료' })) endMutation.mutate(draft.id)
+    if (await appWarnConfirm('현재 게재 중인 배너를 지금 종료하시겠습니까?', { title: '배너 종료' })) endMutation.mutate(draft.id)
   }
   const handleCancelScheduled = async () => {
     if (!draft.id || selectedCampaign?.status !== 'SCHEDULED' || isDirty) return
-    if (await appConfirm('예약을 취소하고 배너를 미공개로 옮기시겠습니까? 목록에서 다시 등록할 수 있습니다.', { title: '예약 취소' })) cancelScheduleMutation.mutate(draft.id)
+    if (await appConfirm('예약을 취소하시겠습니까? 배너 내용은 대기 목록에 보관됩니다.', { title: '예약 취소' })) cancelScheduleMutation.mutate(draft.id)
   }
 
   const handlePickFile = (file: File | undefined) => {
@@ -605,10 +634,10 @@ export default function AdminBannerPage() {
   }
 
   const campaignsList = campaigns.data ?? []
-  const registeredCampaigns = campaignsList.filter(item => item.status === 'LIVE' || item.status === 'SCHEDULED').sort(compareCampaignEndAtLatestFirst)
-  const unpublishedCampaigns = campaignsList.filter(item => item.status === 'DRAFT').sort(compareCampaignEndAtLatestFirst)
+  const postedCampaigns = campaignsList.filter(item => item.status === 'LIVE').sort(compareCampaignEndAtLatestFirst)
+  const pendingCampaigns = campaignsList.filter(item => item.status === 'SCHEDULED' || item.status === 'DRAFT').sort(compareCampaignEndAtLatestFirst)
   const endedCampaigns = campaignsList.filter(item => item.status === 'ENDED').sort(compareCampaignEndAtLatestFirst)
-  const isMutating = saveMutation.isPending || approveMutation.isPending || cancelScheduleMutation.isPending || endMutation.isPending || deleteMutation.isPending
+  const isMutating = saveMutation.isPending || cancelScheduleMutation.isPending || endMutation.isPending || deleteMutation.isPending
   const renderCampaignCards = (items: BannerCampaign[], emptyMessage: string) => {
     if (campaigns.isPending) return <p role="status" className="m-0">배너 목록을 불러오는 중입니다.</p>
     if (campaigns.isError && campaigns.data === undefined) return <p role="alert" className="m-0">배너 목록을 불러오지 못했습니다.</p>
@@ -621,18 +650,14 @@ export default function AdminBannerPage() {
               <span className="flex min-w-0 items-center gap-2">
                 <BannerTypeBadge type={item.type} size="normal" />
                 <span className="max-w-[240px] truncate font-medium text-ui-white">{item.title}</span>
+                {item.status === 'SCHEDULED' && <span className="shrink-0 text-xs text-ui-muted">{formatStartCountdown(item.startsAt)}</span>}
+                {item.status === 'DRAFT' && <span className="shrink-0 text-xs text-ui-muted">게시 대기</span>}
               </span>
               <span className="shrink-0 tabular-nums text-ui-muted">게시 기간: {formatScheduledAt(item.startsAt)} ~ {item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}</span>
             </div>
             <button type="button" disabled={isMutating} onClick={() => void selectCampaign(item)} aria-label={`${item.type === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집`} className="mx-auto flex h-[90px] w-full max-w-[728px] items-center justify-center overflow-hidden border-0 bg-transparent p-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-wait">
               <BannerPreview type={item.type} title={item.title} text={item.text ?? ''} imageUrl={item.hasImage ? campaignImageUrl(item) : null} textScalePercent={item.textScalePercent} textBold={item.textBold} />
             </button>
-            {item.status === 'DRAFT' && <div className="flex items-center justify-end border-t border-ui-border pt-2">
-              <button type="button" disabled={isMutating} onClick={event => {
-                const previewBody = event.currentTarget.closest('[data-banner-campaign-card]')?.querySelector<HTMLElement>('[data-banner-text-body]')
-                void handleApproveCampaign(item, previewBody ?? undefined)
-              }} className={`${FINAL_ACTION_CLASS} min-w-[100px]`}>등록</button>
-            </div>}
           </div>
         ))}
       </div>
@@ -673,24 +698,23 @@ export default function AdminBannerPage() {
                   <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl space-y-5">
                     <InfoPageHeading
                       title={showCampaignList ? '목록' : activeType === 'NOTICE' ? '공지' : '광고'}
-                      summary={showCampaignList ? '등록한 공지·광고를 한곳에서 보고 선택해 수정합니다.' : draft.id ? `${activeType === 'NOTICE' ? '공지' : '광고'} 배너를 ${canEdit ? '수정' : '확인'}하고 있습니다.` : '새 배너 내용을 입력하거나 목록에서 기존 배너를 선택합니다.'}
-                      sticky
+                      summary={showCampaignList ? '게시·대기·종료 상태별로 공지·광고를 확인하고 수정합니다.' : draft.id ? `${activeType === 'NOTICE' ? '공지' : '광고'} 배너를 ${canEdit ? '수정' : '확인'}하고 있습니다.` : '새 배너 내용을 입력하거나 목록에서 기존 배너를 선택합니다.'}
                       actions={(
                         <>
                           <button type="button" aria-pressed={showCampaignList} onClick={() => void openCampaignList()} className={`${SETTINGS_ACTION_CLASS} px-2 ${showCampaignList ? 'bg-brand-surface' : ''}`}>목록</button>
-                          <button type="button" aria-pressed={!showCampaignList && activeType === 'NOTICE'} onClick={() => openType('NOTICE')} className={`${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'NOTICE' ? 'bg-brand-surface' : ''}`}>공지</button>
-                          <button type="button" aria-pressed={!showCampaignList && activeType === 'AD'} onClick={() => openType('AD')} className={`${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'AD' ? 'bg-brand-surface' : ''}`}>광고</button>
+                          <button type="button" aria-pressed={!showCampaignList && activeType === 'NOTICE'} onClick={() => openType('NOTICE')} className={`${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'NOTICE' ? 'bg-brand-surface' : ''}`}>새 공지</button>
+                          <button type="button" aria-pressed={!showCampaignList && activeType === 'AD'} onClick={() => openType('AD')} className={`${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'AD' ? 'bg-brand-surface' : ''}`}>새 광고</button>
                         </>
                       )}
                     />
                     {showCampaignList ? (
                       <AlwaysVisibleScrollArea className="h-[min(75vh,680px)] max-h-[680px]">
                         <div className="flex flex-col gap-3">
-                          <InfoSection number="1" title={`등록 (${campaigns.isError && campaigns.data === undefined ? '—' : registeredCampaigns.length}개)`}>
-                            {renderCampaignCards(registeredCampaigns, '등록 항목이 없습니다.')}
+                          <InfoSection number="1" title={`게시 (${campaigns.isError && campaigns.data === undefined ? '—' : postedCampaigns.length}개)`}>
+                            {renderCampaignCards(postedCampaigns, '게시 중인 배너가 없습니다.')}
                           </InfoSection>
-                          <InfoSection number="2" title={`미공개 (${campaigns.isError && campaigns.data === undefined ? '—' : unpublishedCampaigns.length}개)`}>
-                            {renderCampaignCards(unpublishedCampaigns, '미공개 항목이 없습니다.')}
+                          <InfoSection number="2" title={`대기 (${campaigns.isError && campaigns.data === undefined ? '—' : pendingCampaigns.length}개)`}>
+                            {renderCampaignCards(pendingCampaigns, '대기 중인 배너가 없습니다.')}
                           </InfoSection>
                           <InfoSection number="3" title={`종료 (${campaigns.isError && campaigns.data === undefined ? '—' : endedCampaigns.length}개)`}>
                             {renderCampaignCards(endedCampaigns, '종료 항목이 없습니다.')}
@@ -699,8 +723,10 @@ export default function AdminBannerPage() {
                       </AlwaysVisibleScrollArea>
                     ) : (
                       <>
-                    <BannerEditorPreviews draft={draft} campaign={draft.id ? selectedCampaign : undefined} />
-                    <InfoSection number="1" title="배너 내용">
+                    <InfoSection number="1" title="미리 보기">
+                      <BannerEditorPreviews draft={draft} campaign={draft.id ? selectedCampaign : undefined} />
+                    </InfoSection>
+                    <InfoSection number="2" title="배너 내용">
                       <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-4" style={{ maxWidth: `${bannerTextMetrics.width + 34}px` }}>
                         <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
                           <span>제목</span>
@@ -773,7 +799,7 @@ export default function AdminBannerPage() {
                       </div>
                     </InfoSection>
 
-                    <InfoSection number="2" title="게시 일정">
+                    <InfoSection number="3" title="게시 일정">
                       <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-3" style={{ maxWidth: `${bannerTextMetrics.width + 34}px` }}>
                         <div className="grid w-full grid-cols-1 items-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
                           <div className="flex min-w-0 flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white">
@@ -797,10 +823,10 @@ export default function AdminBannerPage() {
                           </div>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-ui-border pt-3">
-                          <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={handleSave} className={`${EDITOR_ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>{!draft.id ? '저장 (미공개)' : selectedCampaign?.status === 'DRAFT' || selectedCampaign?.status === 'ENDED' ? '수정' : '저장'}</button>
+                          <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={() => { void handleSave() }} className={`${EDITOR_ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>{saveButtonLabel}</button>
                           {draft.id && selectedCampaign?.status === 'SCHEDULED' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleCancelScheduled()} className={`${EDITOR_ACTION_CLASS} bg-[var(--ui-control)] font-medium hover:bg-ui-control-hover focus-visible:outline-brand`}>예약 취소</button>}
-                          {draft.id && selectedCampaign?.status === 'LIVE' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleEnd()} className={`${EDITOR_ACTION_CLASS} bg-[var(--status-error-ink)] font-medium hover:bg-[var(--status-error)] focus-visible:outline-[var(--status-error)]`}>종료</button>}
-                          {draft.id && selectedCampaign?.status === 'ENDED' && <button type="button" disabled={isMutating} onClick={() => void handleDelete()} className={`${EDITOR_ACTION_CLASS} bg-[var(--status-error-ink)] font-medium hover:bg-[var(--status-error)] focus-visible:outline-[var(--status-error)]`}>삭제</button>}
+                          {draft.id && selectedCampaign?.status === 'LIVE' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleEnd()} className={`${EDITOR_ACTION_CLASS} bg-[#BC2F2F] font-medium hover:brightness-110 focus-visible:outline-[#BC2F2F]`}>종료</button>}
+                          {draft.id && selectedCampaign?.status === 'ENDED' && <button type="button" disabled={isMutating} onClick={() => void handleDelete()} className={`${EDITOR_ACTION_CLASS} bg-[#BC2F2F] font-medium hover:brightness-110 focus-visible:outline-[#BC2F2F]`}>삭제</button>}
                         </div>
                       </div>
                     </InfoSection>
@@ -829,8 +855,8 @@ export default function AdminBannerPage() {
                 <SettingsPanelGroup section="adminBanner">
                     <div className="settings-plain-content">
                     {([
-                      { title: '등록', description: '공개·예약된 배너', items: registeredCampaigns },
-                      { title: '미공개', description: '미공개된 배너로 임시 등록', items: unpublishedCampaigns },
+                      { title: '게시', description: '현재 게재 중인 배너', items: postedCampaigns },
+                      { title: '대기', description: '예약되었거나 게시할 수 있는 배너', items: pendingCampaigns },
                       { title: '종료', description: '게재가 종료된 배너', items: endedCampaigns },
                     ] as const).map(section => (
                       <div key={section.title} className="settings-ops-item h-[180px] text-sm">
@@ -844,6 +870,8 @@ export default function AdminBannerPage() {
                                   <button key={item.id} type="button" onClick={() => { void selectCampaign(item) }} className="flex h-5 w-full min-w-0 shrink-0 items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35 focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand">
                                     <BannerTypeBadge type={item.type} />
                                     <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                                    {item.status === 'SCHEDULED' && <span className="shrink-0 text-[11px] text-ui-muted">{formatStartCountdown(item.startsAt)}</span>}
+                                    {item.status === 'DRAFT' && <span className="shrink-0 text-[11px] text-ui-muted">게시 대기</span>}
                                   </button>
                                 )) : null}
                           </AlwaysVisibleScrollArea>

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, type ReactNode } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import MarketSummaryPage from './pages/MarketSummaryPage'
 import MapPage from './pages/MapPage'
 import GroupPage from './pages/GroupPage'
@@ -19,6 +19,8 @@ import HoverHintLayer from './components/HoverHintLayer'
 import MobileNotice from './components/MobileNotice'
 import { marketRoute } from '@/utils/marketRoute'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
+import { useSession } from './hooks/useSession'
+import { isAdminSession } from './utils/adminAccess'
 import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
 
 function ClientMetricsReporter() {
@@ -77,6 +79,12 @@ function LegacyGroupRedirect() {
   return <Navigate to={`${groupPath}${search}${hash}`} replace />
 }
 
+function AdminRouteGuard() {
+  const { data: session, isLoading } = useSession()
+  if (isLoading) return null
+  return isAdminSession(session) ? <Outlet /> : <Navigate to="/home" replace />
+}
+
 // 모바일(폭 768px 미만)에서는 화면 대신 안내만 보여 준다. 세션·시세 요청도 보내지 않도록 앱 맨 바깥에서 가린다.
 // 개인정보처리방침은 Google OAuth 동의 화면에 등록된 공개 페이지라 모바일에서도 열린다.
 function MobileGate({ children }: { children: ReactNode }) {
@@ -120,9 +128,6 @@ export default function App() {
           <Route path="/custom/industry" element={<Navigate to="/custom/sector" replace />} />
           <Route path="/custom/category" element={<Navigate to="/custom/sector" replace />} />
           <Route path="/custom/stock" element={<CustomPage />} />
-          {/* 기존 링크와 로그인 returnTo 호환을 위해 이전 주소는 새 주소로 보낸다. */}
-          <Route path="/admin/sector" element={<Navigate to="/custom/sector" replace />} />
-          <Route path="/admin/stock" element={<Navigate to="/custom/stock" replace />} />
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}
           <Route path="/info" element={<Navigate to="/info/source" replace />} />
           <Route path="/info/privacy" element={<PrivacyPolicyPage />} />
@@ -135,14 +140,19 @@ export default function App() {
           <Route path="/source" element={<Navigate to="/info/source" replace />} />
           <Route path="/contact" element={<Navigate to="/info/contact" replace />} />
           <Route path="/profile" element={<ProfilePage />} />
-          {/* 관리자 전용 — 관리자가 아니면 페이지 안에서 홈으로 보낸다. */}
           {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 메시지, 배너로 나뉜다. */}
-          <Route path="/admin" element={<Navigate to="/admin/member" replace />} />
-          <Route path="/admin/member" element={<AdminPage />} />
-          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-          <Route path="/admin/message" element={<AdminMessagePage />} />
-          <Route path="/admin/banner" element={<AdminBannerPage />} />
-          <Route path="/admin/chart" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/admin" element={<AdminRouteGuard />}>
+            <Route index element={<Navigate to="/home" replace />} />
+            <Route path="member" element={<AdminPage />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="message" element={<AdminMessagePage />} />
+            <Route path="banner" element={<AdminBannerPage />} />
+            <Route path="chart" element={<Navigate to="/admin/dashboard" replace />} />
+            {/* 기존 링크와 로그인 returnTo 호환을 위해 이전 주소는 새 주소로 보낸다. */}
+            <Route path="sector" element={<Navigate to="/custom/sector" replace />} />
+            <Route path="stock" element={<Navigate to="/custom/stock" replace />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
+          </Route>
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </LoginGateProvider>

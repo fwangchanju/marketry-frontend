@@ -17,10 +17,17 @@ import { z } from 'zod'
 const sectorListResponseSchema = z.array(SectorItemSchema)
 const snapshotListResponseSchema = z.array(SnapshotItemSchema)
 const stockSectorListResponseSchema = snapshotResponseSchema(StockSectorListItemSchema)
+const classificationUploadResponseSchema = z.object({
+  createdSectorCount: z.number(),
+  appliedAssignments: z.array(z.object({ path: z.array(z.string()), sectorId: z.number(), stockCodes: z.array(z.string()) })),
+  failedStockCodes: z.array(z.string()),
+})
 
 // 로그인 사용자 전용(GET /api/custom/**).
 
 export const getSectors = () => client.get('/custom/sectors').then(r => sectorListResponseSchema.parse(r.data))
+
+export const resetCustomClassification = () => client.delete('/custom/sectors')
 
 export const createSector = (name: string, parentId: number | null) =>
   client.post('/custom/sectors', { name, parentId }).then(r => SectorItemSchema.parse(r.data))
@@ -61,6 +68,9 @@ export const bulkAssignStockSector = (stockCodes: string[], sectorId: number) =>
   client
     .patch('/custom/stock-sectors/bulk', { stockCodes, sectorId })
     .then(r => BulkAssignResponseSchema.parse(r.data))
+
+export const uploadClassification = (assignments: { path: string[]; stockCodes: string[] }[]) =>
+  client.post('/custom/stock-sectors/upload', { assignments }).then(r => classificationUploadResponseSchema.parse(r.data))
 
 export const getStockSectors = () =>
   client.get('/custom/stock-sectors').then(r => stockSectorListResponseSchema.parse(r.data))

@@ -1,6 +1,7 @@
-import { domToBlob } from 'modern-screenshot'
+import { domToBlob, type Options as ScreenshotOptions } from 'modern-screenshot'
 import { fontCssFor } from './captureFonts'
 import { shareScreenshotOptions } from './screenshotScale'
+import { withScreenshotSandbox } from './screenshotSandbox'
 
 // domToBlob/domToPng이 무거워서 호출 직후 바로 시작하면, 그 직전에 호출한 setState(예: "복사 중"
 // 스피너 표시)가 화면에 그려질 새도 없이 메인 스레드가 막혀버린다 — 두 번의 requestAnimationFrame으로
@@ -13,7 +14,8 @@ export async function screenshotElementToClipboard(el: HTMLElement): Promise<voi
   await waitForNextPaint()
   const options = shareScreenshotOptions(el)
   const fontCss = await fontCssFor(el)
-  const blob = await domToBlob(el, fontCss ? { ...options, font: { cssText: fontCss } } : options)
+  const captureOptions = fontCss ? { ...options, font: { cssText: fontCss } } : options
+  const blob = await withScreenshotSandbox(el.ownerDocument, sandbox => domToBlob(el, { ...captureOptions, sandbox } as ScreenshotOptions & { sandbox: HTMLIFrameElement }))
   if (!blob) throw new Error('스크린샷을 찍지 못했습니다')
   await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
 }
