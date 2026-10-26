@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
+import { usePopupBounds } from '@/hooks/usePopupBounds'
 
 type CalendarView = 'day' | 'month' | 'year'
 type ShownMonth = { year: number; monthIndex: number }
@@ -58,7 +59,8 @@ export default function BannerDatePicker({
   const [decadeStart, setDecadeStart] = useState(Math.floor(shownMonth.year / 10) * 10)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
-  const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false)
+  const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false, false)
+  const popupBounds = usePopupBounds(isOpen, position !== null, triggerRef, popupRef, POPUP_WIDTH)
 
   const toggleCalendar = () => {
     if (disabled) return
@@ -130,10 +132,12 @@ export default function BannerDatePicker({
           aria-label={`${label} 날짜 선택 달력`}
           style={{
             position: 'fixed',
-            top: position.top + (position.openUpward ? -4 : 4),
-            left: popupLeft,
-            width: popupWidth,
-            transform: position.openUpward ? 'translateY(-100%)' : undefined,
+            top: popupBounds?.top ?? position.top + (position.openUpward ? -4 : 4),
+            left: popupBounds?.left ?? popupLeft,
+            width: popupBounds?.width ?? popupWidth,
+            maxHeight: popupBounds ? `${popupBounds.maxHeight}px` : undefined,
+            overflowY: popupBounds ? 'auto' : undefined,
+            visibility: popupBounds?.visible === false ? 'hidden' : undefined,
           }}
           className="z-50 rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
           onClick={event => event.stopPropagation()}

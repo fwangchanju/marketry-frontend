@@ -1,6 +1,6 @@
 import { SlidingHighlight } from '@/components/SlidingHighlight'
 import { CountLabelWithBadge } from '@/components/KindBadge'
-import AlwaysVisibleScrollArea from '@/components/AlwaysVisibleScrollArea'
+import ScrollArea from '@/components/ScrollArea'
 import { Children, Fragment, createContext, isValidElement, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
@@ -2037,7 +2037,7 @@ export function SettingsExcludeSection({
 
         />
         <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
-        <AlwaysVisibleScrollArea
+        <ScrollArea
           inert={!sectorFilterEnabled}
           className={`settings-control-inset settings-exclude-list mt-[7px] h-[92px] max-h-[92px] flex-shrink-0 ${sectorFilterEnabled ? '' : 'opacity-35'}`}
         >
@@ -2058,7 +2058,7 @@ export function SettingsExcludeSection({
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
               </button>
             ))}
-        </AlwaysVisibleScrollArea>
+        </ScrollArea>
       </div>
     </div>
   )

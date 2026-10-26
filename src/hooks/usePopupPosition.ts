@@ -21,6 +21,7 @@ export function usePopupPosition(
   flipThreshold = 0.8,
   // 트리거가 화면 우측 끝에 붙어있으면(예: 일괄 변경 버튼) 왼쪽으로 열어야 화면 밖으로 안 잘린다.
   alignRight = false,
+  closeOnScroll = true,
 ) {
   const [position, setPosition] = useState<PopupPosition | null>(null)
 
@@ -61,19 +62,22 @@ export function usePopupPosition(
     }
     // capture 없이 window 자체의 scroll(페이지 스크롤)만 감지 — capture:true였으면
     // 팝업 내부 목록의 overflow-y-auto 스크롤까지 잡혀서 즉시 닫혀버림.
-    window.addEventListener('scroll', close)
     const settingsScroller = triggerRef.current?.closest('.settings-panel-tab-content')
-    settingsScroller?.addEventListener('scroll', close)
+    if (closeOnScroll) {
+      window.addEventListener('scroll', close)
+      settingsScroller?.addEventListener('scroll', close)
+    }
     document.addEventListener('mousedown', handlePointerDown)
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('mousedown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('scroll', close)
-      settingsScroller?.removeEventListener('scroll', close)
+      if (closeOnScroll) {
+        window.removeEventListener('scroll', close)
+        settingsScroller?.removeEventListener('scroll', close)
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ref/setIsOpen은 안정적이라 isOpen 변화에만 반응하면 됨
-  }, [isOpen])
+  }, [closeOnScroll, isOpen, setIsOpen, triggerRef, popupRef])
 
   return position
 }

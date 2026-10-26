@@ -5,7 +5,7 @@ type ScrollMetrics = { trackHeight: number; thumbHeight: number; thumbTop: numbe
 
 type DragStart = { pointerId: number; clientY: number; scrollTop: number }
 
-export default function AlwaysVisibleScrollArea({
+export default function ScrollArea({
   children,
   className = '',
   inert = false,
@@ -18,6 +18,7 @@ export default function AlwaysVisibleScrollArea({
   const contentRef = useRef<HTMLDivElement>(null)
   const dragStartRef = useRef<DragStart | null>(null)
   const [metrics, setMetrics] = useState<ScrollMetrics>({ trackHeight: 0, thumbHeight: 0, thumbTop: 0 })
+  const [isScrollable, setIsScrollable] = useState(false)
 
   const updateMetrics = useCallback(() => {
     const viewport = viewportRef.current
@@ -25,6 +26,7 @@ export default function AlwaysVisibleScrollArea({
 
     const trackHeight = viewport.clientHeight
     const maxScrollTop = Math.max(0, viewport.scrollHeight - trackHeight)
+    setIsScrollable(previous => previous === (maxScrollTop > 0) ? previous : maxScrollTop > 0)
     const thumbHeight = maxScrollTop === 0
       ? trackHeight
       : Math.min(trackHeight, Math.max(18, (trackHeight * trackHeight) / viewport.scrollHeight))
@@ -93,11 +95,11 @@ export default function AlwaysVisibleScrollArea({
         ref={viewportRef}
         inert={inert}
         onScroll={updateMetrics}
-        className="always-visible-scroll-viewport h-full min-h-0 overflow-x-hidden overflow-y-scroll pr-2"
+        className={`scroll-area-viewport h-full min-h-0 overflow-x-hidden ${isScrollable ? 'overflow-y-scroll pr-2' : 'overflow-y-hidden'}`}
       >
         <div ref={contentRef} className="flex min-h-full flex-col gap-1">{children}</div>
       </div>
-      <div
+      {isScrollable && <div
         aria-hidden="true"
         onPointerDown={handleTrackPointerDown}
         className="absolute inset-y-0 right-0 z-10 w-[6px] cursor-pointer rounded-[3px] bg-ui-white/10"
@@ -110,7 +112,7 @@ export default function AlwaysVisibleScrollArea({
           className="absolute left-0 right-0 touch-none rounded-[3px] bg-ui-white/35"
           style={{ height: metrics.thumbHeight, top: metrics.thumbTop }}
         />
-      </div>
+      </div>}
     </div>
   )
 }

@@ -96,7 +96,7 @@ export default function AppDialogHost() {
         className={`select-none outline-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-admin-only' : ''}`}
       >
         <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-admin-only' : 'text-ui-background'}`}>
-          <PopupKindBadge kind={dialog.kind === 'alert' ? '정보' : dialog.kind === 'warning' ? '경고' : '확인'} />
+          <PopupKindBadge kind={dialog.kind === 'alert' ? '정보' : dialog.kind === 'warning' ? '주의' : '확인'} />
           <span>
             {dialog.title}
             {dialog.adminOnly && ' ⚠'}
@@ -109,7 +109,7 @@ export default function AppDialogHost() {
         </p>
         <div className="mt-auto flex justify-end gap-2 pt-3">
           {dialog.kind !== 'alert' && (
-            <button ref={cancelButtonRef} type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover focus:outline-[1px] focus:outline-solid focus:outline-offset-1 focus:outline-brand-surface">
+            <button ref={cancelButtonRef} type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover focus-visible:bg-ui-control-hover focus:outline-none">
               취소
             </button>
           )}
@@ -117,7 +117,7 @@ export default function AppDialogHost() {
             ref={actionButtonRef}
             type="button"
             onClick={() => resolveCurrentAppDialog(true)}
-            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold focus:outline-[1px] focus:outline-solid focus:outline-offset-1 ${dialog.kind === 'warning' ? 'bg-[#BC2F2F] text-ui-white transition-[filter] hover:brightness-110 focus:outline-[#BC2F2F]' : dialog.kind === 'alert' ? 'bg-ui-selection text-ui-surface transition-colors hover:bg-ui-control-hover focus:outline-brand-surface' : 'bg-brand-surface text-ui-white transition-colors hover:bg-brand-surface-hover focus:outline-brand-surface'}`}
+            className={`rounded-lg border-0 px-4 py-2 text-sm font-bold focus:outline-none focus-visible:brightness-110 ${dialog.kind === 'warning' ? 'bg-[#BC2F2F] text-ui-white transition-[filter] hover:brightness-110' : dialog.kind === 'alert' ? 'bg-ui-selection text-ui-surface transition-colors hover:bg-ui-control-hover focus-visible:bg-ui-control-hover' : 'bg-brand-surface text-ui-white transition-colors hover:bg-brand-surface-hover'}`}
           >
             {dialog.kind === 'alert' ? '닫기' : '확인'}
           </button>
