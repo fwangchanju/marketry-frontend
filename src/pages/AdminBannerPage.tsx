@@ -413,6 +413,8 @@ export default function AdminBannerPage() {
       setSavedCampaigns(value => ({ ...value, [activeType]: undefined }))
       setSavedFlags(value => ({ ...value, [activeType]: false }))
       setEditedFlags(value => ({ ...value, [activeType]: false }))
+      pushCampaignView('list')
+      setShowCampaignList(true)
       await Promise.all([
         client.invalidateQueries({ queryKey: ['admin-banners'] }),
         client.invalidateQueries({ queryKey: ['banners', 'active'] }),
