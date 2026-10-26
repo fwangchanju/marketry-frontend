@@ -195,7 +195,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const [sortColumn, setSortColumn] = useState<number | null>(null)
   const [sortDirection, setSortDirection] = useState<HeaderSortState>(null)
   const [excludedByDepth, setExcludedByDepth] = useState<Record<number, ReadonlySet<string>>>({})
-  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'custom'>(() => localStorage.getItem('marketry:sector-filter-order') === 'alpha' ? 'alpha' : 'custom')
+  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'custom'>('custom')
   const [undoStack, setUndoStack] = useState<SectorHistoryAction[]>([])
   const [redoStack, setRedoStack] = useState<SectorHistoryAction[]>([])
   const historyCounter = useRef(0)
@@ -239,11 +239,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     else next.add(value)
     return { ...previous, [depth]: next }
   })
-  const changeSectorFilterMode = (value: 'alpha' | 'custom') => {
-    localStorage.setItem('marketry:sector-filter-order', value)
-    setSectorFilterMode(value)
-  }
-
+  const changeSectorFilterMode = (value: 'alpha' | 'custom') => setSectorFilterMode(value)
   const createSector = useCreateSector()
   const renameSector = useRenameSector()
   const { remove } = useSectorDeleteFlow()
