@@ -26,7 +26,6 @@
   --color-status-error-text: var(--status-error-text);
   --color-status-error-ink: var(--status-error-ink);
   --color-status-error-hover: var(--status-error-hover);
-  --color-status-warning: var(--status-warning);
   --color-status-success: var(--status-success);
 }
 
@@ -350,7 +349,6 @@
   --ui-white: #ffffff;
   --ui-popup: #fff8e7;
   --status-error: #c47b5a;
-  --status-warning: var(--status-error-ink);
   --status-success: var(--brand);
 
   /* 무채색 단계 — 검정 계열(background·surface·panel)은 위 원색이고, 흰 계열은 설정창 회색(panel)에 흰색을 퍼센트 단계(20·35·90)로 섞어 만든다.

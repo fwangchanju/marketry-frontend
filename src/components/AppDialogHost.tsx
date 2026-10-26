@@ -10,14 +10,44 @@ export default function AppDialogHost() {
   const dialog = useSyncExternalStore(subscribeAppDialogs, getCurrentAppDialog, getCurrentAppDialog)
   const mainAreaRect = useMainAreaRect(dialog !== null)
   const sectionRef = useRef<HTMLElement>(null)
+  const cancelButtonRef = useRef<HTMLButtonElement>(null)
+  const actionButtonRef = useRef<HTMLButtonElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!dialog) {
+      previousFocusRef.current?.focus()
+      previousFocusRef.current = null
+      return
+    }
+    previousFocusRef.current ??= document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const initialButton = dialog.kind === 'alert' ? actionButtonRef : cancelButtonRef
+    initialButton.current?.focus()
+  }, [dialog])
 
   useEffect(() => {
     if (!dialog) return
-    sectionRef.current?.focus()
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
         resolveCurrentAppDialog(false)
+        return
+      }
+      if (event.key !== 'Tab') return
+      const buttons = Array.from(sectionRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? [])
+      if (buttons.length === 0) return
+      const first = buttons[0]
+      const last = buttons[buttons.length - 1]
+      if (!buttons.some(button => button === document.activeElement)) {
+        event.preventDefault()
+        const target = event.shiftKey ? last : first
+        target.focus()
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -79,11 +109,12 @@ export default function AppDialogHost() {
         </p>
         <div className="mt-auto flex justify-end gap-2 pt-3">
           {dialog.kind !== 'alert' && (
-            <button type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover focus:outline-[1px] focus:outline-solid focus:outline-offset-1 focus:outline-brand-surface">
+            <button ref={cancelButtonRef} type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover focus:outline-[1px] focus:outline-solid focus:outline-offset-1 focus:outline-brand-surface">
               취소
             </button>
           )}
           <button
+            ref={actionButtonRef}
             type="button"
             onClick={() => resolveCurrentAppDialog(true)}
             className={`rounded-lg border-0 px-4 py-2 text-sm font-bold focus:outline-[1px] focus:outline-solid focus:outline-offset-1 ${dialog.kind === 'warning' ? 'bg-[#BC2F2F] text-ui-white transition-[filter] hover:brightness-110 focus:outline-[#BC2F2F]' : dialog.kind === 'alert' ? 'bg-ui-selection text-ui-surface transition-colors hover:bg-ui-control-hover focus:outline-brand-surface' : 'bg-brand-surface text-ui-white transition-colors hover:bg-brand-surface-hover focus:outline-brand-surface'}`}

@@ -708,19 +708,17 @@ export default function AdminBannerPage() {
                       )}
                     />
                     {showCampaignList ? (
-                      <AlwaysVisibleScrollArea className="h-[min(75vh,680px)] max-h-[680px]">
-                        <div className="flex flex-col gap-3">
-                          <InfoSection number="1" title={`게시 (${campaigns.isError && campaigns.data === undefined ? '—' : postedCampaigns.length}개)`}>
-                            {renderCampaignCards(postedCampaigns, '게시 중인 배너가 없습니다.')}
-                          </InfoSection>
-                          <InfoSection number="2" title={`대기 (${campaigns.isError && campaigns.data === undefined ? '—' : pendingCampaigns.length}개)`}>
-                            {renderCampaignCards(pendingCampaigns, '대기 중인 배너가 없습니다.')}
-                          </InfoSection>
-                          <InfoSection number="3" title={`종료 (${campaigns.isError && campaigns.data === undefined ? '—' : endedCampaigns.length}개)`}>
-                            {renderCampaignCards(endedCampaigns, '종료 항목이 없습니다.')}
-                          </InfoSection>
-                        </div>
-                      </AlwaysVisibleScrollArea>
+                      <div className="flex flex-col gap-3">
+                        <InfoSection number="1" title={`게시 (${campaigns.isError && campaigns.data === undefined ? '—' : postedCampaigns.length}개)`}>
+                          {renderCampaignCards(postedCampaigns, '게시 중인 배너가 없습니다.')}
+                        </InfoSection>
+                        <InfoSection number="2" title={`대기 (${campaigns.isError && campaigns.data === undefined ? '—' : pendingCampaigns.length}개)`}>
+                          {renderCampaignCards(pendingCampaigns, '대기 중인 배너가 없습니다.')}
+                        </InfoSection>
+                        <InfoSection number="3" title={`종료 (${campaigns.isError && campaigns.data === undefined ? '—' : endedCampaigns.length}개)`}>
+                          {renderCampaignCards(endedCampaigns, '종료 항목이 없습니다.')}
+                        </InfoSection>
+                      </div>
                     ) : (
                       <>
                     <InfoSection number="1" title="미리 보기">

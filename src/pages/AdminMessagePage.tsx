@@ -89,7 +89,7 @@ export default function AdminMessagePage() {
       queryClient.setQueryData(['admin-telegram-setting', session?.userId], saved)
     },
     onError: () => {
-      void appAlert('저장하지 못했습니다. 입력값을 확인하고 다시 시도해 주세요.', { adminOnly: true })
+      void appAlert('저장하지 못했습니다. 입력값을 확인하고 다시 시도해 주세요.', { adminOnly: true, title: '저장 실패' })
     },
   })
 
