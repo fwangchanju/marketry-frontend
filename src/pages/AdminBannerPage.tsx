@@ -96,9 +96,19 @@ function formatScheduledAt(value: string): string {
   const date = new Date(hasTimezone ? value : `${value}+09:00`)
   if (Number.isNaN(date.getTime())) return value
   return new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
     hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(date)
+}
+
+function compareCampaignEndAtLatestFirst(a: BannerCampaign, b: BannerCampaign): number {
+  const timestamp = (value: string | null) => {
+    if (!value) return Number.NEGATIVE_INFINITY
+    const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
+    const parsed = Date.parse(hasTimezone ? value : `${value}+09:00`)
+    return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed
+  }
+  return timestamp(b.endsAt) - timestamp(a.endsAt)
 }
 
 function fitsNoticeBanner(text: string, textScalePercent = 100, textBold = false, sourceBody?: HTMLElement): boolean {
@@ -328,6 +338,8 @@ export default function AdminBannerPage() {
       setDrafts(value => ({ ...value, [item.type]: { ...value[item.type], id: item.id, linkUrl: item.linkUrl ?? 'https://', file: null } }))
       setSavedFlags(value => ({ ...value, [item.type]: true }))
       setEditedFlags(value => ({ ...value, [item.type]: false }))
+      pushCampaignView('list')
+      setShowCampaignList(true)
       await Promise.all([
         client.invalidateQueries({ queryKey: ['admin-banners'] }),
         client.invalidateQueries({ queryKey: ['banners', 'active'] }),
@@ -374,6 +386,8 @@ export default function AdminBannerPage() {
       setDrafts(value => ({ ...value, [item.type]: draftFromCampaign(item) }))
       setSavedFlags(value => ({ ...value, [item.type]: true }))
       setEditedFlags(value => ({ ...value, [item.type]: false }))
+      pushCampaignView('list')
+      setShowCampaignList(true)
       await Promise.all([
         client.invalidateQueries({ queryKey: ['admin-banners'] }),
         client.invalidateQueries({ queryKey: ['banners', 'active'] }),
@@ -399,6 +413,8 @@ export default function AdminBannerPage() {
       setSavedCampaigns(value => ({ ...value, [activeType]: undefined }))
       setSavedFlags(value => ({ ...value, [activeType]: false }))
       setEditedFlags(value => ({ ...value, [activeType]: false }))
+      pushCampaignView('list')
+      setShowCampaignList(true)
       await Promise.all([
         client.invalidateQueries({ queryKey: ['admin-banners'] }),
         client.invalidateQueries({ queryKey: ['banners', 'active'] }),
@@ -589,9 +605,9 @@ export default function AdminBannerPage() {
   }
 
   const campaignsList = campaigns.data ?? []
-  const registeredCampaigns = campaignsList.filter(item => item.status === 'LIVE' || item.status === 'SCHEDULED')
-  const unpublishedCampaigns = campaignsList.filter(item => item.status === 'DRAFT')
-  const endedCampaigns = campaignsList.filter(item => item.status === 'ENDED')
+  const registeredCampaigns = campaignsList.filter(item => item.status === 'LIVE' || item.status === 'SCHEDULED').sort(compareCampaignEndAtLatestFirst)
+  const unpublishedCampaigns = campaignsList.filter(item => item.status === 'DRAFT').sort(compareCampaignEndAtLatestFirst)
+  const endedCampaigns = campaignsList.filter(item => item.status === 'ENDED').sort(compareCampaignEndAtLatestFirst)
   const isMutating = saveMutation.isPending || approveMutation.isPending || cancelScheduleMutation.isPending || endMutation.isPending || deleteMutation.isPending
   const renderCampaignCards = (items: BannerCampaign[], emptyMessage: string) => {
     if (campaigns.isPending) return <p role="status" className="m-0">배너 목록을 불러오는 중입니다.</p>
@@ -606,7 +622,7 @@ export default function AdminBannerPage() {
                 <BannerTypeBadge type={item.type} size="normal" />
                 <span className="max-w-[240px] truncate font-medium text-ui-white">{item.title}</span>
               </span>
-              <span className="shrink-0 tabular-nums text-ui-muted">게시 {formatScheduledAt(item.startsAt)} ~ {item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}</span>
+              <span className="shrink-0 tabular-nums text-ui-muted">게시 기간: {formatScheduledAt(item.startsAt)} ~ {item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}</span>
             </div>
             <button type="button" disabled={isMutating} onClick={() => void selectCampaign(item)} aria-label={`${item.type === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집`} className="mx-auto flex h-[90px] w-full max-w-[728px] items-center justify-center overflow-hidden border-0 bg-transparent p-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-wait">
               <BannerPreview type={item.type} title={item.title} text={item.text ?? ''} imageUrl={item.hasImage ? campaignImageUrl(item) : null} textScalePercent={item.textScalePercent} textBold={item.textBold} />
