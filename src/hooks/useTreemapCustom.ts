@@ -30,8 +30,8 @@ interface StockSectorListResponse {
   items: StockSectorListItem[]
 }
 
-function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQueryClient>) {
-  queryClient.invalidateQueries({
+export function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQueryClient>) {
+  return queryClient.invalidateQueries({
     queryKey: treemapKeys.all,
     predicate: ({ queryKey }) =>
       (queryKey[1] === 'map' || queryKey[1] === 'sectorPair') && queryKey[3] === 'MINE',
@@ -54,16 +54,19 @@ export function useSectorDeletePreview() {
   })
 }
 
-export function useCreateSector(options?: { skipGlobalError?: boolean }) {
+export function useCreateSector(options?: { skipGlobalError?: boolean; deferInvalidation?: boolean }) {
   const queryClient = useQueryClient()
   return useMutation({
     meta: { failure: '업종을 추가하지 못했습니다.', skipGlobalError: options?.skipGlobalError },
     mutationFn: ({ name, parentId }: { name: string; parentId: number | null }) => createSector(name, parentId),
     onSuccess: () => {
+      if (options?.deferInvalidation) return
       queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
-    onError: () => queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() }),
+    onError: () => {
+      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
+    },
   })
 }
 
@@ -166,14 +169,14 @@ export function useDeleteSnapshot() {
 // 재조회(invalidate)를 하면 필터링 중이던 목록에서 방금 바꾼 종목이 새 섹터 기준으로 곧장
 // 걸러져 사라져버리는 문제가 있었다 — 목록 자체(필터링된 종목 집합)를 다시 계산하는 건 필터 조건을
 // 바꾸거나 명시적으로 새로고침할 때만 일어나야 한다.
-function patchStockSectorId(queryClient: ReturnType<typeof useQueryClient>, stockCodes: string[], sectorId: number) {
+function patchStockSectorId(queryClient: ReturnType<typeof useQueryClient>, stockCodes: string[], sectorId: number, deferInvalidation = false) {
   const stockCodeSet = new Set(stockCodes)
   queryClient.setQueryData<StockSectorListResponse>(customTreemapKeys.stockSectors(), old =>
     old
       ? { ...old, items: old.items.map(item => (stockCodeSet.has(item.stockCode) ? { ...item, sectorId } : item)) }
       : old,
   )
-  invalidateCustomTaxonomy(queryClient)
+  if (!deferInvalidation) invalidateCustomTaxonomy(queryClient)
 }
 
 export function useAssignStockSector() {
@@ -186,7 +189,7 @@ export function useAssignStockSector() {
   })
 }
 
-export function useBulkAssignStockSector(options?: { skipGlobalError?: boolean }) {
+export function useBulkAssignStockSector(options?: { skipGlobalError?: boolean; deferInvalidation?: boolean }) {
   const queryClient = useQueryClient()
   return useMutation({
     meta: { failure: '종목의 업종을 바꾸지 못했습니다.', skipGlobalError: options?.skipGlobalError },
@@ -194,10 +197,12 @@ export function useBulkAssignStockSector(options?: { skipGlobalError?: boolean }
       bulkAssignStockSector(stockCodes, sectorId),
     onSuccess: (data, { stockCodes, sectorId }) => {
       const failed = new Set(data.failedStockCodes)
-      patchStockSectorId(queryClient, stockCodes.filter(code => !failed.has(code)), sectorId)
+      patchStockSectorId(queryClient, stockCodes.filter(code => !failed.has(code)), sectorId, options?.deferInvalidation)
     },
     // 응답을 못 받은 요청도 서버에는 적용됐을 수 있으므로 실제 값을 다시 받는다.
-    onError: () => queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() }),
+    onError: () => {
+      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() })
+    },
   })
 }
 
