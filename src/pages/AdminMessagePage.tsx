@@ -9,7 +9,7 @@ import {
   type TelegramSendSettingInput,
 } from '@/api/adminTelegram'
 import DigitalClockPicker from '@/components/DigitalClockPicker'
-import MinuteDial from '@/components/MinuteDial'
+import IntervalDial from '@/components/IntervalDial'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -126,10 +126,10 @@ export default function AdminMessagePage() {
   }
   const headerActions = (
     <div className="flex items-center gap-1">
-      <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={save.isPending} onClick={() => void handleDiscard()} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
+      <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={save.isPending} onClick={() => void handleDiscard()} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
         <HistoryIcon className="h-5 w-5" aria-hidden="true" />
       </button>
-      <button type="button" aria-label="저장" data-hint="변경값으로 저장하기" disabled={save.isPending} onClick={() => void handleSave()} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
+      <button type="button" aria-label="저장" data-hint="변경값으로 저장하기" disabled={save.isPending} onClick={() => void handleSave()} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
         {isDirty && <span aria-hidden="true" className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-brand" />}
         <SaveIcon className="h-5 w-5" aria-hidden="true" />
       </button>
@@ -171,7 +171,7 @@ export default function AdminMessagePage() {
                 <PageMainFrame className="p-6">
                   <article aria-label="메시지" className="mx-auto min-h-full w-full max-w-4xl space-y-5">
                     <InfoPageHeading
-                      title="메시지"
+                      title="텔레그램"
                       summary="텔레그램 정기 리포트의 발송 모습을 미리 봅니다. 발송 여부와 시각은 설정창에서 조정합니다."
                     />
                     <InfoSection number="1" title="발송 미리보기">
@@ -241,8 +241,13 @@ export default function AdminMessagePage() {
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 간격</h2>
                             <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">시장 요약/시장 지도를 몇 분마다 보낼지</p>
-                            <div className="mt-auto mb-auto flex max-w-full settings-control-inset items-center justify-center">
-                              <MinuteDial label="발송 간격" size={100} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
+                            <div className="mt-auto mb-auto grid max-w-full grid-cols-[minmax(0,1fr)_100px_minmax(0,1fr)] items-center settings-control-inset">
+                              <div className="col-start-2">
+                                <IntervalDial label="발송 간격" unit="분" size={100} value={draft.sectorSendIntervalMinutes} step={saved.collectIntervalMinutes} onChange={value => updateDraft({ sectorSendIntervalMinutes: value })} />
+                              </div>
+                              <span className="col-start-3 ml-3 inline-flex h-5 w-[42px] shrink-0 items-center justify-center rounded-[4px] bg-brand-surface px-1.5 text-xs font-semibold leading-none tabular-nums text-ui-white" aria-live="polite">
+                                {draft.sectorSendIntervalMinutes}분
+                              </span>
                             </div>
                           </div>
                         </div>

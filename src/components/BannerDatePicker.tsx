@@ -89,6 +89,7 @@ export default function BannerDatePicker({
   ]
   const cells = [...dayCells, ...Array.from({ length: 42 - dayCells.length }, () => null)]
   const currentMonthKey = `${shownMonth.year}-${String(shownMonth.monthIndex + 1).padStart(2, '0')}`
+  const todayDate = getKstToday()
   const nextMonth = moveMonth(shownMonth, 1)
   const canMovePrevious = currentMonthKey > `${MIN_YEAR}-01`
   const canMoveNext = nextMonth.year <= MAX_YEAR
@@ -172,18 +173,20 @@ export default function BannerDatePicker({
                     {cells.map((day, index) => {
                       if (day === null) return <span key={`blank-${index}`} />
                       const date = toDateKey(shownMonth.year, shownMonth.monthIndex, day)
+                      const isToday = date === todayDate
                       const weekday = (firstWeekday + day - 1) % 7
                       return (
                         <div key={date} className="my-0.5 flex h-7 items-center justify-center">
                           <button
                             type="button"
                             aria-pressed={date === selectedDate}
+                            aria-current={isToday ? 'date' : undefined}
                             onClick={() => selectDay(day)}
                             className={`flex h-7 w-7 items-center justify-center rounded-full border-0 ${
                               date === selectedDate
                                 ? 'bg-brand-surface font-semibold text-ui-white'
                                 : `bg-transparent hover:bg-ui-control ${weekday === 0 || weekday === 6 ? 'text-ui-muted' : 'text-ui-white'}`
-                            }`}
+                            } ${isToday ? 'ring-2 ring-brand' : ''}`}
                           >
                             {day}
                           </button>

@@ -94,7 +94,15 @@ export function approveBanner(id: number): Promise<BannerCampaign> {
   return client.post(`/admin/banners/${id}/approve`).then(response => BannerCampaignSchema.parse(response.data))
 }
 
-export function deleteBannerDraft(id: number): Promise<void> {
+export function cancelBannerSchedule(id: number): Promise<BannerCampaign> {
+  return client.post(`/admin/banners/${id}/cancel-schedule`).then(response => BannerCampaignSchema.parse(response.data))
+}
+
+export function endBannerCampaign(id: number): Promise<BannerCampaign> {
+  return client.post(`/admin/banners/${id}/end`).then(response => BannerCampaignSchema.parse(response.data))
+}
+
+export function deleteBannerCampaign(id: number): Promise<void> {
   return client.delete(`/admin/banners/${id}`).then(() => undefined)
 }
 

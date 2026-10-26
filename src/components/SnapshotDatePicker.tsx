@@ -7,6 +7,7 @@ import { getMarketTradingSchedule } from '@/api/treemap'
 import { INFREQUENT_DATA_CACHE } from '@/hooks/cacheConfig'
 import { treemapKeys } from '@/hooks/queryKeys'
 import { KOREAN_PUBLIC_HOLIDAY_DATES } from '@/utils/koreanPublicHolidayDates'
+import { getKstDate } from '@/utils/tradingWindow'
 import Spinner from '@/components/Spinner'
 import { toSnapshotDateLabel } from '@/utils/format'
 import type { MarketQuery } from '@/types/api'
@@ -107,6 +108,7 @@ interface MonthGridProps {
 // 한 달짜리 달력. 그 달의 종가 지도 목록 조회·불러오는 중/오류 화면을 스스로 맡는다.
 function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMonthAllowed, showPrevButton = true, showNextButton = true, liveDate, isSelectable, isSelected, bandStart, bandEnd, onPick, showSpinner = true }: MonthGridProps) {
   const monthKey = toMonthKey(month)
+  const todayDate = getKstDate(new Date())
   // 월·년 선택 화면 — 날짜 화면의 "10월"을 누르면 월 선택, "2026년"을 누르면 년 선택이 나온다. 년을 고르면 그 해의 월 선택으로, 월을 고르면 날짜 화면으로 돌아온다.
   const [view, setView] = useState<MonthGridView>('day')
   const [pickerYear, setPickerYear] = useState(month.year)
@@ -220,6 +222,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
             {cells.map((day, index) => {
               if (day === null) return <span key={`blank-${index}`} />
               const date = `${monthKey}-${String(day).padStart(2, '0')}`
+              const isToday = date === todayDate
               const hasClosingMap = closingTimeByDate.has(date)
               // 휴장일은 전 거래일 지도 데이터가 연결돼 있어도 선택할 수 없게 한다.
               const selectable = !holidayDates.has(date) && !pendingScheduleDates.has(date) && isSelectable(date, hasClosingMap, hasPreviousDay(date))
@@ -238,6 +241,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                     type="button"
                     disabled={selectable === false}
                     aria-pressed={selected}
+                    aria-current={isToday ? 'date' : undefined}
                     onClick={() => onPick(date, closingTimeByDate.get(date))}
                     className={`relative flex h-7 w-7 items-center justify-center rounded-full border-0 ${
                       selected
@@ -245,7 +249,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                         : selectable
                           ? 'bg-transparent text-ui-white hover:bg-ui-control'
                           : `cursor-not-allowed bg-transparent ${isHoliday && holidayColor ? '' : 'text-ui-muted'}`
-                    }`}
+                    } ${isToday ? 'ring-2 ring-brand' : ''}`}
                     style={!selected && isHoliday && holidayColor ? { color: holidayColor } : undefined}
                   >
                     {day}
