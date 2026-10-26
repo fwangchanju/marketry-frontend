@@ -737,8 +737,8 @@ export default function AdminBannerPage() {
                     />
                     </article>
                   </div>
-                  <div className="min-h-0 flex-1 px-6 pb-6 pt-7">
-                    <div className="page-main-scroll h-full overflow-y-auto">
+                  <div className="min-h-0 flex-1 px-6 pb-6">
+                    <div className="page-main-scroll h-full overflow-y-auto pt-7">
                   <article aria-label="배너 운영 콘텐츠" className="mx-auto w-full max-w-4xl space-y-5">
                     {showCampaignList ? (
                       <div className="flex flex-col gap-3">
