@@ -8,14 +8,19 @@ const EFFECTIVE_DATE = '2026-10-25'
 
 export default function PrivacyPolicyPage() {
   return (
-    <DocumentPageLayout title="PRIVACY" panelDescription="개인정보 수집·이용·보관 기준입니다.">
-      <article className="mx-auto max-w-4xl space-y-5">
+    <DocumentPageLayout
+      title="PRIVACY"
+      panelDescription="개인정보 수집·이용·보관 기준입니다."
+      heading={(
         <InfoPageHeading
+          flushBottom
           title="개인정보처리방침"
           effectiveDate={EFFECTIVE_DATE}
           summary="MARKETRY가 어떤 정보를 수집하고, 어디에 쓰며, 언제 삭제하는지 안내합니다."
         />
-
+      )}
+    >
+      <article className="mx-auto max-w-4xl space-y-5">
         <InfoSection number="1" title="서비스와 개인정보">
           <p>
             MARKETRY(marketry.co.kr)는 개인이 운영하는 시장 데이터 조회·시각화 서비스입니다. 개인정보 문의와 권리 행사는 아래 문의처로

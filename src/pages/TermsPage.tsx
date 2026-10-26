@@ -7,14 +7,19 @@ const EFFECTIVE_DATE = '2026-10-25'
 
 export default function TermsPage() {
   return (
-    <DocumentPageLayout title="TERMS" panelDescription="서비스 이용과 회원 기준을 안내합니다.">
-      <article className="mx-auto max-w-4xl space-y-5">
+    <DocumentPageLayout
+      title="TERMS"
+      panelDescription="서비스 이용과 회원 기준을 안내합니다."
+      heading={(
         <InfoPageHeading
+          flushBottom
           title="이용약관"
           effectiveDate={EFFECTIVE_DATE}
           summary="MARKETRY 서비스를 이용할 때 적용되는 기준입니다. 비회원 방문과 회원 기능 모두 이 약관의 적용을 받습니다."
         />
-
+      )}
+    >
+      <article className="mx-auto max-w-4xl space-y-5">
         <InfoCallout title="투자 정보는 참고 자료입니다">
           서비스의 시세와 통계는 외부 데이터를 가공해 보여 주며 지연되거나 틀릴 수 있습니다. 투자 권유나 자문이 아니므로 투자 판단과 결과는 이용자 본인의 책임입니다.
         </InfoCallout>

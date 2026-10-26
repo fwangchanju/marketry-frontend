@@ -32,7 +32,7 @@ export default function SettingsSegmentedControl<T extends string | number | boo
           role="radio"
           aria-checked={value === option.value}
           onClick={() => onChange(option.value)}
-          className={`relative z-10 min-h-[25px] justify-center rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms] ${value === option.value ? '' : 'settings-chip-hover'} disabled:cursor-not-allowed`}
+          className="settings-choice-hover relative z-10 min-h-[25px] justify-center rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms] disabled:cursor-not-allowed"
         >
           {option.label}
         </button>

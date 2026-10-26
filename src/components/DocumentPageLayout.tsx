@@ -14,7 +14,7 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 
 // 공개 문서도 다른 화면과 같은 헤더·계정·메뉴·툴바·하단 정보줄을 쓴다.
-export default function DocumentPageLayout({ title, children, panelIcon = 'document', panelDescription = 'MARKETRY 서비스 안내 문서입니다.' }: { title: string; children: ReactNode; panelIcon?: SettingsSectionIconName; panelDescription?: string }) {
+export default function DocumentPageLayout({ title, heading, children, panelIcon = 'document', panelDescription = 'MARKETRY 서비스 안내 문서입니다.' }: { title: string; heading: ReactNode; children: ReactNode; panelIcon?: SettingsSectionIconName; panelDescription?: string }) {
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
@@ -61,7 +61,12 @@ export default function DocumentPageLayout({ title, children, panelIcon = 'docum
             <ToolbarModeText page="INFO" label={title} />
           </Toolbar>
           {/* 공통 바깥 프레임 안에서 InfoDocument의 제목·구획·정보 행 양식을 사용한다. */}
-          <PageMainFrame className="p-6">{children}</PageMainFrame>
+          <PageMainFrame
+            className="p-0"
+            fixedHeader={<div className="mx-auto w-full max-w-4xl">{heading}</div>}
+          >
+            {children}
+          </PageMainFrame>
           <DisclaimerFooter />
         </main>
         {isSettingsOpen && <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>

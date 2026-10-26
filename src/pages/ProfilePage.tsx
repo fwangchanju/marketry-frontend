@@ -257,7 +257,14 @@ export default function ProfilePage() {
           <Toolbar>
             <ToolbarModeText page="ACCOUNT" label="PROFILE" />
           </Toolbar>
-          <PageMainFrame className="p-6">
+          <PageMainFrame
+            className="p-0"
+            fixedHeader={session?.authenticated && !isError ? (
+              <div className="mx-auto w-full max-w-4xl">
+                <InfoPageHeading flushBottom title="내 프로필" summary="로그인 계정과 프로필 정보를 확인하고 관리합니다." />
+              </div>
+            ) : undefined}
+          >
             <section className="mx-auto w-full max-w-4xl">
           {isError ? (
             // 다른 화면의 불러오기 실패와 같은 오류 원(문구와 "다시 시도")으로 보여 준다.
@@ -266,9 +273,7 @@ export default function ProfilePage() {
             </div>
           ) : session?.authenticated ? (
             <>
-              <InfoPageHeading title="내 프로필" summary="로그인 계정과 프로필 정보를 확인하고 관리합니다." />
-
-              <section aria-labelledby="profile-account-heading" className="-mt-3 overflow-hidden border border-ui-border bg-ui-panel">
+              <section aria-labelledby="profile-account-heading" className="overflow-hidden border border-ui-border bg-ui-panel">
                 <header className="border-b border-ui-border px-4 py-3">
                   <h2 id="profile-account-heading" className="m-0 text-base font-bold text-ui-white">계정 정보</h2>
                   <p className="m-0 mt-1 text-sm leading-relaxed text-ui-text">로그인에 사용한 계정입니다.</p>

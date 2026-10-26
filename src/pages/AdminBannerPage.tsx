@@ -28,7 +28,7 @@ import BannerDatePicker from '@/components/BannerDatePicker'
 import BannerTimePicker from '@/components/BannerTimePicker'
 
 const INPUT_CLASS = 'h-[25px] w-full min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:border-brand placeholder:text-ui-muted disabled:opacity-35'
-const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover disabled:cursor-not-allowed disabled:opacity-35'
+const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35'
 const EDITOR_ACTION_CLASS = 'flex h-[25px] w-[90px] shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 px-1.5 text-[13px]/4 font-semibold text-ui-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-35'
 
 function kstInputValue(epoch = Date.now()): string {
@@ -729,16 +729,16 @@ export default function AdminBannerPage() {
                       summary="목록에서 공지·광고를 확인하거나 새 배너를 작성합니다."
                       actions={(
                         <>
-                          <button type="button" aria-pressed={showCampaignList} onClick={() => void openCampaignList()} className={`${SETTINGS_ACTION_CLASS} px-2 ${showCampaignList ? 'bg-brand-surface' : ''}`}>목록</button>
-                          <button type="button" aria-pressed={!showCampaignList && activeType === 'NOTICE'} onClick={() => openType('NOTICE')} className={`${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'NOTICE' ? 'bg-brand-surface' : ''}`}>새 공지</button>
-                          <button type="button" aria-pressed={!showCampaignList && activeType === 'AD'} onClick={() => openType('AD')} className={`${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'AD' ? 'bg-brand-surface' : ''}`}>새 광고</button>
+                          <button type="button" aria-pressed={showCampaignList} onClick={() => void openCampaignList()} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${showCampaignList ? 'bg-brand-surface' : ''}`}>목록</button>
+                          <button type="button" aria-pressed={!showCampaignList && activeType === 'NOTICE'} onClick={() => openType('NOTICE')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'NOTICE' ? 'bg-brand-surface' : ''}`}>새 공지</button>
+                          <button type="button" aria-pressed={!showCampaignList && activeType === 'AD'} onClick={() => openType('AD')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'AD' ? 'bg-brand-surface' : ''}`}>새 광고</button>
                         </>
                       )}
                     />
                     </article>
                   </div>
-                  <div className="min-h-0 flex-1 px-6 pb-6">
-                    <div className="page-main-scroll h-full overflow-y-auto pt-7">
+                  <div className="min-h-0 flex-1 px-6">
+                    <div className="page-main-scroll h-full overflow-y-auto pb-6 pt-7">
                   <article aria-label="배너 운영 콘텐츠" className="mx-auto w-full max-w-4xl space-y-5">
                     {showCampaignList ? (
                       <div className="flex flex-col gap-3">
@@ -856,7 +856,7 @@ export default function AdminBannerPage() {
                                       setEndDatePresetGeneration(value => value + 1)
                                     }
                                   }}
-                                  className={`flex h-[25px] w-[42px] shrink-0 items-center justify-center rounded-[4px] border-0 px-0 text-[13px]/[16px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35 ${selectedEndPreset === preset.key ? 'bg-brand-surface hover:bg-brand-surface-hover' : 'bg-[var(--ui-control)] hover:bg-ui-control-hover'}`}
+                                  className={`settings-choice-hover flex h-[25px] w-[42px] shrink-0 items-center justify-center rounded-[4px] border-0 px-0 text-[13px]/[16px] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35 ${selectedEndPreset === preset.key ? 'bg-brand-surface' : 'bg-[var(--ui-control)]'}`}
                                 >
                                   {preset.label}
                                 </button>
