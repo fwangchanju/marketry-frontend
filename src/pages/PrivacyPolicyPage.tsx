@@ -92,7 +92,7 @@ export default function PrivacyPolicyPage() {
 
         <InfoSection number="8" title="문의">
           <p>개인정보 관련 문의와 권리 행사는 아래 이메일로 요청해 주세요.</p>
-          <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex border border-brand bg-brand-surface px-3 py-2 font-bold text-ui-white hover:bg-brand-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex border-0 bg-brand-surface px-3 py-2 font-bold text-ui-white hover:bg-brand-surface-hover focus-visible:bg-brand-surface-hover">
             {CONTACT_EMAIL}
           </a>
         </InfoSection>

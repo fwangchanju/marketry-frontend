@@ -6,6 +6,7 @@ import { usePopupBounds } from '@/hooks/usePopupBounds'
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'))
 const MINUTES = Array.from({ length: 60 }, (_, minute) => String(minute).padStart(2, '0'))
+const POPUP_HEIGHT = 136
 
 export default function BannerTimePicker({
   label,
@@ -65,7 +66,7 @@ export default function BannerTimePicker({
             left: popupBounds?.left ?? popupLeft,
             width: popupBounds?.width ?? popupWidth,
             maxHeight: popupBounds ? `${popupBounds.maxHeight}px` : undefined,
-            overflowY: popupBounds ? 'auto' : undefined,
+            overflowY: popupBounds ? popupBounds.maxHeight < POPUP_HEIGHT ? 'auto' : 'visible' : undefined,
             visibility: popupBounds?.visible === false ? 'hidden' : undefined,
           }}
           className="z-50 rounded-md border border-ui-border bg-ui-panel p-3 text-sm text-ui-white shadow-xl"

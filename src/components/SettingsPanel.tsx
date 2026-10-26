@@ -325,9 +325,9 @@ function ChevronGlyph({ direction, outward = false }: { direction: 'left' | 'rig
 // 설정창이 열리고 닫힐 때의 애니메이션 길이(ms) — index.css의 settings-panel-* 애니메이션 시간(0.25s)과 같아야 한다.
 const SIDEBAR_ANIMATION_MS = 250
 
-// 업종 분류 세로 손잡이와 같은 모양(청록 외곽선, 고른 칸 바탕색)이다.
+// 업종 분류 세로 손잡이와 같은 단색 청록 모양이다.
 const RANGE_HANDLE_CLASS =
-  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center box-border rounded-full border border-brand bg-brand-surface text-ui-white touch-none'
+  'pointer-events-none absolute top-1/2 flex h-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center box-border rounded-full border-0 bg-brand text-ui-surface touch-none'
 
 // 섹션 전체가 막혔을 때의 안내 말풍선은 섹션 아래 끝이 아니라 마우스 커서 바로 옆에 띄운다 —
 // 섹션이 높아도 안내가 컨트롤에서 멀어지지 않는다. x·y는 마우스의 화면 좌표이고, bounds는 말풍선이 나가면 안 되는 설정창의 화면 위치다.
@@ -414,7 +414,7 @@ const stairHeight = (count: number) => count * STAIR_ROW + (count - 1) * STAIR_G
 function StairChevron({ direction, className = '' }: { direction: 'up' | 'down'; className?: string }) {
   return (
     <svg viewBox="0 0 10 6" className={`w-2 ${className}`}>
-      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="var(--ui-white)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={direction === 'up' ? 'M1 5l4-4 4 4' : 'M1 1l4 4 4-4'} fill="none" stroke="var(--ui-surface)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -474,7 +474,7 @@ function StairRows({
               tabIndex={onPick && !disabled && !blocked ? 0 : undefined}
               onClick={onPick && !disabled && !blocked ? () => onPick(index) : undefined}
               onKeyDown={onPick && !disabled && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
-              className={`absolute flex items-center rounded-[4px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-brand/35' : 'bg-ui-control'} ${onPick ? `box-border border border-solid ${selectedIndex === index ? 'border-brand' : 'border-transparent'} ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
+              className={`absolute flex items-center rounded-[4px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-brand-surface' : 'bg-ui-control'} ${onPick ? `box-border border-0 ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
               style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
               <span className={`ml-[2.5px] whitespace-nowrap rounded-[4px] px-1.5 leading-[20px] ${lit ? 'bg-ui-panel text-ui-white' : 'bg-ui-white/20'}`}>
@@ -490,7 +490,7 @@ function StairRows({
 }
 
 const STAIR_HANDLE_BASE =
-  'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-[top,width,height,gap] duration-100'
+  'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-0 transition-[top,width,height,gap] duration-100'
 
 // 업종 분류 깊이(맵)·단계(그룹) — 손잡이는 둘 다 원형 하나다. 맵은 손잡이까지 위 칸이 함께 켜지고(누적), 그룹은 손잡이가 닿은 칸 하나만 켜진다(단일).
 function DepthStairSelect({
@@ -587,7 +587,7 @@ function DepthStairSelect({
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
             else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
           }}
-          className={`${STAIR_HANDLE_BASE} size-3 border-brand bg-brand-surface`}
+          className={`${STAIR_HANDLE_BASE} size-3 bg-brand`}
           style={{ top: stairCenterOf(depth - 1) }}
         />
       </div>
@@ -655,7 +655,7 @@ function DepthStairRange({
     else onChange(minIndex, Math.max(minIndex, Math.min(maxIndex + delta, maxSelectableIndex)))
   }
   const handleStyle = (index: number) => ({ top: stairCenterOf(index) })
-  const singleClass = `${STAIR_HANDLE_BASE} size-3 border-brand bg-brand-surface`
+  const singleClass = `${STAIR_HANDLE_BASE} size-3 bg-brand`
   return (
     <div
       role="group"
@@ -696,7 +696,7 @@ function DepthStairRange({
               if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') handleKeys('min')(e)
               else handleKeys('max')(e)
             }}
-            className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 border-brand bg-brand-surface`}
+            className={`${STAIR_HANDLE_BASE} h-6 w-3 flex-col gap-2 bg-brand`}
             style={handleStyle(minIndex)}
           >
             <StairChevron direction="up" />
@@ -995,7 +995,7 @@ function SingleRangeInput({
       {smooth && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-brand bg-brand-surface"
+          className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-0 bg-brand"
           style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)`, transition: `left ${slide}` }}
         />
       )}
@@ -1172,7 +1172,7 @@ export function SettingsAverageModeSection({
             ))}
           </div>
           <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-2 grid grid-cols-2 gap-[6px]">
-            <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] border border-brand bg-brand-surface" />
+            <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] bg-brand-surface" />
             {options.map(option => {
               const selected = avgChangeRateUseSimple === option.value
               return (
@@ -1271,7 +1271,7 @@ function SettingsTaxonomySelector({
         {TAXONOMY_SELECT_TITLE}
       </p>
       <div data-settings-side-toggle-bottom-anchor role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[4px] border border-brand-surface bg-brand" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[4px] bg-brand" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1500,7 +1500,7 @@ export function SettingsSectorLevelSection({
                 onChange={onChangeActiveDepthMetric}
                 ariaLabel="업종 지표"
                 badge="업종명"
-                outlinedChevron
+                brandChevron
                 disabled={isDepthMetricDisabled || !depthMetricEnabled}
                 className={`max-w-full settings-control-inset ${depthMetricEnabled ? '' : 'opacity-35'}`}
               />
@@ -1612,7 +1612,7 @@ export function SettingsSectorLevelSection({
               </div>
               <div className="px-px pb-px pt-[2px]">
             <div role="radiogroup" aria-label="박스 내 표기" className="relative grid h-[60px] w-full grid-cols-3 gap-[2px]">
-              <SlidingHighlight square bottomRadius={4} gap={2} count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="border border-brand bg-brand-surface" />
+              <SlidingHighlight square bottomRadius={4} gap={2} count={STOCK_LABEL_MODE_LABELS.length} index={stockLabelModeIndex - 1} className="bg-brand-surface" />
               {STOCK_LABEL_MODE_LABELS.map((label, index) => {
                 const value = index + 1
                 const selected = stockLabelModeIndex === value
@@ -1720,7 +1720,7 @@ export function SettingsStockMoveSection({
         aria-label="종목 이동"
         className="relative mt-[18px] grid max-w-full settings-control-inset grid-cols-2 gap-[6px]"
       >
-        <SlidingHighlight count={2} index={enabled ? 1 : 0} className="rounded-[4px] border border-brand bg-brand-surface" />
+        <SlidingHighlight count={2} index={enabled ? 1 : 0} className="rounded-[4px] bg-brand-surface" />
         {[
           { label: '끄기', value: false },
           { label: '켜기', value: true },
@@ -1760,7 +1760,7 @@ export function SettingsStockPopupSection({
         aria-label="종목 정보 여는 방식"
         className="relative mt-[18px] grid max-w-full settings-control-inset grid-cols-2 gap-[6px]"
       >
-        <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[4px] border border-brand bg-brand-surface" />
+        <SlidingHighlight count={2} index={stockPopupOnHover ? 1 : 0} className="rounded-[4px] bg-brand-surface" />
         {[
           { label: '우클릭', onHover: false },
           { label: '마우스 올리기', onHover: true },
@@ -1940,13 +1940,13 @@ export function SettingsSectorChangeSection({
               onChange={key => onChangeDepth(Number(key))}
               ariaLabel="업종 등락 방향 업종 단계"
               compact
-              outlinedChevron
+              brandChevron
               centerLabel
               className="col-start-3 w-full"
             />
           </div>
           <div role="radiogroup" aria-label="업종 등락 방향 필터" className="relative grid grid-cols-3 gap-[6px]">
-            <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
+            <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] bg-brand-surface" />
             {DIRECTION_OPTIONS.map(option => (
               <button
                 key={option.value}
@@ -1982,7 +1982,7 @@ export function SettingsStockChangeSection({
       <div className="settings-button-area flex flex-col justify-center">
         <div className="relative max-w-full settings-control-inset">
           <div role="radiogroup" aria-label="종목 등락 방향 필터" className="relative grid grid-cols-3 gap-[6px]">
-            <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] border border-brand bg-brand-surface" />
+            <SlidingHighlight count={DIRECTION_OPTIONS.length} index={DIRECTION_OPTIONS.findIndex(option => option.value === value)} className="rounded-[4px] bg-brand-surface" />
             {DIRECTION_OPTIONS.map(option => (
               <button
                 key={option.value}
@@ -2115,7 +2115,7 @@ export function SettingsTopPickSection({
               ariaLabel="상위 업종 강조 개수"
               disabled={isTopPickDisabled || !topPickEnabled}
               compact
-              outlinedChevron
+              brandChevron
               className="w-[42px] shrink-0"
             />
           </div>

@@ -90,7 +90,7 @@ type SectorHistoryAction =
   | { id: string; type: 'reorder'; parentId: number | null; beforeIds: number[]; afterIds: number[] }
 type SectorHistoryInput = SectorHistoryAction extends infer A ? (A extends { id: string } ? Omit<A, 'id'> : never) : never
 const SECTOR_HISTORY_LIMIT = 9
-const DRAG_CONTROL_CLASS = 'cursor-grab touch-none rounded-sm border border-[var(--brand)] bg-ui-panel text-ui-text transition-colors hover:bg-[var(--brand)]/10 hover:text-[var(--brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]'
+const DRAG_CONTROL_CLASS = 'cursor-grab touch-none rounded-sm border-0 bg-brand-surface text-ui-white transition-colors hover:bg-brand-surface-hover focus-visible:bg-brand-surface-hover focus-visible:outline-none'
 
 function DraggableSectorHandle({
   sectorId,
@@ -155,7 +155,7 @@ function RootDropHeader({ className, isActive, isOver, children, style, onClick 
     <div ref={setNodeRef} onClick={onClick} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/50' : ''}`} style={style}>
       {children}
       {isActive && (
-        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-[22px] -translate-y-1/2 rounded border px-2 text-xs font-bold leading-[20px] ${isOver ? 'border-[var(--brand)] bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}>
+        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-[22px] -translate-y-1/2 rounded border px-2 text-xs font-bold leading-[20px] ${isOver ? 'border-transparent bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}>
           여기
         </span>
       )}
@@ -668,7 +668,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   {isMoveDrag && isMoveDropTarget(draggedSector, sector) && (
                     <span
                       aria-hidden="true"
-                      className={`pointer-events-none ml-auto mr-2 h-[22px] shrink-0 rounded border px-2 text-xs font-bold leading-[20px] ${moveOverId === sector.id ? 'border-[var(--brand)] bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}
+                      className={`pointer-events-none ml-auto mr-2 h-[22px] shrink-0 rounded border px-2 text-xs font-bold leading-[20px] ${moveOverId === sector.id ? 'border-transparent bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}
                     >
                       여기
                     </span>

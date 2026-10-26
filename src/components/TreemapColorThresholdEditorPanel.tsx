@@ -112,9 +112,10 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             role="img"
             aria-label="0% 고정"
             data-hint="0% 고정"
-            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-panel ${zeroSelected ? 'border border-brand ring-[3px] ring-brand/35' : 'border border-ui-text hover:border-ui-white'}`}
-            style={{ backgroundColor: zeroColor }}
-          />
+            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer border-0 ${zeroSelected ? '' : 'hover:brightness-125'}`}
+          >
+            <span className="pointer-events-none absolute inset-x-0 top-[4px] bottom-[4px] rounded-[2px]" style={{ backgroundColor: zeroColor }} />
+          </div>
           <div className={zeroSelected ? 'opacity-70' : ''}>
             {positive.map((item, rank) => {
               const selected = !zeroSelected && rank === selectedRank
@@ -135,9 +136,11 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
                     aria-valuemax={BAR_MAX_PERCENT}
                     aria-valuenow={item.percent}
                     onKeyDown={event => handleKeyDown(event, rank)}
-                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-panel ${selected ? 'border border-brand ring-[3px] ring-brand/35' : 'border border-ui-text hover:border-ui-white'}`}
+                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer border-0 ${selected ? '' : 'hover:brightness-125'}`}
                     style={{ left }}
-                  />
+                  >
+                    <span className={`pointer-events-none absolute inset-x-0 top-[4px] bottom-[4px] rounded-[2px] ${selected ? 'bg-brand' : 'bg-ui-control-hover'}`} />
+                  </div>
                 </div>
               )
             })}
@@ -201,7 +204,7 @@ export default function TreemapColorThresholdEditorPanel({
                   if (key === 'zero') onSelectZero()
                   else onSelectRank(bar.selectedRank ?? 0, key)
                 }}
-                className={`box-border rounded-[3px] border border-solid px-[7px] py-0 text-[13px] font-light leading-[18px] text-ui-white ${selected ? 'border-brand bg-brand-surface' : 'border-ui-control bg-ui-control hover:bg-ui-control-hover'}`}
+                className={`box-border rounded-[3px] border border-transparent px-[7px] py-0 text-[13px] font-light leading-[18px] text-ui-white ${selected ? 'bg-brand-surface' : 'bg-ui-control hover:bg-ui-control-hover'}`}
               >
                 {CHIP_LABEL[key]}
               </button>
