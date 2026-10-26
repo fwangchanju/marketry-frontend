@@ -116,13 +116,13 @@ export default function IntervalDial({
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}
       onKeyDown={handleKeyDown}
-      className={`shrink-0 touch-none text-ui-white outline-none ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer focus-visible:text-brand'}`}
+      className={`shrink-0 touch-none text-ui-white outline-none ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
     >
       <circle cx={CENTER} cy={CENTER} r={FACE_RADIUS} fill="var(--ui-control)" />
       {isFullTurn ? (
-        <circle cx={CENTER} cy={CENTER} r={FACE_RADIUS - 4} fill="var(--brand-surface)" />
+        <circle cx={CENTER} cy={CENTER} r={FACE_RADIUS - 4} fill="var(--ui-control-hover)" />
       ) : (
-        <path d={`M ${CENTER} ${CENTER} L ${arcStart.x} ${arcStart.y} A ${FACE_RADIUS - 4} ${FACE_RADIUS - 4} 0 ${degrees > 180 ? 1 : 0} 1 ${arcEnd.x} ${arcEnd.y} Z`} fill="var(--brand-surface)" />
+        <path d={`M ${CENTER} ${CENTER} L ${arcStart.x} ${arcStart.y} A ${FACE_RADIUS - 4} ${FACE_RADIUS - 4} 0 ${degrees > 180 ? 1 : 0} 1 ${arcEnd.x} ${arcEnd.y} Z`} fill="var(--ui-control-hover)" />
       )}
       {Array.from({ length: UNITS_PER_TURN / 5 }, (_, index) => {
         const tickDegrees = index * 30
@@ -130,8 +130,8 @@ export default function IntervalDial({
         const inner = polar(tickDegrees, FACE_RADIUS - (index % 3 === 0 ? 6 : 3))
         return <line key={tickDegrees} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} stroke="currentColor" strokeWidth={index % 3 === 0 ? 1.6 : 1} strokeLinecap="round" opacity={0.7} />
       })}
-      <line x1={CENTER} y1={CENTER} x2={handEnd.x} y2={handEnd.y} stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" />
-      <circle cx={CENTER} cy={CENTER} r={2.6} fill="currentColor" />
+      <line x1={CENTER} y1={CENTER} x2={handEnd.x} y2={handEnd.y} stroke="var(--brand)" strokeWidth={2.2} strokeLinecap="round" />
+      <circle cx={CENTER} cy={CENTER} r={2.6} fill="var(--brand)" />
     </svg>
   )
 }

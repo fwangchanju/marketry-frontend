@@ -939,7 +939,7 @@ export default function AdminBannerPage() {
                               onChange={setRotationDraft}
                             />
                           </div>
-                          <span className="col-start-3 ml-3 inline-flex h-5 w-[42px] shrink-0 items-center justify-center rounded-[4px] bg-brand-surface px-1.5 text-xs font-semibold leading-none tabular-nums text-ui-white" aria-live="polite">
+                          <span className="col-start-3 ml-3 inline-flex h-5 w-[42px] shrink-0 items-center justify-center rounded-[4px] bg-ui-control px-1.5 text-xs font-semibold leading-none tabular-nums text-ui-white" aria-live="polite">
                             {rotationInterval}초
                           </span>
                         </div>
