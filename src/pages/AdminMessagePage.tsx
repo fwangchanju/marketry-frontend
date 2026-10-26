@@ -142,7 +142,7 @@ export default function AdminMessagePage() {
   }
   const handleSendOnce = async () => {
     if (sendOnce.isPending) return
-    if (await appConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '1회 발송' })) {
+    if (await appConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '테스트 발송 1회' })) {
       sendOnce.mutate()
     }
   }
@@ -216,7 +216,7 @@ export default function AdminMessagePage() {
                           <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
                             <p className="m-0 text-lg leading-snug text-ui-white">{SAMPLE_CAPTION}</p>
                             <span className="flex shrink-0 items-center gap-1.5 text-lg text-ui-text">
-                              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+                              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-[1em] fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                               2
                               <span className="ml-1.5">{SAMPLE_TIME}</span>
                             </span>
@@ -282,17 +282,17 @@ export default function AdminMessagePage() {
                         </div>
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
-                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">지금 1회 발송</h2>
-                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">정기 설정과 관계없이 가장 최근 데이터로 한 번 보냅니다.</p>
+                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">테스트 발송</h2>
+                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">최신 데이터로 즉시 1회 발송 테스트</p>
                             <div className="mt-auto mb-auto flex max-w-full settings-control-inset justify-center">
                               <button
                                 type="button"
                                 disabled={sendOnce.isPending}
                                 aria-busy={sendOnce.isPending}
                                 onClick={() => void handleSendOnce()}
-                                className="flex h-[25px] w-fit shrink-0 items-center justify-center rounded-[4px] border border-brand bg-brand-surface px-3 text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-35"
+                                className="flex h-[25px] w-full items-center justify-center rounded-[4px] border-0 bg-brand-surface px-3 text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
                               >
-                                {sendOnce.isPending ? '발송 중…' : '지금 1회 발송'}
+                                {sendOnce.isPending ? '발송 중…' : '테스트 발송 1회'}
                               </button>
                             </div>
                           </div>

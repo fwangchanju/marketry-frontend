@@ -245,11 +245,11 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                     onClick={() => onPick(date, closingTimeByDate.get(date))}
                     className={`relative flex h-7 w-7 items-center justify-center rounded-full border-0 ${
                       selected
-                        ? 'bg-brand-surface font-semibold text-ui-white'
+                        ? isToday ? 'bg-brand font-semibold text-ui-surface' : 'bg-brand-surface font-semibold text-ui-white'
                         : selectable
-                          ? 'bg-transparent text-ui-white hover:bg-ui-control'
-                          : `cursor-not-allowed bg-transparent ${isHoliday && holidayColor ? '' : 'text-ui-muted'}`
-                    } ${isToday ? 'ring-2 ring-brand' : ''}`}
+                          ? `bg-transparent hover:bg-ui-control ${isToday ? 'text-brand' : 'text-ui-white'}`
+                          : `cursor-not-allowed bg-transparent ${isToday ? 'text-brand' : isHoliday && holidayColor ? '' : 'text-ui-muted'}`
+                    }`}
                     style={!selected && isHoliday && holidayColor ? { color: holidayColor } : undefined}
                   >
                     {day}

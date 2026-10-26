@@ -141,7 +141,7 @@ export default function NavBar({ hideAccount = false, staticMode = false, banner
                     to="/profile"
                     onClick={() => setIsProfileMenuOpen(false)}
                     aria-current={pathname === '/profile' ? 'page' : undefined}
-                    className={`flex h-7 flex-1 items-center justify-center rounded-[5px] border text-[13px] font-medium text-ui-white transition-colors ${pathname === '/profile' ? 'border-[var(--brand)] bg-[var(--brand-surface)]' : 'border-ui-border bg-transparent hover:bg-ui-white/10 focus:bg-ui-white/10'}`}
+                    className={`flex h-7 flex-1 items-center justify-center rounded-[5px] border text-[13px] font-medium text-ui-white transition-colors ${pathname === '/profile' ? 'border-transparent bg-[var(--brand-surface)]' : 'border-ui-border bg-transparent hover:bg-ui-white/10 focus:bg-ui-white/10'}`}
                   >
                     프로필
                   </Link>

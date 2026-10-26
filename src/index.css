@@ -444,6 +444,12 @@ html, body, #root {
   text-overflow: clip;
 }
 
+/* 화면 이름 배지는 모든 페이지에서 100px로 고정한다. 캡처 글꼴 폭에 따라 다음 날짜 배지가 밀리지 않게 한다. */
+.home-capture-toolbar .toolbar-mode-badge {
+  min-width: 100px;
+  max-width: 100px;
+}
+
 /* 스크린샷 선택 범위: 2px 선과 2px 간격으로 촘촘하게 표시한다. */
 .capture-selection-outline {
   background-image:
@@ -1124,14 +1130,14 @@ a { color: var(--accent-light); text-decoration: none; }
 /* smooth가 꺼진 슬라이더(값이 끊김 없이 이어지는 것)는 기본 손잡이를 그대로 보인다. */
 .settings-single-slider.is-native-thumb::-webkit-slider-thumb {
   box-sizing: border-box;
-  border: 1px solid var(--brand);
-  background: var(--brand-surface);
+  border: 0;
+  background: var(--brand);
 }
 
 .settings-single-slider.is-native-thumb::-moz-range-thumb {
   box-sizing: border-box;
-  border: 1px solid var(--brand);
-  background: var(--brand-surface);
+  border: 0;
+  background: var(--brand);
 }
 
 /* 체크박스 — 브라우저 기본 체크박스와 같은 색이지만 안쪽 체크 표시를 가늘게 직접 그리고, 크기는 옆 글자만큼이다. */

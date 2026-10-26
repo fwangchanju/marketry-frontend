@@ -17,7 +17,7 @@ import { displayEmail } from '@/utils/displayEmail'
 import { AUTH_PROVIDER_ISSUERS, isAuthProviderIssuer } from '@/utils/authProvider'
 
 const PAGE_SIZE = 50
-const controlClass = 'flex h-5 min-w-9 shrink-0 items-center justify-center whitespace-nowrap rounded-sm border border-brand bg-brand px-1.5 text-[11px] font-semibold leading-none text-ui-background outline-none transition-colors hover:brightness-110 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-75'
+const controlClass = 'flex h-5 min-w-9 shrink-0 items-center justify-center whitespace-nowrap rounded-sm border-0 bg-brand px-1.5 text-[11px] font-semibold leading-none text-ui-background outline-none transition-colors hover:brightness-110 focus-visible:brightness-110 disabled:cursor-not-allowed disabled:opacity-75'
 type SortKey = 'id' | 'issuer' | 'email' | 'nickname' | 'role' | 'createdAt' | 'lastAccessAt'
 type SortOrder = 'asc' | 'desc'
 // 로딩 원에서 숫자 세기가 끝나면 나오는 "다시 시도" 버튼(Spinner)과 같은 모양이다.

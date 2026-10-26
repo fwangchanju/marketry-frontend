@@ -188,9 +188,9 @@ export default function BannerDatePicker({
                             onClick={() => selectDay(day)}
                             className={`flex h-7 w-7 items-center justify-center rounded-full border-0 ${
                               date === selectedDate
-                                ? 'bg-brand-surface font-semibold text-ui-white'
-                                : `bg-transparent hover:bg-ui-control ${weekday === 0 || weekday === 6 ? 'text-ui-muted' : 'text-ui-white'}`
-                            } ${isToday ? 'ring-2 ring-brand' : ''}`}
+                                ? isToday ? 'bg-brand font-semibold text-ui-surface' : 'bg-brand-surface font-semibold text-ui-white'
+                                : `bg-transparent hover:bg-ui-control ${isToday ? 'text-brand' : weekday === 0 || weekday === 6 ? 'text-ui-muted' : 'text-ui-white'}`
+                            }`}
                           >
                             {day}
                           </button>

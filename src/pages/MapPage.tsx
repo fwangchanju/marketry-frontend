@@ -159,11 +159,19 @@ function revealMobileCapture(cloned: Node, keepPageLabel = true) {
     const toolbar = document.createElement('div')
     toolbar.className = 'main-toolbar home-capture-toolbar relative mt-[3px] mb-0 flex h-7 w-full shrink-0 items-center overflow-hidden bg-ui-background/70 text-sm font-bold text-ui-white'
     // 복제본에 새로 넣는 요소는 클래스 스타일이 적용되지 않으므로 홈 판 툴바와 같은 위치·정렬은 인라인으로 준다.
-    toolbar.style.marginTop = '5px'
+    toolbar.style.marginTop = '3px'
     toolbar.style.alignItems = 'center'
     const leftContent = toolbarLeft.cloneNode(true) as HTMLElement
     leftContent.style.minWidth = '0'
     leftContent.style.overflow = 'hidden'
+    // 화면·브라우저 캡처·DOM 이미지 복제에서 첫 배지 폭을 동일하게 유지한다.
+    // 복제 후 새 툴바에 끼운 노드는 .home-capture-toolbar 규칙이 이미지 렌더러에 적용되지 않을 수 있다.
+    const modeBadge = leftContent.querySelector<HTMLElement>('.toolbar-mode-badge')
+    if (modeBadge) {
+      modeBadge.style.width = '100px'
+      modeBadge.style.minWidth = '100px'
+      modeBadge.style.maxWidth = '100px'
+    }
     // 복제본은 버튼 크기·배치를 유지하되 항상 시계·시간을 표시한다. 원본 버튼의 호버·갱신 상태가
     // 캡처 스타일에 남으면 새로고침 아이콘만 찍힐 수 있다.
     const refreshButton = leftContent.querySelector<HTMLElement>('.nav-refresh-button')

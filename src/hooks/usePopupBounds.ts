@@ -8,6 +8,7 @@ export interface PopupBounds {
   visible: boolean
 }
 
+// 배너 날짜·시각 팝업의 트리거와 메인 프레임을 재서 팝업 위치와 최대 높이를 계산한다.
 export function usePopupBounds(
   isOpen: boolean,
   positionReady: boolean,
@@ -57,26 +58,22 @@ export function usePopupBounds(
         : { top, left, width, maxHeight, visible })
     }
 
-    update()
     const handleScroll = (event: Event) => {
       const target = event.target
       if (target instanceof Node && popup.contains(target)) return
       update()
     }
-    const scrollContainer = trigger.closest('.page-main-scroll')
     const observer = new ResizeObserver(update)
     observer.observe(frame)
     observer.observe(popup)
+    // document 캡처는 내부 스크롤을, window는 화면 스크롤을 감지해 트리거 기준 좌표를 다시 잰다.
     document.addEventListener('scroll', handleScroll, true)
-    scrollContainer?.addEventListener('scroll', update)
-    window.addEventListener('scroll', handleScroll, true)
     window.addEventListener('scroll', update)
     window.addEventListener('resize', update)
+    update()
     return () => {
       observer.disconnect()
       document.removeEventListener('scroll', handleScroll, true)
-      scrollContainer?.removeEventListener('scroll', update)
-      window.removeEventListener('scroll', handleScroll, true)
       window.removeEventListener('scroll', update)
       window.removeEventListener('resize', update)
     }

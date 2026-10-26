@@ -9,7 +9,8 @@ export interface PopupPosition {
   width: number
 }
 
-// 팝업(섹터 검색창/필터 드롭다운) 공통 로직 — 트리거 기준 위치 계산 + 바깥 클릭/스크롤 시 닫기.
+// 트리거 기준 위치 계산과 바깥 클릭/스크롤 처리를 공유하는 팝업 훅이다.
+// 섹터 검색·필터 드롭다운은 스크롤 시 닫고, 배너 날짜·시각 선택창은 위치를 다시 계산하므로 닫지 않는다.
 export function usePopupPosition(
   isOpen: boolean,
   setIsOpen: (open: boolean) => void,

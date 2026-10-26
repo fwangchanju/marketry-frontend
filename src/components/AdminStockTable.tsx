@@ -1694,7 +1694,7 @@ export default function AdminStockTable({
               type="button"
               onClick={() => void handleResetCustomClassification()}
               disabled={resetCustomClassificationMutation.isPending || isUploading || isExporting || !hasCustomClassification}
-              className="flex h-[25px] items-center justify-center gap-1 rounded-[4px] border-0 bg-[#BC2F2F] px-3 text-[13px] leading-[1.3] font-medium text-ui-white transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex h-[25px] w-full items-center justify-center gap-1 rounded-[4px] border-0 bg-[#BC2F2F] px-3 text-[13px] leading-[1.3] font-medium text-ui-white transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
               aria-label="업종과 종목 분류 초기화"
             >
               초기화

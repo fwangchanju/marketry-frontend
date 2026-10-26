@@ -27,7 +27,7 @@ export function SectorOrderToggle({ label, value, onChange, compact = false }: {
           onClick={() => onChange(option)}
           className={compact
             ? `whitespace-nowrap border-0 bg-transparent p-0 text-xs font-medium ${value === option ? 'text-[var(--brand)]' : 'text-ui-text hover:text-ui-white'}`
-            : `h-6 shrink-0 whitespace-nowrap rounded border px-2 text-xs font-medium shadow-none outline-none focus:outline-none focus-visible:outline-none ${value === option ? 'border-[var(--brand)] bg-transparent text-[var(--brand)]' : 'border-ui-border bg-transparent text-ui-text hover:text-ui-white'}`}
+            : `h-6 shrink-0 whitespace-nowrap rounded border px-2 text-xs font-medium shadow-none outline-none focus:outline-none focus-visible:outline-none ${value === option ? 'border-transparent bg-brand-surface text-ui-white' : 'border-ui-border bg-transparent text-ui-text hover:text-ui-white'}`}
         >
           {text}
         </button>
