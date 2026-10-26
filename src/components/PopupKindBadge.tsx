@@ -1,10 +1,10 @@
-// 팝업 제목 앞에 붙이는 종류 배지 — 정보(닫기)·확인(일반 선택)·경고(위험 선택)를 구분한다. 규칙은 docs/ui-areas.md "팝업 규칙".
-export type PopupKind = '정보' | '확인' | '경고'
+// 팝업 제목 앞에 붙이는 종류 배지 — 정보(닫기)·확인(일반 선택)·주의(위험 확인)를 구분한다. 규칙은 docs/ui-areas.md "팝업 규칙".
+export type PopupKind = '정보' | '확인' | '주의'
 
 const BADGE_COLOR: Record<PopupKind, string> = {
   정보: 'bg-ui-control',
   확인: 'bg-brand-surface',
-  경고: 'bg-[#BC2F2F]',
+  주의: 'bg-[#BC2F2F]',
 }
 
 export default function PopupKindBadge({ kind }: { kind: PopupKind }) {

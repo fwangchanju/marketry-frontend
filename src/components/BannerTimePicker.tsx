@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
+import { usePopupBounds } from '@/hooks/usePopupBounds'
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'))
 const MINUTES = Array.from({ length: 60 }, (_, minute) => String(minute).padStart(2, '0'))
@@ -23,7 +24,8 @@ export default function BannerTimePicker({
   const [hour, minute] = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value)?.slice(1) ?? ['', '']
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
-  const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false)
+  const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false, false)
+  const popupBounds = usePopupBounds(isOpen, position !== null, triggerRef, popupRef, 208)
 
   let popupLeft = 8
   const popupWidth = Math.min(208, typeof window === 'undefined' ? 208 : window.innerWidth - 16)
@@ -59,10 +61,12 @@ export default function BannerTimePicker({
           aria-label={`${label} 시각 선택`}
           style={{
             position: 'fixed',
-            top: position.top + (position.openUpward ? -4 : 4),
-            left: popupLeft,
-            width: popupWidth,
-            transform: position.openUpward ? 'translateY(-100%)' : undefined,
+            top: popupBounds?.top ?? position.top + (position.openUpward ? -4 : 4),
+            left: popupBounds?.left ?? popupLeft,
+            width: popupBounds?.width ?? popupWidth,
+            maxHeight: popupBounds ? `${popupBounds.maxHeight}px` : undefined,
+            overflowY: popupBounds ? 'auto' : undefined,
+            visibility: popupBounds?.visible === false ? 'hidden' : undefined,
           }}
           className="z-50 rounded-md border border-ui-border bg-ui-panel p-3 text-sm text-ui-white shadow-xl"
           onClick={event => event.stopPropagation()}
