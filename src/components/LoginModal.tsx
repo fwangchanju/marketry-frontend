@@ -85,7 +85,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
               <GoogleLogoIcon className="h-3.5 w-3.5" />
             </span>
-            <span className="w-full px-10 py-2 text-center">구글 로그인</span>
+            <span className="w-full px-10 py-2 text-center">구글</span>
           </a>
           {providers?.naver && (
             <a
@@ -96,7 +96,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
               <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
                 <NaverLogoIcon className="h-3 w-3 text-white" />
               </span>
-              <span className="w-full px-10 py-2 text-center">네이버 로그인</span>
+              <span className="w-full px-10 py-2 text-center">네이버</span>
             </a>
           )}
           {providers?.kakao && (
@@ -108,7 +108,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
               <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
                 <KakaoLogoIcon className="h-3.5 w-3.5" />
               </span>
-              <span className="w-full px-10 py-2 text-center">카카오 로그인</span>
+              <span className="w-full px-10 py-2 text-center">카카오</span>
             </a>
           )}
           {devLoginError && <p role="alert" className="m-0 text-xs text-status-error-ink">{devLoginError}</p>}
