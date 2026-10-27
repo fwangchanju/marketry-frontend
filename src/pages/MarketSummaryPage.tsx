@@ -173,7 +173,7 @@ function SortableHomeFrame({ title, captureId, index, children, captureUntil, sh
       ref={setNodeRef}
       aria-label={title}
       data-capture-until={captureUntil}
-      style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.6 : undefined }}
+      style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.7 : undefined }}
       className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}
     >
       <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : index === 2 ? 'pl-1 pr-0' : 'px-1'}`}>

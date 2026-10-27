@@ -270,10 +270,10 @@ function ToggleSwitch({
         aria-label={label}
         onClick={onChange}
         disabled={disabled}
-        className={`relative -mr-1.5 h-3.5 w-[26px] shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-[var(--accent)]' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
+        className={`relative -mr-1.5 h-3.5 w-[26px] shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-brand-surface' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
       >
         <span
-          className={`absolute top-1/2 left-[2px] h-2.5 w-2.5 -translate-y-1/2 rounded-full transition-[transform,opacity,background-color] duration-[500ms] ease-out ${checked ? 'translate-x-3 bg-ui-panel' : 'translate-x-0 bg-ui-white opacity-70'}`}
+          className={`absolute top-1/2 left-[2px] h-2.5 w-2.5 -translate-y-1/2 rounded-full transition-[transform,opacity,background-color] duration-[500ms] ease-out ${checked ? 'translate-x-3 bg-ui-white' : 'translate-x-0 bg-ui-white opacity-70'}`}
         />
       </button>
     </div>
@@ -428,10 +428,8 @@ function StairRows({
   blockedHint,
   valueLabel,
   selectedIndex,
-  animateSelection = false,
-  onPick,
-  hoverPick = false,
-  disabled = false,
+  selectedThroughIndex,
+  dimUnselectedRows = false,
   railWidth = STAIR_RAIL,
 }: {
   labels: string[]
@@ -441,34 +439,22 @@ function StairRows({
   blockedHint: (label: string) => string
   // 켜진 칸의 배지 옆에 덧붙이는 값 글자(지표 표시 단계에 덧붙일 지표 이름).
   valueLabel?: string
-  // 선택색 배경을 표시할 칸. 그래프 단계는 칸 클릭과 오른쪽 트랙 둘 다로 고를 수 있다.
+  // 레일에서 현재 선택한 단계. 선택 행은 기본 칸보다 한 단계 밝게 표시한다.
   selectedIndex?: number
-  // 계단 위치가 다른 그래프 단계의 선택 배경을 한 표시기가 따라가게 한다.
-  animateSelection?: boolean
-  onPick?: (index: number) => void
-  hoverPick?: boolean
-  disabled?: boolean
+  // 누적 선택에서 선택 단계까지의 앞선 단계도 선택 배경으로 표시한다.
+  selectedThroughIndex?: number
+  // 단일 단계 선택에서는 현재 선택되지 않은 단계 선택 영역 전체를 흐리게 표시한다.
+  dimUnselectedRows?: boolean
   railWidth?: number
 }) {
   return (
     <>
-      {animateSelection && selectedIndex !== undefined && (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute z-0 rounded-[4px] bg-brand-surface transition-[top,left,width] duration-[500ms] ease-out"
-          style={{
-            left: selectedIndex * STAIR_STEP,
-            top: selectedIndex * (STAIR_ROW + STAIR_GAP),
-            width: `calc(100% - ${selectedIndex * STAIR_STEP + railWidth}px)`,
-            height: STAIR_ROW,
-          }}
-        />
-      )}
       {labels.map((label, index) => {
         const blocked = index > maxSelectableIndex
-        const selected = selectedIndex === index
-        const canHover = hoverPick && !disabled && !blocked && !selected
+        const selected = selectedIndex === index || (selectedThroughIndex !== undefined && index <= selectedThroughIndex)
         const lit = index >= litFrom && index <= litTo
+        const unselected = dimUnselectedRows ? !selected : !lit
+        const rowOpacity = blocked ? 0.1 : unselected ? 0.7 : 1
         const top = index * (STAIR_ROW + STAIR_GAP)
         const left = index * STAIR_STEP
         const mark = index === 0 ? null : index === 1 ? '▸ ' : (
@@ -482,21 +468,15 @@ function StairRows({
               <span
                 aria-hidden="true"
                 className="absolute rounded-bl-[3px] border-0 border-b-2 border-l-2 border-solid border-ui-border"
-                style={{ left: left - STAIR_STEP + 8, top: top - STAIR_GAP, width: STAIR_STEP - 8, height: STAIR_GAP + STAIR_ROW / 2 }}
+                style={{ left: left - STAIR_STEP + 8, top: top - STAIR_GAP, width: STAIR_STEP - 8, height: STAIR_GAP + STAIR_ROW / 2, opacity: rowOpacity }}
               />
             )}
             <div
               data-hint={blocked ? blockedHint(label) : undefined}
-              role={onPick ? 'radio' : undefined}
-              aria-checked={onPick ? selectedIndex === index : undefined}
-              aria-disabled={onPick && (disabled || blocked) ? true : undefined}
-              tabIndex={onPick && !disabled && !blocked ? 0 : undefined}
-              onClick={onPick && !disabled && !blocked ? () => onPick(index) : undefined}
-              onKeyDown={onPick && !disabled && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
-              className={`absolute flex items-center rounded-[4px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${selected ? `${animateSelection ? 'bg-transparent' : 'bg-brand-surface'} ${canHover ? 'hover:bg-brand-surface-hover' : ''}` : `bg-ui-control ${canHover ? 'hover:bg-ui-control-hover' : ''}`} ${onPick ? `box-border border-0 ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
-              style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
+              className={`absolute flex items-center rounded-[4px] ${selected ? 'bg-ui-control-hover' : 'bg-ui-control'} text-left text-[12px] font-bold leading-none text-ui-white`}
+              style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: rowOpacity }}
             >
-              <span className={`ml-[2.5px] whitespace-nowrap rounded-[4px] px-1.5 leading-[20px] ${lit ? 'bg-ui-panel text-ui-white' : 'bg-ui-white/20'}`}>
+              <span className="settings-depth-level-badge ml-[2.5px] whitespace-nowrap rounded-[4px] px-1.5 leading-[20px]">
                 {mark}{label}
               </span>
               {valueLabel && lit && !blocked && <span className="ml-2.5 truncate text-[13px] font-medium">{valueLabel}</span>}
@@ -511,7 +491,7 @@ function StairRows({
 const STAIR_HANDLE_BASE =
   'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-0 transition-[top,width,height,gap] duration-100'
 
-// 업종 분류 깊이(맵)·단계(그룹) — 손잡이는 둘 다 원형 하나다. 맵은 손잡이까지 위 칸이 함께 켜지고(누적), 그룹은 손잡이가 닿은 칸 하나만 켜진다(단일).
+// 업종 단계 선택은 모두 오른쪽 레일로 한다. 맵 깊이는 누적, 그래프·상위 업종 강조는 단일 단계로 고른다.
 function DepthStairSelect({
   depth,
   labels,
@@ -520,6 +500,7 @@ function DepthStairSelect({
   disabled = false,
   maxSelectableIndex,
   single = false,
+  blockedHint = label => `현재 분류에는\n${label} 단계가 없습니다.`,
 }: {
   depth: number
   labels: string[]
@@ -527,8 +508,9 @@ function DepthStairSelect({
   onChange: (index: number) => void
   disabled?: boolean
   maxSelectableIndex: number
-  // true면 손잡이가 닿은 칸 하나만 켠다(그룹 페이지: 막대 하나가 가리키는 단계). 기본은 손잡이가 닿은 칸까지 위 칸도 함께 켠다(맵의 깊이 제한).
+  // true면 각 단계 눈금을 표시해 하나의 단계를 고른다(그래프·상위 업종 강조). 기본은 맵에서 깊이를 누적 조절한다.
   single?: boolean
+  blockedHint?: (label: string) => string
 }) {
   const last = labels.length - 1
   const railRef = useRef<HTMLDivElement>(null)
@@ -538,7 +520,7 @@ function DepthStairSelect({
     const rail = railRef.current
     if (!rail) return
     const raw = stairRawIndex(rail.getBoundingClientRect(), clientY)
-    if (raw > maxSelectableIndex && raw <= last) rail.dataset.hint = `현재 분류에는\n${labels[raw]} 단계가 없습니다.`
+    if (raw > maxSelectableIndex && raw <= last) rail.dataset.hint = blockedHint(labels[raw])
     else delete rail.dataset.hint
   }
   const pickByPointer = (clientY: number) => {
@@ -563,57 +545,46 @@ function DepthStairSelect({
         litFrom={0}
         litTo={single ? last : depth - 1}
         maxSelectableIndex={maxSelectableIndex}
-        selectedIndex={single ? depth - 1 : undefined}
-        animateSelection={single}
-        onPick={single ? index => onChange(index) : undefined}
-        hoverPick={single}
-        disabled={disabled}
-        blockedHint={label => `현재 분류에는\n${label} 단계가 없습니다.`}
+        blockedHint={blockedHint}
+        selectedIndex={depth - 1}
+        selectedThroughIndex={single ? undefined : depth - 1}
+        dimUnselectedRows
       />
       <div
-        ref={railRef}
-        className="group absolute -right-[20px] top-0 h-full cursor-pointer touch-none"
-        style={{ width: STAIR_RAIL }}
-        onPointerDown={e => {
-          e.currentTarget.setPointerCapture(e.pointerId)
-          updateHint(e.clientY)
-          pickByPointer(e.clientY)
-        }}
-        onPointerMove={e => {
-          updateHint(e.clientY)
-          if (e.currentTarget.hasPointerCapture(e.pointerId)) pickByPointer(e.clientY)
-        }}
-        onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
-      >
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: single ? 0 : stairCenterOf(depth - 1) - stairCenterOf(0) }} />
-        {/* 단일 선택(그룹)은 막대 위 단계마다 눈금 점을 찍어 "세 자리 중 하나를 고른다"로 보이게 한다. 누적(맵)은 눈금 없이 이어진 막대가 채워진다. */}
-        {single && labels.map((tickLabel, index) => (
-          <span
-            key={tickLabel}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ui-border"
-            style={{ top: stairCenterOf(index), opacity: index > maxSelectableIndex ? 0.35 : 1 }}
-          />
-        ))}
-        <span
-          role="slider"
-          tabIndex={disabled ? -1 : 0}
-          aria-label={label}
-          aria-disabled={disabled || undefined}
-          aria-orientation="vertical"
-          aria-valuemin={1}
-          aria-valuemax={maxSelectableIndex + 1}
-          aria-valuenow={depth}
-          aria-valuetext={labels[depth - 1]}
-          onKeyDown={e => {
-            if (disabled) return
-            if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
-            else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
+          ref={railRef}
+          className="group absolute -right-[20px] top-0 h-full cursor-pointer touch-none"
+          style={{ width: STAIR_RAIL }}
+          onPointerDown={e => {
+            e.currentTarget.setPointerCapture(e.pointerId)
+            updateHint(e.clientY)
+            pickByPointer(e.clientY)
           }}
-          className={`${STAIR_HANDLE_BASE} size-3 bg-brand`}
-          style={{ top: stairCenterOf(depth - 1) }}
-        />
+          onPointerMove={e => {
+            updateHint(e.clientY)
+            if (e.currentTarget.hasPointerCapture(e.pointerId)) pickByPointer(e.clientY)
+          }}
+          onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
+        >
+          <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
+          <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: single ? 0 : stairCenterOf(depth - 1) - stairCenterOf(0) }} />
+          <span
+            role="slider"
+            tabIndex={disabled ? -1 : 0}
+            aria-label={label}
+            aria-disabled={disabled || undefined}
+            aria-orientation="vertical"
+            aria-valuemin={1}
+            aria-valuemax={maxSelectableIndex + 1}
+            aria-valuenow={depth}
+            aria-valuetext={labels[depth - 1]}
+            onKeyDown={e => {
+              if (disabled) return
+              if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); onChange(Math.max(0, depth - 2)) }
+              else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); onChange(Math.min(maxSelectableIndex, depth)) }
+            }}
+            className={`${STAIR_HANDLE_BASE} size-3 bg-brand`}
+            style={{ top: stairCenterOf(depth - 1) }}
+          />
       </div>
     </div>
   )
@@ -1138,7 +1109,7 @@ export function SettingsGroupDepthSection({
     <div className="settings-first-depth-level settings-auto-item text-sm">
       <div className="flex max-w-full items-center justify-between">
         <span className="flex items-center text-left text-ui-white">
-          <SettingTitle className="text-[15px]">업종 분류 단계</SettingTitle>
+          <span className="settings-plain-title text-[15px] font-medium leading-[22px]">업종 분류 단계</span>
         </span>
       </div>
       <SettingDescription>그래프 막대가 가리킬 단계 하나 선택</SettingDescription>
@@ -1185,18 +1156,8 @@ export function SettingsAverageModeSection({
       <div className={`settings-average-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>업종 등락률 계산 기준</SettingDescription>
         <div className="settings-control-inset mt-auto mb-auto max-w-full">
-          <div aria-hidden="true" className="grid grid-cols-2 items-center gap-[6px] text-ui-muted">
-            {options.map(option => (
-              <SettingsSectionIcon
-                key={option.label}
-                icon={option.icon}
-                className={`mx-auto ${option.value ? 'h-12 w-12' : 'h-[54px] w-[54px]'} ${avgChangeRateUseSimple === option.value ? 'text-brand' : 'text-ui-muted'}`}
-                strokeWidth={option.value ? 0.675 : 0.6}
-              />
-            ))}
-          </div>
-          <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative mt-2 grid grid-cols-2 gap-[6px]">
-            <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] bg-brand-surface" />
+          <div role="radiogroup" aria-label="등락률 기준" aria-disabled={!enabled} className="relative grid grid-cols-2 gap-[6px]">
+            <SlidingHighlight count={options.length} index={options.findIndex(option => option.value === avgChangeRateUseSimple)} className="rounded-[4px] bg-brand-surface" topInset={62} />
             {options.map(option => {
               const selected = avgChangeRateUseSimple === option.value
               return (
@@ -1207,9 +1168,18 @@ export function SettingsAverageModeSection({
                   aria-checked={selected}
                   onClick={() => onChange(option.value)}
                   disabled={!enabled}
-                  className={`settings-choice-hover relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap text-ui-white transition-colors duration-[500ms]`}
+                  className="group relative z-10 flex flex-col items-center border-0 bg-transparent p-0 text-ui-white disabled:cursor-not-allowed"
                 >
-                  {option.label}
+                  <span className="flex h-[54px] w-full items-center justify-center">
+                    <SettingsSectionIcon
+                      icon={option.icon}
+                      className={`mx-auto ${option.value ? 'h-12 w-12' : 'h-[54px] w-[54px]'} ${selected ? 'text-brand' : 'text-ui-muted group-hover:text-ui-white'}`}
+                      strokeWidth={option.value ? 0.675 : 0.6}
+                    />
+                  </span>
+                  <span className={`settings-average-option-label mt-2 flex min-h-[25px] w-full items-center justify-center rounded-[4px] px-1 py-1 text-[13px]/4 font-medium whitespace-nowrap ${selected ? '' : 'group-hover:text-ui-white'}`}>
+                    {option.label}
+                  </span>
                 </button>
               )
             })}
@@ -1295,7 +1265,7 @@ function SettingsTaxonomySelector({
         {TAXONOMY_SELECT_TITLE}
       </p>
       <div data-settings-side-toggle-bottom-anchor role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 gap-[6px]">
-        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[4px] bg-brand" />
+        <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[4px] bg-brand-surface" />
         {options.map(option => (
           <button
             key={option.label}
@@ -1303,7 +1273,7 @@ function SettingsTaxonomySelector({
             role="radio"
             aria-checked={isSelected(option.key)}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
-            className={`settings-choice-hover relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap transition-colors duration-[500ms] ${isSelected(option.key) ? 'text-ui-surface' : 'text-ui-white hover:text-ui-white'}`}
+            className="settings-choice-hover relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap text-ui-white transition-colors duration-[500ms]"
           >
             {option.label}
           </button>
@@ -2143,22 +2113,18 @@ export function SettingsTopPickSection({
               className="w-[42px] shrink-0"
             />
           </div>
-          <div role="radiogroup" aria-label="상위 업종 강조 단계" className="relative" style={{ height: stairHeight(depthLabelCount) }}>
-            <StairRows
-              railWidth={0}
-              labels={depthMetricLabels}
-              litFrom={0}
-              litTo={depthLabelCount - 1}
-              maxSelectableIndex={Math.min(topPickMaxSelectableDepth, selectableDepth) - 1}
-              blockedHint={label => selectableDepth < depthLabelCount
-                ? `현재 분류에는\n${label} 단계가 없습니다.`
-                : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
-              selectedIndex={topPickDepth}
-              onPick={onChangeTopPickDepth}
-              hoverPick
-              disabled={isTopPickDisabled || !topPickEnabled}
-            />
-          </div>
+          <DepthStairSelect
+            depth={topPickDepth + 1}
+            labels={depthMetricLabels}
+            label="상위 업종 강조 단계"
+            onChange={onChangeTopPickDepth}
+            disabled={isTopPickDisabled || !topPickEnabled}
+            maxSelectableIndex={Math.min(topPickMaxSelectableDepth, selectableDepth) - 1}
+            single
+            blockedHint={label => selectableDepth < depthLabelCount
+              ? `현재 분류에는\n${label} 단계가 없습니다.`
+              : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
+          />
         </div>
       </div>
       {isTopPickDisabled && (
@@ -2603,12 +2569,12 @@ export default function SettingsPanel({
                   try { localStorage.setItem(tabStorageKey, section.id) } catch { /* 저장소 접근이 막혀도 탭 전환은 유지한다. */ }
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-[5px] text-[12px] leading-tight transition-[color,opacity] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/55 hover:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? selected ? 'text-[var(--sub-purple)]' : 'text-[var(--sub-purple)] opacity-55 hover:opacity-100 focus-visible:opacity-100' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
+                    ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/50 hover:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? selected ? 'text-[var(--sub-purple)]' : 'text-[var(--sub-purple)] opacity-50 hover:opacity-100 focus-visible:opacity-100' : selected ? 'text-brand' : 'text-ui-muted hover:text-ui-white'
                 }`}
               >
                 {icon ? <SettingsSectionIcon
                   icon={icon}
-                  className={`${SETTINGS_PANEL_TAB_ICON_CLASS} transition-colors ${icon === 'industry' ? 'scale-90' : icon === 'ad' ? 'scale-[1.2]' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/55 group-hover:text-admin-only group-focus-visible:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
+                  className={`${SETTINGS_PANEL_TAB_ICON_CLASS} transition-colors ${icon === 'industry' ? 'scale-90' : icon === 'ad' ? 'scale-[1.2]' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/50 group-hover:text-admin-only group-focus-visible:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
                   strokeWidth={icon === 'industry' ? 1.22 : icon === 'ad' ? 0.92 : 1.1}
                 /> : <span aria-hidden="true" className={`${SETTINGS_PANEL_TAB_ICON_CLASS} shrink-0`} />}
                 <span className="max-w-full truncate font-bold">{section.id === 'plain' ? section.label : sectionLabelOverrides?.[section.id] ?? section.label}</span>

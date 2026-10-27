@@ -2,8 +2,8 @@ import { useEffect, useRef, type RefObject } from 'react'
 
 // 홈 화면 항목 끌기(PointerSensor)와 같은 시작 거리다.
 const DRAG_START_DISTANCE = 5
-// 홈 화면 항목 끌기와 같은 효과 — 끄는 동안 끌리는 항목이 반투명(60%)으로 맨 위에 떠서 포인터를 따라 움직인다.
-const DRAG_OPACITY = '0.6'
+// 홈 화면 항목 끌기와 같은 효과 — 끄는 동안 끌리는 항목이 반투명(70%)으로 맨 위에 떠서 포인터를 따라 움직인다.
+const DRAG_OPACITY = '0.7'
 
 export interface StockDrop {
   stockCode: string
@@ -79,7 +79,7 @@ export function useStockDrag(containerRef: RefObject<HTMLElement | null>, enable
         ghost.style.opacity = DRAG_OPACITY
         ghost.style.pointerEvents = 'none'
         ghost.style.transition = 'none'
-        ghost.style.boxShadow = '0 4px 14px rgba(0,0,0,0.55)'
+        ghost.style.boxShadow = '0 4px 14px rgba(0,0,0,0.5)'
         document.body.append(ghost)
         session.ghost = ghost
         document.body.style.userSelect = 'none'

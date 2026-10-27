@@ -167,7 +167,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   basis === option.value
                     ? 'bg-[var(--brand-surface)]'
                     : option.locked
-                      ? 'bg-transparent cursor-not-allowed opacity-40'
+                      ? 'bg-transparent cursor-not-allowed opacity-35'
                       : 'bg-transparent hover:bg-ui-white/10'
                 }`}
               >

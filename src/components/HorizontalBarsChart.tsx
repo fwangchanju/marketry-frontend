@@ -17,7 +17,7 @@ export default function HorizontalBarsChart({ rows, ariaLabel, labelWidth = 64 }
         <div key={row.key} className="flex items-center gap-3">
           <span className={`shrink-0 text-right text-sm font-medium ${row.textClass}`} style={{ width: labelWidth }}>{row.label}</span>
           <span className="flex h-5 min-w-0 flex-1 items-center gap-2">
-            <span className={`block h-full min-w-px rounded-[2px] ${row.barClass}`} style={{ flexBasis: 0, flexGrow: row.count, opacity: row.count > 0 ? 1 : 0.25 }} />
+      <span className={`block h-full min-w-px rounded-[2px] ${row.barClass}`} style={{ flexBasis: 0, flexGrow: row.count, opacity: row.count > 0 ? 1 : 0.2 }} />
             {row.count > 0 && <span className="shrink-0 whitespace-nowrap text-xs font-medium tabular-nums text-ui-text">{formatCount(row.count)}</span>}
             <span aria-hidden="true" className="min-w-0" style={{ flexBasis: 0, flexGrow: Math.max(0, max - row.count) }} />
           </span>

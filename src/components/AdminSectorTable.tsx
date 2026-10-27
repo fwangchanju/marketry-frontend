@@ -106,7 +106,7 @@ function DraggableSectorHandle({
     data: { sectorId, parentId },
     disabled: !enabled,
   })
-  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center ${DRAG_CONTROL_CLASS} disabled:cursor-not-allowed disabled:opacity-35 ${isDragging ? 'opacity-30' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
+  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center ${DRAG_CONTROL_CLASS} disabled:cursor-not-allowed disabled:opacity-35 ${isDragging ? 'opacity-35' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
 }
 
 // 끄는 중 마우스의 세로 위치 — 손잡이를 열 안으로 가두는 제한(keepInColumnVertically) 때문에 손잡이 위치는 맨 위·맨 아래에서 멈추므로,

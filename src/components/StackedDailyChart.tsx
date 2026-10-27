@@ -45,7 +45,7 @@ export default function StackedDailyChart({ rows, ariaLabelPrefix = '총 방문�
               <span className="text-xs leading-none tabular-nums text-ui-text">{total === 0 ? '' : formatCount(total)}</span>
               <span
                 className="flex w-full flex-col justify-end overflow-hidden rounded-[2px]"
-                style={{ height: `${Math.max(total > 0 ? 6 : 2, (total / max) * 100)}%`, maxWidth: 40, maxHeight: 'calc(100% - 40px)', backgroundColor: total === 0 ? 'var(--brand)' : undefined, opacity: total > 0 ? 1 : 0.25 }}
+            style={{ height: `${Math.max(total > 0 ? 6 : 2, (total / max) * 100)}%`, maxWidth: 40, maxHeight: 'calc(100% - 40px)', backgroundColor: total === 0 ? 'var(--brand)' : undefined, opacity: total > 0 ? 1 : 0.2 }}
               >
                 <span style={{ flexGrow: row.members, backgroundColor: MEMBER_COLOR }} />
                 <span style={{ flexGrow: row.guests, backgroundColor: GUEST_COLOR }} />
