@@ -6,7 +6,7 @@ const siteUrl = 'https://marketry.co.kr'
 const pages: Record<string, { title: string; description: string }> = {
   '/home': {
     title: 'MARKETRY | 코스피·코스닥 주식 시장 지도',
-    description: '코스피·코스닥 종목과 업종의 움직임을 시장 지도와 그래프로 살펴보세요. MARKETRY에서 관심 시장의 흐름을 한눈에 확인하고 업종 분류를 직접 설계할 수 있습니다.',
+    description: '코스피·코스닥 주식 히트맵에서 업종별 등락과 시가총액 흐름을 살펴보세요. 모바일에서는 대분류와 중분류를 따라 종목 흐름을 확인하고, PC에서는 전체 시장 지도를 볼 수 있습니다.',
   },
   '/map/kospi': {
     title: '코스피 주식 히트맵·업종 지도 | MARKETRY',
