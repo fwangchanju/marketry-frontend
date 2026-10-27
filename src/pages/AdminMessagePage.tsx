@@ -33,7 +33,7 @@ import { isAdminSession } from '@/utils/adminAccess'
 
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
 const SAMPLE_TIME = '오후 8:00'
-const SAMPLE_CAPTION = '헬스케어 +1.74% / S7 +0.99%'
+const SAMPLE_CAPTION = '헬스케어 +1.74%\nS7 +0.99%'
 
 function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
   return {
@@ -214,7 +214,7 @@ export default function AdminMessagePage() {
                             <img src={sampleMapImage} alt="텔레그램 발송 이미지 예시 — 시장 지도" className="block h-auto w-full" draggable={false} />
                           </div>
                           <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
-                            <p className="m-0 text-lg leading-snug text-ui-white">{SAMPLE_CAPTION}</p>
+                            <p className="m-0 whitespace-pre-line text-lg leading-snug text-ui-white">{SAMPLE_CAPTION}</p>
                             <span className="flex shrink-0 items-center gap-1.5 text-lg text-ui-text">
                               <svg aria-hidden="true" viewBox="0 0 24 24" className="size-[1em] fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                               2
