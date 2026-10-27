@@ -18,6 +18,7 @@ import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import { STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
 import StockSortHeader, { type HeaderSortState } from '@/components/StockSortHeader'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
+import ScrollArea from '@/components/ScrollArea'
 import { compareKoreanText } from '@/utils/koreanSort'
 
 interface Props {
@@ -824,9 +825,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   <div className={headerClass} onClick={() => toggleHeaderSort(index)} style={{ height: STOCK_HEADER_ROW_PX }}>{headerContent}</div>
                 )
               })()}
-              <div className={`min-h-0 flex-1 overflow-auto scrollbar-hide ${index < 2 ? 'border-r border-ui-border' : ''}`}>
+              <ScrollArea overlay scrollLabel={`${label} 업종 목록`} className={`min-h-0 flex-1 ${index < 2 ? 'border-r border-ui-border' : ''}`}>
                 <table className="nes-table is-dark custom-page-table custom-sector-table w-full text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><tbody>{columnRows[index].map(renderRow)}</tbody></table>
-              </div>
+              </ScrollArea>
             </div>
           ))}
           {/* 업종이 하나도 없으면 거래소·MARKETRY 표와 같은 안내 글을 가운데에 보여준다. */}
