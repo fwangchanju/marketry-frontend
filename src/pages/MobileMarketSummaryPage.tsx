@@ -208,7 +208,7 @@ export default function MobileMarketSummaryPage() {
         <header className="border-b border-ui-border pb-4">
           <p className="text-xs font-bold tracking-wide text-brand">MARKETRY</p>
           <h1 className="mt-1 text-2xl font-bold leading-tight">국내 주식 시장 지도</h1>
-          <p className="mt-2 text-sm leading-relaxed text-ui-text">요약지도에서 업종을 선택해 중분류와 종목 흐름을 차례로 살펴보세요.</p>
+          <p className="mt-2 text-sm leading-relaxed text-ui-text">함께 움직이는 종목을 내 기준으로 묶고, 대형주에 가려진 흐름까지 살펴보세요.</p>
         </header>
 
         <nav aria-label="시장 선택" className="mt-4 grid grid-cols-3 gap-2">
