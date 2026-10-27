@@ -1,8 +1,11 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { usePopupBounds } from '@/hooks/usePopupBounds'
+import { useTreemapColorScale } from '@/hooks/useTreemapColorScale'
+import { resolveTreemapColor } from '@/utils/treemapColorScale'
+import { KOREAN_PUBLIC_HOLIDAY_DATES } from '@/utils/koreanPublicHolidayDates'
 
 type CalendarView = 'day' | 'month' | 'year'
 type ShownMonth = { year: number; monthIndex: number }
@@ -43,24 +46,37 @@ export default function BannerDatePicker({
   displayValue,
   selectedDate,
   disabled,
+  dateAnimationKey,
   onSelect,
 }: {
   label: string
   displayValue: string
   selectedDate: string | null
   disabled: boolean
+  dateAnimationKey?: number
   onSelect: (date: string) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [isDateHighlighted, setIsDateHighlighted] = useState(false)
+  const previousDateAnimationKey = useRef(dateAnimationKey)
   const [view, setView] = useState<CalendarView>('day')
   const [shownMonth, setShownMonth] = useState<ShownMonth>(() => parseDate(selectedDate) ?? parseDate(getKstToday())!)
   const [pickerYear, setPickerYear] = useState(shownMonth.year)
   const [decadeStart, setDecadeStart] = useState(Math.floor(shownMonth.year / 10) * 10)
+  const { data: colorScale } = useTreemapColorScale()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false, false)
   const popupBounds = usePopupBounds(isOpen, position !== null, triggerRef, popupRef, POPUP_WIDTH)
+
+  useEffect(() => {
+    if (dateAnimationKey === undefined || previousDateAnimationKey.current === dateAnimationKey) return
+    previousDateAnimationKey.current = dateAnimationKey
+    setIsDateHighlighted(true)
+    const timer = window.setTimeout(() => setIsDateHighlighted(false), 1500)
+    return () => window.clearTimeout(timer)
+  }, [dateAnimationKey])
 
   const toggleCalendar = () => {
     if (disabled) return
@@ -95,9 +111,17 @@ export default function BannerDatePicker({
   const nextMonth = moveMonth(shownMonth, 1)
   const canMovePrevious = currentMonthKey > `${MIN_YEAR}-01`
   const canMoveNext = nextMonth.year <= MAX_YEAR
+  const holidayColor = colorScale ? resolveTreemapColor(8, colorScale) : undefined
 
   const selectDay = (day: number) => {
     onSelect(toDateKey(shownMonth.year, shownMonth.monthIndex, day))
+    setIsOpen(false)
+  }
+
+  const selectToday = () => {
+    const today = getKstToday()
+    onSelect(today)
+    setShownMonth(parseDate(today)!)
     setIsOpen(false)
   }
 
@@ -123,13 +147,14 @@ export default function BannerDatePicker({
         className={`relative flex h-[25px] w-[140px] shrink-0 items-center rounded-[4px] border-0 pl-6 pr-1 text-left text-[13px]/[16px] font-medium tabular-nums text-ui-white transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-35 ${isOpen ? 'bg-brand-surface hover:bg-brand-surface-hover' : isHovered ? 'bg-ui-control-hover' : 'bg-[var(--ui-control)]'}`}
       >
         <CalendarIcon aria-hidden="true" className="absolute left-[5px] h-3.5 w-3.5 text-ui-white" />
-        <span className="truncate">{displayValue || 'yyyy. mm. dd.'}</span>
+        <span className={`truncate transition-colors duration-300 ${isDateHighlighted ? 'text-[var(--brand)]' : ''}`}>{displayValue || 'yyyy. mm. dd.'}</span>
       </button>
       {isOpen && position && createPortal(
         <div
           ref={popupRef}
           role="dialog"
           aria-label={`${label} 날짜 선택 달력`}
+          data-banner-date-picker=""
           style={{
             position: 'fixed',
             top: popupBounds?.top ?? position.top + (position.openUpward ? -4 : 4),
@@ -142,6 +167,15 @@ export default function BannerDatePicker({
           className="z-50 rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
           onClick={event => event.stopPropagation()}
         >
+          <div className="mb-2 flex justify-end border-b border-ui-border pb-2">
+            <button
+              type="button"
+              onClick={selectToday}
+              className="flex h-6 shrink-0 items-center justify-center rounded border-0 bg-ui-control px-2.5 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
+            >
+              오늘
+            </button>
+          </div>
           <div className="relative w-60 shrink-0">
             {view === 'day' && (
               <>
@@ -178,19 +212,22 @@ export default function BannerDatePicker({
                       if (day === null) return <span key={`blank-${index}`} />
                       const date = toDateKey(shownMonth.year, shownMonth.monthIndex, day)
                       const isToday = date === todayDate
+                      const isSelected = date === selectedDate
                       const weekday = (firstWeekday + day - 1) % 7
+                      const isHoliday = weekday === 0 || weekday === 6 || KOREAN_PUBLIC_HOLIDAY_DATES.has(date)
                       return (
                         <div key={date} className="my-0.5 flex h-7 items-center justify-center">
                           <button
                             type="button"
-                            aria-pressed={date === selectedDate}
+                            aria-pressed={isSelected}
                             aria-current={isToday ? 'date' : undefined}
                             onClick={() => selectDay(day)}
-                            className={`flex h-7 w-7 items-center justify-center rounded-full border-0 ${
-                              date === selectedDate
-                                ? isToday ? 'bg-brand font-semibold text-ui-surface' : 'bg-brand-surface font-semibold text-ui-white'
-                                : `bg-transparent hover:bg-ui-control ${isToday ? 'text-brand' : weekday === 0 || weekday === 6 ? 'text-ui-muted' : 'text-ui-white'}`
+                            className={`relative flex h-7 w-7 items-center justify-center rounded-full border border-transparent ${
+                              isSelected
+                                ? 'bg-brand font-semibold text-ui-surface'
+                                : isToday ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : `bg-transparent hover:bg-brand-surface ${isHoliday ? holidayColor ? '' : 'text-ui-muted' : 'text-ui-white'}`
                             }`}
+                            style={!isSelected && !isToday && isHoliday && holidayColor ? { color: holidayColor } : undefined}
                           >
                             {day}
                           </button>
@@ -210,7 +247,7 @@ export default function BannerDatePicker({
                 </div>
                 <div role="group" aria-label="월 선택" className="grid min-h-[13.5rem] grid-cols-4 content-center gap-y-3 font-roboto-latin tabular-nums">
                   {Array.from({ length: 12 }, (_, monthIndex) => (
-                    <button key={monthIndex} type="button" aria-pressed={pickerYear === shownMonth.year && monthIndex === shownMonth.monthIndex} onClick={() => { setShownMonth({ year: pickerYear, monthIndex }); setView('day') }} className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${pickerYear === shownMonth.year && monthIndex === shownMonth.monthIndex ? 'bg-brand-surface font-semibold text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-control'}`}>{monthIndex + 1}월</button>
+                    <button key={monthIndex} type="button" aria-pressed={pickerYear === shownMonth.year && monthIndex === shownMonth.monthIndex} onClick={() => { setShownMonth({ year: pickerYear, monthIndex }); setView('day') }} className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${pickerYear === shownMonth.year && monthIndex === shownMonth.monthIndex ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : 'bg-transparent text-ui-white hover:bg-brand-surface'}`}>{monthIndex + 1}월</button>
                   ))}
                 </div>
               </>
@@ -224,7 +261,7 @@ export default function BannerDatePicker({
                 </div>
                 <div role="group" aria-label="년 선택 목록" className="grid min-h-[13.5rem] grid-cols-4 content-center gap-y-3 font-roboto-latin tabular-nums">
                   {Array.from({ length: 12 }, (_, offset) => decadeStart - 1 + offset).map(year => (
-                    <button key={year} type="button" disabled={year < MIN_YEAR || year > MAX_YEAR} aria-pressed={year === shownMonth.year} onClick={() => { setPickerYear(year); setDecadeStart(Math.floor(year / 10) * 10); setView('month') }} className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${year === shownMonth.year ? 'bg-brand-surface font-semibold text-ui-white' : year < MIN_YEAR || year > MAX_YEAR ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-ui-control'}`}>{year}</button>
+                    <button key={year} type="button" disabled={year < MIN_YEAR || year > MAX_YEAR} aria-pressed={year === shownMonth.year} onClick={() => { setPickerYear(year); setDecadeStart(Math.floor(year / 10) * 10); setView('month') }} className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${year === shownMonth.year ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : year < MIN_YEAR || year > MAX_YEAR ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-brand-surface'}`}>{year}</button>
                   ))}
                 </div>
               </>

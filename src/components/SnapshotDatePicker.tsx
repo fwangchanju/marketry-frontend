@@ -70,7 +70,7 @@ function MonthChoice({ market, month, isCurrent, isAllowed, onChoose }: { market
       aria-pressed={isCurrent}
       onClick={onChoose}
       className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${
-        isCurrent ? 'bg-brand-surface font-semibold text-ui-white' : disabled ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-ui-control'
+        isCurrent ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-brand-surface'
       }`}
     >
       {month.monthIndex + 1}월
@@ -243,14 +243,16 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                     aria-pressed={selected}
                     aria-current={isToday ? 'date' : undefined}
                     onClick={() => onPick(date, closingTimeByDate.get(date))}
-                    className={`relative flex h-7 w-7 items-center justify-center rounded-full border-0 ${
+                    className={`relative flex h-7 w-7 items-center justify-center rounded-full border border-transparent ${
                       selected
-                        ? isToday ? 'bg-brand font-semibold text-ui-surface' : 'bg-brand-surface font-semibold text-ui-white'
+                        ? 'bg-brand font-semibold text-ui-surface'
+                        : isToday
+                          ? `bg-ui-control font-semibold text-ui-white hover:bg-brand-surface ${selectable ? '' : 'cursor-not-allowed'}`
                         : selectable
-                          ? `bg-transparent hover:bg-ui-control ${isToday ? 'text-brand' : 'text-ui-white'}`
-                          : `cursor-not-allowed bg-transparent ${isToday ? 'text-brand' : isHoliday && holidayColor ? '' : 'text-ui-muted'}`
+                          ? 'bg-transparent text-ui-white hover:bg-brand-surface'
+                          : `cursor-not-allowed bg-transparent ${isHoliday && holidayColor ? '' : 'text-ui-muted'}`
                     }`}
-                    style={!selected && isHoliday && holidayColor ? { color: holidayColor } : undefined}
+                    style={!selected && !isToday && isHoliday && holidayColor ? { color: holidayColor } : undefined}
                   >
                     {day}
                   </button>
@@ -314,7 +316,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                   aria-pressed={year === month.year}
                   onClick={() => { setPickerYear(year); setView('month') }}
                   className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${
-                    year === month.year ? 'bg-brand-surface font-semibold text-ui-white' : disabled ? 'cursor-not-allowed bg-transparent text-ui-surface' : isOutsideDecade ? 'bg-transparent text-ui-muted hover:bg-ui-control' : 'bg-transparent text-ui-white hover:bg-ui-control'
+                    year === month.year ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-surface' : isOutsideDecade ? 'bg-transparent text-ui-muted hover:bg-brand-surface' : 'bg-transparent text-ui-white hover:bg-brand-surface'
                   }`}
                 >
                   {year}

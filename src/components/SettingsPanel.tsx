@@ -429,6 +429,7 @@ function StairRows({
   valueLabel,
   selectedIndex,
   onPick,
+  hoverPick = false,
   disabled = false,
   railWidth = STAIR_RAIL,
 }: {
@@ -442,6 +443,7 @@ function StairRows({
   // 칸을 눌러 하나만 고르는 모드(상위 업종 강조): 고른 칸에 청록 프레임이 쳐지고, 선택할 수 없는 칸은 눌러도 안 된다.
   selectedIndex?: number
   onPick?: (index: number) => void
+  hoverPick?: boolean
   disabled?: boolean
   railWidth?: number
 }) {
@@ -449,6 +451,7 @@ function StairRows({
     <>
       {labels.map((label, index) => {
         const blocked = index > maxSelectableIndex
+        const canHover = hoverPick && !disabled && !blocked
         const lit = index >= litFrom && index <= litTo
         const top = index * (STAIR_ROW + STAIR_GAP)
         const left = index * STAIR_STEP
@@ -474,7 +477,7 @@ function StairRows({
               tabIndex={onPick && !disabled && !blocked ? 0 : undefined}
               onClick={onPick && !disabled && !blocked ? () => onPick(index) : undefined}
               onKeyDown={onPick && !disabled && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
-              className={`absolute flex items-center rounded-[4px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? 'bg-brand-surface' : 'bg-ui-control'} ${onPick ? `box-border border-0 ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
+              className={`absolute flex items-center rounded-[4px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? `bg-brand-surface ${canHover ? 'hover:bg-brand-surface-hover' : ''}` : `bg-ui-control ${canHover ? 'hover:bg-ui-control-hover' : ''}`} ${onPick ? `box-border border-0 ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
               style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
               <span className={`ml-[2.5px] whitespace-nowrap rounded-[4px] px-1.5 leading-[20px] ${lit ? 'bg-ui-panel text-ui-white' : 'bg-ui-white/20'}`}>
@@ -2131,6 +2134,7 @@ export function SettingsTopPickSection({
                 : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
               selectedIndex={topPickDepth}
               onPick={onChangeTopPickDepth}
+              hoverPick
               disabled={isTopPickDisabled || !topPickEnabled}
             />
           </div>

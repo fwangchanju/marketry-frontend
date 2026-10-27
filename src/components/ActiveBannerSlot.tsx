@@ -1,7 +1,18 @@
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getActiveBanner } from '@/api/adminBanners'
+import { getActiveBanner, type ActiveBanner } from '@/api/adminBanners'
 import { BannerImage, NoticeBanner } from '@/components/BannerContent'
-import AdBannerSlot from '@/components/AdBannerSlot'
+import AdBannerSlot, { type AdBannerSize } from '@/components/AdBannerSlot'
+
+const SLIDE_DURATION_MS = 450
+
+function bannerContent(banner: ActiveBanner, size: AdBannerSize) {
+  return banner.type === 'AD' && banner.imageUrl ? (
+    <BannerImage src={banner.imageUrl} title={banner.title ?? '광고'} size={size} linkUrl={banner.linkUrl} />
+  ) : banner.type === 'NOTICE' ? (
+    <NoticeBanner title={banner.title ?? '공지'} text={banner.text ?? ''} linkUrl={banner.linkUrl} size={size} textScalePercent={banner.textScalePercent} textBold={banner.textBold} />
+  ) : null
+}
 
 function refreshInterval(nextRefreshAt: string | null | undefined) {
   if (!nextRefreshAt) return 60_000
@@ -20,14 +31,28 @@ export default function ActiveBannerSlot() {
     staleTime: 0,
     refetchInterval: query => refreshInterval(query.state.data?.nextRefreshAt),
   })
-  if (!data?.active) return null
+  const [transition, setTransition] = useState<{ current: ActiveBanner | undefined; outgoing: ActiveBanner | null }>(() => ({ current: data, outgoing: null }))
+  if (transition.current !== data) {
+    const outgoing = transition.current?.active && data?.active && transition.current.id !== data.id ? transition.current : null
+    setTransition({ current: data, outgoing })
+  }
+  useEffect(() => {
+    if (!transition.outgoing) return
+    const timer = window.setTimeout(() => setTransition(current => ({ ...current, outgoing: null })), SLIDE_DURATION_MS)
+    return () => window.clearTimeout(timer)
+  }, [transition.outgoing])
+
+  const banner = transition.current
+  const outgoingBanner = transition.outgoing
+  if (!banner?.active) return null
   return (
     <AdBannerSlot>
-      {size => data.type === 'AD' && data.imageUrl ? (
-        <BannerImage src={data.imageUrl} title={data.title ?? '광고'} size={size} linkUrl={data.linkUrl} />
-      ) : data.type === 'NOTICE' ? (
-        <NoticeBanner title={data.title ?? '공지'} text={data.text ?? ''} linkUrl={data.linkUrl} size={size} textScalePercent={data.textScalePercent} textBold={data.textBold} />
-      ) : null}
+      {size => (
+        <div className="relative h-full w-full overflow-hidden">
+          {outgoingBanner && <div className="active-banner-slide-out absolute inset-0">{bannerContent(outgoingBanner, size)}</div>}
+          <div className={outgoingBanner ? 'active-banner-slide-in absolute inset-0' : 'h-full w-full'}>{bannerContent(banner, size)}</div>
+        </div>
+      )}
     </AdBannerSlot>
   )
 }
