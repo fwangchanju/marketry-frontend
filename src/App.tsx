@@ -8,6 +8,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
 import SourcePage from './pages/SourcePage'
 import ContactPage from './pages/ContactPage'
+import StockHeatmapGuidePage from './pages/StockHeatmapGuidePage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
@@ -91,7 +92,7 @@ function AdminRouteGuard() {
 function MobileGate({ children }: { children: ReactNode }) {
   const isNarrow = useIsNarrowScreen()
   const { pathname } = useLocation()
-  if (isNarrow && pathname !== '/privacy' && pathname !== '/info/privacy') return <MobileNotice />
+  if (isNarrow && pathname !== '/privacy' && pathname !== '/info/privacy' && pathname !== '/guide/stock-heatmap') return <MobileNotice />
   return <>{children}</>
 }
 
@@ -136,6 +137,7 @@ export default function App() {
           <Route path="/info/terms" element={<TermsPage />} />
           <Route path="/info/source" element={<SourcePage />} />
           <Route path="/info/contact" element={<ContactPage />} />
+          <Route path="/guide/stock-heatmap" element={<StockHeatmapGuidePage />} />
           {/* 이전 주소와 Google OAuth에 등록된 /privacy 주소도 새 정보 경로로 보낸다. */}
           <Route path="/privacy" element={<Navigate to="/info/privacy" replace />} />
           <Route path="/terms" element={<Navigate to="/info/terms" replace />} />
