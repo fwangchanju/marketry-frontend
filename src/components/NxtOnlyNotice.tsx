@@ -57,7 +57,7 @@ function Notice({ active, window, ready, nodes }: Props) {
         <p className="mt-3 break-keep text-sm leading-relaxed text-ui-background">
           {window.label.replace(/ /g, '')}에는 NXT 종목만 표시됩니다.
           <br />
-          <span className="text-[var(--ui-control)]">현재 {toCount(stockTotal)}종목이며, 설정에 따라 다를 수 있습니다.</span>
+          <span className="text-[var(--ui-control)]">(총 {toCount(stockTotal)}종목이며, 설정에 따라 다를 수 있습니다.)</span>
           {window.fromMinutes >= 12 * 60 && <><br />종가 확인은 상단 애프터 마켓 배지 우측 버튼을 이용하세요.</>}
         </p>
         <div className="mt-auto flex justify-end pt-3">
