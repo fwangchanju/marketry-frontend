@@ -484,9 +484,11 @@ a { color: var(--accent-light); text-decoration: none; }
 .nes-btn:active:not(.is-disabled)::after { box-shadow: none; }
 
 /* Keep focus styling only for visible text-entry controls. Other page controls remain usable
-   but do not show the browser/NES focus outline or focus ring. */
+   but do not show the browser/NES focus outline or focus ring. The banner calendar is portaled outside #root. */
 #root :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus,
 #root :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus-visible,
+[data-banner-date-picker] :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus,
+[data-banner-date-picker] :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus-visible,
 #root :where(input[type='checkbox'], input[type='radio'], input[type='range'], input[type='color'], input[type='button'], input[type='submit'], input[type='reset']):focus,
 #root :where(input[type='checkbox'], input[type='radio'], input[type='range'], input[type='color'], input[type='button'], input[type='submit'], input[type='reset']):focus-visible {
   outline: none !important;
@@ -732,6 +734,39 @@ a { color: var(--accent-light); text-decoration: none; }
   .settings-panel-leave-left {
     animation: none;
   }
+}
+
+@keyframes active-banner-slide-out {
+  from { transform: translateY(0); }
+  to { transform: translateY(-100%); }
+}
+
+@keyframes active-banner-slide-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes active-banner-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes active-banner-fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+.active-banner-slide-out {
+  animation: active-banner-slide-out 450ms ease-in-out both;
+}
+
+.active-banner-slide-in {
+  animation: active-banner-slide-in 450ms ease-in-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .active-banner-slide-out { animation: active-banner-fade-out 300ms ease-out both; }
+  .active-banner-slide-in { animation: active-banner-fade-in 300ms ease-out both; }
 }
 
 /* 설정 창 전체(스크롤 영역 밖인 하단 Basis 선택 포함)의 선택 버튼(radiogroup)은 글자가 두 줄이 되어도(줄바꿈 또는 글자가 길어져 넘칠 때) 줄 간격이 같도록 한곳에서 정한다.

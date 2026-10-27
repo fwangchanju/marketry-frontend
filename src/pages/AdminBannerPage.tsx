@@ -30,6 +30,7 @@ import BannerTimePicker from '@/components/BannerTimePicker'
 const INPUT_CLASS = 'h-[25px] w-full min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:border-brand placeholder:text-ui-muted disabled:opacity-35'
 const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35'
 const EDITOR_ACTION_CLASS = 'flex h-[25px] w-[90px] shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 px-1.5 text-[13px]/4 font-semibold text-ui-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-35'
+type SaveMutationVariables = { draft: BannerDraftInput; wasConfirmed: boolean }
 
 function kstInputValue(epoch = Date.now()): string {
   return new Date(epoch).toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T').slice(0, 16)
@@ -61,7 +62,7 @@ function formatTimePart(value: string): string {
   return match?.[1] ?? ''
 }
 
-function DateTimeField({ label, value, disabled, onChange }: { label: string; value: string; disabled: boolean; onChange: (value: string) => void }) {
+function DateTimeField({ label, value, disabled, onChange, dateAnimationKey }: { label: string; value: string; disabled: boolean; onChange: (value: string) => void; dateAnimationKey?: number }) {
   const selectedDate = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0] ?? null
 
   return (
@@ -71,6 +72,7 @@ function DateTimeField({ label, value, disabled, onChange }: { label: string; va
         displayValue={formatDatePart(value)}
         selectedDate={selectedDate}
         disabled={disabled}
+        dateAnimationKey={dateAnimationKey}
         onSelect={date => {
           const nextValue = `${date}T00:00`
           onChange(nextValue)
@@ -365,8 +367,8 @@ export default function AdminBannerPage() {
       : isScheduledStart(draft.startsAt) ? '예약' : '게시'
 
   const saveMutation = useMutation({
-    mutationFn: async (input: BannerDraftInput) => {
-      const item = await saveBannerDraft(input)
+    mutationFn: async ({ draft }: SaveMutationVariables) => {
+      const item = await saveBannerDraft(draft)
       if (item.status !== 'DRAFT') return { item, publishError: null }
       try {
         return { item: await approveBanner(item.id), publishError: null }
@@ -375,7 +377,7 @@ export default function AdminBannerPage() {
       }
     },
     meta: { skipGlobalError: true },
-    onSuccess: async ({ item, publishError }) => {
+    onSuccess: async ({ item, publishError }, variables) => {
       setSavedCampaigns(value => ({ ...value, [item.type]: item }))
       setDrafts(value => ({ ...value, [item.type]: { ...value[item.type], id: item.id, linkUrl: item.linkUrl ?? 'https://', file: null } }))
       setSavedFlags(value => ({ ...value, [item.type]: true }))
@@ -390,20 +392,9 @@ export default function AdminBannerPage() {
         void appAlert('내용은 대기 목록에 보관했습니다. 대기 목록에서 다시 게시하거나 예약해 주세요.', { title: '게시 실패' })
         return
       }
-      const wasEnded = selectedCampaign?.status === 'ENDED'
-      const wasLive = selectedCampaign?.status === 'LIVE'
-      const wasScheduled = selectedCampaign?.status === 'SCHEDULED'
-      const message = item.status === 'SCHEDULED'
-        ? wasEnded ? '배너를 다시 예약했습니다.' : wasScheduled ? '예약 배너 내용을 저장했습니다.' : '배너 게시를 예약했습니다.'
-        : item.status === 'LIVE'
-          ? wasEnded ? '배너를 다시 게시했습니다.' : wasLive ? '배너 내용을 저장했습니다.' : '배너를 게시했습니다.'
-          : '배너 내용을 저장했습니다.'
-      const title = item.status === 'SCHEDULED'
-        ? wasEnded ? '재예약 완료' : wasScheduled ? '예약 내용 저장 완료' : '예약 완료'
-        : item.status === 'LIVE'
-          ? wasEnded ? '다시 게시 완료' : wasLive ? '저장 완료' : '게시 완료'
-          : '저장 완료'
-      void appAlert(message, { title })
+      if (variables.wasConfirmed) return
+      const message = item.status === 'SCHEDULED' ? '예약 배너 내용을 저장했습니다.' : '배너 내용을 저장했습니다.'
+      void appAlert(message, { title: '저장 완료' })
     },
     onError: error => {
       void client.invalidateQueries({ queryKey: ['admin-banners'] })
@@ -424,7 +415,6 @@ export default function AdminBannerPage() {
         client.invalidateQueries({ queryKey: ['admin-banners'] }),
         client.invalidateQueries({ queryKey: ['banners', 'active'] }),
       ])
-      void appAlert('예약을 취소했습니다. 자동 게시가 중단됐으며 배너는 미예약 상태로 보관했습니다.', { title: '예약 취소 완료' })
     },
     onError: error => void appAlert(isAxiosError(error) ? String(error.response?.data?.detail ?? error.response?.data?.message ?? '예약을 취소하지 못했습니다. 다시 시도해 주세요.') : '예약을 취소하지 못했습니다. 다시 시도해 주세요.', { title: '예약 취소 실패' }),
   })
@@ -443,7 +433,6 @@ export default function AdminBannerPage() {
         client.invalidateQueries({ queryKey: ['admin-banners'] }),
         client.invalidateQueries({ queryKey: ['banners', 'active'] }),
       ])
-      void appAlert('배너 게재를 종료했습니다.', { title: '종료 완료' })
     },
     onError: error => {
       const status = isAxiosError(error) ? error.response?.status : undefined
@@ -470,7 +459,6 @@ export default function AdminBannerPage() {
         client.invalidateQueries({ queryKey: ['admin-banners'] }),
         client.invalidateQueries({ queryKey: ['banners', 'active'] }),
       ])
-      void appAlert('배너를 삭제했습니다.', { title: '삭제 완료' })
     },
     onError: () => void appAlert('배너를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.', { title: '삭제 실패' }),
   })
@@ -481,7 +469,6 @@ export default function AdminBannerPage() {
       client.setQueryData(['admin-banners', 'rotation-setting'], setting)
       setRotationDraft(null)
       await client.invalidateQueries({ queryKey: ['banners', 'active'] })
-      void appAlert(`공개 배너 전환 간격을 ${setting.intervalSeconds}초로 저장했습니다.`, { title: '저장 완료' })
     },
     onError: () => void appAlert('배너 전환 간격을 저장하지 못했습니다. 다시 시도해 주세요.', { title: '저장 실패' }),
   })
@@ -557,9 +544,12 @@ export default function AdminBannerPage() {
       const action = selectedCampaign?.status === 'ENDED'
         ? isScheduledStart(draft.startsAt) ? '재예약' : '다시 게시'
         : isScheduledStart(draft.startsAt) ? '예약' : '게시'
-      if (!await appConfirm(`${formatScheduledAt(draft.startsAt)}에 배너를 모든 방문자에게 ${action}하시겠습니까?`, { title: `배너 ${action}` })) return
+      const confirmationMessage = action === '예약' || action === '재예약'
+        ? `이 시각에 배너 공개를 ${action}하시겠습니까?`
+        : `이 시각에 배너를 모든 방문자에게 ${action === '다시 게시' ? '다시 공개' : '공개'}하시겠습니까?`
+      if (!await appConfirm(`[${formatScheduledAt(draft.startsAt)}]\n${confirmationMessage}`, { title: `배너 ${action}` })) return
     }
-    saveMutation.mutate({ ...draft, endsAt: displayedEndAt, linkUrl: normalizeBannerLink(draft.linkUrl) })
+    saveMutation.mutate({ draft: { ...draft, endsAt: displayedEndAt, linkUrl: normalizeBannerLink(draft.linkUrl) }, wasConfirmed: willPublish })
   }
   const confirmDiscard = (type: BannerDraftInput['type']) => !editedFlags[type] || appConfirm('저장하지 않은 변경 내용을 버리시겠습니까?', { title: '변경 내용 버리기' })
   const draftFromCampaign = (item: BannerCampaign, prepareForRepublish = false): BannerDraftInput => {
@@ -672,14 +662,14 @@ export default function AdminBannerPage() {
       <div className="flex flex-col gap-1">
         {items.map(item => (
           <div key={item.id} data-banner-campaign-card="" className="flex w-full flex-col gap-2 border border-ui-border bg-ui-panel p-3">
-            <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+            <div className="flex min-w-0 flex-col gap-1 text-sm">
               <span className="flex min-w-0 items-center gap-2">
                 <BannerTypeBadge type={item.type} size="normal" />
                 <span className="max-w-[240px] truncate font-medium text-ui-white">{item.title}</span>
                 {item.status === 'SCHEDULED' && <span className="shrink-0 text-xs text-ui-muted">{formatStartCountdown(item.startsAt)}</span>}
                 {item.status === 'DRAFT' && <span className="shrink-0 text-xs text-ui-muted">미예약</span>}
               </span>
-              <span className="shrink-0 tabular-nums text-ui-muted">{item.status === 'DRAFT' ? '게시 기간: 미정' : `게시 기간: ${formatScheduledAt(item.startsAt)} ~ ${item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}`}</span>
+              <span className="tabular-nums text-ui-muted">{item.status === 'DRAFT' ? '게시 기간: 미정' : `게시 기간: ${formatScheduledAt(item.startsAt)} ~ ${item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}`}</span>
             </div>
             <button type="button" disabled={isMutating} onClick={() => void selectCampaign(item)} aria-label={`${item.type === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집`} className="mx-auto flex h-[90px] w-full max-w-[728px] items-center justify-center overflow-hidden border-0 bg-transparent p-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-wait">
               <BannerPreview type={item.type} title={item.title} text={item.text ?? ''} imageUrl={item.hasImage ? campaignImageUrl(item) : null} textScalePercent={item.textScalePercent} textBold={item.textBold} />
@@ -839,7 +829,7 @@ export default function AdminBannerPage() {
                           </div>
                           <div className="flex min-w-[208px] flex-[1_1_208px] flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white">
                             <span className="flex h-[25px] items-center">종료</span>
-                            <DateTimeField label="교체 종료" disabled={!canEdit} value={displayedEndAt} onChange={endsAt => changeDraft({ endsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends-${endDatePresetGeneration}`} />
+                            <DateTimeField label="교체 종료" disabled={!canEdit} value={displayedEndAt} onChange={endsAt => changeDraft({ endsAt })} dateAnimationKey={endDatePresetGeneration} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends`} />
                           </div>
                           <div className="flex flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white">
                             <span className="flex h-[25px] items-center">기간</span>
