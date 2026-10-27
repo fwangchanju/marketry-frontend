@@ -5,8 +5,8 @@ const siteUrl = 'https://marketry.co.kr'
 
 const pages: Record<string, { title: string; description: string }> = {
   '/guide/stock-heatmap': {
-    title: '주식 히트맵 보는 법: 색상·크기·종목 확인 | MARKETRY',
-    description: '코스피·코스닥 주식 히트맵에서 사각형 크기와 등락률 색상을 읽고, 업종과 종목 정보를 확인하는 방법을 알아보세요.',
+    title: '나만의 주식 시장 지도 만들기 | MARKETRY',
+    description: '함께 움직이는 종목을 내 업종으로 묶고, 시가총액 비중을 조절해 대형주에 가려진 흐름을 살펴보세요. MARKETRY로 코스피·코스닥 시장을 내 기준으로 설계할 수 있습니다.',
   },
   '/home': {
     title: 'MARKETRY | 코스피·코스닥 주식 시장 지도',
