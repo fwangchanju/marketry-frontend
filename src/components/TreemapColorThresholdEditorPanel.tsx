@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { SlidingHighlight } from '@/components/SlidingHighlight'
 import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
@@ -92,13 +93,13 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
   }
   const edgeAligned = (position: number) => Math.min(Math.max(position, 0.06), 0.94) * 100
   // 선택값 배지는 가까운 눈금과 겹치지 않도록 11px에 좁은 좌우 여백을 유지하고 같은 줄에 포개서 보여 준다.
-  const badgeClass = 'absolute top-[32px] z-10 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-brand px-0.5 text-[11px] font-medium leading-4 tabular-nums text-ui-background'
+  const badgeClass = 'absolute top-[36px] z-10 -translate-x-1/2 whitespace-nowrap rounded-[3px] bg-brand px-0.5 text-[11px] font-medium leading-4 tabular-nums text-ui-background'
 
   return (
     <>
       {/* 막대 폭은 다른 탭의 슬라이더와 같은 .settings-slider-control 폭이다(양 끝 손잡이·눈금 글자는 그 바깥으로 조금 나온다). */}
       <div
-        className="relative h-[48px] touch-none select-none"
+        className="relative h-[52px] touch-none select-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
@@ -112,10 +113,8 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             role="img"
             aria-label="0% 고정"
             data-hint="0% 고정"
-            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer border-0 ${zeroSelected ? '' : 'hover:brightness-125'}`}
-          >
-            <span className="pointer-events-none absolute inset-x-0 top-[4px] bottom-[4px] rounded-[2px]" style={{ backgroundColor: zeroColor }} />
-          </div>
+            className={`absolute left-0 top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-panel ${zeroSelected ? 'border border-brand ring-[3px] ring-brand/35' : 'border border-ui-text hover:border-ui-white'}`}
+          />
           <div className={zeroSelected ? 'opacity-70' : ''}>
             {positive.map((item, rank) => {
               const selected = !zeroSelected && rank === selectedRank
@@ -136,11 +135,9 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
                     aria-valuemax={BAR_MAX_PERCENT}
                     aria-valuenow={item.percent}
                     onKeyDown={event => handleKeyDown(event, rank)}
-                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer border-0 ${selected ? '' : 'hover:brightness-125'}`}
+                    className={`absolute top-[8px] box-border h-6 w-2 -translate-x-1/2 cursor-pointer rounded-[2px] border bg-ui-panel ${selected ? 'border border-brand ring-[3px] ring-brand/35' : 'border border-ui-text hover:border-ui-white'}`}
                     style={{ left }}
-                  >
-                    <span className={`pointer-events-none absolute inset-x-0 top-[4px] bottom-[4px] rounded-[2px] ${selected ? 'bg-brand' : 'bg-ui-control-hover'}`} />
-                  </div>
+                  />
                 </div>
               )
             })}
@@ -151,7 +148,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
             return (
               <span
                 key={tick}
-                className={`pointer-events-none absolute top-[32px] -translate-x-1/2 whitespace-nowrap text-[12px]/4 transition-colors duration-300 ${highlighted ? 'font-medium text-ui-white' : 'text-ui-muted'}`}
+                className={`pointer-events-none absolute top-[36px] -translate-x-1/2 whitespace-nowrap text-[12px]/4 transition-colors duration-300 ${highlighted ? 'font-medium text-ui-white' : 'text-ui-muted'}`}
                 style={{ left: `${percentToPosition(tick) * 100}%` }}
               >
                 {tick}%
@@ -191,25 +188,28 @@ export default function TreemapColorThresholdEditorPanel({
       <div>
         {/* 상승 / 보합 / 하락 — 업종 단계(대분류·중분류·소분류)처럼 글자만 있는 선택이고, 고른 것은 흰색, 안 고른 것은 회색이다. 색은 아래 막대가 보여 준다. */}
         <div role="radiogroup" aria-label="편집할 구간" className="settings-slider-control flex flex-row items-center justify-center gap-1.5 whitespace-nowrap text-[13px]/4">
-          {(['up', 'zero', 'down'] as const).map(key => {
-            const selected = bar.side === key
-            return (
-              <button
-                key={key}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => {
-                  if (selected) return
-                  if (key === 'zero') onSelectZero()
-                  else onSelectRank(bar.selectedRank ?? 0, key)
-                }}
-                className={`box-border rounded-[3px] border border-transparent px-[7px] py-0 text-[13px] font-light leading-[18px] text-ui-white ${selected ? 'bg-brand-surface' : 'bg-ui-control hover:bg-ui-control-hover'}`}
-              >
-                {CHIP_LABEL[key]}
-              </button>
-            )
-          })}
+          <div className="relative mx-auto flex w-fit items-center gap-1.5">
+            <SlidingHighlight count={3} index={bar.side === 'up' ? 0 : bar.side === 'zero' ? 1 : 2} className="rounded-[3px] bg-brand-surface" />
+            {(['up', 'zero', 'down'] as const).map(key => {
+              const selected = bar.side === key
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => {
+                    if (selected) return
+                    if (key === 'zero') onSelectZero()
+                    else onSelectRank(bar.selectedRank ?? 0, key)
+                  }}
+                  className={`relative z-10 box-border rounded-[3px] border border-transparent bg-transparent px-[7px] py-0 text-[13px] font-light leading-[18px] text-ui-white ${selected ? '' : 'hover:bg-ui-control-hover'}`}
+                >
+                  {CHIP_LABEL[key]}
+                </button>
+              )
+            })}
+          </div>
         </div>
         <div className="mt-[6px]">
           <ThresholdBar
