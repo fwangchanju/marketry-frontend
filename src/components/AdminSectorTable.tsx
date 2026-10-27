@@ -18,6 +18,7 @@ import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import { STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
 import StockSortHeader, { type HeaderSortState } from '@/components/StockSortHeader'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
+import ScrollArea from '@/components/ScrollArea'
 import { compareKoreanText } from '@/utils/koreanSort'
 
 interface Props {
@@ -106,7 +107,7 @@ function DraggableSectorHandle({
     data: { sectorId, parentId },
     disabled: !enabled,
   })
-  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center ${DRAG_CONTROL_CLASS} disabled:cursor-not-allowed disabled:opacity-35 ${isDragging ? 'opacity-35' : ''}`}><span aria-hidden="true" className="text-xl leading-none">⠿</span></button>
+  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center ${DRAG_CONTROL_CLASS} disabled:cursor-not-allowed disabled:opacity-35 ${isDragging ? 'opacity-35' : ''}`}><span aria-hidden="true" className="text-xl font-medium leading-none">⠿</span></button>
 }
 
 // 끄는 중 마우스의 세로 위치 — 손잡이를 열 안으로 가두는 제한(keepInColumnVertically) 때문에 손잡이 위치는 맨 위·맨 아래에서 멈추므로,
@@ -127,7 +128,7 @@ const keepInColumnVertically: Modifier = ({ transform, active, draggingNodeRect,
 }
 
 // 번호 칸 — 업종은 끌어서 다른 업종 위에 놓으면 그 안으로 이동한다(순서 바꾸기는 왼쪽 ⠿ 손잡이).
-const NUMBER_BADGE_CLASS = 'mr-2 inline-flex h-6 w-8 shrink-0 items-center justify-end p-0 pr-1 text-sm leading-none font-bold tabular-nums'
+const NUMBER_BADGE_CLASS = 'mr-[10px] inline-flex h-6 w-8 shrink-0 items-center justify-end p-0 pr-1 text-sm leading-none font-medium tabular-nums'
 
 function DraggableNumberBadge({ sectorId, parentId, children }: { sectorId: number; parentId: number | null; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef } = useDraggable({
@@ -155,7 +156,7 @@ function RootDropHeader({ className, isActive, isOver, children, style, onClick 
     <div ref={setNodeRef} onClick={onClick} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/50' : ''}`} style={style}>
       {children}
       {isActive && (
-        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-[22px] -translate-y-1/2 rounded border px-2 text-xs font-bold leading-[20px] ${isOver ? 'border-transparent bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}>
+        <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-[22px] -translate-y-1/2 rounded border px-2 text-xs font-medium leading-[20px] ${isOver ? 'border-transparent bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}>
           여기
         </span>
       )}
@@ -582,7 +583,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       const chainLabel = `[${row.parentPath.join(SECTOR_PATH_SEPARATOR)}]`
       return (
         <tr key={`add-child-${parentId}`}>
-          <td className="py-0.5 text-left" style={{ paddingLeft: `${row.depth * 20 + 8}px` }}>
+          <td className="py-0.5 text-left" style={{ paddingLeft: '14px' }}>
             {/* 입력 글자의 시작선을 생성 후 업종명과 맞춘다. input 내부 여백(8px)만큼 입력칸 자체는 왼쪽에서 시작한다. */}
             <div className="group/create flex items-center gap-2 pl-14">
               <SectorNameInput
@@ -653,7 +654,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
               ) : (
                 <>
                   <DraggableNumberBadge sectorId={sector.id} parentId={sector.parentId}>{itemNumber}</DraggableNumberBadge>
-                  {sector.depth > 0 && <span aria-hidden="true" className="shrink-0" style={{ width: sector.depth * 20 }} />}
                   <button
                     type="button"
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
@@ -668,7 +668,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   {isMoveDrag && isMoveDropTarget(draggedSector, sector) && (
                     <span
                       aria-hidden="true"
-                      className={`pointer-events-none ml-auto mr-2 h-[22px] shrink-0 rounded border px-2 text-xs font-bold leading-[20px] ${moveOverId === sector.id ? 'border-transparent bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}
+                      className={`pointer-events-none ml-auto mr-2 h-[22px] shrink-0 rounded border px-2 text-xs font-medium leading-[20px] ${moveOverId === sector.id ? 'border-transparent bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}
                     >
                       여기
                     </span>
@@ -824,9 +824,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   <div className={headerClass} onClick={() => toggleHeaderSort(index)} style={{ height: STOCK_HEADER_ROW_PX }}>{headerContent}</div>
                 )
               })()}
-              <div className={`min-h-0 flex-1 overflow-auto scrollbar-hide ${index < 2 ? 'border-r border-ui-border' : ''}`}>
+              <ScrollArea overlay scrollLabel={`${label} 업종 목록`} className={`min-h-0 flex-1 ${index < 2 ? 'border-r border-ui-border' : ''}`}>
                 <table className="nes-table is-dark custom-page-table custom-sector-table w-full text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><tbody>{columnRows[index].map(renderRow)}</tbody></table>
-              </div>
+              </ScrollArea>
             </div>
           ))}
           {/* 업종이 하나도 없으면 거래소·MARKETRY 표와 같은 안내 글을 가운데에 보여준다. */}
@@ -849,11 +849,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           const childCount = childCountByParent.get(draggedSector.id) ?? 0
           return (
             <div
-              style={{ width: draggedRow?.width, marginLeft: draggedRow?.offsetX, paddingLeft: `${draggedSector.depth * 20 + 8}px` }}
+              style={{ width: draggedRow?.width, marginLeft: draggedRow?.offsetX, paddingLeft: '8px' }}
               className="flex items-center border-y-2 border-[var(--brand)] bg-[var(--brand-surface)] py-0.5 text-sm text-ui-white shadow-xl"
             >
-              <span aria-hidden="true" className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center text-xl leading-none ${DRAG_CONTROL_CLASS}`}>⠿</span>
-              <span aria-hidden="true" className={`mr-2 inline-flex h-6 w-8 shrink-0 items-center justify-end pr-1 text-sm leading-none font-bold tabular-nums ${DRAG_CONTROL_CLASS}`}>{number}</span>
+              <span aria-hidden="true" className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center text-xl font-medium leading-none ${DRAG_CONTROL_CLASS}`}>⠿</span>
+              <span aria-hidden="true" className={`${NUMBER_BADGE_CLASS} ${DRAG_CONTROL_CLASS}`}>{number}</span>
               <span className="truncate">{draggedSector.name}</span>
               {childCount > 0 && <span className="ml-1 shrink-0 text-ui-text">({toCount(childCount)})</span>}
             </div>

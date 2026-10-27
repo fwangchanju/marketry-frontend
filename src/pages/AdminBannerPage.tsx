@@ -345,6 +345,9 @@ export default function AdminBannerPage() {
   const rotationInterval = rotationDraft ?? savedRotationInterval
   const isRotationDirty = rotationInterval !== savedRotationInterval
   const draft = drafts[activeType]
+  const isEditingCampaign = draft.id !== null
+  const isNewNotice = !showCampaignList && !isEditingCampaign && activeType === 'NOTICE'
+  const isNewAd = !showCampaignList && !isEditingCampaign && activeType === 'AD'
   const displayedEndAt = draft.endsAt || addDaysToDateTime(draft.startsAt, 30)
   const scheduleError = scheduleValidationMessage(draft.startsAt, displayedEndAt)
   const endPresets = [
@@ -714,13 +717,13 @@ export default function AdminBannerPage() {
                     <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl">
                     <InfoPageHeading
                       flushBottom
-                      title="배너 운영"
-                      summary="목록에서 공지·광고를 확인하거나 새 배너를 작성합니다."
+                      title={showCampaignList ? '목록' : activeType === 'NOTICE' ? isEditingCampaign ? '공지 수정' : '새 공지' : isEditingCampaign ? '광고 수정' : '새 광고'}
+                      summary={showCampaignList ? '게시·대기·종료 상태별로 공지·광고를 확인하고 수정합니다.' : isEditingCampaign ? `${activeType === 'NOTICE' ? '공지' : '광고'} 배너를 ${canEdit ? '수정' : '확인'}하고 있습니다.` : '새 배너 내용을 입력하거나 목록에서 기존 배너를 선택합니다.'}
                       actions={(
                         <>
                           <button type="button" aria-pressed={showCampaignList} onClick={() => void openCampaignList()} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${showCampaignList ? 'bg-brand-surface' : ''}`}>목록</button>
-                          <button type="button" aria-pressed={!showCampaignList && activeType === 'NOTICE'} onClick={() => openType('NOTICE')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'NOTICE' ? 'bg-brand-surface' : ''}`}>새 공지</button>
-                          <button type="button" aria-pressed={!showCampaignList && activeType === 'AD'} onClick={() => openType('AD')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${!showCampaignList && activeType === 'AD' ? 'bg-brand-surface' : ''}`}>새 광고</button>
+                          <button type="button" aria-pressed={isNewNotice} onClick={() => openType('NOTICE')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${isNewNotice ? 'bg-brand-surface' : ''}`}>새 공지</button>
+                          <button type="button" aria-pressed={isNewAd} onClick={() => openType('AD')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${isNewAd ? 'bg-brand-surface' : ''}`}>새 광고</button>
                         </>
                       )}
                     />
