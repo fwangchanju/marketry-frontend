@@ -48,7 +48,7 @@ export default function StockHeatmapGuidePage() {
                 <Link to="/home" className="flex min-h-12 items-center justify-center border border-ui-border bg-ui-panel px-4 py-3 text-center font-semibold text-ui-white hover:bg-ui-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">시장 지도 보기</Link>
               </div>
               <InfoCallout title="휴대폰에서도">
-                요약 지도에서 대분류와 중분류를 차례로 살펴보고, 원하는 종목 목록을 열 수 있습니다.
+                업종 히트맵과 주식 히트맵을 따로 보고, 하단 설정에서 분류 기준·박스 크기·지도에 표시할 종목 수를 바꿀 수 있습니다.
               </InfoCallout>
             </InfoSection>
           </div>
