@@ -428,6 +428,7 @@ function StairRows({
   blockedHint,
   valueLabel,
   selectedIndex,
+  animateSelection = false,
   onPick,
   hoverPick = false,
   disabled = false,
@@ -440,8 +441,10 @@ function StairRows({
   blockedHint: (label: string) => string
   // 켜진 칸의 배지 옆에 덧붙이는 값 글자(지표 표시 단계에 덧붙일 지표 이름).
   valueLabel?: string
-  // 칸을 눌러 하나만 고르는 모드(상위 업종 강조): 고른 칸에 청록 프레임이 쳐지고, 선택할 수 없는 칸은 눌러도 안 된다.
+  // 선택색 배경을 표시할 칸. 그래프 단계는 칸 클릭과 오른쪽 트랙 둘 다로 고를 수 있다.
   selectedIndex?: number
+  // 계단 위치가 다른 그래프 단계의 선택 배경을 한 표시기가 따라가게 한다.
+  animateSelection?: boolean
   onPick?: (index: number) => void
   hoverPick?: boolean
   disabled?: boolean
@@ -449,9 +452,22 @@ function StairRows({
 }) {
   return (
     <>
+      {animateSelection && selectedIndex !== undefined && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute z-0 rounded-[4px] bg-brand-surface transition-[top,left,width] duration-[500ms] ease-out"
+          style={{
+            left: selectedIndex * STAIR_STEP,
+            top: selectedIndex * (STAIR_ROW + STAIR_GAP),
+            width: `calc(100% - ${selectedIndex * STAIR_STEP + railWidth}px)`,
+            height: STAIR_ROW,
+          }}
+        />
+      )}
       {labels.map((label, index) => {
         const blocked = index > maxSelectableIndex
-        const canHover = hoverPick && !disabled && !blocked
+        const selected = selectedIndex === index
+        const canHover = hoverPick && !disabled && !blocked && !selected
         const lit = index >= litFrom && index <= litTo
         const top = index * (STAIR_ROW + STAIR_GAP)
         const left = index * STAIR_STEP
@@ -477,7 +493,7 @@ function StairRows({
               tabIndex={onPick && !disabled && !blocked ? 0 : undefined}
               onClick={onPick && !disabled && !blocked ? () => onPick(index) : undefined}
               onKeyDown={onPick && !disabled && !blocked ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(index) } } : undefined}
-              className={`absolute flex items-center rounded-[4px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${onPick && selectedIndex === index ? `bg-brand-surface ${canHover ? 'hover:bg-brand-surface-hover' : ''}` : `bg-ui-control ${canHover ? 'hover:bg-ui-control-hover' : ''}`} ${onPick ? `box-border border-0 ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
+              className={`absolute flex items-center rounded-[4px] text-left text-[12px] font-bold leading-none text-ui-white transition-[background-color,opacity] ${selected ? `${animateSelection ? 'bg-transparent' : 'bg-brand-surface'} ${canHover ? 'hover:bg-brand-surface-hover' : ''}` : `bg-ui-control ${canHover ? 'hover:bg-ui-control-hover' : ''}`} ${onPick ? `box-border border-0 ${blocked ? 'cursor-not-allowed' : 'cursor-pointer'}` : ''}`}
               style={{ left, top, width: `calc(100% - ${left + railWidth}px)`, height: STAIR_ROW, opacity: blocked ? 0.2 : lit ? 1 : 0.5 }}
             >
               <span className={`ml-[2.5px] whitespace-nowrap rounded-[4px] px-1.5 leading-[20px] ${lit ? 'bg-ui-panel text-ui-white' : 'bg-ui-white/20'}`}>
@@ -544,9 +560,14 @@ function DepthStairSelect({
       <StairRows
         railWidth={0}
         labels={labels}
-        litFrom={single ? depth - 1 : 0}
-        litTo={depth - 1}
+        litFrom={0}
+        litTo={single ? last : depth - 1}
         maxSelectableIndex={maxSelectableIndex}
+        selectedIndex={single ? depth - 1 : undefined}
+        animateSelection={single}
+        onPick={single ? index => onChange(index) : undefined}
+        hoverPick={single}
+        disabled={disabled}
         blockedHint={label => `현재 분류에는\n${label} 단계가 없습니다.`}
       />
       <div
@@ -1169,7 +1190,7 @@ export function SettingsAverageModeSection({
               <SettingsSectionIcon
                 key={option.label}
                 icon={option.icon}
-                className={`mx-auto ${option.value ? 'h-12 w-12' : 'h-[54px] w-[54px]'}`}
+                className={`mx-auto ${option.value ? 'h-12 w-12' : 'h-[54px] w-[54px]'} ${avgChangeRateUseSimple === option.value ? 'text-brand' : 'text-ui-muted'}`}
                 strokeWidth={option.value ? 0.675 : 0.6}
               />
             ))}
@@ -2581,8 +2602,8 @@ export default function SettingsPanel({
                   onSectionChange?.(section.id)
                   try { localStorage.setItem(tabStorageKey, section.id) } catch { /* 저장소 접근이 막혀도 탭 전환은 유지한다. */ }
                 }}
-                className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-[5px] text-[12px] leading-tight transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
-                  ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/55 hover:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
+                className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-[5px] text-[12px] leading-tight transition-[color,opacity] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
+                  ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/55 hover:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? selected ? 'text-[var(--sub-purple)]' : 'text-[var(--sub-purple)] opacity-55 hover:opacity-100 focus-visible:opacity-100' : selected ? 'text-brand' : 'text-ui-muted hover:text-brand'
                 }`}
               >
                 {icon ? <SettingsSectionIcon
