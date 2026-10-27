@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import Spinner from '@/components/Spinner'
@@ -9,6 +10,8 @@ import type { FilteredTreemapSectorNode } from '@/hooks/useFilteredTreemap'
 import { collectAllItems } from '@/hooks/useFilteredTreemap'
 import { isLightColor, resolveTreemapColor } from '@/utils/treemapColorScale'
 import { toCount, toDateTimeLabel, toJoEok, toPctSigned } from '@/utils/format'
+import { layoutOverviewLabel } from '@/utils/overviewLabel'
+import { useFontsVersion } from '@/utils/stockLabelFit'
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 
@@ -19,6 +22,11 @@ const MARKETS: { value: MarketQuery; label: string }[] = [
 ]
 const FIRST_STOCKS_SHOWN = 10
 const STOCKS_PER_MORE = 10
+const STOCK_MAP_COUNTS = [8, 12, 20] as const
+
+function stockLayoutValue(stock: TreemapItem, ratio: number) {
+  return ratio <= 0 ? 1 : Math.pow(Math.max(stock.totalMarketValue, 0), ratio / 100)
+}
 
 type MobileSectorItem = OverviewMapItem & {
   node: FilteredTreemapSectorNode | null
@@ -26,7 +34,7 @@ type MobileSectorItem = OverviewMapItem & {
   isDirectStocks?: boolean
 }
 
-function toMobileSectorItem(node: FilteredTreemapSectorNode, path: string): MobileSectorItem | null {
+function toMobileSectorItem(node: FilteredTreemapSectorNode, path: string, boxSizeRatio: number): MobileSectorItem | null {
   const stocks = collectAllItems(node)
   const marketValue = stocks.reduce((sum, stock) => sum + stock.totalMarketValue, 0)
   if (marketValue <= 0 || stocks.length === 0) return null
@@ -37,6 +45,7 @@ function toMobileSectorItem(node: FilteredTreemapSectorNode, path: string): Mobi
     key: path,
     name: node.sectorName,
     marketValue,
+    layoutValue: stocks.reduce((sum, stock) => sum + stockLayoutValue(stock, boxSizeRatio), 0),
     changeRate,
     advancers,
     decliners,
@@ -46,7 +55,7 @@ function toMobileSectorItem(node: FilteredTreemapSectorNode, path: string): Mobi
   }
 }
 
-function toDirectStocksItem(stocks: TreemapItem[], parentPath: string): MobileSectorItem | null {
+function toDirectStocksItem(stocks: TreemapItem[], parentPath: string, boxSizeRatio: number): MobileSectorItem | null {
   if (!stocks.length) return null
   const marketValue = stocks.reduce((sum, stock) => sum + stock.totalMarketValue, 0)
   if (marketValue <= 0) return null
@@ -54,6 +63,7 @@ function toDirectStocksItem(stocks: TreemapItem[], parentPath: string): MobileSe
     key: `${parentPath}>direct-stocks`,
     name: '직접 종목',
     marketValue,
+    layoutValue: stocks.reduce((sum, stock) => sum + stockLayoutValue(stock, boxSizeRatio), 0),
     changeRate: stocks.reduce((sum, stock) => sum + stock.changeRate * stock.totalMarketValue, 0) / marketValue,
     advancers: stocks.filter(stock => stock.changeRate > 0).length,
     decliners: stocks.filter(stock => stock.changeRate < 0).length,
@@ -62,6 +72,56 @@ function toDirectStocksItem(stocks: TreemapItem[], parentPath: string): MobileSe
     stocks,
     isDirectStocks: true,
   }
+}
+
+function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, onSelect }: {
+  stocks: TreemapItem[]
+  boxSizeRatio: number
+  colorScale: ReturnType<typeof useGlobalSettings>['colorScale']
+  decimalPlaces: number
+  onSelect: (stock: TreemapItem) => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const fontsVersion = useFontsVersion()
+  const [size, setSize] = useState({ width: 0, height: 0 })
+  useLayoutEffect(() => {
+    const element = ref.current
+    if (!element) return
+    const measure = () => setSize({ width: element.clientWidth, height: element.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+  const boxes = useMemo(() => {
+    if (size.width <= 0 || size.height <= 0 || stocks.length === 0) return []
+    const root = hierarchy<{ stock?: TreemapItem; children?: { stock: TreemapItem }[] }>({ children: stocks.map(stock => ({ stock })) })
+      .sum(node => node.stock ? stockLayoutValue(node.stock, boxSizeRatio) : 0)
+      .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
+    const layoutRoot: HierarchyRectangularNode<typeof root.data> = treemap<typeof root.data>().tile(treemapSquarify).size([size.width, size.height]).paddingInner(2)(root)
+    return layoutRoot.leaves().map(leaf => ({
+      stock: (leaf.data as { stock: TreemapItem }).stock,
+      x: leaf.x0,
+      y: leaf.y0,
+      width: leaf.x1 - leaf.x0,
+      height: leaf.y1 - leaf.y0,
+    }))
+  }, [boxSizeRatio, size, stocks])
+
+  return (
+    <div ref={ref} className="relative h-full min-h-0 w-full overflow-hidden border border-ui-border bg-ui-surface p-1">
+      {boxes.map(({ stock, x, y, width, height }) => {
+        const color = resolveTreemapColor(stock.changeRate, colorScale)
+        const label = layoutOverviewLabel(stock.alias ?? stock.stockName, toPctSigned(stock.changeRate, decimalPlaces), width, height, fontsVersion)
+        return (
+          <button key={stock.stockCode} type="button" aria-label={`${stock.stockName} ${toPctSigned(stock.changeRate, decimalPlaces)}`} onClick={() => onSelect(stock)} className="absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight text-white" style={{ left: x, top: y, width, height, backgroundColor: color }}>
+            {label.lines.length > 0 && <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>{label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}</span>}
+            {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{toPctSigned(stock.changeRate, decimalPlaces)}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 function MobileStockList({ stocks, colorScale, decimalPlaces }: { stocks: TreemapItem[]; colorScale: ReturnType<typeof useGlobalSettings>['colorScale']; decimalPlaces: number }) {
@@ -121,6 +181,7 @@ export default function MobileMarketSummaryPage() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const {
+    settingsModalProps,
     market,
     taxonomy,
     data,
@@ -130,10 +191,16 @@ export default function MobileMarketSummaryPage() {
     filteredRootNodes,
     colorScale,
     decimalPlaces,
+    boxSizeMarketCapRatio,
+    onChangeBoxSizeMarketCapRatio,
   } = useGlobalSettings({ allowChangeRateMode: true })
   const [majorSelection, setMajorSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [midSelection, setMidSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [stockSelection, setStockSelection] = useState<{ market: MarketQuery; stocks: TreemapItem[]; categoryName: string } | null>(null)
+  const [viewMode, setViewMode] = useState<'sector' | 'stock'>('sector')
+  const [stockMapCount, setStockMapCount] = useState<number>(12)
+  const [focusedStockCode, setFocusedStockCode] = useState<string | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [groupDepth, setGroupDepth] = usePageSetting<number>('groupPage.depth', 2)
   const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : 3
   const effectiveGroupDepth = Math.min(groupDepth, selectableDepth)
@@ -151,27 +218,37 @@ export default function MobileMarketSummaryPage() {
     const parent = mid ?? major
     if (parent && (mid || effectiveGroupDepth >= 2)) {
       const children = parent.children
-        .map(node => toMobileSectorItem(node, `${major?.sectorName}>${parent.sectorName}>${node.sectorName}`))
+        .map(node => toMobileSectorItem(node, `${major?.sectorName}>${parent.sectorName}>${node.sectorName}`, boxSizeMarketCapRatio))
         .filter((item): item is MobileSectorItem => item !== null)
-      const directItems = toDirectStocksItem(parent.items, parent.sectorName)
+      const directItems = toDirectStocksItem(parent.items, parent.sectorName, boxSizeMarketCapRatio)
       return directItems ? [...children, directItems] : children
     }
     return filteredRootNodes
-      .map(node => toMobileSectorItem(node, node.sectorName))
+      .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio))
       .filter((item): item is MobileSectorItem => item !== null)
-  }, [effectiveGroupDepth, filteredRootNodes, major, mid])
+  }, [boxSizeMarketCapRatio, effectiveGroupDepth, filteredRootNodes, major, mid])
 
-  const mapItems: OverviewMapItem[] = marketItems.map(({ key, name, marketValue, changeRate, simpleAvg, advancers, decliners, unchanged }) => ({
-    key, name, marketValue, changeRate, simpleAvg, advancers, decliners, unchanged,
+  const mapItems: OverviewMapItem[] = marketItems.map(({ key, name, marketValue, layoutValue, changeRate, simpleAvg, advancers, decliners, unchanged }) => ({
+    key, name, marketValue, layoutValue, changeRate, simpleAvg, advancers, decliners, unchanged,
   }))
-  const levelLabel = mid ? '소분류' : major ? '중분류' : '대분류'
-  const heading = selectedStocks ? '종목 목록' : mid ? `${mid.sectorName} 소분류` : major ? `${major.sectorName} 중분류` : '국내 주식 요약 지도'
+  const stockScope = mid ?? major
+  const stockContextItems = useMemo(() => {
+    const stocks = selectedStocks ?? (stockScope ? collectAllItems(stockScope) : filteredRootNodes.flatMap(collectAllItems))
+    return [...stocks].sort((a, b) => b.totalMarketValue - a.totalMarketValue)
+  }, [filteredRootNodes, selectedStocks, stockScope])
+  const stockHeatmapItems = stockContextItems.slice(0, stockMapCount)
+  const focusedStock = stockHeatmapItems.find(stock => stock.stockCode === focusedStockCode) ?? null
+  const heading = viewMode === 'stock'
+    ? `${stockCategoryName || stockScope?.sectorName || '전체 시장'} 주식 히트맵`
+    : mid ? `${mid.sectorName} 소분류 업종 히트맵` : major ? `${major.sectorName} 중분류 업종 히트맵` : '국내 업종 히트맵'
+  const taxonomyLabel = taxonomy === 'MINE' ? '내 기준' : taxonomy === 'MARKETRY' ? 'MARKETRY' : '거래소'
 
   const selectSector = (name: string) => {
     const selected = marketItems.find(item => item.name === name)
     if (!selected) return
     if (selected.isDirectStocks) {
       setSelectedStocks(selected.stocks, selected.name)
+      setViewMode('stock')
       return
     }
     if (!major && effectiveGroupDepth >= 2 && selected.node?.children.length) {
@@ -187,12 +264,21 @@ export default function MobileMarketSummaryPage() {
     }
     if (major && !mid && effectiveGroupDepth === 2) setMidName(selected.node?.sectorName ?? selected.name)
     setSelectedStocks(selected.stocks, selected.name)
+    setViewMode('stock')
+  }
+
+  const selectViewMode = (nextMode: 'sector' | 'stock') => {
+    setViewMode(nextMode)
+    setFocusedStockCode(null)
+    if (nextMode === 'sector') setSelectedStocks(null)
   }
 
   const selectMarket = (nextMarket: MarketQuery) => {
     setMajorName(null)
     setMidName(null)
     setSelectedStocks(null)
+    setViewMode('sector')
+    setFocusedStockCode(null)
     if (pathname.startsWith('/map/')) {
       navigate(marketRoute('/map', nextMarket), { replace: true })
     } else {
@@ -203,119 +289,88 @@ export default function MobileMarketSummaryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-ui-background px-4 pb-10 pt-5 text-ui-white sm:px-6">
-      <div className="mx-auto w-full max-w-xl">
-        <header className="border-b border-ui-border pb-4">
-          <p className="text-xs font-bold tracking-wide text-brand">MARKETRY</p>
-          <h1 className="mt-1 text-2xl font-bold leading-tight">국내 주식 시장 지도</h1>
-          <p className="mt-2 text-sm leading-relaxed text-ui-text">함께 움직이는 종목을 내 기준으로 묶고, 대형주에 가려진 흐름까지 살펴보세요.</p>
-        </header>
-
-        <nav aria-label="시장 선택" className="mt-4 grid grid-cols-3 gap-2">
-          {MARKETS.map(option => (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={market === option.value}
-              onClick={() => selectMarket(option.value)}
-              className={`min-h-11 border px-2 text-sm font-semibold ${market === option.value ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-panel text-ui-text'}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-5 flex min-h-10 items-center justify-between gap-3">
-          <h2 className="min-w-0 truncate text-lg font-bold">{heading}</h2>
-          {data?.snapshotTime && <time className="shrink-0 text-xs tabular-nums text-ui-muted">{toDateTimeLabel(data.snapshotTime)}</time>}
-        </div>
-
-        {(major || selectedStocks) && (
-          <nav aria-label="업종 이동 경로" className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-            <button type="button" onClick={() => { setMajorName(null); setMidName(null); setSelectedStocks(null) }} className="min-h-9 px-2 font-semibold text-brand underline underline-offset-4">전체 업종</button>
-            {major && <>
-              <span aria-hidden="true" className="text-ui-muted">›</span>
-              <button type="button" onClick={() => { setMidName(null); setSelectedStocks(null) }} className={`min-h-9 px-2 ${!mid && selectedStocks ? 'font-semibold text-brand underline underline-offset-4' : 'text-ui-white'}`}>{major.sectorName}</button>
-            </>}
-            {mid && <>
-              <span aria-hidden="true" className="text-ui-muted">›</span>
-              <button type="button" onClick={() => { if (effectiveGroupDepth === 2) setMidName(null); setSelectedStocks(null) }} className={`min-h-9 px-2 ${selectedStocks ? 'font-semibold text-brand underline underline-offset-4' : 'text-ui-white'}`}>{mid.sectorName}</button>
-            </>}
-            {stockCategoryName && stockCategoryName !== mid?.sectorName && <>
-              <span aria-hidden="true" className="text-ui-muted">›</span>
-              <span className="px-2 text-ui-white">{stockCategoryName}</span>
-            </>}
-            {selectedStocks && <>
-              <span aria-hidden="true" className="text-ui-muted">›</span>
-              <span className="px-2 text-ui-white">종목</span>
-            </>}
-          </nav>
-        )}
-
-        {selectableDepth > 1 && !major && !selectedStocks && (
-          <section aria-label="업종 분류 단계 선택" className="mt-4">
-            <div className="mb-2 flex items-baseline justify-between gap-3">
-              <h3 className="text-sm font-semibold text-ui-white">업종 분류 단계</h3>
-              <p className="text-xs text-ui-muted">선택한 단계까지 탐색</p>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {['대분류', '중분류', '소분류'].map((label, index) => {
-                const value = index + 1
-                const disabled = value > selectableDepth
-                const selected = effectiveGroupDepth === value
-                return (
-                  <button key={label} type="button" aria-pressed={selected} disabled={disabled} onClick={() => setGroupDepth(value)} className={`min-h-10 border px-1 text-sm font-semibold ${selected ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-panel text-ui-text'} disabled:opacity-35`}>
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-          </section>
-        )}
-
-        {isLoading ? (
-          <div className="flex min-h-[50vh] items-center justify-center"><Spinner showElapsed /></div>
-        ) : isError ? (
-          <div className="mt-5 border border-ui-border bg-ui-panel p-5 text-center">
-            <p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p>
-            <button type="button" onClick={refetchTreemap} className="mt-3 min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button>
+    <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
+      <header className="shrink-0 border-b border-ui-border px-3 pb-2 pt-[max(env(safe-area-inset-top),0.5rem)]">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold tracking-[0.16em] text-brand">DESIGN YOUR MARKET</p>
+            <h1 className="truncate text-base font-bold">{heading}</h1>
           </div>
-        ) : selectedStocks ? (
-          <MobileStockList key={`${selectedStocks[0]?.stockCode ?? ''}:${selectedStocks.length}`} stocks={selectedStocks} colorScale={colorScale} decimalPlaces={decimalPlaces} />
-        ) : marketItems.length === 0 ? (
-          <p className="mt-6 border border-ui-border bg-ui-panel p-5 text-center text-sm text-ui-muted">표시할 업종이 없습니다.</p>
-        ) : (
-          <>
-            <p className="mt-1 text-xs text-ui-muted">{levelLabel}별 시가총액 비중과 등락률</p>
-            <div className="mt-3 flex h-[min(48vh,400px)] min-h-[280px] flex-col border border-ui-border bg-ui-surface p-1">
-              <OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} />
-            </div>
-            <ul aria-label={`${levelLabel} 목록`} className="mt-4 divide-y divide-ui-border border-y border-ui-border">
-              {marketItems.map(item => {
-                const color = resolveTreemapColor(item.changeRate, colorScale)
-                const textColor = isLightColor(color) ? 'var(--ui-surface)' : 'var(--ui-white)'
-                return (
-                  <li key={item.key}>
-                    <button type="button" onClick={() => selectSector(item.name)} className="flex min-h-14 w-full items-center gap-3 bg-ui-background py-2 text-left hover:bg-ui-panel">
-                      <span aria-hidden="true" className="h-3 w-3 shrink-0" style={{ backgroundColor: color }} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-ui-white">{item.name}</span>
-                        <span className="mt-0.5 block text-xs text-ui-muted">시가총액 {toJoEok(item.marketValue / 100_000_000)}</span>
-                      </span>
-                      <span className="shrink-0 px-2 py-1 text-sm font-bold tabular-nums" style={{ backgroundColor: color, color: textColor }}>{toPctSigned(item.changeRate, decimalPlaces)}</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </>
-        )}
+          {data?.snapshotTime && <time className="shrink-0 text-[10px] tabular-nums text-ui-muted">{toDateTimeLabel(data.snapshotTime)}</time>}
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <nav aria-label="시장 선택" className="flex gap-1">
+            {MARKETS.map(option => <button key={option.value} type="button" aria-pressed={market === option.value} onClick={() => selectMarket(option.value)} className={`min-h-9 border px-3 text-xs font-semibold ${market === option.value ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-panel text-ui-text'}`}>{option.label}</button>)}
+          </nav>
+          <nav aria-label="히트맵 종류" className="flex gap-1">
+            <button type="button" aria-pressed={viewMode === 'sector'} onClick={() => selectViewMode('sector')} className={`min-h-9 px-2 text-xs font-semibold ${viewMode === 'sector' ? 'border-b-2 border-brand text-brand' : 'text-ui-muted'}`}>업종</button>
+            <button type="button" aria-pressed={viewMode === 'stock'} onClick={() => selectViewMode('stock')} className={`min-h-9 px-2 text-xs font-semibold ${viewMode === 'stock' ? 'border-b-2 border-brand text-brand' : 'text-ui-muted'}`}>주식</button>
+          </nav>
+        </div>
+        {(major || mid || selectedStocks) && <nav aria-label="업종 이동 경로" className="mt-1 flex min-h-8 items-center gap-1 overflow-x-auto whitespace-nowrap text-xs">
+          <button type="button" onClick={() => { setMajorName(null); setMidName(null); setSelectedStocks(null); setViewMode('sector') }} className="font-semibold text-brand">전체</button>
+          {major && <><span className="text-ui-muted">›</span><button type="button" onClick={() => { setMidName(null); setSelectedStocks(null); setViewMode('sector') }} className="text-ui-text">{major.sectorName}</button></>}
+          {mid && <><span className="text-ui-muted">›</span><button type="button" onClick={() => { setSelectedStocks(null); setViewMode('sector') }} className="text-ui-text">{mid.sectorName}</button></>}
+          {stockCategoryName && <><span className="text-ui-muted">›</span><span>{stockCategoryName}</span></>}
+        </nav>}
+      </header>
 
-        <footer className="mt-8 border-t border-ui-border pt-4 text-xs leading-relaxed text-ui-muted">
-          모바일에서는 업종 요약과 종목 목록을 제공합니다. 전체 종목 지도는 PC 화면에서 확인할 수 있습니다.
-          <span className="mt-1 block">시세 데이터는 지연되거나 오류가 있을 수 있으며 투자 참고용으로 제공됩니다.</span>
-        </footer>
-      </div>
+      <section aria-label={viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵'} className="relative min-h-0 flex-1 p-1">
+        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
+          : isError ? <div className="flex h-full flex-col items-center justify-center gap-2 text-center"><p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p><button type="button" onClick={refetchTreemap} className="min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button></div>
+            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
+              <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={decimalPlaces} onSelect={stock => setFocusedStockCode(stock.stockCode)} />
+              {focusedStock && <button type="button" onClick={() => setSettingsOpen(true)} className="absolute bottom-20 left-3 right-3 flex items-center justify-between gap-3 border border-ui-border bg-ui-panel/95 px-3 py-2 text-left shadow-lg" aria-live="polite">
+                <span className="min-w-0"><span className="block truncate text-sm font-semibold">{focusedStock.alias ?? focusedStock.stockName}</span><span className="block text-xs text-ui-muted">{focusedStock.stockCode} · 시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span></span>
+                <span className="shrink-0 text-sm font-bold tabular-nums" style={{ color: resolveTreemapColor(focusedStock.changeRate, colorScale) }}>{toPctSigned(focusedStock.changeRate, decimalPlaces)}</span>
+              </button>}
+            </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="flex h-full min-h-0 flex-col border border-ui-border bg-ui-surface p-1"><OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} /></div>}
+      </section>
+
+      <button type="button" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(true)} className="fixed inset-x-0 bottom-0 z-30 flex min-h-[calc(3.75rem+env(safe-area-inset-bottom))] items-center justify-between border-t border-ui-border bg-ui-panel px-4 pb-[env(safe-area-inset-bottom)] text-left shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
+        <span><span className="block text-sm font-bold">지도 설정 <span aria-hidden="true">⌃</span></span><span className="mt-0.5 block text-[11px] text-ui-muted">{taxonomyLabel} · 박스 {boxSizeMarketCapRatio}%{viewMode === 'stock' ? ` · ${stockHeatmapItems.length}종목` : ''}</span></span>
+        <span className="text-xs text-brand">설정 바꾸기</span>
+      </button>
+
+      {settingsOpen && <>
+        <button type="button" aria-label="설정 닫기" onClick={() => setSettingsOpen(false)} className="mobile-settings-backdrop-enter fixed inset-0 z-40 bg-black/55" />
+        <section role="dialog" aria-modal="true" aria-label="지도 설정" className="mobile-settings-sheet-enter fixed inset-x-0 bottom-0 z-50 max-h-[78dvh] overflow-y-auto border-t border-ui-border bg-ui-panel px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-2 shadow-[0_-12px_36px_rgba(0,0,0,0.45)]">
+          <button type="button" onClick={() => setSettingsOpen(false)} className="mx-auto mb-3 block h-1 w-10 rounded-full bg-ui-muted" aria-label="설정 닫기" />
+          <div className="mb-4 flex items-center justify-between"><h2 className="text-base font-bold">지도 설정</h2><button type="button" onClick={() => setSettingsOpen(false)} className="min-h-9 px-2 text-sm font-semibold text-brand">닫기</button></div>
+          <div>
+            <h3 className="mb-2 text-sm font-semibold">분류 기준</h3>
+            <div role="radiogroup" aria-label="분류 기준" className="grid grid-cols-3 gap-2">
+              {[
+                { key: 'MARKETRY' as const, label: 'MARKETRY' },
+                { key: 'KRX' as const, label: '거래소' },
+                { key: 'MINE' as const, label: '내 기준' },
+              ].map(option => {
+                const selected = option.key === 'KRX' ? taxonomy === 'KRX' || taxonomy === 'NXT' : taxonomy === option.key
+                return <button key={option.key} type="button" role="radio" aria-checked={selected} onClick={() => {
+                  if (selected) return
+                  settingsModalProps.onSelectTaxonomy(option.key)
+                  setMajorName(null); setMidName(null); setSelectedStocks(null); setViewMode('sector'); setFocusedStockCode(null)
+                }} className={`min-h-10 border px-1 text-sm font-semibold ${selected ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-background text-ui-text'}`}>{option.label}</button>
+              })}
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="mb-2 flex items-baseline justify-between"><h3 className="text-sm font-semibold">박스 크기</h3><p className="text-xs text-ui-muted">시가총액 반영</p></div>
+            <div className="grid grid-cols-3 gap-2">
+              {[{ value: 0, label: '균등' }, { value: 50, label: '균형' }, { value: 100, label: '시총 비례' }].map(option => <button key={option.value} type="button" aria-pressed={boxSizeMarketCapRatio === option.value} onClick={() => onChangeBoxSizeMarketCapRatio(option.value)} className={`min-h-10 border px-1 text-sm font-semibold ${boxSizeMarketCapRatio === option.value ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-background text-ui-text'}`}>{option.label} <span className="text-xs opacity-70">{option.value}%</span></button>)}
+            </div>
+          </div>
+          {viewMode === 'sector' && selectableDepth > 1 && !major && !selectedStocks && <div className="mt-4">
+            <h3 className="mb-2 text-sm font-semibold">업종 분류 단계</h3>
+            <div className="grid grid-cols-3 gap-2">{['대분류', '중분류', '소분류'].map((label, index) => { const value = index + 1; const disabled = value > selectableDepth; const selected = effectiveGroupDepth === value; return <button key={label} type="button" aria-pressed={selected} disabled={disabled} onClick={() => setGroupDepth(value)} className={`min-h-10 border px-1 text-sm font-semibold ${selected ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-background text-ui-text'} disabled:opacity-35`}>{label}</button> })}</div>
+          </div>}
+          {viewMode === 'stock' && <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">지도에 표시할 종목</h3><div role="group" aria-label="주식 히트맵 표시 종목 수" className="flex gap-1">{STOCK_MAP_COUNTS.map(count => <button key={count} type="button" aria-pressed={stockMapCount === count} onClick={() => { setStockMapCount(count); setFocusedStockCode(null) }} className={`min-h-9 min-w-10 border px-2 text-xs font-semibold ${stockMapCount === count ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-background text-ui-text'}`}>{count}개</button>)}</div></div>
+            <p className="text-xs text-ui-muted">시가총액 상위 종목을 지도에 표시합니다. 아래 목록에서 찾아볼 수 있어요.</p>
+            <MobileStockList key={`${stockScope?.sectorName ?? 'all'}:${stockContextItems.length}`} stocks={stockContextItems} colorScale={colorScale} decimalPlaces={decimalPlaces} />
+          </div>}
+        </section>
+      </>}
     </main>
   )
 }
