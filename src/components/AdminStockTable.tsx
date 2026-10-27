@@ -1450,7 +1450,7 @@ export default function AdminStockTable({
       }
       const summary = [
         `업종: ${toCount(plan.newSectors.length)}개`,
-        `업종을 분류한 종목: ${toCount(plan.changedCount)}개`,
+        `종목 ${toCount(plan.changedCount)}개`,
         '이대로 적용할까요?',
       ].join('\n')
       if (!(await appConfirm(summary, { title: '엑셀 적용' }))) return
@@ -1471,7 +1471,7 @@ export default function AdminStockTable({
           .filter((entry): entry is { stockCode: string; before: number } => entry.before != null && entry.before !== group.sectorId)
         if (entries.length > 0) pushUndo({ type: 'bulkSector', sectorName: group.path.join(' > '), after: group.sectorId, entries })
       }
-      appAlert(`바뀐 종목 ${appliedCount}개\n새로 만든 업종 ${createdCount}개${failed.length > 0 ? `\n반영되지 않은 종목 ${failed.length}개\n${failed.join(', ')}` : ''}`, { title: failed.length > 0 ? '일부 적용' : '적용 완료' })
+      appAlert(`업종: ${createdCount.toLocaleString('ko-KR')}개\n종목 ${appliedCount.toLocaleString('ko-KR')}개${failed.length > 0 ? `\n반영되지 않은 종목 ${failed.length.toLocaleString('ko-KR')}개\n${failed.join(', ')}` : '\n적용되었습니다.'}`, { title: failed.length > 0 ? '일부 적용' : '적용 완료' })
     } catch (error) {
       if (error instanceof ClassificationUploadError) {
         appAlert(error.message, { title: '파일 확인' })
