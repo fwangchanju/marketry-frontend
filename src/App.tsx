@@ -17,6 +17,7 @@ import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
 import HoverHintLayer from './components/HoverHintLayer'
 import MobileNotice from './components/MobileNotice'
+import SearchMetadata from './components/SearchMetadata'
 import { marketRoute } from '@/utils/marketRoute'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
@@ -97,6 +98,7 @@ function MobileGate({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <SearchMetadata />
       <ClientMetricsReporter />
       <AppDialogHost />
       <HoverHintLayer />
