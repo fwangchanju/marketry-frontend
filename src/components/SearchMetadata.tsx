@@ -6,7 +6,7 @@ const siteUrl = 'https://marketry.co.kr'
 const pages: Record<string, { title: string; description: string }> = {
   '/home': {
     title: 'MARKETRY - Design Your Market',
-    description: '증시 히트맵을 내 마음대로. 업종 분류와 종목별 박스 크기를 조절해 코스피·코스닥 시장을 원하는 기준으로 살펴보세요.',
+    description: '증시 히트맵을 내 마음대로. 삼성전자·하이닉스를 작게 보기도 하고, 원치 않는 업종을 숨기기도 하고! 시장을 원하는 기준으로 살펴보세요.',
   },
   '/map/kospi': {
     title: '코스피 주식 히트맵·업종 지도 | MARKETRY',
