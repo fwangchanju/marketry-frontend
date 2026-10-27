@@ -5,8 +5,6 @@ interface Props {
   className?: string
   // 1초 뒤부터 경과 시간을 보여 주는 메인 영역 로딩.
   showElapsed?: boolean
-  // 화면이 막히는 캡처 작업이 시작되기 전에 첫 카운트를 보여 준다.
-  showInitialElapsed?: boolean
   // 배지나 프레임 등 기준점의 정중앙에 로고와 경과 시간을 둔다.
   centerContent?: boolean
   // 설정창처럼 좁은 공간의 로고·경과 시간 표시.
@@ -19,7 +17,7 @@ interface Props {
   stillContent?: ReactNode
 }
 
-export default function Spinner({ className, showElapsed = false, showInitialElapsed = false, centerContent = false, showLogo = false, errorMessage, onRetry, message, still = false, stillContent }: Props) {
+export default function Spinner({ className, showElapsed = false, centerContent = false, showLogo = false, errorMessage, onRetry, message, still = false, stillContent }: Props) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const isLoading = !still && !errorMessage
 
@@ -68,7 +66,7 @@ export default function Spinner({ className, showElapsed = false, showInitialEla
               <span className="absolute left-1/2 top-1/2 w-[76%] -translate-x-1/2 -translate-y-1/2 text-center text-[4.25cqw] leading-tight text-ui-white">{errorMessage}</span>
             )
           ) : still ? stillContent : (
-            <span aria-hidden="true" className="text-[max(16px,5.5cqw)] leading-none tabular-nums text-ui-text">{elapsedSeconds >= 1 ? elapsedSeconds : showInitialElapsed ? 1 : ''}</span>
+            <span aria-hidden="true" className="text-[max(16px,5.5cqw)] leading-none tabular-nums text-ui-text">{elapsedSeconds >= 1 ? elapsedSeconds : ''}</span>
           )}
         </div>
       </div>

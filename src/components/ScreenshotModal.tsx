@@ -331,7 +331,7 @@ export default function ScreenshotModal({
             className={`flex items-center justify-center self-center [container-type:size] ${fitWidth ? '' : 'h-[50dvh] w-[60vw]'}`}
             style={fitWidth && previewRatio ? { width: fitWidth, aspectRatio: previewRatio } : undefined}
           >
-            <Spinner key={captureAttempt} className="h-[min(20rem,90cqw,90cqh)] w-[min(20rem,90cqw,90cqh)]" showElapsed={!captureError} showInitialElapsed errorMessage={captureError ?? undefined} onRetry={captureError ? retryCapture : undefined} />
+            <Spinner key={captureAttempt} className="h-[min(20rem,90cqw,90cqh)] w-[min(20rem,90cqw,90cqh)]" showElapsed={!captureError} errorMessage={captureError ?? undefined} onRetry={captureError ? retryCapture : undefined} />
           </div>
         )}
         {/* 양끝 칸의 폭을 같게 유지해 문구 길이와 무관하게 복사 상태를 정중앙에 둔다.
