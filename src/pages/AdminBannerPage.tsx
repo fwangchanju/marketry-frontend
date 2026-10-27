@@ -30,7 +30,7 @@ import BannerTimePicker from '@/components/BannerTimePicker'
 const INPUT_CLASS = 'h-[25px] w-full min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:border-brand placeholder:text-ui-muted disabled:opacity-35'
 const SETTINGS_ACTION_CLASS = 'flex h-[25px] w-fit shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35'
 const EDITOR_ACTION_CLASS = 'flex h-[25px] w-[90px] shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 px-1.5 text-[13px]/4 font-semibold text-ui-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-35'
-type SaveMutationVariables = { draft: BannerDraftInput; wasConfirmed: boolean }
+type SaveMutationVariables = { draft: BannerDraftInput }
 
 function kstInputValue(epoch = Date.now()): string {
   return new Date(epoch).toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T').slice(0, 16)
@@ -377,7 +377,7 @@ export default function AdminBannerPage() {
       }
     },
     meta: { skipGlobalError: true },
-    onSuccess: async ({ item, publishError }, variables) => {
+    onSuccess: async ({ item, publishError }) => {
       setSavedCampaigns(value => ({ ...value, [item.type]: item }))
       setDrafts(value => ({ ...value, [item.type]: { ...value[item.type], id: item.id, linkUrl: item.linkUrl ?? 'https://', file: null } }))
       setSavedFlags(value => ({ ...value, [item.type]: true }))
@@ -392,7 +392,6 @@ export default function AdminBannerPage() {
         void appAlert('내용은 대기 목록에 보관했습니다. 대기 목록에서 다시 게시하거나 예약해 주세요.', { title: '게시 실패' })
         return
       }
-      if (variables.wasConfirmed) return
       const message = item.status === 'SCHEDULED' ? '예약 배너 내용을 저장했습니다.' : '배너 내용을 저장했습니다.'
       void appAlert(message, { title: '저장 완료' })
     },
@@ -549,7 +548,7 @@ export default function AdminBannerPage() {
         : `이 시각에 배너를 모든 방문자에게 ${action === '다시 게시' ? '다시 공개' : '공개'}하시겠습니까?`
       if (!await appConfirm(`[${formatScheduledAt(draft.startsAt)}]\n${confirmationMessage}`, { title: `배너 ${action}` })) return
     }
-    saveMutation.mutate({ draft: { ...draft, endsAt: displayedEndAt, linkUrl: normalizeBannerLink(draft.linkUrl) }, wasConfirmed: willPublish })
+    saveMutation.mutate({ draft: { ...draft, endsAt: displayedEndAt, linkUrl: normalizeBannerLink(draft.linkUrl) } })
   }
   const confirmDiscard = (type: BannerDraftInput['type']) => !editedFlags[type] || appConfirm('저장하지 않은 변경 내용을 버리시겠습니까?', { title: '변경 내용 버리기' })
   const draftFromCampaign = (item: BannerCampaign, prepareForRepublish = false): BannerDraftInput => {
