@@ -119,7 +119,7 @@ export default function OverviewMap({
         const handlePointerLeave = () => setPopup(previous => (previous?.targetKey === `sector:${item.key}` ? null : previous))
         const content = (
           <>
-            {/* 한 줄에 안 들어가면 `/`(없으면 공백) 자리에서 두 줄로 나누고, 두 줄로도 안 들어가면 이름과 등락률을 모두 그리지 않는다(utils/overviewLabel.ts). 잘린 글자나 `…`는 만들지 않는다. */}
+            {/* 한 줄이 박스 폭에 안 맞으면 `/`, 공백, 업종 용어 경계에서 두 줄로 나눈다. 그래도 안 들어가면 이름과 등락률을 그리지 않는다(utils/overviewLabel.ts). 잘린 글자나 `…`는 만들지 않는다. */}
             {label.lines.length > 0 && (
               <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>
                 {label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}
