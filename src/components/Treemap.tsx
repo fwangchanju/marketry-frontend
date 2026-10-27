@@ -72,7 +72,7 @@ const ZOOM_IN_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
 // 진입 때 새 화면이 투명에서 나타나는 시간 비율(시작 박스 자리에서 갑자기 나타나지 않게 한다).
 const ZOOM_IN_FADE_RATIO = 0.35
 // 진입/복귀 때 주변(형제) 화면에 덮는 어두운 막 — 누른 박스만 밝게 남아서 "여기서 시작했다"는 인상을 준다.
-const DIM_OPACITY = 0.55
+const DIM_OPACITY = 0.5
 const DIM_IN_DURATION = 120 // 진입: 막이 어두워지는 시간(이후 나머지 시간 동안 걷힌다)
 const noop = () => {}
 function toRelativeRect(rect: DOMRect, containerRect: DOMRect): RelativeRect {

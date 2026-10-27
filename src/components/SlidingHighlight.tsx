@@ -16,6 +16,7 @@ export function SlidingHighlight({
   baseColor,
   square = false,
   bottomRadius = 0,
+  topInset = 0,
 }: {
   count: number
   index: number
@@ -24,6 +25,8 @@ export function SlidingHighlight({
   fillColor?: string
   baseColor?: string
   square?: boolean
+  // 선택 영역을 묶음 전체가 아닌 아래쪽 라벨 줄에만 그릴 때 쓴다.
+  topInset?: number
   // 직각 칩 묶음에서 맨 왼쪽 칸의 왼쪽 아래와 맨 오른쪽 칸의 오른쪽 아래만 둥글게 한다(px).
   bottomRadius?: number
 }) {
@@ -37,14 +40,14 @@ export function SlidingHighlight({
           key={i}
           aria-hidden="true"
           className={`pointer-events-none absolute z-0 ${square ? '' : 'rounded-[4px]'}`}
-          style={{ top: 0, bottom: 0, left: leftOf(i), width: `calc(${cell})`, backgroundColor: baseColor ?? CHIP_COLOR, ...cornerStyle(i) }}
+          style={{ top: topInset, bottom: 0, left: leftOf(i), width: `calc(${cell})`, backgroundColor: baseColor ?? CHIP_COLOR, ...cornerStyle(i) }}
         />
       ))}
       {index >= 0 && (
         <span
           aria-hidden="true"
           className={`pointer-events-none absolute z-[1] transition-[left] duration-[500ms] ease-out ${className ?? ''}`}
-          style={{ top: 0, bottom: 0, left: leftOf(index), width: `calc(${cell})`, backgroundColor: fillColor, ...cornerStyle(index) }}
+          style={{ top: topInset, bottom: 0, left: leftOf(index), width: `calc(${cell})`, backgroundColor: fillColor, ...cornerStyle(index) }}
         />
       )}
     </>

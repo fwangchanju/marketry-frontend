@@ -313,7 +313,7 @@ export default function ScreenshotModal({
                       <rect x={highlightRegion.left * 100} y={highlightRegion.top * 100} width={highlightRegion.width * 100} height={highlightRegion.height * 100} fill="black" />
                     </mask>
                   </defs>
-                  <rect width="100" height="100" fill="rgba(0,0,0,0.78)" mask="url(#home-capture-selection-mask)" />
+                  <rect width="100" height="100" fill="rgba(0,0,0,0.85)" mask="url(#home-capture-selection-mask)" />
                 </svg>
                 {headerSelections.map((region, index) => (
                   <div key={index} aria-hidden="true" className="capture-selection-outline pointer-events-none absolute" style={{ left: `${region.left * 100}%`, top: `${region.top * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%` }} />

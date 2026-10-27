@@ -70,7 +70,7 @@ function MonthChoice({ market, month, isCurrent, isAllowed, onChoose }: { market
       aria-pressed={isCurrent}
       onClick={onChoose}
       className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${
-        isCurrent ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-brand-surface'
+        isCurrent ? 'bg-ui-control font-normal text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-brand-surface'
       }`}
     >
       {month.monthIndex + 1}월
@@ -195,8 +195,8 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
             ) : <span className="h-7 w-14" />}
             {/* 년을 누르면 년 선택, 월을 누르면 월 선택이 나온다. */}
             <span className="flex items-center gap-1">
-              <button type="button" aria-label="년 선택" onClick={() => openView('year')} className="border-0 bg-transparent p-0 font-roboto-latin font-semibold tabular-nums text-ui-white hover:text-brand">{month.year}년</button>
-              <button type="button" aria-label="월 선택" onClick={() => openView('month')} className="border-0 bg-transparent p-0 font-roboto-latin font-semibold tabular-nums text-ui-white hover:text-brand">{month.monthIndex + 1}월</button>
+              <button type="button" aria-label="년 선택" onClick={() => openView('year')} className="border-0 bg-transparent p-0 font-roboto-latin font-normal tabular-nums text-ui-white hover:text-brand">{month.year}년</button>
+              <button type="button" aria-label="월 선택" onClick={() => openView('month')} className="border-0 bg-transparent p-0 font-roboto-latin font-normal tabular-nums text-ui-white hover:text-brand">{month.monthIndex + 1}월</button>
             </span>
             {showNextButton ? (
               <span className="flex items-center">
@@ -212,7 +212,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
           </div>
           {/* 날짜 영역은 요일 줄을 뺀 나머지 높이를 모두 차지해서, 로딩 원이 그 영역 정중앙에 놓인다(날짜 줄이 5줄인 달도 마찬가지). */}
           <div className="flex min-h-[13.5rem] flex-col">
-        <div className="mb-0.5 grid grid-cols-7 border-b border-ui-border text-center text-[13px] font-semibold text-ui-muted">
+        <div className="mb-0.5 grid grid-cols-7 border-b border-ui-border text-center text-[13px] font-normal text-ui-muted">
           {WEEKDAY_LABELS.map(label => (
             <span key={label} className="py-1">{label}</span>
           ))}
@@ -245,9 +245,9 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                     onClick={() => onPick(date, closingTimeByDate.get(date))}
                     className={`relative flex h-7 w-7 items-center justify-center rounded-full border border-transparent ${
                       selected
-                        ? 'bg-brand font-semibold text-ui-surface'
+                        ? 'bg-brand font-normal text-ui-surface'
                         : isToday
-                          ? `bg-ui-control font-semibold text-ui-white hover:bg-brand-surface ${selectable ? '' : 'cursor-not-allowed'}`
+                          ? `bg-ui-control font-normal text-ui-white hover:bg-brand-surface ${selectable ? '' : 'cursor-not-allowed'}`
                         : selectable
                           ? 'bg-transparent text-ui-white hover:bg-brand-surface'
                           : `cursor-not-allowed bg-transparent ${isHoliday && holidayColor ? '' : 'text-ui-muted'}`
@@ -270,7 +270,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
             <button type="button" aria-label="이전 해" disabled={pickerYear <= 2000} onClick={() => setPickerYear(year => year - 1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
               <ChevronDownIcon className="h-4 w-4 rotate-90" />
             </button>
-            <button type="button" aria-label="년 선택" onClick={() => { setDecadeStart(Math.floor(pickerYear / 10) * 10); setView('year') }} className="border-0 bg-transparent p-0 font-roboto-latin font-semibold tabular-nums text-ui-white hover:text-brand">{pickerYear}년</button>
+            <button type="button" aria-label="년 선택" onClick={() => { setDecadeStart(Math.floor(pickerYear / 10) * 10); setView('year') }} className="border-0 bg-transparent p-0 font-roboto-latin font-normal tabular-nums text-ui-white hover:text-brand">{pickerYear}년</button>
             <button type="button" aria-label="다음 해" disabled={liveYear !== null && pickerYear >= liveYear} onClick={() => setPickerYear(year => year + 1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
               <ChevronDownIcon className="h-4 w-4 -rotate-90" />
             </button>
@@ -298,7 +298,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
             <button type="button" aria-label="이전 10년" disabled={decadeStart <= 2000} onClick={() => setDecadeStart(start => start - 10)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
               <ChevronDownIcon className="h-4 w-4 rotate-90" />
             </button>
-            <span className="font-roboto-latin font-semibold tabular-nums">{decadeStart} - {decadeStart + 9}</span>
+            <span className="font-roboto-latin font-normal tabular-nums">{decadeStart} - {decadeStart + 9}</span>
             <button type="button" aria-label="다음 10년" disabled={liveYear !== null && decadeStart + 10 > liveYear} onClick={() => setDecadeStart(start => start + 10)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
               <ChevronDownIcon className="h-4 w-4 -rotate-90" />
             </button>
@@ -316,7 +316,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                   aria-pressed={year === month.year}
                   onClick={() => { setPickerYear(year); setView('month') }}
                   className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${
-                    year === month.year ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-surface' : isOutsideDecade ? 'bg-transparent text-ui-muted hover:bg-brand-surface' : 'bg-transparent text-ui-white hover:bg-brand-surface'
+                    year === month.year ? 'bg-ui-control font-normal text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-surface' : isOutsideDecade ? 'bg-transparent text-ui-muted hover:bg-brand-surface' : 'bg-transparent text-ui-white hover:bg-brand-surface'
                   }`}
                 >
                   {year}
@@ -334,10 +334,10 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
 const CALENDAR_SPINNER_CLASS = 'h-[14.5rem] w-[14.5rem]'
 
 const APPLY_BUTTON_CLASS =
-  'shrink-0 rounded border-0 bg-brand-surface px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-surface'
+  'shrink-0 rounded border-0 bg-brand-surface px-2.5 py-1 text-center text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-surface'
 
 const RESET_BUTTON_CLASS =
-  'shrink-0 rounded border-0 bg-ui-control px-2.5 py-1 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
+  'shrink-0 rounded border-0 bg-ui-control px-2.5 py-1 text-center text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
 
 // 달력 아이콘을 누르면 아래로 달력 창이 뜬다. 데이터가 있는 날짜(종가 지도가 있는 날과 오늘)만 누를 수 있다.
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.
@@ -529,7 +529,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
         onSelectSnapshotTime(null)
         setIsOpen(false)
       }}
-      className="flex h-6 shrink-0 items-center gap-1 rounded border-0 bg-ui-control px-2 text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
+      className="flex h-6 shrink-0 items-center gap-1 rounded border-0 bg-ui-control px-2 text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
     >
       <ClockIcon strokeWidth={2.3} className="h-3.5 w-3.5" aria-hidden />
       초기화
@@ -540,7 +540,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     <button
       type="button"
       onClick={pickToday}
-      className="flex h-6 shrink-0 items-center justify-center rounded border-0 bg-ui-control px-2.5 text-center text-[13px] font-semibold leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
+      className="flex h-6 shrink-0 items-center justify-center rounded border-0 bg-ui-control px-2.5 text-center text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
     >
       최근일
     </button>
@@ -584,7 +584,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                       role="radio"
                       aria-checked={isRangeMode === rangeValue}
                       onClick={() => switchMode(rangeValue)}
-                      className={`flex h-5 items-center rounded-md border-0 px-2 text-[13px] font-semibold leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-brand text-ui-background' : 'bg-transparent text-ui-white hover:bg-ui-control'}`}
+                      className={`flex h-5 items-center rounded-md border-0 px-2 text-[13px] font-normal leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-brand text-ui-background' : 'bg-transparent text-ui-white hover:bg-ui-control'}`}
                     >
                       {label}
                     </button>
@@ -647,15 +647,15 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 {/* 시작일 ~ 종료일은 왼쪽에, 초기화와 적용은 오른쪽 끝에 둔다. */}
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className="flex min-w-0 items-center gap-1">
-                    <span className="shrink-0 font-semibold text-brand">시작일</span>
+                    <span className="shrink-0 font-normal text-brand">시작일</span>
                     {draftStart && <span className="truncate text-ui-white">{toSnapshotDateLabel(draftStart.snapshotTime)}</span>}
                   </span>
                   <span aria-hidden="true" className="text-ui-white">~</span>
                   <span className="flex min-w-0 items-center gap-1">
-                    <span className="shrink-0 font-semibold text-brand">종료일</span>
+                    <span className="shrink-0 font-normal text-brand">종료일</span>
                     {draftEnd && <span className="truncate text-ui-white">{toSnapshotDateLabel(draftEnd.snapshotTime)}</span>}
                   </span>
-                  {tradingDayBadge !== null && <span className="inline-flex h-5 shrink-0 items-center rounded bg-brand px-1.5 text-[13px] font-semibold leading-none text-ui-background">{tradingDayBadge}</span>}
+                  {tradingDayBadge !== null && <span className="inline-flex h-5 shrink-0 items-center rounded bg-brand px-1.5 text-[13px] font-normal leading-none text-ui-background">{tradingDayBadge}</span>}
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
                   <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
@@ -715,9 +715,9 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
               </div>
               <div className="mt-1 flex w-[31rem] items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]">
                 <span className="flex items-center gap-2">
-                  <span className="font-semibold text-brand">날짜</span>
+                  <span className="font-normal text-brand">날짜</span>
                   {draftDay ? <span className="text-ui-white">{dayLabel}</span> : viewedDayLabel !== null && <span className="text-ui-muted">{viewedDayLabel}</span>}
-                  {tradingDayBadge !== null && <span className="inline-flex h-5 shrink-0 items-center rounded bg-brand px-1.5 text-[13px] font-semibold leading-none text-ui-background">{tradingDayBadge}</span>}
+                  {tradingDayBadge !== null && <span className="inline-flex h-5 shrink-0 items-center rounded bg-brand px-1.5 text-[13px] font-normal leading-none text-ui-background">{tradingDayBadge}</span>}
                 </span>
                 <button type="button" disabled={draftDay === null} onClick={applyDay} className={APPLY_BUTTON_CLASS}>
                   적용

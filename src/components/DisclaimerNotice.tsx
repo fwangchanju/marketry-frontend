@@ -13,13 +13,13 @@ export default function DisclaimerNotice() {
         <span className="block h-[10px] truncate">{DISCLAIMER}</span>
         <span className="block h-[10px] truncate">
           <span>© 2026 MARKETRY</span>
-          <span aria-hidden="true" className="px-1 text-ui-white/40">·</span>
+          <span aria-hidden="true" className="px-1 text-ui-white/35">·</span>
           <Link to="/info/terms" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">이용약관</Link>
-          <span aria-hidden="true" className="px-1 text-ui-white/40">·</span>
+          <span aria-hidden="true" className="px-1 text-ui-white/35">·</span>
           <Link to="/info/privacy" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">개인정보처리방침</Link>
-          <span aria-hidden="true" className="px-1 text-ui-white/40">·</span>
+          <span aria-hidden="true" className="px-1 text-ui-white/35">·</span>
           <Link to="/info/source" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">데이터</Link>
-          <span aria-hidden="true" className="px-1 text-ui-white/40">·</span>
+          <span aria-hidden="true" className="px-1 text-ui-white/35">·</span>
           <Link to="/info/contact" className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">문의</Link>
         </span>
       </span>

@@ -91,7 +91,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             <a
               href={naverLoginUrl(returnTo)}
               aria-label="네이버 로그인"
-              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#03a94d] text-sm font-bold text-white transition-opacity hover:opacity-90"
+              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#03a94d] text-sm font-bold text-white transition-opacity hover:opacity-85"
             >
               <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
                 <NaverLogoIcon className="h-3 w-3 text-white" />
@@ -103,7 +103,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             <a
               href={kakaoLoginUrl(returnTo)}
               aria-label="카카오 로그인"
-              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#fee500] text-sm font-bold text-[#191919] transition-opacity hover:opacity-90"
+              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#fee500] text-sm font-bold text-[#191919] transition-opacity hover:opacity-85"
             >
               <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
                 <KakaoLogoIcon className="h-3.5 w-3.5" />

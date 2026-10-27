@@ -23,7 +23,7 @@ export default function DailyAccessChart({ rows, ariaLabelPrefix = '접속 회�
           <span className="text-xs leading-none tabular-nums text-ui-text">{row.members === 0 ? '' : formatCount(row.members)}</span>
           <span
             className="w-full rounded-[2px] bg-[var(--brand)]"
-            style={{ height: `${Math.max(row.members > 0 ? 6 : 2, (row.members / max) * 100)}%`, maxWidth: 40, maxHeight: 'calc(100% - 40px)', opacity: row.members > 0 ? 1 : 0.25 }}
+            style={{ height: `${Math.max(row.members > 0 ? 6 : 2, (row.members / max) * 100)}%`, maxWidth: 40, maxHeight: 'calc(100% - 40px)', opacity: row.members > 0 ? 1 : 0.2 }}
           />
           <span className={`flex h-[11px] w-full overflow-visible whitespace-nowrap text-[11px] leading-none tabular-nums text-ui-muted ${dense && index === rows.length - 1 ? 'justify-end' : 'justify-center'}`}>{dateLabel(row.date, index, rows.length)}</span>
         </div>

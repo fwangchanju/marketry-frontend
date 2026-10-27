@@ -17,11 +17,11 @@ import { displayEmail } from '@/utils/displayEmail'
 import { AUTH_PROVIDER_ISSUERS, isAuthProviderIssuer } from '@/utils/authProvider'
 
 const PAGE_SIZE = 50
-const controlClass = 'flex h-5 min-w-9 shrink-0 items-center justify-center whitespace-nowrap rounded-sm border-0 bg-brand px-1.5 text-[11px] font-semibold leading-none text-ui-background outline-none transition-colors hover:brightness-110 focus-visible:brightness-110 disabled:cursor-not-allowed disabled:opacity-75'
+const controlClass = 'flex h-5 min-w-9 shrink-0 items-center justify-center whitespace-nowrap rounded-sm border-0 bg-brand px-1.5 text-[11px] font-semibold leading-none text-ui-background outline-none transition-colors hover:brightness-110 focus-visible:brightness-110 disabled:cursor-not-allowed disabled:opacity-70'
 type SortKey = 'id' | 'issuer' | 'email' | 'nickname' | 'role' | 'createdAt' | 'lastAccessAt'
 type SortOrder = 'asc' | 'desc'
 // 로딩 원에서 숫자 세기가 끝나면 나오는 "다시 시도" 버튼(Spinner)과 같은 모양이다.
-const retryButtonClass = 'rounded border-0 bg-[var(--brand-surface)] px-3 py-1 text-sm font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)] disabled:opacity-40'
+const retryButtonClass = 'rounded border-0 bg-[var(--brand-surface)] px-3 py-1 text-sm font-bold text-ui-white transition-colors hover:bg-[var(--brand-surface-hover)] disabled:opacity-35'
 const columns: { label: string; key: SortKey }[] = [
   { label: '아이디', key: 'id' },
   { label: '연동', key: 'issuer' },
@@ -277,7 +277,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
           <tbody className="select-text">
             {members.isError || noRoleSelected || noIssuerSelected || members.isPending || members.data.items.length === 0 ? null : members.data.items.map((member, index) => {
               const inactiveDays = daysSinceLastAccess(member.lastAccessAt)
-              return <tr key={member.id} {...rowProps(index)} className={`cursor-pointer ${selectedIds.has(member.id) ? 'bg-[var(--brand)]/15' : 'hover:bg-[var(--brand)]/10'}`}>
+              return <tr key={member.id} {...rowProps(index)} className={`cursor-pointer ${selectedIds.has(member.id) ? 'bg-[var(--brand)]/20' : 'hover:bg-[var(--brand)]/10'}`}>
                 <td className="text-center" style={CHECKBOX_CELL_STYLE}>
                   <input type="checkbox" aria-label={`${displayEmail(member.email) ?? member.id} 선택`} className="mx-auto my-0 block thin-check" checked={selectedIds.has(member.id)} onChange={() => {}} />
                 </td>
