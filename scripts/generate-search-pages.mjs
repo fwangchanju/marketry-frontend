@@ -11,8 +11,8 @@ function replaceOnce(html, pattern, replacement) {
   return html.replace(pattern, () => replacement)
 }
 
-export function renderSearchPage(template, path, { title, description }) {
-  const url = escapeHtml(`${siteUrl}${path}`)
+export function renderSearchPage(template, path, { title, description, canonicalPath = path }) {
+  const url = escapeHtml(`${siteUrl}${canonicalPath}`)
   const safeTitle = escapeHtml(title)
   const safeDescription = escapeHtml(description)
   let html = replaceOnce(template, /<title>[^<]*<\/title>/g, `<title>${safeTitle}</title>`)
@@ -33,7 +33,8 @@ async function generate() {
   const pages = JSON.parse(await readFile('src/utils/searchMetadata.json', 'utf8'))
   const template = await readFile('dist/index.html', 'utf8')
   for (const [path, page] of Object.entries(pages)) {
-    if (!/^\/(?:home|(?:map|graph)\/(?:kospi|kosdaq|allstock))$/.test(path)) throw new Error(`Unexpected search page path: ${path}`)
+    if (!/^\/(?:home|map|graph|(?:map|graph)\/(?:kospi|kosdaq|allstock)|guide\/stock-heatmap)$/.test(path)) throw new Error(`Unexpected search page path: ${path}`)
+    if (page.canonicalPath && !/^\/(?:map|graph)$/.test(page.canonicalPath)) throw new Error(`Unexpected canonical search page path: ${page.canonicalPath}`)
     const destination = resolve('dist', `.${path}.html`)
     await mkdir(dirname(destination), { recursive: true })
     await writeFile(destination, renderSearchPage(template, path, page))

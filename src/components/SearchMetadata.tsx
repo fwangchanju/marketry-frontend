@@ -12,7 +12,7 @@ export default function SearchMetadata() {
   const { pathname } = useLocation()
 
   useEffect(() => {
-    const page = (pages as Record<string, { title: string; description: string }>)[pathname]
+    const page = (pages as Record<string, { title: string; description: string; canonicalPath?: string }>)[pathname]
     if (!page) {
       document.title = 'MARKETRY - Design Your Market'
       document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', '코스피·코스닥 종목을 업종별 시장 지도와 그래프로 살펴보는 MARKETRY입니다.')
@@ -22,7 +22,7 @@ export default function SearchMetadata() {
       setMeta('og:url', `${siteUrl}${pathname}`)
       return
     }
-    const url = `${siteUrl}${pathname}`
+    const url = `${siteUrl}${page.canonicalPath ?? pathname}`
     document.title = page.title
     document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', page.description)
     document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', url)

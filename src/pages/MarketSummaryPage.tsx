@@ -439,7 +439,7 @@ export default function MarketSummaryPage() {
   const toolbarContent = (
     <>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="HOME" label="ALL STOCK" />
+              <ToolbarModeText page="HOME" label="K-STOCK" />
               {/* 지도·그룹 페이지와 같은 날짜·시각·시간대 — 홈도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
                   애프터 마켓 시간에는 등락률 기준(종가·누적·별도) 선택도 지도·그룹 페이지와 같이 보인다. 로딩·오류에서도 제자리에 둔다. */}
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>

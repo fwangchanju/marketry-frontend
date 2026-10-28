@@ -8,6 +8,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
 import SourcePage from './pages/SourcePage'
 import ContactPage from './pages/ContactPage'
+import StockHeatmapGuidePage from './pages/StockHeatmapGuidePage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
@@ -69,9 +70,16 @@ function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   const params = new URLSearchParams(search)
   const marketParam = params.get('market')
   const market = marketParam === 'KOSPI' || marketParam === 'KOSDAQ' || marketParam === 'ALL_STOCK' ? marketParam : null
+  if (!market) return basePath === '/map' ? <MapPage /> : <GroupPage />
   if (market) params.delete('market')
   const rest = params.toString()
-  return <Navigate to={`${marketRoute(basePath, market ?? 'ALL_STOCK')}${rest ? `?${rest}` : ''}${hash}`} replace />
+  return <Navigate to={`${marketRoute(basePath, market)}${rest ? `?${rest}` : ''}${hash}`} replace />
+}
+
+// 검색 결과와 기존 북마크의 /allstock·/korea 주소를 기본 국내증시 주소로 옮기되 쿼리와 해시는 보존한다.
+function LegacyDomesticMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
+  const { search, hash } = useLocation()
+  return <Navigate to={`${marketRoute(basePath, 'ALL_STOCK')}${search}${hash}`} replace />
 }
 
 function LegacyGroupRedirect() {
@@ -112,11 +120,13 @@ export default function App() {
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
           <Route path="/map/kospi" element={<MapPage />} />
           <Route path="/map/kosdaq" element={<MapPage />} />
-          <Route path="/map/allstock" element={<MapPage />} />
+          <Route path="/map/korea" element={<LegacyDomesticMarketRedirect basePath="/map" />} />
+          <Route path="/map/allstock" element={<LegacyDomesticMarketRedirect basePath="/map" />} />
           <Route path="/graph" element={<LegacyMarketRedirect basePath="/graph" />} />
           <Route path="/graph/kospi" element={<GroupPage />} />
           <Route path="/graph/kosdaq" element={<GroupPage />} />
-          <Route path="/graph/allstock" element={<GroupPage />} />
+          <Route path="/graph/korea" element={<LegacyDomesticMarketRedirect basePath="/graph" />} />
+          <Route path="/graph/allstock" element={<LegacyDomesticMarketRedirect basePath="/graph" />} />
           <Route path="/group" element={<LegacyGroupRedirect />} />
           <Route path="/group/*" element={<LegacyGroupRedirect />} />
           <Route path="/sector" element={<LegacyGroupRedirect />} />
@@ -136,6 +146,7 @@ export default function App() {
           <Route path="/info/terms" element={<TermsPage />} />
           <Route path="/info/source" element={<SourcePage />} />
           <Route path="/info/contact" element={<ContactPage />} />
+          <Route path="/guide/stock-heatmap" element={<StockHeatmapGuidePage />} />
           {/* 이전 주소와 Google OAuth에 등록된 /privacy 주소도 새 정보 경로로 보낸다. */}
           <Route path="/privacy" element={<Navigate to="/info/privacy" replace />} />
           <Route path="/terms" element={<Navigate to="/info/terms" replace />} />
