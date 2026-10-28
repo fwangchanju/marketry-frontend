@@ -34,7 +34,7 @@ export default function MobileTopBar({ title, className = '' }: { title: string;
       <Link to="/home" aria-label="MARKETRY 홈으로 이동" className="min-w-0 justify-self-start">
         <MarketryLogo layout="horizontalClean" className="h-auto w-[148px] max-w-full" />
       </Link>
-      <span className="flex flex-col items-center text-[14px] font-bold leading-none tracking-[0.12em] text-brand">{title}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></span>
+      <span className="flex flex-col items-center text-[14px] font-bold leading-none tracking-[0.12em] text-brand">{title}{title && <ChevronDownIcon aria-hidden="true" className="h-3 w-3" />}</span>
       <div ref={menuRef} className="relative justify-self-end">
         {isLoading ? <span className="block h-[44px] w-[44px]" aria-hidden="true" /> : session?.authenticated ? (
           <>
