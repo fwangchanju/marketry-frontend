@@ -87,7 +87,7 @@
 - 화면의 **Basis**(설정창 맨 아래)는 코드에서 `Taxonomy`(분류 선택)다. 코드의 `basis`는 이것이 아니라 일간/시간외 등락률 기준이며, 서버에 보내는 요청 항목 이름(`basis=afterHours`)으로만 남아 있고 코드 안에서는 `ChangeRateMode`라고 부른다.
 - **히트맵**: 사각형으로 쪼갠 지도 그림은 화면·검색 문구·코드 모두 `히트맵`/`Heatmap` 하나로 쓴다(2026-10-28 통일). 구글·네이버 검색에서 "히트맵"이 압도적이라 처음 쓰던 "트리맵"/`Treemap`을 바꿨다. 예외는 외부 라이브러리 `d3-hierarchy`가 제공하는 함수 이름(`treemap`, `treemapSquarify`, `treemapBinary`)뿐이다. 새 코드·문서·화면에 "트리맵"/`Treemap`을 다시 쓰지 않는다.
 - "콤보박스"라는 말은 화면과 코드에서 쓰지 않는다. 드롭다운이라고 부른다.
-- **업종 / 거래소 분류**: 화면의 "업종"은 우리 분류의 한 덩어리(대·중·소분류 어느 단계든, 영어 `Sector`)이고, 종목 표의 "거래소 분류"은 거래소(키움 `upName`)가 정한 업종(코드 `industry`)이다. 화면 영어는 `Sector`만 쓰고 `Industry`는 쓰지 않는다. Custom 페이지 주소는 `/custom/sector`(옛 `/custom/industry`는 새 주소로 보낸다)와 `/custom/stock`이다.
+- **업종 / 거래소 분류**: 화면의 "업종"은 우리 분류의 한 덩어리(대·중·소분류 어느 단계든, 영어 `Sector`)이고, 종목 표의 "거래소 분류"은 거래소(키움 `upName`)가 정한 업종(코드 `industry`)이다. 화면 영어는 `Sector`만 쓰고 `Industry`는 쓰지 않는다. Custom 페이지 주소는 `/custom/sector`와 `/custom/stock`이다.
 - 분류 갱신 시각 필드는 `taxonomyUpdatedAt`이다. 서버는 한동안 옛 이름 `classificationUpdatedAt`도 같이 보내며, 화면 전환이 끝난 뒤 서버에서 옛 이름을 지운다.
 
 ## 영역별 화면 요소
