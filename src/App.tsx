@@ -75,12 +75,6 @@ function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   return <Navigate to={`${marketRoute(basePath, market ?? 'ALL_STOCK')}${rest ? `?${rest}` : ''}${hash}`} replace />
 }
 
-function LegacyGroupRedirect() {
-  const { pathname, search, hash } = useLocation()
-  const groupPath = pathname.replace(/^\/(?:group|sector|industry)(?=\/|$)/, '/graph')
-  return <Navigate to={`${groupPath}${search}${hash}`} replace />
-}
-
 function AdminRouteGuard() {
   const { data: session, isLoading } = useSession()
   if (isLoading) return null
@@ -109,7 +103,6 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<MarketSummaryPage />} />
-          <Route path="/summary" element={<Navigate to="/home" replace />} />
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
           <Route path="/map/kospi" element={<MapPage />} />
           <Route path="/map/kosdaq" element={<MapPage />} />
@@ -118,18 +111,9 @@ export default function App() {
           <Route path="/graph/kospi" element={<GroupPage />} />
           <Route path="/graph/kosdaq" element={<GroupPage />} />
           <Route path="/graph/korea" element={<GroupPage />} />
-          <Route path="/group" element={<LegacyGroupRedirect />} />
-          <Route path="/group/*" element={<LegacyGroupRedirect />} />
-          <Route path="/sector" element={<LegacyGroupRedirect />} />
-          <Route path="/sector/*" element={<LegacyGroupRedirect />} />
-          <Route path="/industry" element={<LegacyGroupRedirect />} />
-          <Route path="/industry/*" element={<LegacyGroupRedirect />} />
           {/* 커스텀 관리의 주소는 /custom 아래에서 업종·종목 화면으로 나뉜다. */}
           <Route path="/custom" element={<Navigate to="/custom/sector" replace />} />
           <Route path="/custom/sector" element={<CustomPage />} />
-          {/* 예전 주소(/custom/industry)로 들어와도 새 주소로 보낸다. */}
-          <Route path="/custom/industry" element={<Navigate to="/custom/sector" replace />} />
-          <Route path="/custom/category" element={<Navigate to="/custom/sector" replace />} />
           <Route path="/custom/stock" element={<CustomPage />} />
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}
           <Route path="/info" element={<Navigate to="/info/source" replace />} />
@@ -151,10 +135,6 @@ export default function App() {
             <Route path="dashboard" element={<AdminDashboardPage />} />
             <Route path="message" element={<AdminMessagePage />} />
             <Route path="banner" element={<AdminBannerPage />} />
-            <Route path="chart" element={<Navigate to="/admin/dashboard" replace />} />
-            {/* 기존 링크와 로그인 returnTo 호환을 위해 이전 주소는 새 주소로 보낸다. */}
-            <Route path="sector" element={<Navigate to="/custom/sector" replace />} />
-            <Route path="stock" element={<Navigate to="/custom/stock" replace />} />
             <Route path="*" element={<Navigate to="/home" replace />} />
           </Route>
           <Route path="*" element={<Navigate to="/home" replace />} />
