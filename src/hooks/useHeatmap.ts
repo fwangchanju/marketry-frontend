@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { getTreemap, getSnapshotDays, getStockCatalog, getTradingDayGap, type ChangeRateMode, type SnapshotDay } from '@/api/treemap'
-import { treemapKeys } from './queryKeys'
+import { getHeatmap, getSnapshotDays, getStockCatalog, getTradingDayGap, type ChangeRateMode, type SnapshotDay } from '@/api/heatmap'
+import { heatmapKeys } from './queryKeys'
 import { MARKET_DATA_CACHE, STATIC_REFERENCE_CACHE } from './cacheConfig'
 import type { MarketQuery } from '@/types/api'
 import type { TaxonomySource } from '@/utils/taxonomyNames'
 
-export function useTreemap(
+export function useHeatmap(
   market: MarketQuery,
   source: TaxonomySource,
   nxtOnly: boolean,
@@ -14,8 +14,8 @@ export function useTreemap(
   const basis = options?.basis ?? 'daily'
   const snapshotTime = options?.snapshotTime
   return useQuery({
-    queryKey: treemapKeys.map(market, source, nxtOnly, basis, snapshotTime ?? null),
-    queryFn: () => getTreemap(market, source, snapshotTime, nxtOnly, basis),
+    queryKey: heatmapKeys.map(market, source, nxtOnly, basis, snapshotTime ?? null),
+    queryFn: () => getHeatmap(market, source, snapshotTime, nxtOnly, basis),
     enabled: options?.enabled ?? true,
     ...MARKET_DATA_CACHE,
     // 지난 날짜의 지도는 바뀌지 않으니 1분마다 다시 받지 않는다.
@@ -26,7 +26,7 @@ export function useTreemap(
 // 달력에 표시할 날짜 목록(그 달에 종가 지도가 있는 날). 달력을 열 때만 조회한다.
 export function useSnapshotDays(market: MarketQuery, month: string, options?: { enabled?: boolean; retry?: number | false }) {
   return useQuery({
-    queryKey: treemapKeys.snapshotDays(market, month),
+    queryKey: heatmapKeys.snapshotDays(market, month),
     queryFn: () => getSnapshotDays(market, month),
     enabled: options?.enabled ?? true,
     ...(options?.retry === undefined ? {} : { retry: options.retry }),
@@ -51,7 +51,7 @@ export function usePreviousTradingDay(market: MarketQuery, date: string | null, 
 // 지난 날짜(from)가 실시간 날짜(to)보다 몇 거래일 전인지. 두 날짜가 정해진 뒤에만 조회한다.
 export function useTradingDayGap(from: string | null, to: string | null) {
   return useQuery({
-    queryKey: treemapKeys.tradingDayGap(from ?? '', to ?? ''),
+    queryKey: heatmapKeys.tradingDayGap(from ?? '', to ?? ''),
     queryFn: () => getTradingDayGap(from ?? '', to ?? ''),
     enabled: from !== null && to !== null,
     staleTime: 60_000,
@@ -61,7 +61,7 @@ export function useTradingDayGap(from: string | null, to: string | null) {
 // 로그인 없이 읽는 종목 공통 정보 — 읽기 전용 시트가 NXT 여부·시장·거래소 분류명을 얻는다.
 export function useStockCatalog(options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: treemapKeys.stockCatalog(),
+    queryKey: heatmapKeys.stockCatalog(),
     queryFn: getStockCatalog,
     enabled: options?.enabled ?? true,
     ...STATIC_REFERENCE_CACHE,

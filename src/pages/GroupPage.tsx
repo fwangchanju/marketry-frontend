@@ -1,5 +1,5 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
-import { resolveTreemapColor } from '@/utils/treemapColorScale'
+import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -27,13 +27,13 @@ import DisclaimerFooter from '@/components/DisclaimerFooter'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import ToolbarChip from '@/components/ToolbarChip'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
-import { useSectorTreemapPair } from '@/hooks/useSectorTreemapPair'
+import { useSectorHeatmapPair } from '@/hooks/useSectorHeatmapPair'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
-import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
+import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredHeatmap'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
@@ -41,13 +41,13 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { marketRoute } from '@/utils/marketRoute'
-import type { Market, TreemapSectorNode } from '@/types/api'
+import type { Market, HeatmapSectorNode } from '@/types/api'
 import RankColumns, { type RankColumnItem } from '@/components/RankColumns'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { getMarketIndexHistory } from '@/api/marketSummary'
 import { trendMonths } from '@/utils/trendDates'
-import { usePreviousTradingDay } from '@/hooks/useTreemap'
+import { usePreviousTradingDay } from '@/hooks/useHeatmap'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type GroupGraphMode = 'current' | 'delta'
@@ -92,10 +92,10 @@ export default function GroupPage() {
     pinnedSnapshotTime,
     isLoading,
     isError,
-    isTreemapSuccess,
+    isHeatmapSuccess,
     isMarketValueTierRangeReady,
-    isRefetchingTreemap,
-    refetchTreemap,
+    isRefetchingHeatmap,
+    refetchHeatmap,
     onChangeSectorFilterEnabled,
     excludedMarketValueTiers,
     excludedSectorIds,
@@ -111,7 +111,7 @@ export default function GroupPage() {
   const effectiveDepth = Math.min(groupDepth, selectableDepth)
 
 
-  // now는 여기서 따로 조회하지 않는다 — useGlobalSettings()가 이미 부르는 useTreemap(market, source)
+  // now는 여기서 따로 조회하지 않는다 — useGlobalSettings()가 이미 부르는 useHeatmap(market, source)
   // 결과(data)를 그대로 쓴다. before는 그 now.snapshotTime에서 계산한 시각을 쌍으로 묶어 조회한다
   // (marketry-backend 지시서 결정 4) — 이렇게 해야 재조회로 now가 새 tick으로 바뀌는 순간에도
   // 화면이 새 now·옛 before를 잠깐이라도 섞어 그리지 않는다.
@@ -126,7 +126,7 @@ export default function GroupPage() {
   // 두 토글을 하나의 선택값으로 관리해 항상 정확히 한 그래프만 켜진다. 기간 보기에서는 현재 그래프를 강제로 표시한다.
   const showDeltaGraph = !isRangeView && graphMode === 'delta'
   const toggleGraph = () => setGraphMode(showDeltaGraph ? 'current' : 'delta')
-  const pairQuery = useSectorTreemapPair(market, source, nxtOnly, beforeMinutes, data, changeRateMode, !isRangeView)
+  const pairQuery = useSectorHeatmapPair(market, source, nxtOnly, beforeMinutes, data, changeRateMode, !isRangeView)
   // 쌍 쿼리가 에러(재시도 1회 뒤)면 "before 없음"으로 보고 now 쿼리의 현재 data로 그린다. 그 외에는
   // 화면에 그리는 now가 항상 "쌍 안의 now"다 — placeholder 기간에도 그 쌍이 만들어질 때의 now·before가
   // 함께 유지되어, 상단 바 시각과 그래프가 서로 어긋나지 않는다.
@@ -167,10 +167,10 @@ export default function GroupPage() {
   // "데이터가 없습니다" 화면을 스크린샷으로 찍는다. 그 외에는 쌍 쿼리까지 끝나 있고(성공 또는 에러), placeholder가
   // 아니고, 시가총액 구간 설정이 준비된 뒤에야 스크린샷을 허용한다 — now 에러는 항상 false다.
   const isDataCaptureReady =
-    isTreemapSuccess &&
+    isHeatmapSuccess &&
     (data?.snapshotTime == null ||
       (isPairSettled && !pairQuery.isPlaceholderData && isMarketValueTierRangeReady))
-  const isRefreshing = isRefetchingTreemap || pairQuery.isFetching
+  const isRefreshing = isRefetchingHeatmap || pairQuery.isFetching
 
   // 렌더러가 /sector/kosdaq?beforeMinutes=15&avgMode=simple&sectorFilter=true로
   // 스크린샷을 요청할 때 쓰는 진입점 — MapPage와 동일한 패턴(초기 상태 반영 용도일 뿐 주소창엔
@@ -254,7 +254,7 @@ export default function GroupPage() {
   const charts = useMemo(() => {
     if (!displayNow) return { current: buildRankChart([]), delta: buildRankChart([]) }
 
-    const beforeByPath = new Map<string, TreemapSectorNode>(
+    const beforeByPath = new Map<string, HeatmapSectorNode>(
       collectAtDepth(displayBefore?.items ?? [], effectiveDepth, new Set<number>()).map(({ node, pathKey }) => [pathKey, node]),
     )
 
@@ -310,7 +310,7 @@ export default function GroupPage() {
       <NavSubBar
         actions={
           <NavBarPageActions
-            onRefresh={refetchTreemap}
+            onRefresh={refetchHeatmap}
             isRefreshing={isRefreshing}
             onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
             isSettingsOpen={settingsModalProps.isOpen}
@@ -342,7 +342,7 @@ export default function GroupPage() {
                   <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                   <SnapshotDatePicker
                     market={market}
-                    holidayColor={resolveTreemapColor(8, colorScale)}
+                    holidayColor={resolveHeatmapColor(8, colorScale)}
                     viewedSnapshotTime={displayNow?.snapshotTime ?? null}
                     liveSnapshotTime={liveSnapshotTime}
                     onSelectSnapshotTime={onChangePinnedSnapshotTime}
@@ -364,7 +364,7 @@ export default function GroupPage() {
                     <ToolbarChip bare tone="text-ui-white">
                       <PageRefreshButton
                         cell
-                        onRefresh={refetchTreemap}
+                        onRefresh={refetchHeatmap}
                         isRefreshing={isRefreshing}
                         helpText={SNAPSHOT_REFRESH_HELP}
                         minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
@@ -395,7 +395,7 @@ export default function GroupPage() {
                 </div>
               ) : isError ? (
                 <div className="flex flex-1 items-center justify-center">
-                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
+                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} />
                 </div>
               ) : data?.snapshotTime == null ? (
                 // now가 성공했지만 그 시각 데이터 자체가 없다 — 쌍 쿼리가 비활성이라(결정 4)

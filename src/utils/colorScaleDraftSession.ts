@@ -1,4 +1,4 @@
-import type { ColorScaleConfig } from './treemapColorScale'
+import type { ColorScaleConfig } from './heatmapColorScale'
 
 type Update<T> = T | ((previous: T) => T)
 

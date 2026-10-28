@@ -1,9 +1,9 @@
 import { memo, useRef, type CSSProperties } from 'react'
 import StockBox from './StockBox'
 import type { PopupContent } from './Popup'
-import { sectorHeaderFontSize, sectorHeaderHeight, PADDING, type LaidOutSector } from '@/hooks/useTreemapLayout'
+import { sectorHeaderFontSize, sectorHeaderHeight, PADDING, type LaidOutSector } from '@/hooks/useHeatmapLayout'
 import { TAB_GAP, toJoEokDecimal, toPctSigned } from '@/utils/format'
-import type { ColorScaleConfig } from '@/utils/treemapColorScale'
+import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
   onClosePopup: (targetKey: string) => void
   // 하위 종목 박스에만 적용 — 업종 정보는 이 설정과 무관하게 항상 우클릭으로 연다.
   stockPopupOnHover: boolean
-  // 헤더를 좌클릭(주 버튼)으로 누르는 "순간"(pointerdown) 알림 — Treemap이 이걸로
+  // 헤더를 좌클릭(주 버튼)으로 누르는 "순간"(pointerdown) 알림 — Heatmap이 이걸로
   // suppressSectorHoverBorder를 곧장 켜서, 줌인 애니메이션 시작 전에 hover 테두리가 잠깐
   // 반짝였다가 사라지는 걸 막는다. 우클릭(팝업)은 이 콜백을 아예 안 부른다.
   onHeaderPressStart: () => void
@@ -156,14 +156,14 @@ function SectorBox({
         width: sector.width,
         height: sector.height,
         zIndex: isTopPick ? 20 : undefined,
-        // 헤더뿐 아니라 아래 hover 오버레이(treemap-sector-hover-overlay)도 이 값을 그대로
+        // 헤더뿐 아니라 아래 hover 오버레이(heatmap-sector-hover-overlay)도 이 값을 그대로
         // 상속해서 쓴다 — 오버레이는 헤더의 형제라 헤더에 걸면 안 내려온다(CSS 변수는 자손에게만
         // 상속), 그래서 둘의 공통 조상인 여기(box-content)에 한 번만 건다.
-        '--treemap-base-color': isTopPick ? strongIndustryColor : headerStyle.baseColor,
+        '--heatmap-base-color': isTopPick ? strongIndustryColor : headerStyle.baseColor,
       } as CSSProperties}
       data-sector-id={sector.sectorId}
       data-sector-name={sector.sectorName}
-      className={`treemap-sector-box box-content ${isPinned ? 'is-pinned' : ''}`}
+      className={`heatmap-sector-box box-content ${isPinned ? 'is-pinned' : ''}`}
     >
       {/* 강조 테두리 — border(박스를 4px 키워서 지도 맨 아래·오른쪽 끝에서 잘렸다)가 아니라 박스 안쪽 가장자리에 덮어 그리는 층이다.
           박스 크기는 다른 업종과 같고, 테두리는 항상 박스 안에 들어가며 안쪽 종목 박스 위에 보인다. */}
@@ -175,7 +175,7 @@ function SectorBox({
         />
       )}
       {/* isSelf(드릴다운으로 들어온 자기 자신)는 헤더 태그를 안 그린다 — breadcrumb에 이미
-          "KOSPI > 반도체"처럼 같은 이름이 떠 있어서 중복이기 때문(useTreemapLayout의 paddingTop도
+          "KOSPI > 반도체"처럼 같은 이름이 떠 있어서 중복이기 때문(useHeatmapLayout의 paddingTop도
           이 섹터 몫의 헤더 공간을 아예 안 비워둔다). 그 대신 실제 하위 섹터들이 이 자리를 이어받아
           맨 위(depth 0) 취급을 받는다(아래 subSectors map의 depth 전달 참고). isSelf는 헤더가 아예
           없어 우클릭도 못 받으므로(팝업 대상이 될 수 없음) hover 오버레이도 같이 생략한다. */}
@@ -188,7 +188,7 @@ function SectorBox({
               하위 섹터 자신의 오버레이만 뜬다. z-index:30은 하위 강세 업종 박스(z-index:20)와
               하위 헤더보다 높다. 선택한 섹터 자신의 헤더는 활성 상태에서 CSS가 31로 올려 기존
               헤더 hover 표기를 유지한다. */}
-          <div className="treemap-sector-hover-overlay absolute inset-0 z-[30] pointer-events-none" aria-hidden="true" />
+          <div className="heatmap-sector-hover-overlay absolute inset-0 z-[30] pointer-events-none" aria-hidden="true" />
           {/* 업종 헤더(SectorHeader) — 업종 박스 맨 위 제목. 업종명과 등락률 같은 수치를 한 줄로 보여 준다.
               강조 헤더는 z-30 강조 테두리보다 위에 둔다. 얇은 하위 헤더에서는 테두리 2px이 글자 윗부분을 덮기 때문이다. */}
           <button
@@ -233,7 +233,7 @@ function SectorBox({
               width: `calc(100% - ${PADDING * 2}px)`,
               ...(isTopPick ? { backgroundColor: strongIndustryColor, color: 'var(--ui-surface)' } : absoluteDepth === 0 ? { color: strongIndustryColor } : {}),
             } as CSSProperties}
-            className={`treemap-sector-header ${isTopPick ? 'treemap-top-pick-header z-[31]' : 'z-[2]'} absolute top-0 flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
+            className={`heatmap-sector-header ${isTopPick ? 'heatmap-top-pick-header z-[31]' : 'z-[2]'} absolute top-0 flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
           >
             {/* 글줄 높이는 레이아웃이 확보한 헤더 높이와 같아야 한다.
                 지표는 작은 글꼴의 기준선만 공유하고 별도 줄 높이를 더하지 않는다. */}

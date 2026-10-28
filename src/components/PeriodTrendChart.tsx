@@ -1,6 +1,6 @@
 import Spinner from '@/components/Spinner'
 import { sampleTrendDays } from '@/utils/trendDates'
-import { resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
+import { resolveHeatmapExtremeColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
 
 export interface PeriodTrendPoint { date: string; changeRate: number }
 
@@ -22,7 +22,7 @@ export default function PeriodTrendChart({ points, label, colorScale, loading = 
   const x = (index: number) => points.length === 1 ? 500 : 24 + index / (points.length - 1) * 952
   const y = (value: number) => 180 - (value - minimum) / span * 150
   const last = points.at(-1)!
-  const color = resolveTreemapExtremeColor(last.changeRate, colorScale)
+  const color = resolveHeatmapExtremeColor(last.changeRate, colorScale)
   const ticks = sampleTrendDays(points.map((point, index) => ({ ...point, index })))
   return (
     <div role="img" aria-label={`${label} 선택 기간 누적 등락률 선형 그래프`} className="relative h-full w-full">

@@ -1,5 +1,5 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
-import { resolveTreemapColor } from '@/utils/treemapColorScale'
+import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { createPortal } from 'react-dom'
 import { useSettled } from '@/hooks/useSettled'
@@ -27,7 +27,7 @@ import SettingsPanel, {
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import Toolbar from '@/components/Toolbar'
-import Treemap from '@/components/Treemap'
+import Heatmap from '@/components/Heatmap'
 import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ChangeRateBar from '@/components/ChangeRateBar'
@@ -37,12 +37,12 @@ import Spinner from '@/components/Spinner'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
-import { useTreemapDrilldown } from '@/hooks/useTreemapDrilldown'
+import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
 import { useIsLoggedIn, useSession } from '@/hooks/useSession'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
-import type { DisplayGroup } from '@/hooks/useTreemapLayout'
+import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { CAPTURE_ID } from '@/utils/captureIds'
@@ -55,10 +55,10 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
-import { limitDepth, flattenAllItems, type FilteredTreemapSectorNode, type SectorChangeFilter } from '@/hooks/useFilteredTreemap'
+import { limitDepth, flattenAllItems, type FilteredHeatmapSectorNode, type SectorChangeFilter } from '@/hooks/useFilteredHeatmap'
 import { useTransientSetting } from '@/hooks/useTransientSetting'
 import { MEMBER_DEFAULTS } from '@/utils/settingDefaults'
-import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
+import type { MarketQuery, HeatmapSectorNode, HeatmapItem } from '@/types/api'
 import { isAdminSession } from '@/utils/adminAccess'
 
 const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'K-STOCK' }
@@ -84,7 +84,7 @@ const SPECIAL_MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [...MAP_SET
 const FLAT_GROUP_SECTOR_ID = -1
 const FLAT_GROUP_NAME = '__flat__'
 
-function toFlatDisplayGroup(items: TreemapItem[]): DisplayGroup {
+function toFlatDisplayGroup(items: HeatmapItem[]): DisplayGroup {
   return {
     sectorId: FLAT_GROUP_SECTOR_ID,
     sectorName: FLAT_GROUP_NAME,
@@ -98,7 +98,7 @@ function toFlatDisplayGroup(items: TreemapItem[]): DisplayGroup {
 
 const NO_STOCK_MOVES: StockMoves = {}
 
-function toDisplayGroup(node: FilteredTreemapSectorNode): DisplayGroup {
+function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
   return {
     sectorId: node.sectorId,
     sectorName: node.sectorName,
@@ -112,8 +112,8 @@ function toDisplayGroup(node: FilteredTreemapSectorNode): DisplayGroup {
 
 // 등락률 평균/상승·하락·보합 종목수는 개별 종목(changeRate) 기준이라, 지금 화면에 보이는
 // 그룹들의 종목을 전부(하위 섹터 포함) 펼쳐서 모아야 한다.
-function collectItems(groups: DisplayGroup[]): TreemapItem[] {
-  const result: TreemapItem[] = []
+function collectItems(groups: DisplayGroup[]): HeatmapItem[] {
+  const result: HeatmapItem[] = []
   for (const group of groups) {
     result.push(...group.items)
     result.push(...collectItems(group.children))
@@ -123,8 +123,8 @@ function collectItems(groups: DisplayGroup[]): TreemapItem[] {
 
 // 섹터 제외/시가총액 구간 필터를 적용하기 "전" 원본 트리 기준으로, 지금 보고 있는 뎁스(path)에
 // 해당하는 종목을 전부 모은다 — "제외된 개수까지 포함한 전체 리스트 개수"를 보여주기 위한 분모.
-function collectRawItems(nodes: TreemapSectorNode[]): TreemapItem[] {
-  const result: TreemapItem[] = []
+function collectRawItems(nodes: HeatmapSectorNode[]): HeatmapItem[] {
+  const result: HeatmapItem[] = []
   for (const node of nodes) {
     result.push(...node.items)
     result.push(...collectRawItems(node.children))
@@ -132,8 +132,8 @@ function collectRawItems(nodes: TreemapSectorNode[]): TreemapItem[] {
   return result
 }
 
-function findRawNodeByPath(nodes: TreemapSectorNode[], path: string[]): TreemapSectorNode | null {
-  let node: TreemapSectorNode | null = null
+function findRawNodeByPath(nodes: HeatmapSectorNode[], path: string[]): HeatmapSectorNode | null {
+  let node: HeatmapSectorNode | null = null
   let siblings = nodes
   for (const name of path) {
     const found = siblings.find(n => n.sectorName === name)
@@ -270,8 +270,8 @@ export default function MapPage() {
     rangeStartTime,
     rangeExcludedStocks,
     pinnedSnapshotTime,
-    refetchTreemap,
-    isRefetchingTreemap,
+    refetchHeatmap,
+    isRefetchingHeatmap,
     sectorChangeMaxDepth,
     isLoading,
     isError,
@@ -302,10 +302,10 @@ export default function MapPage() {
   const isAdmin = isAdminSession(session)
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
   const isSpecialMember = isAdmin || (session?.authenticated === true && session.special === true)
-  const [adminSectorChangeFilter, setAdminSectorChangeFilter] = useTransientSetting<SectorChangeFilter>('treemap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
-  const [adminSectorChangeDepth, setAdminSectorChangeDepth] = useTransientSetting('treemap.sectorChangeDepth', MEMBER_DEFAULTS.sectorChangeDepth)
-  const [, setAdminBoxLabelMinAreaPercent] = useTransientSetting('treemap.boxLabelMinAreaPercent', MEMBER_DEFAULTS.boxLabelMinAreaPercent)
-  const [, setAdminStockPopupOnHover] = useTransientSetting('treemap.stockPopupOnHover', MEMBER_DEFAULTS.stockPopupOnHover)
+  const [adminSectorChangeFilter, setAdminSectorChangeFilter] = useTransientSetting<SectorChangeFilter>('heatmap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
+  const [adminSectorChangeDepth, setAdminSectorChangeDepth] = useTransientSetting('heatmap.sectorChangeDepth', MEMBER_DEFAULTS.sectorChangeDepth)
+  const [, setAdminBoxLabelMinAreaPercent] = useTransientSetting('heatmap.boxLabelMinAreaPercent', MEMBER_DEFAULTS.boxLabelMinAreaPercent)
+  const [, setAdminStockPopupOnHover] = useTransientSetting('heatmap.stockPopupOnHover', MEMBER_DEFAULTS.stockPopupOnHover)
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·누적/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
@@ -321,12 +321,12 @@ export default function MapPage() {
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
-  // null이 아니면 Treemap이 해당 뎁스로 줄어드는 줌아웃 애니메이션을 재생하고, 끝나면
+  // null이 아니면 Heatmap이 해당 뎁스로 줄어드는 줌아웃 애니메이션을 재생하고, 끝나면
   // handleZoomOutComplete를 불러서 실제 이동을 한다 — 애니메이션 도중엔 path/groups를 먼저 바꾸지 않는다.
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
   const screenshotRef = useRef<HTMLDivElement>(null)
 
-  const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth, reset } = useTreemapDrilldown(filteredRootNodes)
+  const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth, reset } = useHeatmapDrilldown(filteredRootNodes)
   // "업종 단계" 뎁스 제한은 진짜 루트(대분류) 기준 절대값이다 — 설정이 중분류까지면 어디로 드릴다운해도 중분류까지만 보인다.
   // 드릴다운해서 대분류 하나로 들어가면(path.length = 1) 이미 한 단계를 내려온 것이라, 그 안에서는 남은 단계(설정값 - path.length)만 보인다.
   // 다만 들어간 업종의 바로 아래 한 단계는 항상 보여야 하므로 최소 1단계다. 드릴다운 상태에서는 헤더를 그리지 않는 자기 자신은
@@ -450,7 +450,7 @@ export default function MapPage() {
   // 들어간 단계 = 브라우저 기록 한 칸. 분류에 한 단계 들어갈 때마다 기록에 한 칸씩 쌓아서(직접 깊은 단계로
   // 들어가면 그 단계 수만큼), 브라우저 뒤로가기(⌘[, 트랙패드 스와이프, 마우스 뒤로가기 버튼)를 연달아
   // 눌러도 칸이 있는 만큼 계속 한 단계씩 올라간다. 전체 화면에서 더 누르면 원래대로 사이트 이전 페이지로
-  // 나간다. 앞으로가기(⌘])는 들어갔던 단계로 다시 내려간다. 각 칸은 그 시점의 경로(treemapPath)를 가진다.
+  // 나간다. 앞으로가기(⌘])는 들어갔던 단계로 다시 내려간다. 각 칸은 그 시점의 경로(heatmapPath)를 가진다.
   const historyDepthRef = useRef(0) // 지금 브라우저 기록 위치가 가리키는 깊이
   const historyConsumingRef = useRef(false) // 코드가 일으킨 history.go()의 popstate는 무시한다
   const historyPathnameRef = useRef('') // 기록 칸을 쌓은 주소 — 다른 주소로 이동했으면 go()로 정리하지 않는다
@@ -487,13 +487,13 @@ export default function MapPage() {
       if (entryFromOtherPageRef.current) {
         // 그룹에서 들어온 칸: 새 칸을 쌓지 않고 지금 칸에 경로를 적어 기준 칸으로 삼는다.
         entryFromOtherPageRef.current = false
-        window.history.replaceState({ ...(window.history.state ?? {}), treemapPath: path }, '')
+        window.history.replaceState({ ...(window.history.state ?? {}), heatmapPath: path }, '')
         baseDepthRef.current = depth
         historyDepthRef.current = depth
         historyPathnameRef.current = window.location.pathname
       } else if (depth > historyDepthRef.current) {
         for (let k = historyDepthRef.current + 1; k <= depth; k++) {
-          window.history.pushState({ ...(window.history.state ?? {}), treemapPath: path.slice(0, k) }, '')
+          window.history.pushState({ ...(window.history.state ?? {}), heatmapPath: path.slice(0, k) }, '')
         }
         historyDepthRef.current = depth
         historyPathnameRef.current = window.location.pathname
@@ -516,7 +516,7 @@ export default function MapPage() {
         baseDepthRef.current = depth
         historyDepthRef.current = depth
         if (consuming) pendingBasePathRef.current = path.slice(0, depth)
-        else window.history.replaceState({ ...(window.history.state ?? {}), treemapPath: path.slice(0, depth) }, '')
+        else window.history.replaceState({ ...(window.history.state ?? {}), heatmapPath: path.slice(0, depth) }, '')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 길이가 바뀔 때만 반응하면 된다(path 내용은 그때의 값을 쓴다)
@@ -526,14 +526,14 @@ export default function MapPage() {
       if (historyConsumingRef.current) {
         historyConsumingRef.current = false
         if (pendingBasePathRef.current !== null) {
-          window.history.replaceState({ ...(window.history.state ?? {}), treemapPath: pendingBasePathRef.current }, '')
+          window.history.replaceState({ ...(window.history.state ?? {}), heatmapPath: pendingBasePathRef.current }, '')
           pendingBasePathRef.current = null
         }
         return
       }
       // 이 지도 화면 안에서의 이동만 다룬다 — 다른 페이지로 나가는 뒤로가기는 그대로 둔다.
       if (!window.location.pathname.startsWith('/map')) return
-      const target: string[] = Array.isArray(e.state?.treemapPath) ? e.state.treemapPath : []
+      const target: string[] = Array.isArray(e.state?.heatmapPath) ? e.state.heatmapPath : []
       historyDepthRef.current = target.length
       if (target.length < path.length) requestDepth(target.length)
       else if (target.length > path.length) setPath(target)
@@ -592,7 +592,7 @@ export default function MapPage() {
 
   const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
-  // 렌더러용 모바일 판 — 데이터가 오고 트리맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
+  // 렌더러용 모바일 판 — 데이터가 오고 히트맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
   const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && visibleItems.length > 0
   // 렌더러용 판은 상단 메뉴 위에 보이도록 페이지 맨 바깥(body)에 그린다. 스크린샷 창이 열려 있을 때는 지도 본문 안에 투명하게 둔다.
   const placeMobileFrame = (frame: ReactElement) => (isMobileCaptureMode ? createPortal(frame, document.body) : frame)
@@ -602,7 +602,7 @@ export default function MapPage() {
     if (!isMobileCaptureSettled || isMobileCaptureReady) return
     let rafId = 0
     const revealWhenLaidOut = () => {
-      if (!document.querySelector('[data-map-mobile-capture] [data-treemap-layout-ready="true"]')) {
+      if (!document.querySelector('[data-map-mobile-capture] [data-heatmap-layout-ready="true"]')) {
         rafId = requestAnimationFrame(revealWhenLaidOut)
         return
       }
@@ -621,8 +621,8 @@ export default function MapPage() {
         onReselectCurrent={() => handleGoToDepth(0)}
         actions={
           <NavBarPageActions
-            onRefresh={refetchTreemap}
-            isRefreshing={isRefetchingTreemap}
+            onRefresh={refetchHeatmap}
+            isRefreshing={isRefetchingHeatmap}
             onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
             isSettingsOpen={settingsModalProps.isOpen}
             onOpenShare={() => setIsShareOpen(true)}
@@ -641,7 +641,7 @@ export default function MapPage() {
         >
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
-              항상 같은 폭을 유지하게 한다 — 내부 콘텐츠(트리맵)가 넘치면 이 컬럼 안에서만 처리된다. */}
+              항상 같은 폭을 유지하게 한다 — 내부 콘텐츠(히트맵)가 넘치면 이 컬럼 안에서만 처리된다. */}
           <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
             {/* 왼쪽은 마켓·기간·시계·시간대 묶음, 오른쪽 끝은 프로필(사진 + 거래소·MARKETRY). 두 묶음이 같은 줄에서 서로 밀어내므로
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
@@ -654,7 +654,7 @@ export default function MapPage() {
                   <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                   <SnapshotDatePicker
                     market={market}
-                    holidayColor={resolveTreemapColor(8, colorScale)}
+                    holidayColor={resolveHeatmapColor(8, colorScale)}
                     viewedSnapshotTime={data?.snapshotTime ?? null}
                     liveSnapshotTime={liveSnapshotTime}
                     onSelectSnapshotTime={onChangePinnedSnapshotTime}
@@ -678,8 +678,8 @@ export default function MapPage() {
                     <ToolbarChip bare tone="text-ui-white">
                       <PageRefreshButton
                         cell
-                        onRefresh={refetchTreemap}
-                        isRefreshing={isRefetchingTreemap}
+                        onRefresh={refetchHeatmap}
+                        isRefreshing={isRefetchingHeatmap}
                         helpText={SNAPSHOT_REFRESH_HELP}
                         minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                       >
@@ -745,7 +745,7 @@ export default function MapPage() {
                 </div>
               ) : isError ? (
                 <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
-                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
+                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} />
                 </div>
               ) : visibleItems.length === 0 ? (
                 isMineEmpty ? (
@@ -763,7 +763,7 @@ export default function MapPage() {
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
                   {/* 바깥 main-settings-row에서 양옆·설정창 사이 여백을 관리한다. */}
-                  <Treemap
+                  <Heatmap
                     groups={groups}
                     selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
                     depth={path.length}
@@ -796,7 +796,7 @@ export default function MapPage() {
               <DisclaimerFooter rightContent={<ChangeRateBar swatches={settingsModalProps.legendSwatches} />} />
               </div>
             </div>
-          {/* 모니터 캡처에서는 모바일용 트리맵을 만들지 않아 화면 렌더링과 DOM 복제 비용을 줄인다. */}
+          {/* 모니터 캡처에서는 모바일용 히트맵을 만들지 않아 화면 렌더링과 DOM 복제 비용을 줄인다. */}
           {((isShareOpen && isMobileScreenshotSelected) || isMobileCaptureMode) && !isLoading && !isError && visibleItems.length > 0 && placeMobileFrame(
             <div
               aria-hidden="true"
@@ -824,7 +824,7 @@ export default function MapPage() {
                 </nav>
               )}
               <div className="flex min-h-0 flex-1 flex-col">
-                <Treemap
+                <Heatmap
                   groups={groups}
                   selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
                   depth={path.length}

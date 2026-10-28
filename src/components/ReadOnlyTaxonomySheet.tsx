@@ -16,7 +16,7 @@ import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import Spinner from '@/components/Spinner'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
-import type { Market, TreemapResponse } from '@/types/api'
+import type { Market, HeatmapResponse } from '@/types/api'
 import { toCount, toJoEokDecimal } from '@/utils/format'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { createStockMatcher } from '@/utils/stockSearch'
@@ -103,7 +103,7 @@ const CHECKBOX_CELL_STYLE = { width: CHECKBOX_COLUMN_WIDTH, minWidth: CHECKBOX_C
 
 interface Props {
   mode: 'category' | 'stock'
-  data: TreemapResponse | undefined
+  data: HeatmapResponse | undefined
   isLoading: boolean
   // 데이터를 불러오지 못했는지 — 못 불러온 것을 "표시할 데이터가 없다"로 잘못 보여주지 않는다.
   isError: boolean
@@ -128,11 +128,11 @@ interface Props {
 interface SectorRow {
   sectorName: string
   sectorPath?: string[]
-  stocks: TreemapResponse['items'][number]['items']
+  stocks: HeatmapResponse['items'][number]['items']
 }
 
 // 종목 표는 대·중·소분류에 직접 배정된 종목을 모두 읽되, 각 종목의 배정 업종명을 유지한다.
-function collectSectorRows(nodes: TreemapResponse['items'], parentPath: string[] = []): SectorRow[] {
+function collectSectorRows(nodes: HeatmapResponse['items'], parentPath: string[] = []): SectorRow[] {
   return nodes.flatMap(node => {
     const sectorPath = [...parentPath, node.sectorName]
     return [
