@@ -82,11 +82,16 @@ function AdminRouteGuard() {
 }
 
 // 모바일(폭 768px 미만)에서는 화면 대신 안내만 보여 준다. 세션·시세 요청도 보내지 않도록 앱 맨 바깥에서 가린다.
-// 개인정보처리방침은 Google OAuth 동의 화면에 등록된 공개 페이지라 모바일에서도 열린다.
+// 글 페이지(/info 아래의 가이드·개인정보처리방침·데이터·약관·문의)는 모바일 틀(MobileDocumentShell)이 있어 모바일에서도 열린다.
+// 개인정보처리방침의 옛 주소 /privacy는 Google OAuth 동의 화면에 등록돼 있어 함께 연다.
+function isMobileOpenPath(pathname: string) {
+  return pathname === '/privacy' || pathname === '/info' || pathname.startsWith('/info/')
+}
+
 function MobileGate({ children }: { children: ReactNode }) {
   const isNarrow = useIsNarrowScreen()
   const { pathname } = useLocation()
-  if (isNarrow && pathname !== '/privacy' && pathname !== '/info/privacy') return <MobileNotice />
+  if (isNarrow && !isMobileOpenPath(pathname)) return <MobileNotice />
   return <>{children}</>
 }
 
