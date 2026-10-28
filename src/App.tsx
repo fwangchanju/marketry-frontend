@@ -9,6 +9,7 @@ import TermsPage from './pages/TermsPage'
 import SourcePage from './pages/SourcePage'
 import ContactPage from './pages/ContactPage'
 import GuidePage from './pages/GuidePage'
+import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
@@ -81,16 +82,30 @@ function AdminRouteGuard() {
   return isAdminSession(session) ? <Outlet /> : <Navigate to="/home" replace />
 }
 
-// 모바일(폭 768px 미만)에서는 화면 대신 안내만 보여 준다. 세션·시세 요청도 보내지 않도록 앱 맨 바깥에서 가린다.
+function ResponsiveHomePage() {
+  const isNarrow = useIsNarrowScreen()
+  return isNarrow ? <MobileMarketSummaryPage /> : <MarketSummaryPage />
+}
+
+function ResponsiveMapPage() {
+  const isNarrow = useIsNarrowScreen()
+  return isNarrow ? <MobileMarketSummaryPage /> : <MapPage />
+}
+
+// 모바일(폭 768px 미만)에서는 홈·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
 // 글 페이지(/info 아래의 가이드·개인정보처리방침·데이터·약관·문의)는 모바일 틀(MobileDocumentShell)이 있어 모바일에서도 열린다.
 function isMobileOpenPath(pathname: string) {
   return pathname === '/info' || pathname.startsWith('/info/')
 }
 
+function isMobileMarketPath(pathname: string) {
+  return pathname === '/home' || pathname === '/map' || pathname.startsWith('/map/')
+}
+
 function MobileGate({ children }: { children: ReactNode }) {
   const isNarrow = useIsNarrowScreen()
   const { pathname } = useLocation()
-  if (isNarrow && !isMobileOpenPath(pathname)) return <MobileNotice />
+  if (isNarrow && !isMobileOpenPath(pathname) && !isMobileMarketPath(pathname)) return <MobileNotice />
   return <>{children}</>
 }
 
@@ -106,11 +121,11 @@ export default function App() {
         <PageNumberStyle />
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/home" element={<MarketSummaryPage />} />
+          <Route path="/home" element={<ResponsiveHomePage />} />
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
-          <Route path="/map/kospi" element={<MapPage />} />
-          <Route path="/map/kosdaq" element={<MapPage />} />
-          <Route path="/map/korea" element={<MapPage />} />
+          <Route path="/map/kospi" element={<ResponsiveMapPage />} />
+          <Route path="/map/kosdaq" element={<ResponsiveMapPage />} />
+          <Route path="/map/korea" element={<ResponsiveMapPage />} />
           <Route path="/graph" element={<LegacyMarketRedirect basePath="/graph" />} />
           <Route path="/graph/kospi" element={<GroupPage />} />
           <Route path="/graph/kosdaq" element={<GroupPage />} />

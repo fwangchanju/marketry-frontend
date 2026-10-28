@@ -11,6 +11,8 @@ export interface OverviewMapItem {
   name: string
   // 박스 크기를 정하는 시가총액
   marketValue: number
+  // 화면에 그릴 박스의 면적 값 — 없으면 기존처럼 marketValue를 쓴다.
+  layoutValue?: number
   // 박스 색과 글자로 쓰는 업종 등락률(%) — 시총 가중 평균이다.
   changeRate: number
   // 우클릭 팝업에 쓰는 값(지도 페이지의 업종 팝업과 같다): 동일 가중 평균(%)과 오른·내린·보합 종목 수.
@@ -92,7 +94,7 @@ export default function OverviewMap({
   const rects = (() => {
     if (size.width === 0 || size.height === 0 || items.length === 0) return []
     const root = hierarchy<{ item?: OverviewMapItem; children?: { item: OverviewMapItem }[] }>({ children: items.map(item => ({ item })) })
-      .sum(node => node.item?.marketValue ?? 0)
+      .sum(node => node.item?.layoutValue ?? node.item?.marketValue ?? 0)
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
     treemap<typeof root.data>().tile(treemapSquarify).size([size.width, size.height]).paddingInner(2)(root)
     return (root.leaves() as unknown as { x0: number; y0: number; x1: number; y1: number; data: { item: OverviewMapItem } }[]).map(leaf => ({
