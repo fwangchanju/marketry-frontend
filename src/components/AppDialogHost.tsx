@@ -93,9 +93,9 @@ export default function AppDialogHost() {
         aria-labelledby="app-dialog-title"
         aria-describedby="app-dialog-message"
         // 색은 설정창 말풍선·NXT 안내창과 같은 크림색 계열이다.
-        className={`select-none outline-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS} ${dialog.adminOnly ? 'border-[3px] border-admin-only' : ''}`}
+        className={`select-none outline-none ${POPUP_SIZE_CLASS} ${HINT_BUBBLE_COLOR_CLASS}`}
       >
-        <h2 id="app-dialog-title" className={`flex items-center text-base font-bold ${dialog.adminOnly ? 'text-admin-only' : 'text-ui-background'}`}>
+        <h2 id="app-dialog-title" className={`flex items-center text-base font-bold text-ui-background`}>
           <PopupKindBadge kind={dialog.kind === 'alert' ? '정보' : dialog.kind === 'warning' ? '주의' : '확인'} />
           <span>
             {dialog.title}

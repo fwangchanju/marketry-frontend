@@ -179,7 +179,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
               {link.label}
             </Link>
             {link.options && openTo === link.to && (
-              <div className="absolute left-0 top-full z-50 mt-1 w-32 rounded-lg border border-ui-border bg-[var(--ui-panel)] p-[3px] text-ui-white shadow-lg shadow-ui-background/70">
+              <div className="absolute left-0 top-full z-50 mt-1 w-32 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] text-ui-white shadow-xl">
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
@@ -191,7 +191,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
                         role="option"
                         aria-selected={isCurrent}
                         onClick={() => handleSelect(option)}
-                        className={`font-roboto-latin block h-[30px] w-full rounded-[5px] border-0 ${isMarketChild ? 'pl-5 pr-2.5' : 'px-2.5'} text-left text-sm font-medium transition-colors ${
+                        className={`font-roboto-latin block h-[30px] w-full rounded-none border-0 ${isMarketChild ? 'pl-6 pr-3' : 'px-3'} text-left text-sm font-medium transition-colors ${
                           isCurrent ? 'bg-[var(--brand-surface)] text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'
                         }`}
                       >

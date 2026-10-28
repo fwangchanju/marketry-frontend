@@ -147,7 +147,7 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
           role="dialog"
           aria-label={`${label} 필터`}
           style={{ position: 'fixed', top: position.top, left: position.left, width: POPUP_WIDTH_PX }}
-          className="column-filter-popup z-50 rounded-md border border-ui-border bg-[var(--ui-panel)] py-2 text-sm font-normal text-ui-white shadow-xl"
+          className="column-filter-popup z-50 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pt-2 text-sm font-normal text-ui-white shadow-xl"
           // 머리글(정렬 칸) 위에 떠 있어도 안의 누름이 정렬로 이어지지 않게 한다.
           onClick={event => event.stopPropagation()}
         >

@@ -218,8 +218,7 @@ export default function CustomPage() {
       <NavBar />
       <NavSubBar actions={actions} />
       {/* 좌측 사이드바(종목/섹터 전환 + 버전관리 저장) 삭제 — 종목/섹터 전환은 NavSubBar의
-          "커스텀" 탭 hover 목록으로 이동. 버전관리 저장(AdminVersionSaveSection)은 기능 검증과
-          위치 재검토가 더 필요해서 일단 뺐다 — 다시 넣을 땐 이 컴포넌트를 재사용하면 된다. */}
+          "커스텀" 탭 hover 목록으로 이동. 버전관리 저장 화면은 없앴다. */}
       <div className="flex min-h-0 flex-1">
         {/* 공유 스크린샷(screenshotRef)는 [세 번째 바+본문] 열만 찍는다 — 설정 사이드바는 스크린샷에 넣지 않는다. */}
         <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
