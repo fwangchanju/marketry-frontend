@@ -2,6 +2,7 @@ import { useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 설정창 "변경 내역" 항목 — 실행 취소·다시 실행 두 칸과 변경 내역 목록. 종목 화면과 업종 화면이 같이 쓴다.
 // 목록은 두 칸을 묶은 줄과 같은 왼쪽 끝·폭으로 펼쳐지고, 줄을 고르면 맨 위(다음 차례)부터 그 줄까지 순서대로 처리한다.
@@ -54,17 +55,17 @@ function HistoryListPopup<T extends { id: string }>({
       style={{
         position: 'fixed',
         // 버튼 바로 밑에 붙지 않게 6px 띄운다(위로 열릴 땐 위로 6px).
-        top: position.top + (position.openUpward ? -6 : 6),
+        top: position.top + (position.openUpward ? -DROPDOWN_GAP_PX : DROPDOWN_GAP_PX),
         left: position.left,
         width: position.width,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
         '--accent': 'var(--panel-gray)',
       } as CSSProperties}
-      className="z-50 overflow-hidden rounded-none border border-ui-border bg-[var(--ui-panel)] p-0 text-sm text-ui-white shadow-xl"
+      className={`z-50 overflow-hidden ${DROPDOWN_PANEL_CLASS} text-sm`}
       onClick={e => e.stopPropagation()}
     >
       {ordered.length === 0 ? (
-        <p className="whitespace-nowrap px-1 text-ui-muted">{actionLabel}할 변경 내역이 없습니다.</p>
+        <p className="whitespace-nowrap px-3 py-1 text-ui-muted">{actionLabel}할 변경 내역이 없습니다.</p>
       ) : (
         <div className="change-history-list overflow-y-auto" style={{ maxHeight: LIST_MAX_HEIGHT }} onMouseLeave={() => setHoverIndex(-1)}>
           {ordered.map((action, index) => (
@@ -76,7 +77,7 @@ function HistoryListPopup<T extends { id: string }>({
                 onPick(action.id)
                 setIsOpen(false)
               }}
-              className={`flex h-6 w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-2 py-0 text-left text-[13px] font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white'}`}
+              className={`flex h-[25px] w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-3 py-0 text-left text-[13px] font-medium transition-colors ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'}`}
             >
               <span className={`w-4 shrink-0 text-right text-xs tabular-nums ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-muted'}`}>{direction === 'undo' ? '-' : '+'}{index + 1}</span>
               <span className="flex min-w-0 flex-col">

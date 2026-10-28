@@ -8,7 +8,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
 import SourcePage from './pages/SourcePage'
 import ContactPage from './pages/ContactPage'
-import StockHeatmapGuidePage from './pages/StockHeatmapGuidePage'
+import GuidePage from './pages/GuidePage'
 import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
@@ -110,7 +110,7 @@ function MobileGate({ children }: { children: ReactNode }) {
   const isNarrow = useIsNarrowScreen()
   const { pathname } = useLocation()
   const isMobileMarketRoute = pathname === '/home' || pathname === '/summary' || pathname === '/map' || pathname.startsWith('/map/')
-  if (isNarrow && pathname !== '/privacy' && pathname !== '/info/privacy' && pathname !== '/guide/stock-heatmap' && !isMobileMarketRoute) return <MobileNotice />
+  if (isNarrow && pathname !== '/privacy' && pathname !== '/info/privacy' && pathname !== '/info/guide' && pathname !== '/guide/stock-heatmap' && !isMobileMarketRoute) return <MobileNotice />
   return <>{children}</>
 }
 
@@ -157,7 +157,9 @@ export default function App() {
           <Route path="/info/terms" element={<TermsPage />} />
           <Route path="/info/source" element={<SourcePage />} />
           <Route path="/info/contact" element={<ContactPage />} />
-          <Route path="/guide/stock-heatmap" element={<StockHeatmapGuidePage />} />
+          <Route path="/info/guide" element={<GuidePage />} />
+          <Route path="/guide/map" element={<Navigate to="/info/guide" replace />} />
+          <Route path="/guide/stock-heatmap" element={<Navigate to="/info/guide" replace />} />
           {/* 이전 주소와 Google OAuth에 등록된 /privacy 주소도 새 정보 경로로 보낸다. */}
           <Route path="/privacy" element={<Navigate to="/info/privacy" replace />} />
           <Route path="/terms" element={<Navigate to="/info/terms" replace />} />

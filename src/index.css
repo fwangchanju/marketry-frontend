@@ -484,13 +484,11 @@ a { color: var(--accent-light); text-decoration: none; }
 .nes-btn:active:not(.is-disabled)::after { box-shadow: none; }
 
 /* Keep focus styling only for visible text-entry controls. Other page controls remain usable
-   but do not show the browser/NES focus outline or focus ring. The banner calendar is portaled outside #root. */
-#root :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus,
-#root :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus-visible,
-[data-banner-date-picker] :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus,
-[data-banner-date-picker] :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus-visible,
-#root :where(input[type='checkbox'], input[type='radio'], input[type='range'], input[type='color'], input[type='button'], input[type='submit'], input[type='reset']):focus,
-#root :where(input[type='checkbox'], input[type='radio'], input[type='range'], input[type='color'], input[type='button'], input[type='submit'], input[type='reset']):focus-visible {
+   but do not show the browser/NES focus outline or focus ring. Popups portaled outside #root are included. */
+body :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus,
+body :where(button, a, select, [role='button'], [tabindex]):not(input):not(textarea):not([contenteditable='true']):focus-visible,
+body :where(input[type='checkbox'], input[type='radio'], input[type='range'], input[type='color'], input[type='button'], input[type='submit'], input[type='reset']):focus,
+body :where(input[type='checkbox'], input[type='radio'], input[type='range'], input[type='color'], input[type='button'], input[type='submit'], input[type='reset']):focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }

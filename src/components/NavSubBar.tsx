@@ -6,6 +6,7 @@ import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession } from '@/utils/adminAccess'
+import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 interface MenuOption {
   label: string
@@ -178,8 +179,9 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
               <NavIcon icon={link.icon} />
               {link.label}
             </Link>
+            {/* 메뉴 칸(28px)이 탭 글자(약 20px)보다 커서 칸 아래에 바로 붙여야 글자 기준으로 4px가 된다. */}
             {link.options && openTo === link.to && (
-              <div className="absolute left-0 top-full z-50 mt-1 w-32 rounded-lg border border-ui-border bg-[var(--ui-panel)] p-[3px] text-ui-white shadow-lg shadow-ui-background/70">
+              <div className={`absolute left-0 top-full z-50 w-32 overflow-hidden ${DROPDOWN_PANEL_CLASS}`}>
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
@@ -191,7 +193,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
                         role="option"
                         aria-selected={isCurrent}
                         onClick={() => handleSelect(option)}
-                        className={`font-roboto-latin block h-[30px] w-full rounded-[5px] border-0 ${isMarketChild ? 'pl-5 pr-2.5' : 'px-2.5'} text-left text-sm font-medium transition-colors ${
+                        className={`font-roboto-latin block h-[30px] w-full rounded-none border-0 ${isMarketChild ? 'pl-6 pr-3' : 'px-3'} text-left text-sm font-medium transition-colors ${
                           isCurrent ? 'bg-[var(--brand-surface)] text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'
                         }`}
                       >

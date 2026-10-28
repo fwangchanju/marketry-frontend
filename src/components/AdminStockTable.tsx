@@ -38,6 +38,7 @@ import { DownloadIcon, UploadIcon } from './icons/AppIcons'
 import { isAdminSession } from '@/utils/adminAccess'
 import { isAxiosError } from 'axios'
 import { uploadClassification } from '@/api/custom'
+import { DROPDOWN_GAP_PX } from '@/components/dropdownStyle'
 
 interface Props {
   items: StockSectorListItem[]
@@ -379,7 +380,7 @@ function SectorSearchPopup({
       ref={popupRef}
       style={{
         position: 'fixed',
-        top: position.top + (position.openUpward ? -4 : 4),
+        top: position.top + (position.openUpward ? -DROPDOWN_GAP_PX : DROPDOWN_GAP_PX),
         left: position.left,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
         ...(orderMode && bulkPopupWidth ? { width: bulkPopupWidth } : {}),
@@ -1075,7 +1076,7 @@ export default function AdminStockTable({
       // 다른 종목의 이름이나 약칭과 같은 약칭은 저장하지 않는다 — 지도에서 서로 다른 종목이 같은 이름으로 보여 오해를 낳는다.
       const conflict = alias === null ? null : findAliasConflict(itemsRef.current, stockCode, alias)
       if (conflict) {
-        void appAlert(`"${alias}"은(는) 다른 종목과 겹치는 약칭이라 저장하지 않았습니다.\n겹치는 종목: ${conflict}`, { adminOnly: true, title: '약칭 저장' })
+        void appAlert(`"${alias}"은(는) 다른 종목과 겹치는 약칭이라 저장하지 않았습니다.\n겹치는 종목: ${conflict}`, { title: '약칭 저장' })
         return
       }
       updateAlias.mutate({ stockCode, alias })

@@ -5,6 +5,7 @@ import { type TradingSession } from '@/utils/tradingWindow'
 import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
+import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
 // 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·누적·별도 토글의 선택 칸에도 쓴다).
@@ -144,13 +145,14 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
           {options.find(option => option.value === basis)?.label ?? '누적'}
         </button>
       </ToolbarChip>
+      {/* 눈에 보이는 칩보다 감싸는 칸이 2px 짧아서 mt-1.5로 칩 기준 4px(DROPDOWN_GAP_PX)를 맞춘다. */}
       {isOpen && (
         <div
           role="dialog"
           aria-label="등락률 기준 선택"
-          className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-[3px] text-sm font-normal tracking-normal text-ui-white shadow-xl"
+          className={`absolute left-0 top-full z-50 mt-1.5 w-max overflow-hidden ${DROPDOWN_PANEL_CLASS} text-sm font-normal tracking-normal`}
         >
-          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col gap-0.5">
+          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col">
             {options.map(option => (
               <button
                 key={option.value}
@@ -163,7 +165,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   onChange(option.value)
                   setIsOpen(false)
                 }}
-                className={`flex w-full items-center justify-between gap-4 rounded-[5px] border-0 px-2 py-1 text-left text-ui-white transition-colors ${
+                className={`flex w-full items-center justify-between gap-4 rounded-none border-0 px-3 py-1 text-left text-ui-white transition-colors ${
                   basis === option.value
                     ? 'bg-[var(--brand-surface)]'
                     : option.locked

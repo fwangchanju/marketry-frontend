@@ -2,16 +2,17 @@ import { useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 설정창 드롭박스 — (badge를 주면 왼쪽에 지도 업종 헤더 모양 배지가 붙는다) 고른 값이 한 줄로 보이는 28px 버튼이고, 누르면 같은 폭의 목록이 펼쳐진다.
 // 목록은 변경 내역 목록과 같은 모양(fixed 위치·var(--ui-panel) 바탕·회색 테두리)이고, 고른 값은 목록에서 뺀다(지금 값은 닫힌 버튼에 보이므로 나머지 선택지만 보여 준다).
 
 const ROW_HEIGHT = 25
-// 열린 목록의 한 줄은 닫힌 버튼보다 낮게 둔다.
-const MENU_ROW_HEIGHT = 20
-// compact는 설명 글자(12px/16px) 줄 높이에 가깝게 18px.
+// 열린 목록 행은 다른 선택 팝업과 같은 조작 높이를 쓴다.
+const MENU_ROW_HEIGHT = 25
+// compact는 설명 글자(12px/16px) 줄 높이에 맞춘 18px.
 const COMPACT_HEIGHT = 18
-const COMPACT_ROW_HEIGHT = 20
+const COMPACT_ROW_HEIGHT = 25
 
 interface Option<K extends string> {
   key: K
@@ -83,16 +84,16 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
           aria-label={ariaLabel}
           style={{
             position: 'fixed',
-            top: position.top + (position.openUpward ? 0 : 0),
+            top: position.top + (position.openUpward ? -DROPDOWN_GAP_PX : DROPDOWN_GAP_PX),
             left: position.left + listIndent,
             width: position.width - listIndent,
             transform: position.openUpward ? 'translateY(-100%)' : undefined,
             '--accent': 'var(--panel-gray)',
           } as CSSProperties}
-          className="z-50 overflow-hidden rounded-none border border-ui-border bg-ui-panel p-0 text-ui-white shadow-xl"
+          className={`z-50 overflow-hidden ${DROPDOWN_PANEL_CLASS}`}
           onClick={e => e.stopPropagation()}
         >
-          {options.filter(option => option.key !== value).map((option, index) => (
+          {options.filter(option => option.key !== value).map(option => (
             <button
               key={option.key}
               type="button"
@@ -105,7 +106,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
                 onChange(option.key)
                 setIsOpen(false)
               }}
-              className={`${option.disabled ? 'cursor-not-allowed bg-ui-control text-ui-muted opacity-35' : 'settings-choice-hover bg-ui-control text-ui-white'} flex w-full items-center justify-between rounded-none border-0 py-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-2.5 text-xs'} text-left font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''}`}
+              className={`${option.disabled ? 'cursor-not-allowed bg-ui-control text-ui-muted opacity-35' : 'bg-transparent text-ui-white transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10'} flex w-full items-center justify-between rounded-none border-0 py-0 ${compact ? 'pl-1.5 pr-1 text-xs' : 'px-3 text-[13px]'} text-left font-medium focus-visible:outline-none`}
               style={{ height: compact ? COMPACT_ROW_HEIGHT : MENU_ROW_HEIGHT, ...(textPadLeft !== undefined ? { paddingLeft: textPadLeft } : {}) }}
             >
               <span className={`truncate ${centerLabel ? 'min-w-0 flex-1 text-center' : ''}`}>{option.label}</span>
