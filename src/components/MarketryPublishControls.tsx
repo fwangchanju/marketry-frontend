@@ -12,6 +12,7 @@ import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 import { CloudUploadIcon, HistoryIcon } from '@/components/icons/AppIcons'
+import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 롤백 목록에는 최근에 올린 버전만 이 개수까지 보인다(서버에는 더 오래된 버전도 남아 있다).
 const ROLLBACK_VERSION_COUNT = 5
@@ -130,7 +131,7 @@ export default function MarketryPublishControls() {
         document.body,
       )}
       {isVersionsOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-ui-border bg-[var(--ui-panel)] text-sm font-normal shadow-xl">
+        <div className={`absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto ${DROPDOWN_PANEL_CLASS} text-sm font-normal`}>
           {versions === null ? (
             <p className="px-3 py-1 text-ui-muted">불러오는 중…</p>
           ) : versions.length === 0 ? (

@@ -38,6 +38,7 @@ import { DownloadIcon, UploadIcon } from './icons/AppIcons'
 import { isAdminSession } from '@/utils/adminAccess'
 import { isAxiosError } from 'axios'
 import { uploadClassification } from '@/api/custom'
+import { DROPDOWN_GAP_PX } from '@/components/dropdownStyle'
 
 interface Props {
   items: StockSectorListItem[]
@@ -379,7 +380,7 @@ function SectorSearchPopup({
       ref={popupRef}
       style={{
         position: 'fixed',
-        top: position.top + (position.openUpward ? -4 : 4),
+        top: position.top + (position.openUpward ? -DROPDOWN_GAP_PX : DROPDOWN_GAP_PX),
         left: position.left,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
         ...(orderMode && bulkPopupWidth ? { width: bulkPopupWidth } : {}),

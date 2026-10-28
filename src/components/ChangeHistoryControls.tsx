@@ -2,6 +2,7 @@ import { useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 설정창 "변경 내역" 항목 — 실행 취소·다시 실행 두 칸과 변경 내역 목록. 종목 화면과 업종 화면이 같이 쓴다.
 // 목록은 두 칸을 묶은 줄과 같은 왼쪽 끝·폭으로 펼쳐지고, 줄을 고르면 맨 위(다음 차례)부터 그 줄까지 순서대로 처리한다.
@@ -54,13 +55,13 @@ function HistoryListPopup<T extends { id: string }>({
       style={{
         position: 'fixed',
         // 버튼 바로 밑에 붙지 않게 6px 띄운다(위로 열릴 땐 위로 6px).
-        top: position.top + (position.openUpward ? -4 : 4),
+        top: position.top + (position.openUpward ? -DROPDOWN_GAP_PX : DROPDOWN_GAP_PX),
         left: position.left,
         width: position.width,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
         '--accent': 'var(--panel-gray)',
       } as CSSProperties}
-      className="z-50 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] text-sm text-ui-white shadow-xl"
+      className={`z-50 overflow-hidden ${DROPDOWN_PANEL_CLASS} text-sm`}
       onClick={e => e.stopPropagation()}
     >
       {ordered.length === 0 ? (

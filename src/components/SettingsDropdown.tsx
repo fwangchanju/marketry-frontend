@@ -2,6 +2,7 @@ import { useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 설정창 드롭박스 — (badge를 주면 왼쪽에 지도 업종 헤더 모양 배지가 붙는다) 고른 값이 한 줄로 보이는 28px 버튼이고, 누르면 같은 폭의 목록이 펼쳐진다.
 // 목록은 변경 내역 목록과 같은 모양(fixed 위치·var(--ui-panel) 바탕·회색 테두리)이고, 고른 값은 목록에서 뺀다(지금 값은 닫힌 버튼에 보이므로 나머지 선택지만 보여 준다).
@@ -83,13 +84,13 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
           aria-label={ariaLabel}
           style={{
             position: 'fixed',
-            top: position.top + (position.openUpward ? -4 : 4),
+            top: position.top + (position.openUpward ? -DROPDOWN_GAP_PX : DROPDOWN_GAP_PX),
             left: position.left + listIndent,
             width: position.width - listIndent,
             transform: position.openUpward ? 'translateY(-100%)' : undefined,
             '--accent': 'var(--panel-gray)',
           } as CSSProperties}
-          className="z-50 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] text-ui-white shadow-xl"
+          className={`z-50 overflow-hidden ${DROPDOWN_PANEL_CLASS}`}
           onClick={e => e.stopPropagation()}
         >
           {options.filter(option => option.key !== value).map(option => (
