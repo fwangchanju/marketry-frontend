@@ -47,8 +47,18 @@
     "description": "국내증시에서 직접 분류한 업종 그룹의 등락률을 비교하고, 분류 단계를 조절해 시장 흐름을 살펴보세요.",
     "canonicalPath": "/graph/korea"
   },
-  "/guide/stock-heatmap": {
+  "/info/guide": {
     "title": "증시 히트맵 설정 방법",
     "description": "업종 그룹을 다시 분류하고 대형주 크기를 조절해, 내 기준으로 시장 지도를 보는 방법을 안내합니다."
+  },
+  "/guide/map": {
+    "title": "증시 히트맵 설정 방법",
+    "description": "업종 그룹을 다시 분류하고 대형주 크기를 조절해, 내 기준으로 시장 지도를 보는 방법을 안내합니다.",
+    "canonicalPath": "/info/guide"
+  },
+  "/guide/stock-heatmap": {
+    "title": "증시 히트맵 설정 방법",
+    "description": "업종 그룹을 다시 분류하고 대형주 크기를 조절해, 내 기준으로 시장 지도를 보는 방법을 안내합니다.",
+    "canonicalPath": "/info/guide"
   }
 }
