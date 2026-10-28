@@ -32,6 +32,10 @@ const pages: Record<string, { title: string; description: string }> = {
     title: '국내 주식 업종별 등락률 그래프 | MARKETRY',
     description: '코스피·코스닥 업종별 등락률을 한 화면에서 비교해 보세요. 국내 주식 시장의 업종별 흐름을 그래프로 살펴볼 수 있습니다.',
   },
+  '/guide/stock-heatmap': {
+    title: '증시 히트맵을 내 마음대로 | MARKETRY',
+    description: '업종 그룹을 직접 분류하고 종목 박스 크기를 조절해 시장 흐름을 살펴보세요. 국내증시 히트맵과 코스피·코스닥 지도, 등락률 그래프를 안내합니다.',
+  },
 }
 
 function setMeta(property: string, value: string) {
