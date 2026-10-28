@@ -76,6 +76,12 @@ function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   return <Navigate to={`${marketRoute(basePath, market ?? 'ALL_STOCK')}${rest ? `?${rest}` : ''}${hash}`} replace />
 }
 
+// 검색 결과와 기존 북마크의 /allstock 주소를 새 국내증시 주소로 옮기되 쿼리와 해시는 보존한다.
+function LegacyDomesticMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
+  const { search, hash } = useLocation()
+  return <Navigate to={`${marketRoute(basePath, 'ALL_STOCK')}${search}${hash}`} replace />
+}
+
 function LegacyGroupRedirect() {
   const { pathname, search, hash } = useLocation()
   const groupPath = pathname.replace(/^\/(?:group|sector|industry)(?=\/|$)/, '/graph')
@@ -125,11 +131,13 @@ export default function App() {
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
           <Route path="/map/kospi" element={<ResponsiveMapPage />} />
           <Route path="/map/kosdaq" element={<ResponsiveMapPage />} />
-          <Route path="/map/allstock" element={<ResponsiveMapPage />} />
+          <Route path="/map/korea" element={<ResponsiveMapPage />} />
+          <Route path="/map/allstock" element={<LegacyDomesticMarketRedirect basePath="/map" />} />
           <Route path="/graph" element={<LegacyMarketRedirect basePath="/graph" />} />
           <Route path="/graph/kospi" element={<GroupPage />} />
           <Route path="/graph/kosdaq" element={<GroupPage />} />
-          <Route path="/graph/allstock" element={<GroupPage />} />
+          <Route path="/graph/korea" element={<GroupPage />} />
+          <Route path="/graph/allstock" element={<LegacyDomesticMarketRedirect basePath="/graph" />} />
           <Route path="/group" element={<LegacyGroupRedirect />} />
           <Route path="/group/*" element={<LegacyGroupRedirect />} />
           <Route path="/sector" element={<LegacyGroupRedirect />} />

@@ -61,7 +61,7 @@ import { MEMBER_DEFAULTS } from '@/utils/settingDefaults'
 import type { MarketQuery, TreemapSectorNode, TreemapItem } from '@/types/api'
 import { isAdminSession } from '@/utils/adminAccess'
 
-const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'ALL STOCK' }
+const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'K-STOCK' }
 // 종목·업종 헤더와 같은 방식 — 올리면 흰색 35% 덮개가 씌워진다(index.css의 hover와 같은 불투명도).
 // 이동 경로의 이름이 몇 번째 업종 단계인지(0부터) — 마우스가 이미 그 이름 위에 있어서 툴팁에는 이름 대신 단계 이름만 쓴다. 업종은 최대 4단계(대분류·중분류·소분류·세분류)다.
 const SECTOR_LEVEL_LABEL = ['대분류', '중분류', '소분류', '세분류']
@@ -146,7 +146,7 @@ function findRawNodeByPath(nodes: TreemapSectorNode[], path: string[]): TreemapS
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 
-// keepPageLabel: ALL STOCK 배지 위의 페이지 라벨(MAP)을 남긴다(텔레그램 판·스크린샷 창 모두, 홈 판의 HOME과 같은 모양). false를 주면 숨긴다.
+// keepPageLabel: K-STOCK 배지 위의 페이지 라벨(MAP)을 남긴다(텔레그램 판·스크린샷 창 모두, 홈 판의 HOME과 같은 모양). false를 주면 숨긴다.
 function revealMobileCapture(cloned: Node, keepPageLabel = true) {
   if (!(cloned instanceof Element)) return
   const mobileFrame = cloned.querySelector<HTMLElement>('[data-map-mobile-capture-frame]')
@@ -199,7 +199,7 @@ function revealMobileCapture(cloned: Node, keepPageLabel = true) {
       changeRateButton.style.pointerEvents = 'none'
       changeRateButton.style.transition = 'none'
     }
-    // 모바일 캡처에서는 ALL STOCK과 겹치지 않도록 MAP 페이지 라벨을 숨긴다.
+    // 모바일 캡처에서는 K-STOCK과 겹치지 않도록 MAP 페이지 라벨을 숨긴다.
     if (keepPageLabel) {
       // 라벨이 툴바 위쪽으로 살짝 걸쳐 있어 잘리지 않게 한다.
       toolbar.style.overflow = 'visible'
@@ -316,7 +316,7 @@ export default function MapPage() {
   // 실험 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
-  // 렌더러(텔레그램 발송)가 /map/allstock?capture=mobile 로 열면 스크린샷 창의 "모바일" 판(3:4 세로)을 화면에 그대로 펼쳐 놓고 그 틀만 찍는다.
+  // 렌더러(텔레그램 발송)가 /map/korea?capture=mobile 로 열면 스크린샷 창의 "모바일" 판(3:4 세로)을 화면에 그대로 펼쳐 놓고 그 틀만 찍는다.
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')

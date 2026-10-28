@@ -11,8 +11,8 @@ function replaceOnce(html, pattern, replacement) {
   return html.replace(pattern, () => replacement)
 }
 
-export function renderSearchPage(template, path, { title, description }) {
-  const url = escapeHtml(`${siteUrl}${path}`)
+export function renderSearchPage(template, path, { title, description, canonicalPath = path }) {
+  const url = escapeHtml(`${siteUrl}${canonicalPath}`)
   const safeTitle = escapeHtml(title)
   const safeDescription = escapeHtml(description)
   let html = replaceOnce(template, /<title>[^<]*<\/title>/g, `<title>${safeTitle}</title>`)
@@ -20,14 +20,21 @@ export function renderSearchPage(template, path, { title, description }) {
   html = replaceOnce(html, /<meta\s+name="description"\s+content="[^"]*"\s*\/?\s*>/g, `<meta name="description" content="${safeDescription}" />`)
   html = replaceOnce(html, /<meta\s+property="og:url"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:url" content="${url}" />`)
   html = replaceOnce(html, /<meta\s+property="og:title"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:title" content="${safeTitle}" />`)
-  return replaceOnce(html, /<meta\s+property="og:description"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:description" content="${safeDescription}" />`)
+  html = replaceOnce(html, /<meta\s+property="og:description"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:description" content="${safeDescription}" />`)
+  if (path !== '/home') {
+    const siteNameSchema = /<script\s+type="application\/ld\+json"\s+data-site-name>[\s\S]*?<\/script>\s*/g
+    if ([...html.matchAll(siteNameSchema)].length !== 1) throw new Error('Expected one site name schema block for the homepage')
+    html = html.replace(siteNameSchema, '')
+  }
+  return html
 }
 
 async function generate() {
   const pages = JSON.parse(await readFile('src/utils/searchMetadata.json', 'utf8'))
   const template = await readFile('dist/index.html', 'utf8')
   for (const [path, page] of Object.entries(pages)) {
-    if (!/^\/(?:home|(?:map|graph)\/(?:kospi|kosdaq|allstock))$/.test(path)) throw new Error(`Unexpected search page path: ${path}`)
+    if (!/^\/(?:home|map|graph|(?:map|graph)\/(?:kospi|kosdaq|korea|allstock)|guide\/stock-heatmap)$/.test(path)) throw new Error(`Unexpected search page path: ${path}`)
+    if (page.canonicalPath && !/^\/(?:map|graph)\/korea$/.test(page.canonicalPath)) throw new Error(`Unexpected canonical search page path: ${page.canonicalPath}`)
     const destination = resolve('dist', `.${path}.html`)
     await mkdir(dirname(destination), { recursive: true })
     await writeFile(destination, renderSearchPage(template, path, page))

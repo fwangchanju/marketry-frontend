@@ -23,11 +23,11 @@ interface MenuLink {
   options?: MenuOption[]
 }
 
-// Map·Graph는 ALL STOCK / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다.
+// Map·Graph는 KOREA / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다.
 const BASE_LINKS: MenuLink[] = [
   { to: '/home', label: 'Home', icon: 'home' },
-  { to: '/map/allstock', label: 'Map', icon: 'composition', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/map', option.market) })) },
-  { to: '/graph/allstock', label: 'Graph', icon: 'bar-chart', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/graph', option.market) })) },
+  { to: marketRoute('/map', 'ALL_STOCK'), label: 'Map', icon: 'composition', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/map', option.market) })) },
+  { to: marketRoute('/graph', 'ALL_STOCK'), label: 'Graph', icon: 'bar-chart', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/graph', option.market) })) },
 ]
 // 비로그인에게도 열려 있다 — 마켓트리·거래소 시트는 읽고, 내 분류는 비어 있으며 수정하려 할 때 로그인 팝업이 뜬다.
 const CUSTOM_LINK: MenuLink = {
@@ -123,8 +123,8 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   }, [openTo])
 
   const isLinkActive = (to: string) => {
-    if (to === '/map/allstock') return location.pathname.startsWith('/map/')
-    if (to === '/graph/allstock') return location.pathname.startsWith('/graph/')
+    if (to === marketRoute('/map', 'ALL_STOCK')) return location.pathname.startsWith('/map/')
+    if (to === marketRoute('/graph', 'ALL_STOCK')) return location.pathname.startsWith('/graph/')
     if (to === '/custom/sector') return location.pathname.startsWith('/custom')
     if (to === '/admin/member') return location.pathname.startsWith('/admin')
     return location.pathname === to
@@ -183,6 +183,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
+                    const isMarketChild = option.to.endsWith('/kospi') || option.to.endsWith('/kosdaq')
                     return (
                       <button
                         key={option.to}
@@ -190,7 +191,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
                         role="option"
                         aria-selected={isCurrent}
                         onClick={() => handleSelect(option)}
-                        className={`font-roboto-latin block h-[30px] w-full rounded-[5px] border-0 px-2.5 text-left text-sm font-medium transition-colors ${
+                        className={`font-roboto-latin block h-[30px] w-full rounded-[5px] border-0 ${isMarketChild ? 'pl-5 pr-2.5' : 'px-2.5'} text-left text-sm font-medium transition-colors ${
                           isCurrent ? 'bg-[var(--brand-surface)] text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'
                         }`}
                       >
