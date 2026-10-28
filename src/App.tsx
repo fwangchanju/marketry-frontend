@@ -76,12 +76,6 @@ function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   return <Navigate to={`${marketRoute(basePath, market ?? 'ALL_STOCK')}${rest ? `?${rest}` : ''}${hash}`} replace />
 }
 
-// 검색 결과와 기존 북마크의 /allstock 주소를 새 국내증시 주소로 옮기되 쿼리와 해시는 보존한다.
-function LegacyDomesticMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
-  const { search, hash } = useLocation()
-  return <Navigate to={`${marketRoute(basePath, 'ALL_STOCK')}${search}${hash}`} replace />
-}
-
 function LegacyGroupRedirect() {
   const { pathname, search, hash } = useLocation()
   const groupPath = pathname.replace(/^\/(?:group|sector|industry)(?=\/|$)/, '/graph')
@@ -110,7 +104,7 @@ function MobileGate({ children }: { children: ReactNode }) {
   const isNarrow = useIsNarrowScreen()
   const { pathname } = useLocation()
   const isMobileMarketRoute = pathname === '/home' || pathname === '/summary' || pathname === '/map' || pathname.startsWith('/map/')
-  if (isNarrow && pathname !== '/privacy' && pathname !== '/info/privacy' && pathname !== '/info/guide' && pathname !== '/guide/stock-heatmap' && !isMobileMarketRoute) return <MobileNotice />
+  if (isNarrow && pathname !== '/privacy' && pathname !== '/info/privacy' && pathname !== '/info/guide' && !isMobileMarketRoute) return <MobileNotice />
   return <>{children}</>
 }
 
@@ -132,12 +126,10 @@ export default function App() {
           <Route path="/map/kospi" element={<ResponsiveMapPage />} />
           <Route path="/map/kosdaq" element={<ResponsiveMapPage />} />
           <Route path="/map/korea" element={<ResponsiveMapPage />} />
-          <Route path="/map/allstock" element={<LegacyDomesticMarketRedirect basePath="/map" />} />
           <Route path="/graph" element={<LegacyMarketRedirect basePath="/graph" />} />
           <Route path="/graph/kospi" element={<GroupPage />} />
           <Route path="/graph/kosdaq" element={<GroupPage />} />
           <Route path="/graph/korea" element={<GroupPage />} />
-          <Route path="/graph/allstock" element={<LegacyDomesticMarketRedirect basePath="/graph" />} />
           <Route path="/group" element={<LegacyGroupRedirect />} />
           <Route path="/group/*" element={<LegacyGroupRedirect />} />
           <Route path="/sector" element={<LegacyGroupRedirect />} />
@@ -158,8 +150,6 @@ export default function App() {
           <Route path="/info/source" element={<SourcePage />} />
           <Route path="/info/contact" element={<ContactPage />} />
           <Route path="/info/guide" element={<GuidePage />} />
-          <Route path="/guide/map" element={<Navigate to="/info/guide" replace />} />
-          <Route path="/guide/stock-heatmap" element={<Navigate to="/info/guide" replace />} />
           {/* 이전 주소와 Google OAuth에 등록된 /privacy 주소도 새 정보 경로로 보낸다. */}
           <Route path="/privacy" element={<Navigate to="/info/privacy" replace />} />
           <Route path="/terms" element={<Navigate to="/info/terms" replace />} />
