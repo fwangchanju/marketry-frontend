@@ -35,11 +35,11 @@ function IndustryGroupingExample() {
   )
 }
 
-export default function StockHeatmapGuidePage() {
+export default function GuidePage() {
   return (
     <DocumentPageLayout
       title="GUIDE"
-      panelDescription="히트맵과 등락률 그래프를 내 기준으로 보는 방법입니다."
+      panelDescription="나만의 분류로 시장 흐름 관찰하기"
       heading={(
         <InfoPageHeading
           flushBottom
