@@ -94,9 +94,8 @@ function ResponsiveMapPage() {
 
 // 모바일(폭 768px 미만)에서는 홈·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
 // 글 페이지(/info 아래의 가이드·개인정보처리방침·데이터·약관·문의)는 모바일 틀(MobileDocumentShell)이 있어 모바일에서도 열린다.
-// 개인정보처리방침의 옛 주소 /privacy는 Google OAuth 동의 화면에 등록돼 있어 함께 연다.
 function isMobileOpenPath(pathname: string) {
-  return pathname === '/privacy' || pathname === '/info' || pathname.startsWith('/info/')
+  return pathname === '/info' || pathname.startsWith('/info/')
 }
 
 function isMobileMarketPath(pathname: string) {
@@ -142,11 +141,6 @@ export default function App() {
           <Route path="/info/source" element={<SourcePage />} />
           <Route path="/info/contact" element={<ContactPage />} />
           <Route path="/info/guide" element={<GuidePage />} />
-          {/* 이전 주소와 Google OAuth에 등록된 /privacy 주소도 새 정보 경로로 보낸다. */}
-          <Route path="/privacy" element={<Navigate to="/info/privacy" replace />} />
-          <Route path="/terms" element={<Navigate to="/info/terms" replace />} />
-          <Route path="/source" element={<Navigate to="/info/source" replace />} />
-          <Route path="/contact" element={<Navigate to="/info/contact" replace />} />
           <Route path="/profile" element={<ProfilePage />} />
           {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 메시지, 배너로 나뉜다. */}
           <Route path="/admin" element={<AdminRouteGuard />}>

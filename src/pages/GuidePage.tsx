@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import DocumentPageLayout from '@/components/DocumentPageLayout'
 import { InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
+import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 
 const destinations = [
   { label: '국내증시 히트맵', to: '/map/korea' },
@@ -36,6 +37,7 @@ function IndustryGroupingExample() {
 }
 
 export default function GuidePage() {
+  const isNarrow = useIsNarrowScreen()
   return (
     <DocumentPageLayout
       title="GUIDE"
@@ -50,13 +52,18 @@ export default function GuidePage() {
     >
       <article className="mx-auto w-full max-w-4xl space-y-12">
         <InfoSection number="1" title="업종 분류를 내 기준으로 새롭게 구성">
-          <p>서로 다른 업종에 있는 종목도 내 기준으로 새롭게 묶어서 볼 수 있습니다. 원치 않는 업종 그룹은 지도에서 숨길 수도 있습니다.</p>
+          <p>서로 다른 업종에 있는 종목도 내 기준으로 새롭게 묶어서 볼 수 있습니다. 원치 않는 그룹은 지도에서 숨길 수도 있습니다.</p>
           <IndustryGroupingExample />
           <div className="!mt-12 space-y-3">
             <p>또 다른 새로운 접근 방식이 있다면, 직접 그룹을 분류해보세요.</p>
-            <Link to="/custom/sector" className="inline-flex min-h-11 items-center border border-brand px-3 text-sm font-bold text-brand hover:bg-brand/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
-              내 업종 설정하기<span aria-hidden="true" className="ml-2">↗</span>
-            </Link>
+            {/* 커스텀 화면의 기존 주소 규칙(?sheet=MINE): 로그인했으면 내 기준으로 열고, 비로그인이면 로그인 안내를 띄운다. 모바일은 커스텀 화면이 없어 안내만 한다. */}
+            {isNarrow ? (
+              <p className="text-ui-muted">내 업종 설정은 PC 화면에서 할 수 있습니다.</p>
+            ) : (
+              <Link to="/custom/sector?sheet=MINE" className="inline-flex min-h-11 items-center border border-brand px-3 text-sm font-bold text-brand hover:bg-brand/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
+                내 업종 설정하기<span aria-hidden="true" className="ml-2">↗</span>
+              </Link>
+            )}
           </div>
         </InfoSection>
 
@@ -83,7 +90,7 @@ export default function GuidePage() {
         </InfoSection>
 
         <InfoSection number="3" title="히트맵과 등락률 그래프">
-          <p>히트맵은 종목별 움직임과 업종 구성을 한눈에 보여주고, 그래프는 직접 분류한 업종 그룹의 등락률을 비교합니다.</p>
+          <p>히트맵은 종목별 움직임과 업종 구성을 한눈에 보여주고, 그래프는 직접 분류한 그룹의 등락률을 비교합니다.</p>
           <div className="!mt-8 space-y-3" aria-label="업종 분류 단계에 따른 국내증시 등락률 그래프 비교">
             <figure className="overflow-hidden border border-ui-border bg-ui-surface">
               <figcaption className="flex flex-wrap items-center gap-3 border-b border-ui-border bg-ui-control px-3 py-2 text-sm font-bold text-ui-white sm:px-4">
@@ -92,7 +99,7 @@ export default function GuidePage() {
               </figcaption>
               <img src="/images/guide/korea-graph-major.png" alt="MARKETRY 대분류 업종별 등락률을 비교하는 국내증시 그래프" className="block h-auto w-full" loading="lazy" />
             </figure>
-            <p>S7, 반도체 소·부·장처럼 큰 업종 그룹의 등락률을 한눈에 비교할 수 있습니다.</p>
+            <p>S7, 반도체 소·부·장처럼 큰 그룹의 등락률을 한눈에 비교할 수 있습니다.</p>
             <figure className="!mt-12 overflow-hidden border border-ui-border bg-ui-surface">
               <figcaption className="flex flex-wrap items-center gap-3 border-b border-ui-border bg-brand-surface px-3 py-2 text-sm font-bold text-ui-white sm:px-4">
                 <span className="flex items-center gap-2"><span aria-hidden="true" className="h-4 w-1 shrink-0 rounded-sm bg-ui-white" />국내증시 등락률 그래프</span>

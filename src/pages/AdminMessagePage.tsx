@@ -192,7 +192,7 @@ export default function AdminMessagePage() {
                 </Toolbar>
                 <PageMainFrame
                   className="p-0"
-                  fixedHeader={(
+                  heading={(
                     <div className="mx-auto w-full max-w-4xl">
                       <InfoPageHeading
                         flushBottom

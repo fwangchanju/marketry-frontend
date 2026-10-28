@@ -68,7 +68,7 @@ export default function DocumentPageLayout({ title, heading, children, panelIcon
           {/* 공통 바깥 프레임 안에서 InfoDocument의 제목·구획·정보 행 양식을 사용한다. */}
           <PageMainFrame
             className="p-0"
-            fixedHeader={<div className="mx-auto w-full max-w-4xl">{heading}</div>}
+            heading={<div className="mx-auto w-full max-w-4xl">{heading}</div>}
           >
             {children}
           </PageMainFrame>

@@ -120,6 +120,15 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             닫기
           </button>
         </div>
+        <p className="mt-4 text-center text-xs text-ui-muted">
+          <a href="/info/terms" className="hover:text-ui-text">
+            이용약관
+          </a>
+          {' · '}
+          <a href="/info/privacy" className="hover:text-ui-text">
+            개인정보처리방침
+          </a>
+        </p>
       </div>
       </div>
     </div>
