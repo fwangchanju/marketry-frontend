@@ -2,13 +2,13 @@ import { useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
-import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS, DROPDOWN_SCROLL_CLASS, DROPDOWN_SNAP_ITEM_CLASS, dropdownListMaxHeight } from '@/components/dropdownStyle'
 
 // 설정창 "변경 내역" 항목 — 실행 취소·다시 실행 두 칸과 변경 내역 목록. 종목 화면과 업종 화면이 같이 쓴다.
 // 목록은 두 칸을 묶은 줄과 같은 왼쪽 끝·폭으로 펼쳐지고, 줄을 고르면 맨 위(다음 차례)부터 그 줄까지 순서대로 처리한다.
 
 // 목록 한 번에 보이는 줄 수(넘으면 스크롤) — 줄 높이 24px × 10줄. 업종 선택 팝업·열 필터 목록과 같은 10줄이다.
-const LIST_MAX_HEIGHT = 24 * 10
+const LIST_MAX_HEIGHT = dropdownListMaxHeight(10)
 
 interface Props<T extends { id: string }> {
   undoStack: T[]
@@ -67,7 +67,7 @@ function HistoryListPopup<T extends { id: string }>({
       {ordered.length === 0 ? (
         <p className="whitespace-nowrap px-3 py-1 text-ui-muted">{actionLabel}할 변경 내역이 없습니다.</p>
       ) : (
-        <div className="change-history-list overflow-y-auto" style={{ maxHeight: LIST_MAX_HEIGHT }} onMouseLeave={() => setHoverIndex(-1)}>
+        <div className={`change-history-list ${DROPDOWN_SCROLL_CLASS}`} style={{ maxHeight: LIST_MAX_HEIGHT }} onMouseLeave={() => setHoverIndex(-1)}>
           {ordered.map((action, index) => (
             <button
               key={action.id}
@@ -77,7 +77,7 @@ function HistoryListPopup<T extends { id: string }>({
                 onPick(action.id)
                 setIsOpen(false)
               }}
-              className={`flex h-[25px] w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-3 py-0 text-left text-[13px] font-medium transition-colors ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'}`}
+              className={`${DROPDOWN_SNAP_ITEM_CLASS} flex h-[25px] w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-3 py-0 text-left text-[13px] font-medium transition-colors ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'}`}
             >
               <span className={`w-4 shrink-0 text-right text-xs tabular-nums ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-muted'}`}>{direction === 'undo' ? '-' : '+'}{index + 1}</span>
               <span className="flex min-w-0 flex-col">
