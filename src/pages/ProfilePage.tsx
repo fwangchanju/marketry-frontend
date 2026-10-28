@@ -259,7 +259,7 @@ export default function ProfilePage() {
           </Toolbar>
           <PageMainFrame
             className="p-0"
-            fixedHeader={session?.authenticated && !isError ? (
+            heading={session?.authenticated && !isError ? (
               <div className="mx-auto w-full max-w-4xl">
                 <InfoPageHeading flushBottom title="내 프로필" summary="로그인 계정과 프로필 정보를 확인하고 관리합니다." />
               </div>
