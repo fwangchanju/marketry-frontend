@@ -4,9 +4,10 @@ import DisclaimerNotice from '@/components/DisclaimerNotice'
 import MarketryLogo from '@/components/MarketryLogo'
 
 const destinations = [
-  { label: 'MAP', path: '/map/korea' },
-  { label: 'GRAPH', path: '/graph/korea' },
-  { label: 'GUIDE', path: '/info/guide' },
+  { label: '종목 지도', path: '/map/korea' },
+  { label: '업종 지도', path: '/home?map' },
+  { label: '그룹 등락률', path: '/graph/korea' },
+  { label: '가이드', path: '/info/guide' },
 ]
 
 export default function MobileHomePage() {

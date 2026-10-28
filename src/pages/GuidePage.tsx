@@ -40,7 +40,7 @@ export default function GuidePage() {
   const isNarrow = useIsNarrowScreen()
   return (
     <DocumentPageLayout
-      title="GUIDE"
+      title="가이드"
       panelDescription="나만의 분류로 시장 흐름 관찰하기"
       heading={(
         <InfoPageHeading
