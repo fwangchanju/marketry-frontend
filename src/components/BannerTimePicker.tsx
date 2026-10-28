@@ -3,7 +3,10 @@ import { createPortal } from 'react-dom'
 import { ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { usePopupBounds } from '@/hooks/usePopupBounds'
-import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS, DROPDOWN_ROW_PX, DROPDOWN_SCROLL_CLASS, DROPDOWN_SNAP_ITEM_CLASS, dropdownListMaxHeight } from '@/components/dropdownStyle'
+
+// 시·분 목록에 한 번에 보이는 줄 수(항목 25px × 6 + 테두리 2px).
+const TIME_VISIBLE_ROWS = 6
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'))
 const MINUTES = Array.from({ length: 60 }, (_, minute) => String(minute).padStart(2, '0'))
@@ -96,7 +99,7 @@ export default function BannerTimePicker({
                       <ChevronDownIcon className={`h-3 w-3 text-brand transition-transform ${openColumn === column ? 'rotate-180' : ''}`} />
                     </button>
                     {openColumn === column && (
-                      <div role="listbox" aria-label={`${label} ${labelText} 선택`} className={`absolute left-0 z-10 max-h-[152px] w-full snap-y snap-mandatory overflow-y-auto ${DROPDOWN_PANEL_CLASS} ${position?.openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+                      <div role="listbox" aria-label={`${label} ${labelText} 선택`} style={{ maxHeight: dropdownListMaxHeight(TIME_VISIBLE_ROWS, DROPDOWN_ROW_PX, 2) }} className={`absolute left-0 z-10 w-full ${DROPDOWN_SCROLL_CLASS} ${DROPDOWN_PANEL_CLASS} ${position?.openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                         {options.filter(option => option !== current).map(option => (
                           <button
                             key={option}
@@ -107,7 +110,7 @@ export default function BannerTimePicker({
                               updateTime(isHour ? option : hour, isHour ? minute : option)
                               setOpenColumn(null)
                             }}
-                            className="flex h-[25px] w-full snap-start items-center border-0 bg-transparent px-3 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10 focus-visible:outline-none"
+                            className={`${DROPDOWN_SNAP_ITEM_CLASS} flex h-[25px] w-full items-center border-0 bg-transparent px-3 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10 focus-visible:outline-none`}
                           >
                             {option}
                           </button>

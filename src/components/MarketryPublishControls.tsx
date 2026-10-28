@@ -12,7 +12,7 @@ import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 import { CloudUploadIcon, HistoryIcon } from '@/components/icons/AppIcons'
-import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
+import { DROPDOWN_PANEL_CLASS, DROPDOWN_ROW_PX, DROPDOWN_SCROLL_CLASS, DROPDOWN_SNAP_ITEM_CLASS, dropdownListMaxHeight } from '@/components/dropdownStyle'
 
 // 롤백 목록에는 최근에 올린 버전만 이 개수까지 보인다(서버에는 더 오래된 버전도 남아 있다).
 const ROLLBACK_VERSION_COUNT = 5
@@ -131,7 +131,7 @@ export default function MarketryPublishControls() {
         document.body,
       )}
       {isVersionsOpen && (
-        <div className={`absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto ${DROPDOWN_PANEL_CLASS} text-sm font-normal`}>
+        <div style={{ maxHeight: dropdownListMaxHeight(10, DROPDOWN_ROW_PX, 2) }} className={`absolute left-0 top-full z-50 mt-1 w-full ${DROPDOWN_SCROLL_CLASS} ${DROPDOWN_PANEL_CLASS} text-sm font-normal`}>
           {versions === null ? (
             <p className="px-3 py-1 text-ui-muted">불러오는 중…</p>
           ) : versions.length === 0 ? (
@@ -143,7 +143,7 @@ export default function MarketryPublishControls() {
                 type="button"
                 onClick={() => handleRestore(version)}
                 disabled={isBusy}
-                className="flex min-h-[25px] w-full items-center rounded-none border-0 bg-transparent px-3 text-left text-ui-white transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10 focus-visible:outline-none disabled:opacity-50"
+                className={`${DROPDOWN_SNAP_ITEM_CLASS} flex min-h-[25px] w-full items-center rounded-none border-0 bg-transparent px-3 text-left text-ui-white transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10 focus-visible:outline-none disabled:opacity-50`}
               >
                 {/* 버전 이름 앞의 "MARKETRY"는 뺀다 — 구분되는 것은 시각이고, 알림창에서도 같은 [시각]으로 쓴다. */}
                 <span className="truncate">[{toDateTimeLabel(version.label)}]</span>

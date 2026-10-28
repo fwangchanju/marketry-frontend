@@ -2,7 +2,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
-import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS, DROPDOWN_SNAP_ITEM_CLASS, dropdownListMaxHeight } from '@/components/dropdownStyle'
+
+// 필터 목록의 한 줄 높이(h-7)와 한 번에 보이는 줄 수. 높이는 이 값의 곱으로 맞춰야 스크롤 끝에서 항목이 잘리지 않는다.
+const FILTER_ROW_PX = 28
+const FILTER_VISIBLE_ROWS = 10
 
 const POPUP_WIDTH_PX = 208
 const SEARCH_MIN_OPTIONS = 10
@@ -181,11 +185,11 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
               <button type="button" className="h-6 flex-1 rounded border border-ui-border bg-transparent p-0 text-xs font-medium text-ui-text hover:text-ui-white" onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
             </div>
           )}
-          <ul className="column-filter-options m-0 max-h-[280px] list-none overflow-y-scroll p-0">
+          <ul className="column-filter-options m-0 list-none snap-y snap-mandatory overflow-y-scroll p-0" style={{ maxHeight: dropdownListMaxHeight(FILTER_VISIBLE_ROWS, FILTER_ROW_PX) }}>
             {shownOptions.length === 0 && <li className="px-3 py-1 text-ui-muted">검색 결과가 없습니다.</li>}
             {shownOptions.map(value => (
-              <li key={value}>
-                <label data-hint={hintOf?.(value)} className="flex cursor-pointer items-center gap-2 px-3 py-1 hover:bg-ui-white/10">
+              <li key={value} className={DROPDOWN_SNAP_ITEM_CLASS}>
+                <label data-hint={hintOf?.(value)} className="flex h-7 cursor-pointer items-center gap-2 px-3 hover:bg-ui-white/10">
                   <input type="checkbox" className="thin-check shrink-0" checked={!excluded.has(value)} onChange={() => toggleOption(value)} />
                   <span className="min-w-0 truncate">{labelOf(value)}</span>
                 </label>

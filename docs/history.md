@@ -1168,3 +1168,5 @@ Admin 설정창의 버튼 이름을 **업데이트에서 커밋으로 바꿨다*
 - 함수·타입·스키마 이름(`getTreemap`→`getHeatmap`, `TreemapResponseSchema`→`HeatmapResponseSchema` 등), CSS 클래스(`treemap-stock`→`heatmap-stock` 등), 화면 표시 속성(`data-treemap-layout-ready`→`data-heatmap-layout-ready` 등), 설정 키(`treemap.*`→`heatmap.*`)도 같이 바꿨다. 설정 키는 탭 메모리·세션 저장소에만 있어 사용자 데이터는 잃지 않는다.
 - 바꾸지 않은 것: 서버 요청 주소(`/api/map/...`)와 서버와 주고받는 필드, 외부 라이브러리 `d3-hierarchy`의 `treemap`·`treemapSquarify`·`treemapBinary`. 백엔드 Java 클래스(`TreemapController` 등)는 이번에 바꾸지 않았다.
 - 이 문서의 이전 항목에 남은 `Treemap` 이름은 당시 기록이라 그대로 둔다.
+
+2026-10-28: 스크롤되는 드롭다운 목록(분류 필터·시간 선택·변경 내역·발행 버전)이 스크롤 위치에 따라 마지막 칸이 반쯤 잘리던 것을 공통 규격으로 고쳤다. 목록 높이를 항목 수의 정수배로 맞추고 항목 단위로 멈추게 했다(`dropdownStyle.ts`). 분류 필터 항목 높이는 28px로 고정했고, 변경 내역 목록 높이 계산(24px 기준)은 현재 항목 높이 25px에 맞췄다.
