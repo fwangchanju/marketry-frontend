@@ -1,6 +1,6 @@
-// 툴바 맨 왼쪽에 지금 보는 화면을 페이지 제목처럼 보여 준다 — 서브 청록색 박스 안에 큰 제목(KOSPI·ALL STOCK·STOCK 등)을 두고
+// 툴바 맨 왼쪽에 지금 보는 화면을 페이지 제목처럼 보여 준다 — 서브 청록색 박스 안에 큰 제목(KOSPI·K-STOCK·STOCK 등)을 두고
 // 흰 제목 글자를 가운데에 두고, 작은 페이지 이름(MAP·GROUP·CUSTOM)은 박스 윗변에 걸쳐 놓는다(툴바 바탕색 조각으로 윗변을 가린다).
-// 박스 너비는 가장 긴 ALL STOCK이 들어가는 100px로 고정해서 어느 페이지든 같고, 제목은 가운데에 둔다. 고르는 일은 상단 영역 메뉴(Map·Group·Custom)에 커서를 올려서 한다.
+// 박스 너비는 K-STOCK이 들어가는 100px로 고정해서 어느 페이지든 같고, 제목은 가운데에 둔다. 고르는 일은 상단 영역 메뉴(Map·Group·Custom)에 커서를 올려서 한다.
 export default function ToolbarModeText({ page, label }: { page: string; label: string }) {
   return (
     <div className="font-roboto-latin relative shrink-0">

@@ -7,13 +7,13 @@ const template = readFileSync(new URL('../../index.html', import.meta.url), 'utf
 const pages = JSON.parse(readFileSync(new URL('./searchMetadata.json', import.meta.url), 'utf8'))
 
 test('검색 페이지마다 첫 HTML에 각 제목과 대표 주소가 들어간다', () => {
-  assert.equal(Object.keys(pages).length, 7)
+  assert.equal(Object.keys(pages).length, 10)
   for (const [path, page] of Object.entries(pages)) {
     const html = renderSearchPage(template, path, page)
     assert.ok(html.includes(`<title>${page.title}</title>`))
-    assert.ok(html.includes(`<link rel="canonical" href="https://marketry.co.kr${path}" />`))
+    assert.ok(html.includes(`<link rel="canonical" href="https://marketry.co.kr${page.canonicalPath ?? path}" />`))
     assert.ok(html.includes(`<meta name="description" content="${page.description}" />`))
-    assert.ok(html.includes(`<meta property="og:url" content="https://marketry.co.kr${path}" />`))
+    assert.ok(html.includes(`<meta property="og:url" content="https://marketry.co.kr${page.canonicalPath ?? path}" />`))
     assert.ok(html.includes('<div id="root"></div>'))
   }
 })
