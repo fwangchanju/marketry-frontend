@@ -54,17 +54,17 @@ function HistoryListPopup<T extends { id: string }>({
       style={{
         position: 'fixed',
         // 버튼 바로 밑에 붙지 않게 6px 띄운다(위로 열릴 땐 위로 6px).
-        top: position.top + (position.openUpward ? -6 : 6),
+        top: position.top + (position.openUpward ? -4 : 4),
         left: position.left,
         width: position.width,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
         '--accent': 'var(--panel-gray)',
       } as CSSProperties}
-      className="z-50 overflow-hidden rounded-none border border-ui-border bg-[var(--ui-panel)] p-0 text-sm text-ui-white shadow-xl"
+      className="z-50 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] text-sm text-ui-white shadow-xl"
       onClick={e => e.stopPropagation()}
     >
       {ordered.length === 0 ? (
-        <p className="whitespace-nowrap px-1 text-ui-muted">{actionLabel}할 변경 내역이 없습니다.</p>
+        <p className="whitespace-nowrap px-3 py-1 text-ui-muted">{actionLabel}할 변경 내역이 없습니다.</p>
       ) : (
         <div className="change-history-list overflow-y-auto" style={{ maxHeight: LIST_MAX_HEIGHT }} onMouseLeave={() => setHoverIndex(-1)}>
           {ordered.map((action, index) => (
@@ -76,7 +76,7 @@ function HistoryListPopup<T extends { id: string }>({
                 onPick(action.id)
                 setIsOpen(false)
               }}
-              className={`flex h-6 w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-2 py-0 text-left text-[13px] font-medium ${index > 0 ? 'border-t border-t-ui-white/35' : ''} ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white'}`}
+              className={`flex h-[25px] w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-3 py-0 text-left text-[13px] font-medium transition-colors ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'}`}
             >
               <span className={`w-4 shrink-0 text-right text-xs tabular-nums ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-muted'}`}>{direction === 'undo' ? '-' : '+'}{index + 1}</span>
               <span className="flex min-w-0 flex-col">

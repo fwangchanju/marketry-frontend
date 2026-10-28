@@ -148,9 +148,9 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
         <div
           role="dialog"
           aria-label="등락률 기준 선택"
-          className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-[3px] text-sm font-normal tracking-normal text-ui-white shadow-xl"
+          className="absolute left-0 top-full z-50 mt-1 w-max overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
-          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col gap-0.5">
+          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col">
             {options.map(option => (
               <button
                 key={option.value}
@@ -163,7 +163,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   onChange(option.value)
                   setIsOpen(false)
                 }}
-                className={`flex w-full items-center justify-between gap-4 rounded-[5px] border-0 px-2 py-1 text-left text-ui-white transition-colors ${
+                className={`flex w-full items-center justify-between gap-4 rounded-none border-0 px-3 py-1 text-left text-ui-white transition-colors ${
                   basis === option.value
                     ? 'bg-[var(--brand-surface)]'
                     : option.locked

@@ -80,38 +80,40 @@ export default function BannerTimePicker({
               const options = isHour ? HOURS : MINUTES
               const labelText = isHour ? '시' : '분'
               return (
-                <div key={column} className="relative flex flex-col gap-1 text-xs text-ui-muted">
+                <div key={column} className="flex flex-col gap-1 text-xs text-ui-muted">
                   <span>{labelText}</span>
-                  <button
-                    type="button"
-                    aria-label={`${label} ${labelText} 선택`}
-                    aria-haspopup="listbox"
-                    aria-expanded={openColumn === column}
-                    onClick={() => setOpenColumn(openColumn === column ? null : column)}
-                    className="flex h-[25px] w-full items-center justify-between rounded-[4px] border-0 bg-ui-control px-2 text-left text-[13px] font-medium text-ui-white focus-visible:outline-none"
-                  >
-                    <span>{current || labelText}</span>
-                    <ChevronDownIcon className={`h-3 w-3 text-brand transition-transform ${openColumn === column ? 'rotate-180' : ''}`} />
-                  </button>
-                  {openColumn === column && (
-                    <div role="listbox" aria-label={`${label} ${labelText} 선택`} className={`absolute left-0 z-10 max-h-40 w-full overflow-y-auto rounded-none border border-ui-border bg-ui-background text-ui-white shadow-xl ${position?.openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
-                      {options.filter(option => option !== current).map((option, index) => (
-                        <button
-                          key={option}
-                          type="button"
-                          role="option"
-                          aria-selected={false}
-                          onClick={() => {
-                            updateTime(isHour ? option : hour, isHour ? minute : option)
-                            setOpenColumn(null)
-                          }}
-                          className={`flex h-5 w-full items-center border-0 bg-transparent px-2 text-left text-xs font-medium text-ui-white settings-chip-hover focus-visible:outline-none ${index > 0 ? 'border-t border-t-ui-white/35' : ''}`}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      aria-label={`${label} ${labelText} 선택`}
+                      aria-haspopup="listbox"
+                      aria-expanded={openColumn === column}
+                      onClick={() => setOpenColumn(openColumn === column ? null : column)}
+                      className="flex h-[25px] w-full items-center justify-between rounded-[4px] border-0 bg-ui-control px-2 text-left text-[13px] font-medium text-ui-white focus-visible:outline-none"
+                    >
+                      <span>{current || labelText}</span>
+                      <ChevronDownIcon className={`h-3 w-3 text-brand transition-transform ${openColumn === column ? 'rotate-180' : ''}`} />
+                    </button>
+                    {openColumn === column && (
+                      <div role="listbox" aria-label={`${label} ${labelText} 선택`} className={`absolute left-0 z-10 max-h-[152px] w-full snap-y snap-mandatory overflow-y-auto rounded-md border border-ui-border bg-[var(--ui-panel)] text-ui-white shadow-xl ${position?.openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+                        {options.filter(option => option !== current).map(option => (
+                          <button
+                            key={option}
+                            type="button"
+                            role="option"
+                            aria-selected={false}
+                            onClick={() => {
+                              updateTime(isHour ? option : hour, isHour ? minute : option)
+                              setOpenColumn(null)
+                            }}
+                            className="flex h-[25px] w-full snap-start items-center border-0 bg-transparent px-3 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10 focus-visible:outline-none"
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )
             })}

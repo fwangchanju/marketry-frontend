@@ -27,7 +27,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { HistoryIcon, SaveIcon } from '@/components/icons/AppIcons'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
 
@@ -91,7 +91,7 @@ export default function AdminMessagePage() {
       queryClient.setQueryData(['admin-telegram-setting', session?.userId], saved)
     },
     onError: () => {
-      void appAlert('저장하지 못했습니다. 입력값을 확인하고 다시 시도해 주세요.', { adminOnly: true, title: '저장 실패' })
+      void appAlert('저장하지 못했습니다. 입력값을 확인하고 다시 시도해 주세요.', { title: '저장 실패' })
     },
   })
 
@@ -99,13 +99,13 @@ export default function AdminMessagePage() {
     mutationFn: sendTelegramReportOnce,
     meta: { skipGlobalError: true },
     onSuccess: () => {
-      void appAlert('가장 최근 공통 스냅샷으로 홈 리포트를 텔레그램에 보냈습니다.', { adminOnly: true, title: '발송 완료' })
+      void appAlert('가장 최근 공통 스냅샷으로 홈 리포트를 텔레그램에 보냈습니다.', { title: '발송 완료' })
     },
     onError: error => {
       const message = isAxiosError(error) && error.response?.status === 409
         ? '발송할 공통 스냅샷이 없어 보내지 않았습니다.'
         : '캡처 또는 텔레그램 전송에 실패했습니다. 다시 시도해 주세요.'
-      void appAlert(message, { adminOnly: true, title: '발송 실패' })
+      void appAlert(message, { title: '발송 실패' })
     },
   })
 
@@ -142,7 +142,7 @@ export default function AdminMessagePage() {
   }
   const handleSendOnce = async () => {
     if (sendOnce.isPending) return
-    if (await appConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '테스트 발송 1회' })) {
+    if (await appWarnConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '테스트 발송 1회' })) {
       sendOnce.mutate()
     }
   }
