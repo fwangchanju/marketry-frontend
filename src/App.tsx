@@ -10,6 +10,7 @@ import SourcePage from './pages/SourcePage'
 import ContactPage from './pages/ContactPage'
 import GuidePage from './pages/GuidePage'
 import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
+import MobileHomePage from './pages/MobileHomePage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
@@ -84,7 +85,7 @@ function AdminRouteGuard() {
 
 function ResponsiveHomePage() {
   const isNarrow = useIsNarrowScreen()
-  return isNarrow ? <MobileMarketSummaryPage /> : <MarketSummaryPage />
+  return isNarrow ? <MobileHomePage /> : <MarketSummaryPage />
 }
 
 function ResponsiveMapPage() {

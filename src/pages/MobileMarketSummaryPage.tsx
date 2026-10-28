@@ -18,7 +18,7 @@ import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 
 const MARKETS: { value: MarketQuery; label: string }[] = [
-  { value: 'ALL_STOCK', label: '전체' },
+  { value: 'ALL_STOCK', label: '국내 증시' },
   { value: 'KOSPI', label: '코스피' },
   { value: 'KOSDAQ', label: '코스닥' },
 ]
@@ -171,8 +171,8 @@ export default function MobileMarketSummaryPage() {
   // 분류 단계: MARKETRY·내 기준은 대·중·소분류(3단계), 거래소는 1단계. 눌러서 들어갈 때 하위 분류가 있으면 그 분류로, 없으면 바로 종목으로 간다.
   // 박스 크기는 PC 설정과 따로 두고, 폰의 기본은 시총 비례(100)다. 동일 0 · 균형 50 · 시총 비례 100.
   const [boxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio] = usePageSetting<number>('mobile.boxSizeMarketCapRatio', 100)
-  // 경로의 맨 앞은 고른 마켓 이름(전체·코스피·코스닥)이다.
-  const marketLabel = MARKETS.find(option => option.value === market)?.label ?? '전체'
+  // 경로의 맨 앞은 전체일 때 국내 증시, 그 밖에는 고른 마켓 이름이다.
+  const marketLabel = market === 'ALL_STOCK' ? '국내 증시' : MARKETS.find(option => option.value === market)?.label ?? '국내 증시'
   const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : 3
   const majorName = majorSelection?.market === market ? majorSelection.name : null
   const midName = midSelection?.market === market ? midSelection.name : null
@@ -331,7 +331,7 @@ export default function MobileMarketSummaryPage() {
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
       <MobileTopBar title="MAP" />
       <h1 className="sr-only">{heading}</h1>
-      {/* 경로 줄은 맨 처음(전체)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
+      {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
       <header className="shrink-0 px-3 py-0.5">
         <nav aria-label="업종 이동 경로" className="flex h-[36px] items-center overflow-x-auto whitespace-nowrap text-[15px] leading-none font-bold">
           {pathCrumbs.map(crumb => crumb.go
