@@ -390,10 +390,10 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
       <header className="shrink-0 bg-brand-surface px-3 py-0.5">
-        <nav aria-label="업종 이동 경로" className="flex h-[36px] items-center overflow-x-auto whitespace-nowrap text-[18px] leading-none font-bold">
-          <span aria-hidden="true" className="h-[18px] w-[4px] shrink-0 bg-ui-white" />
+        <nav aria-label="업종 이동 경로" className="flex h-[36px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
+          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
           {pathCrumbs.map(crumb => crumb.go
-            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/35">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-[18px] w-[18px] shrink-0" /></button>
+            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/35">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
             : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
         </nav>
       </header>
@@ -442,7 +442,7 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
           dragRef.current = null
           setDragHeight(null)
         }} onPointerCancel={() => { dragRef.current = null; setDragHeight(null) }} className="relative flex h-[28px] w-full touch-none items-center justify-center border-0 bg-transparent p-0 text-ui-white before:absolute before:left-1/2 before:top-1/2 before:h-[48px] before:w-[48px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']">
-          {!settingsOpen && data?.snapshotTime && <span className="absolute left-3 top-0 flex h-[28px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
+          {data?.snapshotTime && <span className="absolute left-3 top-0 flex h-[28px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
           <span aria-hidden="true" className="h-1 w-10 rounded-full bg-ui-muted" />
         </button>
         <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">
