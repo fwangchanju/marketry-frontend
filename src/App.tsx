@@ -99,7 +99,8 @@ function isMobileOpenPath(pathname: string) {
 }
 
 function isMobileMarketPath(pathname: string) {
-  return pathname === '/home' || pathname === '/map' || pathname.startsWith('/map/')
+  // 첫 화면(/)은 곧 /home으로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
+  return pathname === '/' || pathname === '/home' || pathname === '/map' || pathname.startsWith('/map/')
 }
 
 function MobileGate({ children }: { children: ReactNode }) {

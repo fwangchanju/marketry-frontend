@@ -1,6 +1,7 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import MobileTopBar from '@/components/MobileTopBar'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import Spinner from '@/components/Spinner'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
@@ -273,6 +274,68 @@ export default function MobileMarketSummaryPage() {
     if (nextMode === 'sector') setSelectedStocks(null)
   }
 
+  // 들어간 단계 = 브라우저 기록 한 칸(PC 지도 화면과 같은 방식). 대분류·중분류·종목으로 한 단계 들어갈 때마다 칸을 쌓아서
+  // 뒤로가기가 사이트를 떠나지 않고 한 단계씩 위로 올라가게 한다. 전체 화면에서 한 번 더 누르면 원래대로 이전 페이지로 나간다.
+  const depth = (major ? 1 : 0) + (mid ? 1 : 0) + (selectedStocks ? 1 : 0)
+  const historyDepthRef = useRef(0) // 지금 브라우저 기록 위치가 가리키는 깊이
+  const historyConsumingRef = useRef(false) // 코드가 일으킨 history.go()의 popstate는 무시한다
+  const historyLocationRef = useRef('') // 칸을 쌓은 주소(시장이 바뀌어 주소가 달라졌으면 go()로 정리하지 않는다)
+  const historyNormalizedRef = useRef(false)
+  const reduceToDepth = (target: number) => {
+    let current = depth
+    if (current > target && selectedStocks) { setStockSelection(null); setViewMode('sector'); current -= 1 }
+    if (current > target && mid) { setMidSelection(null); current -= 1 }
+    if (current > target && major) setMajorSelection(null)
+    setFocusedStockCode(null)
+  }
+  useEffect(() => {
+    // 다른 페이지에 갔다가 뒤로가기로 돌아오면 쌓인 칸만 남고 화면은 처음 상태라, 칸을 걷어 내 기준 칸으로 돌아간다.
+    if (historyNormalizedRef.current) return
+    historyNormalizedRef.current = true
+    const stacked = window.history.state?.mobileMapDepth
+    if (typeof stacked === 'number' && stacked > 0) {
+      historyConsumingRef.current = true
+      window.history.go(-stacked)
+    }
+  }, [])
+  useEffect(() => {
+    if (depth > historyDepthRef.current) {
+      for (let k = historyDepthRef.current + 1; k <= depth; k++) window.history.pushState({ ...(window.history.state ?? {}), mobileMapDepth: k }, '')
+      historyDepthRef.current = depth
+      historyLocationRef.current = window.location.pathname + window.location.search
+    } else if (depth < historyDepthRef.current) {
+      const stale = historyDepthRef.current - depth
+      historyDepthRef.current = depth
+      if (window.location.pathname + window.location.search === historyLocationRef.current) {
+        historyConsumingRef.current = true
+        window.history.go(-stale)
+      }
+    }
+  }, [depth])
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (historyConsumingRef.current) {
+        historyConsumingRef.current = false
+        return
+      }
+      // 이 지도 화면 안에서의 이동만 다룬다 — 다른 페이지로 나가는 뒤로가기는 그대로 둔다.
+      const path = window.location.pathname
+      if (path !== '/home' && !path.startsWith('/map')) return
+      const target: number = typeof e.state?.mobileMapDepth === 'number' ? e.state.mobileMapDepth : 0
+      if (target < depth) {
+        historyDepthRef.current = target
+        reduceToDepth(target)
+      } else if (target > depth) {
+        // 앞으로가기로 들어갔던 단계는 복원할 수 없어, 지금 화면에 맞는 칸으로 되돌린다.
+        historyConsumingRef.current = true
+        window.history.go(-(target - depth))
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reduceToDepth는 매 렌더 새 함수이고 depth로 충분히 갱신된다
+  }, [depth])
+
   const selectMarket = (nextMarket: MarketQuery) => {
     setMajorName(null)
     setMidName(null)
@@ -290,10 +353,10 @@ export default function MobileMarketSummaryPage() {
 
   return (
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
-      <header className="shrink-0 border-b border-ui-border px-3 pb-2 pt-[max(env(safe-area-inset-top),0.5rem)]">
+      <MobileTopBar title="HEATMAP" />
+      <header className="shrink-0 border-b border-ui-border px-3 pb-2 pt-2">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold tracking-[0.16em] text-brand">DESIGN YOUR MARKET</p>
             <h1 className="truncate text-base font-bold">{heading}</h1>
           </div>
           {data?.snapshotTime && <time className="shrink-0 text-[10px] tabular-nums text-ui-muted">{toDateTimeLabel(data.snapshotTime)}</time>}
