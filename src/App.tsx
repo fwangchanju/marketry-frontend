@@ -121,7 +121,7 @@ export default function App() {
           <Route path="/custom/sector" element={<CustomPage />} />
           <Route path="/custom/stock" element={<CustomPage />} />
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}
-          <Route path="/info" element={<Navigate to="/info/source" replace />} />
+          <Route path="/info" element={<Navigate to="/info/guide" replace />} />
           <Route path="/info/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/info/terms" element={<TermsPage />} />
           <Route path="/info/source" element={<SourcePage />} />
