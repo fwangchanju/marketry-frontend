@@ -37,9 +37,9 @@ export default function MobileTopBar({ title, titleTo, titleLabel, className = '
         <MarketryLogo layout="horizontalClean" className="h-auto w-[132px] max-w-none" />
       </Link>
       {titleTo ? (
-        <Link to={titleTo} aria-label={titleLabel} className="flex min-h-[44px] flex-col items-center justify-center text-[14px] font-bold leading-none tracking-[0.12em] text-brand">{title}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
+        <Link to={titleTo} aria-label={titleLabel} className="flex min-h-[44px] items-center justify-center gap-1 text-[14px] font-bold leading-none tracking-[0.12em] text-brand">{title}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
       ) : (
-        <span className="flex flex-col items-center text-[14px] font-bold leading-none tracking-[0.12em] text-brand">{title}{title && <ChevronDownIcon aria-hidden="true" className="h-3 w-3" />}</span>
+        <span className="flex items-center gap-1 text-[14px] font-bold leading-none tracking-[0.12em] text-brand">{title}{title && <ChevronDownIcon aria-hidden="true" className="h-3 w-3" />}</span>
       )}
       <div className="flex items-center justify-self-end">
       <button type="button" aria-label={theme === 'light' ? '야간모드로 전환' : '주간모드로 전환'} onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} className="flex h-[44px] w-[40px] items-center justify-center border-0 bg-transparent p-0 text-ui-white">

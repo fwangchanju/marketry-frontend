@@ -7,6 +7,10 @@ export const MIN_FONT = 10
 // 이름이 한 줄에 들어가면 나누지 않는다 — 한 줄에 맞추려고 글자를 줄일 수 있는 한계. 이보다 더 줄여야 하면 두 줄로 나눈다.
 export const ONE_LINE_MIN_FONT = 11
 export const LABEL_LINE_HEIGHT = 1.25
+// 박스 크기에 맞춘 종목명 기준 글자 크기(px) — PC 종목 박스와 모바일 종목 지도가 같이 쓴다.
+export function stockBaseFontPx(width: number, height: number): number {
+  return Math.max(12, Math.min(30, Math.min(width, height) / 5))
+}
 export const RATE_FONT_SCALE = 0.85
 // 이름 양옆 여백(px-1 = 4px씩)과 테두리(1px씩), 등락률 쪽은 테두리와 여유 1px씩.
 const NAME_SIDE = 10

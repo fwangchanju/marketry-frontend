@@ -16,8 +16,7 @@ import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
-import { layoutOverviewLabel } from '@/utils/overviewLabel'
-import { useFontsVersion } from '@/utils/stockLabelFit'
+import { LABEL_LINE_HEIGHT, fitStockLabel, stockBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 import { collectAtDepth } from '@/utils/sectorDepth'
@@ -96,7 +95,7 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
 }) {
   const { bind: bindLongPress, consumeClick } = useLongPress()
   const ref = useRef<HTMLDivElement>(null)
-  const fontsVersion = useFontsVersion()
+  useFontsVersion() // 글꼴이 늦게 로드돼 글자 폭이 달라지면 이름을 다시 맞추려고 다시 그리게 한다.
   const [size, setSize] = useState({ width: 0, height: 0 })
   // 두 손가락으로 확대하고 한 손가락으로 이동한다. 박스는 확대한 좌표·크기로 다시 놓아서, 커진 박스에는 이름이 새로 들어간다.
   // 종목 구성이 바뀌면(다른 업종·마켓으로 이동) 확대를 풀고 처음 크기로 돌아간다 — 확대 값에 그때의 종목 구성을 함께 적어 두고, 다르면 처음 크기로 본다.
@@ -192,13 +191,16 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
         const visibleTop = Math.max(0, y)
         const visibleWidth = Math.min(size.width, x + width) - visibleLeft
         const visibleHeight = Math.min(size.height, y + height) - visibleTop
-        const label = layoutOverviewLabel(stock.alias ?? stock.stockName, toPctSigned(stock.changeRate, decimalPlaces), visibleWidth, visibleHeight, fontsVersion, STOCK_LABEL_OPTIONS)
+        // PC 지도의 종목 박스와 같은 이름 나누기 규칙을 쓴다(공백 > 접미어(우·지주·홀딩스) > 영문·한글 경계·그룹명 뒤 > 가장 균형 잡힌 자리).
+        const name = stock.alias ?? stock.stockName
+        const rateText = toPctSigned(stock.changeRate, decimalPlaces)
+        const fit = fitStockLabel({ name, rateText, width: visibleWidth, height: visibleHeight, baseFont: stockBaseFontPx(visibleWidth, visibleHeight), wantName: true, wantRate: true })
         const press = bindLongPress(() => onLongPress(stock))
         return (
           <button key={stock.stockCode} type="button" aria-label={`${stock.stockName} ${toPctSigned(stock.changeRate, decimalPlaces)}`} onClick={() => { if (!consumeClick()) onSelect(stock) }} {...press} className="select-none [-webkit-touch-callout:none] absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight text-white" style={{ left: x, top: y, width, height, backgroundColor: color }}>
             <span className="pointer-events-none absolute flex flex-col items-center justify-center overflow-hidden p-0.5" style={{ left: visibleLeft - x, top: visibleTop - y, width: visibleWidth, height: visibleHeight }}>
-              {label.lines.length > 0 && <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>{label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}</span>}
-              {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{toPctSigned(stock.changeRate, decimalPlaces)}</span>}
+              {fit.nameLines && <span className="w-full px-1 text-center" style={{ fontSize: fit.nameSize, lineHeight: LABEL_LINE_HEIGHT }}>{fit.nameLines.map(line => <span key={line} className="block whitespace-nowrap">{line}</span>)}</span>}
+              {fit.rateSize !== null && <span className="tabular-nums text-center" style={{ fontSize: fit.rateSize, lineHeight: LABEL_LINE_HEIGHT }}>{rateText}</span>}
             </span>
           </button>
         )
@@ -207,9 +209,6 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
     </div>
   )
 }
-
-// 종목명은 공백이 없는 경우가 많아, 칸이 좁으면 이름 중간에서 두 줄로 나눈다.
-const STOCK_LABEL_OPTIONS = { splitInsideWord: true }
 
 const SETTING_CHIP_CLASS = 'h-[32px] rounded-[4px] border-0 px-1 text-[13px] font-medium'
 
