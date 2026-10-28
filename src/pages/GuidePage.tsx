@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import DocumentPageLayout from '@/components/DocumentPageLayout'
 import { InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
+import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
+import { useTaxonomySelection } from '@/hooks/useTaxonomySelection'
 
 const destinations = [
   { label: '국내증시 히트맵', to: '/map/korea' },
@@ -36,6 +38,8 @@ function IndustryGroupingExample() {
 }
 
 export default function GuidePage() {
+  const isNarrow = useIsNarrowScreen()
+  const [, setTaxonomySelection] = useTaxonomySelection()
   return (
     <DocumentPageLayout
       title="GUIDE"
@@ -54,9 +58,14 @@ export default function GuidePage() {
           <IndustryGroupingExample />
           <div className="!mt-12 space-y-3">
             <p>또 다른 새로운 접근 방식이 있다면, 직접 그룹을 분류해보세요.</p>
-            <Link to="/custom/sector" className="inline-flex min-h-11 items-center border border-brand px-3 text-sm font-bold text-brand hover:bg-brand/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
-              내 업종 설정하기<span aria-hidden="true" className="ml-2">↗</span>
-            </Link>
+            {/* 커스텀 화면은 분류 기준이 MARKETRY·거래소일 때 읽기 전용이라, 눌렀을 때 내 기준 모드로 바꿔서 연다. 모바일은 커스텀 화면이 없어 안내만 한다. */}
+            {isNarrow ? (
+              <p className="text-ui-muted">내 업종 설정은 PC 화면에서 할 수 있습니다.</p>
+            ) : (
+              <Link to="/custom/sector" onClick={() => setTaxonomySelection('MINE')} className="inline-flex min-h-11 items-center border border-brand px-3 text-sm font-bold text-brand hover:bg-brand/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
+                내 업종 설정하기<span aria-hidden="true" className="ml-2">↗</span>
+              </Link>
+            )}
           </div>
         </InfoSection>
 
