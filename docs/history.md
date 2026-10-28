@@ -1162,3 +1162,9 @@ Admin 설정창의 버튼 이름을 **업데이트에서 커밋으로 바꿨다*
 2026-10-28: 회원이 없는 오픈 전이라 오늘 바꾼 옛 주소를 모두 정리했다. `/map/allstock`·`/graph/allstock`(→ `/map/korea`·`/graph/korea`)와 `/guide/map`·`/guide/stock-heatmap`(→ `/info/guide`)의 이동 경로, 이동용 함수(`LegacyDomesticMarketRedirect`), 옛 주소 조각(`allstock`), 검색 정보와 검색 페이지 생성 규칙의 옛 항목을 지웠다. 이제 이 주소로 들어오면 홈으로 이동한다. 이전부터 있던 다른 이동 주소(`/summary`, `/group`·`/sector`·`/industry`, `/custom/industry`·`/custom/category`, `/privacy`·`/terms`·`/source`·`/contact`, `/admin/chart`·`/admin/sector`·`/admin/stock`)는 외부 등록 가능성이 있어 이번에 건드리지 않았다.
 
 2026-10-28: 옛 이동 주소를 추가로 지웠다. `/summary`, `/group`·`/sector`·`/industry`(와 하위 주소), `/custom/industry`·`/custom/category`, `/admin/chart`·`/admin/sector`·`/admin/stock`의 이동 경로와 `LegacyGroupRedirect`를 삭제했고, 이제 이 주소는 홈으로 이동한다. `/privacy`·`/terms`·`/source`·`/contact`는 코드 주석에 Google OAuth 동의 화면에 등록된 주소로 적혀 있어 남겼다. 동의 화면 쪽 주소를 `/info/...`로 바꾼 것이 확인되면 이 네 주소와 모바일에서 `/privacy`를 여는 예외도 지울 수 있다.
+
+2026-10-28: "트리맵(Treemap)"을 "히트맵(Heatmap)"으로 통일했다(사용자 결정). 처음 서비스 이름이 마켓트리여서 코드는 `Treemap`을 썼지만, 구글·네이버 검색에서는 "히트맵"이 압도적이라 화면·검색 문구는 이미 히트맵이었고 코드만 달랐다. 그래서 코드도 맞췄다.
+- 파일 이름: `api/treemap.ts`→`heatmap.ts`, `components/Treemap.tsx`→`Heatmap.tsx`, `TreemapColorThresholdEditorPanel.tsx`→`HeatmapColorThresholdEditorPanel.tsx`, `hooks/useTreemap*.ts`·`useFilteredTreemap.ts`·`useSectorTreemapPair.ts`→`useHeatmap*.ts`·`useFilteredHeatmap.ts`·`useSectorHeatmapPair.ts`, `utils/treemapColorScale.*`→`heatmapColorScale.*`.
+- 함수·타입·스키마 이름(`getTreemap`→`getHeatmap`, `TreemapResponseSchema`→`HeatmapResponseSchema` 등), CSS 클래스(`treemap-stock`→`heatmap-stock` 등), 화면 표시 속성(`data-treemap-layout-ready`→`data-heatmap-layout-ready` 등), 설정 키(`treemap.*`→`heatmap.*`)도 같이 바꿨다. 설정 키는 탭 메모리·세션 저장소에만 있어 사용자 데이터는 잃지 않는다.
+- 바꾸지 않은 것: 서버 요청 주소(`/api/map/...`)와 서버와 주고받는 필드, 외부 라이브러리 `d3-hierarchy`의 `treemap`·`treemapSquarify`·`treemapBinary`. 백엔드 Java 클래스(`TreemapController` 등)는 이번에 바꾸지 않았다.
+- 이 문서의 이전 항목에 남은 `Treemap` 이름은 당시 기록이라 그대로 둔다.

@@ -1,4 +1,4 @@
-import type { MarketValueTierItem, TreemapItem } from '@/types/api'
+import type { MarketValueTierItem, HeatmapItem } from '@/types/api'
 
 // 등급명 제외와 금액 범위 제외를 함께 전달한다. 기존 Set만 넘기는 호출자는 등급명 기준을 유지한다.
 export type MarketValueExclusions = Set<string> & {
@@ -6,7 +6,7 @@ export type MarketValueExclusions = Set<string> & {
 }
 
 export function isMarketValueExcluded(
-  item: Pick<TreemapItem, 'marketValueTier' | 'totalMarketValue'>,
+  item: Pick<HeatmapItem, 'marketValueTier' | 'totalMarketValue'>,
   exclusions: MarketValueExclusions,
 ): boolean {
   const range = exclusions.marketValueRange

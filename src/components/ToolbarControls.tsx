@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ChangeRateChoice } from '@/api/treemap'
+import type { ChangeRateChoice } from '@/api/heatmap'
 import { accentColor } from '@/utils/accentPalette'
 import { type TradingSession } from '@/utils/tradingWindow'
 import { useTradingSession } from '@/hooks/useTradingSession'

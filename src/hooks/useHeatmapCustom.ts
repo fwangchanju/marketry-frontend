@@ -22,7 +22,7 @@ import {
   updateCustomScaleThreshold,
   deleteCustomScaleThreshold,
 } from '@/api/custom'
-import { customTreemapKeys, treemapKeys } from './queryKeys'
+import { customHeatmapKeys, heatmapKeys } from './queryKeys'
 import { STATIC_REFERENCE_CACHE, INFREQUENT_DATA_CACHE } from './cacheConfig'
 import type { StockSectorListItem } from '@/types/api'
 
@@ -33,7 +33,7 @@ interface StockSectorListResponse {
 
 export function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQueryClient>) {
   return queryClient.invalidateQueries({
-    queryKey: treemapKeys.all,
+    queryKey: heatmapKeys.all,
     predicate: ({ queryKey }) =>
       (queryKey[1] === 'map' || queryKey[1] === 'sectorPair') && queryKey[3] === 'MINE',
   })
@@ -41,7 +41,7 @@ export function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQuery
 
 export function useCustomSectors(options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: customTreemapKeys.sectors(),
+    queryKey: customHeatmapKeys.sectors(),
     queryFn: getSectors,
     enabled: options?.enabled ?? true,
     ...INFREQUENT_DATA_CACHE,
@@ -53,8 +53,8 @@ export function useResetCustomClassification() {
   return useMutation({
     mutationFn: resetCustomClassification,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() })
       invalidateCustomTaxonomy(queryClient)
     },
     meta: { skipGlobalError: true },
@@ -75,11 +75,11 @@ export function useCreateSector(options?: { skipGlobalError?: boolean; deferInva
     mutationFn: ({ name, parentId }: { name: string; parentId: number | null }) => createSector(name, parentId),
     onSuccess: () => {
       if (options?.deferInvalidation) return
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
     onError: () => {
-      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
+      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
     },
   })
 }
@@ -90,7 +90,7 @@ export function useRenameSector() {
     meta: { failure: '업종명을 바꾸지 못했습니다.' },
     mutationFn: ({ id, name }: { id: number; name: string }) => renameSector(id, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
   })
@@ -102,7 +102,7 @@ export function useReparentSector() {
     meta: { failure: '업종을 옮기지 못했습니다.' },
     mutationFn: ({ id, parentId }: { id: number; parentId: number | null }) => reparentSector(id, parentId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
   })
@@ -113,7 +113,7 @@ export function useDeleteSector() {
   return useMutation({
     mutationFn: (id: number) => deleteSector(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
       invalidateCustomTaxonomy(queryClient)
     },
     meta: { skipGlobalError: true },
@@ -122,7 +122,7 @@ export function useDeleteSector() {
 
 export function useSnapshots() {
   return useQuery({
-    queryKey: customTreemapKeys.snapshots(),
+    queryKey: customHeatmapKeys.snapshots(),
     queryFn: getSnapshots,
     ...STATIC_REFERENCE_CACHE,
   })
@@ -130,7 +130,7 @@ export function useSnapshots() {
 
 export function useCurrentSnapshot() {
   return useQuery({
-    queryKey: customTreemapKeys.currentSnapshot(),
+    queryKey: customHeatmapKeys.currentSnapshot(),
     queryFn: getCurrentSnapshot,
     ...STATIC_REFERENCE_CACHE,
   })
@@ -141,8 +141,8 @@ export function useSaveSnapshot() {
   return useMutation({
     mutationFn: (label: string) => saveSnapshot(label),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.snapshots() })
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.currentSnapshot() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.snapshots() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.currentSnapshot() })
     },
   })
 }
@@ -152,8 +152,8 @@ export function useOverwriteSnapshot() {
   return useMutation({
     mutationFn: ({ id, label }: { id: number; label: string }) => overwriteSnapshot(id, label),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.snapshots() })
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.currentSnapshot() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.snapshots() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.currentSnapshot() })
     },
   })
 }
@@ -163,8 +163,8 @@ export function useRestoreSnapshot() {
   return useMutation({
     mutationFn: (id: number) => restoreSnapshot(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.sectors() })
-      queryClient.invalidateQueries({ queryKey: customTreemapKeys.currentSnapshot() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.currentSnapshot() })
       invalidateCustomTaxonomy(queryClient)
     },
   })
@@ -174,7 +174,7 @@ export function useDeleteSnapshot() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => deleteSnapshot(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customTreemapKeys.snapshots() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: customHeatmapKeys.snapshots() }),
   })
 }
 
@@ -185,7 +185,7 @@ export function useDeleteSnapshot() {
 // 바꾸거나 명시적으로 새로고침할 때만 일어나야 한다.
 function patchStockSectorId(queryClient: ReturnType<typeof useQueryClient>, stockCodes: string[], sectorId: number, deferInvalidation = false) {
   const stockCodeSet = new Set(stockCodes)
-  queryClient.setQueryData<StockSectorListResponse>(customTreemapKeys.stockSectors(), old =>
+  queryClient.setQueryData<StockSectorListResponse>(customHeatmapKeys.stockSectors(), old =>
     old
       ? { ...old, items: old.items.map(item => (stockCodeSet.has(item.stockCode) ? { ...item, sectorId } : item)) }
       : old,
@@ -215,7 +215,7 @@ export function useBulkAssignStockSector(options?: { skipGlobalError?: boolean; 
     },
     // 응답을 못 받은 요청도 서버에는 적용됐을 수 있으므로 실제 값을 다시 받는다.
     onError: () => {
-      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() })
+      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() })
     },
   })
 }
@@ -226,13 +226,13 @@ export function useUpdateStockAlias() {
     meta: { failure: '종목 약칭을 바꾸지 못했습니다.' },
     mutationFn: ({ stockCode, alias }: { stockCode: string; alias: string | null }) =>
       updateStockAlias(stockCode, alias),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customTreemapKeys.stockSectors() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() }),
   })
 }
 
 export function useStockSectors(options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: customTreemapKeys.stockSectors(),
+    queryKey: customHeatmapKeys.stockSectors(),
     queryFn: getStockSectors,
     enabled: options?.enabled ?? true,
     ...STATIC_REFERENCE_CACHE,

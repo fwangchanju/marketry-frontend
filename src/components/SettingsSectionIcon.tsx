@@ -12,7 +12,7 @@ interface SettingsSectionIconProps {
 }
 
 // 설정창 메뉴 줄의 아이콘 — 상단 영역 아이콘과 같은 선 아이콘이다(24×24 격자, 선 끝·꺾임 둥글게).
-// 업종 분류·색상은 Lucide(network·palette), 종목 구성·종목 박스는 Tabler(chart-treemap·text-size) 모양이다.
+// 업종 분류·색상은 Lucide(network·palette), 종목 구성·종목 박스는 Tabler(chart-heatmap·text-size) 모양이다.
 const ICON_SHAPES: Record<Exclude<SettingsSectionIconName, 'dashboard' | 'megaphone' | 'ad' | 'mail' | 'members'>, ReactNode> = {
   document: (
     <>

@@ -1,10 +1,10 @@
 import { useLayoutEffect, useRef } from 'react'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import {
-  resolveTreemapColor,
-  resolveTreemapExtremeColor,
+  resolveHeatmapColor,
+  resolveHeatmapExtremeColor,
   type ColorScaleConfig,
-} from '@/utils/treemapColorScale'
+} from '@/utils/heatmapColorScale'
 import { RANK_AXIS_BREAK_CUT_PX, RANK_AXIS_BREAK_BRIDGE_PX, RANK_AXIS_BREAK_GAP_PX, rankAxisBreakAt, rankAxisMagnitude } from '@/utils/rankAxis'
 
 export interface RankColumnItem {
@@ -137,7 +137,7 @@ export default function RankColumns({
                   <div
                     className={`absolute bottom-0 left-[18%] right-[18%] border border-ui-control ${hasAxisBreak ? 'rounded-b-sm' : 'rounded-sm'}`}
                     style={{
-                      backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                      backgroundColor: item.isReference ? highlightColor : resolveHeatmapColor(item.value, colorScale),
                       height: `${primaryHeightPercent}%`,
                     }}
                   />
@@ -149,7 +149,7 @@ export default function RankColumns({
                         style={{
                           bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_CUT_PX}px)`,
                           height: RANK_AXIS_BREAK_BRIDGE_PX,
-                          backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                          backgroundColor: item.isReference ? highlightColor : resolveHeatmapColor(item.value, colorScale),
                         }}
                       />
                       <div
@@ -158,14 +158,14 @@ export default function RankColumns({
                         style={{
                           bottom: `calc(${primaryHeightPercent}% + ${RANK_AXIS_BREAK_GAP_PX}px)`,
                           height: `${tailHeightPercent}%`,
-                          backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                          backgroundColor: item.isReference ? highlightColor : resolveHeatmapColor(item.value, colorScale),
                         }}
                       />
                     </>
                   )}
                   <RankColumnValue
                     value={item.value}
-                    color={resolveTreemapExtremeColor(item.value, colorScale)}
+                    color={resolveHeatmapExtremeColor(item.value, colorScale)}
                     heightPercent={heightPercent}
                     axisGapPx={hasAxisBreak ? RANK_AXIS_BREAK_GAP_PX : 0}
                   />

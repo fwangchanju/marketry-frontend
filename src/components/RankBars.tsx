@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import type { RankColumnsChart } from '@/components/RankColumns'
-import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
+import { resolveHeatmapColor, resolveHeatmapExtremeColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
 import { RANK_AXIS_BREAK_CUT_PX, RANK_AXIS_BREAK_BRIDGE_PX, RANK_AXIS_BREAK_GAP_PX, rankAxisBreakAt, rankAxisMagnitude } from '@/utils/rankAxis'
 
 // 자리가 있으면 글자·막대를 키우고, 자리가 모자랄 때만 줄인다. 줄 높이(틀 높이 ÷ 항목 수)와 틀 폭에 맞춰 정한다.
@@ -120,7 +120,7 @@ export default function RankBars({
                     className={`absolute left-0 top-0 h-full border border-ui-control ${hasAxisBreak ? 'rounded-l-sm' : 'rounded-sm'}`}
                     style={{
                       width: `calc((100% - ${reservedWidth}px) * ${primaryMagnitude / axisMax})`,
-                      backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                      backgroundColor: item.isReference ? highlightColor : resolveHeatmapColor(item.value, colorScale),
                     }}
                   />
                   {hasAxisBreak && (
@@ -131,7 +131,7 @@ export default function RankBars({
                         style={{
                           left: `calc((100% - ${reservedWidth}px) * ${axisBreakAt / axisMax} + ${RANK_AXIS_BREAK_CUT_PX}px)`,
                           width: RANK_AXIS_BREAK_BRIDGE_PX,
-                          backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                          backgroundColor: item.isReference ? highlightColor : resolveHeatmapColor(item.value, colorScale),
                         }}
                       />
                       <div
@@ -140,7 +140,7 @@ export default function RankBars({
                         style={{
                           left: `calc((100% - ${reservedWidth}px) * ${axisBreakAt / axisMax} + ${RANK_AXIS_BREAK_GAP_PX}px)`,
                           width: `calc((100% - ${reservedWidth}px) * ${(compressedMagnitude - axisBreakAt) / axisMax})`,
-                          backgroundColor: item.isReference ? highlightColor : resolveTreemapColor(item.value, colorScale),
+                          backgroundColor: item.isReference ? highlightColor : resolveHeatmapColor(item.value, colorScale),
                         }}
                       />
                     </>
@@ -149,7 +149,7 @@ export default function RankBars({
                     className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1.5 font-bold tabular-nums"
                     style={{
                       left: axisPosition,
-                      color: resolveTreemapExtremeColor(item.value, colorScale),
+                      color: resolveHeatmapExtremeColor(item.value, colorScale),
                     }}
                   >
                     {toValueLabel(item.value)}

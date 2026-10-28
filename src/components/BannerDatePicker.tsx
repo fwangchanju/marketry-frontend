@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { usePopupBounds } from '@/hooks/usePopupBounds'
-import { useTreemapColorScale } from '@/hooks/useTreemapColorScale'
-import { resolveTreemapColor } from '@/utils/treemapColorScale'
+import { useHeatmapColorScale } from '@/hooks/useHeatmapColorScale'
+import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { KOREAN_PUBLIC_HOLIDAY_DATES } from '@/utils/koreanPublicHolidayDates'
 import { DROPDOWN_GAP_PX } from '@/components/dropdownStyle'
 
@@ -65,7 +65,7 @@ export default function BannerDatePicker({
   const [shownMonth, setShownMonth] = useState<ShownMonth>(() => parseDate(selectedDate) ?? parseDate(getKstToday())!)
   const [pickerYear, setPickerYear] = useState(shownMonth.year)
   const [decadeStart, setDecadeStart] = useState(Math.floor(shownMonth.year / 10) * 10)
-  const { data: colorScale } = useTreemapColorScale()
+  const { data: colorScale } = useHeatmapColorScale()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false, false)
@@ -112,7 +112,7 @@ export default function BannerDatePicker({
   const nextMonth = moveMonth(shownMonth, 1)
   const canMovePrevious = currentMonthKey > `${MIN_YEAR}-01`
   const canMoveNext = nextMonth.year <= MAX_YEAR
-  const holidayColor = colorScale ? resolveTreemapColor(8, colorScale) : undefined
+  const holidayColor = colorScale ? resolveHeatmapColor(8, colorScale) : undefined
 
   const selectDay = (day: number) => {
     onSelect(toDateKey(shownMonth.year, shownMonth.monthIndex, day))

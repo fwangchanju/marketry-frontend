@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy'
 import { toJoEokDecimal, toPctSigned } from '@/utils/format'
-import { resolveTreemapColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
+import { resolveHeatmapColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
 import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { useFontsVersion } from '@/utils/stockLabelFit'
 import Popup, { type PopupState } from '@/components/Popup'
@@ -39,7 +39,7 @@ export default function OverviewMap({
   useEffect(() => {
     if (!popup) return
     const handlePointerDown = (event: PointerEvent) => {
-      if (event.target instanceof Element && event.target.closest('[data-treemap-popup]')) return
+      if (event.target instanceof Element && event.target.closest('[data-heatmap-popup]')) return
       setPopup(null)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -108,12 +108,12 @@ export default function OverviewMap({
     <div ref={ref} className="relative min-h-0 w-full flex-1">
       <Popup popup={popup} onExcludeSector={() => undefined} onClose={() => setPopup(null)} />
       {rects.map(({ item, x, y, width, height }) => {
-        const background = resolveTreemapColor(item.changeRate, colorScale)
+        const background = resolveHeatmapColor(item.changeRate, colorScale)
         const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion)
         const isPinned = popup?.targetKey === `sector:${item.key}`
         // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box).
         const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`
-        const boxStyle = { left: x, top: y, width, height, backgroundColor: background, color: '#ffffff', '--treemap-base-color': background } as React.CSSProperties
+        const boxStyle = { left: x, top: y, width, height, backgroundColor: background, color: '#ffffff', '--heatmap-base-color': background } as React.CSSProperties
         // 마우스를 올리면 업종 정보 팝업을 열고 박스를 벗어나면 닫는다(이름이 안 들어가 빠진 박스도 여기서 이름과 등락률을 본다).
         const handlePointerEnter = (event: React.PointerEvent<HTMLElement>) => openPopup(item, event.currentTarget, { x: event.clientX, y: event.clientY })
         const handlePointerLeave = () => setPopup(previous => (previous?.targetKey === `sector:${item.key}` ? null : previous))
