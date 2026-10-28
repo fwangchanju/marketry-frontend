@@ -10,7 +10,7 @@ import {
 import { treemapKeys } from '@/hooks/queryKeys'
 import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 import { CloudUploadIcon, HistoryIcon } from '@/components/icons/AppIcons'
 
 // 커스텀 설정창의 다운로드·업로드 버튼과 같은 회색 칩(마우스를 올리면 강조색이 은은하게 비친다). 위험 작업이라는 표시는 설정창 헤더의 ADMIN 경고가 맡는다.
@@ -53,8 +53,8 @@ export default function MarketryPublishControls() {
   const refreshMaps = () => queryClient.invalidateQueries({ queryKey: treemapKeys.all })
 
   const handlePublish = async () => {
-    const confirmed = await appConfirm(
-      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n내 기준을 MARKETRY 분류로 업데이트하시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`,
+    const confirmed = await appWarnConfirm(
+      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n[내 기준]을 [MARKETRY] 분류로 업데이트하시겠습니까?`,
       { adminOnly: true, title: 'MARKETRY 업데이트' },
     )
     if (!confirmed) return
@@ -63,7 +63,7 @@ export default function MarketryPublishControls() {
       const published = await publishMarketry(createPublicationLabel(new Date()))
       setVersions(null)
       await refreshMaps()
-      appAlert(`[${toDateTimeLabel(published.label)}]\nMARKETRY 업데이트이 완료되었습니다.`, { title: '업데이트 완료' })
+      appAlert(`[${toDateTimeLabel(published.label)}]\nMARKETRY 분류가 업데이트되었습니다.`, { title: '업데이트 완료' })
     } catch {
       appAlert('MARKETRY에 올리지 못했습니다.', { title: '업데이트 실패' })
     } finally {
@@ -87,7 +87,7 @@ export default function MarketryPublishControls() {
   }
 
   const handleRestore = async (version: MarketryPublication) => {
-    const confirmed = await appConfirm(`[${toDateTimeLabel(version.label)}]\nMARKETRY 분류를 되돌리시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
+    const confirmed = await appWarnConfirm(`[${toDateTimeLabel(version.label)}]\nMARKETRY 분류를 되돌리시겠습니까?\n유저들이 보는 MARKETRY 맵이 변경됩니다.`, { adminOnly: true, title: 'MARKETRY 롤백' })
     if (!confirmed) return
     setIsBusy(true)
     try {

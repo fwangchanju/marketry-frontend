@@ -27,7 +27,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { HistoryIcon, SaveIcon } from '@/components/icons/AppIcons'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
+import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { isAdminSession } from '@/utils/adminAccess'
 
@@ -142,7 +142,7 @@ export default function AdminMessagePage() {
   }
   const handleSendOnce = async () => {
     if (sendOnce.isPending) return
-    if (await appConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '테스트 발송 1회' })) {
+    if (await appWarnConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '테스트 발송 1회' })) {
       sendOnce.mutate()
     }
   }
