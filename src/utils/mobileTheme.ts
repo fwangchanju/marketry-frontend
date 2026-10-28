@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 // 모바일 화면 모드 — 야간(기본)·주간. 이 브라우저에만 저장하고 서버·계정에는 올리지 않는다.
-// 색은 index.css의 `:root[data-theme="light"]`가 폭 767px 이하에서만 덮어쓴다(PC 화면은 영향이 없다).
+// 색은 index.css의 `:root[data-theme="light"]`가 모바일 화면(폭 767px 이하, 눕힌 폰)에서만 덮어쓴다(PC 화면은 영향이 없다).
 export type MobileTheme = 'dark' | 'light'
 
 const STORAGE_KEY = 'marketry.mobileTheme'

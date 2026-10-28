@@ -390,10 +390,10 @@
   line-height: 1.5;
 }
 
-/* 모바일 주간모드 — 폭 767px 이하에서 html[data-theme="light"]일 때만 색 토큰을 덮어쓴다. 야간 값과 같은 이름·같은 역할이다.
+/* 모바일 주간모드 — 모바일 화면(폭 767px 이하, 또는 눕힌 폰)에서 html[data-theme="light"]일 때만 색 토큰을 덮어쓴다. 야간 값과 같은 이름·같은 역할이다.
    --ui-white는 "글자 색"으로 쓰이므로 주간에서는 어두운 글자가 되고, 청록·데이터 색 바탕 위 글자는 --ui-on-dark(흰색)를 쓴다.
    --brand는 글자로도 쓰여 밝은 바탕에서 대비가 4.5:1 이상이 되도록 진하게 한다(#0e7c70). */
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) and (max-height: 500px) {
   :root[data-theme="light"] {
     color-scheme: light;
     --brand: #0e7c70;
@@ -433,8 +433,8 @@ a, button {
   cursor: pointer;
 }
 
-/* 좁은 화면에서는 rem 기반 유틸리티(폰트/여백/간격)가 전부 이 비율로 같이 줄어듦 */
-@media (max-width: 480px) {
+/* 좁은 화면(폭 480px 이하, 눕힌 폰 포함)에서는 rem 기반 유틸리티(폰트/여백/간격)가 전부 이 비율로 같이 줄어듦 */
+@media (max-width: 480px), (pointer: coarse) and (max-height: 500px) {
   :root {
     font-size: 80%;
   }
@@ -1409,7 +1409,7 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
 }
 
 /* 모바일 화면의 조작 중 글자가 선택되지 않도록 하고 입력 편집은 유지한다. */
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) and (max-height: 500px) {
   body { user-select: none; -webkit-user-select: none; }
   input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-select: text; }
 }
