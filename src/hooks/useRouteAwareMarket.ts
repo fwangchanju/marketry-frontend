@@ -19,10 +19,7 @@ export function useRouteAwareMarket(
   const { pathname } = useLocation()
   const [storedMarket, setStoredMarket] = usePersistedState<MarketQuery>(storageKey, defaultMarket)
 
-  const normalizedPath = pathname.replace(/\/+$/, '')
-  const routeMarket = normalizedPath === '/map' || normalizedPath === '/graph'
-    ? 'ALL_STOCK'
-    : marketFromRouteSegment(normalizedPath.split('/')[2])
+  const routeMarket = marketFromRouteSegment(pathname.split('/')[2])
   const market = routeMarket ?? storedMarket
 
   // 경로/쿼리로 정해진 마켓을 저장해둬야, 마켓 세그먼트가 없는 다음 방문(/sector, /map)에서 폴백으로 쓸 수 있다.

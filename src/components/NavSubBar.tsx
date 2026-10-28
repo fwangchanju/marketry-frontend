@@ -23,7 +23,7 @@ interface MenuLink {
   options?: MenuOption[]
 }
 
-// Map·Graph는 K-STOCK / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다.
+// Map·Graph는 KOREA / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다.
 const BASE_LINKS: MenuLink[] = [
   { to: '/home', label: 'Home', icon: 'home' },
   { to: marketRoute('/map', 'ALL_STOCK'), label: 'Map', icon: 'composition', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/map', option.market) })) },
@@ -183,6 +183,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
+                    const isMarketChild = option.to.endsWith('/kospi') || option.to.endsWith('/kosdaq')
                     return (
                       <button
                         key={option.to}
@@ -190,7 +191,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
                         role="option"
                         aria-selected={isCurrent}
                         onClick={() => handleSelect(option)}
-                        className={`font-roboto-latin block h-[30px] w-full rounded-[5px] border-0 px-2.5 text-left text-sm font-medium transition-colors ${
+                        className={`font-roboto-latin block h-[30px] w-full rounded-[5px] border-0 ${isMarketChild ? 'pl-5 pr-2.5' : 'px-2.5'} text-left text-sm font-medium transition-colors ${
                           isCurrent ? 'bg-[var(--brand-surface)] text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'
                         }`}
                       >

@@ -70,13 +70,12 @@ function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   const params = new URLSearchParams(search)
   const marketParam = params.get('market')
   const market = marketParam === 'KOSPI' || marketParam === 'KOSDAQ' || marketParam === 'ALL_STOCK' ? marketParam : null
-  if (!market) return basePath === '/map' ? <MapPage /> : <GroupPage />
   if (market) params.delete('market')
   const rest = params.toString()
-  return <Navigate to={`${marketRoute(basePath, market)}${rest ? `?${rest}` : ''}${hash}`} replace />
+  return <Navigate to={`${marketRoute(basePath, market ?? 'ALL_STOCK')}${rest ? `?${rest}` : ''}${hash}`} replace />
 }
 
-// 검색 결과와 기존 북마크의 /allstock·/korea 주소를 기본 국내증시 주소로 옮기되 쿼리와 해시는 보존한다.
+// 검색 결과와 기존 북마크의 /allstock 주소를 새 국내증시 주소로 옮기되 쿼리와 해시는 보존한다.
 function LegacyDomesticMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   const { search, hash } = useLocation()
   return <Navigate to={`${marketRoute(basePath, 'ALL_STOCK')}${search}${hash}`} replace />
@@ -120,12 +119,12 @@ export default function App() {
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
           <Route path="/map/kospi" element={<MapPage />} />
           <Route path="/map/kosdaq" element={<MapPage />} />
-          <Route path="/map/korea" element={<LegacyDomesticMarketRedirect basePath="/map" />} />
+          <Route path="/map/korea" element={<MapPage />} />
           <Route path="/map/allstock" element={<LegacyDomesticMarketRedirect basePath="/map" />} />
           <Route path="/graph" element={<LegacyMarketRedirect basePath="/graph" />} />
           <Route path="/graph/kospi" element={<GroupPage />} />
           <Route path="/graph/kosdaq" element={<GroupPage />} />
-          <Route path="/graph/korea" element={<LegacyDomesticMarketRedirect basePath="/graph" />} />
+          <Route path="/graph/korea" element={<GroupPage />} />
           <Route path="/graph/allstock" element={<LegacyDomesticMarketRedirect basePath="/graph" />} />
           <Route path="/group" element={<LegacyGroupRedirect />} />
           <Route path="/group/*" element={<LegacyGroupRedirect />} />

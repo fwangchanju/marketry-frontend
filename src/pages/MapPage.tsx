@@ -316,7 +316,7 @@ export default function MapPage() {
   // 실험 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
-  // 렌더러(텔레그램 발송)가 /map?capture=mobile 로 열면 스크린샷 창의 "모바일" 판(3:4 세로)을 화면에 그대로 펼쳐 놓고 그 틀만 찍는다.
+  // 렌더러(텔레그램 발송)가 /map/korea?capture=mobile 로 열면 스크린샷 창의 "모바일" 판(3:4 세로)을 화면에 그대로 펼쳐 놓고 그 틀만 찍는다.
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
