@@ -712,8 +712,7 @@ export default function AdminBannerPage() {
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="BANNER" />
                 </Toolbar>
-                <PageMainFrame scrollable={false} className="p-0">
-                  <div className="relative z-10 shrink-0 bg-ui-background px-6 pt-6">
+                <PageMainFrame className="p-0" heading={(
                     <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl">
                     <InfoPageHeading
                       flushBottom
@@ -728,9 +727,7 @@ export default function AdminBannerPage() {
                       )}
                     />
                     </article>
-                  </div>
-                  <div className="min-h-0 flex-1 px-6">
-                    <div className="page-main-scroll h-full overflow-y-auto pb-6 pt-7">
+                  )}>
                   <article aria-label="배너 운영 콘텐츠" className="mx-auto w-full max-w-4xl space-y-5">
                     {showCampaignList ? (
                       <div className="flex flex-col gap-3">
@@ -870,8 +867,6 @@ export default function AdminBannerPage() {
                     )}
 
                   </article>
-                    </div>
-                  </div>
                 </PageMainFrame>
               </>
             )}
