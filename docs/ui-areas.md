@@ -75,7 +75,7 @@
 | 분류 값 | `MARKETRY` · `KRX` · `MINE` · `NXT` | MARKETRY · 거래소 · 내 기준 |
 | 페이지 | `MapPage` · `GroupPage` · `CustomPage` | Map · Graph · Custom (`GroupPage`의 화면 이름이 Graph, 주소는 `/graph`) |
 | 상단 영역의 메뉴 줄 | `NavSubBar` | 메뉴 줄 |
-| 상단 영역 메뉴(Map·Graph·Custom)에 커서를 올리면 뜨는 목록 (Map·Graph는 시장, Custom은 업종·종목) | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |
+| 상단 영역 메뉴(Map·Graph·Custom)에 커서를 올리면 뜨는 목록 (Map·Graph는 KOREA·KOSPI·KOSDAQ 시장, KOSPI·KOSDAQ은 KOREA 아래 한 단계 들여씀; 툴바 배지는 K-STOCK 유지. Custom은 업종·종목) | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |
 | 툴바 맨 왼쪽의 현재 시장·화면 이름 배지 (서브 청록색 박스 + 윗변에 걸친 메인 청록색 페이지 이름 + 흰 제목 글자, 고르는 것은 메뉴 목록) | `ToolbarModeText` | 제목 배지 |
 | 툴바의 날짜·시각·시장 시간대·제외 종목 회색 직사각형 | `ToolbarChip` | 칩 |
 | 시각 칩 오른쪽의 새로고침 아이콘 칸 | `PageRefreshButton`(`cell`) | 새로고침 칸 |

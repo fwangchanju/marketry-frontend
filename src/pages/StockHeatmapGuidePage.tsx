@@ -3,10 +3,10 @@ import DocumentPageLayout from '@/components/DocumentPageLayout'
 import { InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 
 const destinations = [
-  { label: '국내증시 히트맵', to: '/map' },
+  { label: '국내증시 히트맵', to: '/map/korea' },
   { label: '코스피 히트맵', to: '/map/kospi' },
   { label: '코스닥 히트맵', to: '/map/kosdaq' },
-  { label: '국내증시 등락률 그래프', to: '/graph' },
+  { label: '국내증시 등락률 그래프', to: '/graph/korea' },
   { label: '코스피 등락률 그래프', to: '/graph/kospi' },
   { label: '코스닥 등락률 그래프', to: '/graph/kosdaq' },
 ]

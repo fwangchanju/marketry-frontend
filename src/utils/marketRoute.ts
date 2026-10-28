@@ -3,7 +3,7 @@ import type { MarketQuery } from '@/types/api'
 const MARKET_ROUTE_SEGMENTS: Record<MarketQuery, string> = {
   KOSPI: 'kospi',
   KOSDAQ: 'kosdaq',
-  ALL_STOCK: '',
+  ALL_STOCK: 'korea',
 }
 
 const MARKET_BY_ROUTE_SEGMENT: Record<string, MarketQuery> = Object.fromEntries(
@@ -12,7 +12,6 @@ const MARKET_BY_ROUTE_SEGMENT: Record<string, MarketQuery> = Object.fromEntries(
 
 // 기존 검색 결과·북마크와의 호환을 위해 옛 주소 조각도 읽는다.
 MARKET_BY_ROUTE_SEGMENT.allstock = 'ALL_STOCK'
-MARKET_BY_ROUTE_SEGMENT.korea = 'ALL_STOCK'
 
 export function marketToRouteSegment(market: MarketQuery): string {
   return MARKET_ROUTE_SEGMENTS[market]

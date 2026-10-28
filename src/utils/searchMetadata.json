@@ -11,14 +11,19 @@
     "title": "코스닥 히트맵",
     "description": "코스닥 종목의 움직임을 나만의 히트맵으로 보세요. 업종을 묶거나 제외하고 종목 크기도 조절할 수 있습니다."
   },
-  "/map": {
+  "/map/korea": {
     "title": "국내증시 히트맵",
     "description": "코스피·코스닥 전체 종목을 한 화면에서 비교하세요. 종목 크기와 업종 구성을 바꿔 전체 시장을 살펴볼 수 있습니다."
+  },
+  "/map": {
+    "title": "국내증시 히트맵",
+    "description": "코스피·코스닥 전체 종목을 한 화면에서 비교하세요. 종목 크기와 업종 구성을 바꿔 전체 시장을 살펴볼 수 있습니다.",
+    "canonicalPath": "/map/korea"
   },
   "/map/allstock": {
     "title": "국내증시 히트맵",
     "description": "코스피·코스닥 전체 종목을 한 화면에서 비교하세요. 종목 크기와 업종 구성을 바꿔 전체 시장을 살펴볼 수 있습니다.",
-    "canonicalPath": "/map"
+    "canonicalPath": "/map/korea"
   },
   "/graph/kospi": {
     "title": "코스피 등락률 그래프",
@@ -28,14 +33,19 @@
     "title": "코스닥 등락률 그래프",
     "description": "코스닥에서 직접 분류한 업종 그룹의 등락률을 비교하고, 분류 단계를 조절해 시장 흐름을 살펴보세요."
   },
-  "/graph": {
+  "/graph/korea": {
     "title": "국내증시 등락률 그래프",
     "description": "국내증시에서 직접 분류한 업종 그룹의 등락률을 비교하고, 분류 단계를 조절해 시장 흐름을 살펴보세요."
+  },
+  "/graph": {
+    "title": "국내증시 등락률 그래프",
+    "description": "국내증시에서 직접 분류한 업종 그룹의 등락률을 비교하고, 분류 단계를 조절해 시장 흐름을 살펴보세요.",
+    "canonicalPath": "/graph/korea"
   },
   "/graph/allstock": {
     "title": "국내증시 등락률 그래프",
     "description": "국내증시에서 직접 분류한 업종 그룹의 등락률을 비교하고, 분류 단계를 조절해 시장 흐름을 살펴보세요.",
-    "canonicalPath": "/graph"
+    "canonicalPath": "/graph/korea"
   },
   "/guide/stock-heatmap": {
     "title": "증시 히트맵 설정 방법",
