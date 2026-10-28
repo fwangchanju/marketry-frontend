@@ -145,7 +145,9 @@ export default function App() {
           <Route path="/info/terms" element={<TermsPage />} />
           <Route path="/info/source" element={<SourcePage />} />
           <Route path="/info/contact" element={<ContactPage />} />
-          <Route path="/guide/stock-heatmap" element={<StockHeatmapGuidePage />} />
+          <Route path="/info/guide" element={<StockHeatmapGuidePage />} />
+          <Route path="/guide/map" element={<Navigate to="/info/guide" replace />} />
+          <Route path="/guide/stock-heatmap" element={<Navigate to="/info/guide" replace />} />
           {/* 이전 주소와 Google OAuth에 등록된 /privacy 주소도 새 정보 경로로 보낸다. */}
           <Route path="/privacy" element={<Navigate to="/info/privacy" replace />} />
           <Route path="/terms" element={<Navigate to="/info/terms" replace />} />
