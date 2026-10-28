@@ -27,12 +27,26 @@ export default function OverviewMap({
   items,
   colorScale,
   onSelect,
+  onLongPress,
+  hoverPopup = true,
 }: {
   items: OverviewMapItem[]
   colorScale: ColorScaleConfig
   onSelect?: (name: string) => void
+  // 손가락으로 업종을 길게 누르면 부른다(모바일 전용). 누르면 들어가는 동작과 겹치지 않도록, 길게 누른 뒤에는 뒤따르는 클릭을 무시한다.
+  onLongPress?: (item: OverviewMapItem) => void
+  // false면 마우스를 올려도 말풍선을 띄우지 않는다(모바일은 길게 누르는 카드로 대신한다).
+  hoverPopup?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const pressRef = useRef<{ timer: number; x: number; y: number } | null>(null)
+  const longPressedRef = useRef(false)
+  const cancelPress = () => {
+    if (!pressRef.current) return
+    window.clearTimeout(pressRef.current.timer)
+    pressRef.current = null
+  }
+  useEffect(() => cancelPress, [])
   const fontsVersion = useFontsVersion()
   const [size, setSize] = useState({ width: 0, height: 0 })
   // 마우스를 올리면 뜨는 업종 팝업 — 지도가 작아서 우클릭 대신 올리는 것만으로 보이게 한다. 지도 페이지의 "마우스 올리면 팝업" 방식과 같이 커서 근처에 놓이고 커서를 따라 움직이며, 박스를 벗어나면 닫힌다.
@@ -119,7 +133,7 @@ export default function OverviewMap({
         // 마우스를 올리면 업종 정보 팝업을 열고 박스를 벗어나면 닫는다(이름이 안 들어가 빠진 박스도 여기서 이름과 등락률을 본다).
         const handlePointerEnter = (event: React.PointerEvent<HTMLElement>) => {
           // 말풍선은 마우스를 올렸을 때만 띄운다 — 손가락으로 업종을 누르면 바로 그 안으로 들어가서 말풍선이 필요 없고, 손가락을 떼도 닫히지 않고 손가락에 가려진다.
-          if (event.pointerType === 'touch') return
+          if (!hoverPopup || event.pointerType === 'touch') return
           openPopup(item, event.currentTarget, { x: event.clientX, y: event.clientY })
         }
         const handlePointerLeave = () => setPopup(previous => (previous?.targetKey === `sector:${item.key}` ? null : previous))
@@ -135,8 +149,28 @@ export default function OverviewMap({
           </>
         )
         // onSelect가 있으면 업종 지도로 이동하는 버튼으로 그린다.
+        const handleSelect = () => {
+          if (longPressedRef.current) { longPressedRef.current = false; return }
+          onSelect?.(item.name)
+        }
+        const handlePressStart = (event: React.PointerEvent<HTMLElement>) => {
+          event.stopPropagation()
+          if (!onLongPress || event.pointerType !== 'touch') return
+          longPressedRef.current = false
+          cancelPress()
+          const timer = window.setTimeout(() => {
+            pressRef.current = null
+            longPressedRef.current = true
+            onLongPress(item)
+          }, 500)
+          pressRef.current = { timer, x: event.clientX, y: event.clientY }
+        }
+        const handlePressMove = (event: React.PointerEvent<HTMLElement>) => {
+          const press = pressRef.current
+          if (press && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) cancelPress()
+        }
         return onSelect ? (
-          <button key={item.key} type="button" aria-label={item.name} onClick={() => onSelect(item.name)} onPointerDown={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} className={boxClassName} style={boxStyle}>
+          <button key={item.key} type="button" aria-label={item.name} onClick={handleSelect} onPointerDown={handlePressStart} onPointerMove={handlePressMove} onPointerUp={cancelPress} onPointerCancel={cancelPress} onContextMenu={onLongPress ? event => event.preventDefault() : undefined} onKeyDown={event => event.stopPropagation()} onPointerEnter={handlePointerEnter} onPointerLeave={() => { cancelPress(); handlePointerLeave() }} className={`${boxClassName} ${onLongPress ? 'select-none [-webkit-touch-callout:none]' : ''}`} style={boxStyle}>
             {content}
           </button>
         ) : (

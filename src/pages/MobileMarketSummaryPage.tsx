@@ -4,6 +4,8 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
+import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
+import { useMarketSummary } from '@/hooks/useMarketSummary'
 import Spinner from '@/components/Spinner'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePageSetting } from '@/hooks/usePageSetting'
@@ -16,6 +18,7 @@ import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { useFontsVersion } from '@/utils/stockLabelFit'
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
+import { collectAtDepth } from '@/utils/sectorDepth'
 import { resolveMobileStockSelection } from '@/utils/mobileStockSelection'
 
 const MARKETS: { value: MarketQuery; label: string }[] = [
@@ -141,7 +144,9 @@ function SettingRow({ label, hint, children }: { label: string; hint?: string; c
   )
 }
 
-export default function MobileMarketSummaryPage() {
+export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map' | 'graph' }) {
+  const isGraph = mode === 'graph'
+  const { data: marketSummary } = useMarketSummary(isGraph)
   const [searchParams, setSearchParams] = useSearchParams()
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -155,13 +160,21 @@ export default function MobileMarketSummaryPage() {
     refetchHeatmap,
     filteredRootNodes,
     colorScale,
+    strongIndustryColor,
+    changeRateMode,
+    changeRateChoice,
+    pinnedSnapshotTime,
+    rangeStartTime,
     decimalPlaces,
   } = useGlobalSettings({ allowChangeRateMode: true, defaultTaxonomy: 'MARKETRY' })
   const [majorSelection, setMajorSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [midSelection, setMidSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [stockSelection, setStockSelection] = useState<{ market: MarketQuery; key: string; categoryName: string } | null>(null)
+  const [graphEntryOffset, setGraphEntryOffset] = useState(0)
+  const [graphDepth, setGraphDepth] = usePageSetting<number>('groupPage.depth', 1)
   const [viewMode, setViewMode] = useState<'sector' | 'stock'>('sector')
   const [focusedStockCode, setFocusedStockCode] = useState<string | null>(null)
+  const [focusedSectorKey, setFocusedSectorKey] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dragHeight, setDragHeight] = useState<number | null>(null)
   const settingsContentRef = useRef<HTMLDivElement>(null)
@@ -186,9 +199,14 @@ export default function MobileMarketSummaryPage() {
 
   const marketItems = useMemo(() => {
     const parent = mid ?? major
+    if (isGraph && !parent && graphDepth > 1 && selectableDepth > 1) {
+      return collectAtDepth(filteredRootNodes, Math.min(graphDepth, selectableDepth), new Set<number>())
+        .map(({ node, pathKey }) => toMobileSectorItem(node as FilteredHeatmapSectorNode, pathKey, boxSizeMarketCapRatio))
+        .filter((item): item is MobileSectorItem => item !== null)
+    }
     if (parent && (mid || selectableDepth >= 2)) {
       const children = parent.children
-        .map(node => toMobileSectorItem(node, `${major?.sectorName}>${parent.sectorName}>${node.sectorName}`, boxSizeMarketCapRatio))
+        .map(node => toMobileSectorItem(node, `${mid ? `${major?.sectorName}>${mid.sectorName}` : parent.sectorName}>${node.sectorName}`, boxSizeMarketCapRatio))
         .filter((item): item is MobileSectorItem => item !== null)
       const directItems = toDirectStocksItem(parent.items, parent.sectorName, boxSizeMarketCapRatio)
       return directItems ? [...children, directItems] : children
@@ -196,7 +214,7 @@ export default function MobileMarketSummaryPage() {
     return filteredRootNodes
       .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio))
       .filter((item): item is MobileSectorItem => item !== null)
-  }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, major, mid])
+  }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, major, mid, isGraph, graphDepth])
 
   // 선택은 업종 키로 유지하고, 종목은 매번 갱신된 트리에서 찾는다. 없어진 업종은 빈 목록으로 표시한다.
   const selectedStocks = resolveMobileStockSelection(stockSelection, market, marketItems)
@@ -217,21 +235,40 @@ export default function MobileMarketSummaryPage() {
     const timer = window.setTimeout(() => setFocusedStockCode(null), 5000)
     return () => window.clearTimeout(timer)
   }, [focusedStockCode])
+  // 업종 정보 카드는 업종을 길게 눌렀을 때 종목 카드처럼 위쪽에 띄운다. 업종 목록이 바뀌어 없어지면 보이지 않고, 5초 뒤 저절로 닫는다.
+  const focusedSector = marketItems.find(item => item.key === focusedSectorKey) ?? null
+  useEffect(() => {
+    if (!focusedSectorKey) return
+    const timer = window.setTimeout(() => setFocusedSectorKey(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [focusedSectorKey])
   const heading = viewMode === 'stock'
     ? `${stockCategoryName || stockScope?.sectorName || '전체 시장'} 주식 히트맵`
     : mid ? `${mid.sectorName} 소분류 업종 히트맵` : major ? `${major.sectorName} 중분류 업종 히트맵` : '국내 업종 히트맵'
 
   // 위쪽 경로 — PC 지도 화면과 같다: 앞 단계는 이름 오른쪽에 ↩ 아이콘이 붙은 버튼(누르면 그 단계로 되돌아감), 마지막(현재 위치)은 강조색 글씨다.
   const pathCrumbs: { key: string; label: string; go: (() => void) | null }[] = [
-    { key: 'market', label: marketLabel, go: major || mid || selectedStocks ? () => { setMajorName(null); setMidName(null); setSelectedStocks(null); setViewMode('sector') } : null },
-    ...(major ? [{ key: 'major', label: major.sectorName, go: mid || selectedStocks ? () => { setMidName(null); setSelectedStocks(null); setViewMode('sector') } : null }] : []),
-    ...(mid ? [{ key: 'mid', label: mid.sectorName, go: selectedStocks ? () => { setSelectedStocks(null); setViewMode('sector') } : null }] : []),
+    { key: 'market', label: marketLabel, go: major || mid || selectedStocks ? () => { setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector') } : null },
+    ...(major && (!isGraph || graphEntryOffset < 1) ? [{ key: 'major', label: major.sectorName, go: mid || selectedStocks ? () => { setMidName(null); setSelectedStocks(null); setViewMode('sector') } : null }] : []),
+    ...(mid && (!isGraph || graphEntryOffset < 2) ? [{ key: 'mid', label: mid.sectorName, go: selectedStocks ? () => { setSelectedStocks(null); setViewMode('sector') } : null }] : []),
     ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
   ]
 
   const selectSector = (name: string) => {
     const selected = marketItems.find(item => item.name === name)
     if (!selected) return
+    if (isGraph && !major && !mid && graphDepth > 1 && selected.node) {
+      const path = selected.key.split('>')
+      if (path.length > 1) {
+        setMajorName(path[0])
+        if (path.length > 2) setMidName(path[1])
+        const hasChildren = selected.node.children.length > 0
+        if (hasChildren && path.length === 2) setMidName(path[1])
+        else { setSelectedStocks(selected); setViewMode('stock') }
+        setGraphEntryOffset(path.length - 1)
+        return
+      }
+    }
     if (selected.isDirectStocks) {
       setSelectedStocks(selected)
       setViewMode('stock')
@@ -254,12 +291,16 @@ export default function MobileMarketSummaryPage() {
 
   // 들어간 단계 = 브라우저 기록 한 칸(PC 지도 화면과 같은 방식). 대분류·중분류·종목으로 한 단계 들어갈 때마다 칸을 쌓아서
   // 뒤로가기가 사이트를 떠나지 않고 한 단계씩 위로 올라가게 한다. 전체 화면에서 한 번 더 누르면 원래대로 이전 페이지로 나간다.
-  const depth = (major ? 1 : 0) + (mid ? 1 : 0) + (selectedStocks ? 1 : 0)
+  const depth = Math.max(0, (major ? 1 : 0) + (mid ? 1 : 0) + (selectedStocks ? 1 : 0) - (isGraph ? graphEntryOffset : 0))
   const historyDepthRef = useRef(0) // 지금 브라우저 기록 위치가 가리키는 깊이
   const historyConsumingRef = useRef(false) // 코드가 일으킨 history.go()의 popstate는 무시한다
   const historyLocationRef = useRef('') // 칸을 쌓은 주소(시장이 바뀌어 주소가 달라졌으면 go()로 정리하지 않는다)
   const historyNormalizedRef = useRef(false)
   const reduceToDepth = (target: number) => {
+    if (isGraph && target === 0 && graphEntryOffset > 0) {
+      setMajorSelection(null); setMidSelection(null); setStockSelection(null); setGraphEntryOffset(0); setViewMode('sector'); setFocusedStockCode(null)
+      return
+    }
     let current = depth
     if (current > target && selectedStocks) { setStockSelection(null); setViewMode('sector'); current -= 1 }
     if (current > target && mid) { setMidSelection(null); current -= 1 }
@@ -298,7 +339,7 @@ export default function MobileMarketSummaryPage() {
       }
       // 이 지도 화면 안에서의 이동만 다룬다 — 다른 페이지로 나가는 뒤로가기는 그대로 둔다.
       const path = window.location.pathname
-      if (path !== '/home' && !path.startsWith('/map')) return
+      if (!path.startsWith('/map/') && !path.startsWith('/graph/')) return
       const target: number = typeof e.state?.mobileMapDepth === 'number' ? e.state.mobileMapDepth : 0
       if (target < depth) {
         historyDepthRef.current = target
@@ -320,8 +361,9 @@ export default function MobileMarketSummaryPage() {
     setSelectedStocks(null)
     setViewMode('sector')
     setFocusedStockCode(null)
-    if (pathname.startsWith('/map/')) {
-      navigate(marketRoute('/map', nextMarket), { replace: true })
+    setGraphEntryOffset(0)
+    if (pathname.startsWith('/map/') || pathname.startsWith('/graph/')) {
+      navigate(marketRoute(isGraph ? '/graph' : '/map', nextMarket), { replace: true })
     } else {
       const next = new URLSearchParams(searchParams)
       next.set('market', nextMarket)
@@ -329,29 +371,50 @@ export default function MobileMarketSummaryPage() {
     }
   }
 
+  const graphItems: MobileGraphItem[] = viewMode === 'stock'
+    ? stockContextItems.map(stock => ({ key: stock.stockCode, name: stock.alias ?? stock.stockName, value: stock.changeRate }))
+    : marketItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate, onSelect: () => selectSector(item.name) }))
+  const showLiveIndexes = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
+  if (isGraph && showLiveIndexes && !major && !mid && viewMode === 'sector') {
+    for (const index of marketSummary?.marketOverviews.items ?? []) {
+      if (index.market === 'KOSPI' || index.market === 'KOSDAQ') {
+        const indexMarket = index.market
+        graphItems.push({ key: `market-index:${indexMarket}`, name: indexMarket === 'KOSPI' ? '코스피' : '코스닥', value: index.changeRate, reference: true, onSelect: () => selectMarket(indexMarket) })
+      }
+    }
+  }
+
   return (
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
-      <MobileTopBar title="MAP" />
-      <h1 className="sr-only">{heading}</h1>
+      <MobileTopBar title={isGraph ? "GRAPH" : "MAP"} titleTo={isGraph ? pathname.replace('/graph/', '/map/') : pathname.replace('/map/', '/graph/')} titleLabel={isGraph ? 'MAP으로 이동' : 'GRAPH로 이동'} />
+      <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
-      <header className="shrink-0 px-3 py-0.5">
-        <nav aria-label="업종 이동 경로" className="flex h-[36px] items-center overflow-x-auto whitespace-nowrap text-[15px] leading-none font-bold">
+      <header className="shrink-0 bg-brand-surface px-3 py-0.5">
+        <nav aria-label="업종 이동 경로" className="flex h-[36px] items-center overflow-x-auto whitespace-nowrap text-[18px] leading-none font-bold">
+          <span aria-hidden="true" className="h-[18px] w-[4px] shrink-0 bg-ui-white" />
           {pathCrumbs.map(crumb => crumb.go
-            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/35">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
-            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-[var(--accent)]">{crumb.label}</span>)}
+            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/35">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-[18px] w-[18px] shrink-0" /></button>
+            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
         </nav>
       </header>
 
-      <section aria-label={viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵'} className="relative min-h-0 flex-1 p-1">
+      <section aria-label={isGraph ? (viewMode === 'sector' ? '업종 등락률 그래프' : '종목 등락률 그래프') : (viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵')} className="relative min-h-0 flex-1 p-1">
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
           : isError ? <div className="flex h-full flex-col items-center justify-center gap-2 text-center"><p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p><button type="button" onClick={refetchHeatmap} className="min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button></div>
+            : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
               <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={decimalPlaces} onSelect={stock => setFocusedStockCode(current => current === stock.stockCode ? null : stock.stockCode)} />
               {focusedStock && <button type="button" aria-label="종목 정보 닫기" onClick={() => setFocusedStockCode(null)} className="absolute left-3 right-3 top-3 flex items-center justify-between gap-3 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" aria-live="polite">
-                <span className="min-w-0"><span className="block truncate text-sm font-semibold">{focusedStock.stockName}</span><span className="block text-xs text-ui-muted">{focusedStock.stockCode} · 시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span></span>
-                <span className="shrink-0 rounded-[4px] px-2 py-1 text-[13px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedStock.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedStock.changeRate, colorScale)) ? 'var(--ui-surface)' : 'var(--ui-white)' }}>{toPctSigned(focusedStock.changeRate, decimalPlaces)}</span>
+                <span className="min-w-0"><span className="block truncate text-[16px] font-semibold">{focusedStock.stockName}</span><span className="block text-[13px] text-ui-muted">{focusedStock.stockCode} · 시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span></span>
+                <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedStock.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedStock.changeRate, colorScale)) ? 'var(--ui-surface)' : 'var(--ui-white)' }}>{toPctSigned(focusedStock.changeRate, decimalPlaces)}</span>
               </button>}
-            </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="flex h-full min-h-0 flex-col bg-ui-surface p-1"><OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} /></div>}
+            </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface p-1">
+              {focusedSector && <button type="button" aria-label="업종 정보 닫기" onClick={() => setFocusedSectorKey(null)} className="absolute left-3 right-3 top-3 z-10 flex items-center justify-between gap-3 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" aria-live="polite">
+                <span className="min-w-0"><span className="block truncate text-[16px] font-semibold">{focusedSector.name}</span><span className="block text-[13px] text-ui-muted">{focusedSector.simpleAvg === undefined ? '' : `동일 가중 ${focusedSector.simpleAvg === null ? '-' : toPctSigned(focusedSector.simpleAvg, decimalPlaces)} · `}▲{focusedSector.advancers ?? 0} ▼{focusedSector.decliners ?? 0} ■{focusedSector.unchanged ?? 0} · 시총 {toJoEok(focusedSector.marketValue / 100_000_000)}</span></span>
+                <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedSector.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedSector.changeRate, colorScale)) ? 'var(--ui-surface)' : 'var(--ui-white)' }}>{toPctSigned(focusedSector.changeRate, decimalPlaces)}</span>
+              </button>}
+              <OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(item.key)} hoverPopup={false} />
+            </div>}
       </section>
 
       <section role="region" aria-label="설정" className="relative z-10 shrink-0 rounded-t-[16px] border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
@@ -384,16 +447,6 @@ export default function MobileMarketSummaryPage() {
         </button>
         <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">
           <div ref={settingsContentRef} inert={!settingsOpen && dragHeight === null} className="max-h-[calc(40dvh-28px)] overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
-          <SettingRow label="마켓">
-            <div role="radiogroup" aria-label="마켓 선택" className="grid flex-1 grid-cols-3 gap-1.5">
-              {MARKETS.map(option => <button key={option.value} type="button" role="radio" aria-checked={market === option.value} onClick={() => selectMarket(option.value)} className={`${SETTING_CHIP_CLASS} ${market === option.value ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
-            </div>
-          </SettingRow>
-          <SettingRow label="박스 크기">
-            <div className="grid flex-1 grid-cols-3 gap-1.5">
-              {[{ value: 0, label: '동일' }, { value: 50, label: '균형' }, { value: 100, label: '시총 비례' }].map(option => <button key={option.value} type="button" aria-pressed={boxSizeMarketCapRatio === option.value} onClick={() => onChangeBoxSizeMarketCapRatio(option.value)} className={`${SETTING_CHIP_CLASS} ${boxSizeMarketCapRatio === option.value ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
-            </div>
-          </SettingRow>
           <SettingRow label="분류 기준">
             <div role="radiogroup" aria-label="분류 기준" className="grid flex-1 grid-cols-3 gap-1.5">
               {[
@@ -405,11 +458,28 @@ export default function MobileMarketSummaryPage() {
                 return <button key={option.key} type="button" role="radio" aria-checked={selected} onClick={() => {
                   if (selected) return
                   settingsModalProps.onSelectTaxonomy(option.key)
-                  setMajorName(null); setMidName(null); setSelectedStocks(null); setViewMode('sector'); setFocusedStockCode(null)
+                  setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); setFocusedStockCode(null)
                 }} className={`${SETTING_CHIP_CLASS} ${selected ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>
               })}
             </div>
           </SettingRow>
+          <SettingRow label="마켓">
+            <div role="radiogroup" aria-label="마켓 선택" className="grid flex-1 grid-cols-3 gap-1.5">
+              {MARKETS.map(option => <button key={option.value} type="button" role="radio" aria-checked={market === option.value} onClick={() => selectMarket(option.value)} className={`${SETTING_CHIP_CLASS} ${market === option.value ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
+            </div>
+          </SettingRow>
+          {isGraph && <SettingRow label="업종 단계">
+            <div role="radiogroup" aria-label="업종 분류 단계" className="grid flex-1 grid-cols-3 gap-1.5">
+              {[{ value: 1, label: '대분류' }, { value: 2, label: '중분류' }, { value: 3, label: '소분류' }].map(option => <button key={option.value} type="button" role="radio" aria-checked={Math.min(graphDepth, selectableDepth) === option.value} disabled={option.value > selectableDepth} onClick={() => {
+                setGraphDepth(option.value); setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); setFocusedStockCode(null)
+              }} className={`${SETTING_CHIP_CLASS} disabled:opacity-35 ${Math.min(graphDepth, selectableDepth) === option.value ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
+            </div>
+          </SettingRow>}
+          {!isGraph && <SettingRow label="박스 크기">
+            <div className="grid flex-1 grid-cols-3 gap-1.5">
+              {[{ value: 0, label: '동일' }, { value: 50, label: '균형' }, { value: 100, label: '시총 비례' }].map(option => <button key={option.value} type="button" aria-pressed={boxSizeMarketCapRatio === option.value} onClick={() => onChangeBoxSizeMarketCapRatio(option.value)} className={`${SETTING_CHIP_CLASS} ${boxSizeMarketCapRatio === option.value ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
+            </div>
+          </SettingRow>}
           </div>
         </div>
       </section>

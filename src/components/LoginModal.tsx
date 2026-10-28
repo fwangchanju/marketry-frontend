@@ -53,18 +53,18 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
         role="dialog"
         aria-modal="true"
         aria-labelledby="login-modal-title"
-        className="w-[calc(100%-2rem)] max-w-sm select-none border border-ui-border bg-[var(--surface)] p-6"
+        className="w-[calc(100%-2rem)] max-w-sm select-none border border-ui-border bg-[var(--surface)] p-6 max-[767px]:max-h-[calc(100dvh-32px)] max-[767px]:overflow-y-auto max-[767px]:p-5"
         onClick={e => e.stopPropagation()}
         onDragStart={e => e.preventDefault()}
       >
-        <p id="login-modal-title" className="text-lg font-bold text-ui-white">로그인</p>
+        <p id="login-modal-title" className="text-lg font-bold text-ui-white max-[767px]:text-[18px]">로그인</p>
         {!hideMessage && (
-          <p className="mt-2 text-sm text-[var(--accent)]">
+          <p className="mt-2 text-sm text-[var(--accent)] max-[767px]:text-[14px]">
             로그인 후 이용 가능합니다.
           </p>
         )}
         {loginError && (
-          <p role="alert" className="mt-2 text-sm text-status-error-text">
+          <p role="alert" className="mt-2 text-sm text-status-error-text max-[767px]:text-[14px]">
             {loginError === 'cancelled'
               ? '로그인이 취소되었습니다.'
               : loginError === 'email_required'
@@ -80,7 +80,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             ref={googleLinkRef}
             onClick={isLocalDev ? event => { event.preventDefault(); if (!isDevLoginPending) void loginAs('admin') } : undefined}
             aria-label="구글 로그인"
-            className="relative flex items-stretch overflow-hidden rounded-lg bg-ui-white text-sm font-bold text-[#202124] transition-colors hover:bg-[#f1f3f4]"
+            className="relative flex items-stretch overflow-hidden rounded-lg bg-ui-white text-sm font-bold text-[#202124] transition-colors hover:bg-[#f1f3f4] max-[767px]:min-h-[44px] max-[767px]:items-center max-[767px]:text-[14px]"
           >
             <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
               <GoogleLogoIcon className="h-3.5 w-3.5" />
@@ -91,7 +91,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             <a
               href={naverLoginUrl(returnTo)}
               aria-label="네이버 로그인"
-              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#03a94d] text-sm font-bold text-white transition-opacity hover:opacity-85"
+              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#03a94d] text-sm font-bold text-white transition-opacity hover:opacity-85 max-[767px]:min-h-[44px] max-[767px]:items-center max-[767px]:text-[14px]"
             >
               <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
                 <NaverLogoIcon className="h-3 w-3 text-white" />
@@ -103,7 +103,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
             <a
               href={kakaoLoginUrl(returnTo)}
               aria-label="카카오 로그인"
-              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#fee500] text-sm font-bold text-[#191919] transition-opacity hover:opacity-85"
+              className="relative flex items-stretch overflow-hidden rounded-lg bg-[#fee500] text-sm font-bold text-[#191919] transition-opacity hover:opacity-85 max-[767px]:min-h-[44px] max-[767px]:items-center max-[767px]:text-[14px]"
             >
               <span aria-hidden="true" className="absolute inset-y-0 left-0 flex w-10 items-center justify-center">
                 <KakaoLogoIcon className="h-3.5 w-3.5" />
@@ -115,12 +115,12 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border-0 bg-ui-control px-4 py-2 text-sm text-ui-white transition-colors hover:bg-ui-control-hover"
+            className="rounded-lg border-0 bg-ui-control px-4 py-2 text-sm text-ui-white transition-colors hover:bg-ui-control-hover max-[767px]:min-h-[44px] max-[767px]:text-[14px]"
           >
             닫기
           </button>
         </div>
-        <p className="mt-4 text-center text-xs text-ui-muted">
+        <p className="mt-4 text-center text-xs text-ui-muted max-[767px]:text-[12px]">
           <a href="/info/terms" className="hover:text-ui-text">
             이용약관
           </a>
