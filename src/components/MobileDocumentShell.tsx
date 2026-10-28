@@ -1,7 +1,7 @@
 import { useLayoutEffect, type ReactNode } from 'react'
-import { Link, useNavigationType } from 'react-router-dom'
+import { useNavigationType } from 'react-router-dom'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
-import MarketryLogo from '@/components/MarketryLogo'
+import MobileTopBar from '@/components/MobileTopBar'
 
 // 좁은 화면(폭 768px 미만)의 글 페이지 틀 — 설정창 없이 본문을 전체 폭으로 보여 준다.
 // 상단은 로고 한 줄(48px)이며 스크롤해도 항상 보인다. 글 내용(heading·children)은 PC와 같은 한 벌을 그대로 쓴다.
@@ -14,13 +14,7 @@ export default function MobileDocumentShell({ title, heading, children }: { titl
   }, [navigationType])
   return (
     <div className="min-h-screen bg-ui-background text-ui-white">
-      <header className="sticky top-0 z-20 flex h-12 items-center justify-between border-b border-ui-border bg-ui-surface px-4">
-        <Link to="/home" aria-label="MARKETRY 홈으로 이동" className="shrink-0">
-          {/* PC 상단바와 같은 로고 변형·크기 규칙이라 비율이 같다. */}
-          <MarketryLogo layout="horizontalClean" className="h-auto w-[min(13rem,calc(100vw-10rem))]" />
-        </Link>
-        <span className="text-xs font-bold tracking-[0.12em] text-brand">{title}</span>
-      </header>
+      <MobileTopBar title={title} className="sticky top-0" />
       <main className="mx-auto w-full max-w-3xl px-4 pb-6 pt-6">
         <div>{heading}</div>
         <div className="pt-7">{children}</div>
