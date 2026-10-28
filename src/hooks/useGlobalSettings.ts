@@ -2,7 +2,7 @@ import { compareKoreanText } from '@/utils/koreanSort'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router-dom'
 import { usePersistedState } from './usePersistedState'
-import { useTaxonomySelection } from './useTaxonomySelection'
+import { useTaxonomySelection, type TaxonomySelection } from './useTaxonomySelection'
 import { MEMBER_DEFAULTS, settingDefaultsFor } from '@/utils/settingDefaults'
 import type { TaxonomySource, TaxonomyKey } from '@/utils/taxonomyNames'
 import { useNxtOnlyWindow } from '@/hooks/useNxtOnlyWindow'
@@ -135,7 +135,7 @@ function withPriceLabels(nodes: HeatmapSectorNode[], labels: { base: string; end
   }))
 }
 
-export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRateMode?: boolean }) {
+export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRateMode?: boolean; defaultTaxonomy?: TaxonomySelection }) {
   const needsTree = options?.needsTree ?? true
   // 등락률 기준(누적/시간외) 선택은 지도 페이지만 쓴다. 그룹 페이지는 now·before 쌍을 따로 받아 누적 기준으로 그리므로
   // 같은 값을 실으면 화면이 섞인다.
@@ -152,7 +152,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [market] = useRouteAwareMarket('heatmap.market', 'ALL_STOCK')
   // 기존 계정 설정은 브라우저 선택이 없을 때만 기본값으로 사용한다. 새 선택은 세 페이지가 localStorage로 공유한다.
   const [savedIsCustom] = usePageSetting('heatmap.isCustom', defaults.isCustom)
-  const [selectedTaxonomy, setSelectedTaxonomy] = useTaxonomySelection(savedIsCustom ? 'MARKETRY' : 'KRX')
+  const [selectedTaxonomy, setSelectedTaxonomy] = useTaxonomySelection(options?.defaultTaxonomy ?? (savedIsCustom ? 'MARKETRY' : 'KRX'))
   // 내 분류(mine)는 로그인이 필요하다 — 로그아웃 상태에서는 처음 화면인 MARKETRY로 보이고, 브라우저에 저장한 선택 자체는 보존한다.
   // MARKETRY는 올린 분류라 로그인 없이 읽는다(읽기 전용).
   const source: TaxonomySource = selectedTaxonomy === 'MINE' && !isLoggedIn ? 'MARKETRY' : selectedTaxonomy

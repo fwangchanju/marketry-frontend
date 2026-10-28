@@ -111,13 +111,17 @@ export default function OverviewMap({
       <Popup popup={popup} onExcludeSector={() => undefined} onClose={() => setPopup(null)} />
       {rects.map(({ item, x, y, width, height }) => {
         const background = resolveHeatmapColor(item.changeRate, colorScale)
-        const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion)
+        const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion, { splitInsideWord: true })
         const isPinned = popup?.targetKey === `sector:${item.key}`
         // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box).
         const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`
         const boxStyle = { left: x, top: y, width, height, backgroundColor: background, color: '#ffffff', '--heatmap-base-color': background } as React.CSSProperties
         // 마우스를 올리면 업종 정보 팝업을 열고 박스를 벗어나면 닫는다(이름이 안 들어가 빠진 박스도 여기서 이름과 등락률을 본다).
-        const handlePointerEnter = (event: React.PointerEvent<HTMLElement>) => openPopup(item, event.currentTarget, { x: event.clientX, y: event.clientY })
+        const handlePointerEnter = (event: React.PointerEvent<HTMLElement>) => {
+          // 말풍선은 마우스를 올렸을 때만 띄운다 — 손가락으로 업종을 누르면 바로 그 안으로 들어가서 말풍선이 필요 없고, 손가락을 떼도 닫히지 않고 손가락에 가려진다.
+          if (event.pointerType === 'touch') return
+          openPopup(item, event.currentTarget, { x: event.clientX, y: event.clientY })
+        }
         const handlePointerLeave = () => setPopup(previous => (previous?.targetKey === `sector:${item.key}` ? null : previous))
         const content = (
           <>

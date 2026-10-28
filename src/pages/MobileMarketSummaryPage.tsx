@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { ChevronDownIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import Spinner from '@/components/Spinner'
@@ -10,7 +11,7 @@ import type { HeatmapItem } from '@/types/api'
 import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
-import { toCount, toDateTimeLabel, toJoEok, toPctSigned } from '@/utils/format'
+import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { useFontsVersion } from '@/utils/stockLabelFit'
 import type { MarketQuery } from '@/types/api'
@@ -21,9 +22,8 @@ const MARKETS: { value: MarketQuery; label: string }[] = [
   { value: 'KOSPI', label: '코스피' },
   { value: 'KOSDAQ', label: '코스닥' },
 ]
-const FIRST_STOCKS_SHOWN = 10
-const STOCKS_PER_MORE = 10
-const STOCK_MAP_COUNTS = [8, 12, 20] as const
+// 주식 지도에 그리는 종목 수(시가총액 상위) — 설정에서 고르지 않고 고정한다.
+const STOCK_MAP_COUNT = 30
 
 function stockLayoutValue(stock: HeatmapItem, ratio: number) {
   return ratio <= 0 ? 1 : Math.pow(Math.max(stock.totalMarketValue, 0), ratio / 100)
@@ -110,10 +110,10 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
   }, [boxSizeRatio, size, stocks])
 
   return (
-    <div ref={ref} className="relative h-full min-h-0 w-full overflow-hidden border border-ui-border bg-ui-surface p-1">
+    <div ref={ref} className="relative h-full min-h-0 w-full overflow-hidden bg-ui-surface p-1">
       {boxes.map(({ stock, x, y, width, height }) => {
         const color = resolveHeatmapColor(stock.changeRate, colorScale)
-        const label = layoutOverviewLabel(stock.alias ?? stock.stockName, toPctSigned(stock.changeRate, decimalPlaces), width, height, fontsVersion)
+        const label = layoutOverviewLabel(stock.alias ?? stock.stockName, toPctSigned(stock.changeRate, decimalPlaces), width, height, fontsVersion, STOCK_LABEL_OPTIONS)
         return (
           <button key={stock.stockCode} type="button" aria-label={`${stock.stockName} ${toPctSigned(stock.changeRate, decimalPlaces)}`} onClick={() => onSelect(stock)} className="absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight text-white" style={{ left: x, top: y, width, height, backgroundColor: color }}>
             {label.lines.length > 0 && <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>{label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}</span>}
@@ -125,55 +125,18 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
   )
 }
 
-function MobileStockList({ stocks, colorScale, decimalPlaces }: { stocks: HeatmapItem[]; colorScale: ReturnType<typeof useGlobalSettings>['colorScale']; decimalPlaces: number }) {
-  const [search, setSearch] = useState('')
-  const normalizedSearch = search.trim().toLocaleLowerCase('ko-KR')
-  const [showMoreFor, setShowMoreFor] = useState({ query: '', count: FIRST_STOCKS_SHOWN })
-  const limit = showMoreFor.query === normalizedSearch ? showMoreFor.count : FIRST_STOCKS_SHOWN
-  const sortedStocks = useMemo(
-    () => [...stocks]
-      .filter(stock => !normalizedSearch || `${stock.stockName} ${stock.alias ?? ''} ${stock.stockCode}`.toLocaleLowerCase('ko-KR').includes(normalizedSearch))
-      .sort((a, b) => b.totalMarketValue - a.totalMarketValue),
-    [stocks, normalizedSearch],
-  )
-  const visibleStocks = sortedStocks.slice(0, limit)
+// 종목명은 공백이 없는 경우가 많아, 칸이 좁으면 이름 중간에서 두 줄로 나눈다.
+const STOCK_LABEL_OPTIONS = { splitInsideWord: true }
 
+const SETTING_CHIP_CLASS = 'h-[32px] rounded-[4px] border-0 px-1 text-[13px] font-medium'
+
+// 설정 줄 한 칸 — 이름은 왼쪽, 선택지는 오른쪽에 한 줄로 둬서 설정 줄이 낮게 유지된다.
+function SettingRow({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <section aria-label="종목 목록" className="mt-5">
-      <label htmlFor="mobile-stock-search" className="mb-2 block text-sm font-semibold text-ui-white">종목 찾기</label>
-      <input
-        id="mobile-stock-search"
-        type="search"
-        value={search}
-        onChange={event => setSearch(event.target.value)}
-        placeholder="종목명 또는 종목코드"
-        className="h-11 w-full border border-ui-border bg-ui-panel px-3 text-base text-ui-white placeholder:text-ui-muted focus:border-brand focus:outline-none"
-      />
-      <p className="mt-3 text-sm text-ui-muted">시가총액 순 · {toCount(sortedStocks.length)}종목</p>
-      <ul className="mt-2 divide-y divide-ui-border border-y border-ui-border">
-        {visibleStocks.map(stock => {
-          const color = resolveHeatmapColor(stock.changeRate, colorScale)
-          const textColor = isLightColor(color) ? 'var(--ui-surface)' : 'var(--ui-white)'
-          return (
-            <li key={stock.stockCode} className="flex min-h-16 items-center gap-3 py-2.5">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-base font-semibold text-ui-white">{stock.alias ?? stock.stockName}</p>
-                <p className="mt-0.5 text-xs text-ui-muted">{stock.stockCode} · 시가총액 {toJoEok(stock.totalMarketValue / 100_000_000)}</p>
-              </div>
-              <span className="shrink-0 px-2 py-1 text-sm font-bold tabular-nums" style={{ backgroundColor: color, color: textColor }}>
-                {toPctSigned(stock.changeRate, decimalPlaces)}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
-      {sortedStocks.length === 0 && <p className="py-8 text-center text-sm text-ui-muted">일치하는 종목이 없습니다.</p>}
-      {visibleStocks.length < sortedStocks.length && (
-          <button type="button" onClick={() => setShowMoreFor(current => ({ query: normalizedSearch, count: (current.query === normalizedSearch ? current.count : FIRST_STOCKS_SHOWN) + STOCKS_PER_MORE }))} className="mt-3 min-h-11 w-full border border-ui-border bg-ui-panel text-sm font-semibold text-ui-white hover:bg-ui-control">
-          종목 더 보기 ({toCount(sortedStocks.length - visibleStocks.length)}개 남음)
-        </button>
-      )}
-    </section>
+    <div className="flex items-center gap-2 py-1">
+      <div className="w-[80px] shrink-0"><h3 className="text-[12px] font-semibold leading-tight">{label}</h3>{hint && <p className="text-[11px] leading-tight text-ui-muted">{hint}</p>}</div>
+      {children}
+    </div>
   )
 }
 
@@ -192,19 +155,19 @@ export default function MobileMarketSummaryPage() {
     filteredRootNodes,
     colorScale,
     decimalPlaces,
-    boxSizeMarketCapRatio,
-    onChangeBoxSizeMarketCapRatio,
-  } = useGlobalSettings({ allowChangeRateMode: true })
+  } = useGlobalSettings({ allowChangeRateMode: true, defaultTaxonomy: 'MARKETRY' })
   const [majorSelection, setMajorSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [midSelection, setMidSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [stockSelection, setStockSelection] = useState<{ market: MarketQuery; stocks: HeatmapItem[]; categoryName: string } | null>(null)
   const [viewMode, setViewMode] = useState<'sector' | 'stock'>('sector')
-  const [stockMapCount, setStockMapCount] = useState<number>(12)
   const [focusedStockCode, setFocusedStockCode] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [groupDepth, setGroupDepth] = usePageSetting<number>('groupPage.depth', 2)
+  // 분류 단계: MARKETRY·내 기준은 대·중·소분류(3단계), 거래소는 1단계. 눌러서 들어갈 때 하위 분류가 있으면 그 분류로, 없으면 바로 종목으로 간다.
+  // 박스 크기는 PC 설정과 따로 두고, 폰의 기본은 시총 비례(100)다. 동일 0 · 균형 50 · 시총 비례 100.
+  const [boxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio] = usePageSetting<number>('mobile.boxSizeMarketCapRatio', 100)
+  // 경로의 맨 앞은 고른 마켓 이름(전체·코스피·코스닥)이다.
+  const marketLabel = MARKETS.find(option => option.value === market)?.label ?? '전체'
   const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : 3
-  const effectiveGroupDepth = Math.min(groupDepth, selectableDepth)
   const majorName = majorSelection?.market === market ? majorSelection.name : null
   const midName = midSelection?.market === market ? midSelection.name : null
   const selectedStocks = stockSelection?.market === market ? stockSelection.stocks : null
@@ -217,7 +180,7 @@ export default function MobileMarketSummaryPage() {
 
   const marketItems = useMemo(() => {
     const parent = mid ?? major
-    if (parent && (mid || effectiveGroupDepth >= 2)) {
+    if (parent && (mid || selectableDepth >= 2)) {
       const children = parent.children
         .map(node => toMobileSectorItem(node, `${major?.sectorName}>${parent.sectorName}>${node.sectorName}`, boxSizeMarketCapRatio))
         .filter((item): item is MobileSectorItem => item !== null)
@@ -227,7 +190,7 @@ export default function MobileMarketSummaryPage() {
     return filteredRootNodes
       .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio))
       .filter((item): item is MobileSectorItem => item !== null)
-  }, [boxSizeMarketCapRatio, effectiveGroupDepth, filteredRootNodes, major, mid])
+  }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, major, mid])
 
   const mapItems: OverviewMapItem[] = marketItems.map(({ key, name, marketValue, layoutValue, changeRate, simpleAvg, advancers, decliners, unchanged }) => ({
     key, name, marketValue, layoutValue, changeRate, simpleAvg, advancers, decliners, unchanged,
@@ -237,12 +200,25 @@ export default function MobileMarketSummaryPage() {
     const stocks = selectedStocks ?? (stockScope ? collectAllItems(stockScope) : filteredRootNodes.flatMap(collectAllItems))
     return [...stocks].sort((a, b) => b.totalMarketValue - a.totalMarketValue)
   }, [filteredRootNodes, selectedStocks, stockScope])
-  const stockHeatmapItems = stockContextItems.slice(0, stockMapCount)
+  const stockHeatmapItems = stockContextItems.slice(0, STOCK_MAP_COUNT)
   const focusedStock = stockHeatmapItems.find(stock => stock.stockCode === focusedStockCode) ?? null
+  // 종목 정보 카드는 손가락으로 가리지 않게 위쪽에 띄우고, 가만두면 5초 뒤 저절로 닫는다.
+  useEffect(() => {
+    if (!focusedStockCode) return
+    const timer = window.setTimeout(() => setFocusedStockCode(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [focusedStockCode])
   const heading = viewMode === 'stock'
     ? `${stockCategoryName || stockScope?.sectorName || '전체 시장'} 주식 히트맵`
     : mid ? `${mid.sectorName} 소분류 업종 히트맵` : major ? `${major.sectorName} 중분류 업종 히트맵` : '국내 업종 히트맵'
-  const taxonomyLabel = taxonomy === 'MINE' ? '내 기준' : taxonomy === 'MARKETRY' ? 'MARKETRY' : '거래소'
+
+  // 위쪽 경로 — PC 지도 화면과 같다: 앞 단계는 이름 오른쪽에 ↩ 아이콘이 붙은 버튼(누르면 그 단계로 되돌아감), 마지막(현재 위치)은 강조색 글씨다.
+  const pathCrumbs: { key: string; label: string; go: (() => void) | null }[] = [
+    { key: 'market', label: marketLabel, go: major || mid || selectedStocks ? () => { setMajorName(null); setMidName(null); setSelectedStocks(null); setViewMode('sector') } : null },
+    ...(major ? [{ key: 'major', label: major.sectorName, go: mid || selectedStocks ? () => { setMidName(null); setSelectedStocks(null); setViewMode('sector') } : null }] : []),
+    ...(mid ? [{ key: 'mid', label: mid.sectorName, go: selectedStocks ? () => { setSelectedStocks(null); setViewMode('sector') } : null }] : []),
+    ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
+  ]
 
   const selectSector = (name: string) => {
     const selected = marketItems.find(item => item.name === name)
@@ -252,26 +228,20 @@ export default function MobileMarketSummaryPage() {
       setViewMode('stock')
       return
     }
-    if (!major && effectiveGroupDepth >= 2 && selected.node?.children.length) {
+    if (!major && selectableDepth >= 2 && selected.node?.children.length) {
       setMajorName(selected.node.sectorName)
       setMidName(null)
       setSelectedStocks(null)
       return
     }
-    if (major && !mid && effectiveGroupDepth >= 3 && selected.node?.children.length) {
+    if (major && !mid && selectableDepth >= 3 && selected.node?.children.length) {
       setMidName(selected.node.sectorName)
       setSelectedStocks(null)
       return
     }
-    if (major && !mid && effectiveGroupDepth === 2) setMidName(selected.node?.sectorName ?? selected.name)
+    if (major && !mid) setMidName(selected.node?.sectorName ?? selected.name)
     setSelectedStocks(selected.stocks, selected.name)
     setViewMode('stock')
-  }
-
-  const selectViewMode = (nextMode: 'sector' | 'stock') => {
-    setViewMode(nextMode)
-    setFocusedStockCode(null)
-    if (nextMode === 'sector') setSelectedStocks(null)
   }
 
   // 들어간 단계 = 브라우저 기록 한 칸(PC 지도 화면과 같은 방식). 대분류·중분류·종목으로 한 단계 들어갈 때마다 칸을 쌓아서
@@ -353,56 +323,52 @@ export default function MobileMarketSummaryPage() {
 
   return (
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
-      <MobileTopBar title="HEATMAP" />
-      <header className="shrink-0 border-b border-ui-border px-3 pb-2 pt-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="truncate text-base font-bold">{heading}</h1>
-          </div>
-          {data?.snapshotTime && <time className="shrink-0 text-[10px] tabular-nums text-ui-muted">{toDateTimeLabel(data.snapshotTime)}</time>}
-        </div>
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <nav aria-label="시장 선택" className="flex gap-1">
-            {MARKETS.map(option => <button key={option.value} type="button" aria-pressed={market === option.value} onClick={() => selectMarket(option.value)} className={`min-h-9 border px-3 text-xs font-semibold ${market === option.value ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-panel text-ui-text'}`}>{option.label}</button>)}
-          </nav>
-          <nav aria-label="히트맵 종류" className="flex gap-1">
-            <button type="button" aria-pressed={viewMode === 'sector'} onClick={() => selectViewMode('sector')} className={`min-h-9 px-2 text-xs font-semibold ${viewMode === 'sector' ? 'border-b-2 border-brand text-brand' : 'text-ui-muted'}`}>업종</button>
-            <button type="button" aria-pressed={viewMode === 'stock'} onClick={() => selectViewMode('stock')} className={`min-h-9 px-2 text-xs font-semibold ${viewMode === 'stock' ? 'border-b-2 border-brand text-brand' : 'text-ui-muted'}`}>주식</button>
-          </nav>
-        </div>
-        {(major || mid || selectedStocks) && <nav aria-label="업종 이동 경로" className="mt-1 flex min-h-8 items-center gap-1 overflow-x-auto whitespace-nowrap text-xs">
-          <button type="button" onClick={() => { setMajorName(null); setMidName(null); setSelectedStocks(null); setViewMode('sector') }} className="font-semibold text-brand">전체</button>
-          {major && <><span className="text-ui-muted">›</span><button type="button" onClick={() => { setMidName(null); setSelectedStocks(null); setViewMode('sector') }} className="text-ui-text">{major.sectorName}</button></>}
-          {mid && <><span className="text-ui-muted">›</span><button type="button" onClick={() => { setSelectedStocks(null); setViewMode('sector') }} className="text-ui-text">{mid.sectorName}</button></>}
-          {stockCategoryName && <><span className="text-ui-muted">›</span><span>{stockCategoryName}</span></>}
-        </nav>}
+      <MobileTopBar title="MAP" />
+      <h1 className="sr-only">{heading}</h1>
+      {/* 경로 줄은 맨 처음(전체)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
+      <header className="shrink-0 px-3 pb-1 pt-2">
+        <nav aria-label="업종 이동 경로" className="flex h-[36px] items-center overflow-x-auto whitespace-nowrap text-[15px] leading-none font-bold">
+          {pathCrumbs.map(crumb => crumb.go
+            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/35">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
+            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-[var(--accent)]">{crumb.label}</span>)}
+        </nav>
       </header>
 
       <section aria-label={viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵'} className="relative min-h-0 flex-1 p-1">
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
           : isError ? <div className="flex h-full flex-col items-center justify-center gap-2 text-center"><p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p><button type="button" onClick={refetchHeatmap} className="min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button></div>
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
-              <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={decimalPlaces} onSelect={stock => setFocusedStockCode(stock.stockCode)} />
-              {focusedStock && <button type="button" onClick={() => setSettingsOpen(true)} className="absolute bottom-20 left-3 right-3 flex items-center justify-between gap-3 border border-ui-border bg-ui-panel/95 px-3 py-2 text-left shadow-lg" aria-live="polite">
-                <span className="min-w-0"><span className="block truncate text-sm font-semibold">{focusedStock.alias ?? focusedStock.stockName}</span><span className="block text-xs text-ui-muted">{focusedStock.stockCode} · 시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span></span>
-                <span className="shrink-0 text-sm font-bold tabular-nums" style={{ color: resolveHeatmapColor(focusedStock.changeRate, colorScale) }}>{toPctSigned(focusedStock.changeRate, decimalPlaces)}</span>
+              <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={decimalPlaces} onSelect={stock => setFocusedStockCode(current => current === stock.stockCode ? null : stock.stockCode)} />
+              {focusedStock && <button type="button" aria-label="종목 정보 닫기" onClick={() => setFocusedStockCode(null)} className="absolute left-3 right-3 top-3 flex items-center justify-between gap-3 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" aria-live="polite">
+                <span className="min-w-0"><span className="block truncate text-sm font-semibold">{focusedStock.stockName}</span><span className="block text-xs text-ui-muted">{focusedStock.stockCode} · 시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span></span>
+                <span className="shrink-0 rounded-[4px] px-2 py-1 text-[13px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedStock.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedStock.changeRate, colorScale)) ? 'var(--ui-surface)' : 'var(--ui-white)' }}>{toPctSigned(focusedStock.changeRate, decimalPlaces)}</span>
               </button>}
-            </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="flex h-full min-h-0 flex-col border border-ui-border bg-ui-surface p-1"><OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} /></div>}
+            </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="flex h-full min-h-0 flex-col bg-ui-surface p-1"><OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} /></div>}
       </section>
 
-      <button type="button" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(true)} className="fixed inset-x-0 bottom-0 z-30 flex min-h-[calc(3.75rem+env(safe-area-inset-bottom))] items-center justify-between border-t border-ui-border bg-ui-panel px-4 pb-[env(safe-area-inset-bottom)] text-left shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
-        <span><span className="block text-sm font-bold">지도 설정 <span aria-hidden="true">⌃</span></span><span className="mt-0.5 block text-[11px] text-ui-muted">{taxonomyLabel} · 박스 {boxSizeMarketCapRatio}%{viewMode === 'stock' ? ` · ${stockHeatmapItems.length}종목` : ''}</span></span>
-        <span className="text-xs text-brand">설정 바꾸기</span>
-      </button>
+      {!settingsOpen && <button type="button" aria-label="설정 열기" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(true)} className="relative flex h-[calc(36px+env(safe-area-inset-bottom))] w-full shrink-0 rounded-t-[16px] border-0 border-t border-ui-border bg-ui-panel p-0">
+        {/* 기준 시각만 왼쪽에 둔다 — 날짜(요일)와 시간은 PC 상단 시각 표기와 같다. */}
+        {data?.snapshotTime && <span className="absolute left-3 top-0 flex h-[36px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
+        {/* 열려 있을 때의 꺾쇠(⌄)와 같은 크기·자리에서 위로 향한다 */}
+        <ChevronDownIcon aria-hidden="true" className="absolute left-1/2 top-[7px] h-[22px] w-[22px] -translate-x-1/2 rotate-180 text-ui-white" />
+      </button>}
 
-      {settingsOpen && <>
-        <button type="button" aria-label="설정 닫기" onClick={() => setSettingsOpen(false)} className="mobile-settings-backdrop-enter fixed inset-0 z-40 bg-black/55" />
-        <section role="dialog" aria-modal="true" aria-label="지도 설정" className="mobile-settings-sheet-enter fixed inset-x-0 bottom-0 z-50 max-h-[78dvh] overflow-y-auto border-t border-ui-border bg-ui-panel px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-2 shadow-[0_-12px_36px_rgba(0,0,0,0.45)]">
-          <button type="button" onClick={() => setSettingsOpen(false)} className="mx-auto mb-3 block h-1 w-10 rounded-full bg-ui-muted" aria-label="설정 닫기" />
-          <div className="mb-4 flex items-center justify-between"><h2 className="text-base font-bold">지도 설정</h2><button type="button" onClick={() => setSettingsOpen(false)} className="min-h-9 px-2 text-sm font-semibold text-brand">닫기</button></div>
-          <div>
-            <h3 className="mb-2 text-sm font-semibold">분류 기준</h3>
-            <div role="radiogroup" aria-label="분류 기준" className="grid grid-cols-3 gap-2">
+      {settingsOpen && (
+        // 지도를 가리지 않도록 지도 아래에 붙는 낮은 설정 줄이다 — 지도가 남은 칸으로 줄어들어 설정을 바꾸면 지도가 바뀌는 모습이 그대로 보인다.
+        <section role="region" aria-label="설정" className="mobile-settings-sheet-enter max-h-[40dvh] shrink-0 overflow-y-auto rounded-t-[16px] border-t border-ui-border bg-ui-panel px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-0 shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
+          <button type="button" aria-label="설정 닫기" onClick={() => setSettingsOpen(false)} className="relative flex h-[36px] w-full items-center h-[36px] border-0 bg-transparent px-[8px] text-left text-ui-white"><ChevronDownIcon aria-hidden="true" className="absolute left-1/2 top-1/2 h-[22px] w-[22px] -translate-x-1/2 -translate-y-1/2" /></button>
+          <SettingRow label="마켓">
+            <div role="radiogroup" aria-label="마켓 선택" className="grid flex-1 grid-cols-3 gap-1.5">
+              {MARKETS.map(option => <button key={option.value} type="button" role="radio" aria-checked={market === option.value} onClick={() => selectMarket(option.value)} className={`${SETTING_CHIP_CLASS} ${market === option.value ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
+            </div>
+          </SettingRow>
+          <SettingRow label="박스 크기">
+            <div className="grid flex-1 grid-cols-3 gap-1.5">
+              {[{ value: 0, label: '동일' }, { value: 50, label: '균형' }, { value: 100, label: '시총 비례' }].map(option => <button key={option.value} type="button" aria-pressed={boxSizeMarketCapRatio === option.value} onClick={() => onChangeBoxSizeMarketCapRatio(option.value)} className={`${SETTING_CHIP_CLASS} ${boxSizeMarketCapRatio === option.value ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
+            </div>
+          </SettingRow>
+          <SettingRow label="분류 기준">
+            <div role="radiogroup" aria-label="분류 기준" className="grid flex-1 grid-cols-3 gap-1.5">
               {[
                 { key: 'MARKETRY' as const, label: 'MARKETRY' },
                 { key: 'KRX' as const, label: '거래소' },
@@ -413,27 +379,12 @@ export default function MobileMarketSummaryPage() {
                   if (selected) return
                   settingsModalProps.onSelectTaxonomy(option.key)
                   setMajorName(null); setMidName(null); setSelectedStocks(null); setViewMode('sector'); setFocusedStockCode(null)
-                }} className={`min-h-10 border px-1 text-sm font-semibold ${selected ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-background text-ui-text'}`}>{option.label}</button>
+                }} className={`${SETTING_CHIP_CLASS} ${selected ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>
               })}
             </div>
-          </div>
-          <div className="mt-4">
-            <div className="mb-2 flex items-baseline justify-between"><h3 className="text-sm font-semibold">박스 크기</h3><p className="text-xs text-ui-muted">시가총액 반영</p></div>
-            <div className="grid grid-cols-3 gap-2">
-              {[{ value: 0, label: '균등' }, { value: 50, label: '균형' }, { value: 100, label: '시총 비례' }].map(option => <button key={option.value} type="button" aria-pressed={boxSizeMarketCapRatio === option.value} onClick={() => onChangeBoxSizeMarketCapRatio(option.value)} className={`min-h-10 border px-1 text-sm font-semibold ${boxSizeMarketCapRatio === option.value ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-background text-ui-text'}`}>{option.label} <span className="text-xs opacity-70">{option.value}%</span></button>)}
-            </div>
-          </div>
-          {viewMode === 'sector' && selectableDepth > 1 && !major && !selectedStocks && <div className="mt-4">
-            <h3 className="mb-2 text-sm font-semibold">업종 분류 단계</h3>
-            <div className="grid grid-cols-3 gap-2">{['대분류', '중분류', '소분류'].map((label, index) => { const value = index + 1; const disabled = value > selectableDepth; const selected = effectiveGroupDepth === value; return <button key={label} type="button" aria-pressed={selected} disabled={disabled} onClick={() => setGroupDepth(value)} className={`min-h-10 border px-1 text-sm font-semibold ${selected ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-background text-ui-text'} disabled:opacity-35`}>{label}</button> })}</div>
-          </div>}
-          {viewMode === 'stock' && <div className="mt-4">
-            <div className="mb-2 flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">지도에 표시할 종목</h3><div role="group" aria-label="주식 히트맵 표시 종목 수" className="flex gap-1">{STOCK_MAP_COUNTS.map(count => <button key={count} type="button" aria-pressed={stockMapCount === count} onClick={() => { setStockMapCount(count); setFocusedStockCode(null) }} className={`min-h-9 min-w-10 border px-2 text-xs font-semibold ${stockMapCount === count ? 'border-brand bg-brand-surface text-ui-white' : 'border-ui-border bg-ui-background text-ui-text'}`}>{count}개</button>)}</div></div>
-            <p className="text-xs text-ui-muted">시가총액 상위 종목을 지도에 표시합니다. 아래 목록에서 찾아볼 수 있어요.</p>
-            <MobileStockList key={`${stockScope?.sectorName ?? 'all'}:${stockContextItems.length}`} stocks={stockContextItems} colorScale={colorScale} decimalPlaces={decimalPlaces} />
-          </div>}
+          </SettingRow>
         </section>
-      </>}
+      )}
     </main>
   )
 }
