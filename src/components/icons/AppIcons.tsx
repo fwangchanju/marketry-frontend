@@ -290,6 +290,24 @@ export function CopyIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+// 모바일 화면 모드 버튼 — 해(주간)와 달(야간). Lucide sun·moon이다.
+export function SunIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </svg>
+  )
+}
+
+export function MoonIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>
+  )
+}
+
 // 로그인 버튼·프로필 기본 모양 — 둥근 사람(Lucide user-round).
 export function UserIcon(props: SVGProps<SVGSVGElement>) {
   return (
