@@ -5,10 +5,10 @@ import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import Spinner from '@/components/Spinner'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePageSetting } from '@/hooks/usePageSetting'
-import type { TreemapItem } from '@/types/api'
-import type { FilteredTreemapSectorNode } from '@/hooks/useFilteredTreemap'
-import { collectAllItems } from '@/hooks/useFilteredTreemap'
-import { isLightColor, resolveTreemapColor } from '@/utils/treemapColorScale'
+import type { HeatmapItem } from '@/types/api'
+import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
+import { collectAllItems } from '@/hooks/useFilteredHeatmap'
+import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { toCount, toDateTimeLabel, toJoEok, toPctSigned } from '@/utils/format'
 import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { useFontsVersion } from '@/utils/stockLabelFit'
@@ -24,17 +24,17 @@ const FIRST_STOCKS_SHOWN = 10
 const STOCKS_PER_MORE = 10
 const STOCK_MAP_COUNTS = [8, 12, 20] as const
 
-function stockLayoutValue(stock: TreemapItem, ratio: number) {
+function stockLayoutValue(stock: HeatmapItem, ratio: number) {
   return ratio <= 0 ? 1 : Math.pow(Math.max(stock.totalMarketValue, 0), ratio / 100)
 }
 
 type MobileSectorItem = OverviewMapItem & {
-  node: FilteredTreemapSectorNode | null
-  stocks: TreemapItem[]
+  node: FilteredHeatmapSectorNode | null
+  stocks: HeatmapItem[]
   isDirectStocks?: boolean
 }
 
-function toMobileSectorItem(node: FilteredTreemapSectorNode, path: string, boxSizeRatio: number): MobileSectorItem | null {
+function toMobileSectorItem(node: FilteredHeatmapSectorNode, path: string, boxSizeRatio: number): MobileSectorItem | null {
   const stocks = collectAllItems(node)
   const marketValue = stocks.reduce((sum, stock) => sum + stock.totalMarketValue, 0)
   if (marketValue <= 0 || stocks.length === 0) return null
@@ -55,7 +55,7 @@ function toMobileSectorItem(node: FilteredTreemapSectorNode, path: string, boxSi
   }
 }
 
-function toDirectStocksItem(stocks: TreemapItem[], parentPath: string, boxSizeRatio: number): MobileSectorItem | null {
+function toDirectStocksItem(stocks: HeatmapItem[], parentPath: string, boxSizeRatio: number): MobileSectorItem | null {
   if (!stocks.length) return null
   const marketValue = stocks.reduce((sum, stock) => sum + stock.totalMarketValue, 0)
   if (marketValue <= 0) return null
@@ -75,11 +75,11 @@ function toDirectStocksItem(stocks: TreemapItem[], parentPath: string, boxSizeRa
 }
 
 function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, onSelect }: {
-  stocks: TreemapItem[]
+  stocks: HeatmapItem[]
   boxSizeRatio: number
   colorScale: ReturnType<typeof useGlobalSettings>['colorScale']
   decimalPlaces: number
-  onSelect: (stock: TreemapItem) => void
+  onSelect: (stock: HeatmapItem) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const fontsVersion = useFontsVersion()
@@ -95,12 +95,12 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
   }, [])
   const boxes = useMemo(() => {
     if (size.width <= 0 || size.height <= 0 || stocks.length === 0) return []
-    const root = hierarchy<{ stock?: TreemapItem; children?: { stock: TreemapItem }[] }>({ children: stocks.map(stock => ({ stock })) })
+    const root = hierarchy<{ stock?: HeatmapItem; children?: { stock: HeatmapItem }[] }>({ children: stocks.map(stock => ({ stock })) })
       .sum(node => node.stock ? stockLayoutValue(node.stock, boxSizeRatio) : 0)
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
     const layoutRoot: HierarchyRectangularNode<typeof root.data> = treemap<typeof root.data>().tile(treemapSquarify).size([size.width, size.height]).paddingInner(2)(root)
     return layoutRoot.leaves().map(leaf => ({
-      stock: (leaf.data as { stock: TreemapItem }).stock,
+      stock: (leaf.data as { stock: HeatmapItem }).stock,
       x: leaf.x0,
       y: leaf.y0,
       width: leaf.x1 - leaf.x0,
@@ -111,7 +111,7 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
   return (
     <div ref={ref} className="relative h-full min-h-0 w-full overflow-hidden border border-ui-border bg-ui-surface p-1">
       {boxes.map(({ stock, x, y, width, height }) => {
-        const color = resolveTreemapColor(stock.changeRate, colorScale)
+        const color = resolveHeatmapColor(stock.changeRate, colorScale)
         const label = layoutOverviewLabel(stock.alias ?? stock.stockName, toPctSigned(stock.changeRate, decimalPlaces), width, height, fontsVersion)
         return (
           <button key={stock.stockCode} type="button" aria-label={`${stock.stockName} ${toPctSigned(stock.changeRate, decimalPlaces)}`} onClick={() => onSelect(stock)} className="absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight text-white" style={{ left: x, top: y, width, height, backgroundColor: color }}>
@@ -124,7 +124,7 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
   )
 }
 
-function MobileStockList({ stocks, colorScale, decimalPlaces }: { stocks: TreemapItem[]; colorScale: ReturnType<typeof useGlobalSettings>['colorScale']; decimalPlaces: number }) {
+function MobileStockList({ stocks, colorScale, decimalPlaces }: { stocks: HeatmapItem[]; colorScale: ReturnType<typeof useGlobalSettings>['colorScale']; decimalPlaces: number }) {
   const [search, setSearch] = useState('')
   const normalizedSearch = search.trim().toLocaleLowerCase('ko-KR')
   const [showMoreFor, setShowMoreFor] = useState({ query: '', count: FIRST_STOCKS_SHOWN })
@@ -151,7 +151,7 @@ function MobileStockList({ stocks, colorScale, decimalPlaces }: { stocks: Treema
       <p className="mt-3 text-sm text-ui-muted">시가총액 순 · {toCount(sortedStocks.length)}종목</p>
       <ul className="mt-2 divide-y divide-ui-border border-y border-ui-border">
         {visibleStocks.map(stock => {
-          const color = resolveTreemapColor(stock.changeRate, colorScale)
+          const color = resolveHeatmapColor(stock.changeRate, colorScale)
           const textColor = isLightColor(color) ? 'var(--ui-surface)' : 'var(--ui-white)'
           return (
             <li key={stock.stockCode} className="flex min-h-16 items-center gap-3 py-2.5">
@@ -187,7 +187,7 @@ export default function MobileMarketSummaryPage() {
     data,
     isLoading,
     isError,
-    refetchTreemap,
+    refetchHeatmap,
     filteredRootNodes,
     colorScale,
     decimalPlaces,
@@ -196,7 +196,7 @@ export default function MobileMarketSummaryPage() {
   } = useGlobalSettings({ allowChangeRateMode: true })
   const [majorSelection, setMajorSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [midSelection, setMidSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
-  const [stockSelection, setStockSelection] = useState<{ market: MarketQuery; stocks: TreemapItem[]; categoryName: string } | null>(null)
+  const [stockSelection, setStockSelection] = useState<{ market: MarketQuery; stocks: HeatmapItem[]; categoryName: string } | null>(null)
   const [viewMode, setViewMode] = useState<'sector' | 'stock'>('sector')
   const [stockMapCount, setStockMapCount] = useState<number>(12)
   const [focusedStockCode, setFocusedStockCode] = useState<string | null>(null)
@@ -210,7 +210,7 @@ export default function MobileMarketSummaryPage() {
   const stockCategoryName = stockSelection?.market === market ? stockSelection.categoryName : null
   const setMajorName = (name: string | null) => setMajorSelection(name ? { market, name } : null)
   const setMidName = (name: string | null) => setMidSelection(name ? { market, name } : null)
-  const setSelectedStocks = (stocks: TreemapItem[] | null, categoryName = '') => setStockSelection(stocks ? { market, stocks, categoryName } : null)
+  const setSelectedStocks = (stocks: HeatmapItem[] | null, categoryName = '') => setStockSelection(stocks ? { market, stocks, categoryName } : null)
   const major = majorName ? filteredRootNodes.find(node => node.sectorName === majorName) ?? null : null
   const mid = major && midName ? major.children.find(node => node.sectorName === midName) ?? null : null
 
@@ -317,12 +317,12 @@ export default function MobileMarketSummaryPage() {
 
       <section aria-label={viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵'} className="relative min-h-0 flex-1 p-1">
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
-          : isError ? <div className="flex h-full flex-col items-center justify-center gap-2 text-center"><p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p><button type="button" onClick={refetchTreemap} className="min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button></div>
+          : isError ? <div className="flex h-full flex-col items-center justify-center gap-2 text-center"><p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p><button type="button" onClick={refetchHeatmap} className="min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button></div>
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
               <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={decimalPlaces} onSelect={stock => setFocusedStockCode(stock.stockCode)} />
               {focusedStock && <button type="button" onClick={() => setSettingsOpen(true)} className="absolute bottom-20 left-3 right-3 flex items-center justify-between gap-3 border border-ui-border bg-ui-panel/95 px-3 py-2 text-left shadow-lg" aria-live="polite">
                 <span className="min-w-0"><span className="block truncate text-sm font-semibold">{focusedStock.alias ?? focusedStock.stockName}</span><span className="block text-xs text-ui-muted">{focusedStock.stockCode} · 시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span></span>
-                <span className="shrink-0 text-sm font-bold tabular-nums" style={{ color: resolveTreemapColor(focusedStock.changeRate, colorScale) }}>{toPctSigned(focusedStock.changeRate, decimalPlaces)}</span>
+                <span className="shrink-0 text-sm font-bold tabular-nums" style={{ color: resolveHeatmapColor(focusedStock.changeRate, colorScale) }}>{toPctSigned(focusedStock.changeRate, decimalPlaces)}</span>
               </button>}
             </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="flex h-full min-h-0 flex-col border border-ui-border bg-ui-surface p-1"><OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} /></div>}
       </section>
