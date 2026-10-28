@@ -1158,3 +1158,5 @@ Admin 설정창의 버튼 이름을 **업데이트에서 커밋으로 바꿨다*
 2026-10-28: 사용자가 정한 표시에 따라 전체 시장의 배지와 메뉴 이름을 `ALL STOCK`에서 `K-STOCK`으로 바꿨다. API 내부 시장값 `ALL_STOCK`과 URL은 그대로 유지한다.
 
 2026-10-28: Map·Graph 시장 메뉴에서 전체 시장은 `KOREA`로 표시하고, KOSPI·KOSDAQ을 하위 항목처럼 한 단계 들여썼다. 툴바의 전체 시장 배지는 `K-STOCK`을 유지한다.
+
+2026-10-28: 회원이 없는 오픈 전이라 오늘 바꾼 옛 주소를 모두 정리했다. `/map/allstock`·`/graph/allstock`(→ `/map/korea`·`/graph/korea`)와 `/guide/map`·`/guide/stock-heatmap`(→ `/info/guide`)의 이동 경로, 이동용 함수(`LegacyDomesticMarketRedirect`), 옛 주소 조각(`allstock`), 검색 정보와 검색 페이지 생성 규칙의 옛 항목을 지웠다. 이제 이 주소로 들어오면 홈으로 이동한다. 이전부터 있던 다른 이동 주소(`/summary`, `/group`·`/sector`·`/industry`, `/custom/industry`·`/custom/category`, `/privacy`·`/terms`·`/source`·`/contact`, `/admin/chart`·`/admin/sector`·`/admin/stock`)는 외부 등록 가능성이 있어 이번에 건드리지 않았다.
