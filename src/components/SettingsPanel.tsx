@@ -6,9 +6,9 @@ import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import type { DepthMetric } from '@/hooks/useGlobalSettings'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
-import type { StockChangeFilter, SectorChangeFilter } from '@/hooks/useFilteredTreemap'
-import { hexToHsl, type ColorScaleConfig } from '@/utils/treemapColorScale'
-import TreemapColorThresholdEditorPanel, { type ColorThresholdEditorProps } from '@/components/TreemapColorThresholdEditorPanel'
+import type { StockChangeFilter, SectorChangeFilter } from '@/hooks/useFilteredHeatmap'
+import { hexToHsl, type ColorScaleConfig } from '@/utils/heatmapColorScale'
+import HeatmapColorThresholdEditorPanel, { type ColorThresholdEditorProps } from '@/components/HeatmapColorThresholdEditorPanel'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import SettingsPanelSideToggle from '@/components/SettingsPanelSideToggle'
 import { SETTINGS_PANEL_TAB_ICON_CLASS, SettingsPanelHeader, SettingsPanelTabList } from '@/components/SettingsPanelChrome'
@@ -1407,11 +1407,11 @@ export function SettingsSectorLevelSection({
   stockLabelEnabled: boolean
   onToggleStockLabel: () => void
   onChangeStockLabelModeIndex: (index: number) => void
-  // 종목 박스가 전체 트리맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다.
+  // 종목 박스가 전체 히트맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다.
   // 등락률(%) 표시 소수점 자릿수(0=정수, 1=소수 1자리, 2=소수 2자리).
   decimalPlacesIndex: number
   onChangeDecimalPlacesIndex: (index: number) => void
-  // true면 "종목 박스" 그룹에 "등락률 소수점" 슬라이더를 같이 그린다 — 지도 페이지에서 실제로 트리맵
+  // true면 "종목 박스" 그룹에 "등락률 소수점" 슬라이더를 같이 그린다 — 지도 페이지에서 실제로 히트맵
   // 등락률(%) 표시에 쓰이는 설정이라 지도 페이지에서만 켠다(섹터는 그래프 자체 소수점 포맷을 따로
   // 쓰므로 기본 false로 숨긴다).
   showDecimalPlaces?: boolean
@@ -2159,7 +2159,7 @@ export function SettingsColorSection({
   colorEditorProps,
 }: {
   isCustom: boolean
-  // 마켓맵 등락률 컬러 스케일 draft(및 그 setter) — null이면 아직 서버 조회 전. 실제 트리맵/범례에
+  // 마켓맵 등락률 컬러 스케일 draft(및 그 setter) — null이면 아직 서버 조회 전. 실제 히트맵/범례에
   // 쓰이는 값과 동일한 참조라, 여기서 편집하는 즉시 지도 색이 실시간으로 바뀐다(별도 미리보기 불필요).
   // admin이 아니거나 아직 로딩 전이면 이 섹션 자체가 안 보인다.
   colorScaleDraft: ColorScaleConfig | null
@@ -2217,7 +2217,7 @@ export function SettingsColorSection({
       <div className="settings-auto-control relative">
         {colorEditorProps && (
           <div className={colorCustomOn ? '' : 'opacity-35'} inert={!colorCustomOn}>
-            <TreemapColorThresholdEditorPanel {...colorEditorProps} />
+            <HeatmapColorThresholdEditorPanel {...colorEditorProps} />
           </div>
         )}
         {!colorCustomOn && colorOffNoticeVisible && (

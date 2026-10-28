@@ -1,7 +1,7 @@
 // 마켓맵 종목 박스/범례가 공유하는 등락률 컬러 스케일 계산.
 // 박스 색칠(StockBox)과 범례 스와치(MapPage) 양쪽이 반드시 이 모듈만 거치도록 해서,
 // 두 곳이 서로 다른 하드코딩 배열을 들고 있다가 실제 값이 어긋나는 문제를 구조적으로 막는다.
-// GET /api/map/scale 응답(TreemapScaleResponse)을 그대로 입력(ColorScaleConfig)으로 받는다.
+// GET /api/map/scale 응답(HeatmapScaleResponse)을 그대로 입력(ColorScaleConfig)으로 받는다.
 // side는 별도 필드가 아니라 thresholdPercent의 부호로 표현한다(음수=하락, 0=기준, 양수=상승) —
 // "side와 부호가 서로 다른 값을 가리키는" 상태 자체를 구조적으로 불가능하게 만든다.
 // 서버에서 받은 threshold는 항상 id가 있지만, 어드민이 방금 로컬에서 추가해서 아직 생성 API를
@@ -45,7 +45,7 @@ export function orderThresholdSaves(
 export const DEFAULT_ZERO_COLOR = '#555555'
 
 // 저장된 threshold가 하나도 없는 side에 쓰는 폴백 프리셋(절댓값 기준). 2/5/8/15%p의 4개 임계값에만 threshold를 둔다.
-// 15% 초과는 별도 threshold를 추가하지 않고, 아래 resolveTreemapColor의 "최고 threshold 초과 시 clamp" 동작에 맡긴다 —
+// 15% 초과는 별도 threshold를 추가하지 않고, 아래 resolveHeatmapColor의 "최고 threshold 초과 시 clamp" 동작에 맡긴다 —
 // 그래야 15% 넘는 구간 전체가 flat한 최고 단계 색 그대로 유지된다. 포인트 색은 쓰지 않는다.
 export const DEFAULT_PLUS_THRESHOLDS: ColorScaleThreshold[] = [
   { thresholdPercent: 2, color: '#411010', colorLabel: 'red' }, // 명도 16
@@ -125,7 +125,7 @@ export function isLightColor(hex: string): boolean {
 }
 
 // changeRate(부호 있는 등락률, %) → 실제 렌더링에 쓸 hex 색.
-export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig): string {
+export function resolveHeatmapColor(changeRate: number, config: ColorScaleConfig): string {
   const zeroColor = resolveZeroColor(config)
   if (changeRate === 0) return zeroColor
 
@@ -157,9 +157,9 @@ export function resolveTreemapColor(changeRate: number, config: ColorScaleConfig
 
 // changeRate(부호 있는 등락률, %) → 그 부호 쪽 threshold 중 절댓값이 가장 큰 색(보간 없이 고정).
 // 지수 헤더/등락률 텍스트처럼 작은 값에도 옅은 그라데이션이 아니라 항상 진하고 읽기 쉬운 색 하나가
-// 필요한 자리에 쓴다. resolveTreemapColor와 같은 thresholdsForSign을 거치므로 커스텀/기본 여부는
+// 필요한 자리에 쓴다. resolveHeatmapColor와 같은 thresholdsForSign을 거치므로 커스텀/기본 여부는
 // 이미 호출자가 넘기는 config(colorScale)에 그대로 반영된다.
-export function resolveTreemapExtremeColor(changeRate: number, config: ColorScaleConfig): string {
+export function resolveHeatmapExtremeColor(changeRate: number, config: ColorScaleConfig): string {
   if (changeRate === 0) return resolveZeroColor(config)
   const thresholds = thresholdsForSign(config, changeRate > 0)
   return thresholds[thresholds.length - 1].color
@@ -170,7 +170,7 @@ export interface LegendSwatch {
   color: string
 }
 
-// 범례 바 — 실제 threshold들(및 0)을 resolveTreemapColor로 샘플링한다. 기본 상태는 박스와
+// 범례 바 — 실제 threshold들(및 0)을 resolveHeatmapColor로 샘플링한다. 기본 상태는 박스와
 // 같은 fallback을 표시하고, 편집 UI는 새로 비어진 부호의 fallback 슬롯만 숨길 수 있다.
 export function resolveLegendSwatches(
   config: ColorScaleConfig,
@@ -199,11 +199,11 @@ export function resolveLegendSwatches(
     .sort((a, b) => Math.abs(b.thresholdPercent) - Math.abs(a.thresholdPercent))
     .map(threshold => {
       const abs = Math.abs(threshold.thresholdPercent)
-      return { label: `-${abs}%`, color: resolveTreemapColor(-abs, config) }
+      return { label: `-${abs}%`, color: resolveHeatmapColor(-abs, config) }
     })
   const plusSwatches = plusThresholds.map(threshold => {
     const abs = Math.abs(threshold.thresholdPercent)
-    return { label: `+${abs}%`, color: resolveTreemapColor(abs, config) }
+    return { label: `+${abs}%`, color: resolveHeatmapColor(abs, config) }
   })
 
   return [...minusSwatches, { label: '0%', color: zeroColor }, ...plusSwatches]

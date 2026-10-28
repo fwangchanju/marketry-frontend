@@ -75,8 +75,8 @@
 
 ## 예외와 범위
 
-- `treemapColorScale.ts`, `accentPalette.ts`, `StockBox.tsx`, `SectorBox.tsx`, `OverviewMap.tsx`의 데이터·업종 표시색은 그대로 유지한다. 단, 상승·하락 모두 포인트 색을 쓰지 않는다(하락 스카이·상승 자홍 모두 뺐다). 홈 시장 수치의 빨강·파랑도 데이터색이다.
-- 지도 등락 색은 하락 인디고(색조 228°·채도 60%)와 상승 브릭 레드(색조 0°·채도 60%)이고, 명도는 구간 순서대로 16·33·46·64다. 구간은 2/5/8/15%이고 15%를 넘으면 가장 진한 단계 색으로 고정한다(코드: `treemapColorScale.ts`의 `DEFAULT_MINUS_THRESHOLDS`·`DEFAULT_PLUS_THRESHOLDS`). 이름은 문서에서 부르기 위해 붙인 것이다.
+- `heatmapColorScale.ts`, `accentPalette.ts`, `StockBox.tsx`, `SectorBox.tsx`, `OverviewMap.tsx`의 데이터·업종 표시색은 그대로 유지한다. 단, 상승·하락 모두 포인트 색을 쓰지 않는다(하락 스카이·상승 자홍 모두 뺐다). 홈 시장 수치의 빨강·파랑도 데이터색이다.
+- 지도 등락 색은 하락 인디고(색조 228°·채도 60%)와 상승 브릭 레드(색조 0°·채도 60%)이고, 명도는 구간 순서대로 16·33·46·64다. 구간은 2/5/8/15%이고 15%를 넘으면 가장 진한 단계 색으로 고정한다(코드: `heatmapColorScale.ts`의 `DEFAULT_MINUS_THRESHOLDS`·`DEFAULT_PLUS_THRESHOLDS`). 이름은 문서에서 부르기 위해 붙인 것이다.
 
   | 구간 | 하락 이름 | 하락 HEX | 상승 이름 | 상승 HEX |
   |---|---|---|---|---|

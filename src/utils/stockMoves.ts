@@ -1,10 +1,10 @@
-import type { DisplayGroup } from '@/hooks/useTreemapLayout'
-import type { TreemapItem } from '@/types/api'
+import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
+import type { HeatmapItem } from '@/types/api'
 
 // 실험 탭의 "종목 이동" — 종목 코드 → 도착 업종(sectorId). 화면에서만 쓰는 값이라 서버와 브라우저 어디에도 저장하지 않는다.
 export type StockMoves = Record<string, number>
 
-function collectAllItems(group: DisplayGroup): TreemapItem[] {
+function collectAllItems(group: DisplayGroup): HeatmapItem[] {
   return [...group.items, ...group.children.flatMap(collectAllItems)]
 }
 
@@ -35,7 +35,7 @@ export function applyStockMoves(groups: DisplayGroup[], moves: StockMoves): Disp
   }
   collectSectorIds(groups)
 
-  const arrivals = new Map<number, TreemapItem[]>()
+  const arrivals = new Map<number, HeatmapItem[]>()
   const movedCodes = new Set<string>()
   const scan = (list: DisplayGroup[]) => {
     for (const group of list) {

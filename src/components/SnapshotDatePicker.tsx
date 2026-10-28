@@ -2,10 +2,10 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { CalendarIcon, ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
-import { useSnapshotDays, useTradingDayGap } from '@/hooks/useTreemap'
-import { getMarketTradingSchedule } from '@/api/treemap'
+import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
+import { getMarketTradingSchedule } from '@/api/heatmap'
 import { INFREQUENT_DATA_CACHE } from '@/hooks/cacheConfig'
-import { treemapKeys } from '@/hooks/queryKeys'
+import { heatmapKeys } from '@/hooks/queryKeys'
 import { KOREAN_PUBLIC_HOLIDAY_DATES } from '@/utils/koreanPublicHolidayDates'
 import { getKstDate } from '@/utils/tradingWindow'
 import Spinner from '@/components/Spinner'
@@ -154,7 +154,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
   })
   const holidaySchedules = useQueries({
     queries: holidayCandidates.map(date => ({
-      queryKey: treemapKeys.tradingSchedule(date),
+      queryKey: heatmapKeys.tradingSchedule(date),
       queryFn: () => getMarketTradingSchedule(date),
       retry: 1,
       ...INFREQUENT_DATA_CACHE,

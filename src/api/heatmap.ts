@@ -1,7 +1,7 @@
 import client from './client'
 import {
-  TreemapResponseSchema,
-  TreemapScaleResponseSchema,
+  HeatmapResponseSchema,
+  HeatmapScaleResponseSchema,
   MarketNoticeResponseSchema,
   MarketTradingScheduleSchema,
   MarketValueTierListResponseSchema,
@@ -24,7 +24,7 @@ export type ChangeRateChoice = ChangeRateMode | 'close'
 
 // source는 어떤 분류로 그릴지다 — krx(거래소), marketry(올린 분류, 로그인 없이 읽는다), mine(내 분류, 로그인 필요).
 // nxtOnly는 NXT 거래 종목만 받는다. false일 때는 요청에 싣지 않는다. basis도 afterHours일 때만 요청에 싣는다.
-export const getTreemap = (
+export const getHeatmap = (
   market: MarketQuery,
   source: TaxonomySource,
   snapshotTime?: string,
@@ -41,9 +41,9 @@ export const getTreemap = (
         ...(basis === 'afterHours' ? { basis } : {}),
       },
     })
-    .then(r => TreemapResponseSchema.parse(r.data))
+    .then(r => HeatmapResponseSchema.parse(r.data))
 
-// 달력에서 고를 수 있는 날짜 — month는 'yyyy-MM'. 날짜마다 그날 종가 스냅샷 시각이 같이 온다(getTreemap의 snapshotTime에 그대로 쓴다).
+// 달력에서 고를 수 있는 날짜 — month는 'yyyy-MM'. 날짜마다 그날 종가 스냅샷 시각이 같이 온다(getHeatmap의 snapshotTime에 그대로 쓴다).
 const SnapshotDaySchema = z.object({ date: z.string(), snapshotTime: z.string() })
 export type SnapshotDay = z.infer<typeof SnapshotDaySchema>
 
@@ -69,8 +69,8 @@ export const getMarketNotices = () =>
 export const getMarketValueTiers = () =>
   client.get('/map/value-tiers').then(r => MarketValueTierListResponseSchema.parse(r.data))
 
-export const getTreemapScale = () =>
-  client.get('/map/scale').then(r => TreemapScaleResponseSchema.parse(r.data))
+export const getHeatmapScale = () =>
+  client.get('/map/scale').then(r => HeatmapScaleResponseSchema.parse(r.data))
 
 // 종목 단위 대신 섹터 단위로 제외한다 — 상태(is_excluded)는 market_map_category에 저장되고,
 // 마켓맵 응답의 각 섹터 노드에 isExcluded로 같이 내려온다.

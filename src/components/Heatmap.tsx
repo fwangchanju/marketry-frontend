@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useTreemapLayout, type DisplayGroup, type LaidOutSector } from '@/hooks/useTreemapLayout'
+import { useHeatmapLayout, type DisplayGroup, type LaidOutSector } from '@/hooks/useHeatmapLayout'
 import SectorBox from './SectorBox'
 import Popup, { type PopupContent, type PopupState } from './Popup'
-import type { ColorScaleConfig } from '@/utils/treemapColorScale'
+import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 import { useStockDrag, type StockDrop } from '@/hooks/useStockDrag'
 
@@ -93,7 +93,7 @@ function toShrinkTransform(rect: RelativeRect, containerRect: DOMRect): string {
   return `translate(${left}px, ${top}px) scale(${rect.width}, ${rect.height})`
 }
 
-export default function Treemap({
+export default function Heatmap({
   groups,
   selfSectorName,
   depth,
@@ -155,7 +155,7 @@ export default function Treemap({
       if (!entry) return
       // contentRect가 소수점 단위라, 브라우저 줌/DPI 조합에 따라 실제로는 안 바뀐 크기를 매 프레임
       // 미세하게 다르게(예: 1234.4 → 1234.6) 보고하는 경우가 있다. 정수로 반올림해서 비교하고,
-      // 값이 그대로면 리렌더(트리맵 재계산)를 아예 건너뛰어 이 흔들림이 무한 재계산으로 이어지지 않게 막는다.
+      // 값이 그대로면 리렌더(히트맵 재계산)를 아예 건너뛰어 이 흔들림이 무한 재계산으로 이어지지 않게 막는다.
       const width = Math.round(entry.contentRect.width)
       const height = Math.round(entry.contentRect.height)
       setSize(prev => (prev.width === width && prev.height === height ? prev : { width, height }))
@@ -165,7 +165,7 @@ export default function Treemap({
   }, [])
 
   // 시가총액 차이를 거듭제곱으로 압축하는 비율을 레이아웃 계산에 전달한다.
-  const sectors = useTreemapLayout(groups, selfSectorName, size.width, size.height, boxSizeMarketCapRatio, stretch, tile)
+  const sectors = useHeatmapLayout(groups, selfSectorName, size.width, size.height, boxSizeMarketCapRatio, stretch, tile)
 
   // 팝업을 마우스 좌표가 아니라 우클릭한 박스(섹터 전체 박스, 혹은 종목 박스)의 화면상 위치에 붙인다.
   // 여기서는 그 박스의 뷰포트 기준 rect만 그대로 popup 상태에 실어두고, 그 rect의 어느 가장자리에
@@ -195,7 +195,7 @@ export default function Treemap({
   useEffect(() => {
     if (!popup) return
     const handlePointerDown = (e: PointerEvent) => {
-      if (e.target instanceof Element && e.target.closest('[data-treemap-popup]')) return
+      if (e.target instanceof Element && e.target.closest('[data-heatmap-popup]')) return
       setPopup(null)
     }
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -340,14 +340,14 @@ export default function Treemap({
     // 이어진다. overflow-hidden으로 이 삐져나옴 자체를 화면에서 잘라내 루프의 시작을 막는다.
     <div
       ref={containerRef}
-      data-treemap-layout-ready={
+      data-heatmap-layout-ready={
         size.width > 0 && size.height > 0 &&
         size.width === Math.round(containerRef.current?.clientWidth ?? 0) &&
         size.height === Math.round(containerRef.current?.clientHeight ?? 0)
           ? 'true'
           : 'false'
       }
-      className={`relative isolate w-full overflow-hidden bg-ui-background ${heightClassName} ${suppressSectorHoverBorder ? 'treemap-suppress-sector-border' : ''}`}
+      className={`relative isolate w-full overflow-hidden bg-ui-background ${heightClassName} ${suppressSectorHoverBorder ? 'heatmap-suppress-sector-border' : ''}`}
       onPointerMove={() => {
         if (suppressSectorHoverBorder && !ghost) setSuppressSectorHoverBorder(false)
       }}

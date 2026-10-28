@@ -7,7 +7,7 @@ import {
   restoreMarketryPublication,
   type MarketryPublication,
 } from '@/api/marketryPublish'
-import { treemapKeys } from '@/hooks/queryKeys'
+import { heatmapKeys } from '@/hooks/queryKeys'
 import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
@@ -54,7 +54,7 @@ export default function MarketryPublishControls() {
     return () => window.removeEventListener('mousedown', close)
   }, [isVersionsOpen])
 
-  const refreshMaps = () => queryClient.invalidateQueries({ queryKey: treemapKeys.all })
+  const refreshMaps = () => queryClient.invalidateQueries({ queryKey: heatmapKeys.all })
 
   const handlePublish = async () => {
     const confirmed = await appWarnConfirm(

@@ -1,9 +1,9 @@
 import { useRef } from 'react'
 import { SlidingHighlight } from '@/components/SlidingHighlight'
-import { resolveTreemapColor } from '@/utils/treemapColorScale'
+import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
-// 색은 고르는 것이 아니라 정해져 있다 — 하락은 파랑, 보합(0%)은 회색, 상승은 빨강이고 구간 순서대로 명도가 올라간다(treemapColorScale.fixedRankColor).
+// 색은 고르는 것이 아니라 정해져 있다 — 하락은 파랑, 보합(0%)은 회색, 상승은 빨강이고 구간 순서대로 명도가 올라간다(heatmapColorScale.fixedRankColor).
 const CHIP_LABEL = { down: '하락', zero: '보합', up: '상승' } as const
 
 type BarSide = 'up' | 'down' | 'zero'
@@ -31,7 +31,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
   const zeroSelected = side === 'zero'
   // 막대 색은 고른 쪽(상승/하락)의 구간 색을 이어서 보여 준다.
   const colored = side === 'down' ? negative : positive
-  // 막대 색은 지도 박스 색과 같은 계산(resolveTreemapColor)을 0~30%에서 촘촘히 찍어 그린다.
+  // 막대 색은 지도 박스 색과 같은 계산(resolveHeatmapColor)을 0~30%에서 촘촘히 찍어 그린다.
   const signed = side === 'down' ? -1 : 1
   const barConfig = {
     thresholds: [
@@ -39,7 +39,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
       ...colored.map((item, rank) => ({ thresholdPercent: signed * (positive[rank]?.percent ?? item.percent), color: item.color, colorLabel: null })),
     ],
   }
-  const gradientStops = Array.from({ length: 61 }, (_, step) => step / 2).map(percent => `${resolveTreemapColor(signed * percent, barConfig)} ${(percentToPosition(percent) * 100).toFixed(2)}%`)
+  const gradientStops = Array.from({ length: 61 }, (_, step) => step / 2).map(percent => `${resolveHeatmapColor(signed * percent, barConfig)} ${(percentToPosition(percent) * 100).toFixed(2)}%`)
   const gradient = `linear-gradient(90deg, ${gradientStops.join(', ')})`
   // 하락 부호는 하이픈(-)이 아니라 수학 빼기 기호(−)로 쓴다 — 하이픈은 +보다 좁아서 상승·하락 배지의 폭이 달라졌다(+12% 38.7px, -12% 36.5px, −12% 38.7px).
   const sign = side === 'down' ? '\u2212' : '+'
@@ -177,7 +177,7 @@ export interface ColorThresholdEditorProps {
 
 // 범례 아래에서 편집하는 등락률 구간 패널. 하락/보합/상승 버튼은 지도 범례와 같은 순서·색이고(색은 정해져 있어 고르지 않는다),
 // 어느 쪽 구간을 편집할지 정한다. 막대 값은 지도에 즉시 반영되고 상단 저장·되돌리기를 따른다.
-export default function TreemapColorThresholdEditorPanel({
+export default function HeatmapColorThresholdEditorPanel({
   bar,
   onChangeRankPercent,
   onSelectRank,

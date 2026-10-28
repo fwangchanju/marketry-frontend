@@ -148,7 +148,7 @@ export default function ScreenshotModal({
         return
       }
       // 모바일용 지도는 별도 크기로 다시 배치한다. ResizeObserver가 새 레이아웃을 계산할 때까지 기다린다.
-      if (!hasEmptyPreview && onCloneNode && screenshotTarget && !screenshotTarget.querySelector('[data-map-mobile-capture] [data-treemap-layout-ready="true"]')) {
+      if (!hasEmptyPreview && onCloneNode && screenshotTarget && !screenshotTarget.querySelector('[data-map-mobile-capture] [data-heatmap-layout-ready="true"]')) {
         rafId = requestAnimationFrame(captureWhenReady)
         return
       }
