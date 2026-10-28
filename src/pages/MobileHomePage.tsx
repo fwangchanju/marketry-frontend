@@ -19,7 +19,7 @@ export default function MobileHomePage() {
       </div>
       <nav aria-label="페이지 이동" className="flex w-full max-w-[200px] flex-col gap-3">
         {destinations.map(({ label, path }) => (
-          <Link key={path} to={path} className="flex min-h-[38px] items-center justify-center rounded-[4px] bg-brand-surface px-4 text-[16px] font-medium text-ui-white">
+          <Link key={path} to={path} className="flex min-h-[38px] items-center justify-center rounded-[4px] bg-brand-surface px-4 text-[16px] font-medium text-ui-on-dark">
             {label}
           </Link>
         ))}

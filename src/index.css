@@ -12,6 +12,8 @@
   --color-ui-text: var(--ui-text);
   --color-ui-muted: var(--ui-muted);
   --color-ui-white: var(--ui-white);
+  --color-ui-on-dark: var(--ui-on-dark);
+  --color-ui-on-light: var(--ui-on-light);
   --color-ui-popup: var(--ui-popup);
   --color-ui-popup-border: var(--ui-popup-border);
   --color-ui-control: var(--ui-control);
@@ -348,6 +350,9 @@
   --ui-panel: #2a2a2a;
   --ui-muted: #9ca3af;
   --ui-white: #ffffff;
+  --ui-on-dark: #ffffff; /* 청록·데이터 색처럼 어두운 바탕 위 글자 — 야간·주간 공통 */
+  --ui-on-light: #1a1a1a; /* 밝은 데이터 색 바탕 위 글자 — 야간·주간 공통 */
+  --ui-data-text-mix: 100%; /* 막대 옆 값·강조 글자에 어두운 색을 섞는 정도 — 야간은 원색 그대로, 주간은 아래에서 낮춘다 */
   --ui-popup: #fff8e7;
   --status-error: #c47b5a;
   --status-success: var(--brand);
@@ -383,6 +388,30 @@
      폴백된다. */
   font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
   line-height: 1.5;
+}
+
+/* 모바일 주간모드 — 폭 767px 이하에서 html[data-theme="light"]일 때만 색 토큰을 덮어쓴다. 야간 값과 같은 이름·같은 역할이다.
+   --ui-white는 "글자 색"으로 쓰이므로 주간에서는 어두운 글자가 되고, 청록·데이터 색 바탕 위 글자는 --ui-on-dark(흰색)를 쓴다.
+   --brand는 글자로도 쓰여 밝은 바탕에서 대비가 4.5:1 이상이 되도록 진하게 한다(#0e7c70). */
+@media (max-width: 767px) {
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --brand: #0e7c70;
+    --ui-background: #f4f4f4;
+    --ui-surface: #ffffff;
+    --ui-panel: #e8e8e8;
+    --ui-muted: #6b7280;
+    --ui-white: #1a1a1a;
+    --ui-control: #cfcfcf;
+    --ui-control-hover: #b8b8b8;
+    --ui-text: #1a1a1a;
+    --ui-data-text-mix: 60%;
+  }
+  /* 청록 바탕 위 글자는 주간에서도 흰색이고, 그 안의 브랜드색 글자는 야간과 같은 밝은 청록이다 — 안쪽에서 두 변수를 쓰는 글자·아이콘이 모두 따라온다. */
+  :root[data-theme="light"] :is([class*="bg-brand-surface"], [class*="bg-[var(--brand-surface)]"]) {
+    --ui-white: var(--ui-on-dark);
+    --brand: #12b8a6;
+  }
 }
 
 /* nes.css가 body/html 등에 직접 font-family를 지정해서 :root만으로는 안 덮어써짐 — 같은 선택자로 재정의 */
