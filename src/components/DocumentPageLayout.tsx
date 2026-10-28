@@ -9,12 +9,15 @@ import PageMainFrame from '@/components/PageMainFrame'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
+import MobileDocumentShell from '@/components/MobileDocumentShell'
+import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 
 // 공개 문서도 다른 화면과 같은 헤더·계정·메뉴·툴바·하단 정보줄을 쓴다.
 export default function DocumentPageLayout({ title, heading, children, panelIcon = 'document', panelDescription = 'MARKETRY 서비스 안내 문서입니다.' }: { title: string; heading: ReactNode; children: ReactNode; panelIcon?: SettingsSectionIconName; panelDescription?: string }) {
+  const isNarrow = useIsNarrowScreen()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
@@ -34,6 +37,8 @@ export default function DocumentPageLayout({ title, heading, children, panelIcon
       setTimeout(() => setCopyStatus('idle'), 2000)
     }
   }
+  // 좁은 화면은 설정창·고정 상단바가 없는 모바일 틀을 쓴다(훅은 모두 위에서 호출해 순서를 지킨다).
+  if (isNarrow) return <MobileDocumentShell title={title} heading={heading}>{children}</MobileDocumentShell>
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
   return (
