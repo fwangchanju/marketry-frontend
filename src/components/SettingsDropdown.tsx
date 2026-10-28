@@ -83,7 +83,7 @@ export default function SettingsDropdown<K extends string>({ options, value, onC
           aria-label={ariaLabel}
           style={{
             position: 'fixed',
-            top: position.top + (position.openUpward ? 0 : 0),
+            top: position.top + (position.openUpward ? -4 : 4),
             left: position.left + listIndent,
             width: position.width - listIndent,
             transform: position.openUpward ? 'translateY(-100%)' : undefined,

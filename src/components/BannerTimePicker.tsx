@@ -95,7 +95,7 @@ export default function BannerTimePicker({
                       <ChevronDownIcon className={`h-3 w-3 text-brand transition-transform ${openColumn === column ? 'rotate-180' : ''}`} />
                     </button>
                     {openColumn === column && (
-                      <div role="listbox" aria-label={`${label} ${labelText} 선택`} className={`absolute left-0 z-10 max-h-40 w-full overflow-y-auto rounded-md border border-ui-border bg-[var(--ui-panel)] text-ui-white shadow-xl ${position?.openUpward ? 'bottom-full' : 'top-full'}`}>
+                      <div role="listbox" aria-label={`${label} ${labelText} 선택`} className={`absolute left-0 z-10 max-h-[152px] w-full snap-y snap-mandatory overflow-y-auto rounded-md border border-ui-border bg-[var(--ui-panel)] text-ui-white shadow-xl ${position?.openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                         {options.filter(option => option !== current).map(option => (
                           <button
                             key={option}
@@ -106,7 +106,7 @@ export default function BannerTimePicker({
                               updateTime(isHour ? option : hour, isHour ? minute : option)
                               setOpenColumn(null)
                             }}
-                            className="flex h-[25px] w-full items-center border-0 bg-transparent px-3 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10 focus-visible:outline-none"
+                            className="flex h-[25px] w-full snap-start items-center border-0 bg-transparent px-3 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10 focus-visible:outline-none"
                           >
                             {option}
                           </button>

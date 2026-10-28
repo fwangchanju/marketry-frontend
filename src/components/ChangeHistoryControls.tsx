@@ -54,7 +54,7 @@ function HistoryListPopup<T extends { id: string }>({
       style={{
         position: 'fixed',
         // 버튼 바로 밑에 붙지 않게 6px 띄운다(위로 열릴 땐 위로 6px).
-        top: position.top + (position.openUpward ? -6 : 6),
+        top: position.top + (position.openUpward ? -4 : 4),
         left: position.left,
         width: position.width,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,

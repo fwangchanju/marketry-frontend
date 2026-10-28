@@ -130,7 +130,7 @@ export default function MarketryPublishControls() {
         document.body,
       )}
       {isVersionsOpen && (
-        <div className="absolute left-0 top-full z-50 max-h-72 w-full overflow-y-auto rounded-md border border-ui-border bg-[var(--ui-panel)] text-sm font-normal shadow-xl">
+        <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-ui-border bg-[var(--ui-panel)] text-sm font-normal shadow-xl">
           {versions === null ? (
             <p className="px-3 py-1 text-ui-muted">불러오는 중…</p>
           ) : versions.length === 0 ? (
