@@ -20,7 +20,13 @@ export function renderSearchPage(template, path, { title, description }) {
   html = replaceOnce(html, /<meta\s+name="description"\s+content="[^"]*"\s*\/?\s*>/g, `<meta name="description" content="${safeDescription}" />`)
   html = replaceOnce(html, /<meta\s+property="og:url"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:url" content="${url}" />`)
   html = replaceOnce(html, /<meta\s+property="og:title"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:title" content="${safeTitle}" />`)
-  return replaceOnce(html, /<meta\s+property="og:description"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:description" content="${safeDescription}" />`)
+  html = replaceOnce(html, /<meta\s+property="og:description"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:description" content="${safeDescription}" />`)
+  if (path !== '/home') {
+    const siteNameSchema = /<script\s+type="application\/ld\+json"\s+data-site-name>[\s\S]*?<\/script>\s*/g
+    if ([...html.matchAll(siteNameSchema)].length !== 1) throw new Error('Expected one site name schema block for the homepage')
+    html = html.replace(siteNameSchema, '')
+  }
+  return html
 }
 
 async function generate() {
