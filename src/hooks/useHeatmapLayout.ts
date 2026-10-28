@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { hierarchy, treemap, treemapBinary, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
-import type { TreemapItem } from '@/types/api'
+import type { HeatmapItem } from '@/types/api'
 
 export interface DisplayGroup {
   sectorId: number
@@ -8,18 +8,18 @@ export interface DisplayGroup {
   totalMarketValue: number
   weightedAvgChangeRate: number | null
   simpleAvgChangeRate: number | null
-  items: TreemapItem[]
+  items: HeatmapItem[]
   children: DisplayGroup[]
 }
 
 interface LaidOutStockBox {
-  item: TreemapItem
+  item: HeatmapItem
   x: number
   y: number
   width: number
   height: number
-  // 이 박스 넓이가 전체 트리맵 컨테이너 넓이에서 차지하는 비중(%) — 섹터 뎁스와 무관하게 항상
-  // 최상위 컨테이너 기준(d3 treemap이 전체 트리를 한 좌표계에서 배치하므로, 어느 뎁스의 박스든
+  // 이 박스 넓이가 전체 히트맵 컨테이너 넓이에서 차지하는 비중(%) — 섹터 뎁스와 무관하게 항상
+  // 최상위 컨테이너 기준(d3 heatmap이 전체 트리를 한 좌표계에서 배치하므로, 어느 뎁스의 박스든
   // width*height를 컨테이너 전체 width*height로 나누면 바로 이 비중이 나온다).
   areaPercent: number
 }
@@ -49,7 +49,7 @@ interface HierarchyDatum {
   totalMarketValue?: number
   weightedAvgChangeRate?: number | null
   simpleAvgChangeRate?: number | null
-  item?: TreemapItem
+  item?: HeatmapItem
   children?: HierarchyDatum[]
 }
 
@@ -70,13 +70,13 @@ const SECTOR_HEADER_HEIGHT_ADJUSTMENT = -1
 export function sectorHeaderHeight(depth: number): number {
   return Math.round(sectorHeaderFontSize(depth) * SECTOR_HEADER_HEIGHT_RATIO) + SECTOR_HEADER_HEIGHT_ADJUSTMENT
 }
-// 형제 섹터끼리의 간격 — d3 treemap의 paddingInner(섹터 자식을 둔 노드 기준).
+// 형제 섹터끼리의 간격 — d3 heatmap의 paddingInner(섹터 자식을 둔 노드 기준).
 export const SECTOR_SIBLING_GAP = 5
 // 형제 종목끼리의 간격 — 자식이 전부 종목(하위 섹터가 하나도 없음)인 노드에서만 적용된다.
 // 종목은 border-box라 테두리가 안쪽으로 그려지므로 간격을 테두리 두께만큼만 둬도 안 겹친다.
 export const ITEM_SIBLING_GAP = 1
 // 섹터 컴포넌트 내부 — 자기 테두리와 그 안의 자식(하위 섹터든 종목이든)들 사이의 여백 — d3
-// treemap의 paddingOuter. SectorBox도 이 값을 그대로 써서, 헤더 바를 자식들과
+// heatmap의 paddingOuter. SectorBox도 이 값을 그대로 써서, 헤더 바를 자식들과
 // 같은 폭만큼 안쪽으로 들여쓴다. 0이라 자식이 섹터면 그 테두리가 부모 테두리와 같은 자리에
 // 겹치는데, 형제 간격(SECTOR_SIBLING_GAP)과 같은 이유로 문제없다(평소엔 같은 색이라 한 줄처럼
 // 보이고, hover 중인 쪽은 z-index로 항상 위에 그려짐). 상단 헤더 공간은 paddingTop으로 별도 처리.
@@ -114,7 +114,7 @@ function toHierarchyDatum(group: DisplayGroup, marketCapRatio: number): Hierarch
   }
 }
 
-export function useTreemapLayout(
+export function useHeatmapLayout(
   groups: DisplayGroup[],
   selfSectorName: string | null,
   width: number,

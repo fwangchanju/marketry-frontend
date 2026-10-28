@@ -32,7 +32,7 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
-import type { MarketOverviewTrendItem, TreemapSectorNode } from '@/types/api'
+import type { MarketOverviewTrendItem, HeatmapSectorNode } from '@/types/api'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useSession } from '@/hooks/useSession'
@@ -44,13 +44,13 @@ import { HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH } from '@/utils/scr
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { isMarketValueExcluded, type MarketValueExclusions } from '@/utils/marketValueTier'
-import { resolveTreemapColor, resolveTreemapExtremeColor, type ColorScaleConfig } from '@/utils/treemapColorScale'
+import { resolveHeatmapColor, resolveHeatmapExtremeColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
-import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredTreemap'
+import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredHeatmap'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { withStableSectorIds } from '@/utils/guestSectorIds'
-import { getSnapshotDays, getTreemap } from '@/api/treemap'
-import { usePreviousTradingDay } from '@/hooks/useTreemap'
+import { getSnapshotDays, getHeatmap } from '@/api/heatmap'
+import { usePreviousTradingDay } from '@/hooks/useHeatmap'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
 import { loadTrendDays, sampleDaysUpTo, trendMonths } from '@/utils/trendDates'
 import { marketRoute } from '@/utils/marketRoute'
@@ -96,7 +96,7 @@ function MarketIndexTrendChart({ items, market, label, colorScale }: { items: Ma
       {values.map(item => {
         const ratio = Math.min(Math.abs(item.changeRate) / scale, 1)
         const height = `max(2px, calc((50% - 32px) * ${ratio}))`
-        const barColor = item.changeRate === 0 ? 'var(--ui-muted)' : resolveTreemapExtremeColor(item.changeRate, colorScale)
+        const barColor = item.changeRate === 0 ? 'var(--ui-muted)' : resolveHeatmapExtremeColor(item.changeRate, colorScale)
         return (
           <div key={`${item.date}-${item.market}`} className="relative min-w-0 text-center">
             <div className="relative mx-auto h-full w-full max-w-32">
@@ -131,7 +131,7 @@ function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSector
           const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getUTCDay()]
           const ratio = Math.min(Math.abs(point.changeRate) / scale, 1)
           const height = `max(2px, calc((50% - 32px) * ${ratio}))`
-          const barColor = resolveTreemapExtremeColor(point.changeRate, colorScale)
+          const barColor = resolveHeatmapExtremeColor(point.changeRate, colorScale)
           return (
             <div key={point.date} className="relative min-w-0 text-center">
               <div className="relative mx-auto h-full w-full max-w-32">
@@ -209,7 +209,7 @@ export default function MarketSummaryPage() {
   const [screenshotTarget, setScreenshotTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const {
-    settingsModalProps, data, rootNodes, isLoading, isError, refetchTreemap, isRefetchingTreemap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
+    settingsModalProps, data, rootNodes, isLoading, isError, refetchHeatmap, isRefetchingHeatmap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
     changeRateMode, changeRateChoice, colorScale, strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps, excludedSectorIds, excludedMarketValueTiers,
     market, nxtOnly, nxtOnlyWindow, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
     isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
@@ -303,7 +303,7 @@ export default function MarketSummaryPage() {
       })
       const cachedMap = (snapshotTime: string) => queryClient.fetchQuery({
         queryKey: ['map', 'home-trend-map', session?.userId ?? null, trendTaxonomy, snapshotTime, isRange ? 'daily' : personalTrendBasis],
-        queryFn: () => getTreemap('ALL_STOCK', trendTaxonomy, snapshotTime, false, isRange ? 'daily' : personalTrendBasis),
+        queryFn: () => getHeatmap('ALL_STOCK', trendTaxonomy, snapshotTime, false, isRange ? 'daily' : personalTrendBasis),
         staleTime: Infinity,
         gcTime: 30 * 60_000,
       })
@@ -336,12 +336,12 @@ export default function MarketSummaryPage() {
           : map.items
         return { date, items }
       })
-      const trendRoots = (items: TreemapSectorNode[]) =>
+      const trendRoots = (items: HeatmapSectorNode[]) =>
         trendTaxonomy === 'KRX' && !session?.authenticated ? withStableSectorIds(items) : items
       const latestRoots = collectAtDepth(rootNodes, 1, excludedSectorIds, excludedMarketValueTiers)
       const top = latestRoots
         .map(({ node, pathKey }) => ({ node, pathKey, changeRate: computeSectorAverage(node, excludedMarketValueTiers).weightedAvg }))
-        .filter((entry): entry is { node: TreemapSectorNode; pathKey: string; changeRate: number } => entry.changeRate !== null)
+        .filter((entry): entry is { node: HeatmapSectorNode; pathKey: string; changeRate: number } => entry.changeRate !== null)
         .sort((a, b) => b.changeRate - a.changeRate)[0]
       if (!top) return null
       return {
@@ -445,7 +445,7 @@ export default function MarketSummaryPage() {
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                 <SnapshotDatePicker
                   market={market}
-                  holidayColor={resolveTreemapColor(8, colorScale)}
+                  holidayColor={resolveHeatmapColor(8, colorScale)}
                   viewedSnapshotTime={data?.snapshotTime ?? null}
                   liveSnapshotTime={liveSnapshotTime}
                   onSelectSnapshotTime={onChangePinnedSnapshotTime}
@@ -468,8 +468,8 @@ export default function MarketSummaryPage() {
                 <ToolbarChip bare tone="text-ui-white">
                   <PageRefreshButton
                     cell
-                    onRefresh={refetchTreemap}
-                    isRefreshing={isRefetchingTreemap}
+                    onRefresh={refetchHeatmap}
+                    isRefreshing={isRefetchingHeatmap}
                     helpText={SNAPSHOT_REFRESH_HELP}
                     minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}
                   >
@@ -595,7 +595,7 @@ export default function MarketSummaryPage() {
               </div>
             ) : isError ? (
               <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
-                <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchTreemap} />
+                <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} />
               </div>
             ) : isMineEmpty ? (
               // 내 분류가 비어 있으면 지도·그룹 페이지와 같은 안내(원·로고·바로 가기)를 홈 전체에 보여 준다 — 원은 위 로딩 원과 같은 자리다.
@@ -608,7 +608,7 @@ export default function MarketSummaryPage() {
                 <EmptyMessage message={EMPTY_FILTER_MESSAGE} topClass="top-0" />
               </div>
             ) : (
-            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 지도" 글자가 지도 페이지 트리맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
+            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 지도" 글자가 지도 페이지 히트맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
             <div className="flex min-h-0 min-w-0 flex-1">
             {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서(지도 아래 약 15px), 캡처 중에는 스크롤을 풀어 둔다. */}
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>

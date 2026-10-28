@@ -2,7 +2,7 @@ import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import PopupKindBadge from '@/components/PopupKindBadge'
 import { HINT_BUBBLE_COLOR_CLASS, POPUP_SIZE_CLASS } from '@/components/hintBubbleStyle'
-import type { TreemapSectorNode } from '@/types/api'
+import type { HeatmapSectorNode } from '@/types/api'
 import { toCount } from '@/utils/format'
 import { collectItems } from '@/utils/sectorAverage'
 import type { NxtOnlyWindow } from '@/utils/tradingWindow'
@@ -11,7 +11,7 @@ interface Props {
   active: boolean
   window: NxtOnlyWindow | null
   ready: boolean
-  nodes: TreemapSectorNode[]
+  nodes: HeatmapSectorNode[]
 }
 
 // 팝업 위치는 페이지마다 같다 — 가로는 메인 영역(data-main-area)의 가운데, 세로는 전체 화면 높이의 중간이다. 부모 칸 기준으로 두면 페이지마다 칸이 달라 위치가 어긋난다.

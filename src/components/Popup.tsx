@@ -8,7 +8,7 @@ export interface PopupContent {
   rows: string[]
   excludeSector?: { id: number; name: string }
   // 우클릭한 섹터/종목 박스를 식별하는 키('sector-<id>' | 'stock-<code>') — 팝업이 떠 있는 동안
-  // 해당 박스에만 초록 하이라이트를 붙이는 데 쓴다(Treemap.highlightedKey).
+  // 해당 박스에만 초록 하이라이트를 붙이는 데 쓴다(Heatmap.highlightedKey).
   targetKey: string
   // true면 커서 이동(hover)으로 뜬 임시 팝업 — 마우스 이벤트를 받지 않아서 커서가 팝업 위로 가도
   // 박스의 pointerleave가 튀지 않는다.
@@ -170,7 +170,7 @@ function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
     <>
       <div
         ref={elRef}
-        data-treemap-popup
+        data-heatmap-popup
         className={`invisible fixed z-[9999] w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
         style={{ maxWidth, backgroundColor: POPUP_BACKGROUND }}
       >

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getMarketTradingSchedule } from '@/api/treemap'
+import { getMarketTradingSchedule } from '@/api/heatmap'
 import { getKstDate } from '@/utils/tradingWindow'
 import { INFREQUENT_DATA_CACHE } from './cacheConfig'
-import { treemapKeys } from './queryKeys'
+import { heatmapKeys } from './queryKeys'
 
 export function useMarketTradingSchedule() {
   const [now, setNow] = useState(() => new Date())
@@ -19,7 +19,7 @@ export function useMarketTradingSchedule() {
   // 상태 표시와 NXT 필터는 스냅샷 날짜와 무관하게 오늘의 같은 시간표 캐시를 사용한다.
   const date = getKstDate(now)
   const { data: schedule } = useQuery({
-    queryKey: treemapKeys.tradingSchedule(date),
+    queryKey: heatmapKeys.tradingSchedule(date),
     queryFn: () => getMarketTradingSchedule(date),
     ...INFREQUENT_DATA_CACHE,
   })

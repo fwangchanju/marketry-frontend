@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createDefaultColorScale, orderThresholdSaves, resolveTreemapColor } from './treemapColorScale.ts'
+import { createDefaultColorScale, orderThresholdSaves, resolveHeatmapColor } from './heatmapColorScale.ts'
 
 const row = (id, thresholdPercent) => ({ id, thresholdPercent, color: '#bc2f2f', colorLabel: 'red' })
 
@@ -40,9 +40,9 @@ test('해결할 수 없는 구간 교환은 요청을 시작하기 전에 거부
 
 test('8퍼센트 경계가 없어도 달력의 휴장 색을 계산한다', () => {
   const scale = createDefaultColorScale()
-  assert.equal(resolveTreemapColor(8, scale), '#bc2f2f')
+  assert.equal(resolveHeatmapColor(8, scale), '#bc2f2f')
   scale.thresholds = scale.thresholds.map(item => Math.abs(item.thresholdPercent) === 8
     ? { ...item, thresholdPercent: Math.sign(item.thresholdPercent) * 10 }
     : item)
-  assert.match(resolveTreemapColor(8, scale), /^#[0-9a-f]{6}$/)
+  assert.match(resolveHeatmapColor(8, scale), /^#[0-9a-f]{6}$/)
 })
