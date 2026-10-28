@@ -9,6 +9,8 @@ import { useMarketSummary } from '@/hooks/useMarketSummary'
 import Spinner from '@/components/Spinner'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePageSetting } from '@/hooks/usePageSetting'
+import { useLongPress } from '@/hooks/useLongPress'
+import { IDENTITY, panTransform, pinchTransform, type Point, type ZoomTransform } from '@/utils/mapZoom'
 import type { HeatmapItem } from '@/types/api'
 import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
@@ -83,16 +85,73 @@ function toDirectStocksItem(stocks: HeatmapItem[], parentPath: string, boxSizeRa
   }
 }
 
-function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, onSelect }: {
+function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, onSelect, onLongPress }: {
   stocks: HeatmapItem[]
   boxSizeRatio: number
   colorScale: ReturnType<typeof useGlobalSettings>['colorScale']
   decimalPlaces: number
   onSelect: (stock: HeatmapItem) => void
+  // 길게 누르면 팝업을 연다(짧게 누르는 것과 달리 이미 떠 있어도 닫지 않는다).
+  onLongPress: (stock: HeatmapItem) => void
 }) {
+  const { bind: bindLongPress, consumeClick } = useLongPress()
   const ref = useRef<HTMLDivElement>(null)
   const fontsVersion = useFontsVersion()
   const [size, setSize] = useState({ width: 0, height: 0 })
+  // 두 손가락으로 확대하고 한 손가락으로 이동한다. 박스는 확대한 좌표·크기로 다시 놓아서, 커진 박스에는 이름이 새로 들어간다.
+  // 종목 구성이 바뀌면(다른 업종·마켓으로 이동) 확대를 풀고 처음 크기로 돌아간다 — 확대 값에 그때의 종목 구성을 함께 적어 두고, 다르면 처음 크기로 본다.
+  const stocksSignature = useMemo(() => stocks.map(stock => stock.stockCode).join(','), [stocks])
+  const [zoomState, setZoomState] = useState<{ signature: string; transform: ZoomTransform }>({ signature: '', transform: IDENTITY })
+  const zoom = zoomState.signature === stocksSignature ? zoomState.transform : IDENTITY
+  const setZoom = (transform: ZoomTransform) => setZoomState({ signature: stocksSignature, transform })
+  const pointersRef = useRef(new Map<number, Point>())
+  const gestureRef = useRef<{ start: ZoomTransform; origin: Point; distance: number } | null>(null)
+  const suppressClickRef = useRef(false)
+  const localPoint = (event: React.PointerEvent<HTMLElement>): Point => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+  }
+  const beginGesture = () => {
+    const points = [...pointersRef.current.values()]
+    const start = zoom
+    if (points.length >= 2) {
+      gestureRef.current = { start, origin: { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 }, distance: Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y) }
+    } else if (points.length === 1) {
+      gestureRef.current = { start, origin: points[0], distance: 0 }
+    } else {
+      gestureRef.current = null
+    }
+  }
+  const handleZoomPointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    if (pointersRef.current.size === 0) suppressClickRef.current = false
+    pointersRef.current.set(event.pointerId, localPoint(event))
+    if (pointersRef.current.size >= 2) suppressClickRef.current = true
+    beginGesture()
+  }
+  const handleZoomPointerMove = (event: React.PointerEvent<HTMLElement>) => {
+    if (!pointersRef.current.has(event.pointerId)) return
+    pointersRef.current.set(event.pointerId, localPoint(event))
+    const gesture = gestureRef.current
+    if (!gesture) return
+    const points = [...pointersRef.current.values()]
+    if (points.length >= 2 && gesture.distance > 0) {
+      suppressClickRef.current = true
+      const mid = { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 }
+      setZoom(pinchTransform(gesture.start, gesture.distance, gesture.origin, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y), mid, size.width, size.height))
+    } else if (points.length === 1 && gesture.start.scale > 1) {
+      const dx = points[0].x - gesture.origin.x
+      const dy = points[0].y - gesture.origin.y
+      if (suppressClickRef.current || Math.hypot(dx, dy) > 8) {
+        suppressClickRef.current = true
+        setZoom(panTransform(gesture.start, dx, dy, size.width, size.height))
+      }
+    }
+  }
+  const handleZoomPointerEnd = (event: React.PointerEvent<HTMLElement>) => {
+    pointersRef.current.delete(event.pointerId)
+    // 두 손가락 중 하나를 떼면 남은 손가락으로 이어서 이동한다.
+    beginGesture()
+  }
   useLayoutEffect(() => {
     const element = ref.current
     if (!element) return
@@ -107,7 +166,7 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
     const root = hierarchy<{ stock?: HeatmapItem; children?: { stock: HeatmapItem }[] }>({ children: stocks.map(stock => ({ stock })) })
       .sum(node => node.stock ? stockLayoutValue(node.stock, boxSizeRatio) : 0)
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
-    const layoutRoot: HierarchyRectangularNode<typeof root.data> = treemap<typeof root.data>().tile(treemapSquarify).size([size.width, size.height]).paddingInner(2)(root)
+    const layoutRoot: HierarchyRectangularNode<typeof root.data> = treemap<typeof root.data>().tile(treemapSquarify).size([size.width, size.height]).paddingInner(0)(root)
     return layoutRoot.leaves().map(leaf => ({
       stock: (leaf.data as { stock: HeatmapItem }).stock,
       x: leaf.x0,
@@ -118,17 +177,33 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
   }, [boxSizeRatio, size, stocks])
 
   return (
-    <div ref={ref} className="relative h-full min-h-0 w-full overflow-hidden bg-ui-surface p-1">
-      {boxes.map(({ stock, x, y, width, height }) => {
+    <div ref={ref} onPointerDown={handleZoomPointerDown} onPointerMove={handleZoomPointerMove} onPointerUp={handleZoomPointerEnd} onPointerCancel={handleZoomPointerEnd} onClickCapture={event => { if (suppressClickRef.current) { suppressClickRef.current = false; event.stopPropagation() } }} style={{ touchAction: 'none' }} className="relative h-full min-h-0 w-full overflow-hidden bg-ui-surface p-1">
+      {boxes.map(box => {
+        const { stock } = box
+        const x = box.x * zoom.scale + zoom.x + 1
+        const y = box.y * zoom.scale + zoom.y + 1
+        const width = box.width * zoom.scale - 2
+        const height = box.height * zoom.scale - 2
+        // 화면 밖으로 나간 박스는 그리지 않는다.
+        if (x + width < 0 || y + height < 0 || x > size.width || y > size.height) return null
         const color = resolveHeatmapColor(stock.changeRate, colorScale)
-        const label = layoutOverviewLabel(stock.alias ?? stock.stockName, toPctSigned(stock.changeRate, decimalPlaces), width, height, fontsVersion, STOCK_LABEL_OPTIONS)
+        // 이름은 박스 중 화면에 보이는 부분의 가운데에 놓고, 그 크기에 맞춰 그린다(확대해서 박스 중앙이 화면 밖이어도 이름이 보인다).
+        const visibleLeft = Math.max(0, x)
+        const visibleTop = Math.max(0, y)
+        const visibleWidth = Math.min(size.width, x + width) - visibleLeft
+        const visibleHeight = Math.min(size.height, y + height) - visibleTop
+        const label = layoutOverviewLabel(stock.alias ?? stock.stockName, toPctSigned(stock.changeRate, decimalPlaces), visibleWidth, visibleHeight, fontsVersion, STOCK_LABEL_OPTIONS)
+        const press = bindLongPress(() => onLongPress(stock))
         return (
-          <button key={stock.stockCode} type="button" aria-label={`${stock.stockName} ${toPctSigned(stock.changeRate, decimalPlaces)}`} onClick={() => onSelect(stock)} className="absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight text-white" style={{ left: x, top: y, width, height, backgroundColor: color }}>
-            {label.lines.length > 0 && <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>{label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}</span>}
-            {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{toPctSigned(stock.changeRate, decimalPlaces)}</span>}
+          <button key={stock.stockCode} type="button" aria-label={`${stock.stockName} ${toPctSigned(stock.changeRate, decimalPlaces)}`} onClick={() => { if (!consumeClick()) onSelect(stock) }} {...press} className="select-none [-webkit-touch-callout:none] absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight text-white" style={{ left: x, top: y, width, height, backgroundColor: color }}>
+            <span className="pointer-events-none absolute flex flex-col items-center justify-center overflow-hidden p-0.5" style={{ left: visibleLeft - x, top: visibleTop - y, width: visibleWidth, height: visibleHeight }}>
+              {label.lines.length > 0 && <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>{label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}</span>}
+              {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{toPctSigned(stock.changeRate, decimalPlaces)}</span>}
+            </span>
           </button>
         )
       })}
+      {zoom.scale > 1.05 && <button type="button" onClick={() => setZoom(IDENTITY)} className="absolute bottom-2 left-2 z-10 h-[32px] rounded-[4px] border-0 bg-ui-panel/95 px-3 text-[13px] font-medium text-ui-white shadow-lg">원래 크기</button>}
     </div>
   )
 }
@@ -148,8 +223,11 @@ function SettingRow({ label, hint, children }: { label: string; hint?: string; c
   )
 }
 
-export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map' | 'graph' }) {
+// stock = 종목 지도(`/map/...`, 업종은 `?sector=`), sector = 업종 지도(`/home?map`), graph = 그룹 등락률(`/graph/...`).
+export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'stock' | 'sector' | 'graph' }) {
   const isGraph = mode === 'graph'
+  const isStockMode = mode === 'stock'
+  const isSectorMode = mode === 'sector'
   const { data: marketSummary } = useMarketSummary(isGraph)
   const [searchParams, setSearchParams] = useSearchParams()
   const { pathname } = useLocation()
@@ -176,8 +254,11 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
   const [stockSelection, setStockSelection] = useState<{ market: MarketQuery; key: string; categoryName: string } | null>(null)
   const [graphEntryOffset, setGraphEntryOffset] = useState(0)
   const [graphDepth, setGraphDepth] = usePageSetting<number>('mobile.graphDepth', 1)
-  const [viewMode, setViewMode] = useState<'sector' | 'stock'>('sector')
+  const [viewModeState, setViewMode] = useState<'sector' | 'stock'>('sector')
+  const viewMode = isStockMode ? 'stock' : viewModeState
   const [focusedStockCode, setFocusedStockCode] = useState<string | null>(null)
+  // 길게 눌러 연 종목 카드는 저절로 닫히지 않고(같은 종목을 다시 길게 누르면 닫힌다), 짧게 눌러 연 카드는 잠깐 보였다 사라진다.
+  const [stockPinned, setStockPinned] = useState(false)
   const [focusedSectorKey, setFocusedSectorKey] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(settingsOpenMemory)
   useEffect(() => { settingsOpenMemory = settingsOpen }, [settingsOpen])
@@ -196,8 +277,10 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
   // 경로의 맨 앞은 전체일 때 국내 증시, 그 밖에는 고른 마켓 이름이다.
   const marketLabel = market === 'ALL_STOCK' ? '국내 증시' : MARKETS.find(option => option.value === market)?.label ?? '국내 증시'
   const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : 3
-  const majorName = majorSelection?.market === market ? majorSelection.name : null
-  const midName = midSelection?.market === market ? midSelection.name : null
+  // 종목 지도에서는 주소의 ?sector=가 대분류다(PC 지도와 같다). 중분류·소분류 단계는 지도에 없다.
+  const sectorParam = isStockMode ? searchParams.get('sector') : null
+  const majorName = isStockMode ? sectorParam : majorSelection?.market === market ? majorSelection.name : null
+  const midName = isStockMode ? null : midSelection?.market === market ? midSelection.name : null
   const stockCategoryName = stockSelection?.market === market ? stockSelection.categoryName : null
   const setMajorName = (name: string | null) => setMajorSelection(name ? { market, name } : null)
   const setMidName = (name: string | null) => setMidSelection(name ? { market, name } : null)
@@ -237,26 +320,21 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
   }, [filteredRootNodes, selectedStocks, stockScope])
   const stockHeatmapItems = stockContextItems.slice(0, STOCK_MAP_COUNT)
   const focusedStock = stockHeatmapItems.find(stock => stock.stockCode === focusedStockCode) ?? null
-  // 종목 정보 카드는 손가락으로 가리지 않게 위쪽에 띄우고, 가만두면 5초 뒤 저절로 닫는다.
+  // 종목 정보 카드는 손가락으로 가리지 않게 위쪽에 띄운다. 짧게 눌러 연 카드는 2초 뒤 저절로 닫고, 길게 눌러 연 카드는 닫을 때까지 둔다.
   useEffect(() => {
-    if (!focusedStockCode) return
-    const timer = window.setTimeout(() => setFocusedStockCode(null), 5000)
+    if (!focusedStockCode || stockPinned) return
+    const timer = window.setTimeout(() => setFocusedStockCode(null), 2000)
     return () => window.clearTimeout(timer)
-  }, [focusedStockCode])
-  // 업종 정보 카드는 업종을 길게 눌렀을 때 종목 카드처럼 위쪽에 띄운다. 업종 목록이 바뀌어 없어지면 보이지 않고, 5초 뒤 저절로 닫는다.
+  }, [focusedStockCode, stockPinned])
+  // 업종 정보 카드는 업종을 길게 눌렀을 때 종목 카드처럼 위쪽에 띄우고, 같은 업종을 다시 길게 누르거나 카드를 눌러 닫을 때까지 둔다. 업종 목록이 바뀌어 없어지면 보이지 않는다.
   const focusedSector = marketItems.find(item => item.key === focusedSectorKey) ?? null
-  useEffect(() => {
-    if (!focusedSectorKey) return
-    const timer = window.setTimeout(() => setFocusedSectorKey(null), 5000)
-    return () => window.clearTimeout(timer)
-  }, [focusedSectorKey])
   const heading = viewMode === 'stock'
     ? `${stockCategoryName || stockScope?.sectorName || '전체 시장'} 주식 히트맵`
     : mid ? `${mid.sectorName} 소분류 업종 히트맵` : major ? `${major.sectorName} 중분류 업종 히트맵` : '국내 업종 히트맵'
 
   // 위쪽 경로 — PC 지도 화면과 같다: 앞 단계는 이름 오른쪽에 ↩ 아이콘이 붙은 버튼(누르면 그 단계로 되돌아감), 마지막(현재 위치)은 강조색 글씨다.
   const pathCrumbs: { key: string; label: string; go: (() => void) | null }[] = [
-    { key: 'market', label: marketLabel, go: major || mid || selectedStocks ? () => { setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector') } : null },
+    { key: 'market', label: marketLabel, go: isStockMode ? (major ? () => navigate(marketRoute('/map', market)) : null) : major || mid || selectedStocks ? () => { setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector') } : null },
     ...(major && (!isGraph || graphEntryOffset < 1) ? [{ key: 'major', label: major.sectorName, go: mid || selectedStocks ? () => { setMidName(null); setSelectedStocks(null); setViewMode('sector') } : null }] : []),
     ...(mid && (!isGraph || graphEntryOffset < 2) ? [{ key: 'mid', label: mid.sectorName, go: selectedStocks ? () => { setSelectedStocks(null); setViewMode('sector') } : null }] : []),
     ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
@@ -265,6 +343,10 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
   const selectSector = (name: string) => {
     const selected = marketItems.find(item => item.name === name)
     if (!selected) return
+    if (isSectorMode) {
+      navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(selected.name)}`)
+      return
+    }
     if (isGraph && !major && !mid && graphDepth > 1 && selected.node) {
       const path = selected.key.split('>')
       if (path.length > 1) {
@@ -299,7 +381,7 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
 
   // 들어간 단계 = 브라우저 기록 한 칸(PC 지도 화면과 같은 방식). 대분류·중분류·종목으로 한 단계 들어갈 때마다 칸을 쌓아서
   // 뒤로가기가 사이트를 떠나지 않고 한 단계씩 위로 올라가게 한다. 전체 화면에서 한 번 더 누르면 원래대로 이전 페이지로 나간다.
-  const depth = Math.max(0, (major ? 1 : 0) + (mid ? 1 : 0) + (selectedStocks ? 1 : 0) - (isGraph ? graphEntryOffset : 0))
+  const depth = isGraph ? Math.max(0, (major ? 1 : 0) + (mid ? 1 : 0) + (selectedStocks ? 1 : 0) - graphEntryOffset) : 0
   const historyDepthRef = useRef(0) // 지금 브라우저 기록 위치가 가리키는 깊이
   const historyConsumingRef = useRef(false) // 코드가 일으킨 history.go()의 popstate는 무시한다
   const historyLocationRef = useRef('') // 칸을 쌓은 주소(시장이 바뀌어 주소가 달라졌으면 go()로 정리하지 않는다)
@@ -312,7 +394,7 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
     let current = depth
     if (current > target && selectedStocks) { setStockSelection(null); setViewMode('sector'); current -= 1 }
     if (current > target && mid) { setMidSelection(null); current -= 1 }
-    if (current > target && major) setMajorSelection(null)
+    if (current > target && major) { setMajorSelection(null); setViewMode('sector') }
     setFocusedStockCode(null)
   }
   useEffect(() => {
@@ -371,6 +453,7 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
     setFocusedStockCode(null)
     setGraphEntryOffset(0)
     if (pathname.startsWith('/map/') || pathname.startsWith('/graph/')) {
+      // 종목 지도에서 업종을 보던 중이어도 마켓을 바꾸면 그 마켓의 전체 종목 지도로 간다(업종 이름이 마켓마다 다를 수 있다).
       navigate(marketRoute(isGraph ? '/graph' : '/map', nextMarket), { replace: true })
     } else {
       const next = new URLSearchParams(searchParams)
@@ -392,9 +475,13 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
     }
   }
 
+  // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 종목 지도 순서로 이동한다(마켓은 유지).
+  const titleTo = isStockMode ? `/home?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
+  const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '종목 지도로 이동'
+
   return (
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
-      <MobileTopBar title={isGraph ? "GRAPH" : "MAP"} titleTo={isGraph ? pathname.replace('/graph/', '/map/') : pathname.replace('/map/', '/graph/')} titleLabel={isGraph ? 'MAP으로 이동' : 'GRAPH로 이동'} />
+      <MobileTopBar title={isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'} titleTo={titleTo} titleLabel={titleLabel} />
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
       <header className="shrink-0 bg-brand-surface px-3 py-0.5">
@@ -411,7 +498,9 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
           : isError ? <div className="flex h-full flex-col items-center justify-center gap-2 text-center"><p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p><button type="button" onClick={refetchHeatmap} className="min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
-              <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={decimalPlaces} onSelect={stock => setFocusedStockCode(current => current === stock.stockCode ? null : stock.stockCode)} />
+              <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={decimalPlaces} onSelect={stock => { setStockPinned(false); setFocusedStockCode(current => current === stock.stockCode ? null : stock.stockCode) }} onLongPress={stock => {
+                if (stockPinned && focusedStockCode === stock.stockCode) { setStockPinned(false); setFocusedStockCode(null) } else { setStockPinned(true); setFocusedStockCode(stock.stockCode) }
+              }} />
               {focusedStock && <button type="button" aria-label="종목 정보 닫기" onClick={() => setFocusedStockCode(null)} className="absolute left-3 right-3 top-3 flex items-center justify-between gap-3 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" aria-live="polite">
                 <span className="min-w-0"><span className="block truncate text-[16px] font-semibold">{focusedStock.stockName}</span><span className="block text-[13px] text-ui-muted">{focusedStock.stockCode} · 시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span></span>
                 <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedStock.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedStock.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedStock.changeRate, decimalPlaces)}</span>
@@ -421,7 +510,7 @@ export default function MobileMarketSummaryPage({ mode = 'map' }: { mode?: 'map'
                 <span className="min-w-0"><span className="block truncate text-[16px] font-semibold">{focusedSector.name}</span><span className="block text-[13px] text-ui-muted">{focusedSector.simpleAvg === undefined ? '' : `동일 가중 ${focusedSector.simpleAvg === null ? '-' : toPctSigned(focusedSector.simpleAvg, decimalPlaces)} · `}▲{focusedSector.advancers ?? 0} ▼{focusedSector.decliners ?? 0} ■{focusedSector.unchanged ?? 0} · 시총 {toJoEok(focusedSector.marketValue / 100_000_000)}</span></span>
                 <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedSector.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedSector.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedSector.changeRate, decimalPlaces)}</span>
               </button>}
-              <OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(item.key)} hoverPopup={false} />
+              <OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} hoverPopup={false} />
             </div>}
       </section>
 

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, type ReactNode } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import MarketSummaryPage from './pages/MarketSummaryPage'
 import MapPage from './pages/MapPage'
 import GroupPage from './pages/GroupPage'
@@ -85,6 +85,9 @@ function AdminRouteGuard() {
 
 function ResponsiveHomePage() {
   const isNarrow = useIsNarrowScreen()
+  const [searchParams] = useSearchParams()
+  // 모바일의 업종 지도는 홈 주소에 ?map을 붙여 연다(PC 홈은 이 값을 읽지 않는다).
+  if (isNarrow && searchParams.has('map')) return <MobileMarketSummaryPage mode="sector" />
   return isNarrow ? <MobileHomePage /> : <MarketSummaryPage />
 }
 
@@ -95,7 +98,7 @@ function ResponsiveGraphPage() {
 
 function ResponsiveMapPage() {
   const isNarrow = useIsNarrowScreen()
-  return isNarrow ? <MobileMarketSummaryPage /> : <MapPage />
+  return isNarrow ? <MobileMarketSummaryPage mode="stock" /> : <MapPage />
 }
 
 // 모바일(폭 768px 미만)에서는 홈·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
