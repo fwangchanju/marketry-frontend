@@ -1,42 +1,8 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import pages from '@/utils/searchMetadata.json'
 
 const siteUrl = 'https://marketry.co.kr'
-
-const pages: Record<string, { title: string; description: string }> = {
-  '/home': {
-    title: 'MARKETRY | 코스피·코스닥 주식 시장 지도',
-    description: '함께 움직이는 종목을 내 기준으로 묶고, 시가총액 반영 비율을 조절해 대형주에 가려진 흐름까지 살펴보세요. 나만의 기준으로 설계하는 코스피·코스닥 주식 시장 지도, MARKETRY.',
-  },
-  '/map/kospi': {
-    title: '코스피 주식 히트맵·업종 지도 | MARKETRY',
-    description: '코스피 종목의 등락과 업종별 흐름을 주식 히트맵으로 살펴보세요. 시가총액과 등락률을 기준으로 시장을 한눈에 비교할 수 있습니다.',
-  },
-  '/map/kosdaq': {
-    title: '코스닥 주식 히트맵·업종 지도 | MARKETRY',
-    description: '코스닥 종목의 등락과 업종별 흐름을 주식 히트맵으로 살펴보세요. 시가총액과 등락률을 기준으로 시장을 한눈에 비교할 수 있습니다.',
-  },
-  '/map/allstock': {
-    title: '국내 주식 시장 히트맵 | MARKETRY',
-    description: '코스피와 코스닥 종목을 함께 보는 국내 주식 시장 지도입니다. 업종과 종목의 등락 흐름을 히트맵으로 비교할 수 있습니다.',
-  },
-  '/graph/kospi': {
-    title: '코스피 업종별 등락률 그래프 | MARKETRY',
-    description: '코스피 업종별 등락률과 시장 흐름을 그래프로 비교해 보세요. 관심 업종의 움직임을 MARKETRY에서 살펴볼 수 있습니다.',
-  },
-  '/graph/kosdaq': {
-    title: '코스닥 업종별 등락률 그래프 | MARKETRY',
-    description: '코스닥 업종별 등락률과 시장 흐름을 그래프로 비교해 보세요. 관심 업종의 움직임을 MARKETRY에서 살펴볼 수 있습니다.',
-  },
-  '/graph/allstock': {
-    title: '국내 주식 업종별 등락률 그래프 | MARKETRY',
-    description: '코스피·코스닥 업종별 등락률을 한 화면에서 비교해 보세요. 국내 주식 시장의 업종별 흐름을 그래프로 살펴볼 수 있습니다.',
-  },
-  '/guide/stock-heatmap': {
-    title: '증시 히트맵을 내 마음대로 | MARKETRY',
-    description: '업종 그룹을 직접 분류하고 종목 박스 크기를 조절해 시장 흐름을 살펴보세요. 국내증시 히트맵과 코스피·코스닥 지도, 등락률 그래프를 안내합니다.',
-  },
-}
 
 function setMeta(property: string, value: string) {
   document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`)?.setAttribute('content', value)
@@ -46,7 +12,7 @@ export default function SearchMetadata() {
   const { pathname } = useLocation()
 
   useEffect(() => {
-    const page = pages[pathname]
+    const page = (pages as Record<string, { title: string; description: string }>)[pathname]
     if (!page) {
       document.title = 'MARKETRY - Design Your Market'
       document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', '코스피·코스닥 종목을 업종별 시장 지도와 그래프로 살펴보는 MARKETRY입니다.')
