@@ -16,8 +16,8 @@ export default function MobileDocumentShell({ title, heading, children }: { titl
     <div className="min-h-screen bg-ui-background text-ui-white">
       <header className="sticky top-0 z-20 flex h-12 items-center justify-between border-b border-ui-border bg-ui-surface px-4">
         <Link to="/home" aria-label="MARKETRY 홈으로 이동" className="shrink-0">
-          {/* horizontalClean은 SVG 필터로 글자 배경을 지우는데, 일부 폰 브라우저에서 MARKETRY 글자가 사라져 필터를 쓰지 않는 기본 로고를 쓴다. */}
-          <MarketryLogo className="h-auto w-[9.5rem]" />
+          {/* PC 상단바와 같은 로고 변형·크기 규칙이라 비율이 같다. */}
+          <MarketryLogo layout="horizontalClean" className="h-auto w-[min(13rem,calc(100vw-10rem))]" />
         </Link>
         <span className="text-xs font-bold tracking-[0.12em] text-brand">{title}</span>
       </header>
