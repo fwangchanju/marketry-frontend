@@ -16,6 +16,7 @@ import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { useFontsVersion } from '@/utils/stockLabelFit'
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
+import { resolveMobileStockSelection } from '@/utils/mobileStockSelection'
 
 const MARKETS: { value: MarketQuery; label: string }[] = [
   { value: 'ALL_STOCK', label: '국내 증시' },
@@ -158,7 +159,7 @@ export default function MobileMarketSummaryPage() {
   } = useGlobalSettings({ allowChangeRateMode: true, defaultTaxonomy: 'MARKETRY' })
   const [majorSelection, setMajorSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [midSelection, setMidSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
-  const [stockSelection, setStockSelection] = useState<{ market: MarketQuery; stocks: HeatmapItem[]; categoryName: string } | null>(null)
+  const [stockSelection, setStockSelection] = useState<{ market: MarketQuery; key: string; categoryName: string } | null>(null)
   const [viewMode, setViewMode] = useState<'sector' | 'stock'>('sector')
   const [focusedStockCode, setFocusedStockCode] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -176,11 +177,10 @@ export default function MobileMarketSummaryPage() {
   const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : 3
   const majorName = majorSelection?.market === market ? majorSelection.name : null
   const midName = midSelection?.market === market ? midSelection.name : null
-  const selectedStocks = stockSelection?.market === market ? stockSelection.stocks : null
   const stockCategoryName = stockSelection?.market === market ? stockSelection.categoryName : null
   const setMajorName = (name: string | null) => setMajorSelection(name ? { market, name } : null)
   const setMidName = (name: string | null) => setMidSelection(name ? { market, name } : null)
-  const setSelectedStocks = (stocks: HeatmapItem[] | null, categoryName = '') => setStockSelection(stocks ? { market, stocks, categoryName } : null)
+  const setSelectedStocks = (item: MobileSectorItem | null) => setStockSelection(item ? { market, key: item.key, categoryName: item.name } : null)
   const major = majorName ? filteredRootNodes.find(node => node.sectorName === majorName) ?? null : null
   const mid = major && midName ? major.children.find(node => node.sectorName === midName) ?? null : null
 
@@ -197,6 +197,9 @@ export default function MobileMarketSummaryPage() {
       .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio))
       .filter((item): item is MobileSectorItem => item !== null)
   }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, major, mid])
+
+  // 선택은 업종 키로 유지하고, 종목은 매번 갱신된 트리에서 찾는다. 없어진 업종은 빈 목록으로 표시한다.
+  const selectedStocks = resolveMobileStockSelection(stockSelection, market, marketItems)
 
   const mapItems: OverviewMapItem[] = marketItems.map(({ key, name, marketValue, layoutValue, changeRate, simpleAvg, advancers, decliners, unchanged }) => ({
     key, name, marketValue, layoutValue, changeRate, simpleAvg, advancers, decliners, unchanged,
@@ -230,7 +233,7 @@ export default function MobileMarketSummaryPage() {
     const selected = marketItems.find(item => item.name === name)
     if (!selected) return
     if (selected.isDirectStocks) {
-      setSelectedStocks(selected.stocks, selected.name)
+      setSelectedStocks(selected)
       setViewMode('stock')
       return
     }
@@ -245,8 +248,7 @@ export default function MobileMarketSummaryPage() {
       setSelectedStocks(null)
       return
     }
-    if (major && !mid) setMidName(selected.node?.sectorName ?? selected.name)
-    setSelectedStocks(selected.stocks, selected.name)
+    setSelectedStocks(selected)
     setViewMode('stock')
   }
 
