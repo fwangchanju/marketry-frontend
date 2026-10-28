@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import marketryLogo from '@/assets/marketry-logo.png'
-import marketryWordmarkWhite from '@/assets/marketry-wordmark-white.png'
+import { MARKETRY_WORDMARK_PATH, MARKETRY_WORDMARK_WIDTH } from '@/components/marketryWordmarkPath'
 
 interface Props {
   className?: string
@@ -9,8 +9,8 @@ interface Props {
 
 // 원본 PNG는 보관하고 슬로건 영역만 가린다. SVG 텍스트가 로고와 같은 비율로 확대·축소된다.
 // 슬로건 색은 로고의 MARKETRY 글자(원본 PNG의 약 var(--ui-white))와 같게 맞춘다.
-// horizontalClean·stacked의 MARKETRY 글자는 원본 PNG의 회색 외곽선을 걷어낸 흰색 이미지(marketry-wordmark-white.png, 원본의 510·25 위치 1170×190 영역)를 쓴다.
-// 예전에는 SVG 필터로 그 자리에서 만들었는데 일부 폰 브라우저에서 글자가 사라져, 미리 만든 이미지로 바꿨다(필터 없음).
+// horizontalClean·stacked의 MARKETRY 글자는 원본 PNG의 회색 외곽선을 걷어낸 흰색 글자의 윤곽을 벡터 경로로 만든 것(marketryWordmarkPath.ts, 원본의 510·25 위치 1170×190 영역)을 쓴다.
+// 예전에는 SVG 필터로 그 자리에서 만들었는데 일부 폰 브라우저에서 글자가 사라졌고, 흰색 PNG 이미지로 바꾼 뒤에도 폰이 이미지를 회색으로 어둡게 보여서, 옆의 슬로건 글자처럼 벡터로 그린다(필터·이미지 없음).
 export default function MarketryLogo({ className, layout = 'horizontal' }: Props) {
   const clipId = useId()
 
@@ -20,7 +20,9 @@ export default function MarketryLogo({ className, layout = 'horizontal' }: Props
         <svg x={303} y={0} width={594} height={561.6} viewBox="0 0 425 400">
           <image href={marketryLogo} width={1681} height={400} />
         </svg>
-        <image href={marketryWordmarkWhite} x={209.95} y={595} width={780.1} height={126.684} />
+        <g transform={`translate(209.95 595) scale(${780.1 / MARKETRY_WORDMARK_WIDTH})`}>
+          <path d={MARKETRY_WORDMARK_PATH} fill="var(--ui-white)" fillRule="evenodd" />
+        </g>
         <text x={600} y={733} textAnchor="middle" dominantBaseline="text-before-edge" fontSize={71.3} fontWeight={500} fill="var(--ui-white)" className="font-roboto-latin">
           Design Your Market
         </text>
@@ -34,7 +36,9 @@ export default function MarketryLogo({ className, layout = 'horizontal' }: Props
         <svg x={0} y={0} width={425} height={400} viewBox="0 0 425 400">
           <image href={marketryLogo} width={1681} height={400} />
         </svg>
-        <image href={marketryWordmarkWhite} x={495} y={47.5} width={1117.5} height={181.5} />
+        <g transform={`translate(495 47.5) scale(${1117.5 / MARKETRY_WORDMARK_WIDTH})`}>
+          <path d={MARKETRY_WORDMARK_PATH} fill="var(--ui-white)" fillRule="evenodd" />
+        </g>
         <text x={495} y={242.5} dominantBaseline="text-before-edge" fontSize={110} fontWeight={500} fill="var(--ui-white)" className="font-roboto-latin">
           Design Your Market
         </text>
