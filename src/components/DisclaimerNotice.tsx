@@ -21,12 +21,12 @@ export default function DisclaimerNotice({ wrap = false }: { wrap?: boolean }) {
     <p className={`normal-nums m-0 min-w-0 text-left font-bold text-ui-white/70 ${wrap ? 'pb-1 text-[11px] leading-[16px]' : 'pb-[4px] text-[9px] leading-[10px]'}`}>
       <span className={`min-w-0 ${wrap ? 'leading-[16px]' : 'leading-[10px]'}`}>
         <span className={wrap ? `${lineClass} mb-1` : lineClass}>{DISCLAIMER}</span>
-        <span className={wrap ? 'flex flex-wrap items-center' : lineClass}>
-          <span className="whitespace-nowrap">© 2026 MARKETRY</span>
-          {INFO_LINKS.map(link => (
+        <span className={wrap ? 'flex flex-wrap items-center justify-center' : lineClass}>
+          <span className={wrap ? "order-last w-full whitespace-nowrap text-center" : "whitespace-nowrap"}>© 2026 MARKETRY</span>
+          {INFO_LINKS.map((link, index) => (
             // 구분점과 링크를 한 덩어리로 묶어, 좁은 화면에서 줄이 바뀌어도 링크 글자가 중간에서 끊기지 않게 한다.
             <span key={link.to} className="whitespace-nowrap">
-              <span aria-hidden="true" className="px-1 text-ui-white/35">·</span>
+              {(!wrap || index > 0) && <span aria-hidden="true" className="px-1 text-ui-white/35">·</span>}
               <Link to={link.to} className="hover:text-ui-white focus-visible:text-ui-white focus-visible:outline focus-visible:outline-1">{link.label}</Link>
             </span>
           ))}

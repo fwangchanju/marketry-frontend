@@ -88,6 +88,11 @@ function ResponsiveHomePage() {
   return isNarrow ? <MobileHomePage /> : <MarketSummaryPage />
 }
 
+function ResponsiveGraphPage() {
+  const isNarrow = useIsNarrowScreen()
+  return isNarrow ? <MobileMarketSummaryPage mode="graph" /> : <GroupPage />
+}
+
 function ResponsiveMapPage() {
   const isNarrow = useIsNarrowScreen()
   return isNarrow ? <MobileMarketSummaryPage /> : <MapPage />
@@ -101,7 +106,7 @@ function isMobileOpenPath(pathname: string) {
 
 function isMobileMarketPath(pathname: string) {
   // 첫 화면(/)은 곧 /home으로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
-  return pathname === '/' || pathname === '/home' || pathname === '/map' || pathname.startsWith('/map/')
+  return pathname === '/' || pathname === '/home' || pathname === '/map' || pathname.startsWith('/map/') || pathname === '/graph' || pathname.startsWith('/graph/')
 }
 
 function MobileGate({ children }: { children: ReactNode }) {
@@ -129,9 +134,9 @@ export default function App() {
           <Route path="/map/kosdaq" element={<ResponsiveMapPage />} />
           <Route path="/map/korea" element={<ResponsiveMapPage />} />
           <Route path="/graph" element={<LegacyMarketRedirect basePath="/graph" />} />
-          <Route path="/graph/kospi" element={<GroupPage />} />
-          <Route path="/graph/kosdaq" element={<GroupPage />} />
-          <Route path="/graph/korea" element={<GroupPage />} />
+          <Route path="/graph/kospi" element={<ResponsiveGraphPage />} />
+          <Route path="/graph/kosdaq" element={<ResponsiveGraphPage />} />
+          <Route path="/graph/korea" element={<ResponsiveGraphPage />} />
           {/* 커스텀 관리의 주소는 /custom 아래에서 업종·종목 화면으로 나뉜다. */}
           <Route path="/custom" element={<Navigate to="/custom/sector" replace />} />
           <Route path="/custom/sector" element={<CustomPage />} />
