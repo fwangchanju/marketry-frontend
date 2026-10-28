@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 const POPUP_WIDTH_PX = 208
 const SEARCH_MIN_OPTIONS = 10
@@ -98,7 +99,7 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
     if (!isOpen || !triggerRef.current) return
     const rect = triggerRef.current.getBoundingClientRect()
     const left = Math.max(8, Math.min(rect.left + rect.width / 2 - POPUP_WIDTH_PX / 2, window.innerWidth - POPUP_WIDTH_PX - 8))
-    setPosition({ top: rect.bottom + 4, left })
+    setPosition({ top: rect.bottom + DROPDOWN_GAP_PX, left })
   }, [isOpen])
 
   useEffect(() => {
@@ -147,7 +148,7 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
           role="dialog"
           aria-label={`${label} 필터`}
           style={{ position: 'fixed', top: position.top, left: position.left, width: POPUP_WIDTH_PX }}
-          className="column-filter-popup z-50 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pt-2 text-sm font-normal text-ui-white shadow-xl"
+          className={`column-filter-popup z-50 overflow-hidden ${DROPDOWN_PANEL_CLASS} pt-2 text-sm font-normal`}
           // 머리글(정렬 칸) 위에 떠 있어도 안의 누름이 정렬로 이어지지 않게 한다.
           onClick={event => event.stopPropagation()}
         >

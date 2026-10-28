@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { usePopupBounds } from '@/hooks/usePopupBounds'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'))
 const MINUTES = Array.from({ length: 60 }, (_, minute) => String(minute).padStart(2, '0'))
@@ -62,7 +63,7 @@ export default function BannerTimePicker({
           aria-label={`${label} 시각 선택`}
           style={{
             position: 'fixed',
-            top: popupBounds?.top ?? position.top + (position.openUpward ? -4 : 4),
+            top: popupBounds?.top ?? position.top + (position.openUpward ? -DROPDOWN_GAP_PX : DROPDOWN_GAP_PX),
             left: popupBounds?.left ?? popupLeft,
             width: popupBounds?.width ?? popupWidth,
             maxHeight: popupBounds ? `${popupBounds.maxHeight}px` : undefined,
@@ -95,7 +96,7 @@ export default function BannerTimePicker({
                       <ChevronDownIcon className={`h-3 w-3 text-brand transition-transform ${openColumn === column ? 'rotate-180' : ''}`} />
                     </button>
                     {openColumn === column && (
-                      <div role="listbox" aria-label={`${label} ${labelText} 선택`} className={`absolute left-0 z-10 max-h-[152px] w-full snap-y snap-mandatory overflow-y-auto rounded-md border border-ui-border bg-[var(--ui-panel)] text-ui-white shadow-xl ${position?.openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+                      <div role="listbox" aria-label={`${label} ${labelText} 선택`} className={`absolute left-0 z-10 max-h-[152px] w-full snap-y snap-mandatory overflow-y-auto ${DROPDOWN_PANEL_CLASS} ${position?.openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                         {options.filter(option => option !== current).map(option => (
                           <button
                             key={option}

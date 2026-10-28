@@ -6,6 +6,7 @@ import { usePopupBounds } from '@/hooks/usePopupBounds'
 import { useTreemapColorScale } from '@/hooks/useTreemapColorScale'
 import { resolveTreemapColor } from '@/utils/treemapColorScale'
 import { KOREAN_PUBLIC_HOLIDAY_DATES } from '@/utils/koreanPublicHolidayDates'
+import { DROPDOWN_GAP_PX } from '@/components/dropdownStyle'
 
 type CalendarView = 'day' | 'month' | 'year'
 type ShownMonth = { year: number; monthIndex: number }
@@ -157,7 +158,7 @@ export default function BannerDatePicker({
           data-banner-date-picker=""
           style={{
             position: 'fixed',
-            top: popupBounds?.top ?? position.top + (position.openUpward ? -4 : 4),
+            top: popupBounds?.top ?? position.top + (position.openUpward ? -DROPDOWN_GAP_PX : DROPDOWN_GAP_PX),
             left: popupBounds?.left ?? popupLeft,
             width: popupBounds?.width ?? popupWidth,
             maxHeight: popupBounds ? `${popupBounds.maxHeight}px` : undefined,

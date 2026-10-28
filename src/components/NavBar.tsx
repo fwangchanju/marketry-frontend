@@ -10,6 +10,7 @@ import { isLocalGuestMode, isLocalSignupEnabled, LOCAL_TEST_MEMBER_USER_ID } fro
 import { isAdminSession } from '@/utils/adminAccess'
 import { displayEmail } from '@/utils/displayEmail'
 import ActiveBannerSlot from '@/components/ActiveBannerSlot'
+import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 모든 페이지에서 항상 똑같이 고정되는 최상단 바 — 홈 이동과 로그인 상태/프로필 메뉴를 담당한다.
 // 로그인 버튼은 NavSubBar 우측 "일괄변경"류 accent 버튼(nes-btn + var(--accent))과 같은 톤을 쓰고,
@@ -122,8 +123,9 @@ export default function NavBar({ hideAccount = false, staticMode = false, banner
         >
           <ProfileAvatar className="size-full object-cover" />
         </button>
+        {/* 아바타 버튼이 칸보다 2px 위(-top-[2px])에 있어서 칸 기준 2px를 띄우면 버튼 기준 4px가 된다. */}
         {isProfileMenuOpen && (
-          <div className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pb-2 text-ui-white shadow-xl">
+          <div className={`absolute right-0 top-full z-30 mt-0.5 w-64 overflow-hidden ${DROPDOWN_PANEL_CLASS} pb-2`}>
             {isLoading ? (
               <p className="px-4 py-3 text-sm text-ui-muted">계정 확인 중...</p>
             ) : session?.authenticated ? (
