@@ -8,7 +8,7 @@ import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import StockSortHeader from '@/components/StockSortHeader'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
+import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
@@ -119,7 +119,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
       appAlert('관리자는 특별 회원으로 바꿀 수 없습니다.\n관리자를 빼고 다시 체크해 주세요.', { title: '지정 불가' })
       return
     }
-    const confirmed = await appConfirm(`체크한 ${selected.length}명을 ${special ? '특별 회원으로 지정' : '일반 회원으로 해제'}하시겠습니까?`, { adminOnly: true, title: special ? '특별 회원 지정' : '특별 회원 해제' })
+    const confirmed = await appWarnConfirm(`체크한 ${selected.length}명을 ${special ? '특별 회원으로 지정' : '일반 회원으로 해제'}하시겠습니까?`, { adminOnly: true, title: special ? '특별 회원 지정' : '특별 회원 해제' })
     if (!confirmed) return
     setIsChangingSpecial(true)
     try {
