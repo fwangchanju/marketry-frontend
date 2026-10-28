@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronDownIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
+import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import Spinner from '@/components/Spinner'
@@ -162,6 +162,12 @@ export default function MobileMarketSummaryPage() {
   const [viewMode, setViewMode] = useState<'sector' | 'stock'>('sector')
   const [focusedStockCode, setFocusedStockCode] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [dragHeight, setDragHeight] = useState<number | null>(null)
+  const settingsContentRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<{ y: number; start: number; max: number; moved: boolean } | null>(null)
+  const suppressClickRef = useRef(false)
+  const settingsHeight = () => Math.min(settingsContentRef.current?.scrollHeight ?? 0, window.innerHeight * 0.4 - 28)
+
   // 분류 단계: MARKETRY·내 기준은 대·중·소분류(3단계), 거래소는 1단계. 눌러서 들어갈 때 하위 분류가 있으면 그 분류로, 없으면 바로 종목으로 간다.
   // 박스 크기는 PC 설정과 따로 두고, 폰의 기본은 시총 비례(100)다. 동일 0 · 균형 50 · 시총 비례 100.
   const [boxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio] = usePageSetting<number>('mobile.boxSizeMarketCapRatio', 100)
@@ -326,7 +332,7 @@ export default function MobileMarketSummaryPage() {
       <MobileTopBar title="MAP" />
       <h1 className="sr-only">{heading}</h1>
       {/* 경로 줄은 맨 처음(전체)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
-      <header className="shrink-0 px-3 pb-1 pt-2">
+      <header className="shrink-0 px-3 py-0.5">
         <nav aria-label="업종 이동 경로" className="flex h-[36px] items-center overflow-x-auto whitespace-nowrap text-[15px] leading-none font-bold">
           {pathCrumbs.map(crumb => crumb.go
             ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/35">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
@@ -346,17 +352,36 @@ export default function MobileMarketSummaryPage() {
             </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="flex h-full min-h-0 flex-col bg-ui-surface p-1"><OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} /></div>}
       </section>
 
-      {!settingsOpen && <button type="button" aria-label="설정 열기" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(true)} className="relative flex h-[calc(36px+env(safe-area-inset-bottom))] w-full shrink-0 rounded-t-[16px] border-0 border-t border-ui-border bg-ui-panel p-0">
-        {/* 기준 시각만 왼쪽에 둔다 — 날짜(요일)와 시간은 PC 상단 시각 표기와 같다. */}
-        {data?.snapshotTime && <span className="absolute left-3 top-0 flex h-[36px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
-        {/* 열려 있을 때의 꺾쇠(⌄)와 같은 크기·자리에서 위로 향한다 */}
-        <ChevronDownIcon aria-hidden="true" className="absolute left-1/2 top-[7px] h-[22px] w-[22px] -translate-x-1/2 rotate-180 text-ui-white" />
-      </button>}
-
-      {settingsOpen && (
-        // 지도를 가리지 않도록 지도 아래에 붙는 낮은 설정 줄이다 — 지도가 남은 칸으로 줄어들어 설정을 바꾸면 지도가 바뀌는 모습이 그대로 보인다.
-        <section role="region" aria-label="설정" className="mobile-settings-sheet-enter max-h-[40dvh] shrink-0 overflow-y-auto rounded-t-[16px] border-t border-ui-border bg-ui-panel px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-0 shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
-          <button type="button" aria-label="설정 닫기" onClick={() => setSettingsOpen(false)} className="relative flex h-[36px] w-full items-center h-[36px] border-0 bg-transparent px-[8px] text-left text-ui-white"><ChevronDownIcon aria-hidden="true" className="absolute left-1/2 top-1/2 h-[22px] w-[22px] -translate-x-1/2 -translate-y-1/2" /></button>
+      <section role="region" aria-label="설정" className="relative z-10 shrink-0 rounded-t-[16px] border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
+        <button type="button" aria-label={settingsOpen ? '설정 닫기' : '설정 열기'} aria-expanded={settingsOpen} onClick={() => {
+          if (suppressClickRef.current) { suppressClickRef.current = false; return }
+          setSettingsOpen(open => !open)
+        }} onPointerDown={event => {
+          if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+          const max = settingsHeight()
+          dragRef.current = { y: event.clientY, start: settingsOpen ? max : 0, max, moved: false }
+          event.currentTarget.setPointerCapture(event.pointerId)
+        }} onPointerMove={event => {
+          const drag = dragRef.current
+          if (!drag) return
+          const delta = drag.y - event.clientY
+          if (Math.abs(delta) > 5) drag.moved = true
+          if (drag.moved) setDragHeight(Math.max(0, Math.min(drag.max, drag.start + delta)))
+        }} onPointerUp={event => {
+          const drag = dragRef.current
+          if (!drag) return
+          if (drag.moved) {
+            setSettingsOpen(drag.start + drag.y - event.clientY > drag.max / 2)
+            suppressClickRef.current = true
+          }
+          dragRef.current = null
+          setDragHeight(null)
+        }} onPointerCancel={() => { dragRef.current = null; setDragHeight(null) }} className="relative flex h-[28px] w-full touch-none items-center justify-center border-0 bg-transparent p-0 text-ui-white before:absolute before:left-1/2 before:top-1/2 before:h-[48px] before:w-[48px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']">
+          {!settingsOpen && data?.snapshotTime && <span className="absolute left-3 top-0 flex h-[28px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
+          <span aria-hidden="true" className="h-1 w-10 rounded-full bg-ui-muted" />
+        </button>
+        <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">
+          <div ref={settingsContentRef} inert={!settingsOpen && dragHeight === null} className="max-h-[calc(40dvh-28px)] overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
           <SettingRow label="마켓">
             <div role="radiogroup" aria-label="마켓 선택" className="grid flex-1 grid-cols-3 gap-1.5">
               {MARKETS.map(option => <button key={option.value} type="button" role="radio" aria-checked={market === option.value} onClick={() => selectMarket(option.value)} className={`${SETTING_CHIP_CLASS} ${market === option.value ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
@@ -383,8 +408,9 @@ export default function MobileMarketSummaryPage() {
               })}
             </div>
           </SettingRow>
-        </section>
-      )}
+          </div>
+        </div>
+      </section>
     </main>
   )
 }
