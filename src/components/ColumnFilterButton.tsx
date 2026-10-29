@@ -60,6 +60,11 @@ interface Props {
   orderMode?: { value: 'alpha' | 'cap'; onChange: (value: 'alpha' | 'cap') => void }
 }
 
+// "전체 선택 / 전체 해제" 배지 버튼 — 지금 상태와 맞는 쪽이 청록으로 눌러진 상태가 된다(설정창 선택 버튼과 같은 색: 미선택 회색, 선택 청록).
+const BULK_BUTTON_CLASS = 'h-6 flex-1 rounded border p-0 text-xs font-medium'
+const BULK_BUTTON_ON_CLASS = 'border-transparent bg-brand-surface text-ui-white'
+const BULK_BUTTON_OFF_CLASS = 'border-ui-border bg-transparent text-ui-text hover:text-ui-white'
+
 const NO_OPTIONS: readonly string[] = []
 const defaultLabelOf = (value: string) => (value === '-' ? '(없음)' : value)
 
@@ -85,6 +90,10 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
       return compareKoreanText(a, b)
     })
   }, [options, optionOrder, orderMode?.value])
+
+  // 목록 전체(검색으로 가려진 항목 포함)가 모두 체크됐는지, 하나도 체크되지 않았는지 — 둘 다 아니면(일부만 체크) 두 버튼 모두 회색이다.
+  const allSelected = sortedOptions.length > 0 && sortedOptions.every(option => !excluded.has(option))
+  const noneSelected = sortedOptions.length > 0 && sortedOptions.every(option => excluded.has(option))
 
   const trimmed = query.trim().toLowerCase()
   const shownOptions = trimmed ? sortedOptions.filter(value => labelOf(value).toLowerCase().includes(trimmed)) : sortedOptions
@@ -158,12 +167,7 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
         >
           <div className="flex items-center justify-between px-3 pb-2 text-xs text-ui-muted">
             <span className="shrink-0 rounded bg-[var(--brand-surface)] px-1.5 py-[3px] text-[11px] font-semibold leading-none text-ui-white">{label}</span>
-            {orderMode ? (
-              <SectorOrderToggle label={label} value={orderMode.value} onChange={orderMode.onChange} compact />
-            ) : <span className="flex gap-3">
-              <button type="button" className="border-0 bg-transparent p-0 text-xs font-medium text-ui-text hover:text-[var(--brand)]" onClick={onSelectAll}>전체 선택</button>
-              <button type="button" className="border-0 bg-transparent p-0 text-xs font-medium text-ui-text hover:text-[var(--brand)]" onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
-            </span>}
+            {orderMode && <SectorOrderToggle label={label} value={orderMode.value} onChange={orderMode.onChange} compact />}
           </div>
           {sortedOptions.length >= SEARCH_MIN_OPTIONS && (
             <div className="px-3 pb-2">
@@ -179,12 +183,11 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
               />
             </div>
           )}
-          {orderMode && (
-            <div className="flex gap-1 px-3 pb-2">
-              <button type="button" className="h-6 flex-1 rounded border border-ui-border bg-transparent p-0 text-xs font-medium text-ui-text hover:text-ui-white" onClick={onSelectAll}>전체 선택</button>
-              <button type="button" className="h-6 flex-1 rounded border border-ui-border bg-transparent p-0 text-xs font-medium text-ui-text hover:text-ui-white" onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
-            </div>
-          )}
+          {/* 전체 선택·전체 해제 배지 — 모든 필터가 같은 자리(검색창이 있으면 검색창 아래, 없으면 이름표 줄 아래)에 둔다. */}
+          <div className="flex gap-1 px-3 pb-2">
+            <button type="button" aria-pressed={allSelected} className={`${BULK_BUTTON_CLASS} ${allSelected ? BULK_BUTTON_ON_CLASS : BULK_BUTTON_OFF_CLASS}`} onClick={onSelectAll}>전체 선택</button>
+            <button type="button" aria-pressed={noneSelected} className={`${BULK_BUTTON_CLASS} ${noneSelected ? BULK_BUTTON_ON_CLASS : BULK_BUTTON_OFF_CLASS}`} onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
+          </div>
           <ul className="column-filter-options m-0 list-none snap-y snap-mandatory overflow-y-scroll p-0" style={{ maxHeight: dropdownListMaxHeight(FILTER_VISIBLE_ROWS, FILTER_ROW_PX) }}>
             {shownOptions.length === 0 && <li className="px-3 py-1 text-ui-muted">검색 결과가 없습니다.</li>}
             {shownOptions.map(value => (
