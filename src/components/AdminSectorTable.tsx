@@ -106,11 +106,11 @@ const NUMBER_BADGE_CLASS = 'mr-[10px] inline-flex h-6 w-8 shrink-0 items-center 
 // 번호 대신 아이콘이 들어갈 때의 배지 — 크기·색은 같고 아이콘만 가로·세로 가운데에 놓는다.
 const ICON_BADGE_CLASS = 'mr-[10px] inline-flex h-6 w-8 shrink-0 items-center justify-center p-0'
 
-// 다른 업종을 끄는 동안 배지 색 — 놓을 수 있는 줄은 회색(예전 "여기" 배지 색), 지금 그 위에 올라간 줄은 청록으로 채우고, 놓을 수 없는 줄은 더 어두운 바탕에 흐린 글자다.
+// 다른 업종을 끄는 동안 배지 색 — 놓을 수 있는 줄은 회색(예전 "여기" 배지 색), 지금 그 위에 올라간 줄은 청록으로 채우고, 놓을 수 없는 줄은 같은 외곽선에 더 어두운 바탕과 흐린 글자다.
 const DROP_BADGE_CLASS = {
   target: 'rounded-sm border border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white',
   over: 'rounded-sm border border-transparent bg-[var(--brand)] text-ui-background',
-  blocked: 'rounded-sm border border-transparent bg-[var(--ui-panel)] text-ui-muted',
+  blocked: 'rounded-sm border border-[var(--ui-muted)] bg-[var(--ui-panel)] text-ui-muted',
 } as const
 
 // dropState — 다른 업종을 끄는 동안 번호 대신 아이콘을 보여 준다: 놓을 수 있는 줄은 하위로 넣는 아이콘(over는 그 위에 올라간 줄), 놓을 수 없는 줄은 ✕이다.
@@ -135,10 +135,10 @@ function DraggableNumberBadge({ sectorId, parentId, children, dropState = null }
 }
 
 // 열 머리글 — 번호 칸을 끄는 동안 대분류 머리글에 놓으면 그 업종이 최상위(대분류)가 된다. 중·소분류 머리글은 놓을 수 없는 자리(✕)다. 끄는 중이 아닐 때는 보통 머리글이다.
-function ColumnDropHeader({ depth, className, isOver, children, style }: { depth: number; className: string; isOver: boolean; children: React.ReactNode; style?: React.CSSProperties }) {
+function ColumnDropHeader({ depth, className, children, style }: { depth: number; className: string; children: React.ReactNode; style?: React.CSSProperties }) {
   const { setNodeRef } = useDroppable({ id: `sector-drop-header-${depth}`, data: { headerDepth: depth } })
   return (
-    <div ref={setNodeRef} className={`${className} ${isOver ? 'bg-[var(--brand)]/50' : ''}`} style={style}>
+    <div ref={setNodeRef} className={className} style={style}>
       {children}
     </div>
   )
@@ -247,7 +247,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     )
   }
 
-  // 이동 모드 — ↪를 누르면 옮길 업종이 정해지고, 표에서 도착할 상위 업종 줄의 "여기" 버튼을 누르면 확인 뒤 옮긴다.
+  // 번호 배지를 끌면 옮길 업종이 정해지고, 놓을 수 있는 줄(번호 자리가 아이콘 배지로 바뀐다)이나 대분류 머리글에 놓으면 확인 뒤 옮긴다.
   // 줄을 누르면 평소처럼 펼쳐지므로(선택 변경) 다른 가지의 업종도 찾아가서 고를 수 있다.
   const getSectorPath = (sector: SectorItem) => {
     const path = [sector.name]
@@ -553,8 +553,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     }
     // 선택한 경로(대·중·소분류에서 고른 업종)의 줄은 종목 표의 선택된 줄과 같은 청록 배경으로 칠한다.
     const isOnSelectedPath = selectedSectorId === sector.id || selectedMajorId === sector.id || selectedMiddleId === sector.id
-    // 놓을 수 있는 줄의 청록 테두리는 칸마다 둘러싸지 않고 위·아래 가로선만 긋는다 — 세 칸에 걸쳐 한 줄처럼 이어진다.
-    const rowBgClass = `${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 shadow-[inset_0_1px_0_0_var(--brand),inset_0_-1px_0_0_var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'shadow-[inset_0_1px_0_0_color-mix(in_srgb,var(--brand)_70%,transparent),inset_0_-1px_0_0_color-mix(in_srgb,var(--brand)_70%,transparent)]' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`
+    // 끄는 동안 놓을 수 있는 줄은 번호 자리의 아이콘 배지로 구분하므로 줄마다 선을 긋지 않는다. 지금 커서가 올라간 한 줄만 줄 전체 높이(29px)로 청록으로 채운다(세 칸에 걸쳐 한 줄처럼 이어진다).
+    const rowBgClass = `${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`
     const stat = sectorStats.get(sector.id)
     return (
       <DroppableSectorRow
@@ -705,7 +705,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 const headerDropState = isMoveDrag ? (isHeaderDropTarget(draggedSector, depth) ? (moveOverHeader === depth ? 'over' : 'target') : 'blocked') : null
                 // 윗줄 — 분류 이름과 개수, 검색 필터.
                 const topRow = (
-                  <div className={`relative flex items-center justify-center gap-2 ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`} style={{ height: HEADER_HALF_PX }}>
+                  <div className={`relative flex items-center justify-center gap-2 ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'} ${moveOverHeader === depth ? 'bg-[color-mix(in_srgb,var(--brand)_50%,var(--ui-background))]' : ''}`} style={{ height: HEADER_HALF_PX }}>
                     <span className="relative">
                       {headerDropState && (
                         <span aria-hidden="true" className={`${ICON_BADGE_CLASS} absolute right-full top-1/2 -translate-y-1/2 ${DROP_BADGE_CLASS[headerDropState]}`}>
@@ -737,7 +737,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   </div>
                 )
                 return (
-                  <ColumnDropHeader depth={depth} className={headerClass} isOver={moveOverHeader === depth} style={{ height: STOCK_HEADER_ROW_PX }}>{topRow}{bottomRow}</ColumnDropHeader>
+                  <ColumnDropHeader depth={depth} className={headerClass} style={{ height: STOCK_HEADER_ROW_PX }}>{topRow}{bottomRow}</ColumnDropHeader>
                 )
               })()}
               <ScrollArea overlay scrollLabel={`${label} 업종 목록`} className={`min-h-0 flex-1 ${index < 2 ? 'border-r border-ui-border' : ''}`}>
@@ -757,7 +757,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           return (
             <div
               style={{ width: draggedRow?.width, height: draggedRow?.height, marginLeft: draggedRow?.offsetX, marginTop: draggedRow?.offsetY, paddingLeft: '8px' }}
-              className="flex items-center border-y-2 border-[var(--brand)] bg-[var(--brand-surface)] py-0.5 text-sm text-ui-white shadow-xl"
+              className="flex items-center bg-[var(--brand-surface)] py-0.5 text-sm text-ui-white shadow-xl"
             >
               <span aria-hidden="true" className={`${NUMBER_BADGE_CLASS} ${DRAG_CONTROL_CLASS}`}>{number}</span>
               <span className="truncate">{draggedSector.name}</span>
