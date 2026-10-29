@@ -272,7 +272,9 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const settingsContentRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ y: number; start: number; max: number; moved: boolean } | null>(null)
   const suppressClickRef = useRef(false)
-  const settingsHeight = () => Math.min(settingsContentRef.current?.scrollHeight ?? 0, window.innerHeight * 0.4 - 28)
+  // 설정창이 열리는 최대 높이 — 화면의 40%(손잡이 줄 28px 제외)다. 눕힌 폰처럼 화면이 낮으면(500px 이하, index.css의 모바일 판정과 같은 기준)
+  // 40%가 내용보다 작아 아래 줄이 잘리므로 60%까지 열어 준다. CSS 한도(아래 max-h)도 같은 값이다.
+  const settingsHeight = () => Math.min(settingsContentRef.current?.scrollHeight ?? 0, window.innerHeight * (window.innerHeight <= 500 ? 0.6 : 0.4) - 28)
 
   // 분류 단계: MARKETRY·내 기준은 대·중·소분류(3단계), 거래소는 1단계. 눌러서 들어갈 때 하위 분류가 있으면 그 분류로, 없으면 바로 종목으로 간다.
   // 박스 크기는 PC 설정과 따로 두고, 폰의 기본은 시총 비례(100)다. 동일 0 · 균형 50 · 시총 비례 100.
@@ -558,7 +560,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           <span aria-hidden="true" className="h-1 w-10 rounded-full bg-ui-muted" />
         </button>
         <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">
-          <div ref={settingsContentRef} inert={!settingsOpen && dragHeight === null} className="max-h-[calc(40dvh-28px)] overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+          <div ref={settingsContentRef} inert={!settingsOpen && dragHeight === null} className="max-h-[calc(40dvh-28px)] [@media(max-height:500px)]:max-h-[calc(60dvh-28px)] overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
           <SettingRow label="분류 기준">
             <div role="radiogroup" aria-label="분류 기준" className="grid flex-1 grid-cols-3 gap-1.5">
               {[
