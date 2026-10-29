@@ -104,6 +104,8 @@ function SectorBox({
         `등락 종목: ▲${advancerCount} ▼${declinerCount} ■${unchangedCount}`,
         `그룹 시총: ${toJoEokDecimal(sector.totalMarketValue / 100_000_000)}`,
       ],
+      // 위 숫자는 제외한 업종·시가총액 구간을 뺀 종목만으로 계산한 값이다(업종 화면 표는 그룹 안 전체 종목).
+      note: '필터 적용 종목 기준',
       excludeSector: canExclude ? { id: sector.sectorId, name: sector.sectorName } : undefined,
       targetKey: sectorKey,
       tooltip: false,
