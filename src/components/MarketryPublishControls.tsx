@@ -10,9 +10,12 @@ import {
 import { heatmapKeys } from '@/hooks/queryKeys'
 import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
-import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
+import { appAlert, appWarnConfirm, appWarnConfirmWithInput } from '@/utils/appDialogBus'
 import { CloudUploadIcon, HistoryIcon } from '@/components/icons/AppIcons'
 import { DROPDOWN_PANEL_CLASS, DROPDOWN_ROW_PX, DROPDOWN_SCROLL_CLASS, DROPDOWN_SNAP_ITEM_CLASS, dropdownListMaxHeight } from '@/components/dropdownStyle'
+
+// 업데이트할 때 적는 메모의 최대 글자 수 — 롤백 목록 한 줄에 들어가는 길이다. 서버의 버전 이름 칸(50자)보다 짧다.
+const MEMO_MAX_LENGTH = 20
 
 // 롤백 목록에는 최근에 올린 버전만 이 개수까지 보인다(서버에는 더 오래된 버전도 남아 있다).
 const ROLLBACK_VERSION_COUNT = 5
@@ -28,6 +31,23 @@ function toDateTimeLabel(label: string) {
 
 function pad(value: number) {
   return String(value).padStart(2, '0')
+}
+
+// 메모 없이 올린 버전 이름("MARKETRY 2026-10-08 14:30") — 이 모양이면 메모가 없는 것으로 본다.
+const TIME_ONLY_LABEL = /^MARKETRY\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/
+
+// 올린 버전의 시각("2026-10-28 15:53")은 서버가 저장한 시각을 쓰고, 메모는 버전 이름이 시각 모양이 아닐 때만 있다.
+function describeVersion(version: { label: string; createdAt: string }) {
+  return {
+    time: version.createdAt.slice(0, 16).replace('T', ' '),
+    memo: TIME_ONLY_LABEL.test(version.label) ? null : version.label,
+  }
+}
+
+// 알림창 첫 줄 — 메모가 있으면 [메모] 아래 줄에 시각, 없으면 [시각]이다.
+function versionHeadLines(version: { label: string; createdAt: string }) {
+  const { time, memo } = describeVersion(version)
+  return memo ? `[${memo}]\n${time}` : `[${time}]`
 }
 
 // 올린 버전 이름 — 브라우저 시각(한국)으로 "MARKETRY 2026-10-08 14:30"처럼 만든다.
@@ -57,17 +77,18 @@ export default function MarketryPublishControls() {
   const refreshMaps = () => queryClient.invalidateQueries({ queryKey: heatmapKeys.all })
 
   const handlePublish = async () => {
-    const confirmed = await appWarnConfirm(
+    const { confirmed, value: memo } = await appWarnConfirmWithInput(
       `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n[내 기준]을 [MARKETRY] 분류로 업데이트하시겠습니까?`,
-      { title: 'MARKETRY 업데이트' },
+      { title: 'MARKETRY 업데이트', placeholder: `메모 (선택, ${MEMO_MAX_LENGTH}자까지)`, maxLength: MEMO_MAX_LENGTH },
     )
     if (!confirmed) return
     setIsBusy(true)
     try {
-      const published = await publishMarketry(createPublicationLabel(new Date()))
+      // 메모를 적었으면 그것을 버전 이름으로 올리고, 비워 두었으면 예전처럼 "MARKETRY 시각"으로 올린다.
+      const published = await publishMarketry(memo || createPublicationLabel(new Date()))
       setVersions(null)
       await refreshMaps()
-      appAlert(`[${toDateTimeLabel(published.label)}]\nMARKETRY 분류가 업데이트되었습니다.`, { title: '업데이트 완료' })
+      appAlert(`${versionHeadLines(published)}\nMARKETRY 분류가 업데이트되었습니다.`, { title: '업데이트 완료' })
     } catch {
       appAlert('MARKETRY에 올리지 못했습니다.', { title: '업데이트 실패' })
     } finally {
@@ -91,14 +112,14 @@ export default function MarketryPublishControls() {
   }
 
   const handleRestore = async (version: MarketryPublication) => {
-    const confirmed = await appWarnConfirm(`[${toDateTimeLabel(version.label)}]\n[MARKETRY] 분류를 되돌리시겠습니까?`, { title: 'MARKETRY 롤백' })
+    const confirmed = await appWarnConfirm(`${versionHeadLines(version)}\n[MARKETRY] 분류를 되돌리시겠습니까?`, { title: 'MARKETRY 롤백' })
     if (!confirmed) return
     setIsBusy(true)
     try {
       await restoreMarketryPublication(version.id)
       setIsVersionsOpen(false)
       await refreshMaps()
-      appAlert(`[${toDateTimeLabel(version.label)}]\nMARKETRY 롤백이 완료되었습니다.`, { title: '롤백 완료' })
+      appAlert(`${versionHeadLines(version)}\nMARKETRY 롤백이 완료되었습니다.`, { title: '롤백 완료' })
     } catch {
       appAlert('MARKETRY를 되돌리지 못했습니다.', { title: '롤백 실패' })
     } finally {
@@ -137,7 +158,9 @@ export default function MarketryPublishControls() {
           ) : versions.length === 0 ? (
             <p className="px-3 py-1 text-ui-muted">올린 버전이 없습니다.</p>
           ) : (
-            versions.map(version => (
+            versions.map(version => {
+              const { time, memo } = describeVersion(version)
+              return (
               <button
                 key={version.id}
                 type="button"
@@ -145,10 +168,11 @@ export default function MarketryPublishControls() {
                 disabled={isBusy}
                 className={`${DROPDOWN_SNAP_ITEM_CLASS} flex min-h-[25px] w-full items-center rounded-none border-0 bg-transparent px-3 text-left text-ui-white transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10 focus-visible:outline-none disabled:opacity-50`}
               >
-                {/* 버전 이름 앞의 "MARKETRY"는 뺀다 — 구분되는 것은 시각이고, 알림창에서도 같은 [시각]으로 쓴다. */}
-                <span className="truncate">[{toDateTimeLabel(version.label)}]</span>
+                {/* 메모가 있으면 메모만 보이고 시각은 마우스를 올렸을 때 툴팁으로 뜬다. 메모 없이 올린 옛 버전은 시각(대괄호 없이)이 보인다. */}
+                <span className="truncate" data-hint={memo ? time : undefined}>{memo ?? time}</span>
               </button>
-            ))
+              )
+            })
           )}
         </div>
       )}

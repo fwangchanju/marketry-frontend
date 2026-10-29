@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { getCurrentAppDialog, resolveCurrentAppDialog, subscribeAppDialogs } from '@/utils/appDialogBus'
 import { HINT_BUBBLE_COLOR_CLASS, POPUP_SIZE_CLASS } from './hintBubbleStyle'
@@ -12,6 +12,9 @@ export default function AppDialogHost() {
   const sectionRef = useRef<HTMLElement>(null)
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
   const actionButtonRef = useRef<HTMLButtonElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  // 입력칸이 있는 창에서 적은 글자 — 창이 바뀔 때마다 비운다.
+  const [inputValue, setInputValue] = useState('')
   const previousFocusRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -21,8 +24,9 @@ export default function AppDialogHost() {
       return
     }
     previousFocusRef.current ??= document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const initialButton = dialog.kind === 'alert' ? actionButtonRef : cancelButtonRef
-    initialButton.current?.focus()
+    setInputValue('')
+    const initialFocus = dialog.input ? inputRef : dialog.kind === 'alert' ? actionButtonRef : cancelButtonRef
+    initialFocus.current?.focus()
   }, [dialog])
 
   useEffect(() => {
@@ -106,6 +110,23 @@ export default function AppDialogHost() {
           {dialog.mutedMessage && <><br /><span className="text-[var(--ui-control)]">{dialog.mutedMessage}</span></>}
           {dialog.followupMessage && <><br />{dialog.followupMessage}</>}
         </p>
+        {dialog.input && (
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            maxLength={dialog.input.maxLength}
+            placeholder={dialog.input.placeholder}
+            aria-label={dialog.input.placeholder}
+            // 한글처럼 글자를 조합하며 치는 입력은 maxLength를 넘는 한 글자가 조합 중에 잠깐 보인다 — 넘는 순간 바로 잘라 낸다.
+            onChange={event => setInputValue(event.target.value.slice(0, dialog.input?.maxLength))}
+            onKeyDown={event => {
+              // 한글을 치는 중에 누른 엔터는 글자를 확정할 뿐이다 — 이때 확인으로 넘기지 않는다.
+              if (event.key === 'Enter' && !event.nativeEvent.isComposing && event.keyCode !== 229) resolveCurrentAppDialog(true, inputValue.trim())
+            }}
+            className="mt-3 h-8 w-full rounded border border-[var(--ui-control)] bg-white/70 px-2 text-sm text-ui-background outline-none placeholder:text-[var(--ui-control)] focus:border-[var(--brand)]"
+          />
+        )}
         <div className="mt-auto flex justify-end gap-2 pt-3">
           {dialog.kind !== 'alert' && (
             <button ref={cancelButtonRef} type="button" onClick={dismiss} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm text-ui-surface transition-colors hover:bg-ui-control-hover focus-visible:bg-ui-control-hover focus:outline-none">
@@ -115,7 +136,7 @@ export default function AppDialogHost() {
           <button
             ref={actionButtonRef}
             type="button"
-            onClick={() => resolveCurrentAppDialog(true)}
+            onClick={() => resolveCurrentAppDialog(true, dialog.input ? inputValue.trim() : undefined)}
             className={`rounded-lg border-0 px-4 py-2 text-sm font-bold focus:outline-none focus-visible:brightness-110 ${dialog.kind === 'warning' ? 'bg-[#BC2F2F] text-ui-white transition-[filter] hover:brightness-110' : dialog.kind === 'alert' ? 'bg-ui-selection text-ui-surface transition-colors hover:bg-ui-control-hover focus-visible:bg-ui-control-hover' : 'bg-brand-surface text-ui-white transition-colors hover:bg-brand-surface-hover'}`}
           >
             {dialog.kind === 'alert' ? '닫기' : '확인'}
