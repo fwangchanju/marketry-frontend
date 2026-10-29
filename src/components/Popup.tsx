@@ -6,6 +6,8 @@ import { appConfirm } from '@/utils/appDialogBus'
 export interface PopupContent {
   title: string
   rows: string[]
+  // 숫자 줄 아래에 괄호와 회색(NXT 안내의 두 번째 줄과 같은 양식)으로 붙이는 보충 설명.
+  note?: string
   excludeSector?: { id: number; name: string }
   // 우클릭한 섹터/종목 박스를 식별하는 키('sector-<id>' | 'stock-<code>') — 팝업이 떠 있는 동안
   // 해당 박스에만 초록 하이라이트를 붙이는 데 쓴다(Heatmap.highlightedKey).
@@ -202,6 +204,7 @@ function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
           {popup.rows.map((row, index) => (
             <div key={index}>{row}</div>
           ))}
+          {popup.note && <div className="text-[var(--ui-control)]">({popup.note})</div>}
         </div>
       </div>
     </>
