@@ -1,5 +1,7 @@
 import { useId } from 'react'
 import marketryLogo from '@/assets/marketry-logo.png'
+// 세로형·가로형(깨끗한)이 쓰는 건 그림 왼쪽 425×400(나무)뿐이라 그 부분만 잘라 둔 파일을 쓴다(386KB → 109KB). 글자는 아래에서 따로 그린다.
+import marketrySymbol from '@/assets/marketry-symbol.png'
 import { MARKETRY_WORDMARK_PATH, MARKETRY_WORDMARK_WIDTH } from '@/components/marketryWordmarkPath'
 
 interface Props {
@@ -18,7 +20,7 @@ export default function MarketryLogo({ className, layout = 'horizontal' }: Props
     return (
       <svg aria-hidden="true" focusable="false" viewBox="0 0 1200 850" width={1200} height={850} className={`block ${className ?? ''}`}>
         <svg x={303} y={0} width={594} height={561.6} viewBox="0 0 425 400">
-          <image href={marketryLogo} width={1681} height={400} />
+          <image href={marketrySymbol} width={425} height={400} />
         </svg>
         <g transform={`translate(209.95 595) scale(${780.1 / MARKETRY_WORDMARK_WIDTH})`}>
           <path d={MARKETRY_WORDMARK_PATH} fill="var(--ui-white)" fillRule="evenodd" />
@@ -34,7 +36,7 @@ export default function MarketryLogo({ className, layout = 'horizontal' }: Props
     return (
       <svg aria-hidden="true" focusable="false" viewBox="0 0 2025 400" width={2025} height={400} className={`block ${className ?? ''}`}>
         <svg x={0} y={0} width={425} height={400} viewBox="0 0 425 400">
-          <image href={marketryLogo} width={1681} height={400} />
+          <image href={marketrySymbol} width={425} height={400} />
         </svg>
         <g transform={`translate(495 47.5) scale(${1117.5 / MARKETRY_WORDMARK_WIDTH})`}>
           <path d={MARKETRY_WORDMARK_PATH} fill="var(--ui-white)" fillRule="evenodd" />
