@@ -183,11 +183,13 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
               />
             </div>
           )}
-          {/* 전체 선택·전체 해제 배지 — 모든 필터가 같은 자리(검색창이 있으면 검색창 아래, 없으면 이름표 줄 아래)에 둔다. */}
-          <div className="flex gap-1 px-3 pb-2">
-            <button type="button" aria-pressed={allSelected} className={`${BULK_BUTTON_CLASS} ${allSelected ? BULK_BUTTON_ON_CLASS : BULK_BUTTON_OFF_CLASS}`} onClick={onSelectAll}>전체 선택</button>
-            <button type="button" aria-pressed={noneSelected} className={`${BULK_BUTTON_CLASS} ${noneSelected ? BULK_BUTTON_ON_CLASS : BULK_BUTTON_OFF_CLASS}`} onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
-          </div>
+          {/* 전체 선택·전체 해제 배지 — 검색창이 있을 만큼 항목이 많은 필터(10개 이상)에만 둔다. 항목이 적으면 하나씩 고르면 되어 두지 않는다. */}
+          {sortedOptions.length >= SEARCH_MIN_OPTIONS && (
+            <div className="flex gap-1 px-3 pb-2">
+              <button type="button" aria-pressed={allSelected} className={`${BULK_BUTTON_CLASS} ${allSelected ? BULK_BUTTON_ON_CLASS : BULK_BUTTON_OFF_CLASS}`} onClick={onSelectAll}>전체 선택</button>
+              <button type="button" aria-pressed={noneSelected} className={`${BULK_BUTTON_CLASS} ${noneSelected ? BULK_BUTTON_ON_CLASS : BULK_BUTTON_OFF_CLASS}`} onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
+            </div>
+          )}
           <ul className="column-filter-options m-0 list-none snap-y snap-mandatory overflow-y-scroll p-0" style={{ maxHeight: dropdownListMaxHeight(FILTER_VISIBLE_ROWS, FILTER_ROW_PX) }}>
             {shownOptions.length === 0 && <li className="px-3 py-1 text-ui-muted">검색 결과가 없습니다.</li>}
             {shownOptions.map(value => (
