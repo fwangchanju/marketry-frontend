@@ -44,10 +44,10 @@ function describeVersion(version: { label: string; createdAt: string }) {
   }
 }
 
-// 알림창 첫 줄 — 메모가 있으면 [메모] 아래 줄에 시각, 없으면 [시각]이다.
+// 알림창 첫 줄 — 메모가 있으면 메모 아래 줄에 시각, 없으면 시각이다(대괄호는 업종명·분류명에만 쓴다).
 function versionHeadLines(version: { label: string; createdAt: string }) {
   const { time, memo } = describeVersion(version)
-  return memo ? `[${memo}]\n${time}` : `[${time}]`
+  return memo ? `${memo}\n${time}` : time
 }
 
 // 올린 버전 이름 — 브라우저 시각(한국)으로 "MARKETRY 2026-10-08 14:30"처럼 만든다.
@@ -78,7 +78,7 @@ export default function MarketryPublishControls() {
 
   const handlePublish = async () => {
     const { confirmed, value: memo } = await appWarnConfirmWithInput(
-      `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n[내 기준]을 [MARKETRY] 분류로 업데이트하시겠습니까?`,
+      `${toDateTimeLabel(createPublicationLabel(new Date()))}\n[내 기준]을 [MARKETRY] 분류로 업데이트하시겠습니까?`,
       { title: 'MARKETRY 업데이트', placeholder: '메모', maxLength: MEMO_MAX_LENGTH },
     )
     if (!confirmed) return
