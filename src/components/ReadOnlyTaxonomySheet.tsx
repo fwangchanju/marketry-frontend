@@ -6,6 +6,8 @@ import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
+import { NEW_LISTING_SECTOR_HINT, NEW_LISTING_SECTOR_NAME, NEW_LISTING_SECTOR_TEXT_CLASS } from '@/utils/newListingSector'
+import { SortIcon } from '@/components/icons/AppIcons'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
@@ -21,7 +23,6 @@ import { toCount, toJoEokDecimal } from '@/utils/format'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { createStockMatcher } from '@/utils/stockSearch'
 import { collectItems } from '@/utils/sectorAverage'
-import { SortIcon } from '@/components/icons/AppIcons'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession } from '@/utils/adminAccess'
 
@@ -51,7 +52,7 @@ const COLOR = {
 const TABLE_CLASS =
   'w-full border-separate border-spacing-0 [&_th:not(:last-child)]:border-r [&_th:not(:last-child)]:border-ui-white/20 [&_td:not(:last-child)]:border-r [&_td:not(:last-child)]:border-ui-border'
 
-type SortDirection = 'asc' | 'desc'
+export type SortDirection = 'asc' | 'desc'
 
 // 머리글을 눌러 정렬한다 — 같은 열을 계속 누르면 오름차순 → 내림차순 → 원래대로(처음 순서)로 돌고, 다른 열을 누르면 그 열의 오름차순으로
 // 시작한다(커스텀 종목 표와 같은 방식).
@@ -68,23 +69,22 @@ function useSort<K extends string>(initialKey: K, initialDirection: SortDirectio
   return { sortKey, direction, toggle }
 }
 
-function SortableHeader({ label, active, direction, onClick, className, width, inlineLabel }: {
-  label: string
-  active: boolean
-  direction: SortDirection
-  onClick: () => void
-  className?: string
-  width?: string
-  inlineLabel?: boolean
-}) {
+// 글자 옆에 ⇅ 정렬 아이콘이 붙는 머리글 글자 — 업종 표(내 기준·MARKETRY·거래소)의 한 줄 머리글이 같이 쓴다.
+export function SortLabel({ label, active, direction, onClick }: { label: string; active: boolean; direction: SortDirection; onClick: () => void }) {
   return (
-    <th className={className ?? HEADER_CELL} style={width ? { width } : undefined}>
-      <span className={`cursor-pointer select-none ${COLOR.sortHover}${inlineLabel ? ' inline-flex items-center align-middle' : ''}`} onClick={onClick}>
-        {label}
-        <span className={`ml-1 inline-flex align-middle ${active ? COLOR.sortActive : COLOR.sortInactive}`}>
-          <SortIcon active={active} direction={direction} className="h-3.5 w-3.5" />
-        </span>
+    <span className={`inline-flex cursor-pointer select-none items-center align-middle ${COLOR.sortHover}`} onClick={onClick}>
+      {label}
+      <span className={`ml-1 inline-flex align-middle ${active ? COLOR.sortActive : COLOR.sortInactive}`}>
+        <SortIcon active={active} direction={direction} className="h-3.5 w-3.5" />
       </span>
+    </span>
+  )
+}
+
+function SortableHeader({ label, active, direction, onClick }: { label: string; active: boolean; direction: SortDirection; onClick: () => void }) {
+  return (
+    <th className={HEADER_CELL}>
+      <SortLabel label={label} active={active} direction={direction} onClick={onClick} />
     </th>
   )
 }
@@ -265,12 +265,7 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
     setSelectedNames,
   )
   const header = (key: CategorySortKey, label: string) => (
-    <SortableHeader
-      label={label}
-      active={sortKey === key}
-      direction={direction}
-      onClick={() => toggle(key)}
-    />
+    <SortableHeader label={label} active={sortKey === key} direction={direction} onClick={() => toggle(key)} />
   )
   return (
     <div className="relative flex min-h-0 flex-1 flex-col text-ui-white">
@@ -304,13 +299,13 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
                 {...rowProps(index)}
                 className={`cursor-pointer text-ui-muted ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/20 [&:hover>td]:bg-[var(--brand)]/35 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-[var(--brand)]/10 [&:hover>td]:border-ui-white/20!'}`}
               >
-                {/* 업종명 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 손잡이 24px + 4px + 번호 칸 28px + 8px = 72px. */}
-                <td className={`${BODY_CELL} relative truncate text-left !pl-[72px]`}>
-                  {row.name}
+                {/* 업종명 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 번호 칸 32px + 10px = 50px. */}
+                <td className={`${BODY_CELL} relative truncate text-left !pl-[50px] ${row.name === NEW_LISTING_SECTOR_NAME ? NEW_LISTING_SECTOR_TEXT_CLASS : ''}`}>
+                  {row.name === NEW_LISTING_SECTOR_NAME ? <span data-hint={NEW_LISTING_SECTOR_HINT}>{row.name}</span> : row.name}
                 </td>
                 {/* 종목 표와 같은 시가총액 표기('137조 2,762억' 대신 '137.3조')와 오른쪽 정렬이다. */}
-                {/* 업종명 왼쪽 여백과 같은 72px를 시가총액 오른쪽에 둔다. */}
-                <td className={`${BODY_CELL} text-right !pr-[72px] text-ui-muted`}>{toJoEokDecimal(row.marketValue / 100_000_000)}</td>
+                {/* 업종명 왼쪽 여백과 같은 50px를 시가총액 오른쪽에 둔다. */}
+                <td className={`${BODY_CELL} text-right !pr-[50px] text-ui-muted`}>{toJoEokDecimal(row.marketValue / 100_000_000)}</td>
                 <td className={BODY_CELL}>
                   <CenteredRightNumber value={row.stockCount} />
                 </td>

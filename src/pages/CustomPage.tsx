@@ -26,6 +26,7 @@ import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/sc
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { isAdminSession } from '@/utils/adminAccess'
+import { buildSectorStats } from '@/utils/sectorOrder'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 
@@ -120,6 +121,9 @@ export default function CustomPage() {
     refetch: refetchTaxonomy,
     isRefetching: isRefetchingTaxonomy,
   } = useHeatmap('ALL_STOCK', sheet, false, { enabled: canReadSheet })
+
+  // 업종별 시가총액 합·종목 수(필터 전 전체 종목 기준) — MARKETRY·거래소 업종 표와 같은 계산이다. 내 분류 업종 표의 숫자 칸·기본 순서와 업종 선택 목록의 "시가총액 순"에 쓴다.
+  const sectorStats = useMemo(() => buildSectorStats(taxonomyMap?.items), [taxonomyMap])
 
   // 읽기 전용 시트의 NXT 여부·시장·거래소 분류명은 회원 데이터가 아니라 공통 종목 정보에서 받는다.
   // 종목 표의 NXT 열은 세 시트(MARKETRY·거래소·내 분류)가 모두 쓰므로, 종목 화면에서는 시트와 상관없이 불러온다.
@@ -285,6 +289,7 @@ export default function CustomPage() {
                     bulkContainer={stockBulkTarget}
                     onCountLabelChange={setCountLabel}
                     nxtStockCodes={nxtStockCodes}
+                    sectorStats={sectorStats}
                     isLoading={isStockSectorsLoading}
                     isError={isStockSectorsError}
                     onRetry={() => void refetchStockSectors()}
@@ -295,6 +300,7 @@ export default function CustomPage() {
                     settingsActionsTarget={sectorSettingsActionsTarget}
                     toolbarContainer={toolbarContainer}
                     onCountLabelChange={setCountLabel}
+                    sectorStats={sectorStats}
                   />
                 )}
               </div>
