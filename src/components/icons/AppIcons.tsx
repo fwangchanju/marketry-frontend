@@ -242,6 +242,16 @@ export function TrashIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+// 업종을 끌어 다른 업종 "하위로" 넣을 수 있는 자리 표시 — 오른쪽 위에서 휘어 왼쪽 아래로 내려가는 화살표다. Lucide corner-left-down 모양이다.
+export function NestIntoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m14 15-5 5-5-5" />
+      <path d="M20 4h-7a4 4 0 0 0-4 4v12" />
+    </svg>
+  )
+}
+
 export function CloseIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
