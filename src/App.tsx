@@ -1,31 +1,35 @@
-import { useEffect, useLayoutEffect, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
-import MarketSummaryPage from './pages/MarketSummaryPage'
-import MapPage from './pages/MapPage'
-import GroupPage from './pages/GroupPage'
-import CustomPage from './pages/CustomPage'
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
-import TermsPage from './pages/TermsPage'
-import SourcePage from './pages/SourcePage'
-import ContactPage from './pages/ContactPage'
-import GuidePage from './pages/GuidePage'
 import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
 import MobileHomePage from './pages/MobileHomePage'
-import ProfilePage from './pages/ProfilePage'
-import AdminPage from './pages/AdminPage'
-import AdminDashboardPage from './pages/AdminDashboardPage'
-import AdminMessagePage from './pages/AdminMessagePage'
-import AdminBannerPage from './pages/AdminBannerPage'
 import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
 import HoverHintLayer from './components/HoverHintLayer'
 import MobileNotice from './components/MobileNotice'
 import SearchMetadata from './components/SearchMetadata'
+import Spinner from './components/Spinner'
 import { marketRoute } from '@/utils/marketRoute'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
 import { isAdminSession } from './utils/adminAccess'
 import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
+
+// 화면별로 코드를 나눠 받는다. 모바일 홈·지도는 첫 화면이라 바로 번들에 두고,
+// PC 전용·관리자·글 페이지는 해당 주소를 열 때만 내려받는다.
+const MarketSummaryPage = lazy(() => import('./pages/MarketSummaryPage'))
+const MapPage = lazy(() => import('./pages/MapPage'))
+const GroupPage = lazy(() => import('./pages/GroupPage'))
+const CustomPage = lazy(() => import('./pages/CustomPage'))
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
+const TermsPage = lazy(() => import('./pages/TermsPage'))
+const SourcePage = lazy(() => import('./pages/SourcePage'))
+const ContactPage = lazy(() => import('./pages/ContactPage'))
+const GuidePage = lazy(() => import('./pages/GuidePage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
+const AdminMessagePage = lazy(() => import('./pages/AdminMessagePage'))
+const AdminBannerPage = lazy(() => import('./pages/AdminBannerPage'))
 
 function ClientMetricsReporter() {
   const { pathname } = useLocation()
@@ -129,6 +133,7 @@ export default function App() {
       <MobileGate>
       <LoginGateProvider>
         <PageNumberStyle />
+        <Suspense fallback={<Spinner />}>
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<ResponsiveHomePage />} />
@@ -163,6 +168,7 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
+        </Suspense>
       </LoginGateProvider>
       </MobileGate>
     </BrowserRouter>
