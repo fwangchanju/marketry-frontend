@@ -1,7 +1,7 @@
 import { buildSectorParentHints } from '@/utils/sectorFilterHints'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import { compareKoreanText } from '@/utils/koreanSort'
-import { loadSectorOrder, sectorNamesByDepth, type SectorOrder } from '@/utils/sectorOrder'
+import { EMPTY_SECTOR_STATS, sectorNamesByDepth, sortByMarketValue, type SectorStats } from '@/utils/sectorOrder'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
@@ -60,6 +60,8 @@ interface Props {
   onCountLabelChange?: (label: string | undefined) => void
   // NXT에서도 거래되는 종목 코드 — NXT 열에 O/-로 보여준다(공개 종목 정보라 모든 사용자가 같다).
   nxtStockCodes?: ReadonlySet<string>
+  // 업종 번호별 시가총액 합·종목 수 — 업종 선택 목록의 "시가총액 순" 보기에 쓴다.
+  sectorStats?: SectorStats
   // 종목 목록을 처음 받는 중이거나 받지 못했을 때 표 자리에 다른 페이지와 같은 로딩·오류 원을 보여 준다.
   isLoading?: boolean
   isError?: boolean
@@ -354,9 +356,9 @@ function SectorSearchPopup({
   onEscape: () => void
   // 소분류 팝업처럼 목록이 특정 대분류로 좁혀져 있을 때, 지금 어느 대분류 밑을 보고 있는지 알려주는 칩.
   contextLabel?: string
-  // 일괄 변경 팝업 — 제목과 "가나다 순 / 사용자 지정 순" 선택(고른 순서는 호출한 쪽이 options 순서로 반영한다).
+  // 일괄 변경 팝업 — 제목과 "가나다 순 / 시가총액 순" 선택(고른 순서는 호출한 쪽이 options 순서로 반영한다).
   title?: string
-  orderMode?: { value: 'alpha' | 'custom'; onChange: (value: 'alpha' | 'custom') => void }
+  orderMode?: { value: 'alpha' | 'cap'; onChange: (value: 'alpha' | 'cap') => void }
 }) {
   // 방향키로 하이라이트가 화면 밖으로 나가면 스크롤이 안 따라가서 지금 뭐가 선택됐는지 안 보이는
   // 문제가 있었다 — 하이라이트된 항목의 DOM 노드를 등록해뒀다가, 바뀔 때마다 보이는 영역으로 스크롤한다.
@@ -466,9 +468,9 @@ function AdminStockSectorCell({
   disabled?: boolean
   // disabled일 때 마우스를 올리면 공통 말풍선(data-hint)으로 뜨는 안내 문구.
   disabledHint?: string
-  // 팝업 제목과 "가나다 순 / 사용자 지정 순" 선택(일괄 변경 팝업과 같은 모양).
+  // 팝업 제목과 "가나다 순 / 시가총액 순" 선택(일괄 변경 팝업과 같은 모양).
   title?: string
-  orderMode?: { value: 'alpha' | 'custom'; onChange: (value: 'alpha' | 'custom') => void }
+  orderMode?: { value: 'alpha' | 'cap'; onChange: (value: 'alpha' | 'cap') => void }
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const cellRef = useRef<HTMLTableCellElement>(null)
@@ -551,7 +553,7 @@ function BulkAssignButton({
   // 버튼에 보일 글자(대분류·중분류·소분류) — "일괄 변경"은 위 섹션 제목이 말해 준다.
   label: string
   title: string
-  orderMode: { value: 'alpha' | 'custom'; onChange: (value: 'alpha' | 'custom') => void }
+  orderMode: { value: 'alpha' | 'cap'; onChange: (value: 'alpha' | 'cap') => void }
   // 선행 단계(1차/2차)가 아직 적용 안 된 상태의 2차/3차 버튼 — 버튼 자체는 평소와 똑같이 보이되,
   // 누르면 아무 일도 없고, 마우스를 올리면 안내 문구가 공통 말풍선(data-hint)으로 뜬다(AdminStockSectorCell의 disabled 셀과 동일한 패턴).
   disabled?: boolean
@@ -727,7 +729,7 @@ const AdminStockRow = memo(function AdminStockRow({
   isNxt,
   sectorOrderMode,
   onSectorOrderModeChange,
-  savedSectorOrder,
+  sectorStats,
 }: {
   item: StockSectorListItem
   index: number
@@ -746,10 +748,10 @@ const AdminStockRow = memo(function AdminStockRow({
   onUpdateAlias: (stockCode: string, alias: string | null) => void
   showAlias: boolean
   isNxt: boolean
-  // 섹터 선택 팝업의 보기 순서 — 가나다 순이거나 업종 화면에서 정한 사용자 지정 순서(savedSectorOrder).
-  sectorOrderMode: 'alpha' | 'custom'
-  onSectorOrderModeChange: (value: 'alpha' | 'custom') => void
-  savedSectorOrder: SectorOrder
+  // 섹터 선택 팝업의 보기 순서 — 가나다 순이거나 시가총액 합이 큰 순서(sectorStats).
+  sectorOrderMode: 'alpha' | 'cap'
+  onSectorOrderModeChange: (value: 'alpha' | 'cap') => void
+  sectorStats: SectorStats
 }) {
   // 행 어디에 마우스를 올려도(체크박스/#/시가총액 등 포함) 줄 전체가 옅게 강조되고, 대분류/소분류/약칭
   // 중 하나를 hover 중일 때는 그 열만 추가로 진하게 표시해서 어떤 걸 hover 중인지 구분되게 한다.
@@ -779,18 +781,14 @@ const AdminStockRow = memo(function AdminStockRow({
   // "지금 이 종목의 중분류"의 자식만 보여준다. sectorId(실제 배정된 섹터)를 parentId로 거슬러
   // 올라가서 전체 조상 체인을 구한 뒤, 뎁스별로 슬롯에 나눠 담는다.
   const chain = resolveSectorChain(sectorOptionsById, item.sectorId)
-  const arrange = (options: SectorOption[], parentId: number | null) => {
-    if (sectorOrderMode === 'alpha') return options
-    const rank = new Map((savedSectorOrder[String(parentId)] ?? []).map((id, position) => [id, position]))
-    return [...options].sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER) || a.id - b.id)
-  }
-  const parentSectorOptions = arrange(sectorOptions.filter(opt => opt.parentId === null), null)
+  const arrange = (options: SectorOption[]) => (sectorOrderMode === 'alpha' ? options : sortByMarketValue(options, sectorStats))
+  const parentSectorOptions = arrange(sectorOptions.filter(opt => opt.parentId === null))
   // 이미 한 단계 위로 좁혀진 목록이라 "- " 들여쓰기 접두어가 필요 없다 — 그냥 이름 그대로 보여준다.
-  const midSectorOptions = arrange(sectorOptions.filter(opt => opt.parentId === chain.rootId), chain.rootId)
+  const midSectorOptions = arrange(sectorOptions.filter(opt => opt.parentId === chain.rootId))
     .map(opt => ({ ...opt, label: opt.name }))
   const subSectorOptions =
     chain.midId != null
-      ? arrange(sectorOptions.filter(opt => opt.parentId === chain.midId), chain.midId).map(opt => ({ ...opt, label: opt.name }))
+      ? arrange(sectorOptions.filter(opt => opt.parentId === chain.midId)).map(opt => ({ ...opt, label: opt.name }))
       : []
   const cellOrderMode = { value: sectorOrderMode, onChange: onSectorOrderModeChange }
 
@@ -899,6 +897,7 @@ export default function AdminStockTable({
   bulkContainer,
   onCountLabelChange,
   nxtStockCodes = NO_NXT_CODES,
+  sectorStats = EMPTY_SECTOR_STATS,
   isLoading = false,
   isError = false,
   onRetry,
@@ -1015,14 +1014,13 @@ export default function AdminStockTable({
     const chain = resolveSectorChain(sectorOptionsById, option.id)
     return [chain.rootName, chain.midName, chain.leafName].filter((name): name is string => name !== null)
   })), [sectorOptions, sectorOptionsById])
-  // 대·중·소분류 필터는 "가나다 순"과 업종 화면에서 정한 "사용자 지정 순" 순서 중 고른 대로 보여준다(기본 사용자 지정 순, 브라우저에 저장).
-  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'custom'>(() => (localStorage.getItem('marketry:sector-filter-order') === 'alpha' ? 'alpha' : 'custom'))
-  const changeSectorFilterMode = useCallback((value: 'alpha' | 'custom') => {
+  // 대·중·소분류 필터는 "가나다 순"과 "시가총액 순" 중 고른 대로 보여준다(기본 시가총액 순, 브라우저에 저장).
+  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>(() => (localStorage.getItem('marketry:sector-filter-order') === 'alpha' ? 'alpha' : 'cap'))
+  const changeSectorFilterMode = useCallback((value: 'alpha' | 'cap') => {
     localStorage.setItem('marketry:sector-filter-order', value)
     setSectorFilterMode(value)
   }, [])
-  const [savedSectorOrder] = useState(loadSectorOrder)
-  const sectorFilterOrder = useMemo(() => sectorNamesByDepth(sectors, savedSectorOrder), [sectors, savedSectorOrder])
+  const sectorFilterOrder = useMemo(() => sectorNamesByDepth(sectors, sectorStats), [sectors, sectorStats])
   // 필터/정렬/컬럼 표시에 쓰는 대분류·중분류·소분류 문자열을 종목마다 한 번씩만 미리 계산해둔다.
   const displayByStockCode = useMemo(
     () => new Map(items.map(item => [item.stockCode, computeDisplayValues(item, sectorOptionsById, nxtStockCodes)])),
@@ -1343,13 +1341,11 @@ export default function AdminStockTable({
   }, [items, selectedStockCodes, sectorOptionsById])
   const effectiveParentId = selectedCommonChain.rootId ?? bulkParentId
   const effectiveMidId = selectedCommonChain.midId ?? bulkMidId
-  // 일괄 변경 목록은 필터와 같은 "가나다 순 / 사용자 지정 순" 선택을 따른다.
+  // 일괄 변경 목록은 필터와 같은 "가나다 순 / 시가총액 순" 선택을 따른다.
   const bulkOrderMode = { value: sectorFilterMode, onChange: changeSectorFilterMode }
   const orderedChildren = (parentId: number | null) => {
     const children = sectorOptions.filter(opt => opt.parentId === parentId)
-    if (sectorFilterMode === 'alpha') return children
-    const rank = new Map((savedSectorOrder[String(parentId)] ?? []).map((id, index) => [id, index]))
-    return [...children].sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER) || a.id - b.id)
+    return sectorFilterMode === 'alpha' ? children : sortByMarketValue(children, sectorStats)
   }
   const bulkParentOptions = orderedChildren(null)
   const bulkMidOptions = effectiveParentId != null ? orderedChildren(effectiveParentId) : []
@@ -1868,7 +1864,7 @@ export default function AdminStockTable({
                       onUpdateAlias={handleUpdateAlias}
                       sectorOrderMode={sectorFilterMode}
                       onSectorOrderModeChange={changeSectorFilterMode}
-                      savedSectorOrder={savedSectorOrder}
+                      sectorStats={sectorStats}
                     />
                   )
                 })}

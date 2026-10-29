@@ -1,22 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { createPortal } from 'react-dom'
-import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragMoveEvent, type DragOverEvent, type Modifier } from '@dnd-kit/core'
+import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragMoveEvent, type DragOverEvent } from '@dnd-kit/core'
 import type { SectorItem } from '@/types/api'
 import { useCreateSector, useRenameSector, useReparentSector } from '@/hooks/useHeatmapCustom'
 import { useSectorDeleteFlow } from '@/hooks/useSectorDeleteFlow'
 import { sectorCollisionDetection } from '@/utils/dndCollision'
-import { toCount } from '@/utils/format'
-import { loadSectorOrder, orderSectors, sectorNamesByDepth, SECTOR_ORDER_STORAGE_KEY, type SectorOrder } from '@/utils/sectorOrder'
+import { toCount, toJoEokDecimal } from '@/utils/format'
+import { NEW_LISTING_SECTOR_HINT, NEW_LISTING_SECTOR_NAME, NEW_LISTING_SECTOR_TEXT_CLASS } from '@/utils/newListingSector'
+import { EMPTY_SECTOR_STATS, sectorNamesByDepth, type SectorStats } from '@/utils/sectorOrder'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
-import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
+import { SearchBar, SortLabel, type SortDirection } from '@/components/ReadOnlyTaxonomySheet'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import EmptyMessage, { EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
 import { EditIcon, PlusIcon, TrashIcon } from '@/components/icons/AppIcons'
 import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import { STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
-import StockSortHeader, { type HeaderSortState } from '@/components/StockSortHeader'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import ScrollArea from '@/components/ScrollArea'
 import { compareKoreanText } from '@/utils/koreanSort'
@@ -28,14 +28,23 @@ interface Props {
   toolbarContainer?: HTMLElement | null
   // 검색창 옆에 두던 개수를 받아 갈 곳 — 페이지가 설정창 머리글에 그려 준다.
   onCountLabelChange?: (label: string | undefined) => void
+  // 업종 번호별 시가총액 합·종목 수(지도 데이터의 전체 종목 기준) — 열의 기본 순서와 숫자 칸에 쓴다.
+  sectorStats?: SectorStats
 }
+
+// 업종 열의 정렬 기준 — 기본은 시가총액 합이 큰 순서이고, 아랫줄 머리글을 눌러 바꾼다(열마다 따로).
+type SectorSortKey = 'name' | 'marketValue' | 'stockCount'
+type SectorSort = { key: SectorSortKey; direction: SortDirection }
+const DEFAULT_SECTOR_SORT: SectorSort = { key: 'marketValue', direction: 'desc' }
+// 표 머리글(58px)을 반으로 나눈 한 줄의 높이 — 윗줄은 분류 이름·필터, 아랫줄은 업종·시가총액 합·종목 수 정렬이다.
+const HEADER_HALF_PX = STOCK_HEADER_ROW_PX / 2
+// 한 열 안의 세 칸(업종·시가총액 합·종목 수) 폭 비율 — 머리글 아랫줄과 본문이 같이 쓴다.
+const SECTOR_COLUMN_WIDTHS = ['50%', '25%', '25%'] as const
 
 // 섹터 깊이 상한(최상위=0) — 4단계(0~3)까지만 허용하고 5단계 섹터는 만들지 못하게 한다. 나중에 한 단계 더
 // 늘릴 때는 이 값만 바꾸면 추가 버튼과 드래그 이동 제한이 같이 따라간다.
 const MAX_SECTOR_DEPTH = 3
 
-// 신규 종목이 자동 배정되는 최상위 업종 — 삭제할 수 없다(서버도 막는다).
-const NEW_LISTING_SECTOR_NAME = '신규 상장'
 // 업종 경로의 구분 표시 — 글자가 작은 '›' 대신 읽기 쉬운 '>'를 쓴다(금융 > 은행). 경로를 만들고 다시 나눌 때 같은 값을 쓴다.
 const SECTOR_PATH_SEPARATOR = ' > '
 const NEW_LISTING_DELETE_MESSAGE = '신규 상장시 자동 분류되는 항목이라 삭제가 불가능합니다.'
@@ -84,56 +93,21 @@ type Row =
   | { type: 'sector'; item: SectorItem; siblingIndex: number }
   | { type: 'add-child'; parentId: number; parentPath: string[]; depth: number }
 
-// 업종 화면 변경 내역 — 이동·이름 바꾸기·순서 바꾸기를 되돌리고 다시 적용한다(추가·삭제는 아직 기록하지 않는다).
+// 업종 화면 변경 내역 — 이동·이름 바꾸기를 되돌리고 다시 적용한다(추가·삭제는 아직 기록하지 않는다).
 type SectorHistoryAction =
   | { id: string; type: 'reparent'; sectorId: number; name: string; fromParentId: number | null; toParentId: number | null }
   | { id: string; type: 'rename'; sectorId: number; before: string; after: string }
-  | { id: string; type: 'reorder'; parentId: number | null; beforeIds: number[]; afterIds: number[] }
 type SectorHistoryInput = SectorHistoryAction extends infer A ? (A extends { id: string } ? Omit<A, 'id'> : never) : never
 const SECTOR_HISTORY_LIMIT = 9
 const DRAG_CONTROL_CLASS = 'cursor-grab touch-none rounded-sm border-0 bg-brand-surface text-ui-white transition-colors hover:bg-brand-surface-hover focus-visible:bg-brand-surface-hover focus-visible:outline-none'
 
-function DraggableSectorHandle({
-  sectorId,
-  parentId,
-  enabled,
-}: {
-  sectorId: number
-  parentId: number | null
-  enabled: boolean
-}) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `sector-drag-${sectorId}`,
-    data: { sectorId, parentId },
-    disabled: !enabled,
-  })
-  return <button ref={setNodeRef} {...listeners} {...attributes} data-no-row-select type="button" disabled={!enabled} aria-label="업종 순서 이동" data-hint={enabled ? '끌어서 순서 이동' : '사용자 지정 정렬에서 순서를 이동할 수 있습니다'} className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center ${DRAG_CONTROL_CLASS} disabled:cursor-not-allowed disabled:opacity-35 ${isDragging ? 'opacity-35' : ''}`}><span aria-hidden="true" className="text-xl font-medium leading-none">⠿</span></button>
-}
-
-// 끄는 중 마우스의 세로 위치 — 손잡이를 열 안으로 가두는 제한(keepInColumnVertically) 때문에 손잡이 위치는 맨 위·맨 아래에서 멈추므로,
-// 놓을 자리가 대상 줄의 위쪽 절반인지 아래쪽 절반인지는 마우스 위치로 가린다(그래야 맨 위·맨 아래 자리까지 갈 수 있다).
-const draggedPointerY = (event: { activatorEvent: Event; delta: { y: number } }) => {
-  const start = (event.activatorEvent as PointerEvent).clientY
-  return Number.isFinite(start) ? start + event.delta.y : null
-}
-
-// ⠿ 손잡이로 순서를 바꿀 때는 옆으로 새지 않고 위아래로만, 그 열 안에서만 움직이게 한다. 번호 칸으로 다른 분류로 옮길 때(mode: 'move')는 자유롭게 움직인다.
-const keepInColumnVertically: Modifier = ({ transform, active, draggingNodeRect, scrollableAncestorRects }) => {
-  if ((active?.data.current as { mode?: string } | undefined)?.mode === 'move') return transform
-  const column = scrollableAncestorRects[0]
-  if (!draggingNodeRect || !column) return { ...transform, x: 0 }
-  const minY = column.top - draggingNodeRect.top
-  const maxY = column.top + column.height - draggingNodeRect.top - draggingNodeRect.height
-  return { ...transform, x: 0, y: Math.min(Math.max(transform.y, minY), Math.max(minY, maxY)) }
-}
-
-// 번호 칸 — 업종은 끌어서 다른 업종 위에 놓으면 그 안으로 이동한다(순서 바꾸기는 왼쪽 ⠿ 손잡이).
+// 번호 칸 — 업종은 끌어서 다른 업종 위에 놓으면 그 안으로 이동한다(업종 순서는 항상 가나다 순이라 바꾸지 못한다).
 const NUMBER_BADGE_CLASS = 'mr-[10px] inline-flex h-6 w-8 shrink-0 items-center justify-end p-0 pr-1 text-sm leading-none font-medium tabular-nums'
 
 function DraggableNumberBadge({ sectorId, parentId, children }: { sectorId: number; parentId: number | null; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: `sector-move-${sectorId}`,
-    data: { sectorId, parentId, mode: 'move' },
+    data: { sectorId, parentId },
   })
   return (
     <button
@@ -150,10 +124,10 @@ function DraggableNumberBadge({ sectorId, parentId, children }: { sectorId: numb
 }
 
 // 대분류 열 머리글 — 번호 칸을 끄는 동안 여기에 놓으면 그 업종이 최상위(대분류)가 된다. 끄는 중이 아닐 때는 보통 머리글이다.
-function RootDropHeader({ className, isActive, isOver, children, style, onClick }: { className: string; isActive: boolean; isOver: boolean; children: React.ReactNode; style?: React.CSSProperties; onClick?: () => void }) {
+function RootDropHeader({ className, isActive, isOver, children, style }: { className: string; isActive: boolean; isOver: boolean; children: React.ReactNode; style?: React.CSSProperties }) {
   const { setNodeRef } = useDroppable({ id: 'sector-drop-root', data: { root: true } })
   return (
-    <div ref={setNodeRef} onClick={onClick} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/50' : ''}`} style={style}>
+    <div ref={setNodeRef} className={`${className} relative ${isActive ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isActive && isOver ? 'bg-[var(--brand)]/50' : ''}`} style={style}>
       {children}
       {isActive && (
         <span aria-hidden="true" className={`pointer-events-none absolute right-2 top-1/2 h-[22px] -translate-y-1/2 rounded border px-2 text-xs font-medium leading-[20px] ${isOver ? 'border-transparent bg-[var(--brand)] text-ui-background' : 'border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white'}`}>
@@ -189,21 +163,19 @@ function DroppableSectorRow({
   )
 }
 
-export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange }: Props) {
+export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS }: Props) {
   const stockSearchWidthPx = useStockSearchWidth()
   const [query, setQuery] = useState('')
-  const [sectorOrder, setSectorOrder] = useState<SectorOrder>(loadSectorOrder)
-  const [sortColumn, setSortColumn] = useState<number | null>(null)
-  const [sortDirection, setSortDirection] = useState<HeaderSortState>(null)
+  const [sortByDepth, setSortByDepth] = useState<Record<number, SectorSort | undefined>>({})
+  // 머리글 필터 목록의 보기 순서 — 시가총액 합 순(기본) 또는 가나다 순.
+  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>('cap')
   const [excludedByDepth, setExcludedByDepth] = useState<Record<number, ReadonlySet<string>>>({})
-  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'custom'>('custom')
   const [undoStack, setUndoStack] = useState<SectorHistoryAction[]>([])
   const [redoStack, setRedoStack] = useState<SectorHistoryAction[]>([])
   const historyCounter = useRef(0)
   const [selectedMajorId, setSelectedMajorId] = useState<number | null>(null)
   const [selectedMiddleId, setSelectedMiddleId] = useState<number | null>(null)
   const [selectedSectorId, setSelectedSectorId] = useState<number | null>(null)
-  const [dropIndicator, setDropIndicator] = useState<{ sectorId: number; position: 'before' | 'after' } | null>(null)
   const [newName, setNewName] = useState('')
   const [childNameByParent, setChildNameByParent] = useState<Record<number, string>>({})
   // 펼침과 무관하게 "지금 이 섹터 밑에 추가 입력줄을 보여줄지"만 따로 관리 — 한 번에 하나만 연다.
@@ -212,35 +184,30 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const [renameValue, setRenameValue] = useState('')
   const [highlightedId, setHighlightedId] = useState<number | null>(null)
   const [draggedSector, setDraggedSector] = useState<SectorItem | null>(null)
-  // 번호 칸을 끌어 다른 분류로 옮기는 중인지, 그리고 지금 놓으면 들어갈 업종.
-  const [isMoveDrag, setIsMoveDrag] = useState(false)
+  // 번호 칸을 끌어 다른 분류로 옮기는 중인지(끌 수 있는 것은 번호 칸뿐이다), 그리고 지금 놓으면 들어갈 업종.
+  const isMoveDrag = draggedSector !== null
   // 이동하거나 새로 만든 업종 — 다음 조작 전까지 배경색으로 표시하고, 목록이 다시 그려진 뒤 화면 안으로 스크롤한다.
   const [recentlyChangedSectorId, setRecentlyChangedSectorId] = useState<number | null>(null)
   const [recentChangeType, setRecentChangeType] = useState<'신규' | '이동' | null>(null)
   const scrollToRecentChangeRef = useRef(false)
-  // 손잡이로 끌 때 띄우는 안내를 메인 영역(왼쪽 끝~설정창 시작점)의 가로·세로 가운데에 놓기 위한 기준.
-  const mainAreaRef = useRef<HTMLDivElement>(null)
-  const [hintPosition, setHintPosition] = useState<{ x: number; y: number } | null>(null)
   const [moveOverId, setMoveOverId] = useState<number | null>(null)
   const [moveOverRoot, setMoveOverRoot] = useState(false)
-  // 끌고 있는 줄의 폭과, 손잡이(끄는 대상) 기준 줄 왼쪽 끝 위치 — 미리보기를 줄 전체 폭으로, 원래 줄과 같은 왼쪽 위치에서 그린다.
-  const [draggedRow, setDraggedRow] = useState<{ width: number; offsetX: number; height: number } | null>(null)
+  // 끌고 있는 줄의 폭과, 번호 칸(끄는 대상) 기준 줄 왼쪽 끝 위치 — 미리보기를 줄 전체 폭으로, 원래 줄과 같은 왼쪽 위치에서 그린다.
+  const [draggedRow, setDraggedRow] = useState<{ width: number; offsetX: number } | null>(null)
 
-  const toggleHeaderSort = (index: number) => {
-    if (sortColumn !== index) {
-      setSortColumn(index)
-      setSortDirection('asc')
-    } else {
-      setSortDirection(current => current === null ? 'asc' : current === 'asc' ? 'desc' : null)
-    }
-  }
+  // MARKETRY·거래소 업종 표와 같은 순환 — 오름차순 → 내림차순 → 기본(시가총액 합 큰 순)으로 돌아간다.
+  const toggleSort = (depth: number, key: SectorSortKey) => setSortByDepth(previous => {
+    const current = previous[depth]
+    if (!current || current.key !== key) return { ...previous, [depth]: { key, direction: 'asc' } }
+    if (current.direction === 'asc') return { ...previous, [depth]: { key, direction: 'desc' } }
+    return { ...previous, [depth]: undefined }
+  })
   const toggleDepthFilter = (depth: number, value: string) => setExcludedByDepth(previous => {
     const next = new Set(previous[depth] ?? [])
     if (next.has(value)) next.delete(value)
     else next.add(value)
     return { ...previous, [depth]: next }
   })
-  const changeSectorFilterMode = (value: 'alpha' | 'custom') => setSectorFilterMode(value)
   const createSector = useCreateSector()
   const renameSector = useRenameSector()
   const { remove } = useSectorDeleteFlow()
@@ -248,14 +215,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const hasChildren = (id: number) => sectors.some(c => c.parentId === id)
-  // 바로 아래 세부 항목 수 — 검색으로 일부만 보이는 중에도 실제 개수를 보여준다.
-  const childCountByParent = useMemo(() => {
-    const counts = new Map<number, number>()
-    for (const sector of sectors) {
-      if (sector.parentId !== null) counts.set(sector.parentId, (counts.get(sector.parentId) ?? 0) + 1)
-    }
-    return counts
-  }, [sectors])
 
   const isDescendant = (sector: SectorItem, ancestorId: number): boolean => {
     let current: SectorItem | undefined = sector
@@ -299,15 +258,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const moveMessage = (name: string, target: SectorItem | null) =>
     `[${name}]\n${target ? `[${getSectorPath(target)}] 하위로` : '최상위로'} 이동하시겠습니까?`
 
-  const persistSiblingOrder = (parentId: number | null, ids: number[]) => {
-    setSectorOrder(previous => {
-      const next = { ...previous, [String(parentId)]: ids }
-      localStorage.setItem(SECTOR_ORDER_STORAGE_KEY, JSON.stringify(next))
-      return next
-    })
-  }
-  const updateSiblingOrder = (parentId: number | null, nextSiblings: SectorItem[]) => persistSiblingOrder(parentId, nextSiblings.map(item => item.id))
-
   // 변경 내역 — 새 변경을 쌓으면 다시 적용 목록은 비운다.
   const pushHistory = (action: SectorHistoryInput) => {
     historyCounter.current += 1
@@ -317,10 +267,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const applyHistoryAction = (action: SectorHistoryAction, direction: 'before' | 'after') => {
     if (action.type === 'reparent') {
       reparentSector.mutate({ id: action.sectorId, parentId: direction === 'before' ? action.fromParentId : action.toParentId }, { onSuccess: () => triggerHighlight(action.sectorId) })
-    } else if (action.type === 'rename') {
-      renameSector.mutate({ id: action.sectorId, name: direction === 'before' ? action.before : action.after }, { onSuccess: () => triggerHighlight(action.sectorId) })
     } else {
-      persistSiblingOrder(action.parentId, direction === 'before' ? action.beforeIds : action.afterIds)
+      renameSector.mutate({ id: action.sectorId, name: direction === 'before' ? action.before : action.after }, { onSuccess: () => triggerHighlight(action.sectorId) })
     }
   }
   // 맨 위(다음 차례)부터 고른 항목까지 순서대로 처리한다 — 한 단계만 하려면 인덱스가 맨 끝이다.
@@ -341,8 +289,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const describeHistoryAction = (action: SectorHistoryAction) => {
     const nameOf = (id: number | null) => (id === null ? '최상위' : (sectors.find(item => item.id === id)?.name ?? '(삭제됨)'))
     if (action.type === 'reparent') return `${action.name}: ${nameOf(action.fromParentId)} → ${nameOf(action.toParentId)} 이동`
-    if (action.type === 'rename') return `${action.before} → ${action.after} 이름 변경`
-    return `${nameOf(action.parentId)} 안 순서 변경`
+    return `${action.before} → ${action.after} 이름 변경`
   }
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -465,16 +412,19 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   // 설정창 머리글 개수는 대분류만 센다 — MARKETRY·거래소(읽기 전용 표)와 같은 기준이다. 중·소분류 개수는 위 열 머리글에 따로 적혀 있다.
   const topLevelTotal = sectors.filter(sector => sector.depth === 0).length
   useReportCountLabel(`${toCount(sectorCounts[0])}/${toCount(topLevelTotal)}업종`, onCountLabelChange)
-  const depthOptions = sectorNamesByDepth(sectors, sectorOrder).map(names => [...new Set(names)])
-  const sortSiblings = (items: SectorItem[], parentId: number | null, depth: number) => {
-    const ordered = orderSectors(items, parentId, sectorOrder)
-    if (sortColumn !== depth || sortDirection === null) return ordered
-    const sign = sortDirection === 'asc' ? 1 : -1
-    return [...ordered].sort((a, b) => sign * compareKoreanText(a.name, b.name) || a.id - b.id)
+  const depthOptions = sectorNamesByDepth(sectors, sectorStats).map(names => [...new Set(names)])
+  const sortSiblings = (items: SectorItem[], depth: number) => {
+    const { key, direction } = sortByDepth[depth] ?? DEFAULT_SECTOR_SORT
+    const sign = direction === 'asc' ? 1 : -1
+    const valueOf = (item: SectorItem) => sectorStats.get(item.id)?.[key === 'stockCount' ? 'stockCount' : 'marketValue'] ?? 0
+    return [...items].sort((a, b) => {
+      const diff = key === 'name' ? compareKoreanText(a.name, b.name) : valueOf(a) - valueOf(b)
+      return diff === 0 ? compareKoreanText(a.name, b.name) || a.id - b.id : sign * diff
+    })
   }
-  const rootSectors = sortSiblings(viewSectors.filter(c => c.parentId === null && !excludedByDepth[0]?.has(c.name)), null, 0)
-  const middleSectors = selectedMajorId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMajorId && !excludedByDepth[1]?.has(c.name)), selectedMajorId, 1)
-  const smallSectors = selectedMiddleId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMiddleId && !excludedByDepth[2]?.has(c.name)), selectedMiddleId, 2)
+  const rootSectors = sortSiblings(viewSectors.filter(c => c.parentId === null && !excludedByDepth[0]?.has(c.name)), 0)
+  const middleSectors = selectedMajorId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMajorId && !excludedByDepth[1]?.has(c.name)), 1)
+  const smallSectors = selectedMiddleId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMiddleId && !excludedByDepth[2]?.has(c.name)), 2)
   // 필터나 검색으로 선택 경로가 감춰지면 다음 열도 함께 닫는다. 숨겨진 부모의 자식만 남아
   // 맥락 없이 보이거나, 필터를 푼 뒤 오래된 선택이 다시 나타나는 일을 막는다.
   useEffect(() => {
@@ -506,51 +456,20 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const rootIndexById = new Map<number, number>()
   rootSectors.forEach((c, i) => rootIndexById.set(c.id, i + 1))
 
-  // ⠿ 손잡이로 순서를 바꾸는 동안, 끄는 줄이 들어갈 자리를 비워 주려고 사이에 낀 줄들이 한 칸씩 위아래로 비켜 준다(px).
-  const shiftById = useMemo(() => {
-    const shifts = new Map<number, number>()
-    if (!draggedSector || isMoveDrag || !dropIndicator || !draggedRow) return shifts
-    const siblings = orderSectors(sectors.filter(item => item.parentId === draggedSector.parentId), draggedSector.parentId, sectorOrder)
-    const from = siblings.findIndex(item => item.id === draggedSector.id)
-    const targetIndex = siblings.findIndex(item => item.id === dropIndicator.sectorId)
-    if (from < 0 || targetIndex < 0) return shifts
-    const slot = targetIndex + (dropIndicator.position === 'after' ? 1 : 0) // 끼워 넣을 자리(원래 순서 기준 0~n)
-    siblings.forEach((item, index) => {
-      if (index === from) return
-      if (from < slot && index > from && index < slot) shifts.set(item.id, -draggedRow.height)
-      if (from > slot - 1 && index >= slot && index < from) shifts.set(item.id, draggedRow.height)
-    })
-    return shifts
-  }, [draggedSector, isMoveDrag, dropIndicator, draggedRow, sectors, sectorOrder])
-
   // 번호 칸을 끌 때 놓을 수 있는 업종 — ↪ 이동과 같은 규칙이다: 자기와 그 하위, 지금 부모는 안 되고, 옮긴 뒤 가장 깊은 업종이 소분류를 넘지 않아야 한다.
   // 그래서 소분류를 대분류 줄에 바로 놓아 중분류로 올리거나, 중분류를 다른 중분류에 놓아 소분류로 내릴 수도 있고, 대분류도 다른 대분류 안으로 넣을 수 있다. 맨 위(대분류)로 올릴 때는 대분류 열 머리글에 놓는다.
   const isMoveDropTarget = (dragged: SectorItem | null, target: SectorItem) => {
     if (!dragged) return false
     return getMoveCandidates(dragged).some(candidate => candidate.id === target.id)
   }
-  // 끄는 중 놓을 자리 표시(번호 칸 끌기는 놓을 수 있는 줄, 손잡이 끌기는 위·아래 어느 쪽에 끼울지). 대상 줄이 그대로여도 마우스가 줄 안에서 움직이면 다시 계산해야 해서 onDragOver와 onDragMove 둘 다 쓴다.
+  // 끄는 중 지금 놓으면 들어갈 줄(또는 최상위 머리글)을 표시한다. 대상 줄이 그대로여도 마우스가 줄 안에서 움직이면 다시 계산해야 해서 onDragOver와 onDragMove 둘 다 쓴다.
   const updateDragTarget = (event: DragOverEvent | DragMoveEvent) => {
     const draggedData = event.active.data.current as { sectorId: number; parentId: number | null } | undefined
     const targetData = event.over?.data.current as { sectorId: number } | undefined
     const draggedItem = draggedData && sectors.find(item => item.id === draggedData.sectorId)
     const targetItem = targetData && sectors.find(item => item.id === targetData.sectorId)
-    if ((event.active.data.current as { mode?: string } | undefined)?.mode === 'move') {
-      setDropIndicator(null)
-      setMoveOverId(draggedItem && targetItem && isMoveDropTarget(draggedItem, targetItem) ? targetItem.id : null)
-      setMoveOverRoot(!!draggedItem && draggedItem.parentId !== null && (event.over?.data.current as { root?: boolean } | undefined)?.root === true)
-      return
-    }
-    const activeRect = event.active.rect.current.translated
-    const overRect = event.over?.rect
-    if (draggedItem && targetItem && draggedItem.parentId === targetItem.parentId && draggedItem.id !== targetItem.id && activeRect && overRect) {
-      const pointerY = draggedPointerY(event)
-      const insertAfter = (pointerY ?? activeRect.top + activeRect.height / 2) > overRect.top + overRect.height / 2
-      setDropIndicator({ sectorId: targetItem.id, position: insertAfter ? 'after' : 'before' })
-    } else {
-      setDropIndicator(null)
-    }
-      
+    setMoveOverId(draggedItem && targetItem && isMoveDropTarget(draggedItem, targetItem) ? targetItem.id : null)
+    setMoveOverRoot(!!draggedItem && draggedItem.parentId !== null && (event.over?.data.current as { root?: boolean } | undefined)?.root === true)
   }
 
   const moveByDrag = async (dragged: SectorItem, target: SectorItem | null) => {
@@ -583,9 +502,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       const chainLabel = `[${row.parentPath.join(SECTOR_PATH_SEPARATOR)}]`
       return (
         <tr key={`add-child-${parentId}`}>
-          <td className="py-0.5 text-left" style={{ paddingLeft: '14px' }}>
+          <td colSpan={3} className="py-0.5 text-left" style={{ paddingLeft: '14px' }}>
             {/* 입력 글자의 시작선을 생성 후 업종명과 맞춘다. input 내부 여백(8px)만큼 입력칸 자체는 왼쪽에서 시작한다. */}
-            <div className="group/create flex items-center gap-2 pl-14">
+            <div className="group/create flex items-center gap-2 pl-7">
               <SectorNameInput
                 wrapperClassName="inline-flex"
                 autoFocus
@@ -624,21 +543,21 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     }
     // 선택한 경로(대·중·소분류에서 고른 업종)의 줄은 종목 표의 선택된 줄과 같은 청록 배경으로 칠한다.
     const isOnSelectedPath = selectedSectorId === sector.id || selectedMajorId === sector.id || selectedMiddleId === sector.id
+    const rowBgClass = `${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`
+    const stat = sectorStats.get(sector.id)
     return (
       <DroppableSectorRow
         key={sector.id}
         sectorId={sector.id}
-        className={`group ${isRenaming ? '' : 'cursor-pointer'} ${draggedSector?.id === sector.id ? (isMoveDrag ? 'opacity-35' : 'invisible') : ''} ${highlightedId === sector.id ? 'animate-row-blink' : ''}`}
-        style={draggedSector && !isMoveDrag ? { transform: `translateY(${shiftById.get(sector.id) ?? 0}px)`, transition: 'transform 150ms ease' } : undefined}
+        className={`group ${isRenaming ? '' : 'cursor-pointer'} ${draggedSector?.id === sector.id ? 'opacity-35' : ''} ${highlightedId === sector.id ? 'animate-row-blink' : ''}`}
         onClick={event => {
           if (isRenaming || (event.target as HTMLElement).closest('[data-no-row-select]')) return
           selectSector()
         }}
       >
-        <td className={`relative py-0.5 text-left ${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50 ring-1 ring-inset ring-[var(--brand)]' : isMoveDrag && isMoveDropTarget(draggedSector, sector) ? 'ring-1 ring-inset ring-[var(--brand)]/70' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`} style={{ paddingLeft: '8px' }}>
+        <td className={`relative py-0.5 text-left ${rowBgClass}`} style={{ paddingLeft: '8px' }}>
           <div className="flex items-center gap-2">
             <div className="flex min-w-0 flex-1 items-center">
-              <DraggableSectorHandle sectorId={sector.id} parentId={sector.parentId} enabled />
               {isRenaming ? (
                 <SectorNameInput
                   wrapperClassName="flex min-w-0 flex-1"
@@ -656,14 +575,12 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   <DraggableNumberBadge sectorId={sector.id} parentId={sector.parentId}>{itemNumber}</DraggableNumberBadge>
                   <button
                     type="button"
+                    data-hint={isProtectedSector(sector) ? NEW_LISTING_SECTOR_HINT : undefined}
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
-                    className="truncate border-0 bg-transparent p-0 text-left text-sm text-ui-white"
+                    className={`truncate border-0 bg-transparent p-0 text-left text-sm ${isProtectedSector(sector) ? NEW_LISTING_SECTOR_TEXT_CLASS : 'text-ui-white'}`}
                   >
                     {sector.name}
                   </button>
-                  {(childCountByParent.get(sector.id) ?? 0) > 0 && (
-                    <span className="ml-1 shrink-0 text-sm text-ui-muted">({toCount(childCountByParent.get(sector.id) ?? 0)})</span>
-                  )}
                   {/* 번호 칸을 끄는 동안 놓을 수 있는 줄 오른쪽 끝에 "여기" 표시를 띄운다(지금 위에 올라간 줄은 채워서 강조). */}
                   {isMoveDrag && isMoveDropTarget(draggedSector, sector) && (
                     <span
@@ -712,6 +629,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             )}
           </div>
         </td>
+        <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toJoEokDecimal((stat?.marketValue ?? 0) / 100_000_000)}</td>
+        <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toCount(stat?.stockCount ?? 0)}</td>
       </DroppableSectorRow>
     )
   }
@@ -720,70 +639,41 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     <>
     <DndContext
       sensors={sensors}
-      modifiers={[keepInColumnVertically]}
       collisionDetection={sectorCollisionDetection}
       onDragOver={updateDragTarget}
       onDragMove={updateDragTarget}
       onDragStart={event => {
-        setDropIndicator(null)
         setRecentlyChangedSectorId(null)
         setMoveOverId(null)
         setMoveOverRoot(false)
-        setIsMoveDrag((event.active.data.current as { mode?: string } | undefined)?.mode === 'move')
-        const mainRect = mainAreaRef.current?.getBoundingClientRect()
-        setHintPosition(mainRect ? { x: mainRect.left + mainRect.width / 2, y: mainRect.top + mainRect.height / 2 } : null)
         const dragData = event.active.data.current as { sectorId: number } | undefined
         setDraggedSector(dragData ? (sectors.find(c => c.id === dragData.sectorId) ?? null) : null)
         const grabbed = event.activatorEvent.target as HTMLElement | null
-        const handleRect = grabbed?.closest('button')?.getBoundingClientRect()
+        const badgeRect = grabbed?.closest('button')?.getBoundingClientRect()
         const rowRect = grabbed?.closest('tr')?.getBoundingClientRect()
-        setDraggedRow(handleRect && rowRect ? { width: rowRect.width, offsetX: rowRect.left - handleRect.left, height: rowRect.height } : null)
+        setDraggedRow(badgeRect && rowRect ? { width: rowRect.width, offsetX: rowRect.left - badgeRect.left } : null)
       }}
       onDragEnd={event => {
-        setDropIndicator(null)
         setDraggedSector(null)
         setDraggedRow(null)
         const draggedData = event.active.data.current as { sectorId: number; parentId: number | null } | undefined
         const targetData = event.over?.data.current as { sectorId: number } | undefined
         const draggedItem = draggedData && sectors.find(item => item.id === draggedData.sectorId)
         const targetItem = targetData && sectors.find(item => item.id === targetData.sectorId)
-        const wasMoveDrag = (event.active.data.current as { mode?: string } | undefined)?.mode === 'move'
-        setIsMoveDrag(false)
         setMoveOverId(null)
         const droppedOnRoot = (event.over?.data.current as { root?: boolean } | undefined)?.root === true
         setMoveOverRoot(false)
-        if (wasMoveDrag) {
-          if (draggedItem && droppedOnRoot && draggedItem.parentId !== null) void moveByDrag(draggedItem, null)
-          else if (draggedItem && targetItem && isMoveDropTarget(draggedItem, targetItem)) void moveByDrag(draggedItem, targetItem)
-          return
-        }
-        if (draggedItem && targetItem && draggedItem.parentId === targetItem.parentId && draggedItem.id !== targetItem.id) {
-          const siblings = orderSectors(sectors.filter(item => item.parentId === draggedItem.parentId), draggedItem.parentId, sectorOrder)
-          const fromIndex = siblings.findIndex(item => item.id === draggedItem.id)
-          const targetIndex = siblings.findIndex(item => item.id === targetItem.id)
-          const activeRect = event.active.rect.current.translated
-          const overRect = event.over?.rect
-          const pointerY = draggedPointerY(event)
-          const insertAfter = !!activeRect && !!overRect && (pointerY ?? activeRect.top + activeRect.height / 2) > overRect.top + overRect.height / 2
-          const [moved] = siblings.splice(fromIndex, 1)
-          const adjustedTargetIndex = targetIndex - (fromIndex < targetIndex ? 1 : 0)
-          siblings.splice(Math.max(0, adjustedTargetIndex + (insertAfter ? 1 : 0)), 0, moved)
-          const beforeIds = orderSectors(sectors.filter(item => item.parentId === draggedItem.parentId), draggedItem.parentId, sectorOrder).map(item => item.id)
-          const afterIds = siblings.map(item => item.id)
-          updateSiblingOrder(draggedItem.parentId, siblings)
-          if (beforeIds.join(',') !== afterIds.join(',')) pushHistory({ type: 'reorder', parentId: draggedItem.parentId, beforeIds, afterIds })
-        }
+        if (draggedItem && droppedOnRoot && draggedItem.parentId !== null) void moveByDrag(draggedItem, null)
+        else if (draggedItem && targetItem && isMoveDropTarget(draggedItem, targetItem)) void moveByDrag(draggedItem, targetItem)
       }}
       onDragCancel={() => {
-        setIsMoveDrag(false)
         setMoveOverId(null)
         setMoveOverRoot(false)
-        setDropIndicator(null)
         setDraggedSector(null)
         setDraggedRow(null)
       }}
     >
-      <div ref={mainAreaRef} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         {toolbarContainer && createPortal(
           <SearchBar
             inline
@@ -799,14 +689,15 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           {(['대분류', '중분류', '소분류'] as const).map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">
               {(() => {
-                const headerClass = `flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 bg-[var(--ui-panel)] text-sm font-bold shadow-[inset_0_-1px_0_var(--ui-border)] ${index < 2 ? 'border-r border-ui-white/20' : ''} ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`
+                const headerClass = `flex shrink-0 flex-col bg-[var(--ui-panel)] text-sm font-bold shadow-[inset_0_-1px_0_var(--ui-border)] ${index < 2 ? 'border-r border-ui-white/20' : ''}`
                 const depth = index
                 const excluded = excludedByDepth[depth] ?? new Set<string>()
-                const headerContent = (
-                  <StockSortHeader
-                    label={`${label} (${toCount(sectorCounts[index])})`}
-                    state={sortColumn === index ? sortDirection : null}
-                    filter={<ColumnFilterButton
+                const { key: sortKey, direction: sortDirection } = sortByDepth[depth] ?? DEFAULT_SECTOR_SORT
+                // 윗줄 — 분류 이름과 개수, 검색 필터.
+                const topRow = (
+                  <div className={`flex items-center justify-center gap-2 ${index === activeColumn ? 'text-[var(--brand)]' : 'text-ui-white'}`} style={{ height: HEADER_HALF_PX }}>
+                    <span>{`${label} (${toCount(sectorCounts[index])})`}</span>
+                    <ColumnFilterButton
                       label={label}
                       getOptions={() => depthOptions[depth]}
                       optionOrder={depthOptions[depth]}
@@ -814,18 +705,28 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                       onToggle={value => toggleDepthFilter(depth, value)}
                       onSelectAll={() => setExcludedByDepth(previous => ({ ...previous, [depth]: new Set() }))}
                       onSelectNone={values => setExcludedByDepth(previous => ({ ...previous, [depth]: new Set(values) }))}
-                      orderMode={{ value: sectorFilterMode, onChange: changeSectorFilterMode }}
-                    />}
-                  />
+                      orderMode={{ value: sectorFilterMode, onChange: setSectorFilterMode }}
+                    />
+                  </div>
+                )
+                // 아랫줄 — MARKETRY·거래소 업종 표와 같은 업종 / 시가총액 합 / 종목 수 정렬 머리글.
+                const bottomRow = (
+                  <div className="flex border-t border-ui-border text-ui-white" style={{ height: HEADER_HALF_PX }}>
+                    {([['name', '업종'], ['marketValue', '시가총액 합'], ['stockCount', '종목 수']] as const).map(([key, text], cell) => (
+                      <div key={key} className="flex items-center justify-center whitespace-nowrap" style={{ width: SECTOR_COLUMN_WIDTHS[cell] }}>
+                        <SortLabel label={text} active={sortKey === key} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
+                      </div>
+                    ))}
+                  </div>
                 )
                 return index === 0 ? (
-                  <RootDropHeader className={headerClass} isActive={isMoveDrag && draggedSector?.parentId !== null && draggedSector !== null} isOver={moveOverRoot} onClick={() => toggleHeaderSort(index)} style={{ height: STOCK_HEADER_ROW_PX }}>{headerContent}</RootDropHeader>
+                  <RootDropHeader className={headerClass} isActive={isMoveDrag && draggedSector?.parentId !== null && draggedSector !== null} isOver={moveOverRoot} style={{ height: STOCK_HEADER_ROW_PX }}>{topRow}{bottomRow}</RootDropHeader>
                 ) : (
-                  <div className={headerClass} onClick={() => toggleHeaderSort(index)} style={{ height: STOCK_HEADER_ROW_PX }}>{headerContent}</div>
+                  <div className={headerClass} style={{ height: STOCK_HEADER_ROW_PX }}>{topRow}{bottomRow}</div>
                 )
               })()}
               <ScrollArea overlay scrollLabel={`${label} 업종 목록`} className={`min-h-0 flex-1 ${index < 2 ? 'border-r border-ui-border' : ''}`}>
-                <table className="nes-table is-dark custom-page-table custom-sector-table w-full text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><tbody>{columnRows[index].map(renderRow)}</tbody></table>
+                <table className="nes-table is-dark custom-page-table custom-sector-table w-full table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><colgroup>{SECTOR_COLUMN_WIDTHS.map(width => <col key={width + index} style={{ width }} />)}</colgroup><tbody>{columnRows[index].map(renderRow)}</tbody></table>
               </ScrollArea>
             </div>
           ))}
@@ -834,28 +735,17 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         </div>
       </div>
       {/* 커서를 따라다니는 드래그 미리보기 — 끌고 있는 줄을 원래 폭의 한 줄 그대로(손잡이·번호·이름) 청록 배경에 그림자를 줘서 들어 올린 것처럼 보여 준다. */}
-      {/* 끄는 동안 안내를 메인 영역 가운데에 띄운다 — ⠿ 손잡이는 위·아래로만 움직인다는 안내, 번호 칸은 끌어서 다른 업종으로 보낼 수 있다는 안내(다른 안내 말풍선과 같은 모양). */}
-      {draggedSector && !isMoveDrag && createPortal(
-        <div role="status" style={{ position: 'fixed', top: hintPosition?.y ?? '50%', left: hintPosition?.x ?? '50%', transform: 'translate(-50%, -50%)' }} className={`z-[100] whitespace-nowrap ${HINT_BUBBLE_CLASS}`}>
-          <><b className="text-status-error-ink">위·아래</b>로만 이동할 수 있어요.</>
-        </div>,
-        document.body,
-      )}
       <DragOverlay>
         {draggedSector && (() => {
-          const siblings = orderSectors(sectors.filter(item => item.parentId === draggedSector.parentId), draggedSector.parentId, sectorOrder)
-          const position = siblings.findIndex(item => item.id === draggedSector.id) + 1
+          const position = columnRows[Math.min(draggedSector.depth, 2)].flatMap(row => (row.type === 'sector' && row.item.id === draggedSector.id ? [row.siblingIndex] : []))[0] ?? 0
           const number = draggedSector.parentId === null ? `${position}.` : draggedSector.depth >= 2 ? `(${position})` : `${position})`
-          const childCount = childCountByParent.get(draggedSector.id) ?? 0
           return (
             <div
               style={{ width: draggedRow?.width, marginLeft: draggedRow?.offsetX, paddingLeft: '8px' }}
               className="flex items-center border-y-2 border-[var(--brand)] bg-[var(--brand-surface)] py-0.5 text-sm text-ui-white shadow-xl"
             >
-              <span aria-hidden="true" className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center text-xl font-medium leading-none ${DRAG_CONTROL_CLASS}`}>⠿</span>
               <span aria-hidden="true" className={`${NUMBER_BADGE_CLASS} ${DRAG_CONTROL_CLASS}`}>{number}</span>
               <span className="truncate">{draggedSector.name}</span>
-              {childCount > 0 && <span className="ml-1 shrink-0 text-ui-text">({toCount(childCount)})</span>}
             </div>
           )
         })()}

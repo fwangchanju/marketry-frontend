@@ -19,11 +19,11 @@ function FunnelIcon({ className }: { className?: string }) {
   )
 }
 
-// "가나다 순 / 사용자 지정 순" 두 칸 — 대·중·소분류 필터와 일괄 변경 팝업이 같이 쓴다.
-export function SectorOrderToggle({ label, value, onChange, compact = false }: { label: string; value: 'alpha' | 'custom'; onChange: (value: 'alpha' | 'custom') => void; compact?: boolean }) {
+// "가나다 순 / 시가총액 순" 두 칸 — 대·중·소분류 필터와 일괄 변경 팝업이 같이 쓴다.
+export function SectorOrderToggle({ label, value, onChange, compact = false }: { label: string; value: 'alpha' | 'cap'; onChange: (value: 'alpha' | 'cap') => void; compact?: boolean }) {
   return (
     <div className={compact ? 'flex gap-3' : 'flex w-max gap-1 px-3 pb-2'} role="radiogroup" aria-label={`${label} 보기 순서`}>
-      {([['alpha', '가나다 순'], ['custom', '사용자 지정 순']] as const).map(([option, text]) => (
+      {([['alpha', '가나다 순'], ['cap', '시가총액 순']] as const).map(([option, text]) => (
         <button
           key={option}
           type="button"
@@ -56,8 +56,8 @@ interface Props {
   onSelectNone: (values: readonly string[]) => void
   // 전체 선택 상태에서 검색 결과를 누르면 해당 값만 남기고 선택을 시작한다.
   selectOnlyOnSearch?: boolean
-  // 보기 순서 선택 — 있으면 목록 위에 "가나다 순 / 사용자 지정 순" 두 칸이 생긴다. 'custom'이면 optionOrder, 'alpha'면 가나다 순으로 보인다.
-  orderMode?: { value: 'alpha' | 'custom'; onChange: (value: 'alpha' | 'custom') => void }
+  // 보기 순서 선택 — 있으면 목록 위에 "가나다 순 / 시가총액 순" 두 칸이 생긴다. 'cap'이면 optionOrder(시가총액 합 순), 'alpha'면 가나다 순으로 보인다.
+  orderMode?: { value: 'alpha' | 'cap'; onChange: (value: 'alpha' | 'cap') => void }
 }
 
 const NO_OPTIONS: readonly string[] = []
