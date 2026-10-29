@@ -1,6 +1,6 @@
 import { SlidingHighlight } from '@/components/SlidingHighlight'
 
-// 설정창의 선택 버튼 묶음 — 지도 설정 "종목 등락 방향"과 같은 양식이다. 선택 칸의 청록 채움이 옆으로 미끄러지고, 안 고른 칸은 회색이다.
+// 설정창의 선택 버튼 묶음 — 지도 설정 "종목 등락 방향"과 같은 양식이다. 선택 칸은 청록으로 채워지고(애니메이션 없이 바로 바뀐다), 안 고른 칸은 회색이다.
 // 글자는 칸 가운데에 두고, 묶음은 제목·설명 아래 남은 칸의 세로 가운데에 놓는다.
 export default function SettingsSegmentedControl<T extends string | number | boolean>({
   label,

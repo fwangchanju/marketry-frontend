@@ -270,10 +270,10 @@ function ToggleSwitch({
         aria-label={label}
         onClick={onChange}
         disabled={disabled}
-        className={`relative -mr-1.5 h-3.5 w-[26px] shrink-0 appearance-none rounded-full border-0 p-0 shadow-none transition-colors duration-[500ms] ease-out ${checked ? 'bg-brand-surface' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
+        className={`relative -mr-1.5 h-3.5 w-[26px] shrink-0 appearance-none rounded-full border-0 p-0 shadow-none ${checked ? 'bg-brand-surface' : 'bg-ui-control'} ${disabled ? 'cursor-not-allowed' : ''}`}
       >
         <span
-          className={`absolute top-1/2 left-[2px] h-2.5 w-2.5 -translate-y-1/2 rounded-full transition-[transform,opacity,background-color] duration-[500ms] ease-out ${checked ? 'translate-x-3 bg-ui-white' : 'translate-x-0 bg-ui-white opacity-70'}`}
+          className={`absolute top-1/2 left-[2px] h-2.5 w-2.5 -translate-y-1/2 rounded-full ${checked ? 'translate-x-3 bg-ui-white' : 'translate-x-0 bg-ui-white opacity-70'}`}
         />
       </button>
     </div>
@@ -489,7 +489,7 @@ function StairRows({
 }
 
 const STAIR_HANDLE_BASE =
-  'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-0 transition-[top,width,height,gap] duration-100'
+  'absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-0'
 
 // 업종 단계 선택은 모두 오른쪽 레일로 한다. 맵 깊이는 누적, 그래프·상위 업종 강조는 단일 단계로 고른다.
 function DepthStairSelect({
@@ -566,7 +566,7 @@ function DepthStairSelect({
           onPointerLeave={e => { delete e.currentTarget.dataset.hint }}
         >
           <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-          <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[height]" style={{ top: stairCenterOf(0), height: single ? 0 : stairCenterOf(depth - 1) - stairCenterOf(0) }} />
+          <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand" style={{ top: stairCenterOf(0), height: single ? 0 : stairCenterOf(depth - 1) - stairCenterOf(0) }} />
           <span
             role="slider"
             tabIndex={disabled ? -1 : 0}
@@ -679,7 +679,7 @@ function DepthStairRange({
         onPointerUp={() => { dragRef.current = null }}
       >
         <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-ui-border" style={{ top: stairCenterOf(0), height: stairCenterOf(last) - stairCenterOf(0) }} />
-        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand transition-[top,height]" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
+        <span className="pointer-events-none absolute left-[6px] w-[4px] rounded-full bg-brand" style={{ top: stairCenterOf(minIndex), height: stairCenterOf(maxIndex) - stairCenterOf(minIndex) }} />
         {merged ? (
           <span
             role="slider"
@@ -750,8 +750,6 @@ function RangeSlider({
   const [limitHintVisible, setLimitHintVisible] = useState(false)
   const [hintPos, setHintPos] = useState<CursorHint | null>(null)
   // 끌고 있는 동안은 핸들이 손을 늦게 따라오지 않도록 아주 짧게, 눌러서 옮길 때는 0.3초 동안 미끄러진다.
-  const [isDragging, setIsDragging] = useState(false)
-  const slideTransition = `left ${isDragging ? 150 : 300}ms ease-out, width ${isDragging ? 150 : 300}ms ease-out`
   const sliderSteps = Math.max(steps, 1)
   const selectableMaxIndex = Math.min(sliderSteps, maxSelectableIndex ?? sliderSteps)
 
@@ -788,7 +786,6 @@ function RangeSlider({
     let dragged = false
     const handleMove = (ev: PointerEvent) => {
       if (!dragged && Math.abs(ev.clientX - startX) < CLICK_MOVE_THRESHOLD) return
-      if (!dragged) setIsDragging(true)
       dragged = true
       const index = dragIndexFromClientX(ev.clientX)
       if (which === 'min') onChange(Math.min(index, maxIndex), maxIndex)
@@ -797,7 +794,6 @@ function RangeSlider({
     const handleUp = (ev: PointerEvent) => {
       document.removeEventListener('pointermove', handleMove)
       document.removeEventListener('pointerup', handleUp)
-      setIsDragging(false)
       if (dragged) return
       // 움직이지 않고 뗐다 = 클릭. 가까운 핸들을 그 자리로 옮긴다.
       const index = dragIndexFromClientX(ev.clientX)
@@ -834,7 +830,7 @@ function RangeSlider({
         <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
         <div
           className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
-          style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, width: `calc(${maxPct - minPct}% - ${(maxPct - minPct) * 0.16}px)`, transition: slideTransition }}
+          style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, width: `calc(${maxPct - minPct}% - ${(maxPct - minPct) * 0.16}px)` }}
         />
         {/* 두 핸들이 같은 칸에 모이면 원 두 개가 겹쳐 화살표가 뭉개진다. 그때는 바깥으로 벌어지는
             화살표 둘을 담은 알약 하나로 그려서, 모여 있어도 양방향으로 벌릴 수 있는 핸들임이 보이게 한다. */}
@@ -846,17 +842,17 @@ function RangeSlider({
           <div
             aria-label={`${minAriaLabel} / ${maxAriaLabel}`}
             className={`${RANGE_HANDLE_CLASS} z-10 w-7 gap-2`}
-            style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, transition: slideTransition }}
+            style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)` }}
           >
             <ChevronGlyph direction="left" />
             <ChevronGlyph direction="right" />
           </div>
         ) : (
           <>
-            <div aria-label={minAriaLabel} className={`${RANGE_HANDLE_CLASS} z-10 w-4`} style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)`, transition: slideTransition }}>
+            <div aria-label={minAriaLabel} className={`${RANGE_HANDLE_CLASS} z-10 w-4`} style={{ left: `calc(8px + ${minPct}% - ${minPct * 0.16}px)` }}>
               <ChevronGlyph direction="left" outward />
             </div>
-            <div aria-label={maxAriaLabel} className={`${RANGE_HANDLE_CLASS} z-20 w-4`} style={{ left: `calc(8px + ${maxPct}% - ${maxPct * 0.16}px)`, transition: slideTransition }}>
+            <div aria-label={maxAriaLabel} className={`${RANGE_HANDLE_CLASS} z-20 w-4`} style={{ left: `calc(8px + ${maxPct}% - ${maxPct * 0.16}px)` }}>
               <ChevronGlyph direction="right" outward />
             </div>
           </>
@@ -974,24 +970,20 @@ function SingleRangeInput({
   smooth?: boolean
 }) {
   const pct = max === min ? 0 : ((value - min) / (max - min)) * 100
-  // 끌고 있는 동안(누른 채 움직일 때)은 손잡이가 손을 늦게 따라오지 않도록 아주 짧게, 눌러서 옮기거나 키보드로 옮길 때는 0.3초 동안 미끄러진다.
-  const [isDragging, setIsDragging] = useState(false)
-  const slide = `${isDragging ? 150 : 300}ms ease-out`
-  const barTransition = smooth ? `width ${slide}` : undefined
   return (
     <div className={`relative h-4 ${disabled ? 'opacity-35' : ''}`}>
       <span aria-hidden="true" data-slider-track className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-ui-border" />
       <span
         aria-hidden="true"
         className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
-        style={{ width: `calc(8px + ${pct}% - ${pct * 0.16}px)`, transition: barTransition }}
+        style={{ width: `calc(8px + ${pct}% - ${pct * 0.16}px)` }}
       />
-      {/* 눈에 보이는 손잡이 — 아래 input의 기본 손잡이는 투명하게 두고, 이 손잡이가 값 위치로 미끄러진다. */}
+      {/* 눈에 보이는 손잡이 — 아래 input의 기본 손잡이는 투명하게 두고, 이 손잡이가 값 위치로 바로 옮겨진다(전환 없음). */}
       {smooth && (
         <span
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 box-border h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-0 bg-brand"
-          style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)`, transition: `left ${slide}` }}
+          style={{ left: `calc(8px + ${pct}% - ${pct * 0.16}px)` }}
         />
       )}
       <input
@@ -1003,10 +995,6 @@ function SingleRangeInput({
         aria-label={ariaLabel}
         aria-valuetext={ariaValueText}
         onChange={e => onChange(Number(e.target.value))}
-        onPointerMove={e => { if (e.buttons === 1) setIsDragging(true) }}
-        onPointerUp={() => setIsDragging(false)}
-        onPointerCancel={() => setIsDragging(false)}
-        onBlur={() => setIsDragging(false)}
         disabled={disabled}
         className={`settings-single-slider absolute inset-0 block h-4 w-full disabled:cursor-not-allowed ${smooth ? '' : 'is-native-thumb'}`}
       />
