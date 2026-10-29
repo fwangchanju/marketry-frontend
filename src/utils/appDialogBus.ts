@@ -5,7 +5,9 @@ export type AppDialogRequest = {
   mutedMessage?: string
   followupMessage?: string
   title: string
-  resolve?: (confirmed: boolean) => void
+  // 입력칸이 있는 창 — 확인하면 적은 글자(앞뒤 공백 제외)가 resolve의 둘째 값으로 간다.
+  input?: { placeholder: string; maxLength: number }
+  resolve?: (confirmed: boolean, value?: string) => void
 }
 
 let queue: AppDialogRequest[] = []
@@ -44,10 +46,25 @@ export function appWarnConfirm(message: string, options: { title: string; mutedM
   return new Promise(resolve => enqueue({ kind: 'warning', message, mutedMessage: options.mutedMessage, followupMessage: options.followupMessage, title: options.title, resolve }))
 }
 
-export function resolveCurrentAppDialog(confirmed: boolean) {
+// 확인 전에 한 줄 메모를 적을 수 있는 주의 창 — 비워 두어도 확인할 수 있다(value는 빈 글자).
+export function appWarnConfirmWithInput(
+  message: string,
+  options: { title: string; mutedMessage?: string; placeholder: string; maxLength: number },
+): Promise<{ confirmed: boolean; value: string }> {
+  return new Promise(resolve => enqueue({
+    kind: 'warning',
+    message,
+    mutedMessage: options.mutedMessage,
+    title: options.title,
+    input: { placeholder: options.placeholder, maxLength: options.maxLength },
+    resolve: (confirmed, value) => resolve({ confirmed, value: value ?? '' }),
+  }))
+}
+
+export function resolveCurrentAppDialog(confirmed: boolean, value?: string) {
   const [current, ...remaining] = queue
   if (!current) return
   queue = remaining
-  current.resolve?.(confirmed)
+  current.resolve?.(confirmed, value)
   notify()
 }
