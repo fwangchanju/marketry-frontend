@@ -11,7 +11,7 @@ import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { useLongPress } from '@/hooks/useLongPress'
 import { IDENTITY, panTransform, pinchTransform, type Point, type ZoomTransform } from '@/utils/mapZoom'
-import type { HeatmapItem } from '@/types/api'
+import type { HeatmapItem, HeatmapSectorNode } from '@/types/api'
 import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
@@ -20,6 +20,7 @@ import { LABEL_LINE_HEIGHT, fitStockLabel, stockBaseFontPx, useFontsVersion } fr
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 import { collectAtDepth } from '@/utils/sectorDepth'
+import { summarizeSector, type SectorSummary } from '@/utils/sectorAverage'
 import { resolveMobileStockSelection } from '@/utils/mobileStockSelection'
 
 const MARKETS: { value: MarketQuery; label: string }[] = [
@@ -44,22 +45,23 @@ type MobileSectorItem = OverviewMapItem & {
   isDirectStocks?: boolean
 }
 
-function toMobileSectorItem(node: FilteredHeatmapSectorNode, path: string, boxSizeRatio: number): MobileSectorItem | null {
+// 업종 하나의 항목. 숫자(등락률·시총·오른/내린 종목 수)는 PC 홈과 같은 규칙으로 필터 전 원본 노드에서 만든 요약(summary)을 쓴다 —
+// 제외한 하위 업종의 종목도 포함하고 시총 구간 제외만 반영한다. 거른 뒤의 종목으로 다시 세면 제외 업종이 있는 업종(금융 등)이
+// PC·텔레그램과 다른 숫자가 된다(utils/sectorAverage.ts). `stocks`는 종목 지도에 보일, 제외 업종이 빠진 종목들이다.
+function toMobileSectorItem(node: FilteredHeatmapSectorNode, path: string, boxSizeRatio: number, summary: SectorSummary | null): MobileSectorItem | null {
+  if (!summary || summary.marketValue <= 0) return null
   const stocks = collectAllItems(node)
-  const marketValue = stocks.reduce((sum, stock) => sum + stock.totalMarketValue, 0)
-  if (marketValue <= 0 || stocks.length === 0) return null
-  const changeRate = stocks.reduce((sum, stock) => sum + stock.changeRate * stock.totalMarketValue, 0) / marketValue
-  const advancers = stocks.filter(stock => stock.changeRate > 0).length
-  const decliners = stocks.filter(stock => stock.changeRate < 0).length
   return {
     key: path,
     name: node.sectorName,
-    marketValue,
-    layoutValue: stocks.reduce((sum, stock) => sum + stockLayoutValue(stock, boxSizeRatio), 0),
-    changeRate,
-    advancers,
-    decliners,
-    unchanged: stocks.length - advancers - decliners,
+    marketValue: summary.marketValue,
+    // 박스 크기도 PC 요약 지도와 같은 종목 모음으로 맞춘다(박스 크기 설정 비율만 반영).
+    layoutValue: summary.items.reduce((sum, stock) => sum + stockLayoutValue(stock, boxSizeRatio), 0),
+    changeRate: summary.weightedAvg,
+    simpleAvg: summary.simpleAvg,
+    advancers: summary.advancers,
+    decliners: summary.decliners,
+    unchanged: summary.unchanged,
     node,
     stocks,
   }
@@ -240,6 +242,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     isError,
     refetchHeatmap,
     filteredRootNodes,
+    rootNodes,
+    excludedMarketValueTiers,
     colorScale,
     strongIndustryColor,
     changeRateMode,
@@ -287,24 +291,36 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const major = majorName ? filteredRootNodes.find(node => node.sectorName === majorName) ?? null : null
   const mid = major && midName ? major.children.find(node => node.sectorName === midName) ?? null : null
 
+  // 필터 전 원본 노드를 업종 번호로 찾는다 — 업종 숫자는 원본으로 계산해야 PC와 같다(toMobileSectorItem 주석).
+  const originalSectors = useMemo(() => {
+    const byId = new Map<number, HeatmapSectorNode>()
+    const walk = (nodes: HeatmapSectorNode[]) => { for (const node of nodes) { byId.set(node.sectorId, node); walk(node.children) } }
+    walk(rootNodes)
+    return byId
+  }, [rootNodes])
+
   const marketItems = useMemo(() => {
+    const summaryOf = (node: FilteredHeatmapSectorNode) => {
+      const original = originalSectors.get(node.sectorId)
+      return original ? summarizeSector(original, excludedMarketValueTiers) : null
+    }
     const parent = mid ?? major
     if (isGraph && !parent && graphDepth > 1 && selectableDepth > 1) {
       return collectAtDepth(filteredRootNodes, Math.min(graphDepth, selectableDepth), new Set<number>())
-        .map(({ node, pathKey }) => toMobileSectorItem(node as FilteredHeatmapSectorNode, pathKey, boxSizeMarketCapRatio))
+        .map(({ node, pathKey }) => toMobileSectorItem(node as FilteredHeatmapSectorNode, pathKey, boxSizeMarketCapRatio, summaryOf(node as FilteredHeatmapSectorNode)))
         .filter((item): item is MobileSectorItem => item !== null)
     }
     if (parent && (mid || selectableDepth >= 2)) {
       const children = parent.children
-        .map(node => toMobileSectorItem(node, `${mid ? `${major?.sectorName}>${mid.sectorName}` : parent.sectorName}>${node.sectorName}`, boxSizeMarketCapRatio))
+        .map(node => toMobileSectorItem(node, `${mid ? `${major?.sectorName}>${mid.sectorName}` : parent.sectorName}>${node.sectorName}`, boxSizeMarketCapRatio, summaryOf(node)))
         .filter((item): item is MobileSectorItem => item !== null)
       const directItems = toDirectStocksItem(parent.items, parent.sectorName, boxSizeMarketCapRatio)
       return directItems ? [...children, directItems] : children
     }
     return filteredRootNodes
-      .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio))
+      .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio, summaryOf(node)))
       .filter((item): item is MobileSectorItem => item !== null)
-  }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, major, mid, isGraph, graphDepth])
+  }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, originalSectors, excludedMarketValueTiers, major, mid, isGraph, graphDepth])
 
   // 선택은 업종 키로 유지하고, 종목은 매번 갱신된 트리에서 찾는다. 없어진 업종은 빈 목록으로 표시한다.
   const selectedStocks = resolveMobileStockSelection(stockSelection, market, marketItems)
