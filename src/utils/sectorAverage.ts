@@ -1,5 +1,5 @@
 import type { HeatmapSectorNode, HeatmapItem } from '@/types/api'
-import { isMarketValueExcluded } from './marketValueTier'
+import { isMarketValueExcluded } from './marketValueTier.ts'
 
 export interface SectorAverage {
   weightedAvg: number | null
@@ -36,5 +36,36 @@ export function computeSectorAverage(
   return {
     weightedAvg: totalValue > 0 ? weightedSum / totalValue : null,
     simpleAvg: itemCount > 0 ? simpleSum / itemCount : null,
+  }
+}
+
+export interface SectorSummary {
+  weightedAvg: number
+  simpleAvg: number | null
+  // 업종 시가총액·오른/내린/보합 종목 수 — 등락률 평균과 같은 종목 모음(원본 노드, 시총 구간 제외만 반영)이다.
+  marketValue: number
+  advancers: number
+  decliners: number
+  unchanged: number
+  // 위 숫자를 만든 종목들(제외한 하위 업종의 종목도 포함, 시총 구간 제외만 뺀 것)
+  items: HeatmapItem[]
+}
+
+// PC 홈의 요약 지도와 모바일 업종 지도·그래프가 같은 숫자를 보이도록 업종 하나의 값을 한 곳에서 만든다.
+// computeSectorAverage와 같은 규칙이라 반드시 필터 전 원본 노드를 넘긴다. 시총 구간에 해당하는 종목이 하나도 없으면 null이다.
+export function summarizeSector(node: HeatmapSectorNode, excludedTierLabels: Set<string>): SectorSummary | null {
+  const average = computeSectorAverage(node, excludedTierLabels)
+  if (average.weightedAvg === null) return null
+  const items = collectItems(node).filter(item => !isMarketValueExcluded(item, excludedTierLabels))
+  const advancers = items.filter(item => item.changeRate > 0).length
+  const decliners = items.filter(item => item.changeRate < 0).length
+  return {
+    weightedAvg: average.weightedAvg,
+    simpleAvg: average.simpleAvg,
+    marketValue: items.reduce((sum, item) => sum + item.totalMarketValue, 0),
+    advancers,
+    decliners,
+    unchanged: items.length - advancers - decliners,
+    items,
   }
 }

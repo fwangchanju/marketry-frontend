@@ -43,9 +43,9 @@ import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/sc
 import { HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
-import { isMarketValueExcluded, type MarketValueExclusions } from '@/utils/marketValueTier'
+import type { MarketValueExclusions } from '@/utils/marketValueTier'
 import { resolveHeatmapColor, resolveHeatmapExtremeColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
-import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
+import { collectItems, computeSectorAverage, summarizeSector } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredHeatmap'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { withStableSectorIds } from '@/utils/guestSectorIds'
@@ -373,20 +373,17 @@ export default function MarketSummaryPage() {
   const overview = useMemo(() => {
     const items: OverviewMapItem[] = []
     for (const { node, pathKey } of collectAtDepth(rootNodes, effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
-      const average = computeSectorAverage(node, excludedMarketValueTiers)
-      if (average.weightedAvg === null) continue
-      const nodeItems = collectItems(node).filter(candidate => !isMarketValueExcluded(candidate, excludedMarketValueTiers))
-      const advancers = nodeItems.filter(candidate => candidate.changeRate > 0).length
-      const decliners = nodeItems.filter(candidate => candidate.changeRate < 0).length
+      const summary = summarizeSector(node, excludedMarketValueTiers)
+      if (!summary) continue
       items.push({
         key: pathKey,
         name: node.sectorName,
-        marketValue: nodeItems.reduce((sum, candidate) => sum + candidate.totalMarketValue, 0),
-        changeRate: average.weightedAvg,
-        simpleAvg: average.simpleAvg,
-        advancers,
-        decliners,
-        unchanged: nodeItems.length - advancers - decliners,
+        marketValue: summary.marketValue,
+        changeRate: summary.weightedAvg,
+        simpleAvg: summary.simpleAvg,
+        advancers: summary.advancers,
+        decliners: summary.decliners,
+        unchanged: summary.unchanged,
       })
     }
     const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
