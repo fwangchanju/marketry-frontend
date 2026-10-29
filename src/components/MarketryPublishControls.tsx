@@ -79,7 +79,7 @@ export default function MarketryPublishControls() {
   const handlePublish = async () => {
     const { confirmed, value: memo } = await appWarnConfirmWithInput(
       `[${toDateTimeLabel(createPublicationLabel(new Date()))}]\n[내 기준]을 [MARKETRY] 분류로 업데이트하시겠습니까?`,
-      { title: 'MARKETRY 업데이트', placeholder: `메모 (선택, ${MEMO_MAX_LENGTH}자까지)`, maxLength: MEMO_MAX_LENGTH },
+      { title: 'MARKETRY 업데이트', placeholder: '메모', maxLength: MEMO_MAX_LENGTH },
     )
     if (!confirmed) return
     setIsBusy(true)
