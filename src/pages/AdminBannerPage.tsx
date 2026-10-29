@@ -549,7 +549,7 @@ export default function AdminBannerPage() {
       const confirmationMessage = action === '예약' || action === '재예약'
         ? `이 시각에 배너 공개를 ${action}하시겠습니까?`
         : `이 시각에 배너를 모든 방문자에게 ${action === '다시 게시' ? '다시 공개' : '공개'}하시겠습니까?`
-      if (!await appWarnConfirm(`[${formatScheduledAt(draft.startsAt)}]\n${confirmationMessage}`, { title: `배너 ${action}` })) return
+      if (!await appWarnConfirm(`${formatScheduledAt(draft.startsAt)}\n${confirmationMessage}`, { title: `배너 ${action}` })) return
     }
     saveMutation.mutate({ draft: { ...draft, endsAt: displayedEndAt, linkUrl: normalizeBannerLink(draft.linkUrl) } })
   }
