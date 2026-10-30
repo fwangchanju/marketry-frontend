@@ -2,13 +2,16 @@ import { useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
-import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS, DROPDOWN_SCROLL_CLASS, DROPDOWN_SNAP_ITEM_CLASS, dropdownListMaxHeight } from '@/components/dropdownStyle'
+import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS, DROPDOWN_ROW_PX, DROPDOWN_SCROLL_CLASS, DROPDOWN_SNAP_ITEM_CLASS, dropdownListMaxHeight } from '@/components/dropdownStyle'
 
 // 설정창 "변경 내역" 항목 — 실행 취소·다시 실행 두 칸과 변경 내역 목록. 종목 화면과 업종 화면이 같이 쓴다.
 // 목록은 두 칸을 묶은 줄과 같은 왼쪽 끝·폭으로 펼쳐지고, 줄을 고르면 맨 위(다음 차례)부터 그 줄까지 순서대로 처리한다.
 
-// 목록 한 번에 보이는 줄 수(넘으면 스크롤) — 줄 높이 24px × 10줄. 업종 선택 팝업·열 필터 목록과 같은 10줄이다.
-const LIST_MAX_HEIGHT = dropdownListMaxHeight(10)
+// 목록 한 번에 보이는 줄 수(넘으면 스크롤) — 한 줄짜리 문구는 줄 높이 25px × 10줄(업종 선택 팝업·열 필터 목록과 같은 10줄)이다.
+// 두 줄짜리 문구(종목 화면: 종목명과 [이전] → [이후] 업종)는 한 줄 높이에 들어가지 않아 줄 높이만 38px로 늘리고, 높이를 비슷하게 맞추려 6줄만 보인다(공통 25px 규격의 예외).
+const SINGLE_LINE_VISIBLE_ROWS = 10
+const TWO_LINE_ROW_PX = 38
+const TWO_LINE_VISIBLE_ROWS = 6
 
 interface Props<T extends { id: string }> {
   undoStack: T[]
@@ -48,6 +51,9 @@ function HistoryListPopup<T extends { id: string }>({
   if (!isOpen || !position) return null
 
   const ordered = [...actions].reverse()
+  const hasTwoLines = ordered.some(action => describe(action).includes('\n'))
+  const rowPx = hasTwoLines ? TWO_LINE_ROW_PX : DROPDOWN_ROW_PX
+  const listMaxHeight = dropdownListMaxHeight(hasTwoLines ? TWO_LINE_VISIBLE_ROWS : SINGLE_LINE_VISIBLE_ROWS, rowPx)
 
   return createPortal(
     <div
@@ -67,20 +73,21 @@ function HistoryListPopup<T extends { id: string }>({
       {ordered.length === 0 ? (
         <p className="whitespace-nowrap px-3 py-1 text-ui-muted">{actionLabel}할 변경 내역이 없습니다.</p>
       ) : (
-        <div className={`change-history-list ${DROPDOWN_SCROLL_CLASS}`} style={{ maxHeight: LIST_MAX_HEIGHT }} onMouseLeave={() => setHoverIndex(-1)}>
+        <div className={`change-history-list ${DROPDOWN_SCROLL_CLASS}`} style={{ maxHeight: listMaxHeight }} onMouseLeave={() => setHoverIndex(-1)}>
           {ordered.map((action, index) => (
             <button
               key={action.id}
               onMouseEnter={() => setHoverIndex(index)}
               type="button"
+              style={{ height: rowPx }}
               onClick={() => {
                 onPick(action.id)
                 setIsOpen(false)
               }}
-              className={`${DROPDOWN_SNAP_ITEM_CLASS} flex h-[25px] w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-3 py-0 text-left text-[13px] font-medium transition-colors ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'}`}
+              className={`${DROPDOWN_SNAP_ITEM_CLASS} flex w-full items-center gap-3 whitespace-nowrap rounded-none border-0 px-3 py-0 text-left text-[13px] font-medium transition-colors ${index <= hoverIndex ? 'bg-[var(--accent)]/35 text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'}`}
             >
               <span className={`w-4 shrink-0 text-right text-xs tabular-nums ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-muted'}`}>{direction === 'undo' ? '-' : '+'}{index + 1}</span>
-              <span className="flex min-w-0 flex-col">
+              <span className="flex min-w-0 flex-col leading-tight">
                 {describe(action).split('\n').map((line, lineIndex) => (
                   <span key={lineIndex} className={`truncate ${lineIndex > 0 ? `text-xs font-normal ${index <= hoverIndex ? 'text-ui-white' : 'text-ui-text'}` : ''}`}>{line}</span>
                 ))}
