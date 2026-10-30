@@ -613,9 +613,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       if (sector.depth === 1) setSelectedMiddleId(current => current === sector.id ? null : sector.id)
     }
     // 선택한 경로(대·중·소분류에서 고른 업종)의 줄은 종목 표의 선택된 줄과 같은 청록 배경으로 칠한다.
-    // 검색 중에는 열린 중분류 아래에 보이는 소분류도 같은 길이라 함께 칠한다(길의 끝까지 이어져 보이게).
     const isOnSelectedPath = selectedSectorId === sector.id || selectedMajorId === sector.id || selectedMiddleId === sector.id
-      || (isSearching && sector.depth >= 2 && selectedMiddleId !== null && sector.parentId === selectedMiddleId)
     // 끄는 동안 놓을 수 있는 줄은 번호 자리의 아이콘 배지로 구분하므로 줄마다 선을 긋지 않는다. 지금 커서가 올라간 한 줄만 줄 전체 높이(29px)로 청록으로 채운다(세 칸에 걸쳐 한 줄처럼 이어진다).
     const rowBgClass = `${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`
     const stat = sectorStats.get(sector.id)
