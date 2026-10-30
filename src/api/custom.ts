@@ -42,8 +42,8 @@ export const getSectorDeletePreview = (id: number) =>
   client.get(`/custom/sectors/${id}/delete-preview`).then(r => SectorDeletePreviewSchema.parse(r.data))
 
 // expectedMoveCount는 미리보기에서 확인한 이동 종목 수다 — 지금 수와 다르면 서버가 삭제하지 않고 409로 다시 확인하게 한다.
-export const deleteSector = (id: number, expectedMoveCount?: number) =>
-  client.delete(`/custom/sectors/${id}`, { params: expectedMoveCount === undefined ? undefined : { expectedMoveCount } })
+export const deleteSector = (id: number, expectedMoveCount: number) =>
+  client.delete(`/custom/sectors/${id}`, { params: { expectedMoveCount } })
 
 export const getSnapshots = () => client.get('/custom/snapshots').then(r => snapshotListResponseSchema.parse(r.data))
 
