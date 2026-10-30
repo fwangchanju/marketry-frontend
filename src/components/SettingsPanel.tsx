@@ -2025,6 +2025,8 @@ export function SettingsExcludeSection({
                 data-hint={SUSPENDED_EXCLUDE_HINT}
                 className="flex h-5 w-full shrink-0 cursor-default items-center gap-1.5 pl-2 pr-1.5 text-[13px] font-medium text-[var(--sub-yellow)]"
               >
+                {/* 다른 제외 업종 줄과 같은 자리·크기의 아이콘 — 복원할 수 없는 항목이라 흐리게 해서 이름이 같은 선에서 시작하게 맞춘다. */}
+                <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0 text-ui-muted" aria-hidden="true" />
                 <span className="min-w-0 truncate">{SUSPENDED_SECTOR_NAME}</span>
                 <span className="ml-auto shrink-0 tabular-nums text-ui-muted">{toCount(suspendedStockCount)}</span>
               </div>
