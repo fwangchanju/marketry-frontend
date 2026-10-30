@@ -1624,7 +1624,7 @@ export default function AdminStockTable({
 
   const rootRef = useRef<HTMLDivElement>(null)
   // 검색창 오른쪽 끝을 아래 약칭 열의 가운데에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
-  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { leftEl: toolbarContainer })
+  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { leftEl: toolbarContainer, tableKey: `${isLoading}:${isError}:${isAdmin}` })
   // 윗줄(드롭다운 오른쪽)에 그리는 검색창과 필터 초기화. 실행취소·다시실행은 설정창의 변경 내역 위치에만 표시한다.
   const toolbar = (
     <div className="flex h-full min-h-0 w-full items-center gap-2">
@@ -1796,6 +1796,7 @@ export default function AdminStockTable({
                   <StockSortHeader
                     label={col.header}
                     state={sortKey === col.key ? sortDirection : null}
+                    onSort={() => handleSort(col.key)}
                     filter={
                       filterKey ? (
                         <ColumnFilterButton
@@ -1820,9 +1821,8 @@ export default function AdminStockTable({
                     key={col.key}
                     data-column-key={col.key}
                     colSpan={col.key === 'stockName' && !isAdmin ? 2 : undefined}
-                    className="cursor-pointer whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white"
+                    className="whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white"
                     data-hint={col.key === 'alias' && isAdmin ? '약칭은 운영자만 관리할 수 있습니다.' : undefined}
-                    onClick={() => handleSort(col.key)}
                   >
                     {col.key === 'totalMarketValue' ? (
                       <>

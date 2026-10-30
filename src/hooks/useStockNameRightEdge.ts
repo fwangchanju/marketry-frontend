@@ -7,7 +7,7 @@ import { publishStockSearchWidth } from '@/utils/stockSearchWidth'
 export function useStockNameRightEdge(
   rootRef: RefObject<HTMLElement | null>,
   scrollRef: RefObject<HTMLElement | null>,
-  { leftEl = null }: { leftEl?: HTMLElement | null } = {},
+  { leftEl = null, tableKey = '' }: { leftEl?: HTMLElement | null; tableKey?: string } = {},
 ): number | undefined {
   const [rightEdge, setRightEdge] = useState<number | undefined>(undefined)
   useLayoutEffect(() => {
@@ -29,6 +29,10 @@ export function useStockNameRightEdge(
     const observer = new ResizeObserver(measure)
     observer.observe(root)
     observer.observe(scroller)
+    const aliasHeader = scroller.querySelector<HTMLElement>('th[data-column-key="alias"]')
+    const nameHeader = scroller.querySelector<HTMLElement>('th[data-column-key="stockName"]')
+    if (aliasHeader) observer.observe(aliasHeader)
+    if (nameHeader) observer.observe(nameHeader)
     if (leftEl) observer.observe(leftEl)
     window.addEventListener('resize', measure)
     return () => {
@@ -36,6 +40,6 @@ export function useStockNameRightEdge(
       observer.disconnect()
       window.removeEventListener('resize', measure)
     }
-  }, [rootRef, scrollRef, leftEl])
+  }, [rootRef, scrollRef, leftEl, tableKey])
   return rightEdge
 }
