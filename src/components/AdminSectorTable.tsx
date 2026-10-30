@@ -15,7 +15,7 @@ import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import EmptyMessage, { EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
 import { CloseIcon, EditIcon, NestIntoIcon, PlusIcon, TrashIcon } from '@/components/icons/AppIcons'
-import { useStockSearchWidth } from '@/utils/stockSearchWidth'
+import { useStockSearchWidthEstimate } from '@/utils/stockSearchWidth'
 import { STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import ScrollArea from '@/components/ScrollArea'
@@ -175,7 +175,8 @@ function DroppableSectorRow({
 }
 
 export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS }: Props) {
-  const stockSearchWidthPx = useStockSearchWidth()
+  // 검색창 너비를 종목 화면(종목명 열 오른쪽 끝)과 같게 맞춘다.
+  const stockSearchWidthPx = useStockSearchWidthEstimate(toolbarContainer)
   const [query, setQuery] = useState('')
   const [sortByDepth, setSortByDepth] = useState<Record<number, SectorSort | undefined>>({})
   // 머리글 필터 목록의 보기 순서 — 시가총액 합 순(기본) 또는 가나다 순.

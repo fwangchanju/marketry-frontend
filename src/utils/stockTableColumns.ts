@@ -35,6 +35,18 @@ const FLEX_COLUMN_MIN_PX = 110
 
 export const stockColumnFixedPx = (key: StockColumnKey): number | undefined => FIXED_COLUMN_PX[key]
 
+// 남는 폭을 나눠 갖는 열(종목명·약칭·거래소 분류·대/중/소분류)의 개수 — 종목 표는 약칭 열을 숨겨도 이 열들이 같은 폭을 나눈다.
+const FLEX_COLUMN_COUNT = 6
+
+// 약칭 열 가운데(표 왼쪽에서 px)를 표 전체 폭으로 어림한다. 업종 화면의 검색창이 종목 화면과 같은 너비를 쓰는 데 쓴다.
+// 체크박스 칸 + 종목코드 칸 + 종목명 칸 + 약칭 칸의 반(남는 폭을 열 수로 나눈 값, 최소 폭 아래로는 줄지 않는다)이다.
+export const estimateSearchRightEdgePx = (tableWidthPx: number): number => {
+  const fixedTotal = Object.values(FIXED_COLUMN_PX).reduce((sum, width) => sum + width, 0)
+  const flexWidth = Math.max(FLEX_COLUMN_MIN_PX, (tableWidthPx - STOCK_CHECKBOX_COLUMN_PX - fixedTotal) / FLEX_COLUMN_COUNT)
+  // 브라우저가 열 폭을 올려 그리므로 올림으로 맞춘다.
+  return Math.ceil(STOCK_CHECKBOX_COLUMN_PX + (FIXED_COLUMN_PX.stockCode ?? 0) + flexWidth * 1.5)
+}
+
 // 표 전체의 최소 폭 — 보이는 열로 계산한다.
 export const stockTableMinWidthPx = (keys: readonly StockColumnKey[]): number =>
   STOCK_CHECKBOX_COLUMN_PX + keys.reduce((sum, key) => sum + (FIXED_COLUMN_PX[key] ?? FLEX_COLUMN_MIN_PX), 0)
