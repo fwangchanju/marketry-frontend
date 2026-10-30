@@ -26,16 +26,20 @@ export const SUSPENDED_STOCK_HINT = '거래 정지 종목은 다른 업종으로
 export const isSuspendedSectorName = (name: string | null | undefined) => name === SUSPENDED_SECTOR_NAME
 
 export const isProtectedSectorName = (name: string) => (PROTECTED_SECTOR_NAMES as readonly string[]).includes(name)
-export const getProtectedSectorHint = (name: string): string | undefined => PROTECTED_SECTOR_HINTS[name]
+// 거래소 표에는 거래 정지만 있다 — 읽기 전용이고, 재개되면 서버가 다음 조회부터 키움 업종으로 돌려놓는다.
+const KRX_SUSPENDED_HINT = '연속 5거래일 이상 거래가 정지된 종목이 이 그룹으로 묶입니다.\n재개되면 원래 거래소 업종으로 돌아갑니다.'
+export const getProtectedSectorHint = (name: string, source: 'MARKETRY' | 'KRX' = 'MARKETRY'): string | undefined =>
+  source === 'KRX' && name === SUSPENDED_SECTOR_NAME ? KRX_SUSPENDED_HINT : PROTECTED_SECTOR_HINTS[name]
 export const getProtectedSectorDeleteMessage = (name: string): string => PROTECTED_SECTOR_DELETE_MESSAGES[name] ?? '삭제가 불가능한 항목입니다.'
 // 맨 아래에 놓는 순서 — 보호 업종이 아니면 -1이다.
 export const protectedSectorOrder = (name: string) => (PROTECTED_SECTOR_NAMES as readonly string[]).indexOf(name)
 
 // 정렬한 업종 목록에서 보호 업종을 빼 맨 아래로 보낸다(정렬 방향과 상관없이 항상 미분류 → 신규 상장 → 거래 정지 순서).
-export function placeProtectedSectorsLast<T>(items: T[], getName: (item: T) => string): T[] {
-  const regular = items.filter(item => !isProtectedSectorName(getName(item)))
+// names는 맨 아래로 보낼 업종(기본은 보호 업종 셋)이다. 거래소 표는 거래 정지만 보낸다.
+export function placeProtectedSectorsLast<T>(items: T[], getName: (item: T) => string, names: readonly string[] = PROTECTED_SECTOR_NAMES): T[] {
+  const regular = items.filter(item => !names.includes(getName(item)))
   const protectedItems = items
-    .filter(item => isProtectedSectorName(getName(item)))
-    .sort((a, b) => protectedSectorOrder(getName(a)) - protectedSectorOrder(getName(b)))
+    .filter(item => names.includes(getName(item)))
+    .sort((a, b) => names.indexOf(getName(a)) - names.indexOf(getName(b)))
   return [...regular, ...protectedItems]
 }
