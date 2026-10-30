@@ -194,6 +194,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const [addingChildFor, setAddingChildFor] = useState<number | null>(null)
   const [renamingId, setRenamingId] = useState<number | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  // 이름 변경 입력칸을 엔터·Esc·바깥 클릭 중 한 번만 닫게 하는 표시 — 엔터로 저장한 뒤 칸이 사라지며 바깥 클릭 저장이 한 번 더 도는 것을 막는다.
+  const renameClosingRef = useRef(false)
   const [highlightedId, setHighlightedId] = useState<number | null>(null)
   const [draggedSector, setDraggedSector] = useState<SectorItem | null>(null)
   // 번호 칸을 끌어 다른 분류로 옮기는 중인지(끌 수 있는 것은 번호 칸뿐이다), 그리고 지금 놓으면 들어갈 업종.
@@ -375,13 +377,19 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   }
 
   const startRename = (sector: SectorItem) => {
+    renameClosingRef.current = false
     setRenamingId(sector.id)
     setRenameValue(sector.name)
   }
 
-  const cancelRename = () => setRenamingId(null)
+  const cancelRename = () => {
+    renameClosingRef.current = true
+    setRenamingId(null)
+  }
 
   const submitRename = (sector: SectorItem) => {
+    if (renameClosingRef.current) return
+    renameClosingRef.current = true
     const trimmed = renameValue.trim()
     setRenamingId(null)
     if (!trimmed || trimmed === sector.name) return
@@ -392,6 +400,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       },
       // 실패하면 이름 입력칸을 입력했던 이름 그대로 다시 열어 고쳐서 다시 저장하게 한다.
       onError: () => {
+        renameClosingRef.current = false
         setRenamingId(sector.id)
         setRenameValue(trimmed)
       },
@@ -587,17 +596,24 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           <div className="flex items-center gap-2">
             <div className="flex min-w-0 flex-1 items-center">
               {isRenaming ? (
-                <SectorNameInput
-                  wrapperClassName="flex min-w-0 flex-1"
-                  autoFocus
-                  value={renameValue}
-                  onChange={e => setRenameValue(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') submitRename(sector)
-                    if (e.key === 'Escape') cancelRename()
-                  }}
-                  className="nes-input is-dark min-w-0 flex-1 text-sm"
-                />
+                <>
+                  {/* 번호 배지는 그대로 두고(끌 수 없다) 그 뒤에 입력칸을 놓는다. 입력 글자의 시작선을 업종명과 맞추려고 입력 내부 여백(8px)만큼 칸이 왼쪽에서 시작하고, 오른쪽은 시가총액 합 칸과의 세로선을 넘지 않게 8px 띄운다. */}
+                  <DraggableNumberBadge sectorId={sector.id} parentId={sector.parentId} locked>{itemNumber}</DraggableNumberBadge>
+                  <SectorNameInput
+                    wrapperClassName="-ml-2 mr-2 flex min-w-0 flex-1"
+                    autoFocus
+                    value={renameValue}
+                    onChange={e => setRenameValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') submitRename(sector)
+                      if (e.key === 'Escape') cancelRename()
+                    }}
+                    // 입력칸 바깥을 누르면 지금 이름으로 저장하고 닫는다(안 바뀌었거나 비었으면 그냥 닫는다).
+                    onBlur={() => submitRename(sector)}
+                    aria-label={`${sector.name} 이름`}
+                    className="h-6 min-w-0 flex-1 rounded-md border-0 bg-[var(--ui-panel)] px-2 text-sm font-medium text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
+                  />
+                </>
               ) : (
                 <>
                   <DraggableNumberBadge
