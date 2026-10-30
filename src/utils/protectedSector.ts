@@ -21,6 +21,10 @@ const PROTECTED_SECTOR_DELETE_MESSAGES: Record<string, string> = {
   [UNCLASSIFIED_SECTOR_NAME]: '삭제한 업종의 종목이 옮겨 오는 항목이라 삭제가 불가능합니다.',
 }
 
+// 거래 정지 종목은 서버가 거래 정지 업종에 자동 배정하고, 사용자(운영자 포함)는 그 업종에 종목을 직접 넣거나 거기서 다른 업종으로 옮길 수 없다.
+export const SUSPENDED_STOCK_HINT = '거래 정지 종목은 다른 업종으로 옮길 수 없습니다.'
+export const isSuspendedSectorName = (name: string | null | undefined) => name === SUSPENDED_SECTOR_NAME
+
 export const isProtectedSectorName = (name: string) => (PROTECTED_SECTOR_NAMES as readonly string[]).includes(name)
 export const getProtectedSectorHint = (name: string): string | undefined => PROTECTED_SECTOR_HINTS[name]
 export const getProtectedSectorDeleteMessage = (name: string): string => PROTECTED_SECTOR_DELETE_MESSAGES[name] ?? '삭제가 불가능한 항목입니다.'
