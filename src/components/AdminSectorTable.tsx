@@ -448,8 +448,18 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     return placeProtectedSectorsLast(sorted, item => (item.parentId === null ? item.name : ''))
   }
   const rootSectors = sortSiblings(viewSectors.filter(c => c.parentId === null && !excludedByDepth[0]?.has(c.name)), 0)
-  const middleSectors = selectedMajorId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMajorId && !excludedByDepth[1]?.has(c.name)), 1)
-  const smallSectors = selectedMiddleId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMiddleId && !excludedByDepth[2]?.has(c.name)), 2)
+  // 검색 중에는 열린 길과 상관없이 맞는 중·소분류(와 그 상위 업종)를 모두 나열한다 — 서로 다른 대분류 아래에 맞는 업종이 있어도 가려지지 않는다.
+  // 열린 길의 줄만 청록으로 칠해 구분하고, 다른 길의 줄을 누르면 그 길이 열린다.
+  const isSearching = trimmedQuery !== ''
+  // 대분류 순서대로 그 아래 중분류를, 중분류 순서대로 그 아래 소분류를 묶어서 나열한다(각 묶음 안은 열 머리글의 정렬을 따른다).
+  // 그래야 중·소분류 칸의 위아래 순서가 왼쪽 칸의 상위 업종 순서와 어긋나지 않는다.
+  const childrenOf = (parentId: number, depth: number) => sortSiblings(viewSectors.filter(c => c.parentId === parentId && !excludedByDepth[depth]?.has(c.name)), depth)
+  const middleSectors = isSearching
+    ? rootSectors.flatMap(root => childrenOf(root.id, 1))
+    : selectedMajorId === null ? [] : childrenOf(selectedMajorId, 1)
+  const smallSectors = isSearching
+    ? middleSectors.flatMap(middle => childrenOf(middle.id, 2))
+    : selectedMiddleId === null ? [] : childrenOf(selectedMiddleId, 2)
   // 필터나 검색으로 선택 경로가 감춰지면 다음 열도 함께 닫는다. 숨겨진 부모의 자식만 남아
   // 맥락 없이 보이거나, 필터를 푼 뒤 오래된 선택이 다시 나타나는 일을 막는다.
   useEffect(() => {
@@ -468,6 +478,24 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       setAddingChildFor(null)
     }
   }, [viewSectors, excludedByDepth, selectedMajorId, selectedMiddleId])
+  // 검색어가 바뀌면 맞는 업종까지 가는 길을 자동으로 연다 — 소분류를 검색해도 대분류만 보이고 중·소분류 칸이 비어 있던 문제를 막는다.
+  // 길이 여러 갈래면 화면 순서상 첫 갈래만 열고, 나머지는 눌러서 연다. 검색어가 같은 동안에는 직접 고른 선택을 건드리지 않는다.
+  const searchOpenedQueryRef = useRef('')
+  useEffect(() => {
+    if (!trimmedQuery) {
+      searchOpenedQueryRef.current = ''
+      return
+    }
+    if (searchOpenedQueryRef.current === trimmedQuery || rootSectors.length === 0) return
+    searchOpenedQueryRef.current = trimmedQuery
+    const visibleChildren = (parentId: number, depth: number) => sortSiblings(viewSectors.filter(c => c.parentId === parentId && !excludedByDepth[depth]?.has(c.name)), depth)
+    const major = rootSectors.find(root => visibleChildren(root.id, 1).length > 0)
+    const middle = major ? visibleChildren(major.id, 1).find(child => visibleChildren(child.id, 2).length > 0) : undefined
+    setSelectedMajorId(major?.id ?? null)
+    setSelectedMiddleId(middle?.id ?? null)
+    setSelectedSectorId(null)
+    setAddingChildFor(null)
+  }, [trimmedQuery, rootSectors, viewSectors, excludedByDepth])
   const makeRows = (items: SectorItem[], parentId: number | null): Row[] => {
     const rows: Row[] = items.map((item, index) => ({ type: 'sector', item, siblingIndex: index + 1 }))
     if (parentId !== null && addingChildFor === parentId) {
@@ -574,11 +602,20 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     const selectSector = () => {
       setRecentlyChangedSectorId(null)
       setSelectedSectorId(sector.id)
+      if (isSearching && sector.depth >= 1) {
+        // 검색 중에는 다른 길의 줄도 보이므로, 누른 줄의 상위 업종까지 함께 열어 그 길로 옮겨 간다.
+        const parent = sectors.find(item => item.id === sector.parentId)
+        if (sector.depth === 1) { setSelectedMajorId(sector.parentId); setSelectedMiddleId(current => current === sector.id && selectedMajorId === sector.parentId ? null : sector.id) }
+        else { setSelectedMajorId(parent?.parentId ?? null); setSelectedMiddleId(sector.parentId) }
+        return
+      }
       if (sector.depth === 0) { setSelectedMajorId(current => current === sector.id ? null : sector.id); setSelectedMiddleId(null) }
       if (sector.depth === 1) setSelectedMiddleId(current => current === sector.id ? null : sector.id)
     }
     // 선택한 경로(대·중·소분류에서 고른 업종)의 줄은 종목 표의 선택된 줄과 같은 청록 배경으로 칠한다.
+    // 검색 중에는 열린 중분류 아래에 보이는 소분류도 같은 길이라 함께 칠한다(길의 끝까지 이어져 보이게).
     const isOnSelectedPath = selectedSectorId === sector.id || selectedMajorId === sector.id || selectedMiddleId === sector.id
+      || (isSearching && sector.depth >= 2 && selectedMiddleId !== null && sector.parentId === selectedMiddleId)
     // 끄는 동안 놓을 수 있는 줄은 번호 자리의 아이콘 배지로 구분하므로 줄마다 선을 긋지 않는다. 지금 커서가 올라간 한 줄만 줄 전체 높이(29px)로 청록으로 채운다(세 칸에 걸쳐 한 줄처럼 이어진다).
     const rowBgClass = `${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`
     const stat = sectorStats.get(sector.id)
@@ -769,7 +806,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   <div className="flex border-t border-ui-border text-ui-white" style={{ height: HEADER_HALF_PX }}>
                     {([['name', '업종'], ['marketValue', '시가총액 합'], ['stockCount', '종목 수']] as const).map(([key, text], cell) => (
                       <div key={key} className="flex items-center justify-center whitespace-nowrap" style={{ width: SECTOR_COLUMN_WIDTHS[cell] }}>
-                        <SortLabel label={text} active={sortKey === key} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
+                        <SortLabel label={text} active={sortKey === key && !(isSearching && depth > 0)} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
                       </div>
                     ))}
                   </div>
