@@ -806,7 +806,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   <div className="flex border-t border-ui-border text-ui-white" style={{ height: HEADER_HALF_PX }}>
                     {([['name', '업종'], ['marketValue', '시가총액 합'], ['stockCount', '종목 수']] as const).map(([key, text], cell) => (
                       <div key={key} className="flex items-center justify-center whitespace-nowrap" style={{ width: SECTOR_COLUMN_WIDTHS[cell] }}>
-                        <SortLabel label={text} active={sortKey === key} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
+                        <SortLabel label={text} active={sortKey === key && !(isSearching && depth > 0)} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
                       </div>
                     ))}
                   </div>
