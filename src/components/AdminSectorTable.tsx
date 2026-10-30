@@ -468,6 +468,24 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       setAddingChildFor(null)
     }
   }, [viewSectors, excludedByDepth, selectedMajorId, selectedMiddleId])
+  // 검색어가 바뀌면 맞는 업종까지 가는 길을 자동으로 연다 — 소분류를 검색해도 대분류만 보이고 중·소분류 칸이 비어 있던 문제를 막는다.
+  // 길이 여러 갈래면 화면 순서상 첫 갈래만 열고, 나머지는 눌러서 연다. 검색어가 같은 동안에는 직접 고른 선택을 건드리지 않는다.
+  const searchOpenedQueryRef = useRef('')
+  useEffect(() => {
+    if (!trimmedQuery) {
+      searchOpenedQueryRef.current = ''
+      return
+    }
+    if (searchOpenedQueryRef.current === trimmedQuery || rootSectors.length === 0) return
+    searchOpenedQueryRef.current = trimmedQuery
+    const visibleChildren = (parentId: number, depth: number) => sortSiblings(viewSectors.filter(c => c.parentId === parentId && !excludedByDepth[depth]?.has(c.name)), depth)
+    const major = rootSectors.find(root => visibleChildren(root.id, 1).length > 0)
+    const middle = major ? visibleChildren(major.id, 1).find(child => visibleChildren(child.id, 2).length > 0) : undefined
+    setSelectedMajorId(major?.id ?? null)
+    setSelectedMiddleId(middle?.id ?? null)
+    setSelectedSectorId(null)
+    setAddingChildFor(null)
+  }, [trimmedQuery, rootSectors, viewSectors, excludedByDepth])
   const makeRows = (items: SectorItem[], parentId: number | null): Row[] => {
     const rows: Row[] = items.map((item, index) => ({ type: 'sector', item, siblingIndex: index + 1 }))
     if (parentId !== null && addingChildFor === parentId) {
