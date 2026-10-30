@@ -180,7 +180,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const [query, setQuery] = useState('')
   const [sortByDepth, setSortByDepth] = useState<Record<number, SectorSort | undefined>>({})
   // 머리글 필터 목록의 보기 순서 — 시가총액 합 순(기본) 또는 가나다 순.
-  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>('cap')
+  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>('alpha')
   const [excludedByDepth, setExcludedByDepth] = useState<Record<number, ReadonlySet<string>>>({})
   const [undoStack, setUndoStack] = useState<SectorHistoryAction[]>([])
   const [redoStack, setRedoStack] = useState<SectorHistoryAction[]>([])
@@ -789,6 +789,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                     </span>
                     <ColumnFilterButton
                       label={label}
+                      isProtected={depth === 0 ? isProtectedSectorName : undefined}
                       getOptions={() => depthOptions[depth]}
                       optionOrder={depthOptions[depth]}
                       excluded={excluded}

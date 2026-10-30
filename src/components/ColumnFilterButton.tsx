@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 import { DROPDOWN_GAP_PX, DROPDOWN_PANEL_CLASS, DROPDOWN_SNAP_ITEM_CLASS, dropdownListMaxHeight } from '@/components/dropdownStyle'
+import { PROTECTED_SECTOR_TEXT_CLASS, protectedSectorOrder } from '@/utils/protectedSector'
 
 // 필터 목록의 한 줄 높이(h-7)와 한 번에 보이는 줄 수. 높이는 이 값의 곱으로 맞춰야 스크롤 끝에서 항목이 잘리지 않는다.
 const FILTER_ROW_PX = 28
@@ -50,6 +51,7 @@ interface Props {
   // 화면에 보일 값 이름 — 기본은 값 그대로이고, 비어 있는 값('-')은 "(없음)"으로 보인다.
   labelOf?: (value: string) => string
   hintOf?: (value: string) => string | undefined
+  isProtected?: (value: string) => boolean
   excluded: ReadonlySet<string>
   onToggle: (value: string) => void
   onSelectAll: () => void
@@ -70,18 +72,23 @@ const defaultLabelOf = (value: string) => (value === '-' ? '(없음)' : value)
 
 // 머리글 오른쪽의 필터 아이콘 — 누르면 아래에 체크 목록이 뜬다. 체크를 풀면 그 값의 종목이 표에서 빠지고, 걸려 있으면 아이콘이 청록색이다.
 // 머리글 칸을 누르면 정렬이 바뀌므로, 아이콘 누름은 칸까지 전달하지 않는다.
-export default function ColumnFilterButton({ label, getOptions, optionOrder, labelOf = defaultLabelOf, hintOf, excluded, onToggle, onSelectAll, onSelectNone, orderMode, selectOnlyOnSearch = false }: Props) {
+export default function ColumnFilterButton({ label, getOptions, optionOrder, labelOf = defaultLabelOf, hintOf, isProtected, excluded, onToggle, onSelectAll, onSelectNone, orderMode, selectOnlyOnSearch = false }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
   const [query, setQuery] = useState('')
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
+  const optionsRef = useRef<HTMLUListElement>(null)
   const isActive = excluded.size > 0
 
   const options = isOpen ? getOptions() : NO_OPTIONS
   const sortedOptions = useMemo(() => {
     const order = new Map((orderMode?.value === 'alpha' ? [] : optionOrder ?? []).map((value, index) => [value, index]))
     return [...options].sort((a, b) => {
+      const aProtected = isProtected?.(a) ?? false
+      const bProtected = isProtected?.(b) ?? false
+      if (aProtected && bProtected) return protectedSectorOrder(a) - protectedSectorOrder(b)
+      if (aProtected !== bProtected) return aProtected ? 1 : -1
       const ia = order.get(a)
       const ib = order.get(b)
       if (ia !== undefined || ib !== undefined) return (ia ?? Infinity) - (ib ?? Infinity)
@@ -89,7 +96,12 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
       if (a === '-' || b === '-') return a === '-' ? 1 : -1
       return compareKoreanText(a, b)
     })
-  }, [options, optionOrder, orderMode?.value])
+  }, [options, optionOrder, orderMode?.value, isProtected])
+
+  // 재정렬 중 브라우저의 스크롤 보정과 무관하게 목록을 첫 항목부터 보여 준다.
+  useLayoutEffect(() => {
+    if (isOpen && optionsRef.current) optionsRef.current.scrollTop = 0
+  }, [isOpen, orderMode?.value])
 
   // 목록 전체(검색으로 가려진 항목 포함)가 모두 체크됐는지, 하나도 체크되지 않았는지 — 둘 다 아니면(일부만 체크) 두 버튼 모두 회색이다.
   const allSelected = sortedOptions.length > 0 && sortedOptions.every(option => !excluded.has(option))
@@ -190,13 +202,13 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
               <button type="button" aria-pressed={noneSelected} className={`${BULK_BUTTON_CLASS} ${noneSelected ? BULK_BUTTON_ON_CLASS : BULK_BUTTON_OFF_CLASS}`} onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
             </div>
           )}
-          <ul className="column-filter-options m-0 list-none snap-y snap-mandatory overflow-y-scroll p-0" style={{ maxHeight: dropdownListMaxHeight(FILTER_VISIBLE_ROWS, FILTER_ROW_PX) }}>
+          <ul ref={optionsRef} className="column-filter-options m-0 list-none snap-y snap-mandatory overflow-y-scroll [overflow-anchor:none] p-0" style={{ maxHeight: dropdownListMaxHeight(FILTER_VISIBLE_ROWS, FILTER_ROW_PX) }}>
             {shownOptions.length === 0 && <li className="px-3 py-1 text-ui-muted">검색 결과가 없습니다.</li>}
             {shownOptions.map(value => (
               <li key={value} className={DROPDOWN_SNAP_ITEM_CLASS}>
                 <label data-hint={hintOf?.(value)} className="flex h-7 cursor-pointer items-center gap-2 px-3 hover:bg-ui-white/10">
                   <input type="checkbox" className="thin-check shrink-0" checked={!excluded.has(value)} onChange={() => toggleOption(value)} />
-                  <span className="min-w-0 truncate">{labelOf(value)}</span>
+                  <span className={`min-w-0 truncate ${isProtected?.(value) ? PROTECTED_SECTOR_TEXT_CLASS : ''}`}>{labelOf(value)}</span>
                 </label>
               </li>
             ))}

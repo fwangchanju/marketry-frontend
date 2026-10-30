@@ -13,7 +13,7 @@ import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { findAliasConflict } from '@/utils/aliasConflict'
 import { ClassificationUploadError, buildUploadPlan, readClassificationFile } from '@/utils/classificationUpload'
 import { getErrorDetail } from '@/utils/errorMessage'
-import { SUSPENDED_STOCK_HINT, isSuspendedSectorName } from '@/utils/protectedSector'
+import { SUSPENDED_STOCK_HINT, isProtectedSectorName, isSuspendedSectorName } from '@/utils/protectedSector'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
 import { invalidateCustomTaxonomy, useAssignStockSector, useBulkAssignStockSector, useResetCustomClassification, useUpdateStockAlias } from '@/hooks/useHeatmapCustom'
@@ -1021,13 +1021,23 @@ export default function AdminStockTable({
     const chain = resolveSectorChain(sectorOptionsById, option.id)
     return [chain.rootName, chain.midName, chain.leafName].filter((name): name is string => name !== null)
   })), [sectorOptions, sectorOptionsById])
-  // 대·중·소분류 필터는 "가나다 순"과 "시가총액 순" 중 고른 대로 보여준다(기본 시가총액 순, 브라우저에 저장).
-  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>(() => (localStorage.getItem('marketry:sector-filter-order') === 'alpha' ? 'alpha' : 'cap'))
+  // 거래소 분류와 대·중·소분류 필터는 "가나다 순"과 "시가총액 순" 중 고른 대로 보여준다(기본 가나다 순, 브라우저에 저장).
+  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>(() => (localStorage.getItem('marketry:sector-filter-order') === 'cap' ? 'cap' : 'alpha'))
   const changeSectorFilterMode = useCallback((value: 'alpha' | 'cap') => {
     localStorage.setItem('marketry:sector-filter-order', value)
     setSectorFilterMode(value)
   }, [])
   const sectorFilterOrder = useMemo(() => sectorNamesByDepth(sectors, sectorStats), [sectors, sectorStats])
+  const industryFilterOrder = useMemo(() => {
+    const marketValueByIndustry = new Map<string, number>()
+    for (const item of items) {
+      const name = item.industryName ?? '-'
+      if (name !== '-') marketValueByIndustry.set(name, (marketValueByIndustry.get(name) ?? 0) + (item.totalMarketValue ?? 0))
+    }
+    return [...marketValueByIndustry]
+      .sort(([nameA, valueA], [nameB, valueB]) => valueB - valueA || compareKoreanText(nameA, nameB))
+      .map(([name]) => name)
+  }, [items])
   // 필터/정렬/컬럼 표시에 쓰는 대분류·중분류·소분류 문자열을 종목마다 한 번씩만 미리 계산해둔다.
   const displayByStockCode = useMemo(
     () => new Map(items.map(item => [item.stockCode, computeDisplayValues(item, sectorOptionsById, nxtStockCodes)])),
@@ -1801,6 +1811,7 @@ export default function AdminStockTable({
                       filterKey ? (
                         <ColumnFilterButton
                           label={col.header}
+                          isProtected={filterKey === 'parentSector' ? isProtectedSectorName : undefined}
                           getOptions={() => columnFilters.optionValues(filterKey)}
                           excluded={columnFilters.excluded[filterKey] ?? NO_EXCLUDED}
                           onToggle={value => columnFilters.toggle(filterKey, value)}
@@ -1808,8 +1819,8 @@ export default function AdminStockTable({
                           onSelectNone={values => columnFilters.selectNone(filterKey, values)}
                           selectOnlyOnSearch={filterKey === 'industry' || filterKey === 'parentSector' || filterKey === 'midSector' || filterKey === 'subSector'}
                           hintOf={filterKey === 'midSector' || filterKey === 'subSector' ? value => sectorParentHints[filterKey].get(value) : undefined}
-                          optionOrder={filterKey === 'sizeTier' ? tierOrder : filterKey === 'market' ? ['코스피', '코스닥'] : filterKey === 'nxt' ? ['O', '-'] : filterKey === 'parentSector' ? sectorFilterOrder[0] : filterKey === 'midSector' ? sectorFilterOrder[1] : filterKey === 'subSector' ? sectorFilterOrder[2] : undefined}
-                          orderMode={filterKey === 'parentSector' || filterKey === 'midSector' || filterKey === 'subSector' ? { value: sectorFilterMode, onChange: changeSectorFilterMode } : undefined}
+                          optionOrder={filterKey === 'sizeTier' ? tierOrder : filterKey === 'market' ? ['코스피', '코스닥'] : filterKey === 'nxt' ? ['O', '-'] : filterKey === 'industry' ? industryFilterOrder : filterKey === 'parentSector' ? sectorFilterOrder[0] : filterKey === 'midSector' ? sectorFilterOrder[1] : filterKey === 'subSector' ? sectorFilterOrder[2] : undefined}
+                          orderMode={filterKey === 'industry' || filterKey === 'parentSector' || filterKey === 'midSector' || filterKey === 'subSector' ? { value: sectorFilterMode, onChange: changeSectorFilterMode } : undefined}
                           labelOf={filterKey === 'nxt' ? value => (value === 'O' ? 'NXT 거래' : 'NXT 미거래') : undefined}
                         />
                       ) : undefined

@@ -364,6 +364,35 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
         return diff === 0 ? b.totalMarketValue - a.totalMarketValue || compareKoreanText(a.stockCode, b.stockCode) : sign * diff
       })
   }, [sectors, stockMarkets, stockIndustries, nxtStockCodes, activeSortKey, direction])
+  // 읽기 전용 분류 필터도 내 기준 종목 표와 같은 순서를 쓴다. 시가총액 순은 현재 검색·필터와 무관하게 전체 종목의 합으로 계산한다.
+  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>(() => (localStorage.getItem('marketry:sector-filter-order') === 'cap' ? 'cap' : 'alpha'))
+  const changeSectorFilterMode = useCallback((value: 'alpha' | 'cap') => {
+    localStorage.setItem('marketry:sector-filter-order', value)
+    setSectorFilterMode(value)
+  }, [])
+  const classificationFilterOrder = useMemo(() => {
+    const totals = new Map<StockFilterKey, Map<string, number>>(
+      (['industry', 'parentSector', 'midSector', 'subSector'] as const).map(key => [key, new Map<string, number>()]),
+    )
+    for (const row of rows) {
+      const values: Record<'industry' | 'parentSector' | 'midSector' | 'subSector', string> = {
+        industry: (showHierarchy ? row.industryName : row.sectorName) || '-',
+        parentSector: (showHierarchy && row.parentSector) || '-',
+        midSector: (showHierarchy && row.midSector) || '-',
+        subSector: (showHierarchy && row.subSector) || '-',
+      }
+      for (const key of Object.keys(values) as (keyof typeof values)[]) {
+        const name = values[key]
+        if (name !== '-') {
+          const byName = totals.get(key)!
+          byName.set(name, (byName.get(name) ?? 0) + row.totalMarketValue)
+        }
+      }
+    }
+    return new Map([...totals].map(([key, byName]) => [key, [...byName]
+      .sort(([nameA, valueA], [nameB, valueB]) => valueB - valueA || compareKoreanText(nameA, nameB))
+      .map(([name]) => name)]))
+  }, [rows, showHierarchy])
   // 위쪽 검색창은 종목명·약칭(약칭 열이 보일 때만)·코드·분류명을 대소문자·공백 무시와 초성으로 찾는다.
   const trimmed = query.trim()
   const searchedRows = useMemo(
@@ -402,6 +431,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
   const filterButton = (filterKey: StockFilterKey, label: string, extraProps?: { optionOrder?: readonly string[]; labelOf?: (value: string) => string }) => (
     <ColumnFilterButton
       label={label}
+      isProtected={showHierarchy && filterKey === 'parentSector' ? value => (PROTECTED_SECTOR_NAMES as readonly string[]).includes(value) : !showHierarchy && filterKey === 'industry' ? value => KRX_PROTECTED_SECTOR_NAMES.includes(value) : undefined}
       getOptions={() => filters.optionValues(filterKey)}
       excluded={filters.excluded[filterKey] ?? NO_EXCLUDED}
       onToggle={value => filters.toggle(filterKey, value)}
@@ -409,6 +439,8 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
       onSelectNone={values => filters.selectNone(filterKey, values)}
       selectOnlyOnSearch={filterKey === 'industry' || filterKey === 'parentSector' || filterKey === 'midSector' || filterKey === 'subSector'}
       hintOf={filterKey === 'midSector' || filterKey === 'subSector' ? value => sectorParentHints[filterKey].get(value) : undefined}
+      orderMode={filterKey === 'industry' || filterKey === 'parentSector' || filterKey === 'midSector' || filterKey === 'subSector' ? { value: sectorFilterMode, onChange: changeSectorFilterMode } : undefined}
+      optionOrder={classificationFilterOrder.get(filterKey)}
       {...extraProps}
     />
   )
