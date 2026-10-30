@@ -6,7 +6,7 @@ import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
-import { NEW_LISTING_SECTOR_HINT, NEW_LISTING_SECTOR_NAME, NEW_LISTING_SECTOR_TEXT_CLASS } from '@/utils/newListingSector'
+import { PROTECTED_SECTOR_MARK, PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorHint, isProtectedSectorName, placeProtectedSectorsLast } from '@/utils/protectedSector'
 import { SortIcon } from '@/components/icons/AppIcons'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
@@ -178,7 +178,7 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
   return mode === 'stock' ? (
     <StockTable showHierarchy={source === 'MARKETRY'} showAlias={source === 'MARKETRY' || isAdmin} sectors={sectors} emptyMessage={emptyMessage} nxtStockCodes={nxtStockCodes} stockMarkets={stockMarkets} stockIndustries={stockIndustries} extra={null} onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
   ) : (
-    <CategoryTable sectors={sectors} emptyMessage={emptyMessage} extra={null} onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
+    <CategoryTable sectors={sectors} showProtected={source === 'MARKETRY'} emptyMessage={emptyMessage} extra={null} onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
   )
 }
 
@@ -234,14 +234,14 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
 
 type CategorySortKey = 'name' | 'stockCount' | 'marketValue'
 
-function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolbarContainer }: { sectors: SectorRow[]; emptyMessage: string; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
+function CategoryTable({ sectors, showProtected, emptyMessage, extra, onCountLabelChange, toolbarContainer }: { sectors: SectorRow[]; showProtected: boolean; emptyMessage: string; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
   const stockSearchWidthPx = useStockSearchWidth()
   const [query, setQuery] = useState('')
   // 시가총액 합이 큰 업종부터 처음 보여준다.
   const { sortKey, direction, toggle } = useSort<CategorySortKey>('marketValue', 'desc')
   const rows = useMemo(() => {
     const sign = direction === 'asc' ? 1 : -1
-    return sectors
+    const sorted = sectors
       .map(sector => ({
         name: sector.sectorName,
         stockCount: sector.stocks.length,
@@ -251,7 +251,9 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
         const diff = sortKey === 'name' ? compareName(a.name, b.name) : a[sortKey] - b[sortKey]
         return diff === 0 ? compareName(a.name, b.name) : sign * diff
       })
-  }, [sectors, sortKey, direction])
+    // MARKETRY 표에서는 보호 업종(신규 상장·거래 정지·미분류)을 정렬 방향과 상관없이 항상 맨 아래에 둔다. 거래소 표는 그대로다.
+    return showProtected ? placeProtectedSectorsLast(sorted, row => row.name) : sorted
+  }, [sectors, sortKey, direction, showProtected])
   const trimmed = query.trim()
   const visibleRows = useMemo(() => (trimmed ? rows.filter(row => row.name.includes(trimmed)) : rows), [rows, trimmed])
   useReportCountLabel(`${toCount(visibleRows.length)}/${toCount(rows.length)}업종`, onCountLabelChange)
@@ -300,8 +302,8 @@ function CategoryTable({ sectors, emptyMessage, extra, onCountLabelChange, toolb
                 className={`cursor-pointer text-ui-muted ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/20 [&:hover>td]:bg-[var(--brand)]/35 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-[var(--brand)]/10 [&:hover>td]:border-ui-white/20!'}`}
               >
                 {/* 업종명 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 번호 칸 32px + 10px = 50px. */}
-                <td className={`${BODY_CELL} relative truncate text-left !pl-[50px] ${row.name === NEW_LISTING_SECTOR_NAME ? NEW_LISTING_SECTOR_TEXT_CLASS : ''}`}>
-                  {row.name === NEW_LISTING_SECTOR_NAME ? <span data-hint={NEW_LISTING_SECTOR_HINT}>{row.name}</span> : row.name}
+                <td className={`${BODY_CELL} relative truncate text-left !pl-[50px] ${showProtected && isProtectedSectorName(row.name) ? PROTECTED_SECTOR_TEXT_CLASS : ''}`}>
+                  {showProtected && isProtectedSectorName(row.name) ? <span data-hint={getProtectedSectorHint(row.name)}>{`${row.name}${PROTECTED_SECTOR_MARK}`}</span> : row.name}
                 </td>
                 {/* 종목 표와 같은 시가총액 표기('137조 2,762억' 대신 '137.3조')와 오른쪽 정렬이다. */}
                 {/* 업종명 왼쪽 여백과 같은 50px를 시가총액 오른쪽에 둔다. */}

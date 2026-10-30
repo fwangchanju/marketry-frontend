@@ -7,7 +7,7 @@ import { useCreateSector, useRenameSector, useReparentSector } from '@/hooks/use
 import { useSectorDeleteFlow } from '@/hooks/useSectorDeleteFlow'
 import { sectorCollisionDetection } from '@/utils/dndCollision'
 import { toCount, toJoEokDecimal } from '@/utils/format'
-import { NEW_LISTING_SECTOR_HINT, NEW_LISTING_SECTOR_NAME, NEW_LISTING_SECTOR_TEXT_CLASS } from '@/utils/newListingSector'
+import { PROTECTED_SECTOR_MARK, PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorDeleteMessage, getProtectedSectorHint, isProtectedSectorName, placeProtectedSectorsLast } from '@/utils/protectedSector'
 import { EMPTY_SECTOR_STATS, sectorNamesByDepth, type SectorStats } from '@/utils/sectorOrder'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { SearchBar, SortLabel, type SortDirection } from '@/components/ReadOnlyTaxonomySheet'
@@ -47,8 +47,8 @@ const MAX_SECTOR_DEPTH = 3
 
 // 업종 경로의 구분 표시 — 글자가 작은 '›' 대신 읽기 쉬운 '>'를 쓴다(금융 > 은행). 경로를 만들고 다시 나눌 때 같은 값을 쓴다.
 const SECTOR_PATH_SEPARATOR = ' > '
-const NEW_LISTING_DELETE_MESSAGE = '신규 상장시 자동 분류되는 항목이라 삭제가 불가능합니다.'
-const isProtectedSector = (sector: SectorItem) => sector.parentId === null && sector.name === NEW_LISTING_SECTOR_NAME
+// 보호 업종(신규 상장·거래 정지·미분류) — 삭제·이름 변경·이동·하위 업종 만들기가 막히고, 대분류에만 있다(서버도 막는다).
+const isProtectedSector = (sector: SectorItem) => sector.parentId === null && isProtectedSectorName(sector.name)
 const MAX_SECTOR_LEVELS = MAX_SECTOR_DEPTH + 1
 // "하위 업종 추가" 아이콘은 대분류·중분류(깊이 0·1)에만 보여 준다 — 소분류 이하에는 더 만들지 않는다. 이미 있는 4단계 업종은 그대로 둔다.
 const ADD_CHILD_MAX_PARENT_DEPTH = 1
@@ -114,11 +114,16 @@ const DROP_BADGE_CLASS = {
 } as const
 
 // dropState — 다른 업종을 끄는 동안 번호 대신 아이콘을 보여 준다: 놓을 수 있는 줄은 하위로 넣는 아이콘(over는 그 위에 올라간 줄), 놓을 수 없는 줄은 ✕이다.
-function DraggableNumberBadge({ sectorId, parentId, children, dropState = null }: { sectorId: number; parentId: number | null; children: React.ReactNode; dropState?: 'target' | 'over' | 'blocked' | null }) {
+function DraggableNumberBadge({ sectorId, parentId, children, dropState = null, locked = false }: { sectorId: number; parentId: number | null; children: React.ReactNode; dropState?: 'target' | 'over' | 'blocked' | null; locked?: boolean }) {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: `sector-move-${sectorId}`,
     data: { sectorId, parentId },
+    disabled: locked,
   })
+  // 보호 업종은 옮길 수 없으니 끌 수 있는 버튼이 아니라 번호만 보여 준다(다른 업종을 끄는 동안에는 ✕/아이콘 배지가 그대로 뜬다).
+  if (locked && !dropState) {
+    return <span className={`${NUMBER_BADGE_CLASS} rounded-sm bg-brand-surface text-ui-white`}>{children}</span>
+  }
   return (
     <button
       ref={setNodeRef}
@@ -238,6 +243,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       .filter(c => c.depth > moved.depth && isDescendant(c, moved.id))
       .reduce((max, c) => Math.max(max, c.depth - moved.depth), 0)
     return sectors.filter(candidate =>
+      !isProtectedSector(candidate) &&
       candidate.id !== moved.id &&
       !isDescendant(candidate, moved.id) &&
       candidate.id !== moved.parentId &&
@@ -424,10 +430,12 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     const { key, direction } = sortByDepth[depth] ?? DEFAULT_SECTOR_SORT
     const sign = direction === 'asc' ? 1 : -1
     const valueOf = (item: SectorItem) => sectorStats.get(item.id)?.[key === 'stockCount' ? 'stockCount' : 'marketValue'] ?? 0
-    return [...items].sort((a, b) => {
+    const sorted = [...items].sort((a, b) => {
       const diff = key === 'name' ? compareKoreanText(a.name, b.name) : valueOf(a) - valueOf(b)
       return diff === 0 ? compareKoreanText(a.name, b.name) || a.id - b.id : sign * diff
     })
+    // 보호 업종은 정렬 방향과 상관없이 항상 맨 아래(신규 상장 → 거래 정지 → 미분류)에 둔다.
+    return placeProtectedSectorsLast(sorted, item => (item.parentId === null ? item.name : ''))
   }
   const rootSectors = sortSiblings(viewSectors.filter(c => c.parentId === null && !excludedByDepth[0]?.has(c.name)), 0)
   const middleSectors = selectedMajorId === null ? [] : sortSiblings(viewSectors.filter(c => c.parentId === selectedMajorId && !excludedByDepth[1]?.has(c.name)), 1)
@@ -595,26 +603,29 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                     sectorId={sector.id}
                     parentId={sector.parentId}
                     dropState={isMoveDrag && draggedSector?.id !== sector.id ? (isMoveDropTarget(draggedSector, sector) ? (moveOverId === sector.id ? 'over' : 'target') : 'blocked') : null}
+                    locked={isProtectedSector(sector)}
                   >{itemNumber}</DraggableNumberBadge>
                   <button
                     type="button"
-                    data-hint={isProtectedSector(sector) ? NEW_LISTING_SECTOR_HINT : undefined}
+                    data-hint={isProtectedSector(sector) ? getProtectedSectorHint(sector.name) : undefined}
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
-                    className={`truncate border-0 bg-transparent p-0 text-left text-sm ${isProtectedSector(sector) ? NEW_LISTING_SECTOR_TEXT_CLASS : 'text-ui-white'}`}
+                    className={`truncate border-0 bg-transparent p-0 text-left text-sm ${isProtectedSector(sector) ? PROTECTED_SECTOR_TEXT_CLASS : 'text-ui-white'}`}
                   >
-                    {sector.name}
+                    {isProtectedSector(sector) ? `${sector.name}${PROTECTED_SECTOR_MARK}` : sector.name}
                   </button>
                   {/* 선택한 항목은 줄 오른쪽 끝에 하위 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 번호 칸을 끄는 중에는 숨긴다. */}
                   {selectedSectorId === sector.id && !isMoveDrag && (
                     <span className="ml-auto flex shrink-0 items-center gap-0.5 pl-2 pr-2">
-                      {sector.depth <= ADD_CHILD_MAX_PARENT_DEPTH && (
+                      {sector.depth <= ADD_CHILD_MAX_PARENT_DEPTH && !isProtectedSector(sector) && (
                         <button type="button" data-no-row-select data-hint="하위 업종 추가" aria-label={`${sector.name} 하위 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
                           <PlusIcon className="h-4 w-4" />
                         </button>
                       )}
-                      <button type="button" data-no-row-select data-hint="이름 변경" aria-label={`${sector.name} 이름 변경`} onClick={() => startRename(sector)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
-                        <EditIcon className="h-4 w-4" />
-                      </button>
+                      {!isProtectedSector(sector) && (
+                        <button type="button" data-no-row-select data-hint="이름 변경" aria-label={`${sector.name} 이름 변경`} onClick={() => startRename(sector)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
+                          <EditIcon className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         data-no-row-select
@@ -622,7 +633,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                         aria-label={`${sector.name} 삭제`}
                         onClick={() => {
                           if (isProtectedSector(sector)) {
-                            void appAlert(`[${sector.name}]\n${NEW_LISTING_DELETE_MESSAGE}`, { title: '삭제 불가' })
+                            void appAlert(`[${sector.name}]\n${getProtectedSectorDeleteMessage(sector.name)}`, { title: '삭제 불가' })
                             return
                           }
                           remove(sector.id, sector.name)
