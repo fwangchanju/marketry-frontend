@@ -134,7 +134,7 @@ function DraggableNumberBadge({ sectorId, parentId, children, dropState = null }
   )
 }
 
-// 열 머리글 — 번호 칸을 끄는 동안 대분류 머리글에 놓으면 그 업종이 최상위(대분류)가 된다. 중·소분류 머리글은 놓을 수 없는 자리(✕)다. 끄는 중이 아닐 때는 보통 머리글이다.
+// 열 머리글 — 번호 칸을 끄는 동안 대분류 머리글에 놓으면 그 업종이 최상위(대분류)가 되고, 중·소분류 머리글에 놓으면 지금 열려 있는 대분류·중분류의 하위가 된다(같은 위치이거나 깊이 한도를 넘으면 ✕). 끄는 중이 아닐 때는 보통 머리글이다.
 function ColumnDropHeader({ depth, className, children, style }: { depth: number; className: string; children: React.ReactNode; style?: React.CSSProperties }) {
   const { setNodeRef } = useDroppable({ id: `sector-drop-header-${depth}`, data: { headerDepth: depth } })
   return (
@@ -469,8 +469,16 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     if (!dragged) return false
     return getMoveCandidates(dragged).some(candidate => candidate.id === target.id)
   }
-  // 열 머리글에 놓을 수 있는지 — 대분류 머리글(최상위로 이동)만, 그것도 이미 최상위가 아닌 업종일 때만이다.
-  const isHeaderDropTarget = (dragged: SectorItem | null, depth: number) => depth === 0 && !!dragged && dragged.parentId !== null
+  // 열 머리글에 놓으면 들어갈 부모 — 대분류 머리글은 최상위(null), 중·소분류 머리글은 지금 열려 있는 대분류·중분류다. 놓을 수 없으면 undefined다.
+  // 중·소분류 머리글은 줄에 놓는 것과 같은 규칙(isMoveDropTarget)을 따라서, 같은 위치이거나 깊이 한도를 넘으면 ✕다.
+  const getHeaderDropParent = (dragged: SectorItem | null, depth: number): SectorItem | null | undefined => {
+    if (!dragged) return undefined
+    if (depth === 0) return dragged.parentId !== null ? null : undefined
+    const openId = depth === 1 ? selectedMajorId : selectedMiddleId
+    const parent = openId === null ? undefined : sectors.find(item => item.id === openId)
+    return parent && isMoveDropTarget(dragged, parent) ? parent : undefined
+  }
+  const isHeaderDropTarget = (dragged: SectorItem | null, depth: number) => getHeaderDropParent(dragged, depth) !== undefined
   // 끄는 중 지금 놓으면 들어갈 줄(또는 열 머리글)을 표시한다. 대상 줄이 그대로여도 마우스가 줄 안에서 움직이면 다시 계산해야 해서 onDragOver와 onDragMove 둘 다 쓴다.
   const updateDragTarget = (event: DragOverEvent | DragMoveEvent) => {
     const draggedData = event.active.data.current as { sectorId: number; parentId: number | null } | undefined
@@ -670,7 +678,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         const droppedHeaderDepth = (event.over?.data.current as { headerDepth?: number } | undefined)?.headerDepth
         setMoveOverHeader(null)
         if (draggedItem && droppedHeaderDepth !== undefined) {
-          if (isHeaderDropTarget(draggedItem, droppedHeaderDepth)) void moveByDrag(draggedItem, null)
+          const headerParent = getHeaderDropParent(draggedItem, droppedHeaderDepth)
+          if (headerParent !== undefined) void moveByDrag(draggedItem, headerParent)
         }
         else if (draggedItem && targetItem && isMoveDropTarget(draggedItem, targetItem)) void moveByDrag(draggedItem, targetItem)
       }}
