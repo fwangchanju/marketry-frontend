@@ -2031,7 +2031,6 @@ export function SettingsExcludeSection({
                 <span className="ml-auto shrink-0 tabular-nums text-ui-muted">{toCount(suspendedStockCount)}</span>
               </div>
             )}
-            <div inert={!sectorFilterEnabled} className={sectorFilterEnabled ? '' : 'opacity-35'}>
             {excludedSectors.map(sector => (
               // 지도 위쪽 이동 경로의 되돌아가기 버튼과 같은 모양 — 이름 앞에 되돌아가기 표시가 붙은 한 버튼이다.
               <button
@@ -2043,13 +2042,14 @@ export function SettingsExcludeSection({
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
                 data-hint="맵에 다시 표시"
-                className="flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35"
+                // 업종 제외 스위치를 끄면 목록이 흐려지고 눌리지 않는다(위의 거래 정지 고정 항목은 늘 적용되므로 제외한다).
+                inert={!sectorFilterEnabled}
+                className={`flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35 ${sectorFilterEnabled ? '' : 'opacity-35'}`}
               >
                 <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
               </button>
             ))}
-            </div>
         </ScrollArea>
       </div>
     </div>
