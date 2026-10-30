@@ -6,7 +6,7 @@ import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
-import { PROTECTED_SECTOR_MARK, PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorHint, isProtectedSectorName, placeProtectedSectorsLast } from '@/utils/protectedSector'
+import { PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorHint, isProtectedSectorName, placeProtectedSectorsLast } from '@/utils/protectedSector'
 import { SortIcon } from '@/components/icons/AppIcons'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
@@ -303,7 +303,7 @@ function CategoryTable({ sectors, showProtected, emptyMessage, extra, onCountLab
               >
                 {/* 업종명 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 번호 칸 32px + 10px = 50px. */}
                 <td className={`${BODY_CELL} relative truncate text-left !pl-[50px] ${showProtected && isProtectedSectorName(row.name) ? PROTECTED_SECTOR_TEXT_CLASS : ''}`}>
-                  {showProtected && isProtectedSectorName(row.name) ? <span data-hint={getProtectedSectorHint(row.name)}>{`${row.name}${PROTECTED_SECTOR_MARK}`}</span> : row.name}
+                  {showProtected && isProtectedSectorName(row.name) ? <span data-hint={getProtectedSectorHint(row.name)}>{row.name}</span> : row.name}
                 </td>
                 {/* 종목 표와 같은 시가총액 표기('137조 2,762억' 대신 '137.3조')와 오른쪽 정렬이다. */}
                 {/* 업종명 왼쪽 여백과 같은 50px를 시가총액 오른쪽에 둔다. */}

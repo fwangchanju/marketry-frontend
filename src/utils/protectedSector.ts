@@ -4,9 +4,8 @@ export const SUSPENDED_SECTOR_NAME = '거래 정지'
 export const UNCLASSIFIED_SECTOR_NAME = '미분류'
 export const PROTECTED_SECTOR_NAMES = [NEW_LISTING_SECTOR_NAME, SUSPENDED_SECTOR_NAME, UNCLASSIFIED_SECTOR_NAME] as const
 
-// 업종 표에서 보호 업종을 눈에 띄게 하는 서브 노랑 글자와 이름 뒤 표시.
+// 업종 표에서 보호 업종을 눈에 띄게 하는 서브 노랑 글자.
 export const PROTECTED_SECTOR_TEXT_CLASS = 'text-[var(--sub-yellow)]'
-export const PROTECTED_SECTOR_MARK = '*'
 
 // 이름에 마우스를 올렸을 때 공통 툴팁(data-hint)으로 보여 주는 안내.
 const PROTECTED_SECTOR_HINTS: Record<string, string> = {

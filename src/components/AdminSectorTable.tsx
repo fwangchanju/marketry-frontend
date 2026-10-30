@@ -7,7 +7,7 @@ import { useCreateSector, useRenameSector, useReparentSector } from '@/hooks/use
 import { useSectorDeleteFlow } from '@/hooks/useSectorDeleteFlow'
 import { sectorCollisionDetection } from '@/utils/dndCollision'
 import { toCount, toJoEokDecimal } from '@/utils/format'
-import { PROTECTED_SECTOR_MARK, PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorDeleteMessage, getProtectedSectorHint, isProtectedSectorName, placeProtectedSectorsLast } from '@/utils/protectedSector'
+import { PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorDeleteMessage, getProtectedSectorHint, isProtectedSectorName, placeProtectedSectorsLast } from '@/utils/protectedSector'
 import { EMPTY_SECTOR_STATS, sectorNamesByDepth, type SectorStats } from '@/utils/sectorOrder'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { SearchBar, SortLabel, type SortDirection } from '@/components/ReadOnlyTaxonomySheet'
@@ -611,7 +611,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
                     className={`truncate border-0 bg-transparent p-0 text-left text-sm ${isProtectedSector(sector) ? PROTECTED_SECTOR_TEXT_CLASS : 'text-ui-white'}`}
                   >
-                    {isProtectedSector(sector) ? `${sector.name}${PROTECTED_SECTOR_MARK}` : sector.name}
+                    {sector.name}
                   </button>
                   {/* 선택한 항목은 줄 오른쪽 끝에 하위 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 번호 칸을 끄는 중에는 숨긴다. */}
                   {selectedSectorId === sector.id && !isMoveDrag && (
