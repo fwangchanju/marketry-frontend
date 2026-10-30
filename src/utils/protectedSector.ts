@@ -1,8 +1,8 @@
-// 삭제·이름 변경·이동·하위 업종 만들기가 막힌 보호 업종(서버도 막는다). 모든 사용자에게 항상 대분류로 있고, 업종 표에서 항상 맨 아래에 이 순서로 놓는다.
+// 삭제·이름 변경·이동·하위 업종 만들기가 막힌 보호 업종(서버도 막는다). 모든 사용자에게 항상 대분류로 있고, 업종 표에서 항상 맨 아래에 미분류 → 신규 상장 → 거래 정지 순서로 놓는다.
 export const NEW_LISTING_SECTOR_NAME = '신규 상장'
 export const SUSPENDED_SECTOR_NAME = '거래 정지'
 export const UNCLASSIFIED_SECTOR_NAME = '미분류'
-export const PROTECTED_SECTOR_NAMES = [NEW_LISTING_SECTOR_NAME, SUSPENDED_SECTOR_NAME, UNCLASSIFIED_SECTOR_NAME] as const
+export const PROTECTED_SECTOR_NAMES = [UNCLASSIFIED_SECTOR_NAME, NEW_LISTING_SECTOR_NAME, SUSPENDED_SECTOR_NAME] as const
 
 // 업종 표에서 보호 업종을 눈에 띄게 하는 서브 노랑 글자.
 export const PROTECTED_SECTOR_TEXT_CLASS = 'text-[var(--sub-yellow)]'
@@ -27,7 +27,7 @@ export const getProtectedSectorDeleteMessage = (name: string): string => PROTECT
 // 맨 아래에 놓는 순서 — 보호 업종이 아니면 -1이다.
 export const protectedSectorOrder = (name: string) => (PROTECTED_SECTOR_NAMES as readonly string[]).indexOf(name)
 
-// 정렬한 업종 목록에서 보호 업종을 빼 맨 아래로 보낸다(정렬 방향과 상관없이 항상 신규 상장 → 거래 정지 → 미분류 순서).
+// 정렬한 업종 목록에서 보호 업종을 빼 맨 아래로 보낸다(정렬 방향과 상관없이 항상 미분류 → 신규 상장 → 거래 정지 순서).
 export function placeProtectedSectorsLast<T>(items: T[], getName: (item: T) => string): T[] {
   const regular = items.filter(item => !isProtectedSectorName(getName(item)))
   const protectedItems = items
