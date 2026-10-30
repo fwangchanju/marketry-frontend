@@ -56,6 +56,28 @@ const pathKey = (path: string[]) => path.join('\u0000')
 
 export class ClassificationUploadError extends Error {}
 
+// 같은 업종명이 서로 다른 경로에 있는 충돌 하나 — 내 분류(또는 파일의 앞쪽 줄)의 경로와 파일의 경로다.
+interface NameConflict {
+  name: string
+  otherPath: string[]
+  otherFromFile: boolean
+  filePath: string[]
+}
+
+// 팝업에 한 번에 보여 줄 충돌 수 — 많으면 나머지는 건수로만 알린다.
+const MAX_SHOWN_CONFLICTS = 5
+
+// 어느 쪽이 내 분류이고 어느 쪽이 파일인지, 어떻게 고치면 되는지까지 알려 주는 문구다.
+export function buildConflictMessage(conflicts: readonly NameConflict[]): string {
+  const blocks = conflicts.slice(0, MAX_SHOWN_CONFLICTS).map(conflict =>
+    `[${conflict.name}]\n${conflict.otherFromFile ? '파일(앞줄)' : '내 분류'}: ${conflict.otherPath.join(' > ')}\n파일: ${conflict.filePath.join(' > ')}`)
+  const rest = conflicts.length > MAX_SHOWN_CONFLICTS ? `\n외 ${conflicts.length - MAX_SHOWN_CONFLICTS}건` : ''
+  const fix = conflicts.some(conflict => !conflict.otherFromFile)
+    ? '파일의 경로를 내 분류와 같게 고치거나,\n내 분류의 업종 이름을 파일에 맞게 바꾼 뒤 다시 올려 주세요.'
+    : '파일 안에서 같은 이름의 업종이 서로 다른 경로에 있습니다.\n파일의 경로를 하나로 맞춘 뒤 다시 올려 주세요.'
+  return `같은 이름의 업종이 서로 다른 경로에 있어 올릴 수 없습니다. (${conflicts.length}건)\n\n${blocks.join('\n\n')}${rest}\n\n${fix}`
+}
+
 export function buildUploadPlan(rows: UploadRow[], sectors: SectorItem[], currentSectorIdByCode: Map<string, number | null>): UploadPlan {
   const idByPath = new Map<string, number>()
   const nameById = new Map(sectors.map(sector => [sector.id, sector]))
@@ -113,16 +135,19 @@ export function buildUploadPlan(rows: UploadRow[], sectors: SectorItem[], curren
     else groups.set(key, { path: row.path, stockCodes: [row.stockCode] })
   }
 
-  // 서버는 부모가 달라도 같은 업종명을 허용하지 않는다. 변경 요청 전에 전체 계획을 검사한다.
-  const pathByName = new Map(sectors.map(sector => [sector.name, pathOf(sector.id)]))
+  // 서버는 부모가 달라도 같은 업종명을 허용하지 않는다. 변경 요청 전에 전체 계획을 검사하고, 충돌을 한 번에 모두 알려 준다.
+  const pathByName = new Map(sectors.map(sector => [sector.name, { path: pathOf(sector.id), fromFile: false }]))
+  const conflicts: NameConflict[] = []
   for (const path of newSectors) {
     const name = path[path.length - 1]
-    const existingPath = pathByName.get(name)
-    if (existingPath && pathKey(existingPath) !== pathKey(path)) {
-      throw new ClassificationUploadError(`[${name}]가 서로 다른 경로에 있습니다.\n${existingPath.join(' > ')}\n${path.join(' > ')}\n업종명은 전체 분류에서 중복될 수 없습니다. 이름을 바꾼 뒤 다시 업로드해 주세요.`)
+    const other = pathByName.get(name)
+    if (other && pathKey(other.path) !== pathKey(path)) {
+      conflicts.push({ name, otherPath: other.path, otherFromFile: other.fromFile, filePath: path })
+      continue
     }
-    pathByName.set(name, path)
+    pathByName.set(name, { path, fromFile: true })
   }
+  if (conflicts.length > 0) throw new ClassificationUploadError(buildConflictMessage(conflicts))
   return { newSectors, assignments: [...groups.values()], unknownCodes, existingIdByPath: idByPath, ...plan }
 }
 
