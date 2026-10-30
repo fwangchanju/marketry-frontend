@@ -149,6 +149,8 @@ export const HeatmapResponseSchema = z.object({
   // 선택한 분류의 갱신 시각: MARKETRY는 올린 업종 정보·종목 배정 수정, 거래소는 종목 정보 동기화.
   taxonomyUpdatedAt: z.string().nullish(),
   afterHoursStart: z.string().nullish(),
+  // 연속 5거래일 정지로 이 지도에서 뺀 종목 수 — 설정창 위쪽 종목 수의 분모를 전체 종목 수와 맞추는 데 쓴다. 옛 서버 응답에는 없다.
+  suspendedStockCount: z.number().default(0),
 })
 export type HeatmapResponse = z.infer<typeof HeatmapResponseSchema>
 

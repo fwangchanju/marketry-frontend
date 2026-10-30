@@ -356,7 +356,8 @@ export default function MapPage() {
   const visibleItems = collectItems(groups)
   // 지금 뎁스(path) 기준으로, 섹터 제외/시가총액 구간 필터를 적용하기 전 원본 트리에 있는 전체 종목 수.
   const rawCurrentNode = findRawNodeByPath(rootNodes, path)
-  const totalItemCount = collectRawItems(rawCurrentNode ? [rawCurrentNode] : rootNodes).length
+  // 시장 전체를 볼 때는 정지로 뺀 종목도 분모에 더해 전체 종목 수와 맞춘다(한 업종 안으로 들어가면 그 업종 종목만 센다).
+  const totalItemCount = collectRawItems(rawCurrentNode ? [rawCurrentNode] : rootNodes).length + (rawCurrentNode ? 0 : (data?.suspendedStockCount ?? 0))
   // 내 분류에 종목이 하나도 배정되지 않은 상태 — 필터·시총 범위로 다 가려진 경우나 한 업종 안으로 들어간 경우와 구분하려고 전체 트리로 센다.
   const isMineEmpty = isCustom && collectRawItems(rootNodes).length === 0
 
