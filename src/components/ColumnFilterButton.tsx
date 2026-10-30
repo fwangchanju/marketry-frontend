@@ -32,8 +32,8 @@ export function SectorOrderToggle({ label, value, onChange, compact = false }: {
           aria-checked={value === option}
           onClick={() => onChange(option)}
           className={compact
-            ? `whitespace-nowrap border-0 bg-transparent p-0 text-xs font-medium ${value === option ? 'text-[var(--brand)]' : 'text-ui-text hover:text-ui-white'}`
-            : `h-6 shrink-0 whitespace-nowrap rounded border px-2 text-xs font-medium shadow-none outline-none focus:outline-none focus-visible:outline-none ${value === option ? 'border-transparent bg-brand-surface text-ui-white' : 'border-ui-border bg-transparent text-ui-text hover:text-ui-white'}`}
+            ? `whitespace-nowrap border-0 bg-transparent p-0 text-xs font-medium transition-colors ${value === option ? 'text-[var(--brand)]' : 'text-ui-muted hover:text-ui-white'}`
+            : `h-6 shrink-0 whitespace-nowrap rounded border px-2 text-xs font-medium shadow-none outline-none focus:outline-none focus-visible:outline-none ${value === option ? 'border-transparent bg-brand-surface text-ui-white' : 'border-ui-border bg-transparent text-ui-text transition-colors hover:bg-ui-control-hover hover:text-ui-white'}`}
         >
           {text}
         </button>
@@ -65,7 +65,7 @@ interface Props {
 // "전체 선택 / 전체 해제" 배지 버튼 — 지금 상태와 맞는 쪽이 청록으로 눌러진 상태가 된다(설정창 선택 버튼과 같은 색: 미선택 회색, 선택 청록).
 const BULK_BUTTON_CLASS = 'h-6 flex-1 rounded border p-0 text-xs font-medium'
 const BULK_BUTTON_ON_CLASS = 'border-transparent bg-brand-surface text-ui-white'
-const BULK_BUTTON_OFF_CLASS = 'border-ui-border bg-transparent text-ui-text hover:text-ui-white'
+const BULK_BUTTON_OFF_CLASS = 'border-ui-border bg-transparent text-ui-text transition-colors hover:bg-ui-control-hover hover:text-ui-white'
 
 const NO_OPTIONS: readonly string[] = []
 const defaultLabelOf = (value: string) => (value === '-' ? '(없음)' : value)

@@ -17,7 +17,6 @@ import { SUSPENDED_STOCK_HINT, isProtectedSectorName, isSuspendedSectorName } fr
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
 import { invalidateCustomTaxonomy, useAssignStockSector, useBulkAssignStockSector, useResetCustomClassification, useUpdateStockAlias } from '@/hooks/useHeatmapCustom'
-import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
 import { SearchBar } from './ReadOnlyTaxonomySheet'
@@ -388,7 +387,7 @@ function SectorSearchPopup({
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
         ...(orderMode && bulkPopupWidth ? { width: bulkPopupWidth } : {}),
       }}
-      className="z-50 w-[195px] rounded-md border border-ui-border bg-[var(--ui-panel)] py-2 text-sm font-normal text-ui-white shadow-xl"
+      className="z-50 w-[195px] overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pt-2 text-sm font-normal text-ui-white shadow-xl"
       onClick={e => e.stopPropagation()}
     >
       {title && (
@@ -409,9 +408,9 @@ function SectorSearchPopup({
           aria-label="업종 검색"
           className="h-7 w-full rounded border border-ui-border bg-ui-panel px-2 text-sm text-ui-white outline-none focus:placeholder:text-transparent focus:border-[var(--brand)]"
         />
-        {contextLabel && <p className="m-0 mt-1.5 truncate text-xs font-medium text-ui-text">{contextLabel}</p>}
       </div>
       {title && orderMode && <div ref={orderToggleRef} className="w-fit"><SectorOrderToggle label={title} value={orderMode.value} onChange={orderMode.onChange} /></div>}
+      {contextLabel && <p className="m-0 truncate px-3 pb-2 text-xs font-medium text-ui-muted">{contextLabel}</p>}
       <div className="sector-popup-options overflow-y-auto" style={{ maxHeight: FILTER_LIST_MAX_HEIGHT }}>
         {search.matches.length === 0 ? (
           <p className="m-0 px-3 py-1 text-ui-muted">검색 결과가 없습니다.</p>
@@ -868,7 +867,7 @@ const AdminStockRow = memo(function AdminStockRow({
         onHoverStart={() => onMidSectorHoverStart(item.stockCode)}
         onHoverEnd={onHoverEnd}
         onEditingChange={editing => setCellEditing('sector2', editing)}
-        contextLabel={chain.rootName}
+        contextLabel={`대분류: ${chain.rootName}`}
         disabled={isSuspendedStock}
         disabledHint={SUSPENDED_STOCK_HINT}
         title="중분류 개별 변경"
@@ -883,7 +882,7 @@ const AdminStockRow = memo(function AdminStockRow({
         onHoverStart={() => onSubSectorHoverStart(item.stockCode)}
         onHoverEnd={onHoverEnd}
         onEditingChange={editing => setCellEditing('sector3', editing)}
-        contextLabel={chain.midName ?? undefined}
+        contextLabel={chain.midName ? `중분류: ${chain.midName}` : undefined}
         disabled={chain.midId == null || isSuspendedStock}
         disabledHint={isSuspendedStock ? SUSPENDED_STOCK_HINT : '중분류를 먼저 지정하세요'}
         title="소분류 개별 변경"
@@ -910,8 +909,8 @@ export default function AdminStockTable({
   onRetry,
 }: Props) {
   const queryClient = useQueryClient()
-  const [sortKey, setSortKey] = usePersistedState<SortKey | null>('adminStockTable.sortKey', DEFAULT_SORT_KEY)
-  const [sortDirection, setSortDirection] = usePersistedState<SortDirection>('adminStockTable.sortDirection', 'desc')
+  const [sortKey, setSortKey] = useState<SortKey | null>(DEFAULT_SORT_KEY)
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [isPending, startTransition] = useTransition()
   // 헤더가 sticky + 스크롤 컨테이너(overflow-auto) 안에 있어서, 그 위로 뜨는 툴팁은 일반 absolute로는
   // 부모의 overflow에 잘린다 — body에 포털로 그려서 잘리지 않게 한다(StockBox 등과 동일한 패턴).
