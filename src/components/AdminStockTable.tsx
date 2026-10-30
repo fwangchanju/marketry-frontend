@@ -1044,10 +1044,15 @@ export default function AdminStockTable({
   // 기억해뒀다가, 2차/3차 버튼의 선택지를 그 하위 섹터로만 좁힌다. 선택이 전부 풀리면(새 작업 시작) 초기화.
   const [bulkParentId, setBulkParentId] = useState<number | null>(null)
   const [bulkMidId, setBulkMidId] = useState<number | null>(null)
+  // 방금 일괄 적용한 종목 — 바뀐 분류가 열 필터 조건에서 벗어나도(예: 대분류 `신규 상장` 필터를 걸어 두고 `금융`으로 적용) 선택을 모두
+  // 풀기 전까지 표에 남겨, 이어서 중분류·소분류를 정할 수 있게 한다. 하나씩 체크를 풀 때는 줄이 바로 사라지지 않는다(눌린 채 줄이 밀려
+  // 옆 종목의 체크까지 풀리는 것을 막는다). 선택이 전부 풀리면 필터대로 돌아간다.
+  const [pinnedStockCodes, setPinnedStockCodes] = useState<Set<string>>(new Set())
   useEffect(() => {
     if (selectedStockCodes.size === 0) {
       setBulkParentId(null)
       setBulkMidId(null)
+      setPinnedStockCodes(previous => (previous.size === 0 ? previous : new Set()))
     }
   }, [selectedStockCodes])
 
@@ -1292,6 +1297,8 @@ export default function AdminStockTable({
   // 여러 번 덮어쓰는 흐름이지만), 다음 단계 버튼에서 계속 이어서 좁혀나갈 수 있도록 선택은 유지한다.
   const runBulkAssign = (sectorId: number, onSuccessExtra?: () => void) => {
     const targets = [...selectedStockCodes]
+    // 결과 반영으로 필터에서 빠지더라도 표에 남겨 둔다. 분류가 바뀌기 전에 미리 표시해야 필터 갱신 때 선택이 풀리지 않는다.
+    setPinnedStockCodes(previous => new Set([...previous, ...targets]))
     // 실행취소용으로 각 종목의 "변경 전" 섹터를 미리 스냅샷 — 일괄적용은 종목마다 원래 섹터가
     // 달랐을 수 있어서, 되돌릴 때도 종목별로 각자의 이전 값으로 복원해야 한다.
     const beforeByStockCode = new Map(targets.map(stockCode => [stockCode, itemsRef.current.find(item => item.stockCode === stockCode)?.sectorId]))
@@ -1389,7 +1396,13 @@ export default function AdminStockTable({
     [displayByStockCode],
   )
   const columnFilters = useStockColumnFilters(searched, filterValueOf)
-  const filtered = columnFilters.filteredRows
+  const filtered = useMemo(() => {
+    const rows = columnFilters.filteredRows
+    if (pinnedStockCodes.size === 0) return rows
+    const matchedStockCodes = new Set(rows.map(item => item.stockCode))
+    const kept = searched.filter(item => pinnedStockCodes.has(item.stockCode) && !matchedStockCodes.has(item.stockCode))
+    return kept.length === 0 ? rows : [...rows, ...kept]
+  }, [columnFilters.filteredRows, pinnedStockCodes, searched])
   // 종목 크기 필터의 보기 순서 — 큰 구간부터(Top 2, 대형주, ...).
   const { data: valueTiers } = useMarketValueTiers()
   const tierOrder = useMemo(() => [...(valueTiers ?? [])].sort((a, b) => b.thresholdValue - a.thresholdValue).map(tier => tier.label), [valueTiers])
