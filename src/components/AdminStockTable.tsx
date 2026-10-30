@@ -1069,18 +1069,6 @@ export default function AdminStockTable({
     })
   }
 
-  // AdminStockRow에 props로 내려가는 콜백들 — 매 렌더마다 새 함수면 React.memo가 무력화되므로 useCallback으로 고정한다.
-  const handleAssign = useCallback(
-    (stockCode: string, sectorId: number) => {
-      const before = itemsRef.current.find(item => item.stockCode === stockCode)?.sectorId
-      assignStockSector.mutate({ stockCode, sectorId: sectorId })
-      if (before != null && before !== sectorId) {
-        pushUndo({ type: 'sector', stockCode, before, after: sectorId })
-      }
-    },
-    [assignStockSector, pushUndo],
-  )
-
   const handleUpdateAlias = useCallback(
     (stockCode: string, alias: string | null) => {
       // 다른 종목의 이름이나 약칭과 같은 약칭은 저장하지 않는다 — 지도에서 서로 다른 종목이 같은 이름으로 보여 오해를 낳는다.
@@ -1396,6 +1384,27 @@ export default function AdminStockTable({
     [displayByStockCode],
   )
   const columnFilters = useStockColumnFilters(searched, filterValueOf)
+  // 개별 변경으로 분류 필터에서 빠질 때도 이어서 편집할 수 있게 한다. 선택하지 않은 행이면 이전 선택 대신 이 행만 선택한다.
+  const handleAssign = useCallback((stockCode: string, sectorId: number) => {
+    const before = itemsRef.current.find(item => item.stockCode === stockCode)?.sectorId
+    const chain = resolveSectorChain(sectorOptionsById, sectorId)
+    const leavesFilter = (['parentSector', 'midSector', 'subSector'] as const).some((key, index) =>
+      columnFilters.excluded[key]?.has([chain.rootName, chain.midName ?? '-', chain.leafName ?? '-'][index]))
+    assignStockSector.mutate({ stockCode, sectorId }, {
+      onSuccess: () => {
+        if (!leavesFilter || before === sectorId) return
+        if (!selectedStockCodes.has(stockCode)) {
+          setSelectedStockCodes(new Set([stockCode]))
+          setPinnedStockCodes(new Set([stockCode]))
+          setBulkParentId(null)
+          setBulkMidId(null)
+        } else {
+          setPinnedStockCodes(previous => new Set([...previous, stockCode]))
+        }
+      },
+    })
+    if (before != null && before !== sectorId) pushUndo({ type: 'sector', stockCode, before, after: sectorId })
+  }, [assignStockSector, columnFilters.excluded, pushUndo, sectorOptionsById, selectedStockCodes])
   const filtered = useMemo(() => {
     const rows = columnFilters.filteredRows
     if (pinnedStockCodes.size === 0) return rows
