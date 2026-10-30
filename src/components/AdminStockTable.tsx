@@ -1787,6 +1787,7 @@ export default function AdminStockTable({
                   <StockSortHeader
                     label={col.header}
                     state={sortKey === col.key ? sortDirection : null}
+                    onSort={() => handleSort(col.key)}
                     filter={
                       filterKey ? (
                         <ColumnFilterButton
@@ -1811,9 +1812,8 @@ export default function AdminStockTable({
                     key={col.key}
                     data-column-key={col.key}
                     colSpan={col.key === 'stockName' && !isAdmin ? 2 : undefined}
-                    className="cursor-pointer whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white"
+                    className="whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white"
                     data-hint={col.key === 'alias' && isAdmin ? '약칭은 운영자만 관리할 수 있습니다.' : undefined}
-                    onClick={() => handleSort(col.key)}
                   >
                     {col.key === 'totalMarketValue' ? (
                       <>

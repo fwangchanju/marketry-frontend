@@ -29,6 +29,10 @@ export function useStockNameRightEdge(
     const observer = new ResizeObserver(measure)
     observer.observe(root)
     observer.observe(scroller)
+    const aliasHeader = scroller.querySelector<HTMLElement>('th[data-column-key="alias"]')
+    const nameHeader = scroller.querySelector<HTMLElement>('th[data-column-key="stockName"]')
+    if (aliasHeader) observer.observe(aliasHeader)
+    if (nameHeader) observer.observe(nameHeader)
     if (leftEl) observer.observe(leftEl)
     window.addEventListener('resize', measure)
     return () => {

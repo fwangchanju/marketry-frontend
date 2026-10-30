@@ -72,12 +72,12 @@ function useSort<K extends string>(initialKey: K, initialDirection: SortDirectio
 // 글자 옆에 ⇅ 정렬 아이콘이 붙는 머리글 글자 — 업종 표(내 기준·MARKETRY·거래소)의 한 줄 머리글이 같이 쓴다.
 export function SortLabel({ label, active, direction, onClick }: { label: string; active: boolean; direction: SortDirection; onClick: () => void }) {
   return (
-    <span className={`inline-flex cursor-pointer select-none items-center align-middle ${COLOR.sortHover}`} onClick={onClick}>
+    <button type="button" className="group/sort inline-flex cursor-pointer select-none items-center border-0 bg-transparent p-0 align-middle text-inherit hover:text-[var(--brand)]" onClick={onClick}>
       {label}
-      <span className={`ml-1 inline-flex align-middle ${active ? COLOR.sortActive : COLOR.sortInactive}`}>
+      <span className={`ml-1 inline-flex align-middle group-hover/sort:text-[var(--brand)] ${active ? COLOR.sortActive : COLOR.sortInactive}`}>
         <SortIcon active={active} direction={direction} className="h-3.5 w-3.5" />
       </span>
-    </span>
+    </button>
   )
 }
 
@@ -413,8 +413,8 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
     />
   )
   const header = (key: StockSortKey, label: string, filter?: ReactNode, colSpan?: number) => (
-    <th data-column-key={key} colSpan={colSpan} className={`${STOCK_HEADER_CELL} cursor-pointer`} onClick={() => toggle(key)}>
-      <StockSortHeader label={label} state={activeSortKey === key ? direction : null} filter={filter} />
+    <th data-column-key={key} colSpan={colSpan} className={STOCK_HEADER_CELL}>
+      <StockSortHeader label={label} state={activeSortKey === key ? direction : null} filter={filter} onSort={() => toggle(key)} />
     </th>
   )
   useReportCountLabel(`${toCount(visibleRows.length)}/${toCount(rows.length)}종목`, onCountLabelChange)
