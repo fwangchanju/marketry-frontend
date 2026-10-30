@@ -1447,7 +1447,7 @@ export default function AdminStockTable({
       }
       const plan = buildUploadPlan(rows, sectors, new Map(itemsRef.current.map(item => [item.stockCode, item.sectorId])))
       // 창이 길어지지 않게 개수만 한 줄씩 적는다 — 건너뛰는 종목은 비어 있음·대분류 없음·목록에 없는 코드를 합친 수다.
-      const skippedCount = plan.blankCount + plan.invalidCount + plan.unknownCodes.length
+      const skippedCount = plan.blankCount + plan.invalidCount + plan.unknownCodes.length + plan.autoAssignedCount
       if (plan.changedCount === 0) {
         const parts = [plan.unchangedCount > 0 && `이미 같은 분류 ${toCount(plan.unchangedCount)}개`, skippedCount > 0 && `건너뜀 ${toCount(skippedCount)}개`].filter(Boolean)
         appAlert(`바뀌는 종목이 없습니다.${parts.length > 0 ? `\n${parts.join(' · ')}` : ''}`, { title: '적용 없음' })

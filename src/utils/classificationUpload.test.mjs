@@ -52,3 +52,15 @@ test('충돌이 없으면 계획을 돌려준다', () => {
   assert.deepEqual(plan.newSectors, [['금융', '증권']])
   assert.equal(plan.changedCount, 1)
 })
+
+test('거래 정지 줄은 서버가 자동 배정하니 건너뛰고 변경 수에 넣지 않는다', () => {
+  const rows = [
+    { stockCode: '000003', path: ['거래 정지'], invalid: false },
+    { stockCode: '000004', path: ['금융', '증권'], invalid: false },
+  ]
+  const plan = buildUploadPlan(rows, sectors, currentSectorIdByCode)
+  assert.equal(plan.autoAssignedCount, 1)
+  assert.equal(plan.changedCount, 1)
+  assert.deepEqual(plan.newSectors, [['금융', '증권']])
+  assert.deepEqual(plan.assignments.map(group => group.stockCodes), [['000004']])
+})

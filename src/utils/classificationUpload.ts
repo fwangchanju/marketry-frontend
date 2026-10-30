@@ -12,6 +12,9 @@ export interface UploadRow {
 
 const BLANK_VALUES = new Set(['', '-', '(없음)'])
 
+// 서버가 정지 종목을 자동으로 배정하는 업종 이름(protectedSector.ts의 거래 정지와 같은 값 — node 테스트에서 별칭 경로를 못 읽어 여기 둔다).
+const AUTO_ASSIGNED_SECTOR_NAME = '거래 정지'
+
 const normalizeName = (value: unknown) => String(value ?? '').trim()
 
 // 엑셀이 "005930"을 숫자 5930으로 바꿔 저장한 경우를 위해 6자리 미만 숫자는 앞을 0으로 채운다.
@@ -48,6 +51,7 @@ export interface UploadPlan {
   unchangedCount: number
   blankCount: number // 대·중·소분류를 모두 비운 줄 — 건드리지 않는다
   invalidCount: number // 대분류 없이 중·소분류만 있는 줄
+  autoAssignedCount: number // 거래 정지 줄 — 정지 종목은 서버가 자동으로 배정하니 파일로 넣지 않고 건너뛴다
   unknownCodes: string[] // 내 분류 목록에 없는 종목코드
   existingIdByPath: Map<string, number> // 이미 있는 분류의 경로 → id(새로 만든 분류의 id를 더해 가며 쓴다)
 }
@@ -95,7 +99,7 @@ export function buildUploadPlan(rows: UploadRow[], sectors: SectorItem[], curren
   const newSectorKeys = new Set<string>()
   const newSectors: string[][] = []
   const groups = new Map<string, { path: string[]; stockCodes: string[] }>()
-  const plan = { changedCount: 0, unchangedCount: 0, blankCount: 0, invalidCount: 0 }
+  const plan = { changedCount: 0, unchangedCount: 0, blankCount: 0, invalidCount: 0, autoAssignedCount: 0 }
   const unknownCodes: string[] = []
   const seenCodes = new Set<string>()
 
@@ -112,6 +116,11 @@ export function buildUploadPlan(rows: UploadRow[], sectors: SectorItem[], curren
     }
     if (row.path.length === 0) {
       plan.blankCount++
+      continue
+    }
+    // 거래 정지 업종에는 서버가 연속 5거래일 정지 종목만 자동으로 넣는다 — 파일에 적혀 있어도(내려받은 엑셀에는 들어 있다) 건너뛴다.
+    if (row.path[0] === AUTO_ASSIGNED_SECTOR_NAME) {
+      plan.autoAssignedCount++
       continue
     }
     const key = pathKey(row.path)
