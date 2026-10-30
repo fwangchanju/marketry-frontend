@@ -228,7 +228,13 @@ export const SectorDeletePreviewSchema = z.object({
   deletable: z.boolean(),
   blockingStocks: z.array(StockSectorItemSchema),
   deletableSectors: z.array(z.string()),
+  // 지우면 미분류로 옮겨질 종목 수(비활성·화면에 없는 종목 포함). 예전 서버 응답에는 없다.
+  moveStockCount: z.number().default(0),
+  // 삭제할 수 없는 이유 — 보호 업종이거나 하위 업종이 있을 때다.
+  blockReason: z.enum(['PROTECTED', 'HAS_SUB_SECTORS']).nullish().transform(value => value ?? null),
+  subSectorNames: z.array(z.string()).default([]),
 })
+export type SectorDeletePreview = z.infer<typeof SectorDeletePreviewSchema>
 
 export const SnapshotItemSchema = z.object({
   id: z.number(),
