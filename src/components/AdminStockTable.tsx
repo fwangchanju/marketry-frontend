@@ -1453,9 +1453,11 @@ export default function AdminStockTable({
         appAlert(`바뀌는 종목이 없습니다.${parts.length > 0 ? `\n${parts.join(' · ')}` : ''}`, { title: '적용 없음' })
         return
       }
+      // 종목은 "변경"되는 수다 — 파일 전체 수와 다르게 읽히지 않도록 이미 같은 분류인 종목과 건너뛰는 종목을 함께 적어 합계가 맞게 보이게 한다.
+      const keptParts = [plan.unchangedCount > 0 && `이미 같은 분류 ${toCount(plan.unchangedCount)}개`, skippedCount > 0 && `건너뜀 ${toCount(skippedCount)}개`].filter(Boolean)
       const summary = [
         `업종: 신규 ${toCount(plan.newSectors.length)}개`,
-        `종목: 변경 ${toCount(plan.changedCount)}개`,
+        `종목: 변경 ${toCount(plan.changedCount)}개${keptParts.length > 0 ? ` (${keptParts.join(', ')})` : ''}`,
         '이대로 적용할까요?',
       ].join('\n')
       if (!(await appConfirm(summary, { title: '엑셀 적용' }))) return
