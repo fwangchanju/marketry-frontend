@@ -11,7 +11,7 @@ const FILTER_VISIBLE_ROWS = 10
 const POPUP_WIDTH_PX = 208
 const SEARCH_MIN_OPTIONS = 10
 
-function FunnelIcon({ className }: { className?: string }) {
+export function FunnelIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" className={className} fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M2.5 3.5h11l-4.2 5v3.8l-2.6 1.2V8.5z" />
