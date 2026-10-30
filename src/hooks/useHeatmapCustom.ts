@@ -111,7 +111,7 @@ export function useReparentSector() {
 export function useDeleteSector() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, expectedMoveCount }: { id: number; expectedMoveCount?: number }) => deleteSector(id, expectedMoveCount),
+    mutationFn: ({ id, expectedMoveCount }: { id: number; expectedMoveCount: number }) => deleteSector(id, expectedMoveCount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
       // 담겨 있던 종목이 미분류로 옮겨지므로 종목 표의 분류도 다시 받는다.
