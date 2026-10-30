@@ -17,7 +17,6 @@ import { SUSPENDED_STOCK_HINT, isProtectedSectorName, isSuspendedSectorName } fr
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
 import { invalidateCustomTaxonomy, useAssignStockSector, useBulkAssignStockSector, useResetCustomClassification, useUpdateStockAlias } from '@/hooks/useHeatmapCustom'
-import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
 import { SearchBar } from './ReadOnlyTaxonomySheet'
@@ -910,8 +909,8 @@ export default function AdminStockTable({
   onRetry,
 }: Props) {
   const queryClient = useQueryClient()
-  const [sortKey, setSortKey] = usePersistedState<SortKey | null>('adminStockTable.sortKey', DEFAULT_SORT_KEY)
-  const [sortDirection, setSortDirection] = usePersistedState<SortDirection>('adminStockTable.sortDirection', 'desc')
+  const [sortKey, setSortKey] = useState<SortKey | null>(DEFAULT_SORT_KEY)
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [isPending, startTransition] = useTransition()
   // 헤더가 sticky + 스크롤 컨테이너(overflow-auto) 안에 있어서, 그 위로 뜨는 툴팁은 일반 absolute로는
   // 부모의 overflow에 잘린다 — body에 포털로 그려서 잘리지 않게 한다(StockBox 등과 동일한 패턴).
