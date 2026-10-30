@@ -13,6 +13,7 @@ import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { findAliasConflict } from '@/utils/aliasConflict'
 import { ClassificationUploadError, buildUploadPlan, readClassificationFile } from '@/utils/classificationUpload'
 import { getErrorDetail } from '@/utils/errorMessage'
+import { SUSPENDED_STOCK_HINT, isSuspendedSectorName } from '@/utils/protectedSector'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
 import { invalidateCustomTaxonomy, useAssignStockSector, useBulkAssignStockSector, useResetCustomClassification, useUpdateStockAlias } from '@/hooks/useHeatmapCustom'
@@ -782,7 +783,9 @@ const AdminStockRow = memo(function AdminStockRow({
   // 올라가서 전체 조상 체인을 구한 뒤, 뎁스별로 슬롯에 나눠 담는다.
   const chain = resolveSectorChain(sectorOptionsById, item.sectorId)
   const arrange = (options: SectorOption[]) => (sectorOrderMode === 'alpha' ? options : sortByMarketValue(options, sectorStats))
-  const parentSectorOptions = arrange(sectorOptions.filter(opt => opt.parentId === null))
+  // 거래 정지 업종은 서버만 종목을 넣으므로 고를 수 있는 목록에서 뺀다. 이미 거래 정지인 종목은 업종 칸을 눌러도 바뀌지 않는다.
+  const isSuspendedStock = isSuspendedSectorName(chain.rootName)
+  const parentSectorOptions = arrange(sectorOptions.filter(opt => opt.parentId === null && !isSuspendedSectorName(opt.name)))
   // 이미 한 단계 위로 좁혀진 목록이라 "- " 들여쓰기 접두어가 필요 없다 — 그냥 이름 그대로 보여준다.
   const midSectorOptions = arrange(sectorOptions.filter(opt => opt.parentId === chain.rootId))
     .map(opt => ({ ...opt, label: opt.name }))
@@ -851,6 +854,8 @@ const AdminStockRow = memo(function AdminStockRow({
         onHoverStart={() => onParentSectorHoverStart(item.stockCode)}
         onHoverEnd={onHoverEnd}
         onEditingChange={editing => setCellEditing('sector1', editing)}
+        disabled={isSuspendedStock}
+        disabledHint={SUSPENDED_STOCK_HINT}
         title="대분류 개별 변경"
         orderMode={cellOrderMode}
       />
@@ -864,6 +869,8 @@ const AdminStockRow = memo(function AdminStockRow({
         onHoverEnd={onHoverEnd}
         onEditingChange={editing => setCellEditing('sector2', editing)}
         contextLabel={chain.rootName}
+        disabled={isSuspendedStock}
+        disabledHint={SUSPENDED_STOCK_HINT}
         title="중분류 개별 변경"
         orderMode={cellOrderMode}
       />
@@ -872,13 +879,13 @@ const AdminStockRow = memo(function AdminStockRow({
         options={subSectorOptions}
         onAssign={sectorId => onAssign(item.stockCode, sectorId)}
         isHighlighted={hoveredKind === 'subSector'}
-        rowHoverClass={chain.midId == null ? readOnlyHoverClass : rowHoverClass}
+        rowHoverClass={chain.midId == null || isSuspendedStock ? readOnlyHoverClass : rowHoverClass}
         onHoverStart={() => onSubSectorHoverStart(item.stockCode)}
         onHoverEnd={onHoverEnd}
         onEditingChange={editing => setCellEditing('sector3', editing)}
         contextLabel={chain.midName ?? undefined}
-        disabled={chain.midId == null}
-        disabledHint="중분류를 먼저 지정하세요"
+        disabled={chain.midId == null || isSuspendedStock}
+        disabledHint={isSuspendedStock ? SUSPENDED_STOCK_HINT : '중분류를 먼저 지정하세요'}
         title="소분류 개별 변경"
         orderMode={cellOrderMode}
       />
@@ -1347,7 +1354,8 @@ export default function AdminStockTable({
     const children = sectorOptions.filter(opt => opt.parentId === parentId)
     return sectorFilterMode === 'alpha' ? children : sortByMarketValue(children, sectorStats)
   }
-  const bulkParentOptions = orderedChildren(null)
+  // 일괄 변경으로도 거래 정지 업종에는 넣을 수 없다 — 목록에서 뺀다.
+  const bulkParentOptions = orderedChildren(null).filter(opt => !isSuspendedSectorName(opt.name))
   const bulkMidOptions = effectiveParentId != null ? orderedChildren(effectiveParentId) : []
   const bulkSubOptions = effectiveMidId != null ? orderedChildren(effectiveMidId) : []
 
