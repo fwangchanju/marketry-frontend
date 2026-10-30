@@ -179,7 +179,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const stockSearchWidthPx = useStockSearchWidthEstimate(toolbarContainer)
   const [query, setQuery] = useState('')
   const [sortByDepth, setSortByDepth] = useState<Record<number, SectorSort | undefined>>({})
-  // 머리글 필터 목록의 보기 순서 — 시가총액 합 순(기본) 또는 가나다 순.
+  // 머리글 필터 목록의 보기 순서 — 가나다 순(기본) 또는 시가총액 합 순.
   const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>('alpha')
   const [excludedByDepth, setExcludedByDepth] = useState<Record<number, ReadonlySet<string>>>({})
   const [undoStack, setUndoStack] = useState<SectorHistoryAction[]>([])

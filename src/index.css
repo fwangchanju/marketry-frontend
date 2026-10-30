@@ -1357,7 +1357,7 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   box-shadow: none !important;
 }
 
-:is(.column-filter-options, .sector-popup-options, .change-history-list) { scrollbar-gutter: stable; }
+:is(.column-filter-options, .change-history-list) { scrollbar-gutter: stable; }
 
 /* 업종 제외·배너 목록은 내용이 넘칠 때만 공통 스크롤 트랙과 손잡이를 표시한다. */
 .scroll-area-viewport {
