@@ -42,3 +42,8 @@ test('거래소 표의 거래 정지 툴팁은 재개되면 원래 업종으로 
   assert.ok(getProtectedSectorHint('거래 정지', 'KRX').includes('원래 거래소 업종'))
   assert.ok(getProtectedSectorHint('거래 정지').includes('옮길 수 없습니다'))
 })
+
+test('거래소 표의 미분류에는 툴팁이 없다', () => {
+  assert.equal(getProtectedSectorHint('미분류', 'KRX'), undefined)
+  assert.ok(getProtectedSectorHint('미분류'))
+})
