@@ -119,7 +119,7 @@ export function buildUploadPlan(rows: UploadRow[], sectors: SectorItem[], curren
     const name = path[path.length - 1]
     const existingPath = pathByName.get(name)
     if (existingPath && pathKey(existingPath) !== pathKey(path)) {
-      throw new ClassificationUploadError(`업종명 [${name}]이 서로 다른 경로에 있습니다.\n${existingPath.join(' > ')}\n${path.join(' > ')}\n업종명은 전체 분류에서 중복될 수 없습니다. 이름을 바꾼 뒤 다시 업로드해 주세요.`)
+      throw new ClassificationUploadError(`[${name}]가 서로 다른 경로에 있습니다.\n${existingPath.join(' > ')}\n${path.join(' > ')}\n업종명은 전체 분류에서 중복될 수 없습니다. 이름을 바꾼 뒤 다시 업로드해 주세요.`)
     }
     pathByName.set(name, path)
   }
