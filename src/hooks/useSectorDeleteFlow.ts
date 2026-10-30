@@ -19,7 +19,7 @@ function alertBlocked(sectorName: string, blockingStocks: StockSectorItem[]) {
     appAlert(`[${sectorName}]\n삭제할 수 없습니다.`, { title: '삭제 불가' })
     return
   }
-  appAlert(`[${sectorName}]\n${stockCount}종목이 있어 삭제할 수 없습니다.`, { title: '삭제 불가' })
+  appAlert(`[${sectorName}]\n${stockCount}종목이 담겨 있어 삭제할 수 없습니다.`, { title: '삭제 불가' })
 }
 
 function alertDeleteFailed(sectorName: string, error: unknown) {
