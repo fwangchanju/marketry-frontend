@@ -24,12 +24,14 @@ export type ChangeRateChoice = ChangeRateMode | 'close'
 
 // source는 어떤 분류로 그릴지다 — krx(거래소), marketry(올린 분류, 로그인 없이 읽는다), mine(내 분류, 로그인 필요).
 // nxtOnly는 NXT 거래 종목만 받는다. false일 때는 요청에 싣지 않는다. basis도 afterHours일 때만 요청에 싣는다.
+// includeSuspended는 연속 5거래일 정지로 지도·평균에서 빠지는 종목도 받는다 — 업종 표가 전체 종목 수와 맞도록 업종 표만 켠다.
 export const getHeatmap = (
   market: MarketQuery,
   source: TaxonomySource,
   snapshotTime?: string,
   nxtOnly = false,
   basis: ChangeRateMode = 'daily',
+  includeSuspended = false,
 ) =>
   client
     .get('/map', {
@@ -39,6 +41,7 @@ export const getHeatmap = (
         ...(snapshotTime ? { snapshotTime } : {}),
         ...(nxtOnly ? { nxtOnly } : {}),
         ...(basis === 'afterHours' ? { basis } : {}),
+        ...(includeSuspended ? { includeSuspended } : {}),
       },
     })
     .then(r => HeatmapResponseSchema.parse(r.data))

@@ -9,13 +9,14 @@ export function useHeatmap(
   market: MarketQuery,
   source: TaxonomySource,
   nxtOnly: boolean,
-  options?: { enabled?: boolean; basis?: ChangeRateMode; snapshotTime?: string },
+  options?: { enabled?: boolean; basis?: ChangeRateMode; snapshotTime?: string; includeSuspended?: boolean },
 ) {
   const basis = options?.basis ?? 'daily'
   const snapshotTime = options?.snapshotTime
+  const includeSuspended = options?.includeSuspended ?? false
   return useQuery({
-    queryKey: heatmapKeys.map(market, source, nxtOnly, basis, snapshotTime ?? null),
-    queryFn: () => getHeatmap(market, source, snapshotTime, nxtOnly, basis),
+    queryKey: heatmapKeys.map(market, source, nxtOnly, basis, snapshotTime ?? null, includeSuspended),
+    queryFn: () => getHeatmap(market, source, snapshotTime, nxtOnly, basis, includeSuspended),
     enabled: options?.enabled ?? true,
     ...MARKET_DATA_CACHE,
     // 지난 날짜의 지도는 바뀌지 않으니 1분마다 다시 받지 않는다.

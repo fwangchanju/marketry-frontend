@@ -25,22 +25,6 @@ const PROTECTED_SECTOR_DELETE_MESSAGES: Record<string, string> = {
 export const SUSPENDED_STOCK_HINT = '거래 정지 종목은 다른 업종으로 옮길 수 없습니다.'
 export const isSuspendedSectorName = (name: string | null | undefined) => name === SUSPENDED_SECTOR_NAME
 
-// 거래 정지 종목은 지도·평균에서 빠져 있어서(연속 5거래일 정지) 지도 데이터로 센 업종 표 숫자에는 들어오지 않는다.
-// 그러면 업종 표의 종목 수 합계가 전체 종목 수(지도 설정창 상단의 분모)보다 모자라므로, 거래 정지 업종만 실제로 배정된 종목으로 센다.
-export function suspendedSectorStat(
-  sectors: readonly { id: number; name: string; parentId: number | null }[],
-  items: readonly { sectorId: number | null; totalMarketValue: number | null }[],
-): { sectorId: number; marketValue: number; stockCount: number } | null {
-  const suspended = sectors.find(sector => sector.parentId === null && sector.name === SUSPENDED_SECTOR_NAME)
-  if (!suspended) return null
-  const assigned = items.filter(item => item.sectorId === suspended.id)
-  return {
-    sectorId: suspended.id,
-    marketValue: assigned.reduce((sum, item) => sum + (item.totalMarketValue ?? 0), 0),
-    stockCount: assigned.length,
-  }
-}
-
 export const isProtectedSectorName = (name: string) => (PROTECTED_SECTOR_NAMES as readonly string[]).includes(name)
 export const getProtectedSectorHint = (name: string): string | undefined => PROTECTED_SECTOR_HINTS[name]
 export const getProtectedSectorDeleteMessage = (name: string): string => PROTECTED_SECTOR_DELETE_MESSAGES[name] ?? '삭제가 불가능한 항목입니다.'
