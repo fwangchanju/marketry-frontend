@@ -31,7 +31,7 @@ import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
-import ColumnFilterButton, { SectorOrderToggle } from '@/components/ColumnFilterButton'
+import ColumnFilterButton, { FunnelIcon, SectorOrderToggle } from '@/components/ColumnFilterButton'
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { customHeatmapKeys } from '@/hooks/queryKeys'
@@ -1634,8 +1634,9 @@ export default function AdminStockTable({
             <button
               type="button"
               onClick={columnFilters.clearAll}
-              className="toolbar-badge flex h-6 items-center whitespace-nowrap rounded border border-ui-border bg-transparent px-2 text-sm font-normal text-ui-text transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+              className="toolbar-badge flex h-6 items-center gap-1 whitespace-nowrap rounded border border-ui-border bg-transparent px-2 text-sm font-normal text-ui-text transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
             >
+              <FunnelIcon className="h-3.5 w-3.5 shrink-0 text-[var(--brand)]" />
               필터 초기화
             </button>
           ) : null
