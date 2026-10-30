@@ -7,7 +7,7 @@ import { publishStockSearchWidth } from '@/utils/stockSearchWidth'
 export function useStockNameRightEdge(
   rootRef: RefObject<HTMLElement | null>,
   scrollRef: RefObject<HTMLElement | null>,
-  { columnKey = 'stockName', leftEl = null }: { columnKey?: string; leftEl?: HTMLElement | null } = {},
+  { leftEl = null }: { leftEl?: HTMLElement | null } = {},
 ): number | undefined {
   const [rightEdge, setRightEdge] = useState<number | undefined>(undefined)
   useLayoutEffect(() => {
@@ -15,9 +15,12 @@ export function useStockNameRightEdge(
     const scroller = scrollRef.current
     if (!root || !scroller) return
     const measure = () => {
-      const th = scroller.querySelector<HTMLElement>(`th[data-column-key="${columnKey}"]`)
-      if (!th) return
-      const width = Math.round(th.getBoundingClientRect().right - (leftEl ?? root).getBoundingClientRect().left)
+      // 검색창 오른쪽 끝은 약칭 열의 가운데다. 약칭 열이 안 보이는 표(일반 회원)는 종목명 열과 같은 폭이니 종목명 열 오른쪽에서 반 칸 더 간 곳이다.
+      const alias = scroller.querySelector<HTMLElement>('th[data-column-key="alias"]')?.getBoundingClientRect()
+      const name = scroller.querySelector<HTMLElement>('th[data-column-key="stockName"]')?.getBoundingClientRect()
+      const edge = alias ? (alias.left + alias.right) / 2 : name ? name.right + name.width / 2 : undefined
+      if (edge === undefined) return
+      const width = Math.round(edge - (leftEl ?? root).getBoundingClientRect().left)
       setRightEdge(width)
       publishStockSearchWidth(width)
     }
@@ -33,6 +36,6 @@ export function useStockNameRightEdge(
       observer.disconnect()
       window.removeEventListener('resize', measure)
     }
-  }, [rootRef, scrollRef, columnKey, leftEl])
+  }, [rootRef, scrollRef, leftEl])
   return rightEdge
 }

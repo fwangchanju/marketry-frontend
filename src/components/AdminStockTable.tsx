@@ -1599,8 +1599,8 @@ export default function AdminStockTable({
   )
 
   const rootRef = useRef<HTMLDivElement>(null)
-  // 검색창 오른쪽 끝을 아래 약칭 열의 오른쪽 줄에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
-  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { columnKey: isAdmin ? 'alias' : 'stockName', leftEl: toolbarContainer })
+  // 검색창 오른쪽 끝을 아래 약칭 열의 가운데에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
+  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { leftEl: toolbarContainer })
   // 윗줄(드롭다운 오른쪽)에 그리는 검색창과 필터 초기화. 실행취소·다시실행은 설정창의 변경 내역 위치에만 표시한다.
   const toolbar = (
     <div className="flex h-full min-h-0 w-full items-center gap-2">

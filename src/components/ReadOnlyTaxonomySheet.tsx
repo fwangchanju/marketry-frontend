@@ -6,11 +6,11 @@ import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
-import { PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_TEXT_CLASS, SUSPENDED_SECTOR_NAME, getProtectedSectorHint, placeProtectedSectorsLast } from '@/utils/protectedSector'
+import { KRX_PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorHint, placeProtectedSectorsLast } from '@/utils/protectedSector'
 import { SortIcon } from '@/components/icons/AppIcons'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
-import { useStockSearchWidth } from '@/utils/stockSearchWidth'
+import { useStockSearchWidthEstimate } from '@/utils/stockSearchWidth'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
@@ -235,9 +235,10 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
 type CategorySortKey = 'name' | 'stockCount' | 'marketValue'
 
 function CategoryTable({ sectors, source, emptyMessage, extra, onCountLabelChange, toolbarContainer }: { sectors: SectorRow[]; source: 'KRX' | 'MARKETRY'; emptyMessage: string; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
-  const stockSearchWidthPx = useStockSearchWidth()
-  // 노랗게 칠하고 맨 아래에 두는 업종 — MARKETRY는 보호 업종 셋, 거래소는 거래 정지만이다(서버가 정지 종목을 묶어 준다).
-  const protectedNames: readonly string[] = source === 'MARKETRY' ? PROTECTED_SECTOR_NAMES : [SUSPENDED_SECTOR_NAME]
+  // 검색창 너비를 종목 화면(종목명 열 오른쪽 끝)과 같게 맞춘다.
+  const stockSearchWidthPx = useStockSearchWidthEstimate(toolbarContainer)
+  // 노랗게 칠하고 맨 아래에 두는 업종 — MARKETRY는 보호 업종 셋, 거래소는 미분류와 거래 정지다(서버가 정지 종목을 묶어 준다).
+  const protectedNames = source === 'MARKETRY' ? PROTECTED_SECTOR_NAMES : KRX_PROTECTED_SECTOR_NAMES
   const [query, setQuery] = useState('')
   // 시가총액 합이 큰 업종부터 처음 보여준다.
   const { sortKey, direction, toggle } = useSort<CategorySortKey>('marketValue', 'desc')
@@ -428,7 +429,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
   const rootRef = useRef<HTMLDivElement>(null)
   // 검색창 오른쪽 끝을 아래 종목명 열의 오른쪽 줄에 맞춘다.
   // 검색창 오른쪽 끝을 아래 약칭 열의 오른쪽 줄에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
-  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { columnKey: showAlias ? 'alias' : 'stockName', leftEl: toolbarContainer ?? null })
+  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { leftEl: toolbarContainer ?? null })
   // 줄 누르기·Shift+클릭 범위·끌어서 연속 선택 — MARKETRY 종목 표와 같은 동작이다.
   const { rowProps, selectionHint } = useRowRangeSelection(
     useMemo(() => visibleRows.map(row => row.stockCode), [visibleRows]),
