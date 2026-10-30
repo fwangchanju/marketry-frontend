@@ -243,7 +243,8 @@ export default function GroupPage() {
   // 제외한 시가총액 구간)으로 걸러 남은 종목이다.
   const stockCountLabel = useMemo(() => {
     const nodes = displayNow?.items ?? []
-    const total = nodes.reduce((sum, node) => sum + collectItems(node).length, 0)
+    // 분모에는 정지로 지도에서 뺀 종목도 더해 전체 종목 수와 맞춘다.
+    const total = nodes.reduce((sum, node) => sum + collectItems(node).length, 0) + (displayNow?.suspendedStockCount ?? 0)
     const included = filterTreeByExclusions(nodes, excludedSectorIds, excludedMarketValueTiers).reduce(
       (sum, node) => sum + collectAllItems(node).length,
       0,

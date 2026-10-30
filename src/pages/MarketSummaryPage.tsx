@@ -405,13 +405,14 @@ export default function MarketSummaryPage() {
   // 설정창 위쪽 "nn/nn종목" — 그룹 페이지와 같은 기준이다. 분모는 지금 시장의 모든 종목, 분자는 제외한 업종(하위 업종까지)·시가총액 구간을 뺀 종목이다.
   const stockCountLabel = useMemo(() => {
     const nodes = rootNodes
-    const total = nodes.reduce((sum, node) => sum + collectItems(node).length, 0)
+    // 분모에는 정지로 지도에서 뺀 종목도 더해 전체 종목 수와 맞춘다.
+    const total = nodes.reduce((sum, node) => sum + collectItems(node).length, 0) + (data?.suspendedStockCount ?? 0)
     const included = filterTreeByExclusions(nodes, excludedSectorIds, excludedMarketValueTiers).reduce(
       (sum, node) => sum + collectAllItems(node).length,
       0,
     )
     return `${toCount(included)}/${toCount(total)}종목`
-  }, [rootNodes, excludedSectorIds, excludedMarketValueTiers])
+  }, [rootNodes, data, excludedSectorIds, excludedMarketValueTiers])
   // 세 틀을 한 장으로 스크린샷으로 찍는 중에는 틀마다 있는 스크린샷 버튼을 감춰서 이미지에 찍히지 않게 한다.
   const isCapturingAll = screenshotTarget !== null && screenshotTarget === allFramesRef.current
   const handleCopy = async (previewSrc?: string | null) => {

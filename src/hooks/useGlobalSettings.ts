@@ -773,6 +773,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   const settingsModalProps = {
     isCustom,
+    // 지도·평균에서 항상 빼는 정지 종목 수 — 설정창의 업종 제외 목록에 고정 항목으로 보여 준다.
+    suspendedStockCount: data?.suspendedStockCount ?? 0,
     onToggleCustom: handleToggleCustom,
     taxonomy,
     onSelectTaxonomy: handleSelectTaxonomy,

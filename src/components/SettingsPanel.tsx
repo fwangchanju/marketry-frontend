@@ -1,4 +1,6 @@
 import { SlidingHighlight } from '@/components/SlidingHighlight'
+import { SUSPENDED_EXCLUDE_HINT, SUSPENDED_SECTOR_NAME } from '@/utils/protectedSector'
+import { toCount } from '@/utils/format'
 import { CountLabelWithBadge } from '@/components/KindBadge'
 import ScrollArea from '@/components/ScrollArea'
 import { Children, Fragment, createContext, isValidElement, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
@@ -1989,6 +1991,7 @@ export function SettingsExcludeSection({
   onToggleSectorFilter,
   excludedSectors,
   onRemoveExcludedSector,
+  suspendedStockCount,
   afterStockChange = false,
 }: {
   // 개별 섹터를 켜고 끄는 토글이 아니라, "섹터 제외를 적용할지 말지" 자체를 한 번에 켜고 끄는 스위치.
@@ -1997,6 +2000,8 @@ export function SettingsExcludeSection({
   onToggleSectorFilter: () => void
   excludedSectors: ExcludedSector[]
   onRemoveExcludedSector: (sectorId: number) => void
+  // 연속 5거래일 정지로 항상 빼는 종목 수 — 있으면 목록 맨 위에 해제할 수 없는 `거래 정지` 항목으로 보여 준다(업종 제외 스위치와 상관없이 늘 적용된다).
+  suspendedStockCount?: number
   afterStockChange?: boolean
 }) {
   return (
@@ -2012,9 +2017,20 @@ export function SettingsExcludeSection({
         />
         <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
         <ScrollArea
-          inert={!sectorFilterEnabled}
-          className={`settings-control-inset settings-exclude-list mt-[7px] h-[92px] max-h-[92px] flex-shrink-0 ${sectorFilterEnabled ? '' : 'opacity-35'}`}
+          className="settings-control-inset settings-exclude-list mt-[7px] h-[92px] max-h-[92px] flex-shrink-0"
         >
+            {suspendedStockCount !== undefined && (
+              // 업종 제외를 끄거나 켜는 것과 상관없이 항상 제외되므로 흐리게 하지 않고, 눌러도 복원되지 않는다.
+              <div
+                data-hint={SUSPENDED_EXCLUDE_HINT}
+                className="flex h-5 w-full shrink-0 cursor-default items-center gap-1.5 pl-2 pr-1.5 text-[13px] font-medium text-[var(--sub-yellow)]"
+              >
+                {/* 다른 제외 업종 줄과 같은 자리·크기의 아이콘 — 복원할 수 없는 항목이라 흐리게 해서 이름이 같은 선에서 시작하게 맞춘다. */}
+                <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0 text-ui-muted" aria-hidden="true" />
+                <span className="min-w-0 truncate">{SUSPENDED_SECTOR_NAME}</span>
+                <span className="ml-auto shrink-0 tabular-nums text-ui-muted">{toCount(suspendedStockCount)}</span>
+              </div>
+            )}
             {excludedSectors.map(sector => (
               // 지도 위쪽 이동 경로의 되돌아가기 버튼과 같은 모양 — 이름 앞에 되돌아가기 표시가 붙은 한 버튼이다.
               <button
@@ -2026,7 +2042,9 @@ export function SettingsExcludeSection({
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
                 data-hint="맵에 다시 표시"
-                className="flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35"
+                // 업종 제외 스위치를 끄면 목록이 흐려지고 눌리지 않는다(위의 거래 정지 고정 항목은 늘 적용되므로 제외한다).
+                inert={!sectorFilterEnabled}
+                className={`flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35 ${sectorFilterEnabled ? '' : 'opacity-35'}`}
               >
                 <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
