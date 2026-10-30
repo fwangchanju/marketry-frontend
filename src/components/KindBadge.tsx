@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTaxonomySelection } from '@/hooks/useTaxonomySelection'
 import { FLASH_HOLD_MS } from '@/components/numberEffectTiming'
+import { toCount } from '@/utils/format'
 
 // 종목/업종 구분 배지 — 지도에서 업종 헤더·종목 박스를 우클릭했을 때 뜨는 팝업의 제목 앞 배지와 같은 모양이다.
 // 설정창 위쪽의 "nn/nn종목" 개수 표시도 글자 대신 이 배지를 쓴다.
@@ -111,8 +112,14 @@ function useCountChange(numerator: string, denominator: string) {
   return { isFlashing, isCueVisible, shownNumerator: tweenValue === null ? numerator : String(tweenValue) }
 }
 
-// "449/2741종목" → "449/2741 [종목]"(숫자가 앞, 배지가 바로 뒤). align이 end면 숫자와 배지를 칸의 오른쪽 끝에 붙인다.
+// "449/2,741종목" → "449/2,741 [종목]"(숫자가 앞, 배지가 바로 뒤, 천 단위 쉼표 포함).
+// 계산(자리 비교·숫자 변화 효과)은 쉼표를 뺀 숫자로 하고, 화면에 그릴 때만 쉼표를 다시 찍는다. align이 end면 숫자와 배지를 칸의 오른쪽 끝에 붙인다.
 // 배지는 글자 수가 같은(2글자) 종목/업종이라 칸 오른쪽 끝에서 항상 같은 자리에 오고, 숫자만 자릿수만큼 왼쪽으로 늘어난다.
+const withComma = (value: string) => {
+  const parsed = Number(value)
+  return value !== '' && Number.isFinite(parsed) ? toCount(parsed) : value
+}
+
 export function CountLabelWithBadge({ label, alignEnd = false }: { label: string; alignEnd?: boolean }) {
   const match = /^(.*?)(종목|업종)$/.exec(label)
   const [numerator = '', denominator = ''] = (match?.[1] ?? '').replaceAll(',', '').split('/')
@@ -121,8 +128,8 @@ export function CountLabelWithBadge({ label, alignEnd = false }: { label: string
   return (
     <span className={`items-center gap-1.5 ${alignEnd ? 'flex w-full justify-end' : 'inline-flex'}`}>
       <span>
-        <span className={`inline-block origin-right tabular-nums transition-[transform,color] ease-out motion-reduce:transform-none ${isCueVisible ? 'scale-[1.3] font-bold text-ui-white duration-150' : `scale-100 duration-300 ${isFlashing ? 'text-[var(--brand)]' : ''}`}`}>{shownNumerator}</span>
-        {denominator && `/${denominator}`}
+        <span className={`inline-block origin-right tabular-nums transition-[transform,color] ease-out motion-reduce:transform-none ${isCueVisible ? 'scale-[1.3] font-bold text-ui-white duration-150' : `scale-100 duration-300 ${isFlashing ? 'text-[var(--brand)]' : ''}`}`}>{withComma(shownNumerator)}</span>
+        {denominator && `/${withComma(denominator)}`}
       </span>
       <KindBadge kind={match[2] as Kind} onDark />
     </span>
