@@ -21,7 +21,6 @@ import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
 import { SearchBar } from './ReadOnlyTaxonomySheet'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
-import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
 import { createStockMatcher } from '@/utils/stockSearch'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from './EmptyMessage'
 import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
@@ -1632,20 +1631,17 @@ export default function AdminStockTable({
   )
 
   const rootRef = useRef<HTMLDivElement>(null)
-  // 검색창 오른쪽 끝을 아래 약칭 열의 가운데에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
-  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { leftEl: toolbarContainer, tableKey: `${isLoading}:${isError}:${isAdmin}` })
   // 윗줄(드롭다운 오른쪽)에 그리는 검색창과 필터 초기화. 실행취소·다시실행은 설정창의 변경 내역 위치에만 표시한다.
   const toolbar = (
     <div className="flex h-full min-h-0 w-full items-center gap-2">
       <SearchBar
         inline
-        inputRightEdgePx={nameRightEdge}
         query={searchQuery}
         onChange={query => {
           setSearchQuery(query)
           scrollContainerRef.current?.scrollTo({ top: 0 })
         }}
-        placeholder={isAdmin ? '종목명 · 약칭 · 코드 · 분류' : '종목명 · 코드 · 분류'}
+        placeholder={isAdmin ? '종목코드 · 종목명 · 약칭 · 분류 검색' : '종목코드 · 종목명 · 분류 검색'}
         ariaLabel="종목 검색"
         afterInput={
           columnFilters.activeCount > 0 ? (
