@@ -636,12 +636,13 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 </>
               )}
             </div>
-            {!isRenaming && recentlyChangedSectorId === sector.id && recentChangeType && (
-              <span className="ml-auto mr-2 inline-flex h-[22px] w-8 shrink-0 items-center justify-center rounded-sm border border-[var(--ui-muted)] bg-[var(--ui-control)] text-sm font-bold leading-none text-ui-white">
-                {recentChangeType}
-              </span>
-            )}
           </div>
+          {/* 방금 추가·이동한 업종 표시 — 번호 배지 위에 같은 자리·같은 크기로 포갠다. 눌러도 아래 번호 배지를 그대로 끌 수 있게 클릭은 통과시킨다. */}
+          {!isRenaming && recentlyChangedSectorId === sector.id && recentChangeType && (
+            <span className="pointer-events-none absolute left-2 top-1/2 inline-flex h-6 w-8 -translate-y-1/2 items-center justify-center rounded-sm border border-[var(--ui-muted)] bg-[var(--ui-control)] text-sm font-bold leading-none text-ui-white">
+              {recentChangeType}
+            </span>
+          )}
         </td>
         <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toJoEokDecimal((stat?.marketValue ?? 0) / 100_000_000)}</td>
         <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toCount(stat?.stockCount ?? 0)}</td>
