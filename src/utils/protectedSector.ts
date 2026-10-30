@@ -26,7 +26,7 @@ export const SUSPENDED_STOCK_HINT = '거래 정지 종목은 다른 업종으로
 export const isSuspendedSectorName = (name: string | null | undefined) => name === SUSPENDED_SECTOR_NAME
 
 // 설정창의 업종 제외 목록에 해제할 수 없는 항목으로 보여 주는 안내.
-export const SUSPENDED_EXCLUDE_HINT = '연속 5거래일 이상 거래가 정지된 종목은\n지도·평균에서 항상 제외됩니다.(해제 불가)'
+export const SUSPENDED_EXCLUDE_HINT = '거래 정지 종목은 지도·평균에서\n항상 제외되며 해제할 수 없습니다.'
 
 export const isProtectedSectorName = (name: string) => (PROTECTED_SECTOR_NAMES as readonly string[]).includes(name)
 // 거래소 표에는 거래 정지만 있다 — 읽기 전용이고, 재개되면 서버가 다음 조회부터 키움 업종으로 돌려놓는다.
