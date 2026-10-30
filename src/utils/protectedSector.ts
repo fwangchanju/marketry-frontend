@@ -29,10 +29,17 @@ export const isSuspendedSectorName = (name: string | null | undefined) => name =
 export const SUSPENDED_EXCLUDE_HINT = '거래 정지 종목은 지도·평균에서\n항상 제외되며 해제할 수 없습니다.'
 
 export const isProtectedSectorName = (name: string) => (PROTECTED_SECTOR_NAMES as readonly string[]).includes(name)
-// 거래소 표에는 거래 정지만 있다 — 읽기 전용이고, 재개되면 서버가 다음 조회부터 키움 업종으로 돌려놓는다.
+// 거래소 표에는 미분류(키움 업종이 없는 종목)와 거래 정지만 있다 — 읽기 전용이고, 거래 정지는 재개되면 서버가 다음 조회부터 키움 업종으로 돌려놓는다.
+// 거래소 표의 미분류는 색과 위치만 다르게 하고 툴팁은 두지 않는다.
 const KRX_SUSPENDED_HINT = '연속 5거래일 이상 거래가 정지된 종목이 이 그룹으로 묶입니다.\n재개되면 원래 거래소 업종으로 돌아갑니다.'
-export const getProtectedSectorHint = (name: string, source: 'MARKETRY' | 'KRX' = 'MARKETRY'): string | undefined =>
-  source === 'KRX' && name === SUSPENDED_SECTOR_NAME ? KRX_SUSPENDED_HINT : PROTECTED_SECTOR_HINTS[name]
+export const getProtectedSectorHint = (name: string, source: 'MARKETRY' | 'KRX' = 'MARKETRY'): string | undefined => {
+  if (source === 'KRX' && name === SUSPENDED_SECTOR_NAME) return KRX_SUSPENDED_HINT
+  if (source === 'KRX' && name === UNCLASSIFIED_SECTOR_NAME) return undefined
+  return PROTECTED_SECTOR_HINTS[name]
+}
+
+// 거래소 표에서 노랗게 칠하고 맨 아래에 두는 업종 — 이 순서다.
+export const KRX_PROTECTED_SECTOR_NAMES: readonly string[] = [UNCLASSIFIED_SECTOR_NAME, SUSPENDED_SECTOR_NAME]
 export const getProtectedSectorDeleteMessage = (name: string): string => PROTECTED_SECTOR_DELETE_MESSAGES[name] ?? '삭제가 불가능한 항목입니다.'
 // 맨 아래에 놓는 순서 — 보호 업종이 아니면 -1이다.
 export const protectedSectorOrder = (name: string) => (PROTECTED_SECTOR_NAMES as readonly string[]).indexOf(name)
