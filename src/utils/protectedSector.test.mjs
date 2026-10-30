@@ -6,7 +6,6 @@ import {
   getProtectedSectorHint,
   isProtectedSectorName,
   placeProtectedSectorsLast,
-  suspendedSectorStat,
 } from './protectedSector.ts'
 
 test('보호 업종 이름은 띄어쓰기까지 정확히 미분류·신규 상장·거래 정지다', () => {
@@ -31,21 +30,12 @@ test('보호 업종은 정렬 결과와 상관없이 맨 아래에 미분류·�
   assert.deepEqual(placeProtectedSectorsLast([...sorted].reverse(), name => name), ['반도체', '금융', '미분류', '신규 상장', '거래 정지'])
 })
 
-test('거래 정지 업종은 실제로 배정된 종목 수와 시가총액 합으로 센다', () => {
-  const sectors = [
-    { id: 1, name: '금융', parentId: null },
-    { id: 9, name: '거래 정지', parentId: null },
-    { id: 10, name: '거래 정지', parentId: 1 }, // 하위 업종의 같은 이름은 보호 업종이 아니다
-  ]
-  const items = [
-    { sectorId: 9, totalMarketValue: 300 },
-    { sectorId: 9, totalMarketValue: null },
-    { sectorId: 1, totalMarketValue: 50 },
-    { sectorId: null, totalMarketValue: 7 },
-  ]
-  assert.deepEqual(suspendedSectorStat(sectors, items), { sectorId: 9, marketValue: 300, stockCount: 2 })
+test('거래소 표는 거래 정지만 맨 아래로 보낸다', () => {
+  const rows = ['미분류', '금융', '거래 정지', '건설']
+  assert.deepEqual(placeProtectedSectorsLast(rows, name => name, ['거래 정지']), ['미분류', '금융', '건설', '거래 정지'])
 })
 
-test('거래 정지 업종이 없으면 계산하지 않는다', () => {
-  assert.equal(suspendedSectorStat([{ id: 1, name: '금융', parentId: null }], []), null)
+test('거래소 표의 거래 정지 툴팁은 재개되면 원래 업종으로 돌아간다고 알린다', () => {
+  assert.ok(getProtectedSectorHint('거래 정지', 'KRX').includes('원래 거래소 업종'))
+  assert.ok(getProtectedSectorHint('거래 정지').includes('옮길 수 없습니다'))
 })
