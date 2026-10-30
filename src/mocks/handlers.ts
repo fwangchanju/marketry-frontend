@@ -163,7 +163,7 @@ export const handlers = [
   http.get('/api/custom/sectors/:id/delete-preview', ({ params }) => {
     const sector = data.customSectors.find(c => c.id === Number(params.id))
     if (!sector) return new HttpResponse(null, { status: 404 })
-    return HttpResponse.json({ sectorName: sector.name, deletable: true, blockingStocks: [], deletableSectors: [] })
+    return HttpResponse.json({ sectorName: sector.name, deletable: true, blockingStocks: [], deletableSectors: [], moveStockCount: 0, blockReason: null, subSectorNames: [] })
   }),
   http.delete('/api/custom/sectors/:id', ok),
   http.get('/api/custom/snapshots', () => HttpResponse.json(data.customSnapshots)),
