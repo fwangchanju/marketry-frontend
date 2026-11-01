@@ -321,7 +321,7 @@ export default function MapPage() {
   // 실험 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
-  // 렌더러도 지도 화면과 같은 모바일 캡처 함수를 사용한다.
+  // 텔레그램 렌더러가 이 함수를 호출해 화면 캡처와 같은 글꼴·여백·배율로 저장한다.
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
@@ -816,12 +816,11 @@ export default function MapPage() {
             <div
               aria-hidden="true"
               data-map-mobile-capture-frame
-              data-map-shared-capture={isMobileCaptureMode ? 'true' : undefined}
               data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
               data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
-              // 두 경로 모두 아래 4px를 자른 3:5 이미지를 만든다.
+              // 두 경로 모두 아래 4px를 자른 9:16 이미지를 만든다.
               style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT + 4}px`, padding: '4px 4px 0', boxSizing: 'border-box' }}
-              className={`pointer-events-none ${isMobileCaptureMode ? 'fixed z-[200]' : 'absolute z-[60]'} left-0 top-0 bg-ui-background`}
+              className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"
             >
             <div
               aria-hidden="true"
