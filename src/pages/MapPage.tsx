@@ -1,7 +1,6 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
-import { useEffect, useRef, useState, type ReactElement } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useRef, useState } from 'react'
 import { useSettled } from '@/hooks/useSettled'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
@@ -46,7 +45,7 @@ import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { CAPTURE_ID } from '@/utils/captureIds'
-import { HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
+import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
@@ -60,6 +59,12 @@ import { useTransientSetting } from '@/hooks/useTransientSetting'
 import { MEMBER_DEFAULTS } from '@/utils/settingDefaults'
 import type { MarketQuery, HeatmapSectorNode, HeatmapItem } from '@/types/api'
 import { isAdminSession } from '@/utils/adminAccess'
+
+declare global {
+  interface Window {
+    marketryCaptureMap?: () => Promise<string>
+  }
+}
 
 const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'K-STOCK' }
 // 종목·업종 헤더와 같은 방식 — 올리면 흰색 35% 덮개가 씌워진다(index.css의 hover와 같은 불투명도).
@@ -316,7 +321,7 @@ export default function MapPage() {
   // 실험 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
-  // 렌더러(텔레그램 발송)가 /map/korea?capture=mobile 로 열면 스크린샷 창의 "모바일" 판(3:4 세로)을 화면에 그대로 펼쳐 놓고 그 틀만 찍는다.
+  // 렌더러도 지도 화면과 같은 모바일 캡처 함수를 사용한다.
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
@@ -595,8 +600,6 @@ export default function MapPage() {
 
   // 렌더러용 모바일 판 — 데이터가 오고 히트맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
   const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && visibleItems.length > 0
-  // 렌더러용 판은 상단 메뉴 위에 보이도록 페이지 맨 바깥(body)에 그린다. 스크린샷 창이 열려 있을 때는 지도 본문 안에 투명하게 둔다.
-  const placeMobileFrame = (frame: ReactElement) => (isMobileCaptureMode ? createPortal(frame, document.body) : frame)
   // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 복제하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
   const isMobileCaptureSettled = useSettled(canShowMobileCapture, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
   useEffect(() => {
@@ -613,6 +616,17 @@ export default function MapPage() {
     rafId = requestAnimationFrame(revealWhenLaidOut)
     return () => cancelAnimationFrame(rafId)
   }, [isMobileCaptureSettled, isMobileCaptureReady])
+
+  useEffect(() => {
+    if (!isMobileCaptureMode || !isMobileCaptureReady) return
+    const capture = () => {
+      const root = screenshotRef.current
+      if (!root) throw new Error('캡처할 지도 영역이 없습니다.')
+      return screenshotElementToDataUrl(root, '[data-map-mobile-capture-frame]', 'element', revealMobileCapture)
+    }
+    window.marketryCaptureMap = capture
+    return () => { delete window.marketryCaptureMap }
+  }, [isMobileCaptureMode, isMobileCaptureReady])
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
@@ -798,14 +812,15 @@ export default function MapPage() {
               </div>
             </div>
           {/* 모니터 캡처에서는 모바일용 히트맵을 만들지 않아 화면 렌더링과 DOM 복제 비용을 줄인다. */}
-          {((isShareOpen && isMobileScreenshotSelected) || isMobileCaptureMode) && !isLoading && !isError && visibleItems.length > 0 && placeMobileFrame(
+          {((isShareOpen && isMobileScreenshotSelected) || isMobileCaptureMode) && !isLoading && !isError && visibleItems.length > 0 && (
             <div
               aria-hidden="true"
               data-map-mobile-capture-frame
+              data-map-shared-capture={isMobileCaptureMode ? 'true' : undefined}
               data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
               data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
-              // 홈 부분 캡처와 같은 810×1080 판을 쓴다. 스크린샷 창은 이미지 끝에서 하단 4px를 자르므로 높이만 4px 더 둔다.
-              style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${HOME_CAPTURE_FRAME_HEIGHT + (isMobileCaptureMode ? 0 : 4)}px`, padding: '4px 4px 0', boxSizing: 'border-box' }}
+              // 두 경로 모두 아래 4px를 자른 3:5 이미지를 만든다.
+              style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT + 4}px`, padding: '4px 4px 0', boxSizing: 'border-box' }}
               className={`pointer-events-none ${isMobileCaptureMode ? 'fixed z-[200]' : 'absolute z-[60]'} left-0 top-0 bg-ui-background`}
             >
             <div

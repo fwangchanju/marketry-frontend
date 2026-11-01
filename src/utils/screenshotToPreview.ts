@@ -43,7 +43,10 @@ async function cropMobileCaptureBottom(dataUrl: string, cropPixels: number): Pro
 // regionSelector를 주면 맨 왼쪽부터 그 요소의 오른쪽 끝까지만 찍는다.
 export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector?: string, regionMode?: 'through-right-edge' | 'element' | 'content', onCloneNode?: (cloned: Node) => void, horizontalPadding = 0): Promise<string> {
   const captureStartedAt = performance.now()
-  const options = shareScreenshotOptions(el, regionSelector, regionMode, onCloneNode, horizontalPadding)
+  const baseOptions = shareScreenshotOptions(el, regionSelector, regionMode, onCloneNode, horizontalPadding)
+  const options = regionSelector === '[data-map-mobile-capture-frame]'
+    ? { ...baseOptions, scale: 2560 / MAP_MOBILE_CAPTURE_FRAME_HEIGHT }
+    : baseOptions
   // 글꼴은 찍을 영역에 쓰인 조각만 넣는다(전부 넣으면 캡처마다 글꼴 조각 277개를 내려받는다). 고르지 못하면 라이브러리 기본 동작이다.
   const mobileFrame = regionSelector === '[data-map-mobile-capture-frame]'
     ? el.querySelector<HTMLElement>(regionSelector)
@@ -63,6 +66,7 @@ export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector
 // 텔레그램 홈 모바일 판과 같은 크기(픽셀).
 export const HOME_CAPTURE_FRAME_WIDTH = 810
 export const HOME_CAPTURE_FRAME_HEIGHT = 1080
+export const MAP_MOBILE_CAPTURE_FRAME_HEIGHT = 1350
 // 상단 정보(왼쪽 툴바와 오른쪽 배지)가 고정 폭에 다 들어가지 않을 때 — 사용자에게 안내 문구를 그대로 보여 준다.
 export class CaptureWidthError extends Error {
   constructor() {
