@@ -1855,7 +1855,7 @@ export function SettingsMarketValueSection({
         <SettingTitle help>시가총액 범위</SettingTitle>
         {tierRangeLines && <SettingHelpBubble label="시가총액 구간" description={tierRangeLines} />}
       </p>
-      <SettingDescription>지도에 포함할 종목의 시총 구간</SettingDescription>
+      <SettingDescription>지도를 구성할 종목들의 시가총액</SettingDescription>
       <div className="settings-subsection-list flex min-h-[90px] flex-1 items-center pb-3 text-sm">
         <div className="settings-slider-control">
           <p className="mb-2 flex min-h-[22px] justify-center text-[13px]/4 text-ui-white" aria-live="polite" aria-atomic="true">
@@ -2018,7 +2018,7 @@ export function SettingsExcludeSection({
           labelClassName="text-[15px] settings-section-num"
 
         />
-        <SettingDescription dimmed={!sectorFilterEnabled}>업종을 우클릭하면 제외 가능</SettingDescription>
+        <SettingDescription dimmed={!sectorFilterEnabled}>업종 박스를 우클릭 후 제외</SettingDescription>
         <ScrollArea
           className="settings-control-inset settings-exclude-list mt-[7px] h-[92px] max-h-[92px] flex-shrink-0"
         >
