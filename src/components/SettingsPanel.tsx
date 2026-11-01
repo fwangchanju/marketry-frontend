@@ -219,6 +219,9 @@ interface ExcludedSector {
   sectorName: string
 }
 
+// 제외 업종 툴팁 — 맨 위에 `제외 업종`, 아래에 이름 전체 경로("대분류 > 중분류 > 소분류")를 보여 준다. 목록에서 이름이 말줄임표로 잘려도 여기서 전체를 읽을 수 있다.
+const excludedSectorHint = (sectorName: string) => `제외 업종\n${sectorName}`
+
 // checked가 꺼지면 라벨 텍스트도 같이 옅어져서, 꺼져있다는 게 스위치 색뿐 아니라 글자로도 드러난다.
 function ToggleSwitch({
   checked,
@@ -2041,7 +2044,7 @@ export function SettingsExcludeSection({
                   onRemoveExcludedSector(sector.sectorId)
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
-                data-hint="맵에 다시 표시"
+                data-hint={excludedSectorHint(sector.sectorName)}
                 // 업종 제외 스위치를 끄면 목록이 흐려지고 눌리지 않는다(위의 거래 정지 고정 항목은 늘 적용되므로 제외한다).
                 inert={!sectorFilterEnabled}
                 className={`flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35 ${sectorFilterEnabled ? '' : 'opacity-35'}`}
