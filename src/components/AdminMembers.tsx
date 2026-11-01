@@ -11,7 +11,6 @@ import ToolbarModeText from '@/components/ToolbarModeText'
 import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
-import { useStockSearchWidth } from '@/utils/stockSearchWidth'
 import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
 import { displayEmail } from '@/utils/displayEmail'
 import { AUTH_PROVIDER_ISSUERS, isAuthProviderIssuer } from '@/utils/authProvider'
@@ -76,7 +75,6 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
   const [page, setPage] = useState(0)
   const [sort, setSort] = useState<{ key: SortKey; order: SortOrder } | null>(null)
   const appliedSort = sort ?? DEFAULT_SORT
-  const stockSearchWidthPx = useStockSearchWidth()
   const includedRoles = GRADE_VALUES.filter(value => !excludedRoles.has(value))
   const role = includedRoles.length === GRADE_VALUES.length ? '' : includedRoles.join(',')
   const includedIssuers = ISSUER_VALUES.filter(value => !excludedIssuers.has(value))
@@ -196,7 +194,6 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
         <div className="ml-1 flex min-w-0 flex-1 items-center">
           <SearchBar
             inline
-            inputRightEdgePx={stockSearchWidthPx}
             query={draft}
             onChange={changeSearch}
             placeholder="이메일 · 닉네임"

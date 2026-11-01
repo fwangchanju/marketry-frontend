@@ -9,8 +9,6 @@ import StockSortHeader from '@/components/StockSortHeader'
 import { KRX_PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorHint, placeProtectedSectorsLast } from '@/utils/protectedSector'
 import { SortIcon } from '@/components/icons/AppIcons'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
-import { useStockNameRightEdge } from '@/hooks/useStockNameRightEdge'
-import { useStockSearchWidthEstimate } from '@/utils/stockSearchWidth'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
@@ -184,7 +182,7 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
 
 // 검색어 최대 글자 수 — 분류 이름(대·중·소분류)·약칭 최대 길이(12자)와 같다.
 // 표 위의 검색창과 개수 — 카테고리·종목 화면이 같은 틀(위치·크기)을 쓰도록 한 곳에 둔다. 커스텀 종목 표도 이걸 쓴다.
-export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel, extra, settingsLayout = false, inline = false, inlineWidthClassName = 'w-[15.5rem]', inputRightEdgePx, afterInput }: {
+export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel, extra, settingsLayout = false, inline = false, inlineWidthClassName = 'w-[250px]', afterInput }: {
   query: string
   onChange: (query: string) => void
   placeholder: string
@@ -197,8 +195,6 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
   inlineWidthClassName?: string
   // 개수 오른쪽 끝에 붙는 추가 조작(예: "NXT만 보기" 체크박스).
   extra?: ReactNode
-  // 검색창의 오른쪽 끝을 표 영역 왼쪽에서 이 px에 맞춘다(종목 표: 아래 종목명 열의 오른쪽 줄). 없으면 기본 너비.
-  inputRightEdgePx?: number
   // 검색창 바로 오른쪽에 붙는 조작(예: 관리자 버튼, 필터 요약).
   afterInput?: ReactNode
 }) {
@@ -220,7 +216,7 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
         }`}
         // 안내 문구와 입력 글자가 위 드롭박스의 글자와 같은 선에서 시작하게 한다: 드롭박스 안쪽 여백(0.5rem)에서
         // 이 입력창의 테두리(1px)만큼 뺀다. 유틸리티 클래스는 nes.css보다 약해서 인라인으로 준다.
-        style={{ paddingLeft: 'calc(0.5rem - 1px)', ...(!settingsLayout && inputRightEdgePx ? { width: Math.max(120, inputRightEdgePx) } : {}) }}
+        style={{ paddingLeft: 'calc(0.5rem - 1px)' }}
       />
       {afterInput && <div className="ml-2 flex shrink-0 items-center gap-3">{afterInput}</div>}
       {/* 개수는 위 헤더의 "읽기 전용"과 같은 위치에서 시작한다: 드롭박스 둘(15.5rem) + 간격(0.5rem) + "읽기 전용"의 왼쪽 여백(0.75rem)
@@ -235,8 +231,6 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
 type CategorySortKey = 'name' | 'stockCount' | 'marketValue'
 
 function CategoryTable({ sectors, source, emptyMessage, extra, onCountLabelChange, toolbarContainer }: { sectors: SectorRow[]; source: 'KRX' | 'MARKETRY'; emptyMessage: string; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
-  // 검색창 너비를 종목 화면(종목명 열 오른쪽 끝)과 같게 맞춘다.
-  const stockSearchWidthPx = useStockSearchWidthEstimate(toolbarContainer)
   // 노랗게 칠하고 맨 아래에 두는 업종 — MARKETRY는 보호 업종 셋, 거래소는 미분류와 거래 정지다(서버가 정지 종목을 묶어 준다).
   const protectedNames = source === 'MARKETRY' ? PROTECTED_SECTOR_NAMES : KRX_PROTECTED_SECTOR_NAMES
   const [query, setQuery] = useState('')
@@ -278,7 +272,6 @@ function CategoryTable({ sectors, source, emptyMessage, extra, onCountLabelChang
       {toolbarContainer && createPortal(
         <SearchBar
           inline
-          inputRightEdgePx={stockSearchWidthPx}
           query={query}
           onChange={setQuery}
           placeholder="업종 검색"
@@ -459,9 +452,6 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
   // 화면에 보이는 행(+위아래 여유)만 그리고, 나머지 높이는 앞뒤 스페이서 <tr>로 채운다(AdminStockTable과 같은 방식).
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
-  // 검색창 오른쪽 끝을 아래 종목명 열의 오른쪽 줄에 맞춘다.
-  // 검색창 오른쪽 끝을 아래 약칭 열의 오른쪽 줄에 맞춘다(검색창은 윗줄 컨테이너의 왼쪽 끝에서 시작한다).
-  const nameRightEdge = useStockNameRightEdge(rootRef, scrollContainerRef, { leftEl: toolbarContainer ?? null, tableKey: String(showAlias) })
   // 줄 누르기·Shift+클릭 범위·끌어서 연속 선택 — MARKETRY 종목 표와 같은 동작이다.
   const { rowProps, selectionHint } = useRowRangeSelection(
     useMemo(() => visibleRows.map(row => row.stockCode), [visibleRows]),
@@ -490,8 +480,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
           inline
           query={query}
           onChange={setQuery}
-          inputRightEdgePx={nameRightEdge}
-          placeholder={showAlias ? '종목명 · 약칭 · 코드 · 분류' : '종목명 · 코드 · 분류'}
+          placeholder={showAlias ? '종목코드 · 종목명 · 약칭 · 분류 검색' : '종목코드 · 종목명 · 분류 검색'}
           ariaLabel="종목 검색"
           afterInput={
             <>
