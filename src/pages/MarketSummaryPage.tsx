@@ -16,7 +16,6 @@ import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_FILTER_MESSA
 import SettingsPanel, { SettingsPanelGroup, SettingsMarketValueSection, SettingsExcludeSection, SettingsColorSection, SettingsStrongIndustryColorSection } from '@/components/SettingsPanel'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
-import PeriodTrendChart from '@/components/PeriodTrendChart'
 import { getMarketIndexHistory } from '@/api/marketSummary'
 import Spinner from '@/components/Spinner'
 import NxtOnlyNotice from '@/components/NxtOnlyNotice'
@@ -32,10 +31,8 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
-import type { MarketOverviewTrendItem, HeatmapSectorNode } from '@/types/api'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
-import { useSession } from '@/hooks/useSession'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
@@ -43,16 +40,12 @@ import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/sc
 import { HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
-import type { MarketValueExclusions } from '@/utils/marketValueTier'
-import { resolveHeatmapColor, resolveHeatmapExtremeColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
-import { collectItems, computeSectorAverage, summarizeSector } from '@/utils/sectorAverage'
+import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
+import { collectItems, summarizeSector } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredHeatmap'
 import { collectAtDepth } from '@/utils/sectorDepth'
-import { withStableSectorIds } from '@/utils/guestSectorIds'
-import { getSnapshotDays, getHeatmap } from '@/api/heatmap'
 import { usePreviousTradingDay } from '@/hooks/useHeatmap'
-import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
-import { loadTrendDays, sampleDaysUpTo, trendMonths } from '@/utils/trendDates'
+import { trendMonths } from '@/utils/trendDates'
 import { marketRoute } from '@/utils/marketRoute'
 
 // 홈 시장 요약 배치
@@ -63,8 +56,6 @@ type HistoricalIndexPoint = {
   overview: Awaited<ReturnType<typeof getMarketIndexHistory>>[number]
 }
 
-// 시장 요약의 항목 배지는 툴바의 "분류" 칸과 같은 짙은 청록 배경(--brand-surface)·흰 글자을 쓴다. 지수는 오르면 빨강·내리면 파랑, 변화가 없거나 값이 없으면 회색이다.
-const TREND_MAX_POINTS = 30
 const TREND_MAX_YEARS = 1
 // 종료일 기준 그래프가 시작하는 날(포함) — 기간이 이보다 길어도 그래프는 이 날부터만 그린다.
 function maxDate(a: string, b: string): string {
@@ -75,114 +66,30 @@ function earliestTrendDate(endDate: string): string {
   start.setUTCFullYear(start.getUTCFullYear() - TREND_MAX_YEARS)
   return start.toISOString().slice(0, 10)
 }
-const INDEX_ROWS = [
-  { label: '코스피', market: 'KOSPI' },
-  { label: '코스닥', market: 'KOSDAQ' },
-] as const
-
-
-// 막대는 차트 높이에 비례해 키우고, 위아래에는 값 라벨과 간격에 필요한 공간만 남긴다.
-function MarketIndexTrendChart({ items, market, label, colorScale }: { items: MarketOverviewTrendItem[]; market: 'KOSPI' | 'KOSDAQ'; label: string; colorScale: ColorScaleConfig }) {
-  const dateLabels = (date: string) => {
-    const value = new Date(`${date}T00:00:00Z`)
-    return { date: `${value.getUTCMonth() + 1}/${value.getUTCDate()}`, weekday: ['일', '월', '화', '수', '목', '금', '토'][value.getUTCDay()] }
-  }
-  const values = items.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date)).slice(-5)
-  const scale = Math.max(3, ...values.map(item => Math.abs(item.changeRate)))
-  if (!values.length) return null
-  return (
-    <div role="img" aria-label={`${label} 최근 ${values.length}거래일 등락률 그래프`} className="relative grid h-full w-full grid-cols-5 gap-2">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-[#808080]" />
-      {values.map(item => {
-        const ratio = Math.min(Math.abs(item.changeRate) / scale, 1)
-        const height = `max(2px, calc((50% - 32px) * ${ratio}))`
-        const barColor = item.changeRate === 0 ? 'var(--ui-muted)' : resolveHeatmapExtremeColor(item.changeRate, colorScale)
-        return (
-          <div key={`${item.date}-${item.market}`} className="relative min-w-0 text-center">
-            <div className="relative mx-auto h-full w-full max-w-32">
-            <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 border border-ui-control ${item.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
-              <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[13px] font-semibold tabular-nums" style={{ top: item.changeRate >= 0 ? `calc(50% - ${height} - 19px)` : `calc(50% + ${height} + 3.5px)`, color: barColor }}>{item.changeRate > 0 ? '+' : ''}{item.changeRate.toFixed(2)}</div>
-            </div>
-            <div className="absolute inset-x-0 top-[calc(100%+8px)] text-ui-muted">
-              <div className="whitespace-nowrap text-[13px] leading-tight tabular-nums">{dateLabels(item.date).date}</div>
-              <div className="whitespace-nowrap text-[13px] leading-tight">({dateLabels(item.date).weekday})</div>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-type PersonalSectorPoint = { date: string; changeRate: number }
-type PersonalSectorTrend = { sectorName: string; isRange: boolean; points: PersonalSectorPoint[] } | null
-
-function PersonalSectorTrendChart({ trend, colorScale }: { trend: PersonalSectorTrend | undefined; colorScale: ColorScaleConfig }) {
-  const points = trend?.points ?? []
-  if (trend?.isRange) return <PeriodTrendChart points={points} label={trend.sectorName} colorScale={colorScale} />
-  if (!points.length) return null
-  const scale = Math.max(3, ...points.map(point => Math.abs(point.changeRate)))
-  return (
-    <div className="h-full min-w-0 w-full">
-      <div role="img" aria-label={`${trend?.sectorName ?? '최상위 업종'} ${trend?.isRange ? '선택 기간 누적' : '최근 5거래일 일간'} 등락률 막대그래프`} className="relative grid h-full gap-2" style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-[#808080]" />
-        {points.map(point => {
-          const date = new Date(`${point.date}T00:00:00Z`)
-          const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getUTCDay()]
-          const ratio = Math.min(Math.abs(point.changeRate) / scale, 1)
-          const height = `max(2px, calc((50% - 32px) * ${ratio}))`
-          const barColor = resolveHeatmapExtremeColor(point.changeRate, colorScale)
-          return (
-            <div key={point.date} className="relative min-w-0 text-center">
-              <div className="relative mx-auto h-full w-full max-w-32">
-              <i className={`absolute left-1/2 w-1/4 -translate-x-1/2 border border-ui-control ${point.changeRate >= 0 ? 'bottom-1/2 rounded-t-sm' : 'top-1/2 rounded-b-sm'}`} style={{ height, backgroundColor: barColor }} />
-                <div className="absolute inset-x-0 z-[1] whitespace-nowrap text-[13px] font-semibold tabular-nums" style={{ top: point.changeRate >= 0 ? `calc(50% - ${height} - 19px)` : `calc(50% + ${height} + 3.5px)`, color: barColor }}>{point.changeRate > 0 ? '+' : ''}{point.changeRate.toFixed(2)}</div>
-              </div>
-              <div className="absolute inset-x-0 top-[calc(100%+8px)] text-ui-muted">
-                <div className="whitespace-nowrap text-[13px] leading-tight tabular-nums">{date.getUTCMonth() + 1}/{date.getUTCDate()}</div>
-                <div className="whitespace-nowrap text-[13px] leading-tight">({weekday})</div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 const SUMMARY_BADGE_CLASS = FRAME_BADGE_CLASS
 
-function SummaryBadge({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <span className={`${SUMMARY_BADGE_CLASS} ${className}`}>{children}</span>
-}
-
 const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
-const DEFAULT_HOME_FRAME_ORDER = ['시장 요약', '요약 지도', '그룹 등락률 (%)']
+const DEFAULT_HOME_FRAME_ORDER = ['업종 지도', '그룹 등락률 (%)']
 
-function SortableHomeFrame({ title, captureId, index, children, captureUntil, showHeader = true, insetHeader = false }: { title: string; captureId: string; index: number; children: ReactNode | ((dragBadge: ReactNode) => ReactNode); captureUntil?: string; showHeader?: boolean; insetHeader?: boolean }) {
+function SortableHomeFrame({ title, captureId, index, children, captureUntil }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
-  const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" className={`${SUMMARY_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title === '시장 요약' ? '코스피' : title}</span>
-  const body = typeof children === 'function' ? children(dragBadge) : children
-  const header = (
-    <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
-      {dragBadge}
-    </div>
-  )
+  const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" className={`${SUMMARY_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title}</span>
   return (
     <section
       ref={setNodeRef}
       aria-label={title}
       data-capture-until={captureUntil}
       style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.7 : undefined }}
-      className={`home-summary-frame relative flex h-full min-w-[320px] flex-col bg-ui-background ${index === 1 ? 'flex-1' : 'flex-none basis-[calc(100%/3_-_4px)]'}`}
+      className="home-summary-frame relative flex h-full min-w-[320px] flex-1 basis-0 flex-col bg-ui-background"
     >
-      <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : index === 2 ? 'pl-1 pr-0' : 'px-1'}`}>
-        {insetHeader ? (
-          <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] py-[7px]">
-            {header}
-            <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{body}</div>
+      {/* 두 틀의 너비가 같다 — 틀 사이(안쪽)만 4px씩 띄우고 바깥쪽은 0이라 내용 폭이 같다. */}
+      <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : 'pl-1 pr-0'}`}>
+        <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] py-[7px]">
+          <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
+            {dragBadge}
           </div>
-        ) : <>{showHeader && header}{body}</>}
+          <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{children}</div>
+        </div>
       </div>
     </section>
   )
@@ -220,8 +127,8 @@ export default function MarketSummaryPage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
-  // 예전 이름('시장 지도')으로 저장된 순서도 새 이름('요약 지도')의 같은 자리로 읽는다.
-  const savedHomeFrameOrder = homeFrameOrder.map(title => (title === '시장 지도' ? '요약 지도' : title))
+  // 예전 이름('시장 지도'·'요약 지도')으로 저장된 순서도 새 이름('업종 지도')의 같은 자리로 읽는다.
+  const savedHomeFrameOrder = homeFrameOrder.map(title => (title === '시장 지도' || title === '요약 지도' ? '업종 지도' : title))
   const safeHomeFrameOrder = [
     ...savedHomeFrameOrder.filter((title, index) => DEFAULT_HOME_FRAME_ORDER.includes(title) && savedHomeFrameOrder.indexOf(title) === index),
     ...DEFAULT_HOME_FRAME_ORDER.filter(title => !savedHomeFrameOrder.includes(title)),
@@ -240,19 +147,10 @@ export default function MarketSummaryPage() {
 
   // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
   const { data: marketSummary } = useMarketSummary()
-  const { data: session } = useSession()
   const queryClient = useQueryClient()
   const rangePreviousDay = usePreviousTradingDay(market, rangeStartTime?.slice(0, 10) ?? null, { enabled: rangeStartTime !== undefined })
-  const marketTrendDates = [...new Set((marketSummary?.marketOverviewTrends ?? []).map(item => item.date))].sort().slice(-5)
-  const personalTrendBasis = changeRateChoice === 'afterHours' ? 'afterHours' : 'daily'
-  const marketValueRange = (excludedMarketValueTiers as MarketValueExclusions).marketValueRange
-  const trendTaxonomy = settingsModalProps.taxonomy === 'NXT' ? 'KRX' : settingsModalProps.taxonomy
-  const personalTrendEndDate = pinnedSnapshotTime?.slice(0, 10) ?? data?.snapshotTime?.slice(0, 10) ?? marketTrendDates.at(-1) ?? null
-  // 기간이 종료일 기준 TREND_MAX_YEARS년보다 길면 그래프는 일부만 그리므로 그 사실을 그래프에 적는다.
-  const trendRangeEndDate = pinnedSnapshotTime?.slice(0, 10) ?? data?.snapshotTime?.slice(0, 10) ?? null
-  const trendNote = rangeStartTime && trendRangeEndDate && rangeStartTime.slice(0, 10) < earliestTrendDate(trendRangeEndDate) ? `최근 ${TREND_MAX_YEARS}년` : undefined
   const indexEndDate = pinnedSnapshotTime?.slice(0, 10) ?? marketSummary?.marketOverviews.snapshotTime?.slice(0, 10) ?? null
-  const { data: historicalIndexData, isPending: isIndexHistoryPending, isError: isIndexHistoryError, refetch: refetchIndexHistory } = useQuery({
+  const { data: historicalIndexData } = useQuery({
     queryKey: ['home-historical-market-index', indexEndDate, rangeStartTime, rangePreviousDay?.snapshotTime, changeRateChoice],
     enabled: Boolean(indexEndDate && pinnedSnapshotTime !== undefined && (!rangeStartTime || rangePreviousDay !== undefined)),
     queryFn: async () => {
@@ -285,84 +183,8 @@ export default function MarketSummaryPage() {
     },
     staleTime: 60_000,
   })
-  const { data: personalSectorTrend, isPending: isSectorTrendPending, isError: isSectorTrendError, refetch: refetchSectorTrend } = useQuery({
-    // 시총 범위는 Set의 원소가 아니라 marketValueRange 속성에 있으므로 금액 경계도 캐시 키에 넣는다.
-    queryKey: ['home-personal-sector-trend', session?.userId ?? null, personalTrendEndDate, data?.snapshotTime, rangeStartTime, rangePreviousDay?.snapshotTime, pinnedSnapshotTime !== undefined, marketTrendDates, changeRateChoice, settingsModalProps.taxonomy,
-      [...excludedSectorIds].sort((a, b) => a - b), [...excludedMarketValueTiers].sort(), marketValueRange?.min ?? null, marketValueRange?.max ?? null],
-    // 시장 요약이 도착하기 전 빈 날짜 목록으로 먼저 실행하면 현재점만 조회한 뒤 같은 추이를 다시 요청한다.
-    enabled: Boolean(personalTrendEndDate && data?.snapshotTime && (rangeStartTime ? rangePreviousDay !== undefined : marketSummary) && (settingsModalProps.taxonomy !== 'MINE' || session?.authenticated)),
-    queryFn: async (): Promise<PersonalSectorTrend> => {
-      const isRange = rangeStartTime !== undefined
-      const isPinnedDate = pinnedSnapshotTime !== undefined
-      // 과거 지도는 개별로 캐시해 현재 스냅샷이 갱신돼도 다시 받지 않는다.
-      const cachedDays = (month: string) => queryClient.fetchQuery({
-        queryKey: ['home-trend-days', month],
-        queryFn: () => getSnapshotDays('ALL_STOCK', month),
-        staleTime: 60_000,
-        gcTime: 30 * 60_000,
-      })
-      const cachedMap = (snapshotTime: string) => queryClient.fetchQuery({
-        queryKey: ['map', 'home-trend-map', session?.userId ?? null, trendTaxonomy, snapshotTime, isRange ? 'daily' : personalTrendBasis],
-        queryFn: () => getHeatmap('ALL_STOCK', trendTaxonomy, snapshotTime, false, isRange ? 'daily' : personalTrendBasis),
-        staleTime: Infinity,
-        gcTime: 30 * 60_000,
-      })
-      const endDate = personalTrendEndDate!
-      let historicalDates = marketTrendDates.filter(date => date < endDate).slice(-4)
-      if (isPinnedDate && !isRange) {
-        const [year, month] = endDate.slice(0, 7).split('-').map(Number)
-        const previousMonth = new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7)
-        const dayLists = await Promise.all([previousMonth, endDate.slice(0, 7)].map(cachedDays))
-        historicalDates = dayLists.flat().map(day => day.date).filter(date => date < endDate).sort().slice(-4)
-      }
-      const months = isRange
-        ? trendMonths(maxDate(rangeStartTime.slice(0, 10), earliestTrendDate(endDate)), endDate)
-        : [...new Set(historicalDates.map(date => date.slice(0, 7)))]
-      const snapshotDays = (await Promise.all(months.map(cachedDays))).flat()
-      // 기간 선택은 자유롭지만 그래프는 종료일 기준 최근 TREND_MAX_YEARS년만 그리고, 점은 최대 TREND_MAX_POINTS개만 쓴다(첫날·마지막 날 포함).
-      // 누적 등락률의 기준은 선택한 시작일 그대로라 그린 구간의 값은 기간 전체 기준과 같다.
-      const earliestGraphDate = earliestTrendDate(endDate)
-      const selectedDates = isRange
-        ? sampleDaysUpTo([...new Set([...snapshotDays.map(day => day.date).filter(date => date >= rangeStartTime.slice(0, 10) && date >= earliestGraphDate && date <= endDate), endDate])].sort(), TREND_MAX_POINTS)
-        : [...historicalDates, endDate]
-      const baseMap = isRange ? await cachedMap(rangePreviousDay?.snapshotTime ?? rangeStartTime) : null
-      const datedMaps = await loadTrendDays(selectedDates, async date => {
-        if (date === endDate) return { date, items: rootNodes }
-        const day = snapshotDays.find(candidate => candidate.date === date)
-        if (!day) return { date, items: [] }
-        const map = await cachedMap(day.snapshotTime)
-        const items = baseMap
-          ? buildRangeChangeRateTree(map.items, baseMap.items, rangePreviousDay ? 'close' : 'previousClose').items
-          : map.items
-        return { date, items }
-      })
-      const trendRoots = (items: HeatmapSectorNode[]) =>
-        trendTaxonomy === 'KRX' && !session?.authenticated ? withStableSectorIds(items) : items
-      const latestRoots = collectAtDepth(rootNodes, 1, excludedSectorIds, excludedMarketValueTiers)
-      const top = latestRoots
-        .map(({ node, pathKey }) => ({ node, pathKey, changeRate: computeSectorAverage(node, excludedMarketValueTiers).weightedAvg }))
-        .filter((entry): entry is { node: HeatmapSectorNode; pathKey: string; changeRate: number } => entry.changeRate !== null)
-        .sort((a, b) => b.changeRate - a.changeRate)[0]
-      if (!top) return null
-      return {
-        sectorName: top.node.sectorName,
-        isRange,
-        points: datedMaps.flatMap(({ date, items }) => {
-          const node = collectAtDepth(date === endDate ? items : trendRoots(items), 1, excludedSectorIds, excludedMarketValueTiers)
-            .find(({ pathKey }) => pathKey === top.pathKey)?.node
-          const changeRate = node ? computeSectorAverage(node, excludedMarketValueTiers).weightedAvg : null
-          return changeRate === null ? [] : [{ date, changeRate }]
-        }),
-      }
-    },
-    staleTime: 60_000,
-  })
   // 실시간 요약 지수는 최신 일간 보기에서만 쓴다. 과거 날짜·기간 보기에는 조회한 해당 날짜/기간의 지수 추이를 쓴다.
   const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
-  const indexTrendItems = pinnedSnapshotTime
-    ? (historicalIndexData ?? []).flatMap(({ date, market, overview }) => overview ? [{ date, market, changeRate: overview.changeRate }] : [])
-    : marketSummary?.marketOverviewTrends ?? []
-
   // 홈은 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
   const effectiveDepth = 1
   const handleSelectSector = (sectorName: string) => {
@@ -413,7 +235,7 @@ export default function MarketSummaryPage() {
     )
     return `${toCount(included)}/${toCount(total)}종목`
   }, [rootNodes, data, excludedSectorIds, excludedMarketValueTiers])
-  // 세 틀을 한 장으로 스크린샷으로 찍는 중에는 틀마다 있는 스크린샷 버튼을 감춰서 이미지에 찍히지 않게 한다.
+  // 두 틀을 한 장으로 스크린샷으로 찍는 중에는 틀마다 있는 스크린샷 버튼을 감춰서 이미지에 찍히지 않게 한다.
   const isCapturingAll = screenshotTarget !== null && screenshotTarget === allFramesRef.current
   const handleCopy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotTarget) return
@@ -431,7 +253,7 @@ export default function MarketSummaryPage() {
 
 
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
-  // 세 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
+  // 두 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
 
   // 툴바 왼쪽(제목 배지·날짜·시각·시간대)과 오른쪽(분류 배지) — 화면의 툴바와 3:4 캡처용 판이 같은 내용을 쓴다.
   const toolbarContent = (
@@ -486,10 +308,10 @@ export default function MarketSummaryPage() {
             </div>
     </>
   )
-  // 홈의 세 틀(제목·캡처 이름·본문) — 화면과 3:4 캡처용 판이 같은 본문을 쓴다.
+  // 홈의 두 틀(제목·캡처 이름·본문) — 화면과 3:4 캡처용 판이 같은 본문을 쓴다.
   const homeFrames = [
               {
-                title: '요약 지도',
+                title: '업종 지도',
                 captureId: 'market-map',
                 body: (
                   <OverviewMap items={overview.items} colorScale={colorScale} onSelect={handleSelectSector} />
@@ -500,45 +322,6 @@ export default function MarketSummaryPage() {
                 captureId: 'group-change-rate',
                 body: (
                   <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={handleSelectSector} onSelectIndex={handleSelectIndex} applyAxisBreak={rangeStartTime === undefined} />
-                ),
-              },
-              {
-                // 거래정지로 지도에서 빠지기 시작한 종목, 신규 상장 종목을 그날 하루만 종류별 칸(신규 상장·거래 정지)에 보여 준다. 없는 종류는 배지 옆에 "없음"을 적는다.
-                title: '시장 요약',
-                captureId: 'market-summary',
-                body: (dragBadge: ReactNode) => (
-                  <div className="grid h-full min-h-0 w-full flex-1 grid-rows-[repeat(3,minmax(160px,1fr))] gap-2 overflow-y-auto text-[14px] font-medium leading-none tabular-nums">
-                    {INDEX_ROWS.map(({ label, market }) => {
-                      const trendItems = indexTrendItems
-                      return (
-                        <section key={market} aria-label={`${label} 시장 요약과 최근 5거래일 추이`} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-[7px] pb-[7px] pt-1.5">
-                          <div className="relative z-10 flex h-[26px] min-w-0 shrink-0 items-center gap-2">
-                            {market === 'KOSPI' ? dragBadge : <SummaryBadge>{label}</SummaryBadge>}
-                          </div>
-                          <div className={rangeStartTime && (isIndexHistoryPending || !trendItems.some(item => item.market === market))
-                            ? 'absolute inset-0'
-                            : 'absolute inset-x-2 top-[30px] bottom-[44px]'}>
-                            {rangeStartTime ? (
-                              <PeriodTrendChart points={trendItems.filter(item => item.market === market).sort((a, b) => a.date.localeCompare(b.date))} label={label} colorScale={colorScale} loading={isIndexHistoryPending} error={isIndexHistoryError} onRetry={() => { void refetchIndexHistory() }} note={trendNote} />
-                            ) : <MarketIndexTrendChart items={trendItems} market={market} label={label} colorScale={colorScale} />}
-                          </div>
-                        </section>
-                      )
-                    })}
-                    <section aria-label={rangeStartTime ? '최상위 업종 선택 기간 누적 등락률' : '최상위 업종 최근 5거래일 일간 등락률'} className="relative flex min-h-[160px] flex-row rounded-sm border border-ui-border bg-ui-background px-[7px] pb-[7px] pt-1.5">
-                      <div className="relative z-10 flex h-[26px] min-w-0 shrink-0 flex-row items-center gap-2">
-                        <SummaryBadge>최상위 업종</SummaryBadge>
-                        <span className="max-w-full truncate text-[14px] font-semibold leading-tight text-ui-text">{personalSectorTrend?.sectorName ?? ''}</span>
-                      </div>
-                      <div className={rangeStartTime && (isSectorTrendPending || !personalSectorTrend?.points.length)
-                        ? 'absolute inset-0'
-                        : 'absolute inset-x-2 top-[30px] bottom-[44px]'}>
-                        {rangeStartTime ? (
-                          <PeriodTrendChart points={personalSectorTrend?.points ?? []} label={personalSectorTrend?.sectorName ?? '최상위 업종'} colorScale={colorScale} loading={isSectorTrendPending} error={isSectorTrendError} onRetry={() => { void refetchSectorTrend() }} note={trendNote} />
-                        ) : <PersonalSectorTrendChart trend={personalSectorTrend} colorScale={colorScale} />}
-                      </div>
-                    </section>
-                  </div>
                 ),
               },
             ]
@@ -606,7 +389,7 @@ export default function MarketSummaryPage() {
                 <EmptyMessage message={EMPTY_FILTER_MESSAGE} topClass="top-0" />
               </div>
             ) : (
-            /* 세 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 지도" 글자가 지도 페이지 히트맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
+            /* 두 틀이 툴바 바로 아래부터 맨 아래 줄 바로 위까지 영역 전체를 나눠 채운다(바깥 여백 없이, 틀 안쪽 위아래 여백 없음). 외곽선도 틀 사이 구분선도 없다. 위쪽은 커스텀 페이지의 표와 같이 툴바 아래 여백(5.25px)만 둔다. 첫 틀의 "시장 지도" 글자가 지도 페이지 히트맵의 "Top 2" 글자 자리와 비슷하다. 창이 아주 좁으면 틀의 최소 폭(320px)에서 가로로 스크롤된다. */
             <div className="flex min-h-0 min-w-0 flex-1">
             {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서(지도 아래 약 15px), 캡처 중에는 스크롤을 풀어 둔다. */}
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
@@ -614,7 +397,7 @@ export default function MarketSummaryPage() {
             <SortableContext items={safeHomeFrameOrder} strategy={horizontalListSortingStrategy}>
             <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
             {orderedHomeFrames.map((frame, frameIndex) => (
-              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} showHeader={frame.title !== '시장 요약'} insetHeader={frame.title !== '시장 요약'}>
+              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined}>
                 {frame.body}
               </SortableHomeFrame>
             ))}
@@ -685,7 +468,7 @@ export default function MarketSummaryPage() {
             {orderedHomeFrames.map(frame => (
               <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: HOME_CAPTURE_FRAME_WIDTH }}>
                 <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
-                <CaptureFrame title={frame.title === '시장 요약' ? '코스피' : frame.title} className="min-h-0 flex-1">
+                <CaptureFrame title={frame.title} className="min-h-0 flex-1">
                   {isMineEmpty ? (
                     <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
                       <CustomPageBadgeLink />
@@ -712,12 +495,12 @@ export default function MarketSummaryPage() {
           ) : undefined}
           fixedHomeCaptureRef={fixedCaptureRef}
           frameCaptureOptions={safeHomeFrameOrder.map((title, selectedSlot) => {
-            const captureId = title === '요약 지도' ? 'market-map' : title === '그룹 등락률 (%)' ? 'group-change-rate' : 'market-summary'
+            const captureId = title === '업종 지도' ? 'market-map' : 'group-change-rate'
             return {
               id: captureId,
-              label: ['좌측', '중앙', '우측'][selectedSlot],
+              label: ['좌측', '우측'][selectedSlot],
               selector: `[data-capture-frame="${captureId}"]`,
-              selectedSlot: selectedSlot as 0 | 1 | 2,
+              selectedSlot: selectedSlot as 0 | 1,
               mode: 'content' as const,
             }
           })}
