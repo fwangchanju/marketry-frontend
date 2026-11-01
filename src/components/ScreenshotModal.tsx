@@ -22,7 +22,7 @@ interface Props {
   mobileRegionOption?: { label: string; selector: string; mode?: 'through-right-edge' | 'element' | 'content'; onCloneNode?: (cloned: Node) => void; monitorHorizontalPadding?: number }
   onMobileSelectionChange?: (selected: boolean) => void
   // 홈의 각 요약 항목을 따로 캡처하는 버튼들.
-  frameCaptureOptions?: Array<{ id: string; label: string; selector: string; selectedSlot: 0 | 1 | 2; mode?: 'element' | 'content' }>
+  frameCaptureOptions?: Array<{ id: string; label: string; selector: string; selectedSlot: 0 | 1; mode?: 'element' | 'content' }>
 }
 
 // 마지막으로 고른 캡처 범위를 이 브라우저에만 남긴다(서버에는 보내지 않는다). 페이지 종류마다 고를 수 있는 버튼이 달라서(지도: 모바일, 홈: 항목별) 종류별로 따로 둔다.

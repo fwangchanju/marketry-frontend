@@ -51,7 +51,7 @@ export interface SectorSummary {
   items: HeatmapItem[]
 }
 
-// PC 홈의 요약 지도와 모바일 업종 지도·그래프가 같은 숫자를 보이도록 업종 하나의 값을 한 곳에서 만든다.
+// PC 홈의 업종 지도와 모바일 업종 지도·그래프가 같은 숫자를 보이도록 업종 하나의 값을 한 곳에서 만든다.
 // computeSectorAverage와 같은 규칙이라 반드시 필터 전 원본 노드를 넘긴다. 시총 구간에 해당하는 종목이 하나도 없으면 null이다.
 export function summarizeSector(node: HeatmapSectorNode, excludedTierLabels: Set<string>): SectorSummary | null {
   const average = computeSectorAverage(node, excludedTierLabels)

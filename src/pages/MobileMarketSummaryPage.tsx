@@ -55,7 +55,7 @@ function toMobileSectorItem(node: FilteredHeatmapSectorNode, path: string, boxSi
     key: path,
     name: node.sectorName,
     marketValue: summary.marketValue,
-    // 박스 크기도 PC 요약 지도와 같은 종목 모음으로 맞춘다(박스 크기 설정 비율만 반영).
+    // 박스 크기도 PC 업종 지도와 같은 종목 모음으로 맞춘다(박스 크기 설정 비율만 반영).
     layoutValue: summary.items.reduce((sum, stock) => sum + stockLayoutValue(stock, boxSizeRatio), 0),
     changeRate: summary.weightedAvg,
     simpleAvg: summary.simpleAvg,
