@@ -5,15 +5,14 @@ import { useCustomPreferences } from './useCustomPreferences'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
 import { useMarketValueTiers } from './useMarketValueTiers'
 import { defaultExcludedTierLabels, marketValueSliderSteps } from '@/utils/marketValueTier'
+import { profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
 
 const MIN_INDEX_KEY = 'heatmap.tierRangeMinIndex'
 const MAX_INDEX_KEY = 'heatmap.tierRangeMaxIndex'
 
-// 시가총액 구간(오름차순 tiers 배열 기준) 범위 필터 — 마켓맵 화면과 섹터 랭킹 화면이 세션스토리지
-// 키를 그대로 공유해서, 한쪽에서 바꾼 토글 상태가 다른 화면에도 항상 똑같이 반영된다(두 화면 모두
-// 배포 전 운영 수치와 일치해야 한다는 요구사항 때문에 상태를 분리해두면 안 됨).
+// 시가총액 구간은 선택한 분류 프로필별로 저장하고, 같은 분류의 지도와 섹터 랭킹은 값을 공유한다.
 // enabled=false면(예: 기본 분류 트리 모드) 필터 자체를 적용하지 않는다.
-export function useMarketValueTierRange(enabled: boolean) {
+export function useMarketValueTierRange(enabled: boolean, profile: SettingsProfile) {
   const isLoggedIn = useIsLoggedIn()
   const { isLoaded: isPreferencesLoaded } = useCustomPreferences()
   const { data: valueTiersData, isSuccess: isValueTiersSuccess } = useMarketValueTiers()
@@ -22,10 +21,10 @@ export function useMarketValueTierRange(enabled: boolean) {
 
   // 예전에 저장한 인덱스는 원래 등급 목록으로 해석한다. 새 선택은 금액으로 저장해서,
   // 눈금 추가로 기존 사용자 범위가 달라지지 않도록 한다(-1은 미설정, 상한 null은 무제한).
-  const [storedMinIndex] = usePageSetting(MIN_INDEX_KEY, -1)
-  const [storedMaxIndex] = usePageSetting(MAX_INDEX_KEY, -1)
-  const [storedMinValue, setMinValue] = usePageSetting('heatmap.tierRangeMinValue', -1)
-  const [storedMaxValue, setMaxValue] = usePageSetting<number | null>('heatmap.tierRangeMaxValue', -1)
+  const [storedMinIndex] = usePageSetting(profileSettingKey(profile, MIN_INDEX_KEY), -1)
+  const [storedMaxIndex] = usePageSetting(profileSettingKey(profile, MAX_INDEX_KEY), -1)
+  const [storedMinValue, setMinValue] = usePageSetting(profileSettingKey(profile, 'heatmap.tierRangeMinValue'), -1)
+  const [storedMaxValue, setMaxValue] = usePageSetting<number | null>(profileSettingKey(profile, 'heatmap.tierRangeMaxValue'), -1)
 
   // 저장된 값이 없을 때의 기본 범위는 값을 써 넣지 않고 계산만 한다 — 써 넣으면 사용자가 바꾸지 않았는데도 "저장 안 된
   // 변경"이 생기고, 서버 설정이 도착하기 전에 기본값이 저장값을 덮어쓴다.

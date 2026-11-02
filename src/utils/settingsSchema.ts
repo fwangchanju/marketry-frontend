@@ -10,7 +10,7 @@
 // 버전이 없는 저장값은 0으로 본다. 현재 버전보다 높은 값(더 새로운 화면에서 저장한 것)은 건드리지 않는다.
 
 export const SETTINGS_VERSION_KEY = 'settings.version'
-export const SETTINGS_SCHEMA_VERSION = 3
+export const SETTINGS_SCHEMA_VERSION = 4
 
 export type SettingsProfile = 'exchange' | 'marketry' | 'mine'
 export const SETTINGS_PROFILES: SettingsProfile[] = ['exchange', 'marketry', 'mine']
@@ -43,6 +43,17 @@ const PROFILED_SETTING_KEYS = [
 ]
 
 const MIGRATIONS: Record<number, (preferences: Preferences) => Preferences> = {
+  3: preferences => {
+    const next = { ...preferences }
+    for (const key of ['heatmap.tierRangeMinIndex', 'heatmap.tierRangeMaxIndex', 'heatmap.tierRangeMinValue', 'heatmap.tierRangeMaxValue']) {
+      if (!Object.hasOwn(preferences, key)) continue
+      for (const profile of SETTINGS_PROFILES) {
+        const target = profileSettingKey(profile, key)
+        if (!Object.hasOwn(next, target)) next[target] = preferences[key]
+      }
+    }
+    return next
+  },
   1: preferences => {
     const next = { ...preferences }
     for (const key of PROFILED_SETTING_KEYS) {
