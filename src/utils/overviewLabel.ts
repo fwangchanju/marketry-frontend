@@ -112,6 +112,15 @@ export function layoutOverviewLabel(name: string, rateText: string, width: numbe
     if (nameHeight > innerHeight) return null
     const rate = rateSizeFor(size)
     const withRate = rate !== null && nameHeight + rate * LINE_HEIGHT <= innerHeight
+    // PC 홈은 이름만 보일 때 작은 글씨로 등락률까지 들어가는지 먼저 확인한다.
+    if (options.large && !withRate) {
+      for (let smaller = size - 1; smaller >= MIN_NAME_SIZE; smaller -= 1) {
+        const smallerRate = rateSizeFor(smaller)
+        if (smallerRate !== null && (lines.length * smaller + smallerRate) * LINE_HEIGHT <= innerHeight) {
+          return { lines, nameSize: smaller, rateSize: smallerRate }
+        }
+      }
+    }
     return { lines, nameSize: size, rateSize: withRate ? rate : null }
   }
   // 1) 먼저 한 줄로 맞춘다. 박스 폭이 좁아 최소 글자 크기에도 안 들어갈 때만 단어 경계에서 줄을 나눈다.

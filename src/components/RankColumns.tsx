@@ -26,7 +26,7 @@ const LEFT_GUTTER = 40
 
 function toValueLabel(value: number): string {
   const sign = value > 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)}`
+  return `${sign}${value.toFixed(1)}`
 }
 
 // 모든 모드에서 숫자는 16px로 표시하고, SVG 영역만 회전한 글자 크기에 맞춘다.

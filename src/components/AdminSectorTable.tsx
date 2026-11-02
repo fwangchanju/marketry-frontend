@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { createPortal } from 'react-dom'
 import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragMoveEvent, type DragOverEvent } from '@dnd-kit/core'
@@ -433,7 +433,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const topLevelTotal = sectors.filter(sector => sector.depth === 0).length
   useReportCountLabel(`${toCount(sectorCounts[0])}/${toCount(topLevelTotal)}업종`, onCountLabelChange)
   const depthOptions = sectorNamesByDepth(sectors, sectorStats).map(names => [...new Set(names)])
-  const sortSiblings = (items: SectorItem[], depth: number) => {
+  const sortSiblings = useCallback((items: SectorItem[], depth: number) => {
     const { key, direction } = sortByDepth[depth] ?? DEFAULT_SECTOR_SORT
     const sign = direction === 'asc' ? 1 : -1
     const valueOf = (item: SectorItem) => sectorStats.get(item.id)?.[key === 'stockCount' ? 'stockCount' : 'marketValue'] ?? 0
@@ -443,7 +443,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     })
     // 보호 업종은 정렬 방향과 상관없이 항상 맨 아래(신규 상장 → 거래 정지 → 미분류)에 둔다.
     return placeProtectedSectorsLast(sorted, item => (item.parentId === null ? item.name : ''))
-  }
+  }, [sortByDepth, sectorStats])
   const rootSectors = sortSiblings(viewSectors.filter(c => c.parentId === null && !excludedByDepth[0]?.has(c.name)), 0)
   // 검색 중에는 열린 길과 상관없이 맞는 중·소분류(와 그 상위 업종)를 모두 나열한다 — 서로 다른 대분류 아래에 맞는 업종이 있어도 가려지지 않는다.
   // 열린 길의 줄만 청록으로 칠해 구분하고, 다른 길의 줄을 누르면 그 길이 열린다.
@@ -492,7 +492,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     setSelectedMiddleId(middle?.id ?? null)
     setSelectedSectorId(null)
     setAddingChildFor(null)
-  }, [trimmedQuery, rootSectors, viewSectors, excludedByDepth])
+  }, [trimmedQuery, rootSectors, viewSectors, excludedByDepth, sortSiblings])
   const makeRows = (items: SectorItem[], parentId: number | null): Row[] => {
     const rows: Row[] = items.map((item, index) => ({ type: 'sector', item, siblingIndex: index + 1 }))
     if (parentId !== null && addingChildFor === parentId) {
