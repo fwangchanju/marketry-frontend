@@ -6,6 +6,8 @@ import { useSyncExternalStore } from 'react'
 export const MIN_FONT = 10
 // 이름이 한 줄에 들어가면 나누지 않는다 — 한 줄에 맞추려고 글자를 줄일 수 있는 한계. 이보다 더 줄여야 하면 두 줄로 나눈다.
 export const ONE_LINE_MIN_FONT = 11
+// 한 줄이 들어가도 두 줄로 나눴을 때 이만큼(px) 넘게 커지면 두 줄을 쓴다.
+const TWO_LINE_GAIN = 3
 export const LABEL_LINE_HEIGHT = 1.25
 // 박스 크기에 맞춘 종목명 기준 글자 크기(px) — PC 종목 박스와 모바일 종목 지도가 같이 쓴다.
 export function stockBaseFontPx(width: number, height: number): number {
@@ -297,7 +299,18 @@ export function fitStockLabel({
         const rate = withRate ? rateSizeFor(size) : null
         const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
         if (LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight && textWidth(name, size) <= nameAvail) {
-          return { nameLines: [name], nameSize: size, rateSize: rate }
+          const oneLine: StockLabelFit = { nameLines: [name], nameSize: size, rateSize: rate }
+          // 한 줄이 들어가도 두 줄로 나누면 글자를 TWO_LINE_GAIN(3px) 넘게 키울 수 있으면 두 줄로 나눈다 — 폭이 좁은 박스의 큰 종목(HD현대중공업)이 한 줄 12px에 머무는 것을 막는다.
+          for (const mode of passes) {
+            for (let twoSize = baseFont; twoSize >= size + TWO_LINE_GAIN; twoSize -= 0.5) {
+              const twoRate = withRate ? rateSizeFor(twoSize) : null
+              const twoRateHeight = twoRate ? twoRate * LABEL_LINE_HEIGHT : 0
+              if (2 * LABEL_LINE_HEIGHT * twoSize + twoRateHeight > innerHeight) continue
+              const lines = splitTwoLines(name, twoSize, nameAvail, mode)
+              if (lines) return { nameLines: lines, nameSize: twoSize, rateSize: twoRate }
+            }
+          }
+          return oneLine
         }
       }
       for (const mode of passes) {
