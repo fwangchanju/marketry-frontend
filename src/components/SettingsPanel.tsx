@@ -217,10 +217,15 @@ const settingNumber = (id: SettingItemId) => {
 interface ExcludedSector {
   sectorId: number
   sectorName: string
+  // 이 업종(하위 업종 포함)에 속한 종목 수.
+  stockCount: number
+  // 상위 업종도 제외돼 있어 이 업종의 종목은 상위 업종 줄의 종목 수에 이미 들어 있다.
+  coveredByParent: boolean
 }
 
 // 제외 업종 툴팁 — 맨 위에 `제외 업종`, 아래에 이름 전체 경로("대분류 > 중분류 > 소분류")를 보여 준다. 목록에서 이름이 말줄임표로 잘려도 여기서 전체를 읽을 수 있다.
-const excludedSectorHint = (sectorName: string) => `제외 업종\n${sectorName}`
+const excludedSectorHint = (sectorName: string, coveredByParent: boolean) =>
+  `제외 업종\n${sectorName}${coveredByParent ? '\n~~(상위 업종도 제외됨)~~' : ''}`
 
 // checked가 꺼지면 라벨 텍스트도 같이 옅어져서, 꺼져있다는 게 스위치 색뿐 아니라 글자로도 드러난다.
 function ToggleSwitch({
@@ -2044,13 +2049,15 @@ export function SettingsExcludeSection({
                   onRemoveExcludedSector(sector.sectorId)
                 }}
                 aria-label={`${sector.sectorName} 맵에 다시 표시`}
-                data-hint={excludedSectorHint(sector.sectorName)}
+                data-hint={excludedSectorHint(sector.sectorName, sector.coveredByParent)}
                 // 업종 제외 스위치를 끄면 목록이 흐려지고 눌리지 않는다(위의 거래 정지 고정 항목은 늘 적용되므로 제외한다).
                 inert={!sectorFilterEnabled}
-                className={`flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35 ${sectorFilterEnabled ? '' : 'opacity-35'}`}
+                className={`flex h-5 w-full shrink-0 cursor-pointer items-center justify-start gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-left text-[13px] font-medium text-ui-white transition-colors hover:bg-[var(--accent)]/35 ${!sectorFilterEnabled ? 'opacity-35' : sector.coveredByParent ? 'opacity-50' : ''}`}
               >
                 <ReturnArrowIcon strokeWidth={2.3} className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{sector.sectorName}</span>
+                {/* 이름이 길면 말줄임표로 줄고 숫자 칸은 그대로 남는다. 상위 업종도 제외된 줄은 줄 전체를 흐리게 하며, 눌러서 복원하는 것은 그대로 된다. */}
+                <span className="ml-auto shrink-0 tabular-nums text-ui-muted">{toCount(sector.stockCount)}</span>
               </button>
             ))}
         </ScrollArea>
