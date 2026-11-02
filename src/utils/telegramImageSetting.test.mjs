@@ -21,11 +21,11 @@ test('저장 전에는 렌더러 소유자 설정과 기존 범위의 실제 값
       { id: 2, label: '중형주', thresholdValue: 500_000_000_000, isExcludedByDefault: false },
       { id: 3, label: '대형주', thresholdValue: 5_000_000_000_000, isExcludedByDefault: false },
     ],
-    excludedSectors: [[11, '금융 > 지주']],
+    excludedSectors: [['b8993daa-26f1-4c1d-b09c-a2b03b2d4709', '금융 > 지주']],
   }
   const result = legacyTelegramImageValues(legacy)
   assert.equal(result.preferences['heatmap.boxSizeMarketCapRatio'], 70)
   assert.equal(result.preferences['heatmap.tierRangeMinValue'], 500_000_000_000)
   assert.equal(result.preferences['heatmap.tierRangeMaxValue'], 5_000_000_000_000)
-  assert.deepEqual(result.excludedSectors, [[11, '금융 > 지주']])
+  assert.deepEqual(result.excludedSectors, [['b8993daa-26f1-4c1d-b09c-a2b03b2d4709', '금융 > 지주']])
 })

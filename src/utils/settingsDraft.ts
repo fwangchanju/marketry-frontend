@@ -1,4 +1,7 @@
 import { useSyncExternalStore } from 'react'
+import type { SettingsProfile } from './settingsSchema'
+
+type DraftScope = SettingsProfile | 'common'
 
 // "임시로 써보기" 값 저장소. 설정창에서 바꾼 값은 서버에 바로 올리지 않고 이 화면의 메모리에만 둔다(새로고침하면 사라진다) —
 // 저장 버튼을 눌러야 서버로 올라가고(commitDrafts), 초기화 버튼이나 브라우저 종료·새로고침이면 저장값으로 돌아온다(discardDrafts).
@@ -13,12 +16,16 @@ interface DraftParticipant {
   hasChanges: boolean
   save: () => Promise<void>
   discard: () => void
+  scope: DraftScope
 }
 const participants = new Map<string, DraftParticipant>()
 
-export function updateDraftParticipant(key: string, participant: DraftParticipant) {
+export function updateDraftParticipant(
+  key: string,
+  participant: Omit<DraftParticipant, 'scope'> & { scope?: DraftScope },
+) {
   const wasDirty = participants.get(key)?.hasChanges ?? false
-  participants.set(key, participant)
+  participants.set(key, { ...participant, scope: participant.scope ?? 'common' })
   if (wasDirty !== participant.hasChanges) notify()
 }
 
@@ -54,8 +61,17 @@ export function writeDraft(key: string, value: unknown) {
   notify()
 }
 
-function activeDraftKeys(): string[] {
-  return [...registeredKeys].filter(key => readDraft(key).found)
+function scopeForKey(key: string): DraftScope {
+  const match = key.match(/^heatmap\.profile\.(exchange|marketry|mine)\./)
+  return match ? match[1] as SettingsProfile : 'common'
+}
+
+function inScope(itemScope: DraftScope, scope?: SettingsProfile): boolean {
+  return scope === undefined || itemScope === 'common' || itemScope === scope
+}
+
+function activeDraftKeys(scope?: SettingsProfile): string[] {
+  return [...registeredKeys].filter(key => inScope(scopeForKey(key), scope) && readDraft(key).found)
 }
 
 export function clearDraft(key: string, notifySubscribers = true) {
@@ -63,17 +79,22 @@ export function clearDraft(key: string, notifySubscribers = true) {
   if (removed && notifySubscribers) notify()
 }
 
-export function discardDrafts() {
-  participants.forEach(participant => { if (participant.hasChanges) participant.discard() })
-  activeDraftKeys().forEach(key => clearDraft(key, false))
+export function discardDrafts(scope?: SettingsProfile) {
+  participants.forEach(participant => {
+    if (participant.hasChanges && inScope(participant.scope, scope)) participant.discard()
+  })
+  activeDraftKeys(scope).forEach(key => clearDraft(key, false))
   notify()
 }
 
 // 임시값을 저장값으로 올린다. save는 로그인 사용자의 서버 저장 함수(useCustomPreferences의 commitPreferences).
 // 저장이 성공한 뒤에만 임시값을 지운다 — 실패하면 던지고 임시값을 그대로 둬서 다시 저장할 수 있다.
-export async function commitDrafts(save: (entries: Array<[string, unknown]>) => Promise<void>) {
-  const entries = activeDraftKeys().map(key => [key, readDraft(key).value] as [string, unknown])
-  const pending = [...participants.values()].filter(participant => participant.hasChanges)
+export async function commitDrafts(
+  save: (entries: Array<[string, unknown]>) => Promise<void>,
+  scope?: SettingsProfile,
+) {
+  const entries = activeDraftKeys(scope).map(key => [key, readDraft(key).value] as [string, unknown])
+  const pending = [...participants.values()].filter(participant => participant.hasChanges && inScope(participant.scope, scope))
   for (const participant of pending) await participant.save()
   if (entries.length > 0) await save(entries)
   // 저장하는 동안 사용자가 다시 바꾼 값은 남겨 둔다.
@@ -82,9 +103,11 @@ export async function commitDrafts(save: (entries: Array<[string, unknown]>) => 
 }
 
 // 임시값이 하나라도 있으면 true. 값이 바뀔 때마다 다시 그려지게 구독한다.
-export function useHasDrafts(): boolean {
+export function useHasDrafts(scope?: SettingsProfile): boolean {
   useSyncExternalStore(subscribe, () => version)
-  return activeDraftKeys().length > 0 || [...participants.values()].some(participant => participant.hasChanges)
+  return activeDraftKeys(scope).length > 0 || [...participants.values()].some(
+    participant => participant.hasChanges && inScope(participant.scope, scope),
+  )
 }
 
 // 임시값이 바뀌거나 버려질 때 설정을 쓰는 화면이 다시 그려지게 하는 구독.

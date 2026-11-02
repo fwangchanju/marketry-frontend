@@ -3,7 +3,7 @@ import client from '@/api/client'
 
 export type TelegramImageValues = {
   preferences: Record<string, unknown>
-  excludedSectors: Array<[number, string]>
+  excludedSectors: Array<[string, string]>
 }
 
 export type TelegramImageSetting = { values: TelegramImageValues | null; updatedAt: string | null }

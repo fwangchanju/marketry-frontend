@@ -4,7 +4,12 @@ import type { TelegramImageLegacySetting } from '../api/adminTelegram.ts'
 import type { TelegramImageValues } from '../hooks/useTelegramImageSetting.ts'
 
 export function resolveTelegramPreference<T>(capture: boolean, values: Record<string, unknown> | undefined, key: string, fallback: T): T {
-  return capture && values && Object.hasOwn(values, key) ? values[key] as T : fallback
+  if (!capture || !values) return fallback
+  if (Object.hasOwn(values, key)) return values[key] as T
+  const legacyKey = key.startsWith('heatmap.profile.marketry.')
+    ? `heatmap.${key.slice('heatmap.profile.marketry.'.length)}`
+    : key
+  return Object.hasOwn(values, legacyKey) ? values[legacyKey] as T : fallback
 }
 
 // 별도 발송값이 아직 없을 때 렌더러 소유자 설정의 기본값과 옛 범위 인덱스를 현재 표시값으로 풀어낸다.

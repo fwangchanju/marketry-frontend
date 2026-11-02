@@ -40,7 +40,7 @@ export function getTelegramImageSetting(signal?: AbortSignal) {
   return client.get<TelegramImageSetting>('/admin/telegram-image-setting', { signal }).then(response => response.data)
 }
 
-export type TelegramImageLegacySetting = { preferences: Record<string, unknown>; excludedSectors: Array<[number, string]>; tiers: MarketValueTierItem[] }
+export type TelegramImageLegacySetting = { preferences: Record<string, unknown>; excludedSectors: Array<[string, string]>; tiers: MarketValueTierItem[] }
 
 export function getTelegramImageLegacySetting(signal?: AbortSignal) {
   return client.get<TelegramImageLegacySetting>('/admin/telegram-image-setting/legacy', { signal }).then(response => response.data)
