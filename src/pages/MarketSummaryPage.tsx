@@ -314,7 +314,7 @@ export default function MarketSummaryPage() {
                 title: '업종 지도',
                 captureId: 'market-map',
                 body: (
-                  <OverviewMap items={overview.items} colorScale={colorScale} onSelect={handleSelectSector} />
+                  <OverviewMap items={overview.items} colorScale={colorScale} onSelect={handleSelectSector} large />
                 ),
               },
               {

@@ -30,6 +30,7 @@ export default function OverviewMap({
   onSelect,
   onLongPress,
   hoverPopup = true,
+  large = false,
 }: {
   items: OverviewMapItem[]
   colorScale: ColorScaleConfig
@@ -38,6 +39,8 @@ export default function OverviewMap({
   onLongPress?: (item: OverviewMapItem) => void
   // false면 마우스를 올려도 말풍선을 띄우지 않는다(모바일은 길게 누르는 카드로 대신한다).
   hoverPopup?: boolean
+  // 박스가 큰 PC 홈은 글자를 더 키운다(최대 34px). 폰은 기존 크기(최대 28px)를 쓴다.
+  large?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const { bind: bindLongPress, consumeClick } = useLongPress()
@@ -119,7 +122,7 @@ export default function OverviewMap({
       <Popup popup={popup} onExcludeSector={() => undefined} onClose={() => setPopup(null)} />
       {rects.map(({ item, x, y, width, height }) => {
         const background = resolveHeatmapColor(item.changeRate, colorScale)
-        const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion, { splitInsideWord: true })
+        const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion, { splitInsideWord: true, large })
         const isPinned = popup?.targetKey === `sector:${item.key}`
         // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box).
         const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`

@@ -4,7 +4,7 @@ import type { HeatmapItem } from '@/types/api'
 import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
 import { isLightColor, resolveHeatmapColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
-import { LABEL_LINE_HEIGHT, fitStockLabel, stockBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
+import { LABEL_LINE_HEIGHT, fitStockLabel, stockFitBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
 
 interface Props {
   item: HeatmapItem
@@ -54,11 +54,11 @@ export default function StockBox({
   highlightedKey,
   ancestorPath,
 }: Props) {
-  const fontSize = stockBaseFontPx(width, height)
   // 글자는 박스 크기에 맞춘다(utils/stockLabelFit.ts) — 종목명은 한 줄에 들어가면 그대로, 안 들어가면 두 줄로 나누고, 그래도 안 되면 글자를 9px까지 줄이고,
   // 그래도 안 되면 종목명을 감추고 등락률만 보여 준다. 말줄임표나 잘린 글자는 만들지 않는다. 종목명만 고른 경우에 이름이 안 들어가면 아무것도 그리지 않는다.
   const wantName = stockLabelMode !== 'rateOnly'
   const wantRate = stockLabelMode !== 'nameOnly'
+  const fontSize = stockFitBaseFontPx(width, height, wantRate)
   const fontsVersion = useFontsVersion()
   const name = item.alias ?? item.stockName
   const rateText = toPctSigned(item.changeRate, decimalPlaces)

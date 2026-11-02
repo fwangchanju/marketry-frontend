@@ -12,6 +12,22 @@ export function stockBaseFontPx(width: number, height: number): number {
   return Math.max(12, Math.min(30, Math.min(width, height) / 5))
 }
 export const RATE_FONT_SCALE = 0.85
+// 박스 넓이(가로·세로의 기하평균)에 맞춘 글자 크기 — 넓이가 같으면 박스 모양이 달라도 글자가 비슷하다(60→12px … 300 이상→34px, 제곱근 곡선).
+// 박스 넓이는 이미 시총 반영 비율을 담고 있어서, 비율을 바꿔도 박스와 글자의 관계는 그대로다. 짧은 변 기준(위 함수)만으로는 가로로 긴 박스가 여유가 있어도 작게 보였다.
+// 높이의 90% 안에 한 줄(등락률을 보이면 그 줄까지)이 들어가는 크기를 넘지 않는다. 출발값만 키우고 폭에 안 들어가면 fitStockLabel이 지금처럼 줄인다.
+const FIT_MAX_FONT = 34
+export function stockFitBaseFontPx(width: number, height: number, withRate: boolean): number {
+  // 짧은 변 기준 출발값도 이 함수에서는 상한을 34px로 둔다(위 함수는 모바일 종목 지도와 같이 쓰므로 30px 그대로).
+  const base = Math.max(12, Math.min(FIT_MAX_FONT, Math.min(width, height) / 5))
+  // 폭이 60px보다 좁은 박스는 이름 폭이 한계라 키울 여지가 없고, 등락률 글자 폭이 어림값이라 키우면 가장자리가 1~2px 잘린다 — 지금 크기를 그대로 쓴다.
+  if (width < 60) return base
+  const span = Math.sqrt(width * height)
+  const byArea = 12 + (FIT_MAX_FONT - 12) * Math.sqrt(Math.min(Math.max((span - 60) / 240, 0), 1))
+  const byHeight = (height - 2) * 0.9 / (LABEL_LINE_HEIGHT * (withRate ? 1 + RATE_FONT_SCALE : 1))
+  const grown = Math.min(byArea, byHeight)
+  // 키운 값은 0.5px 단위로 내린다 — fitStockLabel이 0.5px씩 줄여 가며 최솟값(10px·11px)에 닿아야 하는데, 어중간한 출발값이면 최솟값을 건너뛰어 작은 박스의 글자가 사라진다.
+  return grown > base ? Math.floor(grown * 2) / 2 : base
+}
 // 이름 양옆 여백(px-1 = 4px씩)과 테두리(1px씩), 등락률 쪽은 테두리와 여유 1px씩.
 const NAME_SIDE = 10
 const RATE_SIDE = 4

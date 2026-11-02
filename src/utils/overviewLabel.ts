@@ -42,8 +42,10 @@ function width100(text: string, weight: 400 | 500, version: number): number {
 }
 
 // 박스 크기(가로·세로의 기하평균)에 맞춰 정하는 글자 크기 — 작은 박스는 12px, 큰 박스일수록 커진다(가장 큰 박스는 약 28px).
-function sizeByBox(width: number, height: number): number {
+function sizeByBox(width: number, height: number, large = false): number {
   const span = Math.sqrt(width * height)
+  // large는 PC 지도 종목 박스와 같은 값이다(60→12px … 300 이상→34px). 폰은 화면이 좁아 기존 값(70→12px … 364 이상→28px)을 쓴다.
+  if (large) return Math.round(12 + 22 * Math.sqrt(Math.min(Math.max((span - 60) / 240, 0), 1)))
   return Math.round(12 + 16 * Math.sqrt(Math.min(Math.max((span - 70) / 294, 0), 1)))
 }
 
@@ -89,12 +91,14 @@ const HIDDEN: OverviewLabel = { lines: [], nameSize: MIN_NAME_SIZE, rateSize: nu
 // 화면별 옵션 — 종목명처럼 공백이 없는 이름도 두 줄로 나눠야 하는 화면(폰 주식 지도)은 이름 중간에서 나누게 한다.
 export interface OverviewLabelOptions {
   splitInsideWord?: boolean
+  // PC 홈 업종 지도처럼 박스가 큰 화면은 글자를 더 키운다(최대 34px).
+  large?: boolean
 }
 
 export function layoutOverviewLabel(name: string, rateText: string, width: number, height: number, fontsVersion: number, options: OverviewLabelOptions = {}): OverviewLabel {
   const innerWidth = width - PADDING_X
   const innerHeight = height - PADDING_Y
-  const bySize = sizeByBox(width, height)
+  const bySize = sizeByBox(width, height, options.large)
   const nameWidth = (text: string, size: number) => width100(text, 500, fontsVersion) * size / 100
   // 등락률: 이름 크기의 90%(최소 12px)를 쓰되 폭에 안 들어가면 12px까지 줄이고, 그래도 안 되면 뺀다.
   const rateSizeFor = (nameSize: number): number | null => {
