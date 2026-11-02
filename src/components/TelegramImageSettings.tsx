@@ -64,7 +64,7 @@ function labels(values: TelegramImageValues) {
     enabled('heatmap.depthMetricEnabled', METRICS[resolvedMetric] ?? '-'),
     `${depth(p['heatmap.depthMetricMinIndex'])} ~ ${depth(p['heatmap.depthMetricMaxIndex'])}`,
     `${p['heatmap.boxSizeMarketCapRatio']}%`, enabled('heatmap.stockLabelEnabled', stock),
-    ['0%', '0.0%', '0.00%'][Number(p['heatmap.decimalPlacesIndex'])] ?? '-',
+    ['정수', '소수 첫째자리', '소수 둘째자리'][Number(p['heatmap.decimalPlacesIndex'])] ?? '-',
     String(p['heatmap.strongIndustryColor'] ?? '-'), enabled('heatmap.topPickEnabled', top),
   ]
 }
