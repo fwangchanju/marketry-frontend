@@ -24,6 +24,12 @@ function yieldDuringCapture<T extends CloneCaptureOptions>(options: T) {
   }
 }
 
+async function waitForCaptureLayout(el: HTMLElement): Promise<void> {
+  // 폰트가 바뀐 직후에는 헤더 말줄임·종목명 맞춤 크기가 다음 프레임에 반영된다.
+  await el.ownerDocument.fonts?.ready
+  await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+}
+
 async function cropMobileCaptureBottom(dataUrl: string, cropPixels: number): Promise<string> {
   const image = new Image()
   image.src = dataUrl
@@ -43,6 +49,7 @@ async function cropMobileCaptureBottom(dataUrl: string, cropPixels: number): Pro
 // regionSelector를 주면 맨 왼쪽부터 그 요소의 오른쪽 끝까지만 찍는다.
 export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector?: string, regionMode?: 'through-right-edge' | 'element' | 'content', onCloneNode?: (cloned: Node) => void, horizontalPadding = 0): Promise<string> {
   const captureStartedAt = performance.now()
+  await waitForCaptureLayout(el)
   const baseOptions = shareScreenshotOptions(el, regionSelector, regionMode, onCloneNode, horizontalPadding)
   const options = regionSelector === '[data-map-mobile-capture-frame]'
     ? { ...baseOptions, scale: 2560 / MAP_MOBILE_CAPTURE_FRAME_HEIGHT }
@@ -78,6 +85,7 @@ export class CaptureWidthError extends Error {
 // 텔레그램 홈 모바일 판과 같은 크기(픽셀)로 저장한다. 별도 리샘플링을 거치면 배지 글자 위치가 달라진다.
 // 툴바는 각 틀 안에 원래 글자 크기로 배치해 전체 상단줄을 축소하지 않는다.
 export async function screenshotFixedHomeFrameToDataUrl(root: HTMLElement, selector: string): Promise<string> {
+  await waitForCaptureLayout(root)
   const frame = root.querySelector(selector)?.closest<HTMLElement>('[data-capture-fixed-frame]')
   if (!frame) throw new Error('Fixed home capture frame is unavailable')
   const toolbar = frame.querySelector<HTMLElement>('.home-capture-toolbar')
