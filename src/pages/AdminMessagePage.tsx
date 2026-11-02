@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
-import sampleImage from '@/assets/telegram-home-sample.png'
 import sampleMapImage from '@/assets/telegram-map-sample.png'
 import {
   getTelegramSendSetting,
@@ -23,6 +22,7 @@ import PageMainFrame from '@/components/PageMainFrame'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
+import Spinner from '@/components/Spinner'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
@@ -33,7 +33,7 @@ import { isAdminSession } from '@/utils/adminAccess'
 
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
 const SAMPLE_TIME = '오후 8:00'
-const SAMPLE_CAPTION = '헬스케어 +1.74%\nS7 +0.99%'
+const SAMPLE_CAPTION = '필수 소비재 +1.1%\n헬스케어 +0.7%'
 
 function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
   return {
@@ -142,7 +142,7 @@ export default function AdminMessagePage() {
   }
   const handleSendOnce = async () => {
     if (sendOnce.isPending) return
-    if (await appWarnConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '테스트 발송 1회' })) {
+    if (await appWarnConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '발송 테스트 1회' })) {
       sendOnce.mutate()
     }
   }
@@ -207,11 +207,15 @@ export default function AdminMessagePage() {
                       {setting.isError ? (
                         <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                       ) : saved ? (
-                        <div className="mx-auto w-full max-w-2xl rounded-2xl rounded-bl-md bg-ui-control p-1">
+                        <div className="mx-auto w-full max-w-[26rem] rounded-2xl rounded-bl-md bg-ui-control p-1">
                           <p className="m-0 px-3 pb-1 pt-1.5 text-lg font-medium text-[var(--sub-yellow)]">MARKETRY</p>
-                          <div className="grid grid-cols-2 items-start gap-0.5 overflow-hidden rounded-[10px]">
-                            <img src={sampleImage} alt="텔레그램 발송 이미지 예시 — 시장 요약" className="block h-auto w-full" draggable={false} />
+                          <div className="relative overflow-hidden rounded-[10px]">
                             <img src={sampleMapImage} alt="텔레그램 발송 이미지 예시 — 시장 지도" className="block h-auto w-full" draggable={false} />
+                            {sendOnce.isPending && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-ui-background/60">
+                                <Spinner className="h-16 w-16" />
+                              </div>
+                            )}
                           </div>
                           <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
                             <p className="m-0 whitespace-pre-line text-lg leading-snug text-ui-white">{SAMPLE_CAPTION}</p>
@@ -223,7 +227,7 @@ export default function AdminMessagePage() {
                           </div>
                         </div>
                       ) : (
-                        <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                        <div className="flex justify-center py-10"><Spinner className="h-12 w-12" /></div>
                       )}
                     </InfoSection>
                   </article>
@@ -282,8 +286,8 @@ export default function AdminMessagePage() {
                         </div>
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
-                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">테스트 발송</h2>
-                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">최신 데이터로 즉시 1회 발송 테스트</p>
+                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 테스트</h2>
+                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">최신 데이터로 발송 테스트</p>
                             <div className="mt-auto mb-auto flex max-w-full settings-control-inset justify-center">
                               <button
                                 type="button"
@@ -292,7 +296,7 @@ export default function AdminMessagePage() {
                                 onClick={() => void handleSendOnce()}
                                 className="flex h-[25px] w-full items-center justify-center rounded-[4px] border-0 bg-brand-surface px-3 text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
                               >
-                                {sendOnce.isPending ? '발송 중…' : '테스트 발송 1회'}
+                                {sendOnce.isPending ? <Spinner className="h-4 w-4" /> : '발송 테스트'}
                               </button>
                             </div>
                           </div>
