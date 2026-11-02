@@ -82,3 +82,26 @@ test('색상 저장 중 새로 바꾼 일반 설정은 저장 후에도 임시�
   await commitDrafts(async entries => assert.deepEqual(entries, [[settingKey, 5]]))
   assert.deepEqual(readDraft(settingKey), { found: true, value: 6 })
 })
+
+test('분류별 저장은 현재 분류와 공통 변경만 처리하고 다른 분류 draft를 보존한다', async () => {
+  const exchangeKey = 'heatmap.profile.exchange.selectedMaxDepth'
+  const marketryKey = 'heatmap.profile.marketry.selectedMaxDepth'
+  const commonKey = 'heatmap.boxSizeMarketCapRatio'
+  registerDraftKey(exchangeKey)
+  registerDraftKey(marketryKey)
+  registerDraftKey(commonKey)
+  writeDraft(exchangeKey, 1)
+  writeDraft(marketryKey, 2)
+  writeDraft(commonKey, 80)
+
+  let saved
+  await commitDrafts(async entries => { saved = entries }, 'marketry')
+
+  assert.deepEqual(new Map(saved), new Map([[marketryKey, 2], [commonKey, 80]]))
+  assert.equal(readDraft(exchangeKey).value, 1)
+  assert.equal(readDraft(marketryKey).found, false)
+  assert.equal(readDraft(commonKey).found, false)
+
+  discardDrafts('exchange')
+  assert.equal(readDraft(exchangeKey).found, false)
+})

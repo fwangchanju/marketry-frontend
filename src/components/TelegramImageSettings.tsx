@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getTelegramImageLegacySetting, getTelegramImageSetting, saveTelegramImageSetting } from '@/api/adminTelegram'
+import { useQuery } from '@tanstack/react-query'
+import { getTelegramImageLegacySetting } from '@/api/adminTelegram'
 import { InfoSection } from '@/components/InfoDocument'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
@@ -105,28 +105,18 @@ export default function TelegramImageSettings() {
 }
 
 function TelegramImageSettingsForUser({ userId }: { userId: number | null }) {
-  const queryClient = useQueryClient()
+  const { commitPreferences } = useCustomPreferences()
   const [draft, setDraft] = useState<TelegramImageValues | null>(null)
   const [loadingCurrent, setLoadingCurrent] = useState(false)
   const [exclusionsOpen, setExclusionsOpen] = useState(false)
-  const queryKey = ['admin-telegram-image-setting', userId] as const
-  const query = useQuery({ queryKey, queryFn: ({ signal }) => getTelegramImageSetting(signal), retry: false })
-  const needsLegacy = query.isSuccess && query.data.values === null
   const legacy = useQuery({
     queryKey: ['admin-telegram-image-legacy-setting', userId],
     queryFn: ({ signal }) => getTelegramImageLegacySetting(signal),
-    enabled: needsLegacy,
+    enabled: userId !== null,
     staleTime: Infinity,
     retry: false,
   })
-  const save = useMutation({
-    mutationFn: saveTelegramImageSetting,
-    onSuccess: result => {
-      queryClient.setQueryData(queryKey, result)
-      setDraft(null)
-    },
-    onError: () => { void appAlert('발송 이미지 설정을 저장하지 못했습니다.', { title: '저장 실패' }) },
-  })
+  const [saving, setSaving] = useState(false)
   const handleLoaded = useCallback((values: TelegramImageValues) => {
     setDraft(values)
     setLoadingCurrent(false)
@@ -137,16 +127,34 @@ function TelegramImageSettingsForUser({ userId }: { userId: number | null }) {
   }, [])
   const refresh = async () => {
     // 캐시된 지도는 바로 표시하지 않고 버튼을 누른 시점에 다시 확인한다.
-    await queryClient.invalidateQueries({ queryKey: ['map', 'map'], refetchType: 'none' })
     setLoadingCurrent(true)
   }
-  const saved = query.data?.values ?? (legacy.data ? legacyTelegramImageValues(legacy.data) : null)
+  const saved = legacy.data ? legacyTelegramImageValues(legacy.data) : null
+  const saveDraft = async () => {
+    if (!draft) return
+    setSaving(true)
+    const scoped = new Set(['heatmap.sectorFilterEnabled', 'heatmap.sectorLevelEnabled', 'heatmap.selectedMaxDepth', 'heatmap.activeDepthMetric', 'heatmap.depthMetricEnabled', 'heatmap.depthMetricMinIndex', 'heatmap.depthMetricMaxIndex', 'heatmap.topPickDepth', 'heatmap.topPickCount', 'heatmap.topPickEnabled'])
+    const entries = Object.entries(draft.preferences).map(([key, value]) => [
+      scoped.has(key) ? `heatmap.profile.marketry.${key.slice('heatmap.'.length)}` : key,
+      value,
+    ] as [string, unknown])
+    entries.push(['heatmap.profile.marketry.excludedSectorKeys', draft.excludedSectors.map(([key]) => key)])
+    try {
+      await commitPreferences(entries)
+      setDraft(null)
+      await legacy.refetch()
+    } catch {
+      void appAlert('MARKETRY 설정을 저장하지 못했습니다.', { title: '저장 실패' })
+    } finally {
+      setSaving(false)
+    }
+  }
   const hasMoreExclusions = [saved, draft].some(value => value && value.preferences['heatmap.sectorFilterEnabled'] !== false && value.excludedSectors.length > 1)
   const names = ['시가총액 범위', '업종 제외', '업종 분류 깊이', '업종 지표', '지표 표시 단계', '박스 크기', '박스 내 표기', '등락률 소수점', '강조 색상', '상위 업종 강조']
   return <InfoSection number="1" title="발송 이미지 설정">
     <div className="mx-auto w-full max-w-[674px] overflow-hidden border border-ui-border bg-ui-panel p-4 text-sm">
       {loadingCurrent && <CurrentSettingsLoader onLoad={handleLoaded} onError={handleLoadError} />}
-      {query.isError || (needsLegacy && legacy.isError) ? <p role="alert">설정을 불러오지 못했습니다.</p> : <>
+      {legacy.isError ? <p role="alert">설정을 불러오지 못했습니다.</p> : <>
         <div className="space-y-3">
         <section aria-label="기본" className="rounded-md border border-ui-border bg-ui-background/50 p-3">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-ui-white"><img src={marketrySymbol} alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain" />기본 <span className="h-px flex-1 bg-ui-border" /></h3>
@@ -175,8 +183,8 @@ function TelegramImageSettingsForUser({ userId }: { userId: number | null }) {
         })}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ui-border pt-3">
-          <button type="button" disabled={loadingCurrent || save.isPending || query.isPending} onClick={() => void refresh()} className={`${ACTION_CLASS} bg-ui-control font-medium hover:bg-ui-control-hover focus-visible:outline-brand`}>{loadingCurrent ? '불러오는 중' : '불러오기'}</button>
-          <button type="button" disabled={!draft || loadingCurrent || save.isPending || query.isPending} onClick={() => { if (draft) save.mutate(draft) }} className={`${ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>저장</button>
+          <button type="button" disabled={loadingCurrent || legacy.isLoading} onClick={() => void refresh()} className={`${ACTION_CLASS} bg-ui-control font-medium hover:bg-ui-control-hover focus-visible:outline-brand`}>{loadingCurrent ? '불러오는 중' : '불러오기'}</button>
+          <button type="button" disabled={!draft || loadingCurrent || saving || legacy.isLoading} onClick={() => void saveDraft()} className={`${ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>{saving ? '저장 중' : '저장'}</button>
           {draft && <span role="status" className="text-xs text-ui-muted">저장 전</span>}
         </div>
       </>}

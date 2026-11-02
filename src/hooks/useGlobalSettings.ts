@@ -44,12 +44,14 @@ import {
 } from '@/utils/heatmapColorScale'
 import { colorScaleDraftSession } from '@/utils/colorScaleDraftSession'
 import { isTelegramMapCapture, useTelegramCaptureSetting } from '@/hooks/useTelegramImageSetting'
-import { updateDraftParticipant, unregisterDraftParticipant } from '@/utils/settingsDraft'
+import { updateDraftParticipant, unregisterDraftParticipant, readDraft, writeDraft } from '@/utils/settingsDraft'
 import queryClient from '@/api/queryClient'
 import { customHeatmapKeys } from './queryKeys'
 import { clampBetweenNeighbors } from '@/utils/thresholdBar'
 import { withStableSectorIds } from '@/utils/guestSectorIds'
 import type { HeatmapResponse, HeatmapSectorNode } from '@/types/api'
+import { profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
+import { useCustomPreferences } from './useCustomPreferences'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
 
 // 한 부호의 구간들을 절댓값이 작은 것부터 정렬해(몇 번째 구간인지 = 순서) 원래 배열의 인덱스와 함께 돌려준다. 등락률 막대의 손잡이 순서이자 상승·하락 거울 짝의 기준이다.
@@ -65,6 +67,7 @@ function sortedSignRows(thresholds: ColorScaleThreshold[], positive: boolean): {
 const EMPTY_COLOR_SCALE: ColorScaleConfig = { thresholds: [] }
 const DEFAULT_STRONG_INDUSTRY_COLOR = MEMBER_DEFAULTS.strongIndustryColor
 const LEGACY_STRONG_INDUSTRY_COLOR = '#eab308'
+const EXCLUDED_SECTOR_SEED_KEY = 'heatmap.excludedSeedKey'
 
 export type DepthMetric = 'weightedAvgChangeRate' | 'simpleAvgChangeRate' | 'upDownCount' | 'marketValue'
 type StoredDepthMetric = DepthMetric | 'avgChangeRate' | [number, number] | null
@@ -97,6 +100,37 @@ function seedExcludedSectorNames(
     seedExcludedSectorNames(node.children, path, out)
   }
   return out
+}
+
+function seedExcludedSectorKeys(nodes: HeatmapSectorNode[], out: string[] = []): string[] {
+  for (const node of nodes) {
+    if (node.isExcluded && node.stableKey) out.push(node.stableKey)
+    seedExcludedSectorKeys(node.children, out)
+  }
+  return out
+}
+
+function excludedNamesForStableKeys(nodes: HeatmapSectorNode[], keys: string[]): Map<number, string> {
+  const selected = new Set(keys)
+  const result = new Map<number, string>()
+  const walk = (items: HeatmapSectorNode[], ancestors: string[] = []) => {
+    for (const node of items) {
+      const path = [...ancestors, node.sectorName]
+      if (node.stableKey && selected.has(node.stableKey)) result.set(node.sectorId, path.join(' > '))
+      walk(node.children, path)
+    }
+  }
+  walk(nodes)
+  return result
+}
+
+function stableKeyForSectorId(nodes: HeatmapSectorNode[], sectorId: number): string | null {
+  for (const node of nodes) {
+    if (node.sectorId === sectorId) return node.stableKey ?? null
+    const key = stableKeyForSectorId(node.children, sectorId)
+    if (key) return key
+  }
+  return null
 }
 
 // 우클릭 제외 시점엔 리프 섹터명만 알고 있으므로, 뎁스가 있으면(최상위가 아니면) 원본 트리에서
@@ -138,7 +172,6 @@ function topPickAverage(node: FilteredHeatmapSectorNode, metric: DepthMetric): n
 // 열면 그 순간부터는 조회하므로(그리고 지도/섹터를 먼저 봤다면 react-query 캐시로 즉시 뜨므로) 설정
 // 내용 자체는 어느 페이지에서 열든 동일하게 보인다.
 // 제외 업종 목록을 서버 기본값으로 마지막에 채운 분류 — 이 탭의 sessionStorage에 둔다.
-const SEEDED_KEY_STORAGE = 'heatmap.excludedSeedKey'
 
 function withPriceLabels(nodes: HeatmapSectorNode[], labels: { base: string; end: string }): HeatmapSectorNode[] {
   return nodes.map(node => ({
@@ -161,6 +194,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 설정 기본값은 utils/settingDefaults.ts에 모아 두었다(비로그인과 회원이 다르다). 사용자가 값을 바꾸면 저장값이 우선한다.
   const defaults = settingDefaultsFor(isLoggedIn)
   const { requireLogin } = useLoginGate()
+  const { data: preferenceValues, isLoaded: preferencesLoaded, setPreference } = useCustomPreferences()
   // 트리 조회 마켓은 경로를 따른다 — /map, /sector 둘 다 경로 세그먼트가 곧 마켓이라 여기서 바로
   // 우선순위(쿼리 > 경로 > 저장값 > 기본값)를 적용하면, 이 훅을 그대로 쓰는 지도 페이지는 물론
   // 트리 조회만 공유하는 섹터 페이지도 같은 마켓으로 트리를 받는다(docs/instructions-route-market-first-render.md 결정 2).
@@ -179,6 +213,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const isCustom = source === 'MINE'
   const isMarketry = source === 'MARKETRY'
   const usesCustomTree = isCustom || isMarketry
+  const settingsProfile: SettingsProfile = isTelegramCapture || options?.readOnlyTelegramSnapshot
+    ? 'marketry'
+    : isCustom ? 'mine' : isMarketry ? 'marketry' : 'exchange'
+  const profileKey = (key: string) => profileSettingKey(settingsProfile, key)
   // NXT 종목만 보기 — 어느 분류(거래소/MARKETRY)이든 오늘의 시간표가 정한 필터 구간에만
   // 분류는 그대로 두고 NXT 거래 종목만 남기고, 그 밖의 시간에는 전체 종목을 보여준다. 사용자가 직접 켜고 끄지 않는다.
   const nxtOnlyWindow = useNxtOnlyWindow()
@@ -218,18 +256,18 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   }, [isLegacyStrongIndustryColor, setStrongIndustryColor])
   const boxSizeMarketCapRatio = Math.max(0, Math.min(100, Math.round(storedBoxSizeMarketCapRatio)))
   const [storedDepthMetric, setStoredDepthMetric] = usePageSetting<StoredDepthMetric>(
-    'heatmap.activeDepthMetric',
+    profileKey('heatmap.activeDepthMetric'),
     defaults.depthMetric,
   )
   const selectedDepthMetric = resolveDepthMetric(storedDepthMetric)
   const [depthMetricEnabled, setDepthMetricEnabled] = usePageSetting(
-    'heatmap.depthMetricEnabled',
+    profileKey('heatmap.depthMetricEnabled'),
     storedDepthMetric !== null,
   )
   // 분류별 데이터 깊이에 맞춰 화면에 적용하되, 사용자가 고른 범위는 전환해도 보존한다.
   // 기본값: 대분류~중분류(index 0~1) — 렌더러가 스크린샷으로 찍는 기본 화면에 등락률이 보이도록.
-  const [depthMetricMinIndex, setDepthMetricMinIndex] = usePageSetting('heatmap.depthMetricMinIndex', defaults.depthMetricMinIndex)
-  const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting('heatmap.depthMetricMaxIndex', defaults.depthMetricMaxIndex)
+  const [depthMetricMinIndex, setDepthMetricMinIndex] = usePageSetting(profileKey('heatmap.depthMetricMinIndex'), defaults.depthMetricMinIndex)
+  const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting(profileKey('heatmap.depthMetricMaxIndex'), defaults.depthMetricMaxIndex)
   // avgChangeRateUseSimple은 섹터 랭킹에 사용한다. 강세 업종은 업종 탭 표시 지표를 따른다.
   // 종목 박스가 전체 히트맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다(섹터 헤더와는 무관).
   // 실험 탭의 3-3 텍스트 표시 기준은 저장하지 않는다(새로고침하면 기본값).
@@ -259,16 +297,23 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     excludedMarketValueTiers,
     isTierRangeReady: isMarketValueTierRangeReady,
   } = useMarketValueTierRange(true)
-  const [excludedSectorNames, setExcludedSectorNames] = usePersistedState<Map<number, string>>(
-    'heatmap.excludedSectorNames',
+  const [exchangeExcludedSectorNames, setExchangeExcludedSectorNames] = usePersistedState<Map<number, string>>(
+    'heatmap.excludedSectorNames.exchange',
     new Map(),
     {
       serialize: map => [...map.entries()],
       deserialize: raw => new Map(raw as [number, string][]),
     },
   )
+  const [mineExcludedSectorNames, setMineExcludedSectorNames] = usePersistedState<Map<number, string>>(
+    'heatmap.excludedSectorNames.mine', new Map(),
+    { serialize: map => [...map.entries()], deserialize: raw => new Map(raw as [number, string][]) },
+  )
+  const [guestMarketryExcludedKeys, setGuestMarketryExcludedKeys] = usePersistedState<string[]>(
+    'heatmap.excludedSectorKeys.marketry.guest', [],
+  )
   // 섹터 제외를 목록별로 켜고 끄는 게 아니라, 제외 적용 자체를 통째로 켜고 끄는 마스터 스위치.
-  const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting('heatmap.sectorFilterEnabled', defaults.sectorFilterEnabled)
+  const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting(profileKey('heatmap.sectorFilterEnabled'), defaults.sectorFilterEnabled)
   const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<StockChangeFilter>('heatmap.stockChangeFilter', defaults.stockChangeFilter)
   // 실험 탭의 업종 등락 방향·깊이는 저장하지 않는다(새로고침하면 기본값).
   const [storedSectorChangeFilter] = useTransientSetting<SectorChangeFilter>('heatmap.sectorChangeFilter', defaults.sectorChangeFilter)
@@ -277,13 +322,13 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const sectorChangeDepth = Number.isInteger(storedSectorChangeDepth) && storedSectorChangeDepth >= 0 ? storedSectorChangeDepth : 0
   // null = 제한 없음(전체 뎁스 표시). 슬라이더의 실제 상한(availableMaxDepth)은 트리 계산 후에 나온다.
   // 기본값 2(렌더러 스크린샷 기준 화면에 맞춤).
-  const [selectedMaxDepth, setMaxDepth] = usePageSetting<number | null>('heatmap.selectedMaxDepth', defaults.maxDepth)
-  const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting('heatmap.sectorLevelEnabled', defaults.sectorLevelEnabled)
+  const [selectedMaxDepth, setMaxDepth] = usePageSetting<number | null>(profileKey('heatmap.selectedMaxDepth'), defaults.maxDepth)
+  const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting(profileKey('heatmap.sectorLevelEnabled'), defaults.sectorLevelEnabled)
   const maxDepth = sectorLevelEnabled ? selectedMaxDepth : 0
   // 선호 업종 — 선택한 절대 depth에서 등락률 상위 N개 섹터를 지도 전체에 강조한다.
-  const [topPickDepth, setTopPickDepth] = usePageSetting('heatmap.topPickDepth', defaults.topPickDepth)
-  const [topPickCount, setTopPickCount] = usePageSetting('heatmap.topPickCount', defaults.topPickCount)
-  const [topPickEnabled, setTopPickEnabled] = usePageSetting('heatmap.topPickEnabled', topPickCount !== 0)
+  const [topPickDepth, setTopPickDepth] = usePageSetting(profileKey('heatmap.topPickDepth'), defaults.topPickDepth)
+  const [topPickCount, setTopPickCount] = usePageSetting(profileKey('heatmap.topPickCount'), defaults.topPickCount)
+  const [topPickEnabled, setTopPickEnabled] = usePageSetting(profileKey('heatmap.topPickEnabled'), topPickCount !== 0)
   const selectedTopPickCount = topPickCount || 2
   // 설정 사이드바 열림 상태. 페이지 진입 시 기본으로 연다.
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
@@ -419,40 +464,72 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     [isLoggedIn, isMarketry, rawRootNodes],
   )
 
+  const [savedMarketryExcludedKeys, setSavedMarketryExcludedKeys] = usePageSetting<string[]>(
+    profileSettingKey('marketry', 'heatmap.excludedSectorKeys'), seedExcludedSectorKeys(rootNodes),
+  )
+  const marketryExcludedSectorNames = useMemo(
+    () => excludedNamesForStableKeys(rootNodes, isLoggedIn ? savedMarketryExcludedKeys : guestMarketryExcludedKeys),
+    [rootNodes, isLoggedIn, savedMarketryExcludedKeys, guestMarketryExcludedKeys],
+  )
+  useEffect(() => {
+    if (!isMarketry || !isLoggedIn || !preferencesLoaded || !data || !isHeatmapSuccess || options?.readOnlyTelegramSnapshot) return
+    const key = profileSettingKey('marketry', 'heatmap.excludedSectorKeys')
+    const saved = preferenceValues?.[key]
+    if (!Array.isArray(saved)) return
+    const available = new Set<string>()
+    const collect = (nodes: HeatmapSectorNode[]) => nodes.forEach(node => {
+      if (node.stableKey) available.add(node.stableKey)
+      collect(node.children)
+    })
+    collect(data.items)
+    const pruned = saved.filter((value): value is string => typeof value === 'string' && available.has(value))
+    if (pruned.length === saved.length) return
+    const draft = readDraft(key)
+    if (draft.found) writeDraft(key, pruned)
+    else setPreference(key, pruned)
+  }, [isMarketry, isLoggedIn, preferencesLoaded, data, isHeatmapSuccess, options?.readOnlyTelegramSnapshot, preferenceValues, setPreference])
+  const excludedSectorNames = isMarketry ? marketryExcludedSectorNames : isCustom ? mineExcludedSectorNames : exchangeExcludedSectorNames
+  const setExcludedSectorNames = isMarketry
+    ? (next: Map<number, string> | ((previous: Map<number, string>) => Map<number, string>)) => {
+      const value = typeof next === 'function' ? next(marketryExcludedSectorNames) : next
+      const keys = [...value.keys()].map(id => stableKeyForSectorId(rootNodes, id)).filter((key): key is string => key !== null)
+      if (isLoggedIn) setSavedMarketryExcludedKeys(keys)
+      else setGuestMarketryExcludedKeys(keys)
+    }
+    : isCustom ? setMineExcludedSectorNames : setExchangeExcludedSectorNames
+
   useEffect(() => {
     if (!data) return
     if (options?.readOnlyTelegramSnapshot) return
     // 비로그인의 거래소 제외 목록은 서버 값이 아니라 이 탭에서 직접 고른 것이라 서버 값으로 다시 채우지 않는다.
-    // MARKETRY에 정해 둔 제외 업종을 처음 값으로 받는다(그 뒤 바꾸는 건 이 탭에서만 유효하다).
-    if (!isLoggedIn && !isMarketry) return
-    // 어떤 분류로 채웠는지를 이 탭에 기억해 둔다 — 페이지를 옮길 때(지도→홈·그룹) 이 훅이 다시 만들어져도 지도에서 직접 바꾼 제외 목록을
-    // 서버 기본값으로 되돌리지 않는다. 시장(코스피·코스닥·전체)은 키에 넣지 않는다: 업종 id가 시장과 무관해서 시장을 바꿔도 목록이 그대로여야 한다.
-    const key = `${source}:${nxtOnly}`
+    // 내 분류의 서버 isExcluded 값은 분류 데이터가 기준이다. MARKETRY 제외 목록은 stable key로
+    // 프로필 설정에 저장하므로 업로드된 트리의 numeric ID를 다시 저장하지 않는다.
+    if (!isCustom) return
+    const seedKey = `mine:${session?.userId ?? 'anonymous'}`
     try {
-      if (sessionStorage.getItem(SEEDED_KEY_STORAGE) === key) return
-      sessionStorage.setItem(SEEDED_KEY_STORAGE, key)
+      if (sessionStorage.getItem(EXCLUDED_SECTOR_SEED_KEY) === seedKey) return
+      sessionStorage.setItem(EXCLUDED_SECTOR_SEED_KEY, seedKey)
     } catch {
-      // 저장소를 못 쓰면 화면을 열 때마다 기본값으로 채운다(예전 동작).
+      // 저장소를 못 쓰면 다음 트리 응답 때 서버 값으로 다시 시드한다.
     }
-    setExcludedSectorNames(seedExcludedSectorNames(data.items, []))
-  }, [data, source, nxtOnly, isLoggedIn, isMarketry, setExcludedSectorNames, options?.readOnlyTelegramSnapshot])
+    setMineExcludedSectorNames(seedExcludedSectorNames(data.items, []))
+  }, [data, isCustom, session?.userId, setMineExcludedSectorNames, options?.readOnlyTelegramSnapshot])
 
-  let snapshotExcludedSectorNames = excludedSectorNames
-  if (options?.readOnlyTelegramSnapshot && data) {
-    let seededForMarketry = false
-    try { seededForMarketry = sessionStorage.getItem(SEEDED_KEY_STORAGE) === `MARKETRY:${nxtOnly}` } catch { /* use server values */ }
-    if (!seededForMarketry) snapshotExcludedSectorNames = seedExcludedSectorNames(data.items, [])
-  }
+  const captureExcluded = telegramCaptureSetting.data?.values?.excludedSectors
+  const snapshotExcludedSectorNames = options?.readOnlyTelegramSnapshot && data
+    ? excludedNamesForStableKeys(data.items, captureExcluded?.map(([key]) => key) ?? seedExcludedSectorKeys(data.items))
+    : excludedSectorNames
 
   // 로그인 사용자의 거래소 분류 트리는 사용자 정의 섹터를 쓰지 않으므로 isExcluded와 제외 목록을 적용하지 않는다.
   // 비로그인은 거래소 분류만 쓰지만 직접 고른 제외 목록을 이 탭에서 적용한다(새로고침하면 초기화).
   // MARKETRY는 읽기 전용이라 이 탭에서만 제외한다.
-  const captureExcluded = telegramCaptureSetting.data?.values?.excludedSectors
   const excludedSectorIds = useMemo(
     () => (usesCustomTree || !isLoggedIn) && sectorFilterEnabled
-      ? new Set(isTelegramCapture && captureExcluded ? captureExcluded.map(([id]) => id) : excludedSectorNames.keys())
+      ? new Set(isTelegramCapture && captureExcluded
+        ? excludedNamesForStableKeys(rootNodes, captureExcluded.map(([key]) => key)).keys()
+        : excludedSectorNames.keys())
       : new Set<number>(),
-    [usesCustomTree, isLoggedIn, sectorFilterEnabled, excludedSectorNames, isTelegramCapture, captureExcluded],
+    [usesCustomTree, isLoggedIn, sectorFilterEnabled, excludedSectorNames, isTelegramCapture, captureExcluded, rootNodes],
   )
 
   // 거래소(KRX·NXT) 분류는 대분류(0)만 있다. 1-2 업종 등락 방향의 단계도 저장값은 두고 여기서만 따라간다.
@@ -929,7 +1006,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
         'heatmap.topPickCount': topPickCount,
         'heatmap.topPickEnabled': topPickEnabled,
       },
-      excludedSectors: Array.from(snapshotExcludedSectorNames.entries()),
+      excludedSectors: Array.from(snapshotExcludedSectorNames.entries()).flatMap(([id, name]) => {
+        const stableKey = stableKeyForSectorId(rootNodes, id)
+        return stableKey ? [[stableKey, name] as [string, string]] : []
+      }),
     },
     colorEditorPanelProps,
     // 지도 페이지가 히트맵을 실제로 그리는 데 직접 필요한 값들.

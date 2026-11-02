@@ -121,6 +121,7 @@ export type HeatmapItem = z.infer<typeof HeatmapItemSchema>
 
 export interface HeatmapSectorNode {
   sectorId: number
+  stableKey?: string | null
   sectorName: string
   totalMarketValue: number
   isExcluded: boolean
@@ -131,6 +132,7 @@ export interface HeatmapSectorNode {
 const HeatmapSectorNodeSchema: z.ZodType<HeatmapSectorNode> = z.lazy(() =>
   z.object({
     sectorId: z.number(),
+    stableKey: z.string().uuid().nullish(),
     sectorName: z.string(),
     totalMarketValue: z.number(),
     isExcluded: z.boolean(),

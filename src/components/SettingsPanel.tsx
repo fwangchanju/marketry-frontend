@@ -25,6 +25,7 @@ import { useIsLoggedIn, useSession } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
 import { commitDrafts, discardDrafts, useHasDrafts } from '@/utils/settingsDraft'
+import type { SettingsProfile } from '@/utils/settingsSchema'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
@@ -1246,6 +1247,9 @@ function SettingsTaxonomySelector({
   atBottom?: boolean
   snapshotTime?: string | null
 }) {
+  const marketryDirty = useHasDrafts('marketry')
+  const exchangeDirty = useHasDrafts('exchange')
+  const mineDirty = useHasDrafts('mine')
   // KRX와 NXT는 "거래소" 한 칸으로 합쳤고, 지금 어느 쪽 종목을 보여줄지는 시간대가 정한다. 내 분류는 로그인이 필요하다(고르면 로그인 창이 뜬다).
   const options: { key: TaxonomyKey; label: string }[] = [
     { key: 'MARKETRY', label: TAXONOMY_NAMES.MARKETRY.tab },
@@ -1254,6 +1258,7 @@ function SettingsTaxonomySelector({
   ]
   const isExchange = taxonomy === 'KRX' || taxonomy === 'NXT'
   const isSelected = (key: TaxonomyKey) => (key === 'KRX' ? isExchange : taxonomy === key)
+  const hasDraft = (key: TaxonomyKey) => key === 'MARKETRY' ? marketryDirty : key === 'MINE' ? mineDirty : exchangeDirty
 
   return (
     <div data-settings-side-toggle-top-anchor={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
@@ -1270,10 +1275,12 @@ function SettingsTaxonomySelector({
             type="button"
             role="radio"
             aria-checked={isSelected(option.key)}
+            aria-label={hasDraft(option.key) ? `${option.label}, 저장하지 않은 변경 있음` : option.label}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
-            className="settings-choice-hover relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap text-ui-white transition-colors duration-[500ms]"
+            className={`settings-choice-hover relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap transition-colors duration-[500ms] ${option.key === 'MARKETRY' ? 'text-brand' : option.key === 'MINE' ? 'text-ui-white' : 'text-ui-muted'}`}
           >
             {option.label}
+            {hasDraft(option.key) && <span aria-hidden="true" className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-brand" />}
           </button>
         ))}
       </div>
@@ -2400,7 +2407,11 @@ export default function SettingsPanel({
     else void requireLogin(`${pathname}${search}${hash}`)
   }
   const { commitPreferences, isLoaded: preferencesLoaded } = useCustomPreferences()
-  const hasDrafts = useHasDrafts()
+  const selectedTaxonomy: TaxonomyKey = taxonomy ?? (isCustom ? 'MARKETRY' : 'KRX')
+  const settingsProfile: SettingsProfile = selectedTaxonomy === 'MARKETRY'
+    ? 'marketry'
+    : selectedTaxonomy === 'MINE' ? 'mine' : 'exchange'
+  const hasDrafts = useHasDrafts(settingsProfile)
   const [isPreferenceFeedbackVisible, setIsPreferenceFeedbackVisible] = useState(false)
   const [isSavingPreferences, setIsSavingPreferences] = useState(false)
   const isPreferenceFeedbackActive = isPreferenceFeedbackVisible || isSavingPreferences
@@ -2474,7 +2485,6 @@ export default function SettingsPanel({
   const ungroupedNodes = childNodes.filter(node => !isSettingsPanelGroup(node))
   if (ungroupedNodes.length > 0) addSectionContent('composition', ungroupedNodes)
   const hasTaxonomySelector = Boolean(taxonomy && onSelectTaxonomy) || (typeof isCustom === 'boolean' && Boolean(onToggleCustom))
-  const selectedTaxonomy: TaxonomyKey = taxonomy ?? (isCustom ? 'MARKETRY' : 'KRX')
   const handleSelectTaxonomy = onSelectTaxonomy ?? (() => onToggleCustom?.())
 
   const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSessionNow || !ADMIN_ONLY_SECTIONS.has(section.id)) && (isSpecialSession || !SPECIAL_SECTIONS.has(section.id)))
@@ -2501,7 +2511,7 @@ export default function SettingsPanel({
   const preferenceActions = showPreferenceActions ? (
     <div className="-mr-[7px] ml-auto flex shrink-0 items-center gap-1">
       <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
-          if (hasDrafts && await appConfirm('기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(discardDrafts)
+          if (hasDrafts && await appConfirm('현재 분류의 기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(() => discardDrafts(settingsProfile))
         }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
         <HistoryIcon className="h-5 w-5" aria-hidden="true" />
       </button>
@@ -2522,7 +2532,7 @@ export default function SettingsPanel({
           // 저장에 실패하면 임시값은 그대로 남아 있으니 알리고, 사용자가 다시 저장하게 한다.
           setIsSavingPreferences(true)
           runPreferenceAction(() => {
-            commitDrafts(commitPreferences)
+            commitDrafts(commitPreferences, settingsProfile)
               .catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.', { title: '저장 실패' }))
               .finally(() => setIsSavingPreferences(false))
           })
