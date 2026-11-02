@@ -1,6 +1,8 @@
 import { useCallback, useEffect, type Dispatch, type SetStateAction } from 'react'
 import { useCustomPreferences } from './useCustomPreferences'
 import { useIsLoggedIn } from './useSession'
+import { isTelegramMapCapture, useTelegramCaptureSetting } from './useTelegramImageSetting'
+import { resolveTelegramPreference } from '@/utils/telegramImageSetting'
 import { clearDraft, readDraft, registerDraftKey, useDraftVersion, writeDraft } from '@/utils/settingsDraft'
 
 // 화면 설정(마켓맵/섹터 페이지의 옵션 사이드바 값 등) 하나를 다루는 훅 — useState와 같은 [value, setValue] 시그니처.
@@ -14,6 +16,7 @@ import { clearDraft, readDraft, registerDraftKey, useDraftVersion, writeDraft } 
 export function usePageSetting<T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
   const isLoggedIn = useIsLoggedIn()
   const { data: preferences, isLoaded } = useCustomPreferences()
+  const capture = useTelegramCaptureSetting()
   useDraftVersion()
   useEffect(() => {
     registerDraftKey(key)
@@ -23,7 +26,8 @@ export function usePageSetting<T>(key: string, initialValue: T): [T, Dispatch<Se
   const useServer = isLoggedIn && isLoaded
   const hasServerValue = useServer && preferences !== undefined && Object.hasOwn(preferences, key)
   const savedValue = hasServerValue ? (preferences![key] as T) : initialValue
-  const value = draft.found ? (draft.value as T) : savedValue
+  const capturePreferences = capture.data?.values?.preferences
+  const value = resolveTelegramPreference(isTelegramMapCapture(), capturePreferences, key, draft.found ? (draft.value as T) : savedValue)
 
   const setValue = useCallback<Dispatch<SetStateAction<T>>>(
     next => {

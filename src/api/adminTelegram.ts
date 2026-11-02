@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import client from './client'
+import type { TelegramImageSetting, TelegramImageValues } from '@/hooks/useTelegramImageSetting'
 
 const TelegramSendSettingSchema = z.object({
   enabled: z.boolean(),
@@ -32,4 +33,12 @@ export function saveTelegramSendSetting(input: TelegramSendSettingInput) {
 
 export function sendTelegramReportOnce() {
   return client.post('/admin/telegram-settings/send-once').then(() => undefined)
+}
+
+export function getTelegramImageSetting(signal?: AbortSignal) {
+  return client.get<TelegramImageSetting>('/admin/telegram-image-setting', { signal }).then(response => response.data)
+}
+
+export function saveTelegramImageSetting(values: TelegramImageValues) {
+  return client.put<TelegramImageSetting>('/admin/telegram-image-setting', values).then(response => response.data)
 }

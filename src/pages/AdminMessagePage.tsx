@@ -23,6 +23,7 @@ import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import Spinner from '@/components/Spinner'
+import TelegramImageSettings from '@/components/TelegramImageSettings'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
@@ -230,6 +231,7 @@ export default function AdminMessagePage() {
                         <div className="flex justify-center py-10"><Spinner className="h-12 w-12" /></div>
                       )}
                     </InfoSection>
+                    <TelegramImageSettings />
                   </article>
                 </PageMainFrame>
               </>
