@@ -43,6 +43,7 @@ import {
   type ColorScaleThreshold,
 } from '@/utils/heatmapColorScale'
 import { colorScaleDraftSession } from '@/utils/colorScaleDraftSession'
+import { isTelegramMapCapture, useTelegramCaptureSetting } from '@/hooks/useTelegramImageSetting'
 import { updateDraftParticipant, unregisterDraftParticipant } from '@/utils/settingsDraft'
 import queryClient from '@/api/queryClient'
 import { customHeatmapKeys } from './queryKeys'
@@ -147,7 +148,9 @@ function withPriceLabels(nodes: HeatmapSectorNode[], labels: { base: string; end
   }))
 }
 
-export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRateMode?: boolean; defaultTaxonomy?: TaxonomySelection; taxonomyStorageKey?: string }) {
+export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRateMode?: boolean; defaultTaxonomy?: TaxonomySelection; taxonomyStorageKey?: string; readOnlyTelegramSnapshot?: boolean }) {
+  const isTelegramCapture = isTelegramMapCapture()
+  const telegramCaptureSetting = useTelegramCaptureSetting()
   const needsTree = options?.needsTree ?? true
   // 등락률 기준(누적/시간외) 선택은 지도 페이지만 쓴다. 그룹 페이지는 now·before 쌍을 따로 받아 누적 기준으로 그리므로
   // 같은 값을 실으면 화면이 섞인다.
@@ -161,13 +164,14 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 트리 조회 마켓은 경로를 따른다 — /map, /sector 둘 다 경로 세그먼트가 곧 마켓이라 여기서 바로
   // 우선순위(쿼리 > 경로 > 저장값 > 기본값)를 적용하면, 이 훅을 그대로 쓰는 지도 페이지는 물론
   // 트리 조회만 공유하는 섹터 페이지도 같은 마켓으로 트리를 받는다(docs/instructions-route-market-first-render.md 결정 2).
-  const [market] = useRouteAwareMarket('heatmap.market', 'ALL_STOCK')
+  const [routeMarket] = useRouteAwareMarket('heatmap.market', 'ALL_STOCK')
+  const market = options?.readOnlyTelegramSnapshot ? 'ALL_STOCK' : routeMarket
   // 기존 계정 설정은 브라우저 선택이 없을 때만 기본값으로 사용한다. 새 선택은 세 페이지가 localStorage로 공유한다.
   const [savedIsCustom] = usePageSetting('heatmap.isCustom', defaults.isCustom)
   const [selectedTaxonomy, setSelectedTaxonomy] = useTaxonomySelection(options?.defaultTaxonomy ?? (savedIsCustom ? 'MARKETRY' : 'KRX'), options?.taxonomyStorageKey)
   // 내 분류(mine)는 로그인이 필요하다 — 로그아웃 상태에서는 처음 화면인 MARKETRY로 보이고, 브라우저에 저장한 선택 자체는 보존한다.
   // MARKETRY는 올린 분류라 로그인 없이 읽는다(읽기 전용).
-  const source: TaxonomySource = selectedTaxonomy === 'MINE' && !isLoggedIn ? 'MARKETRY' : selectedTaxonomy
+  const source: TaxonomySource = isTelegramCapture || options?.readOnlyTelegramSnapshot ? 'MARKETRY' : selectedTaxonomy === 'MINE' && !isLoggedIn ? 'MARKETRY' : selectedTaxonomy
   // 새로고침 직후에는 로그인 여부를 아직 모른다. 내 분류를 골라 둔 사람이 그 사이에 다른 분류 지도를 받았다가 바뀌지 않도록,
   // 로그인 확인이 끝날 때까지는 지도를 요청하지 않고 로딩으로 둔다.
   const isWaitingForSession = selectedTaxonomy === 'MINE' && isSessionLoading
@@ -417,6 +421,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   useEffect(() => {
     if (!data) return
+    if (options?.readOnlyTelegramSnapshot) return
     // 비로그인의 거래소 제외 목록은 서버 값이 아니라 이 탭에서 직접 고른 것이라 서버 값으로 다시 채우지 않는다.
     // MARKETRY에 정해 둔 제외 업종을 처음 값으로 받는다(그 뒤 바꾸는 건 이 탭에서만 유효하다).
     if (!isLoggedIn && !isMarketry) return
@@ -430,14 +435,24 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
       // 저장소를 못 쓰면 화면을 열 때마다 기본값으로 채운다(예전 동작).
     }
     setExcludedSectorNames(seedExcludedSectorNames(data.items, []))
-  }, [data, source, nxtOnly, isLoggedIn, isMarketry, setExcludedSectorNames])
+  }, [data, source, nxtOnly, isLoggedIn, isMarketry, setExcludedSectorNames, options?.readOnlyTelegramSnapshot])
+
+  let snapshotExcludedSectorNames = excludedSectorNames
+  if (options?.readOnlyTelegramSnapshot && data) {
+    let seededForMarketry = false
+    try { seededForMarketry = sessionStorage.getItem(SEEDED_KEY_STORAGE) === `MARKETRY:${nxtOnly}` } catch { /* use server values */ }
+    if (!seededForMarketry) snapshotExcludedSectorNames = seedExcludedSectorNames(data.items, [])
+  }
 
   // 로그인 사용자의 거래소 분류 트리는 사용자 정의 섹터를 쓰지 않으므로 isExcluded와 제외 목록을 적용하지 않는다.
   // 비로그인은 거래소 분류만 쓰지만 직접 고른 제외 목록을 이 탭에서 적용한다(새로고침하면 초기화).
   // MARKETRY는 읽기 전용이라 이 탭에서만 제외한다.
+  const captureExcluded = telegramCaptureSetting.data?.values?.excludedSectors
   const excludedSectorIds = useMemo(
-    () => (usesCustomTree || !isLoggedIn) && sectorFilterEnabled ? new Set(excludedSectorNames.keys()) : new Set<number>(),
-    [usesCustomTree, isLoggedIn, sectorFilterEnabled, excludedSectorNames],
+    () => (usesCustomTree || !isLoggedIn) && sectorFilterEnabled
+      ? new Set(isTelegramCapture && captureExcluded ? captureExcluded.map(([id]) => id) : excludedSectorNames.keys())
+      : new Set<number>(),
+    [usesCustomTree, isLoggedIn, sectorFilterEnabled, excludedSectorNames, isTelegramCapture, captureExcluded],
   )
 
   // 거래소(KRX·NXT) 분류는 대분류(0)만 있다. 1-2 업종 등락 방향의 단계도 저장값은 두고 여기서만 따라간다.
@@ -546,7 +561,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
         ],
       }
     : EMPTY_COLOR_SCALE
-  const colorScale = colorCustomOn ? colorScaleDraftForRendering : EMPTY_COLOR_SCALE
+  const colorScale = !isTelegramCapture && colorCustomOn ? colorScaleDraftForRendering : EMPTY_COLOR_SCALE
   const legendSwatches = resolveLegendSwatches(colorScale, {
     // 편집을 시작하기 전부터 비어 있던 부호는 기본 2/5/8 슬롯을 유지한다. 이번 편집으로 처음
     // 비어진 부호만 숨겨 fallback 슬롯이 새로 늘어나는 것을 막는다.
@@ -894,6 +909,28 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   return {
     settingsModalProps,
+    telegramImageValues: {
+      preferences: {
+        'heatmap.tierRangeMinValue': valueTiers[tierRangeMinIndex]?.thresholdValue ?? 0,
+        'heatmap.tierRangeMaxValue': valueTiers[tierRangeMaxIndex + 1]?.thresholdValue ?? null,
+        'heatmap.sectorFilterEnabled': sectorFilterEnabled,
+        'heatmap.sectorLevelEnabled': sectorLevelEnabled,
+        'heatmap.selectedMaxDepth': selectedMaxDepth,
+        'heatmap.activeDepthMetric': storedDepthMetric,
+        'heatmap.depthMetricEnabled': depthMetricEnabled,
+        'heatmap.depthMetricMinIndex': depthMetricMinIndex,
+        'heatmap.depthMetricMaxIndex': depthMetricMaxIndex,
+        'heatmap.boxSizeMarketCapRatio': boxSizeMarketCapRatio,
+        'heatmap.stockLabelModeIndex': stockLabelModeIndex,
+        'heatmap.stockLabelEnabled': stockLabelEnabled,
+        'heatmap.decimalPlacesIndex': decimalPlacesIndex,
+        'heatmap.strongIndustryColor': strongIndustryColor,
+        'heatmap.topPickDepth': topPickDepth,
+        'heatmap.topPickCount': topPickCount,
+        'heatmap.topPickEnabled': topPickEnabled,
+      },
+      excludedSectors: Array.from(snapshotExcludedSectorNames.entries()),
+    },
     colorEditorPanelProps,
     // 지도 페이지가 히트맵을 실제로 그리는 데 직접 필요한 값들.
     market,
@@ -921,8 +958,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     rangeExcludedStocks,
     refetchHeatmap,
     isRefetchingHeatmap,
-    isLoading: isHeatmapLoading || isWaitingForSession || isCloseWaiting,
-    isError,
+    isLoading: isHeatmapLoading || isWaitingForSession || isCloseWaiting || (isTelegramCapture && (telegramCaptureSetting.isPending || isSessionLoading || !isMarketValueTierRangeReady)),
+    isError: isError || (isTelegramCapture && telegramCaptureSetting.isError),
     isHeatmapSuccess,
     isMarketValueTierRangeReady,
     rootNodes,
