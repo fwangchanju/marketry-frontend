@@ -314,14 +314,14 @@ export default function MarketSummaryPage() {
                 title: '업종 지도',
                 captureId: 'market-map',
                 body: (
-                  <OverviewMap items={overview.items} colorScale={colorScale} onSelect={handleSelectSector} large />
+                  <OverviewMap items={overview.items} colorScale={colorScale} onSelect={handleSelectSector} large decimalPlaces={1} />
                 ),
               },
               {
                 title: '그룹 등락률 (%)',
                 captureId: 'group-change-rate',
                 body: (
-                  <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={handleSelectSector} onSelectIndex={handleSelectIndex} applyAxisBreak={rangeStartTime === undefined} />
+                  <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={handleSelectSector} onSelectIndex={handleSelectIndex} applyAxisBreak={rangeStartTime === undefined} decimalPlaces={1} />
                 ),
               },
             ]

@@ -31,6 +31,7 @@ export default function OverviewMap({
   onLongPress,
   hoverPopup = true,
   large = false,
+  decimalPlaces = 2,
 }: {
   items: OverviewMapItem[]
   colorScale: ColorScaleConfig
@@ -41,6 +42,7 @@ export default function OverviewMap({
   hoverPopup?: boolean
   // 박스가 큰 PC 홈은 글자를 더 키운다(최대 34px). 폰은 기존 크기(최대 28px)를 쓴다.
   large?: boolean
+  decimalPlaces?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const { bind: bindLongPress, consumeClick } = useLongPress()
@@ -122,7 +124,8 @@ export default function OverviewMap({
       <Popup popup={popup} onExcludeSector={() => undefined} onClose={() => setPopup(null)} />
       {rects.map(({ item, x, y, width, height }) => {
         const background = resolveHeatmapColor(item.changeRate, colorScale)
-        const label = layoutOverviewLabel(item.name, toPctSigned(item.changeRate), width, height, fontsVersion, { splitInsideWord: true, large })
+        const rateText = toPctSigned(item.changeRate, decimalPlaces)
+        const label = layoutOverviewLabel(item.name, rateText, width, height, fontsVersion, { splitInsideWord: true, large })
         const isPinned = popup?.targetKey === `sector:${item.key}`
         // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box).
         const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`
@@ -142,7 +145,7 @@ export default function OverviewMap({
                 {label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}
               </span>
             )}
-            {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{toPctSigned(item.changeRate)}</span>}
+            {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{rateText}</span>}
           </>
         )
         // onSelect가 있으면 업종 지도로 이동하는 버튼으로 그린다.
@@ -156,7 +159,7 @@ export default function OverviewMap({
             {content}
           </button>
         ) : (
-          <div key={item.key} role="img" aria-label={`${item.name} ${toPctSigned(item.changeRate)}`} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} className={boxClassName} style={boxStyle}>
+          <div key={item.key} role="img" aria-label={`${item.name} ${rateText}`} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} className={boxClassName} style={boxStyle}>
             {content}
           </div>
         )

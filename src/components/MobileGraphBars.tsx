@@ -32,7 +32,7 @@ export default function MobileGraphBars({ items, colorScale, highlightColor }: {
             <span className="flex w-[108px] shrink-0 justify-end pr-2 font-bold" style={{ color: item.reference ? `color-mix(in srgb, ${highlightColor} var(--ui-data-text-mix), var(--ui-on-light))` : 'var(--ui-white)' }}><span className="max-w-full truncate px-1 group-active:bg-ui-white/35">{item.name}</span></span>
             <span className="relative min-w-0 flex-1">
               <span className="block h-[20px] rounded-sm border border-ui-control" style={{ width: `${Math.abs(item.value) / max * 100}%`, backgroundColor: item.reference ? highlightColor : resolveHeatmapColor(item.value, colorScale) }} />
-              <span className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1 font-bold tabular-nums" style={{ left: `${Math.abs(item.value) / max * 100}%`, color: `color-mix(in srgb, ${resolveHeatmapExtremeColor(item.value, colorScale)} var(--ui-data-text-mix), var(--ui-on-light))` }}>{item.value > 0 ? '+' : ''}{item.value.toFixed(2)}%</span>
+              <span className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1 font-bold tabular-nums" style={{ left: `${Math.abs(item.value) / max * 100}%`, color: `color-mix(in srgb, ${resolveHeatmapExtremeColor(item.value, colorScale)} var(--ui-data-text-mix), var(--ui-on-light))` }}>{item.value > 0 ? '+' : ''}{item.value.toFixed(1)}%</span>
             </span>
           </>
           const className = `group flex min-h-[24px] ${rowCap} flex-1 w-full items-center gap-2 pr-[72px] text-left text-[14px]`
