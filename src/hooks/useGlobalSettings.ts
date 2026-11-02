@@ -405,8 +405,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     if (data) setAfterHoursStart(data.afterHoursStart ?? null)
   }, [data])
   useEffect(() => {
-    if (pinnedSnapshotTime === undefined && !isCloseActive && dataSnapshotTime) setLiveSnapshotTime(dataSnapshotTime)
-  }, [pinnedSnapshotTime, isCloseActive, dataSnapshotTime, setLiveSnapshotTime])
+    if (!options?.readOnlyTelegramSnapshot && pinnedSnapshotTime === undefined && !isCloseActive && dataSnapshotTime) setLiveSnapshotTime(dataSnapshotTime)
+  }, [pinnedSnapshotTime, isCloseActive, dataSnapshotTime, setLiveSnapshotTime, options?.readOnlyTelegramSnapshot])
   // 종가를 보는 동안에는 받은 지도가 정규장 종가라서, 별도가 열렸는지는 실시간 스냅샷으로 따진다.
   const isAfterHoursSelectable = isAfterHoursControlsVisible && isAfterHoursSelectableAt(isCloseActive ? liveSnapshotTime : data?.snapshotTime, data?.afterHoursStart)
   const changeRateMode: ChangeRateMode = isAfterHoursSelectable ? requestedBasis : 'daily'

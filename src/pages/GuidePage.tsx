@@ -40,12 +40,12 @@ export default function GuidePage() {
   const isNarrow = useIsNarrowScreen()
   return (
     <DocumentPageLayout
-      title="가이드"
+      title="GUIDE"
       panelDescription="나만의 분류로 시장 흐름 관찰하기"
       heading={(
         <InfoPageHeading
           flushBottom
-          title="증시 히트맵을 새롭게 보는 법"
+          title="가이드"
           summary="국내증시의 클래식한 업종 분류로는 놓치기 쉬운 시장의 흐름을 나만의 새로운 분류 방법으로 관찰해보세요."
         />
       )}

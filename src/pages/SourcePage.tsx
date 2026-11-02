@@ -38,7 +38,7 @@ export default function SourcePage() {
       )}
     >
       <article className="mx-auto max-w-4xl space-y-5">
-        <InfoSection number="1" title="데이터 출처">
+        <InfoSection number="1" title="출처">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {DATA_SOURCES.map(({ source, category, items }) => (
               <section key={source} className="border border-ui-border bg-ui-panel p-4">

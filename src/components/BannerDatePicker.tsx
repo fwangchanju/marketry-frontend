@@ -226,7 +226,7 @@ export default function BannerDatePicker({
                             className={`relative flex h-7 w-7 items-center justify-center rounded-full border border-transparent ${
                               isSelected
                                 ? 'bg-brand font-semibold text-ui-surface'
-                                : isToday ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : `bg-transparent hover:bg-brand-surface ${isHoliday ? holidayColor ? '' : 'text-ui-muted' : 'text-ui-white'}`
+                                : isToday ? 'bg-brand-surface font-semibold text-ui-white hover:bg-brand hover:text-ui-surface' : `bg-transparent hover:bg-brand hover:text-ui-surface ${isHoliday ? holidayColor ? '' : 'text-ui-muted' : 'text-ui-white'}`
                             }`}
                             style={!isSelected && !isToday && isHoliday && holidayColor ? { color: holidayColor } : undefined}
                           >

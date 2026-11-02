@@ -23,7 +23,7 @@ import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/sc
 import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { approveBanner, adminBannerImageUrl, cancelBannerSchedule, deleteBannerCampaign, endBannerCampaign, getAdminBanners, getBannerRotationSetting, saveBannerDraft, saveBannerRotationSetting, type BannerCampaign, type BannerDraftInput } from '@/api/adminBanners'
-import { CloseIcon, HistoryIcon, SaveIcon, UploadIcon } from '@/components/icons/AppIcons'
+import { CloseIcon, EditIcon, HistoryIcon, PlusIcon, SaveIcon, UploadIcon } from '@/components/icons/AppIcons'
 import BannerDatePicker from '@/components/BannerDatePicker'
 import BannerTimePicker from '@/components/BannerTimePicker'
 
@@ -663,7 +663,7 @@ export default function AdminBannerPage() {
     return (
       <div className="flex flex-col gap-1">
         {items.map(item => (
-          <div key={item.id} data-banner-campaign-card="" className="flex w-full flex-col gap-2 border border-ui-border bg-ui-panel p-3">
+          <button key={item.id} type="button" data-banner-campaign-card="" disabled={isMutating} onClick={() => void selectCampaign(item)} aria-label={`${item.type === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집`} className="flex w-full flex-col gap-2 border border-ui-border bg-ui-panel p-3 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-wait">
             <div className="flex min-w-0 flex-col gap-1 text-sm">
               <span className="flex min-w-0 items-center gap-2">
                 <BannerTypeBadge type={item.type} size="normal" />
@@ -673,10 +673,10 @@ export default function AdminBannerPage() {
               </span>
               <span className="tabular-nums text-ui-muted">{item.status === 'DRAFT' ? '게시 기간: 미정' : `게시 기간: ${formatScheduledAt(item.startsAt)} ~ ${item.endsAt ? formatScheduledAt(item.endsAt) : '종료 없음'}`}</span>
             </div>
-            <button type="button" disabled={isMutating} onClick={() => void selectCampaign(item)} aria-label={`${item.type === 'AD' ? '광고' : '공지'} 배너 ${item.title} 편집`} className="mx-auto flex h-[90px] w-full max-w-[728px] items-center justify-center overflow-hidden border-0 bg-transparent p-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand disabled:cursor-wait">
+            <span aria-hidden="true" className="mx-auto flex h-[90px] w-full max-w-[728px] items-center justify-center overflow-hidden">
               <BannerPreview type={item.type} title={item.title} text={item.text ?? ''} imageUrl={item.hasImage ? campaignImageUrl(item) : null} textScalePercent={item.textScalePercent} textBold={item.textBold} />
-            </button>
-          </div>
+            </span>
+          </button>
         ))}
       </div>
     )
@@ -714,18 +714,46 @@ export default function AdminBannerPage() {
                 </Toolbar>
                 <PageMainFrame className="p-0" heading={(
                     <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl">
-                    <InfoPageHeading
-                      flushBottom
-                      title={showCampaignList ? '목록' : activeType === 'NOTICE' ? isEditingCampaign ? '공지 수정' : '새 공지' : isEditingCampaign ? '광고 수정' : '새 광고'}
-                      summary={showCampaignList ? '게시·대기·종료 상태별로 공지·광고를 확인하고 수정합니다.' : isEditingCampaign ? `${activeType === 'NOTICE' ? '공지' : '광고'} 배너를 ${canEdit ? '수정' : '확인'}하고 있습니다.` : '새 배너 내용을 입력하거나 목록에서 기존 배너를 선택합니다.'}
-                      actions={(
-                        <>
-                          <button type="button" aria-pressed={showCampaignList} onClick={() => void openCampaignList()} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${showCampaignList ? 'bg-brand-surface' : ''}`}>목록</button>
-                          <button type="button" aria-pressed={isNewNotice} onClick={() => openType('NOTICE')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${isNewNotice ? 'bg-brand-surface' : ''}`}>새 공지</button>
-                          <button type="button" aria-pressed={isNewAd} onClick={() => openType('AD')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${isNewAd ? 'bg-brand-surface' : ''}`}>새 광고</button>
-                        </>
-                      )}
-                    />
+                    {showCampaignList ? (
+                      <InfoPageHeading
+                        flushBottom
+                        title="배너"
+                        summary="게시·대기·종료 상태별로 공지·광고를 확인하고 수정합니다."
+                        actions={(
+                          <>
+                            <button type="button" aria-pressed onClick={() => void openCampaignList()} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 bg-brand-surface`}>목록</button>
+                            <button type="button" aria-pressed={isNewNotice} onClick={() => openType('NOTICE')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${isNewNotice ? 'bg-brand-surface' : ''}`}>신규 공지</button>
+                            <button type="button" aria-pressed={isNewAd} onClick={() => openType('AD')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${isNewAd ? 'bg-brand-surface' : ''}`}>신규 광고</button>
+                          </>
+                        )}
+                      />
+                    ) : (
+                      <header className="border-b border-ui-border pb-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <h1 className="flex min-w-0 items-center gap-2 text-2xl font-bold text-ui-white">
+                            {isEditingCampaign ? (
+                              <>
+                                <EditIcon aria-hidden="true" className="h-6 w-6 shrink-0 text-brand" />
+                                <span>수정</span>
+                                <BannerTypeBadge type={activeType} size="normal" />
+                              </>
+                            ) : (
+                              <>
+                                <PlusIcon aria-hidden="true" className="h-6 w-6 shrink-0 text-brand" />
+                                <span>신규</span>
+                                <BannerTypeBadge type={activeType} size="normal" />
+                              </>
+                            )}
+                          </h1>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <button type="button" onClick={() => void openCampaignList()} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2`}>목록</button>
+                            <button type="button" aria-pressed={isNewNotice} onClick={() => openType('NOTICE')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${isNewNotice ? 'bg-brand-surface' : ''}`}>신규 공지</button>
+                            <button type="button" aria-pressed={isNewAd} onClick={() => openType('AD')} className={`settings-choice-hover ${SETTINGS_ACTION_CLASS} px-2 ${isNewAd ? 'bg-brand-surface' : ''}`}>신규 광고</button>
+                          </div>
+                        </div>
+                        {!canEdit && isEditingCampaign && <p className="mt-2 mb-0 text-sm text-ui-muted">확인 전용</p>}
+                      </header>
+                    )}
                     </article>
                   )}>
                   <article aria-label="배너 운영 콘텐츠" className="mx-auto w-full max-w-4xl space-y-5">
@@ -743,13 +771,12 @@ export default function AdminBannerPage() {
                       </div>
                     ) : (
                       <>
-                    <InfoSection number="1" title="미리 보기">
-                      <BannerEditorPreviews draft={draft} campaign={draft.id ? selectedCampaign : undefined} />
-                    </InfoSection>
-                    <InfoSection number="2" title="배너 내용">
-                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-4" style={{ maxWidth: `${bannerTextMetrics.width + 34}px` }}>
-                        <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
-                          <span>제목</span>
+                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel px-4" style={{ maxWidth: `${bannerTextMetrics.width + 150}px` }}>
+                        <div className="border-b border-ui-border py-4">
+                          <BannerEditorPreviews draft={draft} campaign={draft.id ? selectedCampaign : undefined} />
+                        </div>
+                        <div className="grid grid-cols-1 items-center gap-2 py-3 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-4">
+                          <span className="flex h-[25px] items-center text-[15px]/[22px] font-medium text-ui-white">제목</span>
                           <input aria-label="배너 제목" placeholder="제목을 입력해 주세요." maxLength={100} disabled={!canEdit} value={draft.title} onChange={event => {
                             const nextTitle = event.currentTarget.value
                             if ((event.nativeEvent as InputEvent).isComposing) {
@@ -763,13 +790,12 @@ export default function AdminBannerPage() {
                             const title = event.currentTarget.value
                             const fittedTitle = truncateNoticeTitle(title, bannerTextMetrics.titleWidth, bannerTextMetrics.titleFont)
                             if (fittedTitle !== title) changeDraft({ title: fittedTitle })
-                          }} style={{ width: `${bannerTextMetrics.width}px`, maxWidth: '100%' }} className={INPUT_CLASS} />
-                        </label>
-                        <div className="mt-3 border-t border-ui-border pt-3">
+                          }} className={`${INPUT_CLASS} w-full`} />
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 border-t border-ui-border py-3 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-4">
+                          <span className="flex h-[25px] items-center text-[15px]/[22px] font-medium text-ui-white">{activeType === 'NOTICE' ? '내용' : '이미지'}</span>
                           {activeType === 'NOTICE' ? (
                             <div className="flex w-full flex-col gap-3">
-                              <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
-                                <span>내용</span>
                                 <textarea aria-label="내용" placeholder="내용을 입력해 주세요." maxLength={200} disabled={!canEdit} value={draft.text} onKeyDown={event => {
                                   if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
                                   const { value, selectionStart, selectionEnd } = event.currentTarget
@@ -786,8 +812,7 @@ export default function AdminBannerPage() {
                                   } else {
                                     setNoticeLimitMessage('현재 배너에 표시할 수 있는 분량을 모두 입력했습니다.')
                                   }
-                                }} style={{ width: `${bannerTextMetrics.width}px`, maxWidth: '100%', height: `${bannerTextMetrics.inputHeight}px`, fontSize: `${bannerTextMetrics.fontSize}px`, lineHeight: `${bannerTextMetrics.lineHeight}px`, paddingTop: '6px', paddingBottom: '6px' }} className={`${INPUT_CLASS.replace('h-[25px]', 'h-auto')} resize-none overflow-y-auto`} />
-                              </label>
+                                }} style={{ width: '100%', height: `${bannerTextMetrics.inputHeight}px`, fontSize: `${bannerTextMetrics.fontSize}px`, lineHeight: `${bannerTextMetrics.lineHeight}px`, paddingTop: '6px', paddingBottom: '6px' }} className={`${INPUT_CLASS.replace('h-[25px]', 'h-auto')} resize-none overflow-y-auto`} />
                               {noticeLimitMessage && <p role="status" className="m-0 text-sm leading-5 text-status-error-text">{noticeLimitMessage}</p>}
                             </div>
                           ) : (
@@ -806,33 +831,27 @@ export default function AdminBannerPage() {
                             </div>
                           )}
                         </div>
-                        <div className="mt-3 border-t border-ui-border pt-3">
-                          <label className="flex flex-col gap-1 text-[15px] leading-[22px] font-medium text-ui-white">
-                            <span>연결 <span className="font-normal text-ui-muted">(선택)</span></span>
-                            <input aria-label="연결 (선택)" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} style={{ width: `${bannerTextMetrics.width}px`, maxWidth: '100%' }} onBlur={event => {
+                        <div className="grid grid-cols-1 gap-2 border-t border-ui-border py-3 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-4">
+                          <span className="flex h-[25px] items-center text-[15px]/[22px] font-medium text-ui-white">연결 <span className="font-normal text-ui-muted">(선택)</span></span>
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <input aria-label="연결 (선택)" disabled={!canEdit} value={draft.linkUrl} onChange={event => changeDraft({ linkUrl: event.target.value })} className={`${INPUT_CLASS} w-full`} onBlur={event => {
                               const normalized = normalizeBannerLink(event.target.value) || 'https://'
                               if (normalized !== draft.linkUrl) changeDraft({ linkUrl: normalized })
-                            }} className={INPUT_CLASS} />
+                            }} />
                             <span className="text-sm font-normal leading-relaxed text-ui-muted">입력하면 배너를 눌러 해당 주소로 이동합니다.</span>
-                          </label>
+                          </div>
                         </div>
-                      </div>
-                    </InfoSection>
-
-                    <InfoSection number="3" title="게시 일정">
-                      <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-3" style={{ maxWidth: `${bannerTextMetrics.width + 34}px` }}>
-                        <div className="flex w-full flex-wrap items-start gap-x-2 gap-y-3">
-                          <div className="flex min-w-[208px] flex-[1_1_208px] flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white">
-                            <span className="flex h-[25px] items-center">시작</span>
-                            <DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} />
-                          </div>
-                          <div className="flex min-w-[208px] flex-[1_1_208px] flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white">
-                            <span className="flex h-[25px] items-center">종료</span>
-                            <DateTimeField label="교체 종료" disabled={!canEdit} value={displayedEndAt} onChange={endsAt => changeDraft({ endsAt })} dateAnimationKey={endDatePresetGeneration} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends`} />
-                          </div>
-                          <div className="flex flex-col gap-1 text-[15px]/[22px] font-medium text-ui-white">
-                            <span className="flex h-[25px] items-center">기간</span>
-                            <div className="flex h-[25px] items-center gap-0.5 sm:justify-end">
+                        <div className="grid grid-cols-1 items-center gap-2 border-t border-ui-border py-3 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-4">
+                          <span className="flex h-[25px] items-center text-[15px]/[22px] font-medium text-ui-white">시작</span>
+                          <DateTimeField label="교체 시작" disabled={!canEdit} value={draft.startsAt} onChange={startsAt => changeDraft({ startsAt })} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-starts`} />
+                        </div>
+                        <div className="grid grid-cols-1 items-center gap-2 border-t border-ui-border py-3 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-4">
+                          <span className="flex h-[25px] items-center text-[15px]/[22px] font-medium text-ui-white">종료</span>
+                          <DateTimeField label="교체 종료" disabled={!canEdit} value={displayedEndAt} onChange={endsAt => changeDraft({ endsAt })} dateAnimationKey={endDatePresetGeneration} key={`${draftGeneration}-${activeType}-${draft.id ?? 'new'}-ends`} />
+                        </div>
+                        <div className="grid grid-cols-1 items-center gap-2 border-t border-ui-border pb-3 pt-3 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-4">
+                          <span className="flex h-[25px] items-center text-[15px]/[22px] font-medium text-ui-white">기간</span>
+                          <div className="flex h-[25px] items-center gap-0.5">
                               {endPresets.map(preset => (
                                 <button
                                   key={preset.key}
@@ -850,18 +869,16 @@ export default function AdminBannerPage() {
                                   {preset.label}
                                 </button>
                               ))}
-                            </div>
                           </div>
                         </div>
-                        {scheduleError && <p role="alert" className="mt-2 text-sm leading-5 text-status-error-text">{scheduleError}</p>}
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-ui-border pt-3">
+                        {scheduleError && <p role="alert" className="m-0 border-t border-ui-border py-2 text-sm leading-5 text-status-error-text sm:ml-[104px]">{scheduleError}</p>}
+                        <div className="mt-0 flex flex-wrap items-center justify-between gap-2 border-t border-ui-border pb-3 pt-3">
                           <button type="button" disabled={!canEdit || !isDraftValid || saveMutation.isPending || !isDirty} onClick={() => { void handleSave() }} className={`${EDITOR_ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>{saveButtonLabel}</button>
                           {draft.id && selectedCampaign?.status === 'SCHEDULED' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleCancelScheduled()} className={`${EDITOR_ACTION_CLASS} bg-[var(--ui-control)] font-medium hover:bg-ui-control-hover focus-visible:outline-brand`}>예약 취소</button>}
                           {draft.id && selectedCampaign?.status === 'LIVE' && <button type="button" disabled={isMutating || isDirty} onClick={() => void handleEnd()} className={`${EDITOR_ACTION_CLASS} bg-[#BC2F2F] font-medium hover:brightness-110 focus-visible:outline-[#BC2F2F]`}>종료</button>}
                           {draft.id && selectedCampaign?.status === 'ENDED' && <button type="button" disabled={isMutating} onClick={() => void handleDelete()} className={`${EDITOR_ACTION_CLASS} bg-[#BC2F2F] font-medium hover:brightness-110 focus-visible:outline-[#BC2F2F]`}>삭제</button>}
                         </div>
                       </div>
-                    </InfoSection>
 
                       </>
                     )}
