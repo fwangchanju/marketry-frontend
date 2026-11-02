@@ -118,26 +118,20 @@ function embedFontUrl(url: string): Promise<string> {
 // 글꼴 정의의 파일 주소를 내려받은 data URL로 바꾼다. 캡처 라이브러리는 cssText를 받으면 파일을 대신 받아 주지 않아서 직접 넣어야 한다.
 async function embedFontUrls(cssText: string): Promise<string> {
   const urls = [...new Set(Array.from(cssText.matchAll(/url\((['"]?)([^)'"]+)\1\)/g), match => match[2]))]
-  // 조각 하나가 끝내 안 받아져도 나머지는 넣는다 — 하나 때문에 글꼴 전체를 포기하면 캡처 이미지의 글꼴이 통째로 달라진다.
+  // 일부 조각만 빠지면 해당 글자만 대체 글꼴로 그려져 한 이미지 안에서 폭과 굵기가 달라진다.
+  // 필요한 글꼴은 전부 넣거나 캡처를 실패시킨다.
   const entries = await Promise.all(
-    urls.map(async url => {
-      try {
-        return [url, await embedFontUrl(new URL(url, document.baseURI).href)] as const
-      } catch (error) {
-        console.warn('[캡처] 글꼴 조각을 넣지 못했습니다', url, error)
-        return [url, null] as const
-      }
-    }),
+    urls.map(async url => [url, await embedFontUrl(new URL(url, document.baseURI).href)] as const),
   )
   let embedded = cssText
-  for (const [url, dataUrl] of entries) {
-    if (dataUrl !== null) embedded = embedded.split(url).join(dataUrl)
-  }
+  for (const [url, dataUrl] of entries) embedded = embedded.split(url).join(dataUrl)
   return embedded
 }
 
 // 찍을 영역에 필요한 글꼴 CSS(파일은 data URL로 넣은 것). 글꼴 정의를 못 읽거나 고른 조각이 하나도 없거나 받지 못하면 undefined(라이브러리 기본 동작)다.
 export async function fontCssFor(root: HTMLElement | HTMLElement[]): Promise<string | undefined> {
+  // 동적 글꼴 조각이 아직 로드 중이면 캡처 시점에 따라 굵기·폭이 달라진다.
+  await document.fonts?.ready
   const faces = readFontFaces()
   if (faces.length === 0) return undefined
   const roots = Array.isArray(root) ? root : [root]
@@ -155,9 +149,5 @@ export async function fontCssFor(root: HTMLElement | HTMLElement[]): Promise<str
     }
   }
   if (picked.length === 0) return undefined
-  try {
-    return await embedFontUrls(picked.join('\n'))
-  } catch {
-    return undefined
-  }
+  return embedFontUrls(picked.join('\n'))
 }
