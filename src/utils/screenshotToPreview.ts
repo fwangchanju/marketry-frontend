@@ -66,8 +66,8 @@ export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector
 // 텔레그램 홈 모바일 판과 같은 크기(픽셀).
 export const HOME_CAPTURE_FRAME_WIDTH = 810
 export const HOME_CAPTURE_FRAME_HEIGHT = 1080
-// 9:16 비율(810×1440). 모바일 캡처와 텔레그램이 같은 프레임·배율을 사용한다.
-export const MAP_MOBILE_CAPTURE_FRAME_HEIGHT = 1440
+// 5:8 비율(810×1296). 모바일 캡처와 텔레그램이 같은 프레임·배율을 사용한다.
+export const MAP_MOBILE_CAPTURE_FRAME_HEIGHT = 1296
 // 상단 정보(왼쪽 툴바와 오른쪽 배지)가 고정 폭에 다 들어가지 않을 때 — 사용자에게 안내 문구를 그대로 보여 준다.
 export class CaptureWidthError extends Error {
   constructor() {
