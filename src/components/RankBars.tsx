@@ -14,9 +14,9 @@ const VALUE_WIDTH_EM = 4 // 숫자 칸 폭(글자 크기의 배수)
 const BAR_HEIGHT_RATIO = 0.6 // 줄 높이에 대한 막대 높이 비율
 const BAR_MAX_FONT_RATIO = 1.6 // 막대 높이 상한(글자 크기의 배수)
 
-function toValueLabel(value: number): string {
+function toValueLabel(value: number, decimalPlaces: number): string {
   const sign = value > 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)}`
+  return `${sign}${value.toFixed(decimalPlaces)}`
 }
 
 // 모바일 폭용 가로 막대 — RankColumns와 같은 자료를 쓴다. 항목명은 왼쪽, 막대는 오른쪽으로 절댓값만큼 뻗고, 부호는 색과 숫자로 구분한다.
@@ -27,6 +27,7 @@ export default function RankBars({
   onSelectSector,
   onSelectIndex,
   applyAxisBreak = false,
+  decimalPlaces = 2,
 }: {
   chart: RankColumnsChart
   highlightColor: string
@@ -34,6 +35,7 @@ export default function RankBars({
   onSelectSector?: (sectorName: string) => void
   onSelectIndex?: (market: 'KOSPI' | 'KOSDAQ') => void
   applyAxisBreak?: boolean
+  decimalPlaces?: number
 }) {
   const items = chart.rankedItems
   const containerRef = useRef<HTMLDivElement>(null)
@@ -91,7 +93,7 @@ export default function RankBars({
           // 텔레그램 발송이 이미지에 그려진 숫자를 그대로 캡션에 쓰도록 렌더러가 읽어 가는 값이다 — 업종 막대만 담고 지수·생략 줄은 뺀다.
           <div
             key={item.key}
-            data-capture-row={isEllipsis || item.isReference ? undefined : JSON.stringify({ name: item.sectorName, value: toValueLabel(item.value) })}
+            data-capture-row={isEllipsis || item.isReference ? undefined : JSON.stringify({ name: item.sectorName, value: toValueLabel(item.value, decimalPlaces) })}
             className="flex min-h-0 flex-1 items-center gap-2"
           >
             <div className="flex shrink-0 justify-end" style={{ width: nameWidth }}>
@@ -152,7 +154,7 @@ export default function RankBars({
                       color: resolveHeatmapExtremeColor(item.value, colorScale),
                     }}
                   >
-                    {toValueLabel(item.value)}
+                    {toValueLabel(item.value, decimalPlaces)}
                   </span>
                 </>
               )}
