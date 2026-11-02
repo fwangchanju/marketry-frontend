@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import client from './client'
 import type { TelegramImageSetting, TelegramImageValues } from '@/hooks/useTelegramImageSetting'
+import type { MarketValueTierItem } from '@/types/api'
 
 const TelegramSendSettingSchema = z.object({
   enabled: z.boolean(),
@@ -37,6 +38,12 @@ export function sendTelegramReportOnce() {
 
 export function getTelegramImageSetting(signal?: AbortSignal) {
   return client.get<TelegramImageSetting>('/admin/telegram-image-setting', { signal }).then(response => response.data)
+}
+
+export type TelegramImageLegacySetting = { preferences: Record<string, unknown>; excludedSectors: Array<[number, string]>; tiers: MarketValueTierItem[] }
+
+export function getTelegramImageLegacySetting(signal?: AbortSignal) {
+  return client.get<TelegramImageLegacySetting>('/admin/telegram-image-setting/legacy', { signal }).then(response => response.data)
 }
 
 export function saveTelegramImageSetting(values: TelegramImageValues) {

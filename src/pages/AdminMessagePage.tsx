@@ -204,7 +204,8 @@ export default function AdminMessagePage() {
                   )}
                 >
                   <article aria-label="메시지" className="mx-auto min-h-full w-full max-w-4xl space-y-5">
-                    <InfoSection number="1" title="발송 미리보기">
+                    <TelegramImageSettings />
+                    <InfoSection number="2" title="발송 미리보기">
                       {setting.isError ? (
                         <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                       ) : saved ? (
@@ -231,7 +232,6 @@ export default function AdminMessagePage() {
                         <div className="flex justify-center py-10"><Spinner className="h-12 w-12" /></div>
                       )}
                     </InfoSection>
-                    <TelegramImageSettings />
                   </article>
                 </PageMainFrame>
               </>

@@ -78,5 +78,5 @@ export function useCustomPreferences() {
     queryClient.setQueryData(customPreferenceKeys.preferences(), next)
   }
 
-  return { data: query.data, isLoaded: query.isSuccess, setPreference, commitPreferences }
+  return { data: query.data, isLoaded: query.isSuccess, isError: query.isError, setPreference, commitPreferences }
 }
