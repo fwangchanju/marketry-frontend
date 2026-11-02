@@ -82,7 +82,7 @@ function textWidth(text: string, size: number): number {
 // 이름 앞에 오는 그룹사·브랜드 이름 — 이 뒤에서 줄을 나눈다(한화/비전, 삼성/전기, 롯데/쇼핑). 영문 접두어가 앞에 붙은 이름(HD현대/건설기계)도 맞춘다.
 const GROUP_PREFIXES = [
   '삼성', '현대', '롯데', '한화', '두산', '포스코', '한진', '효성', '코오롱', '신세계', '대한', '대우', '한솔', '동국', '동원', '동양', '세아', '금호',
-  '카카오', '에코프로', '미래에셋', '키움', '유진', '대신', '교보', '메리츠', '하나', '신한', '우리', '한국', '부국', '한양', '아모레', '이수', '서울', '한미', '삼양', '삼천리', '태광',
+  '카카오', '에코프로', '미래에셋', '키움', '유진', '대신', '교보', '메리츠', '하나', '신한', '우리', '한국', '부국', '한양', '아모레', '이수', '현대차', '서울', '한미', '삼양', '삼천리', '태광',
   '아시아나', '파마', '서진', '셀트리온', '경동', '비에이치', '제주', '쌍용', '한라', '녹십자', '영원', '대웅', '일진', '가온', '한온', '한전', '고려', '보령', '일동', '동서', '종근당', '하림',
   '주성', '동진', '해성', '원익', '파크', '리노', '티씨', '케이씨', '피에스케이', '이오', '삼화',
 ]
@@ -105,7 +105,7 @@ function groupSplitPositions(chars: string[]): number[] {
 const DESCRIPTOR_WORDS = [
   '테라퓨틱스', '노믹스', '게임즈', '데이타', '데이터', '네오룩스', '시스템즈', '시스템', '솔루션즈', '솔루션', '테크놀로지', '인더스트리즈', '인더스트리',
   '엔터테인먼트', '엔터', '네트웍스', '글로벌', '코리아', '인터내셔널', '코퍼레이션', '컴퍼니', '바이오', '제약', '약품', '파마', '헬스케어', '메디칼', '메디컬', '사이언스',
-  '증권', '소프트웨어', '소프트', '정보통신', '일렉트릭', '에너지', '머티리얼즈', '머티리얼', '로보틱스', '디스플레이', '반도체', '엔지니어링', '이엔씨', '콘덴서',
+  '증권', '소프트웨어', '소프트', '정보통신', '일렉트릭', '에너지', '머티리얼즈', '머티리얼', '로보틱스', '디스플레이', '반도체', '엔지니어링', '이엔씨', '콘덴서', '스마트', '마트',
 ].sort((a, b) => b.length - a.length)
 
 function descriptorSplitPosition(chars: string[]): number | null {
@@ -113,7 +113,7 @@ function descriptorSplitPosition(chars: string[]): number | null {
   const word = DESCRIPTOR_WORDS.find(candidate => name.endsWith(candidate))
   if (!word) return null
   const position = Array.from(name.slice(0, name.length - word.length)).length
-  return position >= 2 ? position : null
+  return position >= 1 ? position : null
 }
 
 // 알파벳을 한글로 읽어 쓴 사명(비에이치=BH, 케이씨=KC, 엔씨=NC)의 글자 이름. 이름 앞쪽에 이런 글자가 2개 이상 이어지면 한 묶음으로 보고 묶음 가운데는 나누지 않는다.
@@ -218,8 +218,9 @@ function splitCandidates(chars: string[]) {
   // 한글 알파벳 묶음 끝(케이씨/텍, 엔씨/소프트)과 끝 단어 앞(넥슨/게임즈)도 그룹명 뒤처럼 글자 수 차이가 3 이하일 때 쓴다.
   const clusterSplit = cluster && clusterEnd < chars.length ? [clusterEnd] : []
   const descriptorAt = descriptorSplitPosition(chars)
+  const groupAt = closeEnough(groupSplitPositions(chars).filter(i => all.includes(i)))
   const trailingCluster = trailingLetterClusterPosition(chars)
-  const atMeaning = Array.from(new Set([...atScriptEdge, ...(trailingCluster === null || !all.includes(trailingCluster) ? [] : [trailingCluster]), ...closeEnough([...groupSplitPositions(chars), ...clusterSplit, ...(descriptorAt === null ? [] : [descriptorAt])].filter(i => all.includes(i)))])).sort((a, b) => a - b)
+  const atMeaning = Array.from(new Set([...atScriptEdge, ...(trailingCluster === null || !all.includes(trailingCluster) ? [] : [trailingCluster]), ...closeEnough([...groupSplitPositions(chars), ...clusterSplit].filter(i => all.includes(i))), ...(groupAt.length > 0 || descriptorAt === null || !all.includes(descriptorAt) ? [] : closeEnough([descriptorAt]))])).sort((a, b) => a - b)
   const suffixAt = suffixSplitPosition(chars)
   const atSuffix = suffixAt !== null && all.includes(suffixAt) ? [suffixAt] : []
   return { all, atSpaces, atMeaning, atSuffix }
