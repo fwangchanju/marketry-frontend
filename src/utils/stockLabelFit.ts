@@ -1,28 +1,22 @@
 // 종목 박스 안 글자를 박스 크기에 맞춘다. 말줄임표나 잘린 글자는 만들지 않는다.
-// 이름은 한 줄에 들어가면 그대로 두고, 안 들어가면 두 줄로 나눠(균형 있게) 보여 준다. 두 줄로도 안 들어가면 글자를 MIN_FONT(10px)까지 줄이고,
+// 이름은 한 줄·두 줄 각각 들어가는 가장 큰 글자 크기를 구해, 두 줄이 더 크게 쓸 수 있을 때만 두 줄로 나눈다(균형 있게). 둘 다 안 들어가면 글자를 MIN_FONT(10px)까지 줄이고,
 // 그래도 안 되면 이름과 등락률 모두 그리지 않는다(등락률만 남기지 않는다). 설정에서 등락률만 고른 경우에만 등락률만 보여 주고, 폭에 안 들어가면 MIN_FONT까지 줄이다 안 되면 그리지 않는다.
 import { useSyncExternalStore } from 'react'
 
 export const MIN_FONT = 10
-// 이름이 한 줄에 들어가면 나누지 않는다 — 한 줄에 맞추려고 글자를 줄일 수 있는 한계. 이보다 더 줄여야 하면 두 줄로 나눈다.
-export const ONE_LINE_MIN_FONT = 11
-// 한 줄이 들어가도 두 줄로 나눴을 때 이만큼(px) 넘게 커지면 두 줄을 쓴다.
-const TWO_LINE_GAIN = 3
 export const LABEL_LINE_HEIGHT = 1.25
 // 박스 크기에 맞춘 종목명 기준 글자 크기(px) — PC 종목 박스와 모바일 종목 지도가 같이 쓴다.
 export function stockBaseFontPx(width: number, height: number): number {
   return Math.max(12, Math.min(30, Math.min(width, height) / 5))
 }
 export const RATE_FONT_SCALE = 0.85
-// 박스 넓이(가로·세로의 기하평균)에 맞춘 글자 크기 — 넓이가 같으면 박스 모양이 달라도 글자가 비슷하다(60→12px … 300 이상→34px, 제곱근 곡선).
+// 박스 넓이(가로·세로의 기하평균)에 맞춘 글자 크기 — 넓이가 같으면 박스 모양이 달라도 글자가 비슷하다(60→12px … 300 이상→32px, 제곱근 곡선).
 // 박스 넓이는 이미 시총 반영 비율을 담고 있어서, 비율을 바꿔도 박스와 글자의 관계는 그대로다. 짧은 변 기준(위 함수)만으로는 가로로 긴 박스가 여유가 있어도 작게 보였다.
 // 높이의 90% 안에 한 줄(등락률을 보이면 그 줄까지)이 들어가는 크기를 넘지 않는다. 출발값만 키우고 폭에 안 들어가면 fitStockLabel이 지금처럼 줄인다.
-const FIT_MAX_FONT = 34
+const FIT_MAX_FONT = 32
 export function stockFitBaseFontPx(width: number, height: number, withRate: boolean): number {
-  // 짧은 변 기준 출발값도 이 함수에서는 상한을 34px로 둔다(위 함수는 모바일 종목 지도와 같이 쓰므로 30px 그대로).
+  // 짧은 변 기준 출발값도 이 함수에서는 상한을 32px로 둔다(위 함수는 모바일 종목 지도와 같이 쓰므로 30px 그대로).
   const base = Math.max(12, Math.min(FIT_MAX_FONT, Math.min(width, height) / 5))
-  // 폭이 60px보다 좁은 박스는 이름 폭이 한계라 키울 여지가 없고, 등락률 글자 폭이 어림값이라 키우면 가장자리가 1~2px 잘린다 — 지금 크기를 그대로 쓴다.
-  if (width < 60) return base
   const span = Math.sqrt(width * height)
   const byArea = 12 + (FIT_MAX_FONT - 12) * Math.sqrt(Math.min(Math.max((span - 60) / 240, 0), 1))
   const byHeight = (height - 2) * 0.9 / (LABEL_LINE_HEIGHT * (withRate ? 1 + RATE_FONT_SCALE : 1))
@@ -284,7 +278,8 @@ export function fitStockLabel({
   // 등락률 글자 크기: 이름 크기에 비례하되 MIN_FONT 아래로는 안 내리고, 폭에 안 들어가면 MIN_FONT까지 줄인다. 그래도 안 들어가면 null.
   const rateSizeFor = (nameSize: number): number | null => {
     const wanted = Math.max(MIN_FONT, nameSize * RATE_FONT_SCALE)
-    const fitting = rateAvail * 100 / width100(rateText)
+    // 등락률은 숫자 폭이 같은(tabular) 글꼴이라 가장 넓은 숫자 0으로 재야 실제 폭에 맞는다(그냥 재면 최대 20%까지 좁게 나온다).
+    const fitting = rateAvail * 100 / width100(rateText.replace(/[0-9]/g, '0'))
     const size = Math.min(wanted, fitting)
     return size >= MIN_FONT ? size : null
   }
@@ -294,39 +289,30 @@ export function fitStockLabel({
     const { atSpaces, atMeaning, atSuffix } = splitCandidates(Array.from(name))
     const passes: Array<'suffix' | 'semantic' | 'any'> = atSuffix.length > 0 ? ['suffix', 'semantic', 'any'] : atSpaces.length + atMeaning.length > 0 ? ['semantic', 'any'] : ['any']
     const searchName = (withRate: boolean): StockLabelFit | null => {
-      // 먼저 한 줄에 맞춰 본다 — 글자를 ONE_LINE_MIN_FONT까지 줄여서라도 한 줄에 들어가면 나누지 않는다.
-      for (let size = baseFont; size >= Math.min(baseFont, ONE_LINE_MIN_FONT); size -= 0.5) {
+      const heightOf = (size: number, lines: number) => {
         const rate = withRate ? rateSizeFor(size) : null
-        const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
-        if (LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight && textWidth(name, size) <= nameAvail) {
-          const oneLine: StockLabelFit = { nameLines: [name], nameSize: size, rateSize: rate }
-          // 한 줄이 들어가도 두 줄로 나누면 글자를 TWO_LINE_GAIN(3px) 넘게 키울 수 있으면 두 줄로 나눈다 — 폭이 좁은 박스의 큰 종목(HD현대중공업)이 한 줄 12px에 머무는 것을 막는다.
-          for (const mode of passes) {
-            for (let twoSize = baseFont; twoSize >= size + TWO_LINE_GAIN; twoSize -= 0.5) {
-              const twoRate = withRate ? rateSizeFor(twoSize) : null
-              const twoRateHeight = twoRate ? twoRate * LABEL_LINE_HEIGHT : 0
-              if (2 * LABEL_LINE_HEIGHT * twoSize + twoRateHeight > innerHeight) continue
-              const lines = splitTwoLines(name, twoSize, nameAvail, mode)
-              if (lines) return { nameLines: lines, nameSize: twoSize, rateSize: twoRate }
-            }
-          }
-          return oneLine
-        }
+        return { rate, fits: LABEL_LINE_HEIGHT * size * lines + (rate ? rate * LABEL_LINE_HEIGHT : 0) <= innerHeight }
       }
+      // 한 줄로 들어가는 가장 큰 글자 크기.
+      let one: StockLabelFit | null = null
+      for (let size = baseFont; size >= MIN_FONT; size -= 0.5) {
+        const { rate, fits } = heightOf(size, 1)
+        if (fits && textWidth(name, size) <= nameAvail) { one = { nameLines: [name], nameSize: size, rateSize: rate }; break }
+      }
+      // 두 줄로 들어가는 가장 큰 글자 크기 — 나눌 자리 우선순위(passes)대로 처음 되는 쪽을 쓴다.
+      let two: StockLabelFit | null = null
       for (const mode of passes) {
-        for (let size = baseFont; size >= MIN_FONT; size -= 0.5) {
-          const rate = withRate ? rateSizeFor(size) : null
-          const rateHeight = rate ? rate * LABEL_LINE_HEIGHT : 0
-          if (LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight && textWidth(name, size) <= nameAvail) {
-            return { nameLines: [name], nameSize: size, rateSize: rate }
-          }
-          if (2 * LABEL_LINE_HEIGHT * size + rateHeight <= innerHeight) {
-            const lines = splitTwoLines(name, size, nameAvail, mode)
-            if (lines) return { nameLines: lines, nameSize: size, rateSize: rate }
-          }
+        for (let size = baseFont; size >= MIN_FONT && !two; size -= 0.5) {
+          const { rate, fits } = heightOf(size, 2)
+          if (!fits) continue
+          const lines = splitTwoLines(name, size, nameAvail, mode)
+          if (lines) two = { nameLines: lines, nameSize: size, rateSize: rate }
         }
+        if (two) break
       }
-      return null
+      // 한 줄보다 두 줄이 글자를 더 크게 쓸 수 있으면 두 줄, 아니면 한 줄이다.
+      if (one && two) return two.nameSize > one.nameSize ? two : one
+      return one ?? two
     }
     // 종목명과 등락률 중 하나만 들어가면 종목명이 먼저다 — 둘이 함께 안 들어가면 등락률을 빼고 이름만 보여 준다.
     const found = (wantRate ? searchName(true) : null) ?? searchName(false)
