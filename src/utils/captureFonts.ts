@@ -78,23 +78,37 @@ function usedCodePoints(root: HTMLElement): Set<number> {
 // 한 번 내려받은 글꼴 조각은 data URL로 메모리에 두고 다음 캡처에서 다시 받지 않는다.
 const embeddedFonts = new Map<string, Promise<string>>()
 
+const FONT_FETCH_ATTEMPTS = 3
+
+function wait(ms: number): Promise<void> {
+  return new Promise(resolve => window.setTimeout(resolve, ms))
+}
+
+async function fetchFontDataUrl(url: string): Promise<string> {
+  let lastError: unknown
+  for (let attempt = 1; attempt <= FONT_FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`글꼴을 받지 못했습니다(${response.status}): ${url}`)
+      const blob = await response.blob()
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result))
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(blob)
+      })
+    } catch (error) {
+      lastError = error
+      if (attempt < FONT_FETCH_ATTEMPTS) await wait(300 * attempt)
+    }
+  }
+  throw lastError
+}
+
 function embedFontUrl(url: string): Promise<string> {
   const cached = embeddedFonts.get(url)
   if (cached) return cached
-  const loading = fetch(url)
-    .then(response => {
-      if (!response.ok) throw new Error(`글꼴을 받지 못했습니다: ${url}`)
-      return response.blob()
-    })
-    .then(
-      blob =>
-        new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(String(reader.result))
-          reader.onerror = () => reject(reader.error)
-          reader.readAsDataURL(blob)
-        }),
-    )
+  const loading = fetchFontDataUrl(url)
   // 실패한 요청은 다음 캡처에서 다시 시도한다.
   loading.catch(() => embeddedFonts.delete(url))
   embeddedFonts.set(url, loading)
@@ -104,9 +118,21 @@ function embedFontUrl(url: string): Promise<string> {
 // 글꼴 정의의 파일 주소를 내려받은 data URL로 바꾼다. 캡처 라이브러리는 cssText를 받으면 파일을 대신 받아 주지 않아서 직접 넣어야 한다.
 async function embedFontUrls(cssText: string): Promise<string> {
   const urls = [...new Set(Array.from(cssText.matchAll(/url\((['"]?)([^)'"]+)\1\)/g), match => match[2]))]
-  const entries = await Promise.all(urls.map(async url => [url, await embedFontUrl(new URL(url, document.baseURI).href)] as const))
+  // 조각 하나가 끝내 안 받아져도 나머지는 넣는다 — 하나 때문에 글꼴 전체를 포기하면 캡처 이미지의 글꼴이 통째로 달라진다.
+  const entries = await Promise.all(
+    urls.map(async url => {
+      try {
+        return [url, await embedFontUrl(new URL(url, document.baseURI).href)] as const
+      } catch (error) {
+        console.warn('[캡처] 글꼴 조각을 넣지 못했습니다', url, error)
+        return [url, null] as const
+      }
+    }),
+  )
   let embedded = cssText
-  for (const [url, dataUrl] of entries) embedded = embedded.split(url).join(dataUrl)
+  for (const [url, dataUrl] of entries) {
+    if (dataUrl !== null) embedded = embedded.split(url).join(dataUrl)
+  }
   return embedded
 }
 
