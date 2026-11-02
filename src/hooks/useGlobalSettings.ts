@@ -109,6 +109,28 @@ function findSectorPath(nodes: HeatmapSectorNode[], targetId: number, ancestors:
   return null
 }
 
+// 업종(하위 업종 포함)에 속한 종목 수 — 제외 목록의 줄마다 종목 수를 적을 때 쓴다. 트리에 없으면 0이다.
+function countSectorStocks(node: HeatmapSectorNode): number {
+  return node.items.length + node.children.reduce((sum, child) => sum + countSectorStocks(child), 0)
+}
+function collectSectorStockCounts(nodes: HeatmapSectorNode[], out: Map<number, number> = new Map()) {
+  for (const node of nodes) {
+    out.set(node.sectorId, countSectorStocks(node))
+    collectSectorStockCounts(node.children, out)
+  }
+  return out
+}
+
+// 상위 업종도 같이 제외된 업종의 id — 이 업종의 종목은 상위 업종 줄의 종목 수에 이미 들어 있어서 목록에서 흐리게 보여 준다.
+function collectCoveredExcludedIds(nodes: HeatmapSectorNode[], excluded: Map<number, string>, covered = false, out: Set<number> = new Set()) {
+  for (const node of nodes) {
+    const isExcluded = excluded.has(node.sectorId)
+    if (isExcluded && covered) out.add(node.sectorId)
+    collectCoveredExcludedIds(node.children, excluded, covered || isExcluded, out)
+  }
+  return out
+}
+
 function topPickAverage(node: FilteredHeatmapSectorNode, metric: DepthMetric): number | null {
   // 강세 업종은 업종 탭 표시 지표를 따른다. 평균이 아닌 지표를 고르면 시총 가중으로 계산한다.
   return metric === 'simpleAvgChangeRate' ? node.simpleAvgChangeRate : node.weightedAvgChangeRate
@@ -762,6 +784,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     if (isCustom) registerExcludedSector(sectorId).catch(e => console.error('섹터 제외 실패', e))
   }
 
+  const excludedStockCounts = useMemo(() => collectSectorStockCounts(rootNodes), [rootNodes])
+  const coveredExcludedIds = useMemo(() => collectCoveredExcludedIds(rootNodes, excludedSectorNames), [rootNodes, excludedSectorNames])
+
   const handleRemoveExcludedSector = (sectorId: number) => {
     setExcludedSectorNames(prev => {
       const next = new Map(prev)
@@ -818,7 +843,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     onToggleSectorFilter: () => setSectorFilterEnabled(prev => !prev),
     // 제외 업종 목록은 이름순으로 보여준다 — 서버가 내려주는 트리 순서는 업종을 만든 순서를 따라서, 같은 분류라도
     // MARKETRY와 내 분류에서 순서가 다르게 나왔다.
-    excludedSectors: Array.from(excludedSectorNames, ([sectorId, sectorName]) => ({ sectorId, sectorName })).sort((a, b) =>
+    excludedSectors: Array.from(excludedSectorNames, ([sectorId, sectorName]) => ({ sectorId, sectorName, stockCount: excludedStockCounts.get(sectorId) ?? 0, coveredByParent: coveredExcludedIds.has(sectorId) })).sort((a, b) =>
       compareKoreanText(a.sectorName, b.sectorName),
     ),
     onRemoveExcludedSector: handleRemoveExcludedSector,
