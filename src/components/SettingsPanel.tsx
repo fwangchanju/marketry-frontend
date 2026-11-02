@@ -1262,7 +1262,7 @@ function SettingsTaxonomySelector({
 
   return (
     <div data-settings-side-toggle-top-anchor={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
-      <p data-map-select-title className="font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none">
+      <p data-map-select-title className={`font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none ${taxonomy === 'MARKETRY' ? 'text-brand' : taxonomy === 'MINE' ? 'text-ui-white' : 'text-ui-muted'}`}>
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
         {TAXONOMY_SELECT_TITLE}
@@ -1277,7 +1277,7 @@ function SettingsTaxonomySelector({
             aria-checked={isSelected(option.key)}
             aria-label={hasDraft(option.key) ? `${option.label}, 저장하지 않은 변경 있음` : option.label}
             onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
-            className={`settings-choice-hover relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap transition-colors duration-[500ms] ${option.key === 'MARKETRY' ? 'text-brand' : option.key === 'MINE' ? 'text-ui-white' : 'text-ui-muted'}`}
+            className="settings-choice-hover relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap text-ui-white transition-colors duration-[500ms]"
           >
             {option.label}
             {hasDraft(option.key) && <span aria-hidden="true" className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-brand" />}

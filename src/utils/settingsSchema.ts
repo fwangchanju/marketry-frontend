@@ -10,7 +10,7 @@
 // 버전이 없는 저장값은 0으로 본다. 현재 버전보다 높은 값(더 새로운 화면에서 저장한 것)은 건드리지 않는다.
 
 export const SETTINGS_VERSION_KEY = 'settings.version'
-export const SETTINGS_SCHEMA_VERSION = 2
+export const SETTINGS_SCHEMA_VERSION = 3
 
 export type SettingsProfile = 'exchange' | 'marketry' | 'mine'
 export const SETTINGS_PROFILES: SettingsProfile[] = ['exchange', 'marketry', 'mine']
@@ -23,6 +23,9 @@ export function profileSettingKey(profile: SettingsProfile, key: string): string
 type Preferences = Record<string, unknown>
 
 const PROFILED_SETTING_KEYS = [
+  'heatmap.avgChangeRateUseSimple',
+  'heatmap.boxSizeMarketCapRatio',
+  'heatmap.strongIndustryColor',
   'heatmap.sectorFilterEnabled',
   'heatmap.sectorLevelEnabled',
   'heatmap.selectedMaxDepth',
@@ -33,10 +36,25 @@ const PROFILED_SETTING_KEYS = [
   'heatmap.topPickDepth',
   'heatmap.topPickCount',
   'heatmap.topPickEnabled',
+  'heatmap.stockLabelModeIndex',
+  'heatmap.stockLabelEnabled',
+  'heatmap.decimalPlacesIndex',
+  'heatmap.colorCustomOn',
 ]
 
 const MIGRATIONS: Record<number, (preferences: Preferences) => Preferences> = {
   1: preferences => {
+    const next = { ...preferences }
+    for (const key of PROFILED_SETTING_KEYS) {
+      if (!Object.hasOwn(preferences, key)) continue
+      for (const profile of SETTINGS_PROFILES) {
+        const targetKey = profileSettingKey(profile, key)
+        if (!Object.hasOwn(next, targetKey)) next[targetKey] = preferences[key]
+      }
+    }
+    return next
+  },
+  2: preferences => {
     const next = { ...preferences }
     for (const key of PROFILED_SETTING_KEYS) {
       if (!Object.hasOwn(preferences, key)) continue

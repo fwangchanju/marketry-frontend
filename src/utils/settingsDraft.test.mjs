@@ -105,3 +105,20 @@ test('분류별 저장은 현재 분류와 공통 변경만 처리하고 다른 
   discardDrafts('exchange')
   assert.equal(readDraft(exchangeKey).found, false)
 })
+
+test('모드별 설정 draft는 전환·저장·초기화 때 다른 모드에 섞이지 않는다', async () => {
+  const mineKey = 'heatmap.profile.mine.boxSizeMarketCapRatio'
+  const exchangeKey = 'heatmap.profile.exchange.boxSizeMarketCapRatio'
+  registerDraftKey(mineKey)
+  registerDraftKey(exchangeKey)
+  writeDraft(mineKey, 65)
+
+  assert.equal(readDraft(exchangeKey).found, false)
+  await commitDrafts(async entries => assert.deepEqual(entries, [[mineKey, 65]]), 'mine')
+  assert.equal(readDraft(mineKey).found, false)
+
+  writeDraft(exchangeKey, 25)
+  discardDrafts('exchange')
+  assert.equal(readDraft(exchangeKey).found, false)
+  assert.equal(readDraft(mineKey).found, false)
+})
