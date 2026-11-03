@@ -102,6 +102,7 @@ export default function TelegramImageSettings({
   saved,
   current,
   loadState,
+  isSaved,
   onLoad,
   onSave,
 }: {
@@ -111,6 +112,7 @@ export default function TelegramImageSettings({
   saved: TelegramImageValues | null
   current: TelegramImageValues | null
   loadState: 'idle' | 'loading' | 'ready' | 'error'
+  isSaved: boolean
   onLoad: () => void
   onSave: () => void
 }) {
@@ -194,7 +196,7 @@ export default function TelegramImageSettings({
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ui-border pt-3">
         <button type="button" disabled={loadState === 'loading'} onClick={onLoad} className={`${ACTION_CLASS} bg-ui-control font-medium hover:bg-ui-control-hover focus-visible:outline-brand`}>{loadState === 'loading' ? '불러오는 중' : '불러오기'}</button>
         <button type="button" disabled={loadState !== 'ready'} onClick={onSave} className={`${ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>저장</button>
-        {loadState === 'ready' && <span role="status" className="text-xs text-ui-muted">저장 전</span>}
+        {loadState === 'ready' && <span role="status" className="text-xs text-ui-muted">{isSaved ? '저장 완료' : '저장 전'}</span>}
       </div>
     </div>
   </InfoSection>
