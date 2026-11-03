@@ -2528,7 +2528,8 @@ export default function SettingsPanel({
             appAlert('저장된 설정을 아직 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.', { title: '불러오기 실패' })
             return
           }
-          if (!await appConfirm('지금 변경사항을 저장하시겠습니까?', { title: '저장하기' })) return
+          const taxonomyName = TAXONOMY_NAMES[selectedTaxonomy].title
+          if (!await appConfirm(`현재 [${taxonomyName}] 분류의 변경사항을 저장하시겠습니까?`, { title: `[${taxonomyName}] 저장하기` })) return
           // 저장에 실패하면 임시값은 그대로 남아 있으니 알리고, 사용자가 다시 저장하게 한다.
           setIsSavingPreferences(true)
           runPreferenceAction(() => {

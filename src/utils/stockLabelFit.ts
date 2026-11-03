@@ -116,6 +116,25 @@ function descriptorSplitPosition(chars: string[]): number | null {
   return position >= 1 ? position : null
 }
 
+// 그룹명 뒤에 의미 단어가 붙고 뒤에 이름이 더 이어지면 그 단어 뒤도 줄바꿈 후보로 둔다(삼성바이오/로직스).
+function groupDescriptorSplitPositions(chars: string[]): number[] {
+  let lead = 0
+  while (lead < chars.length && isAsciiChar(chars[lead])) lead += 1
+  const rest = chars.slice(lead).join('')
+  const positions: number[] = []
+  for (const prefix of GROUP_PREFIXES) {
+    const prefixLength = Array.from(prefix).length
+    if (!rest.startsWith(prefix)) continue
+    const afterPrefix = rest.slice(prefix.length)
+    for (const descriptor of DESCRIPTOR_WORDS) {
+      if (afterPrefix.startsWith(descriptor) && Array.from(afterPrefix).length > Array.from(descriptor).length) {
+        positions.push(lead + prefixLength + Array.from(descriptor).length)
+      }
+    }
+  }
+  return positions
+}
+
 // 알파벳을 한글로 읽어 쓴 사명(비에이치=BH, 케이씨=KC, 엔씨=NC)의 글자 이름. 이름 앞쪽에 이런 글자가 2개 이상 이어지면 한 묶음으로 보고 묶음 가운데는 나누지 않는다.
 const LETTER_NAMES = [
   '더블유', '에이치', '에이', '에프', '에스', '제이', '케이', '아이', '제트', '엑스', '와이', '브이', '아르',
@@ -220,7 +239,7 @@ function splitCandidates(chars: string[]) {
   const descriptorAt = descriptorSplitPosition(chars)
   const groupAt = closeEnough(groupSplitPositions(chars).filter(i => all.includes(i)))
   const trailingCluster = trailingLetterClusterPosition(chars)
-  const atMeaning = Array.from(new Set([...atScriptEdge, ...(trailingCluster === null || !all.includes(trailingCluster) ? [] : [trailingCluster]), ...closeEnough([...groupSplitPositions(chars), ...clusterSplit].filter(i => all.includes(i))), ...(groupAt.length > 0 || descriptorAt === null || !all.includes(descriptorAt) ? [] : closeEnough([descriptorAt]))])).sort((a, b) => a - b)
+  const atMeaning = Array.from(new Set([...atScriptEdge, ...(trailingCluster === null || !all.includes(trailingCluster) ? [] : [trailingCluster]), ...closeEnough([...groupSplitPositions(chars), ...groupDescriptorSplitPositions(chars), ...clusterSplit].filter(i => all.includes(i))), ...(groupAt.length > 0 || descriptorAt === null || !all.includes(descriptorAt) ? [] : closeEnough([descriptorAt]))])).sort((a, b) => a - b)
   const suffixAt = suffixSplitPosition(chars)
   const atSuffix = suffixAt !== null && all.includes(suffixAt) ? [suffixAt] : []
   return { all, atSpaces, atMeaning, atSuffix }
