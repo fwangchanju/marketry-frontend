@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getAdminDefaults, saveAdminDefaults } from '@/api/adminDefaults'
 import NavBar from '@/components/NavBar'
@@ -10,10 +10,13 @@ import ToolbarModeText from '@/components/ToolbarModeText'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import { InfoPageHeading } from '@/components/InfoDocument'
 import TelegramImageSettings from '@/components/TelegramImageSettings'
+import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
+import ScreenshotModal from '@/components/ScreenshotModal'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useHeatmap } from '@/hooks/useHeatmap'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
+import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useSession } from '@/hooks/useSession'
 import type { TelegramImageValues } from '@/hooks/useTelegramImageSetting'
 import type { DefaultProfiles } from '@/hooks/useDefaultPreferences'
@@ -21,6 +24,7 @@ import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
 import { defaultExcludedTierLabels } from '@/utils/marketValueTier'
+import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import type { HeatmapSectorNode, MarketValueTierItem } from '@/types/api'
 
 type ProfileSnapshot = {
@@ -151,6 +155,22 @@ export default function AdminDefaultPage() {
   const { data: session, isLoading } = useSession()
   const isAdmin = isAdminSession(session)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
+  const screenshotRef = useRef<HTMLDivElement>(null)
+  const handleCopy = async (previewSrc?: string | null) => {
+    if (!previewSrc && !screenshotRef.current) return
+    setCopyStatus('copying')
+    try {
+      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
+      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
+      setCopyStatus('copied')
+    } catch { setCopyStatus('error') }
+    finally { setTimeout(() => setCopyStatus('idle'), 2000) }
+  }
+  const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   const { data: tiers = [] } = useMarketValueTiers()
   const queryClient = useQueryClient()
   const [snapshots, setSnapshots] = useState<Record<'marketry' | 'exchange', ProfileSnapshot | null>>({ marketry: null, exchange: null })
@@ -201,10 +221,10 @@ export default function AdminDefaultPage() {
 
   return <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
     <NavBar />
-    <NavSubBar actions={<NavBarPageActions onRefresh={() => void defaults.refetch()} isRefreshing={defaults.isFetching} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} showRefresh={false} />} />
+    <NavSubBar actions={<NavBarPageActions onRefresh={() => void defaults.refetch()} isRefreshing={defaults.isFetching} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} showRefresh={false} onToggleSettings={() => setIsSettingsOpen(previous => !previous)} isSettingsOpen={isSettingsOpen} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} />} />
     <div className="flex min-h-0 flex-1">
       <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
-        <div data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
+        <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
           {isLoading ? <p role="status" className="m-auto text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p> : !isAdmin ? <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p> : <>
             <Toolbar><ToolbarModeText page="ADMIN" label="DEFAULT" /></Toolbar>
             <PageMainFrame className="p-0" heading={<div className="mx-auto w-full max-w-4xl"><InfoPageHeading flushBottom title="기본값" summary="MARKETRY와 거래소 기본 설정을 각각 저장합니다." /></div>}>
@@ -216,9 +236,15 @@ export default function AdminDefaultPage() {
           </>}
           <DisclaimerFooter />
         </div>
+        {isAdmin && <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
+          <SettingsPanel pageLabel="Default" showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isSettingsOnLeft} onToggleSide={toggleSettingsSide} sectionOrder={['adminManage']} sectionLabelOverrides={{ adminManage: '기본값' }}>
+            <SettingsPanelGroup section="adminManage"><div className="settings-plain-content"><div className="settings-ops-item flex h-[180px] items-center justify-center text-center text-sm text-ui-muted">기본값은 메인 영역에서 설정합니다.</div></div></SettingsPanelGroup>
+          </SettingsPanel>
+        </div>}
       </div>
     </div>
     {isAdmin && loadVersions.marketry > 0 && <ProfileReader key={`marketry-${loadVersions.marketry}`} profile="marketry" onSnapshot={updateSnapshot} />}
     {isAdmin && loadVersions.exchange > 0 && <ProfileReader key={`exchange-${loadVersions.exchange}`} profile="exchange" onSnapshot={updateSnapshot} />}
+    {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={handleCopy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} />}
   </div>
 }

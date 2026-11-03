@@ -21,7 +21,7 @@ const METRICS: Record<string, string> = {
   upDownCount: '상승/하락 종목 수', marketValue: '업종 시가총액 합계',
 }
 const ACTION_CLASS = 'flex h-[25px] w-[90px] shrink-0 items-center justify-center gap-1.5 rounded-[4px] border-0 px-1.5 text-[13px]/4 font-semibold text-ui-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-35'
-const VALUE_CLASS = 'min-h-[25px] min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 py-1 text-[13px]/4 font-medium text-ui-white'
+const VALUE_CLASS = 'min-h-[25px] min-w-0 rounded-[4px] border border-transparent bg-[var(--ui-control)] px-2 py-1 text-[13px]/4 font-medium'
 const LABEL_CLASS = 'flex min-h-[25px] min-w-0 items-center gap-1 px-1 text-[13px]/4 font-medium text-ui-white'
 
 function won(value: number) {
@@ -168,12 +168,12 @@ export default function TelegramImageSettings({
               const isDifferent = hasDifferentValue(saved, current, index, profileLabel)
               return <div key={name} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-2 border-t border-ui-border/50 py-2">
                 <span className={LABEL_CLASS}>{name}</span>
-                <span ref={index === 1 && hasMoreExclusions(saved) ? savedExclusionsTriggerRef : undefined} className={`${VALUE_CLASS} flex items-center justify-between gap-1`}>
+                <span ref={index === 1 && hasMoreExclusions(saved) ? savedExclusionsTriggerRef : undefined} className={`${VALUE_CLASS} flex items-center justify-between gap-1 text-ui-white`}>
                   <span className="min-w-0"><SettingValue value={saved} index={index} profileLabel={profileLabel} /></span>
                   {index === 1 && hasMoreExclusions(saved) && <button type="button" aria-haspopup="dialog" aria-label="설정값 제외 업종 목록 열기" aria-expanded={exclusionsOpen && exclusionsColumn === 'saved'} onClick={() => toggleExclusions('saved')} className="inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-ui-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"><ChevronDownIcon aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${exclusionsOpen && exclusionsColumn === 'saved' ? 'rotate-180' : ''}`} /></button>}
                 </span>
                 <span ref={index === 1 && hasMoreExclusions(current) ? currentExclusionsTriggerRef : undefined} className={`${VALUE_CLASS} flex items-center justify-between gap-1 ${isDifferent ? 'text-brand' : 'text-ui-white'}`}>
-                  <span className="min-w-0"><SettingValue value={current} index={index} profileLabel={profileLabel} /></span>
+                  <span className="min-w-0">{isDifferent && <span className="sr-only">설정값과 다름: </span>}<SettingValue value={current} index={index} profileLabel={profileLabel} /></span>
                   {index === 1 && hasMoreExclusions(current) && <button type="button" aria-haspopup="dialog" aria-label="현재값 제외 업종 목록 열기" aria-expanded={exclusionsOpen && exclusionsColumn === 'current'} onClick={() => toggleExclusions('current')} className="inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-ui-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"><ChevronDownIcon aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${exclusionsOpen && exclusionsColumn === 'current' ? 'rotate-180' : ''}`} /></button>}
                 </span>
               </div>
@@ -184,7 +184,7 @@ export default function TelegramImageSettings({
       {exclusionsOpen && exclusionsRect && createPortal(
         <div ref={exclusionsPopupRef} role="dialog" aria-label={`${exclusionsColumn === 'saved' ? '설정값' : '현재값'} 제외 업종 목록`}
           style={{ position: 'fixed', top: exclusionsRect.top, left: exclusionsRect.left, width: exclusionsRect.width }}
-          className={`${VALUE_CLASS} z-50 flex items-start justify-between gap-1 shadow-xl`}>
+          className={`${VALUE_CLASS} z-50 flex items-start justify-between gap-1 text-ui-white shadow-xl`}>
           <span className="space-y-2">{popupNames.map(name => <div key={name}>{name}</div>)}</span>
           <button type="button" aria-label="업종 제외 목록 접기" onClick={() => setExclusionsOpen(false)} className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-ui-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
             <ChevronDownIcon aria-hidden="true" className="h-3.5 w-3.5 rotate-180" />
