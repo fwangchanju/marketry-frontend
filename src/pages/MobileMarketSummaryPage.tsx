@@ -43,6 +43,12 @@ function stockLayoutValue(stock: HeatmapItem, ratio: number) {
   return ratio <= 0 ? 1 : Math.pow(Math.max(stock.totalMarketValue, 0), ratio / 100)
 }
 
+function sectorLayoutValue(stocks: HeatmapItem[], ratio: number) {
+  // 업종 지도에서 '동일'은 현재 보이는 업종 칸끼리 같은 면적을 뜻한다.
+  // 시총 비율을 쓰는 설정에서는 구성 종목의 가중치를 업종 칸에 합산한다.
+  return ratio <= 0 ? 1 : stocks.reduce((sum, stock) => sum + stockLayoutValue(stock, ratio), 0)
+}
+
 type MobileSectorItem = MobileSectorMapItem & {
   node: FilteredHeatmapSectorNode | null
   stocks: HeatmapItem[]
@@ -61,8 +67,8 @@ function toMobileSectorItem(node: FilteredHeatmapSectorNode, path: string, boxSi
     key: path,
     name: node.sectorName,
     marketValue: summary.marketValue,
-    // 박스 크기도 PC 업종 지도와 같은 종목 모음으로 맞춘다(박스 크기 설정 비율만 반영).
-    layoutValue: summary.items.reduce((sum, stock) => sum + stockLayoutValue(stock, boxSizeRatio), 0),
+    // 동일이면 현재 단계의 업종 칸을 같은 면적으로 둔다. 시총 비율 설정은 구성 종목을 합산한다.
+    layoutValue: sectorLayoutValue(summary.items, boxSizeRatio),
     changeRate: summary.weightedAvg,
     simpleAvg: summary.simpleAvg,
     advancers: summary.advancers,
@@ -81,7 +87,7 @@ function toDirectStocksItem(stocks: HeatmapItem[], parentPath: string, boxSizeRa
     key: `${parentPath}>direct-stocks`,
     name: '나머지',
     marketValue,
-    layoutValue: stocks.reduce((sum, stock) => sum + stockLayoutValue(stock, boxSizeRatio), 0),
+    layoutValue: sectorLayoutValue(stocks, boxSizeRatio),
     changeRate: stocks.reduce((sum, stock) => sum + stock.changeRate * stock.totalMarketValue, 0) / marketValue,
     advancers: stocks.filter(stock => stock.changeRate > 0).length,
     decliners: stocks.filter(stock => stock.changeRate < 0).length,
@@ -363,7 +369,11 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   }, [])
   // 열린 채로 새 페이지가 만들어지면 내용 높이를 알 수 있는 첫 그리기 직후에 한 번 더 그려서 높이를 맞춘다.
   const [, setHeightTick] = useState(0)
+  const [settingsLayoutReady, setSettingsLayoutReady] = useState(false)
   useLayoutEffect(() => { if (settingsOpenMemory) setHeightTick(tick => tick + 1) }, [])
+  // 새 페이지의 첫 렌더에서는 설정 내용 ref가 아직 없어 높이가 0이다. 측정된 높이로 맞출 때
+  // 열림 애니메이션이 재생되지 않도록 한 프레임 뒤에 사용자 조작용 전환을 켠다.
+  useEffect(() => { setSettingsLayoutReady(true) }, [])
   const [dragHeight, setDragHeight] = useState<number | null>(null)
   const settingsContentRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ y: number; start: number; max: number; moved: boolean } | null>(null)
@@ -790,7 +800,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         </div>}
       </section>
 
-      <section ref={settingsSectionRef} data-mobile-settings-panel role="region" aria-label="설정" className="relative z-10 mx-2 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
+      <section ref={settingsSectionRef} data-mobile-settings-panel role="region" aria-label="설정" className="relative z-10 mx-1 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
         <div className="relative h-[24px]">
         <button type="button" aria-label={settingsOpen ? '설정 닫기' : '설정 열기'} aria-expanded={settingsOpen} onClick={() => {
           if (suppressClickRef.current) { suppressClickRef.current = false; return }
@@ -820,7 +830,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         </button>
         {data?.snapshotTime && <span className="absolute left-3 top-0 flex h-[24px] items-center overflow-hidden whitespace-nowrap text-ellipsis text-[11px] tabular-nums text-ui-muted min-[360px]:text-[12px] min-[400px]:text-[13px]" style={{ maxWidth: 'calc(50% - 2.5rem)' }}>{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
         </div>
-        <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">
+        <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null && settingsLayoutReady ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">
           <div ref={settingsContentRef} inert={!settingsOpen && dragHeight === null} className="max-h-[calc(40dvh-24px)] [@media(max-height:500px)]:max-h-[calc(60dvh-24px)] overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
           <SettingRow label="분류 기준">
             <div role="radiogroup" aria-label="분류 기준" className="grid flex-1 grid-cols-3 gap-1.5">
