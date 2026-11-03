@@ -20,6 +20,22 @@ export function profileSettingKey(profile: SettingsProfile, key: string): string
   return `heatmap.profile.${profile}.${suffix}`
 }
 
+export function profileFromSettingKey(key: string): { profile: 'exchange' | 'marketry'; key: string } | null {
+  const match = /^heatmap\.profile\.(exchange|marketry)\.(.+)$/.exec(key)
+  return match ? { profile: match[1] as 'exchange' | 'marketry', key: match[2] } : null
+}
+
+export function profileDefaultForSettingKey<T>(
+  profiles: Record<string, Record<string, unknown> | undefined> | undefined,
+  key: string,
+  fallback: T,
+): { found: boolean; value: T } {
+  const scoped = profileFromSettingKey(key)
+  const settings = scoped ? profiles?.[scoped.profile] : undefined
+  if (!scoped || !settings || !Object.hasOwn(settings, scoped.key)) return { found: false, value: fallback }
+  return { found: true, value: settings[scoped.key] as T }
+}
+
 type Preferences = Record<string, unknown>
 
 const PROFILED_SETTING_KEYS = [

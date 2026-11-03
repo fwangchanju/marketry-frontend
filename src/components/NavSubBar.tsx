@@ -51,6 +51,7 @@ const ADMIN_LINK: MenuLink = {
     { label: 'MEMBER', to: '/admin/member' },
     { label: 'DASHBOARD', to: '/admin/dashboard' },
     { label: 'MESSAGE', to: '/admin/message' },
+    { label: 'DEFAULT', to: '/admin/default' },
     { label: 'BANNER', to: '/admin/banner' },
   ],
 }

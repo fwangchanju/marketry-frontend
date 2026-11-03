@@ -29,6 +29,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const AdminMessagePage = lazy(() => import('./pages/AdminMessagePage'))
+const AdminDefaultPage = lazy(() => import('./pages/AdminDefaultPage'))
 const AdminBannerPage = lazy(() => import('./pages/AdminBannerPage'))
 
 function ClientMetricsReporter() {
@@ -163,6 +164,7 @@ export default function App() {
             <Route path="member" element={<AdminPage />} />
             <Route path="dashboard" element={<AdminDashboardPage />} />
             <Route path="message" element={<AdminMessagePage />} />
+            <Route path="default" element={<AdminDefaultPage />} />
             <Route path="banner" element={<AdminBannerPage />} />
             <Route path="*" element={<Navigate to="/home" replace />} />
           </Route>

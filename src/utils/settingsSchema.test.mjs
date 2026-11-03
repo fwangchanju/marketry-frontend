@@ -1,6 +1,25 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { migratePreferences, profileSettingKey } from './settingsSchema.ts'
+import { migratePreferences, profileDefaultForSettingKey, profileFromSettingKey, profileSettingKey } from './settingsSchema.ts'
+
+test('새 기본값 조회 키는 MARKETRY·거래소 설정만 프로필 기본값으로 연결한다', () => {
+  assert.deepEqual(profileFromSettingKey(profileSettingKey('marketry', 'heatmap.boxSizeMarketCapRatio')), {
+    profile: 'marketry', key: 'boxSizeMarketCapRatio',
+  })
+  assert.deepEqual(profileFromSettingKey(profileSettingKey('exchange', 'heatmap.tierRangeMaxValue')), {
+    profile: 'exchange', key: 'tierRangeMaxValue',
+  })
+  assert.equal(profileFromSettingKey(profileSettingKey('mine', 'heatmap.boxSizeMarketCapRatio')), null)
+  assert.equal(profileFromSettingKey('heatmap.colorScale'), null)
+})
+
+test('비어 있거나 false인 명시적 기본값도 저장된 값으로 구분한다', () => {
+  const defaults = { marketry: { excludedSectorKeys: [], colorCustomOn: false, tierRangeMaxValue: null } }
+  assert.deepEqual(profileDefaultForSettingKey(defaults, profileSettingKey('marketry', 'heatmap.excludedSectorKeys'), ['seed']), { found: true, value: [] })
+  assert.deepEqual(profileDefaultForSettingKey(defaults, profileSettingKey('marketry', 'heatmap.colorCustomOn'), true), { found: true, value: false })
+  assert.deepEqual(profileDefaultForSettingKey(defaults, profileSettingKey('marketry', 'heatmap.tierRangeMaxValue'), 500), { found: true, value: null })
+  assert.deepEqual(profileDefaultForSettingKey(defaults, profileSettingKey('exchange', 'heatmap.boxSizeMarketCapRatio'), 45), { found: false, value: 45 })
+})
 
 test('기존 분류 설정을 세 프로필의 최초 값으로 복사하고 이미 생성된 프로필 값은 보존한다', () => {
   const result = migratePreferences({

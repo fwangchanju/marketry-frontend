@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 
-type Options<T> = { serialize?: (value: T) => unknown; deserialize?: (raw: unknown) => T }
+type Options<T> = { serialize?: (value: T) => unknown; deserialize?: (raw: unknown) => T; liveDefault?: boolean }
 
 // 새로고침(하드 리프레시 포함) 사이에는 유지하되, 탭/창을 닫으면 사라지는 게 자연스러운 "토글성" 상태를
 // 위한 useState 대체 훅. sessionStorage에 저장할 뿐 백엔드에는 전혀 관여하지 않는다.
@@ -24,22 +24,28 @@ export function usePersistedState<T>(key: string, initialValue: T, options?: Opt
       return initialValue
     }
   })
+  const [hasStoredValue, setHasStoredValue] = useState(() => {
+    try { return sessionStorage.getItem(key) !== null } catch { return false }
+  })
+  const resolvedState = options?.liveDefault && !hasStoredValue ? initialValue : state
+  const currentValueRef = useRef(resolvedState)
 
-  const setPersistedState = useCallback<Dispatch<SetStateAction<T>>>(
-    value => {
-      setState(prev => {
-        const next = value instanceof Function ? value(prev) : value
-        try {
-          const serialize = optionsRef.current?.serialize ?? ((v: T) => v)
-          sessionStorage.setItem(key, JSON.stringify(serialize(next)))
-        } catch {
-          // 프라이빗 모드 등으로 접근이 막혀도 화면 동작 자체는 계속되게 조용히 무시
-        }
-        return next
-      })
-    },
-    [key],
-  )
+  useEffect(() => {
+    currentValueRef.current = resolvedState
+  }, [resolvedState])
 
-  return [state, setPersistedState]
+  const setPersistedState = useCallback<Dispatch<SetStateAction<T>>>(value => {
+    const next = value instanceof Function ? value(currentValueRef.current) : value
+    currentValueRef.current = next
+    setState(next)
+    setHasStoredValue(true)
+    try {
+      const serialize = optionsRef.current?.serialize ?? ((v: T) => v)
+      sessionStorage.setItem(key, JSON.stringify(serialize(next)))
+    } catch {
+      // 프라이빗 모드 등으로 접근이 막혀도 화면 동작 자체는 계속되게 조용히 무시
+    }
+  }, [key])
+
+  return [resolvedState, setPersistedState]
 }
