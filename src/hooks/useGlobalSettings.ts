@@ -286,8 +286,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 팝업은 이 설정과 무관하게 항상 우클릭이다.
   const [stockPopupOnHover, setStockPopupOnHover] = useTransientSetting(profileKey('heatmap.stockPopupOnHover'), defaults.stockPopupOnHover)
   const decimalPlaces = decimalPlacesIndex
-  // 시가총액 구간 범위 필터 — 마켓맵/섹터 랭킹 화면이 세션스토리지 키를 공유한다(useMarketValueTierRange 참고).
-  // 시가총액 구간 필터는 분류 체계와 무관한 표시 설정이라 두 분류 모두에서 적용한다.
+  // 시가총액 구간 범위는 같은 분류의 지도와 섹터 랭킹이 공유한다.
   const {
     tiers: valueTiers,
     minIndex: tierRangeMinIndex,
@@ -296,7 +295,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     setMaxIndex: setTierRangeMaxIndex,
     excludedMarketValueTiers,
     isTierRangeReady: isMarketValueTierRangeReady,
-  } = useMarketValueTierRange(true)
+  } = useMarketValueTierRange(true, settingsProfile)
   const [exchangeExcludedSectorNames, setExchangeExcludedSectorNames] = usePersistedState<Map<number, string>>(
     'heatmap.excludedSectorNames.exchange',
     new Map(),
@@ -517,7 +516,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   const captureExcluded = telegramCaptureSetting.data?.values?.excludedSectors
   const snapshotExcludedSectorNames = options?.readOnlyTelegramSnapshot && data
-    ? excludedNamesForStableKeys(data.items, captureExcluded?.map(([key]) => key) ?? seedExcludedSectorKeys(data.items))
+    ? isTelegramCapture
+      ? excludedNamesForStableKeys(data.items, captureExcluded?.map(([key]) => key) ?? seedExcludedSectorKeys(data.items))
+      : marketryExcludedSectorNames
     : excludedSectorNames
 
   // 로그인 사용자의 거래소 분류 트리는 사용자 정의 섹터를 쓰지 않으므로 isExcluded와 제외 목록을 적용하지 않는다.

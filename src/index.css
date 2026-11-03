@@ -1398,9 +1398,9 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   color: var(--ui-white);
 }
 
-/* 공통 설정은 제목에만 청록색을 사용한다. */
-.settings-panel-tab-content :is(.settings-market-value, .settings-second-exclude, .settings-first-color, .settings-second-strong-color) .settings-section-num {
-  color: var(--brand);
+/* 설정 항목명은 분류와 항목 종류에 관계없이 흰색으로 표시한다. */
+[data-settings-panel] .settings-panel-tab-content :is(.settings-section-num, .settings-plain-title) {
+  color: var(--ui-white);
 }
 
 /* 실험 탭 "종목 이동"이 켜져 있는 동안 종목 박스에 잡는 손 커서를 보여 준다(홈 화면 항목 끌기와 같다). */
