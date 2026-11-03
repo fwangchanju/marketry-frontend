@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
 import { navigateWithMobileSlide } from '@/utils/mobilePageTransition'
-import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
+import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
 import Spinner from '@/components/Spinner'
@@ -21,7 +21,7 @@ import { LABEL_LINE_HEIGHT, fitStockLabel, stockFitBaseFontPx, useFontsVersion }
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 import { collectAtDepth } from '@/utils/sectorDepth'
-import { summarizeSector, type SectorSummary } from '@/utils/sectorAverage'
+import { summarizeMobileSector, type MobileSectorSummary } from '@/utils/mobileSectorSummary'
 import { resolveMobileStockSelection } from '@/utils/mobileStockSelection'
 
 const MARKETS: { value: MarketQuery; label: string }[] = [
@@ -31,7 +31,7 @@ const MARKETS: { value: MarketQuery; label: string }[] = [
 ]
 // 설정창이 열려 있는지는 MAP↔GRAPH를 오가도 이어지게 이 탭의 메모리에 기억한다(두 화면은 서로 다른 페이지라 컴포넌트가 새로 만들어진다).
 // 새로고침하면 닫힌 상태로 돌아간다.
-let settingsOpenMemory = false
+let settingsOpenMemory = true
 
 // 주식 지도에 그리는 종목 수(시가총액 상위) — 설정에서 고르지 않고 고정한다.
 const STOCK_MAP_COUNT = 50
@@ -42,16 +42,18 @@ function stockLayoutValue(stock: HeatmapItem, ratio: number) {
   return ratio <= 0 ? 1 : Math.pow(Math.max(stock.totalMarketValue, 0), ratio / 100)
 }
 
-type MobileSectorItem = OverviewMapItem & {
+type MobileSectorItem = MobileSectorMapItem & {
   node: FilteredHeatmapSectorNode | null
   stocks: HeatmapItem[]
+  simpleAvg?: number | null
+  advancers?: number
+  decliners?: number
+  unchanged?: number
   isDirectStocks?: boolean
 }
 
-// 업종 하나의 항목. 숫자(등락률·시총·오른/내린 종목 수)는 PC 홈과 같은 규칙으로 필터 전 원본 노드에서 만든 요약(summary)을 쓴다 —
-// 제외한 하위 업종의 종목도 포함하고 시총 구간 제외만 반영한다. 거른 뒤의 종목으로 다시 세면 제외 업종이 있는 업종(금융 등)이
-// PC·텔레그램과 다른 숫자가 된다(utils/sectorAverage.ts). `stocks`는 종목 지도에 보일, 제외 업종이 빠진 종목들이다.
-function toMobileSectorItem(node: FilteredHeatmapSectorNode, path: string, boxSizeRatio: number, summary: SectorSummary | null): MobileSectorItem | null {
+// 모바일 지도 전용 업종 집계로 수치와 박스 면적을 만든다. `stocks`는 현재 분류 트리에서 볼 종목들이다.
+function toMobileSectorItem(node: FilteredHeatmapSectorNode, path: string, boxSizeRatio: number, summary: MobileSectorSummary | null): MobileSectorItem | null {
   if (!summary || summary.marketValue <= 0) return null
   const stocks = collectAllItems(node)
   return {
@@ -228,7 +230,7 @@ function SettingRow({ label, hint, children }: { label: string; hint?: string; c
   )
 }
 
-// stock = 종목 지도(`/map/...`, 업종은 `?sector=`), sector = 업종 지도(`/home?map`), graph = 그룹 등락률(`/graph/...`).
+// stock = 마켓 전체 상위 50개 종목 지도(`/map/...`), sector = 업종 분류 지도(`/home?map`), graph = 그룹 등락률(`/graph/...`).
 export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'stock' | 'sector' | 'graph' }) {
   const isGraph = mode === 'graph'
   const isStockMode = mode === 'stock'
@@ -268,8 +270,11 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   // 길게 눌러 연 종목 카드는 저절로 닫히지 않고(같은 종목을 다시 길게 누르면 닫힌다), 짧게 눌러 연 카드는 잠깐 보였다 사라진다.
   const [stockPinned, setStockPinned] = useState(false)
   const [focusedSectorKey, setFocusedSectorKey] = useState<string | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(settingsOpenMemory)
-  useEffect(() => { settingsOpenMemory = settingsOpen }, [settingsOpen])
+  const [settingsOpen, setSettingsOpenState] = useState(settingsOpenMemory)
+  const setSettingsOpen = (open: boolean) => {
+    settingsOpenMemory = open
+    setSettingsOpenState(open)
+  }
   // 열린 채로 새 페이지가 만들어지면 내용 높이를 알 수 있는 첫 그리기 직후에 한 번 더 그려서 높이를 맞춘다.
   const [, setHeightTick] = useState(0)
   useLayoutEffect(() => { if (settingsOpenMemory) setHeightTick(tick => tick + 1) }, [])
@@ -306,9 +311,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const marketLabel = market === 'ALL_STOCK' ? '국내 증시' : MARKETS.find(option => option.value === market)?.label ?? '국내 증시'
   const marketHeadingLabel = isStockMode ? `${marketLabel} 상위 ${STOCK_MAP_COUNT}` : marketLabel
   const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : 3
-  // 종목 지도에서는 주소의 ?sector=가 대분류다(PC 지도와 같다). 중분류·소분류 단계는 지도에 없다.
-  const sectorParam = isStockMode ? searchParams.get('sector') : null
-  const majorName = isStockMode ? sectorParam : majorSelection?.market === market ? majorSelection.name : null
+  // 모바일 종목 지도는 마켓 상위 50개로 고정한다. 업종 하위 탐색은 업종 지도 안에서만 한다.
+  const majorName = isStockMode ? null : majorSelection?.market === market ? majorSelection.name : null
   const midName = isStockMode ? null : midSelection?.market === market ? midSelection.name : null
   const stockCategoryName = stockSelection?.market === market ? stockSelection.categoryName : null
   const setMajorName = (name: string | null) => setMajorSelection(name ? { market, name } : null)
@@ -317,7 +321,14 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const major = majorName ? filteredRootNodes.find(node => node.sectorName === majorName) ?? null : null
   const mid = major && midName ? major.children.find(node => node.sectorName === midName) ?? null : null
 
-  // 필터 전 원본 노드를 업종 번호로 찾는다 — 업종 숫자는 원본으로 계산해야 PC와 같다(toMobileSectorItem 주석).
+  useEffect(() => {
+    if (!isStockMode || !searchParams.has('sector')) return
+    const next = new URLSearchParams(searchParams)
+    next.delete('sector')
+    setSearchParams(next, { replace: true })
+  }, [isStockMode, searchParams, setSearchParams])
+
+  // 모바일 업종 집계는 선택 필터에 잘리기 전 원본 트리를 기준으로 하므로 업종 번호로 원본 노드를 찾는다.
   const originalSectors = useMemo(() => {
     const byId = new Map<number, HeatmapSectorNode>()
     const walk = (nodes: HeatmapSectorNode[]) => { for (const node of nodes) { byId.set(node.sectorId, node); walk(node.children) } }
@@ -328,7 +339,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const marketItems = useMemo(() => {
     const summaryOf = (node: FilteredHeatmapSectorNode) => {
       const original = originalSectors.get(node.sectorId)
-      return original ? summarizeSector(original, excludedMarketValueTiers) : null
+      return original ? summarizeMobileSector(original, excludedMarketValueTiers) : null
     }
     const parent = mid ?? major
     if (isGraph && !parent && graphDepth > 1 && selectableDepth > 1) {
@@ -351,8 +362,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   // 선택은 업종 키로 유지하고, 종목은 매번 갱신된 트리에서 찾는다. 없어진 업종은 빈 목록으로 표시한다.
   const selectedStocks = resolveMobileStockSelection(stockSelection, market, marketItems)
 
-  const mapItems: OverviewMapItem[] = marketItems.map(({ key, name, marketValue, layoutValue, changeRate, simpleAvg, advancers, decliners, unchanged }) => ({
-    key, name, marketValue, layoutValue, changeRate, simpleAvg, advancers, decliners, unchanged,
+  const mapItems: MobileSectorMapItem[] = marketItems.map(({ key, name, marketValue, layoutValue, changeRate }) => ({
+    key, name, marketValue, layoutValue, changeRate,
   }))
   const stockScope = mid ?? major
   const stockContextItems = useMemo(() => {
@@ -384,10 +395,6 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const selectSector = (name: string) => {
     const selected = marketItems.find(item => item.name === name)
     if (!selected) return
-    if (isSectorMode) {
-      navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(selected.name)}`)
-      return
-    }
     if (isGraph && !major && !mid && graphDepth > 1 && selected.node) {
       const path = selected.key.split('>')
       if (path.length > 1) {
@@ -624,7 +631,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       : isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
         : isError ? <div className="flex h-full items-center justify-center text-center text-sm text-ui-text">시장을 불러오지 못했습니다.</div>
           : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p>
-            : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface p-1"><OverviewMap items={mapItems} colorScale={colorScale} onSelect={() => undefined} hoverPopup={false} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>
+            : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface p-1"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={() => undefined} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>
 
   return (
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
@@ -677,7 +684,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
                 <span className="min-w-0"><span className="block truncate text-[16px] font-semibold">{focusedSector.name}</span><span className="block text-[13px] text-ui-muted">{focusedSector.simpleAvg === undefined ? '' : `동일 가중 ${focusedSector.simpleAvg === null ? '-' : toPctSigned(focusedSector.simpleAvg, MOBILE_DECIMAL_PLACES)} · `}▲{focusedSector.advancers ?? 0} ▼{focusedSector.decliners ?? 0} ■{focusedSector.unchanged ?? 0} · 시총 {toJoEok(focusedSector.marketValue / 100_000_000)}</span></span>
                 <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedSector.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedSector.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedSector.changeRate, MOBILE_DECIMAL_PLACES)}</span>
               </button>}
-              <OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} hoverPopup={false} decimalPlaces={MOBILE_DECIMAL_PLACES} zoomable />
+              <MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} decimalPlaces={MOBILE_DECIMAL_PLACES} />
             </div>}
         </div>
         {pageSwipePreview && <div aria-hidden="true" inert className="absolute inset-0 p-1" style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
@@ -689,7 +696,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         <div className="relative h-[24px]">
         <button type="button" aria-label={settingsOpen ? '설정 닫기' : '설정 열기'} aria-expanded={settingsOpen} onClick={() => {
           if (suppressClickRef.current) { suppressClickRef.current = false; return }
-          setSettingsOpen(open => !open)
+          setSettingsOpen(!settingsOpen)
         }} onPointerDown={event => {
           if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
           const max = settingsHeight()
