@@ -188,11 +188,23 @@ export default function OverviewMap({
     }))
   }, [items, size])
 
-  // 이동 중에는 지도 레이어만 움직인다. 글자 배치 계산은 항목·배율이 바뀔 때만 다시 한다.
-  const labels = useMemo(() => new Map(rects.map(({ item, width, height }) => {
+  // 지도 배치는 고정하고, 이름은 박스에서 화면에 보이는 부분을 기준으로 맞춘다. 그래서 박스가 화면 밖으로 일부 이동해도 이름은 남은 부분 안에서 보인다.
+  const labels = useMemo(() => new Map(rects.map(({ item, x, y, width, height }) => {
     const rateText = toPctSigned(item.changeRate, decimalPlaces)
-    return [item.key, layoutOverviewLabel(item.name, rateText, width * zoom.scale, height * zoom.scale, fontsVersion, { splitInsideWord: true, large })] as const
-  })), [decimalPlaces, fontsVersion, large, rects, zoom.scale])
+    const screenLeft = x * zoom.scale + zoom.x
+    const screenTop = y * zoom.scale + zoom.y
+    const screenWidth = width * zoom.scale
+    const screenHeight = height * zoom.scale
+    const visibleLeft = zoomable ? Math.max(0, screenLeft) : screenLeft
+    const visibleTop = zoomable ? Math.max(0, screenTop) : screenTop
+    const visibleWidth = zoomable ? Math.max(0, Math.min(size.width, screenLeft + screenWidth) - visibleLeft) : width
+    const visibleHeight = zoomable ? Math.max(0, Math.min(size.height, screenTop + screenHeight) - visibleTop) : height
+    const label = layoutOverviewLabel(item.name, rateText, visibleWidth, visibleHeight, fontsVersion, { splitInsideWord: true, large })
+    const bounds = zoomable
+      ? { left: (visibleLeft - zoom.x) / zoom.scale - x, top: (visibleTop - zoom.y) / zoom.scale - y, width: visibleWidth / zoom.scale, height: visibleHeight / zoom.scale }
+      : { left: 0, top: 0, width, height }
+    return [item.key, { ...label, bounds }] as const
+  })), [decimalPlaces, fontsVersion, large, rects, size, zoom.scale, zoom.x, zoom.y, zoomable])
 
   return (
     <div
@@ -219,7 +231,7 @@ export default function OverviewMap({
       {rects.map(({ item, x, y, width, height }) => {
         const background = resolveHeatmapColor(item.changeRate, colorScale)
         const rateText = toPctSigned(item.changeRate, decimalPlaces)
-        const label = labels.get(item.key) ?? { lines: [], nameSize: 12, rateSize: null }
+        const label = labels.get(item.key) ?? { lines: [], nameSize: 12, rateSize: null, bounds: { left: 0, top: 0, width, height } }
         const isPinned = popup?.targetKey === `sector:${item.key}`
         // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box).
         const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`
@@ -231,7 +243,7 @@ export default function OverviewMap({
           openPopup(item, event.currentTarget, { x: event.clientX, y: event.clientY })
         }
         const handlePointerLeave = () => setPopup(previous => (previous?.targetKey === `sector:${item.key}` ? null : previous))
-        const content = (
+        const labelContent = (
           <>
             {/* 한 줄이 박스 폭에 안 맞으면 `/`, 공백, 업종 용어 경계에서 두 줄로 나눈다. 그래도 안 들어가면 이름과 등락률을 그리지 않는다(utils/overviewLabel.ts). 잘린 글자나 `…`는 만들지 않는다. */}
             {label.lines.length > 0 && (
@@ -242,6 +254,9 @@ export default function OverviewMap({
             {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize / zoom.scale }}>{rateText}</span>}
           </>
         )
+        const content = zoomable
+          ? <span aria-hidden="true" className="pointer-events-none absolute flex flex-col items-center justify-center overflow-hidden p-0.5 text-center leading-tight" style={label.bounds}>{labelContent}</span>
+          : labelContent
         // onSelect가 있으면 업종 지도로 이동하는 버튼으로 그린다.
         const handleSelect = () => {
           if (consumeClick()) return

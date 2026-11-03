@@ -25,7 +25,10 @@ export default function MobileHomePage() {
           </Link>
         ))}
       </nav>
-      <p className="pt-6 text-center text-[14px] text-ui-white">업종 분류는 PC에서만 가능합니다.</p>
+      <p className="pt-6 text-center text-[14px] text-ui-white">
+        <span className="block">PC 화면에 최적화된 홈페이지입니다.</span>
+        <span className="block">업종 분류는 PC에서만 가능합니다.</span>
+      </p>
       </main>
       <footer className="border-t border-ui-border px-4 py-3"><DisclaimerNotice wrap /></footer>
     </div>
