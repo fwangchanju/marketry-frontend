@@ -531,7 +531,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
             </div>}
       </section>
 
-      <section role="region" aria-label="설정" className="relative z-10 shrink-0 rounded-t-[16px] border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
+      <section role="region" aria-label="설정" className="relative z-10 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
         <div className="relative h-[28px]">
         <button type="button" aria-label={settingsOpen ? '설정 닫기' : '설정 열기'} aria-expanded={settingsOpen} onClick={() => {
           if (suppressClickRef.current) { suppressClickRef.current = false; return }
@@ -559,7 +559,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         }} onPointerCancel={() => { dragRef.current = null; setDragHeight(null) }} className="absolute left-1/2 top-0 flex h-[28px] w-16 -translate-x-1/2 touch-none items-center justify-center border-0 bg-transparent p-0 text-ui-white before:absolute before:left-1/2 before:top-1/2 before:h-[48px] before:w-[48px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']">
           <span aria-hidden="true" className="h-1 w-10 rounded-full bg-ui-muted" />
         </button>
-        <Link to={titleTo} aria-label={titleLabel} className="absolute left-3 top-0 z-10 flex h-[28px] items-center gap-1 text-[13px] font-bold tracking-[0.12em] text-brand">{isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
+        <Link to={titleTo} aria-label={titleLabel} className="absolute left-3 top-0 z-10 flex h-[28px] items-center gap-1 text-[13px] font-bold tracking-[0.12em] text-brand no-underline">{isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
         {data?.snapshotTime && <span className="absolute right-3 top-0 flex h-[28px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
         </div>
         <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">
