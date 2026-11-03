@@ -139,10 +139,7 @@ export function useHeatmapLayout(
       .sum(d => d.value ?? 0)
       .sort((a, b) => (b.data.totalMarketValue ?? 0) - (a.data.totalMarketValue ?? 0))
 
-    const totalValue = hierarchyRoot.value ?? 0
-    if (totalValue <= 0) return []
-
-    const root: HierarchyRectangularNode<HierarchyDatum> = treemap<HierarchyDatum>()
+    const layout = treemap<HierarchyDatum>()
       .size([width / stretch, height])
       .tile(tile === 'binary' ? treemapBinary : treemapSquarify)
       .paddingOuter(PADDING)
@@ -159,11 +156,12 @@ export function useHeatmapLayout(
         const renderDepth = node.depth - 1 - (selfSectorName !== null ? 1 : 0)
         return sectorHeaderHeight(renderDepth)
       })
-      .round(true)(hierarchyRoot)
+      .round(true)
 
-    // 가상 영역(폭 1/stretch)에서 d3가 배치한 가로 좌표를 실제 폭으로 되돌린다. 박스와 박스 사이 간격은 늘리지 않고 박스 폭만 늘린다:
-    // d3는 각 노드를 "자리(tile)"에서 간격의 절반씩 안쪽으로 줄여 그리므로, 자리를 부모 안쪽 구간에 비례해 늘린 뒤 다시 같은 간격만큼 줄인다.
-    // stretch가 1이면 d3 결과와 같다. 부모의 실제 가로 범위(parentReal)가 이미 정해져 있어야 해서 위에서 아래로 차례로 계산한다.
+    const layoutRoot = () => layout(hierarchyRoot)
+
+    // 가상 영역에서 배치한 x 좌표를 실제 화면 폭으로 되돌린다. 보정 면적 계산과 최종 렌더에서
+    // 같은 변환을 쓰도록 둔다.
     const toRealRange = (
       node: HierarchyRectangularNode<HierarchyDatum>,
       parent: HierarchyRectangularNode<HierarchyDatum>,
@@ -179,6 +177,47 @@ export function useHeatmapLayout(
       return { x0, x1: Math.max(x0, x1) }
     }
 
+    const rootReal = { x0: 0, x1: width }
+    const collectStockAreas = (
+      node: HierarchyRectangularNode<HierarchyDatum>,
+      parent: HierarchyRectangularNode<HierarchyDatum>,
+      parentReal: { x0: number; x1: number },
+    ): Array<{ node: HierarchyRectangularNode<HierarchyDatum>; area: number }> => {
+      const nodeReal = toRealRange(node, parent, parentReal)
+      if (node.data.item) {
+        const nodeHeight = (node.y1 ?? 0) - (node.y0 ?? 0)
+        return [{ node, area: Math.max(0, (nodeReal.x1 - nodeReal.x0) * nodeHeight) }]
+      }
+      return (node.children ?? []).flatMap(child => collectStockAreas(child, node, nodeReal))
+    }
+
+    // 동일 크기에서는 업종 헤더·간격을 제외하고 실제 종목에 배정된 면적이 같아지도록 보정한다.
+    // 실제 화면 폭으로 변환한 종목 면적을 기준으로 반복 보정한다. 다른 시총 비율은 그대로 둔다.
+    if (marketCapRatio <= 0) {
+      for (let iteration = 0; iteration < 8; iteration += 1) {
+        const laidOutRoot = layoutRoot()
+        const stockAreas = (laidOutRoot.children ?? []).flatMap(node => collectStockAreas(node, laidOutRoot, rootReal))
+        if (stockAreas.length === 0) break
+        const areas = stockAreas.map(stock => stock.area)
+        const totalArea = areas.reduce((sum, area) => sum + area, 0)
+        if (totalArea <= 0) break
+        const targetArea = totalArea / stockAreas.length
+
+        stockAreas.forEach(({ node }, index) => {
+          const area = areas[index]
+          // 면적 오차를 한 번에 전부 반영하면 깊은 업종 트리에서 보정이 튀므로 절반만 반영한다.
+          if (area > 0 && node.data.value !== undefined) node.data.value *= Math.sqrt(targetArea / area)
+        })
+        hierarchyRoot.sum(d => d.value ?? 0)
+      }
+    }
+
+    const root = layoutRoot()
+    if ((root.value ?? 0) <= 0) return []
+
+    // 가상 영역(폭 1/stretch)에서 d3가 배치한 가로 좌표를 실제 폭으로 되돌린다. 박스와 박스 사이 간격은 늘리지 않고 박스 폭만 늘린다:
+    // d3는 각 노드를 "자리(tile)"에서 간격의 절반씩 안쪽으로 줄여 그리므로, 자리를 부모 안쪽 구간에 비례해 늘린 뒤 다시 같은 간격만큼 줄인다.
+    // stretch가 1이면 d3 결과와 같다. 부모의 실제 가로 범위(parentReal)가 이미 정해져 있어야 해서 위에서 아래로 차례로 계산한다.
     const toLaidOutSector = (
       node: HierarchyRectangularNode<HierarchyDatum>,
       parent: HierarchyRectangularNode<HierarchyDatum>,
@@ -238,7 +277,6 @@ export function useHeatmapLayout(
       }
     }
 
-    const rootReal = { x0: 0, x1: width }
     return (root.children ?? []).map(sectorNode => toLaidOutSector(sectorNode, root, rootReal, 0, 0))
   }, [groups, selfSectorName, width, height, marketCapRatio, stretch, tile])
 }
