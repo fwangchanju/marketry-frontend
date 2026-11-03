@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import DocumentPageLayout from '@/components/DocumentPageLayout'
+import { navigateWithMobileSlide } from '@/utils/mobilePageTransition'
 import { InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
@@ -38,10 +39,18 @@ function IndustryGroupingExample() {
 
 export default function GuidePage() {
   const isNarrow = useIsNarrowScreen()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const requestedMarket = searchParams.get('market')
+  const returnMarket = requestedMarket === 'KOSPI' || requestedMarket === 'KOSDAQ' ? requestedMarket : 'ALL_STOCK'
+  const returnPath = `/map/${returnMarket === 'KOSPI' ? 'kospi' : returnMarket === 'KOSDAQ' ? 'kosdaq' : 'korea'}`
   return (
     <DocumentPageLayout
       title="GUIDE"
       panelDescription="나만의 분류로 시장 흐름 관찰하기"
+      mobileTitleTo={isNarrow ? returnPath : undefined}
+      mobileTitleLabel={isNarrow ? '종목 지도로 이동' : undefined}
+      mobileTitleClick={isNarrow ? () => navigateWithMobileSlide(navigate, returnPath) : undefined}
       heading={(
         <InfoPageHeading
           flushBottom

@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronDownIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
+import { navigateWithMobileSlide } from '@/utils/mobilePageTransition'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
@@ -522,9 +523,9 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     }
   }
 
-  // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 종목 지도 순서로 이동한다(마켓은 유지).
-  const titleTo = isStockMode ? `/home?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
-  const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '종목 지도로 이동'
+  // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 가이드 → 종목 지도로 이동한다(마켓은 유지).
+  const titleTo = isStockMode ? `/home?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : `/info/guide?market=${market}`
+  const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '가이드로 이동'
   const modeForSwipe = (direction: 'next' | 'previous') => {
     const order = ['stock', 'sector', 'graph'] as const
     const index = order.indexOf(mode)
@@ -546,6 +547,16 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       if (finish) navigate(routeForMode(preview.targetMode))
       else setPageSwipePreview(null)
     }, duration)
+  }
+  const transitionToNextMode = () => {
+    if (pageSwipePreviewRef.current) return
+    if (isGraph) {
+      navigateWithMobileSlide(navigate, titleTo)
+      return
+    }
+    const direction = 'next' as const
+    setPageSwipePreview({ direction, targetMode: modeForSwipe(direction), offset: 0, settling: null })
+    requestAnimationFrame(() => finishSwipe(true))
   }
   const beginPageSwipe = (event: React.PointerEvent<HTMLElement>) => {
     const mobilePointer = event.pointerType === 'touch' || event.pointerType === 'pen'
@@ -616,7 +627,12 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
 
   return (
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
-      <MobileTopBar title="" />
+      <MobileTopBar
+        title={isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}
+        titleTo={titleTo}
+        titleLabel={titleLabel}
+        onTitleClick={transitionToNextMode}
+      />
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
       <header className="shrink-0 bg-brand-surface px-3 py-0.5">
@@ -695,7 +711,6 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         }} onPointerCancel={() => { dragRef.current = null; setDragHeight(null) }} className="absolute left-1/2 top-0 flex h-[24px] w-16 -translate-x-1/2 touch-none items-center justify-center border-0 bg-transparent p-0 text-ui-white before:absolute before:left-1/2 before:top-1/2 before:h-[48px] before:w-[48px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']">
           <span aria-hidden="true" className="h-1 w-12 -translate-y-0.5 rounded-full bg-ui-muted" />
         </button>
-        <Link to={titleTo} aria-label={titleLabel} className="absolute left-3 top-0 z-10 flex h-[24px] items-center gap-1 text-[13px] font-bold tracking-[0.12em] text-brand no-underline">{isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
         {data?.snapshotTime && <span className="absolute right-3 top-0 flex h-[24px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
         </div>
         <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">

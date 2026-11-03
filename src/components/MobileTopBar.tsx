@@ -8,7 +8,7 @@ import { useLocalDevLogin, useLogout, useSession, useSessionKeepAlive } from '@/
 import { useMobileTheme } from '@/utils/mobileTheme'
 
 // 홈·지도·글 페이지가 공유하는 모바일 상단 줄.
-export default function MobileTopBar({ title, titleTo, titleLabel, className = '' }: { title: string; titleTo?: string; titleLabel?: string; className?: string }) {
+export default function MobileTopBar({ title, titleTo, titleLabel, onTitleClick, className = '' }: { title: string; titleTo?: string; titleLabel?: string; onTitleClick?: () => void; className?: string }) {
   const { pathname, search, hash } = useLocation()
   const { requireLogin } = useLoginGate()
   const { data: session, isLoading } = useSession()
@@ -37,7 +37,7 @@ export default function MobileTopBar({ title, titleTo, titleLabel, className = '
         <MarketryLogo layout="horizontalClean" className="h-auto w-[132px] max-w-none" />
       </Link>
       {titleTo ? (
-        <Link to={titleTo} aria-label={titleLabel} className="flex min-h-[44px] items-center justify-center gap-1 text-[14px] font-bold leading-none tracking-[0.12em] text-brand">{title}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
+        <Link to={titleTo} aria-label={titleLabel} onClick={event => { if (onTitleClick) { event.preventDefault(); onTitleClick() } }} className="flex min-h-[44px] items-center justify-center gap-1 text-[14px] font-bold leading-none tracking-[0.12em] text-brand">{title}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
       ) : (
         <span className="flex items-center gap-1 text-[14px] font-bold leading-none tracking-[0.12em] text-brand">{title}{title && <ChevronDownIcon aria-hidden="true" className="h-3 w-3" />}</span>
       )}
