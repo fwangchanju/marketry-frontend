@@ -17,7 +17,8 @@ import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
-import { LABEL_LINE_HEIGHT, fitStockLabel, stockFitBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
+import { layoutOverviewLabel } from '@/utils/overviewLabel'
+import { useFontsVersion } from '@/utils/stockLabelFit'
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 import { collectAtDepth } from '@/utils/sectorDepth'
@@ -101,7 +102,7 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
 }) {
   const { bind: bindLongPress, consumeClick } = useLongPress()
   const ref = useRef<HTMLDivElement>(null)
-  useFontsVersion() // 글꼴이 늦게 로드돼 글자 폭이 달라지면 이름을 다시 맞추려고 다시 그리게 한다.
+  const fontsVersion = useFontsVersion() // 글꼴이 늦게 로드돼 글자 폭이 달라지면 이름을 다시 맞추려고 다시 그리게 한다.
   const [size, setSize] = useState({ width: 0, height: 0 })
   // 두 손가락으로 확대하고 한 손가락으로 이동한다. 박스는 확대한 좌표·크기로 다시 놓아서, 커진 박스에는 이름이 새로 들어간다.
   // 종목 구성이 바뀌면(다른 업종·마켓으로 이동) 확대를 풀고 처음 크기로 돌아간다 — 확대 값에 그때의 종목 구성을 함께 적어 두고, 다르면 처음 크기로 본다.
@@ -192,23 +193,15 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
         // 화면 밖으로 나간 박스는 그리지 않는다.
         if (x + width < 0 || y + height < 0 || x > size.width || y > size.height) return null
         const color = resolveHeatmapColor(stock.changeRate, colorScale)
-        // 이름은 박스 중 화면에 보이는 부분의 가운데에 놓고, 그 크기에 맞춰 그린다(확대해서 박스 중앙이 화면 밖이어도 이름이 보인다).
-        const visibleLeft = Math.max(0, x)
-        const visibleTop = Math.max(0, y)
-        const visibleWidth = Math.min(size.width, x + width) - visibleLeft
-        const visibleHeight = Math.min(size.height, y + height) - visibleTop
-        // PC 지도와 같은 면적·높이 기준으로 시작 글자 크기를 정하고, 확대 중이면 보이는 칸 크기를 쓴다.
-        // 이름 나누기와 최종 맞춤은 PC 지도와 같은 규칙이며, 맞지 않으면 fitStockLabel이 줄인다.
+        // 확대된 박스 전체 크기에 업종 지도와 같은 글자 계산을 적용한다. 화면에 잘린 조각은 별도로 기준 삼지 않는다.
         const name = stock.alias ?? stock.stockName
         const rateText = toPctSigned(stock.changeRate, decimalPlaces)
-        const fit = fitStockLabel({ name, rateText, width: visibleWidth, height: visibleHeight, baseFont: stockFitBaseFontPx(visibleWidth, visibleHeight, true), wantName: true, wantRate: true })
+        const label = layoutOverviewLabel(name, rateText, width, height, fontsVersion, { splitInsideWord: true })
         const press = bindLongPress(() => onLongPress(stock))
         return (
           <button key={stock.stockCode} type="button" aria-label={`${stock.stockName} ${toPctSigned(stock.changeRate, decimalPlaces)}`} onClick={() => { if (!consumeClick()) onSelect(stock) }} {...press} className="select-none [-webkit-touch-callout:none] absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight text-white" style={{ left: x, top: y, width, height, backgroundColor: color }}>
-            <span className="pointer-events-none absolute flex flex-col items-center justify-center overflow-hidden p-0.5" style={{ left: visibleLeft - x, top: visibleTop - y, width: visibleWidth, height: visibleHeight }}>
-              {fit.nameLines && <span className="w-full px-1 text-center" style={{ fontSize: fit.nameSize, lineHeight: LABEL_LINE_HEIGHT }}>{fit.nameLines.map(line => <span key={line} className="block whitespace-nowrap">{line}</span>)}</span>}
-              {fit.rateSize !== null && <span className="tabular-nums text-center" style={{ fontSize: fit.rateSize, lineHeight: LABEL_LINE_HEIGHT }}>{rateText}</span>}
-            </span>
+            {label.lines.length > 0 && <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>{label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}</span>}
+            {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{rateText}</span>}
           </button>
         )
       })}
@@ -521,7 +514,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
 
   // 들어간 단계 = 브라우저 기록 한 칸(PC 지도 화면과 같은 방식). 대분류·중분류·종목으로 한 단계 들어갈 때마다 칸을 쌓아서
   // 뒤로가기가 사이트를 떠나지 않고 한 단계씩 위로 올라가게 한다. 전체 화면에서 한 번 더 누르면 원래대로 이전 페이지로 나간다.
-  const depth = isGraph ? Math.max(0, (major ? 1 : 0) + (mid ? 1 : 0) + (selectedStocks ? 1 : 0) - graphEntryOffset) : 0
+  const depth = isStockMode ? 0 : Math.max(0, (major ? 1 : 0) + (mid ? 1 : 0) + (selectedStocks ? 1 : 0) - (isGraph ? graphEntryOffset : 0))
   const historyDepthRef = useRef(0) // 지금 브라우저 기록 위치가 가리키는 깊이
   const historyConsumingRef = useRef(false) // 코드가 일으킨 history.go()의 popstate는 무시한다
   const historyLocationRef = useRef('') // 칸을 쌓은 주소(시장이 바뀌어 주소가 달라졌으면 go()로 정리하지 않는다)
@@ -569,7 +562,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       }
       // 이 지도 화면 안에서의 이동만 다룬다 — 다른 페이지로 나가는 뒤로가기는 그대로 둔다.
       const path = window.location.pathname
-      if (!path.startsWith('/map/') && !path.startsWith('/graph/')) return
+      const isMobileSectorRoute = path === '/home' && new URLSearchParams(window.location.search).has('map')
+      if (!path.startsWith('/map/') && !path.startsWith('/graph/') && !isMobileSectorRoute) return
       const target: number = typeof e.state?.mobileMapDepth === 'number' ? e.state.mobileMapDepth : 0
       if (target < depth) {
         historyDepthRef.current = target
@@ -824,7 +818,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         }} onPointerCancel={() => { dragRef.current = null; setDragHeight(null) }} className="absolute left-1/2 top-0 flex h-[24px] w-16 -translate-x-1/2 touch-none items-center justify-center border-0 bg-transparent p-0 text-ui-white before:absolute before:left-1/2 before:top-1/2 before:h-[48px] before:w-[48px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']">
           <span aria-hidden="true" className="h-1 w-12 -translate-y-0.5 rounded-full bg-ui-muted" />
         </button>
-        {data?.snapshotTime && <span className="absolute right-3 top-0 flex h-[24px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
+        {data?.snapshotTime && <span className="absolute left-3 top-0 flex h-[24px] items-center overflow-hidden whitespace-nowrap text-ellipsis text-[11px] tabular-nums text-ui-muted min-[360px]:text-[12px] min-[400px]:text-[13px]" style={{ maxWidth: 'calc(50% - 2.5rem)' }}>{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
         </div>
         <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">
           <div ref={settingsContentRef} inert={!settingsOpen && dragHeight === null} className="max-h-[calc(40dvh-24px)] [@media(max-height:500px)]:max-h-[calc(60dvh-24px)] overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">

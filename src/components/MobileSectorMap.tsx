@@ -115,25 +115,11 @@ export default function MobileSectorMap({
     }))
   }, [items, size])
 
-  const labels = useMemo(() => new Map(rects.map(({ item, x, y, width, height }) => {
+  const labels = useMemo(() => new Map(rects.map(({ item, width, height }) => {
     const rateText = toPctSigned(item.changeRate, decimalPlaces)
-    const screenLeft = x * zoom.scale + zoom.x
-    const screenTop = y * zoom.scale + zoom.y
-    const visibleLeft = Math.max(0, screenLeft)
-    const visibleTop = Math.max(0, screenTop)
-    const visibleWidth = Math.max(0, Math.min(size.width, screenLeft + width * zoom.scale) - visibleLeft)
-    const visibleHeight = Math.max(0, Math.min(size.height, screenTop + height * zoom.scale) - visibleTop)
-    const label = layoutOverviewLabel(item.name, rateText, visibleWidth, visibleHeight, fontsVersion, { splitInsideWord: true })
-    return [item.key, {
-      ...label,
-      bounds: {
-        left: (visibleLeft - zoom.x) / zoom.scale - x,
-        top: (visibleTop - zoom.y) / zoom.scale - y,
-        width: visibleWidth / zoom.scale,
-        height: visibleHeight / zoom.scale,
-      },
-    }] as const
-  })), [decimalPlaces, fontsVersion, rects, size, zoom.scale, zoom.x, zoom.y])
+    // 업종 지도의 기존 방식처럼 확대된 박스 전체 크기로 글자를 맞춘다.
+    return [item.key, layoutOverviewLabel(item.name, rateText, width * zoom.scale, height * zoom.scale, fontsVersion, { splitInsideWord: true })] as const
+  })), [decimalPlaces, fontsVersion, rects, zoom.scale])
 
   return (
     <div ref={ref} data-mobile-map-scale={zoom.scale} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onClickCapture={event => {
@@ -146,11 +132,11 @@ export default function MobileSectorMap({
         {rects.map(({ item, x, y, width, height }) => {
           const background = resolveHeatmapColor(item.changeRate, colorScale)
           const rateText = toPctSigned(item.changeRate, decimalPlaces)
-          const label = labels.get(item.key) ?? { lines: [], nameSize: 12, rateSize: null, bounds: { left: 0, top: 0, width, height } }
+          const label = labels.get(item.key) ?? { lines: [], nameSize: 12, rateSize: null }
           const press = bindLongPress(onLongPress ? () => onLongPress(item) : undefined)
           return (
             <button key={item.key} type="button" aria-label={`${item.name} ${rateText}`} onClick={() => { if (!consumeClick()) onSelect(item.name) }} onPointerDown={event => press.onPointerDown(event)} onPointerMove={press.onPointerMove} onPointerUp={press.onPointerUp} onPointerCancel={press.onPointerCancel} onContextMenu={press.onContextMenu} onPointerLeave={press.onPointerLeave} className="overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight select-none [-webkit-touch-callout:none]" style={{ left: x, top: y, width, height, backgroundColor: background, color: '#fff', '--heatmap-base-color': background } as React.CSSProperties}>
-              <span aria-hidden="true" className="pointer-events-none absolute flex flex-col items-center justify-center overflow-hidden p-0.5 text-center leading-tight" style={label.bounds}>
+              <span aria-hidden="true" className="pointer-events-none flex flex-col items-center justify-center overflow-hidden p-0.5 text-center leading-tight">
                 {label.lines.length > 0 && <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize / zoom.scale }}>{label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}</span>}
                 {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize / zoom.scale }}>{rateText}</span>}
               </span>
