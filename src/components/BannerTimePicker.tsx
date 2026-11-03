@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
@@ -29,8 +29,9 @@ export default function BannerTimePicker({
   const [hour, minute] = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value)?.slice(1) ?? ['', '']
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
+  const closeOnScroll = useCallback(() => { setIsOpen(false); setOpenColumn(null) }, [])
   const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false, false)
-  const popupBounds = usePopupBounds(isOpen, position !== null, triggerRef, popupRef, 208)
+  const popupBounds = usePopupBounds(isOpen, position !== null, triggerRef, popupRef, 208, closeOnScroll)
 
   let popupLeft = 8
   const popupWidth = Math.min(208, typeof window === 'undefined' ? 208 : window.innerWidth - 16)
