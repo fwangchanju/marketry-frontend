@@ -83,6 +83,21 @@ function SettingValue({ value, index, open, empty }: { value: TelegramImageValue
   return <>{items[index]}</>
 }
 
+function hasDifferentValue(saved: TelegramImageValues | null, current: TelegramImageValues | null, index: number) {
+  if (!saved || !current) return false
+  if (index === 1) {
+    const excludedKeys = (value: TelegramImageValues) => value.preferences['heatmap.sectorFilterEnabled'] === false
+      ? []
+      : value.excludedSectors.map(([key]) => key).sort()
+    return JSON.stringify(excludedKeys(saved)) !== JSON.stringify(excludedKeys(current))
+  }
+  if (index === 8) {
+    return String(saved.preferences['heatmap.strongIndustryColor'] ?? '').toLowerCase()
+      !== String(current.preferences['heatmap.strongIndustryColor'] ?? '').toLowerCase()
+  }
+  return labels(saved)[index] !== labels(current)[index]
+}
+
 function CurrentSettingsLoader({ onLoad, onError }: { onLoad: (values: TelegramImageValues) => void; onError: () => void }) {
   const { telegramImageValues, isMarketValueTierRangeReady, isLoading, isError, isHeatmapSuccess, isRefetchingHeatmap } = useGlobalSettings({ readOnlyTelegramSnapshot: true })
   const { isLoaded, isError: isPreferenceError } = useCustomPreferences()
@@ -171,13 +186,13 @@ function TelegramImageSettingsForUser({ userId }: { userId: number | null }) {
           return <section key={tab.label} aria-label={tab.label} className="rounded-md border border-ui-border bg-ui-background/50 p-3">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-ui-white"><SettingsSectionIcon icon={tab.icon} className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />{tab.label}<span className="h-px flex-1 bg-ui-border" /></h3>
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-x-2 text-center text-xs font-semibold text-ui-muted"><span>항목</span><span>설정값</span><span>현재값</span></div>
-          {names.slice(start, end).map((name, offset) => { const i = start + offset; return <div key={name} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-2 border-t border-ui-border/50 py-2">
+          {names.slice(start, end).map((name, offset) => { const i = start + offset; const isDifferent = hasDifferentValue(saved, draft, i); return <div key={name} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-2 border-t border-ui-border/50 py-2">
             <span className={LABEL_CLASS}>{name}</span>
             <span className={`${VALUE_CLASS} flex items-start justify-between gap-1`}>
               <span><SettingValue value={saved} index={i} open={exclusionsOpen} empty="불러오는 중" /></span>
               {i === 1 && hasMoreExclusions && <button type="button" aria-label={exclusionsOpen ? '업종 제외 접기' : '업종 제외 펼치기'} aria-expanded={exclusionsOpen} onClick={() => setExclusionsOpen(!exclusionsOpen)} className="inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-ui-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"><ChevronDownIcon aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${exclusionsOpen ? 'rotate-180' : ''}`} /></button>}
             </span>
-            <span className={VALUE_CLASS}><SettingValue value={draft} index={i} open={exclusionsOpen} empty="-" /></span>
+            <span className={`${VALUE_CLASS} ${isDifferent ? 'text-brand' : 'text-ui-white'}`}><SettingValue value={draft} index={i} open={exclusionsOpen} empty="-" /></span>
           </div>})}
           </section>
         })}
