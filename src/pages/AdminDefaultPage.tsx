@@ -176,6 +176,7 @@ export default function AdminDefaultPage() {
   const [snapshots, setSnapshots] = useState<Record<'marketry' | 'exchange', ProfileSnapshot | null>>({ marketry: null, exchange: null })
   const [loadVersions, setLoadVersions] = useState({ marketry: 0, exchange: 0 })
   const [loadStates, setLoadStates] = useState<Record<'marketry' | 'exchange', 'idle' | 'loading' | 'ready' | 'error'>>({ marketry: 'idle', exchange: 'idle' })
+  const [savedSnapshots, setSavedSnapshots] = useState<Record<'marketry' | 'exchange', string | null>>({ marketry: null, exchange: null })
   const updateSnapshot = useCallback((profile: 'marketry' | 'exchange', snapshot: ProfileSnapshot | null) => {
     setSnapshots(previous => {
       if (JSON.stringify(previous[profile]) === JSON.stringify(snapshot)) return previous
@@ -195,15 +196,17 @@ export default function AdminDefaultPage() {
   const marketryMap = useHeatmap('ALL_STOCK', 'MARKETRY', false, { enabled: isAdmin && hasMarketryExclusions })
   const marketryNames = marketrySectorNames(marketryMap.data?.items ?? [])
   const save = useMutation({
-    mutationFn: saveAdminDefaults,
-    onSuccess: result => {
+    mutationFn: ({ value }: { value: DefaultProfiles; profile: 'marketry' | 'exchange'; snapshot: string }) => saveAdminDefaults(value),
+    onSuccess: (result, variables) => {
       queryClient.setQueryData(['admin-default-preferences'], result)
       queryClient.setQueryData(['default-preferences'], result)
+      setSavedSnapshots(previous => ({ ...previous, [variables.profile]: variables.snapshot }))
       void appAlert('기본값을 저장했습니다.', { title: '저장 완료' })
     },
     onError: () => void appAlert('기본값을 저장하지 못했습니다.', { title: '저장 실패' }),
   })
   const handleLoad = (profile: 'marketry' | 'exchange') => {
+    setSavedSnapshots(previous => ({ ...previous, [profile]: null }))
     setSnapshots(previous => ({ ...previous, [profile]: null }))
     setLoadStates(previous => ({ ...previous, [profile]: 'loading' }))
     setLoadVersions(previous => ({ ...previous, [profile]: previous[profile] + 1 }))
@@ -216,7 +219,7 @@ export default function AdminDefaultPage() {
       ...defaults.data,
       [profile]: profilePayload(snapshot, profile),
     }
-    save.mutate(next)
+    save.mutate({ value: next, profile, snapshot: JSON.stringify(snapshot) })
   }
 
   return <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
@@ -229,8 +232,8 @@ export default function AdminDefaultPage() {
             <Toolbar><ToolbarModeText page="ADMIN" label="DEFAULT" /></Toolbar>
             <PageMainFrame className="p-0" heading={<div className="mx-auto w-full max-w-4xl"><InfoPageHeading flushBottom title="기본값" summary="MARKETRY와 거래소 기본 설정을 각각 저장합니다." /></div>}>
               {defaults.isError ? <p role="alert" className="m-0 text-sm text-ui-text">기본값을 불러오지 못했습니다.</p> : <article aria-label="기본값" className="mx-auto min-h-full w-full max-w-4xl space-y-5">
-                <TelegramImageSettings number="1" title="MARKETRY 모드" profileLabel="MARKETRY" saved={savedView(defaults.data?.marketry, snapshots.marketry, 'marketry', tiers, marketryNames)} current={snapshots.marketry?.values ?? null} loadState={loadStates.marketry} onLoad={() => handleLoad('marketry')} onSave={() => void handleSave('marketry')} />
-                <TelegramImageSettings number="2" title="거래소 모드" profileLabel="거래소" saved={savedView(defaults.data?.exchange, snapshots.exchange, 'exchange', tiers, marketryNames)} current={snapshots.exchange?.values ?? null} loadState={loadStates.exchange} onLoad={() => handleLoad('exchange')} onSave={() => void handleSave('exchange')} />
+                <TelegramImageSettings number="1" title="MARKETRY 모드" profileLabel="MARKETRY" saved={savedView(defaults.data?.marketry, snapshots.marketry, 'marketry', tiers, marketryNames)} current={snapshots.marketry?.values ?? null} loadState={loadStates.marketry} isSaved={savedSnapshots.marketry !== null && savedSnapshots.marketry === JSON.stringify(snapshots.marketry)} onLoad={() => handleLoad('marketry')} onSave={() => void handleSave('marketry')} />
+                <TelegramImageSettings number="2" title="거래소 모드" profileLabel="거래소" saved={savedView(defaults.data?.exchange, snapshots.exchange, 'exchange', tiers, marketryNames)} current={snapshots.exchange?.values ?? null} loadState={loadStates.exchange} isSaved={savedSnapshots.exchange !== null && savedSnapshots.exchange === JSON.stringify(snapshots.exchange)} onLoad={() => handleLoad('exchange')} onSave={() => void handleSave('exchange')} />
               </article>}
             </PageMainFrame>
           </>}
