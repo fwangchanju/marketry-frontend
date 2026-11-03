@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ReturnArrowIcon } from '@/components/icons/AppIcons'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { ChevronDownIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
@@ -498,7 +498,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
 
   return (
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
-      <MobileTopBar title={isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'} titleTo={titleTo} titleLabel={titleLabel} />
+      <MobileTopBar title="" />
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
       <header className="shrink-0 bg-brand-surface px-3 py-0.5">
@@ -527,11 +527,12 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
                 <span className="min-w-0"><span className="block truncate text-[16px] font-semibold">{focusedSector.name}</span><span className="block text-[13px] text-ui-muted">{focusedSector.simpleAvg === undefined ? '' : `동일 가중 ${focusedSector.simpleAvg === null ? '-' : toPctSigned(focusedSector.simpleAvg, decimalPlaces)} · `}▲{focusedSector.advancers ?? 0} ▼{focusedSector.decliners ?? 0} ■{focusedSector.unchanged ?? 0} · 시총 {toJoEok(focusedSector.marketValue / 100_000_000)}</span></span>
                 <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedSector.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedSector.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedSector.changeRate, decimalPlaces)}</span>
               </button>}
-              <OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} hoverPopup={false} />
+              <OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} hoverPopup={false} zoomable />
             </div>}
       </section>
 
       <section role="region" aria-label="설정" className="relative z-10 shrink-0 rounded-t-[16px] border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
+        <div className="relative h-[28px]">
         <button type="button" aria-label={settingsOpen ? '설정 닫기' : '설정 열기'} aria-expanded={settingsOpen} onClick={() => {
           if (suppressClickRef.current) { suppressClickRef.current = false; return }
           setSettingsOpen(open => !open)
@@ -555,10 +556,12 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           }
           dragRef.current = null
           setDragHeight(null)
-        }} onPointerCancel={() => { dragRef.current = null; setDragHeight(null) }} className="relative flex h-[28px] w-full touch-none items-center justify-center border-0 bg-transparent p-0 text-ui-white before:absolute before:left-1/2 before:top-1/2 before:h-[48px] before:w-[48px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']">
-          {data?.snapshotTime && <span className="absolute left-3 top-0 flex h-[28px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
+        }} onPointerCancel={() => { dragRef.current = null; setDragHeight(null) }} className="absolute left-1/2 top-0 flex h-[28px] w-16 -translate-x-1/2 touch-none items-center justify-center border-0 bg-transparent p-0 text-ui-white before:absolute before:left-1/2 before:top-1/2 before:h-[48px] before:w-[48px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']">
           <span aria-hidden="true" className="h-1 w-10 rounded-full bg-ui-muted" />
         </button>
+        <Link to={titleTo} aria-label={titleLabel} className="absolute left-3 top-0 z-10 flex h-[28px] items-center gap-1 text-[13px] font-bold tracking-[0.12em] text-brand">{isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
+        {data?.snapshotTime && <span className="absolute right-3 top-0 flex h-[28px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
+        </div>
         <div style={{ height: dragHeight === null ? (settingsOpen ? `${settingsHeight()}px` : '0px') : `${dragHeight}px`, transition: dragHeight === null ? 'height 240ms ease-out' : 'none' }} className="overflow-hidden motion-reduce:!transition-none">
           <div ref={settingsContentRef} inert={!settingsOpen && dragHeight === null} className="max-h-[calc(40dvh-28px)] [@media(max-height:500px)]:max-h-[calc(60dvh-28px)] overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
           <SettingRow label="분류 기준">

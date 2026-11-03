@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy'
 import { useLongPress } from '@/hooks/useLongPress'
 import { toJoEokDecimal, toPctSigned } from '@/utils/format'
 import { resolveHeatmapColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
 import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { useFontsVersion } from '@/utils/stockLabelFit'
+import { IDENTITY, panTransform, pinchTransform, type Point, type ZoomTransform } from '@/utils/mapZoom'
 import Popup, { type PopupState } from '@/components/Popup'
 
 export interface OverviewMapItem {
@@ -32,6 +33,7 @@ export default function OverviewMap({
   hoverPopup = true,
   large = false,
   decimalPlaces = 2,
+  zoomable = false,
 }: {
   items: OverviewMapItem[]
   colorScale: ColorScaleConfig
@@ -43,13 +45,80 @@ export default function OverviewMap({
   // 박스가 큰 PC 홈은 글자를 더 키운다(최대 34px). 폰은 기존 크기(최대 28px)를 쓴다.
   large?: boolean
   decimalPlaces?: number
+  zoomable?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const { bind: bindLongPress, consumeClick } = useLongPress()
   const fontsVersion = useFontsVersion()
   const [size, setSize] = useState({ width: 0, height: 0 })
+  const itemsSignature = useMemo(() => items.map(item => item.key).join(','), [items])
+  const [zoomState, setZoomState] = useState<{ signature: string; transform: ZoomTransform }>({ signature: '', transform: IDENTITY })
+  const zoom = zoomable && zoomState.signature === itemsSignature ? zoomState.transform : IDENTITY
+  const setZoom = (transform: ZoomTransform) => setZoomState({ signature: itemsSignature, transform })
+  const pointersRef = useRef(new Map<number, Point>())
+  const gestureRef = useRef<{ start: ZoomTransform; origin: Point; distance: number } | null>(null)
+  const suppressClickRef = useRef(false)
   // 마우스를 올리면 뜨는 업종 팝업 — 지도가 작아서 우클릭 대신 올리는 것만으로 보이게 한다. 지도 페이지의 "마우스 올리면 팝업" 방식과 같이 커서 근처에 놓이고 커서를 따라 움직이며, 박스를 벗어나면 닫힌다.
   const [popup, setPopup] = useState<PopupState | null>(null)
+
+  const localPoint = (event: React.PointerEvent<HTMLDivElement>): Point => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+  }
+  const beginGesture = () => {
+    const points = [...pointersRef.current.values()]
+    const start = zoom
+    if (points.length >= 2) {
+      gestureRef.current = {
+        start,
+        origin: { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 },
+        distance: Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y),
+      }
+    } else if (points.length === 1) {
+      gestureRef.current = { start, origin: points[0], distance: 0 }
+    } else {
+      gestureRef.current = null
+    }
+  }
+  const handleZoomPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!zoomable) return
+    if (pointersRef.current.size === 0) suppressClickRef.current = false
+    pointersRef.current.set(event.pointerId, localPoint(event))
+    if (pointersRef.current.size >= 2) suppressClickRef.current = true
+    beginGesture()
+  }
+  const handleZoomPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!zoomable || !pointersRef.current.has(event.pointerId)) return
+    pointersRef.current.set(event.pointerId, localPoint(event))
+    const gesture = gestureRef.current
+    if (!gesture) return
+    const points = [...pointersRef.current.values()]
+    if (points.length >= 2 && gesture.distance > 0) {
+      suppressClickRef.current = true
+      const mid = { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 }
+      setZoom(pinchTransform(
+        gesture.start,
+        gesture.distance,
+        gesture.origin,
+        Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y),
+        mid,
+        size.width,
+        size.height,
+      ))
+    } else if (points.length === 1 && gesture.start.scale > 1) {
+      const dx = points[0].x - gesture.origin.x
+      const dy = points[0].y - gesture.origin.y
+      if (suppressClickRef.current || Math.hypot(dx, dy) > 8) {
+        suppressClickRef.current = true
+        setZoom(panTransform(gesture.start, dx, dy, size.width, size.height))
+      }
+    }
+  }
+  const handleZoomPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!zoomable) return
+    pointersRef.current.delete(event.pointerId)
+    beginGesture()
+  }
 
   useEffect(() => {
     if (!popup) return
@@ -104,7 +173,7 @@ export default function OverviewMap({
     return () => observer.disconnect()
   }, [])
 
-  const rects = (() => {
+  const rects = useMemo(() => {
     if (size.width === 0 || size.height === 0 || items.length === 0) return []
     const root = hierarchy<{ item?: OverviewMapItem; children?: { item: OverviewMapItem }[] }>({ children: items.map(item => ({ item })) })
       .sum(node => node.item?.layoutValue ?? node.item?.marketValue ?? 0)
@@ -117,15 +186,39 @@ export default function OverviewMap({
       width: leaf.x1 - leaf.x0,
       height: leaf.y1 - leaf.y0,
     }))
-  })()
+  }, [items, size])
+
+  // 이동 중에는 지도 레이어만 움직인다. 글자 배치 계산은 항목·배율이 바뀔 때만 다시 한다.
+  const labels = useMemo(() => new Map(rects.map(({ item, width, height }) => {
+    const rateText = toPctSigned(item.changeRate, decimalPlaces)
+    return [item.key, layoutOverviewLabel(item.name, rateText, width * zoom.scale, height * zoom.scale, fontsVersion, { splitInsideWord: true, large })] as const
+  })), [decimalPlaces, fontsVersion, large, rects, zoom.scale])
 
   return (
-    <div ref={ref} className="relative min-h-0 w-full flex-1">
+    <div
+      ref={ref}
+      onPointerDown={handleZoomPointerDown}
+      onPointerMove={handleZoomPointerMove}
+      onPointerUp={handleZoomPointerEnd}
+      onPointerCancel={handleZoomPointerEnd}
+      onClickCapture={event => {
+        if (!suppressClickRef.current) return
+        suppressClickRef.current = false
+        event.preventDefault()
+        event.stopPropagation()
+      }}
+      style={zoomable ? { touchAction: 'none' } : undefined}
+      className={`relative min-h-0 w-full flex-1 ${zoomable ? 'overflow-hidden' : ''}`}
+    >
       <Popup popup={popup} onExcludeSector={() => undefined} onClose={() => setPopup(null)} />
+      <div
+        className="absolute inset-0"
+        style={zoomable ? { transformOrigin: '0 0', transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})` } : undefined}
+      >
       {rects.map(({ item, x, y, width, height }) => {
         const background = resolveHeatmapColor(item.changeRate, colorScale)
         const rateText = toPctSigned(item.changeRate, decimalPlaces)
-        const label = layoutOverviewLabel(item.name, rateText, width, height, fontsVersion, { splitInsideWord: true, large })
+        const label = labels.get(item.key) ?? { lines: [], nameSize: 12, rateSize: null }
         const isPinned = popup?.targetKey === `sector:${item.key}`
         // 마우스를 올리면 지도 페이지의 종목 박스처럼 흰 막을 씌워 밝아지고 테두리가 생긴다(index.css의 .overview-map-box).
         const boxClassName = `overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight ${isPinned ? 'is-pinned' : ''}`
@@ -141,11 +234,11 @@ export default function OverviewMap({
           <>
             {/* 한 줄이 박스 폭에 안 맞으면 `/`, 공백, 업종 용어 경계에서 두 줄로 나눈다. 그래도 안 들어가면 이름과 등락률을 그리지 않는다(utils/overviewLabel.ts). 잘린 글자나 `…`는 만들지 않는다. */}
             {label.lines.length > 0 && (
-              <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>
+              <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize / zoom.scale }}>
                 {label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}
               </span>
             )}
-            {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize }}>{rateText}</span>}
+            {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize / zoom.scale }}>{rateText}</span>}
           </>
         )
         // onSelect가 있으면 업종 지도로 이동하는 버튼으로 그린다.
@@ -155,7 +248,7 @@ export default function OverviewMap({
         }
         const press = bindLongPress(onLongPress ? () => onLongPress(item) : undefined)
         return onSelect ? (
-          <button key={item.key} type="button" aria-label={item.name} onClick={handleSelect} onPointerDown={event => { event.stopPropagation(); press.onPointerDown(event) }} onPointerMove={press.onPointerMove} onPointerUp={press.onPointerUp} onPointerCancel={press.onPointerCancel} onContextMenu={press.onContextMenu} onKeyDown={event => event.stopPropagation()} onPointerEnter={handlePointerEnter} onPointerLeave={() => { press.onPointerLeave(); handlePointerLeave() }} className={`${boxClassName} ${onLongPress ? 'select-none [-webkit-touch-callout:none]' : ''}`} style={boxStyle}>
+          <button key={item.key} type="button" aria-label={item.name} onClick={handleSelect} onPointerDown={event => { if (!zoomable) event.stopPropagation(); press.onPointerDown(event) }} onPointerMove={press.onPointerMove} onPointerUp={press.onPointerUp} onPointerCancel={press.onPointerCancel} onContextMenu={press.onContextMenu} onKeyDown={event => event.stopPropagation()} onPointerEnter={handlePointerEnter} onPointerLeave={() => { press.onPointerLeave(); handlePointerLeave() }} className={`${boxClassName} ${onLongPress ? 'select-none [-webkit-touch-callout:none]' : ''}`} style={boxStyle}>
             {content}
           </button>
         ) : (
@@ -164,6 +257,8 @@ export default function OverviewMap({
           </div>
         )
       })}
+      </div>
+      {zoomable && zoom.scale > 1.05 && <button type="button" onPointerDown={event => event.stopPropagation()} onClick={() => setZoom(IDENTITY)} className="absolute bottom-2 left-2 z-10 h-[32px] rounded-[4px] border-0 bg-ui-panel/95 px-3 text-[13px] font-medium text-ui-white shadow-lg">원래 크기</button>}
     </div>
   )
 }
