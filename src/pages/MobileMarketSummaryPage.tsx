@@ -693,7 +693,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           dragRef.current = null
           setDragHeight(null)
         }} onPointerCancel={() => { dragRef.current = null; setDragHeight(null) }} className="absolute left-1/2 top-0 flex h-[24px] w-16 -translate-x-1/2 touch-none items-center justify-center border-0 bg-transparent p-0 text-ui-white before:absolute before:left-1/2 before:top-1/2 before:h-[48px] before:w-[48px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']">
-          <span aria-hidden="true" className="h-1 w-12 -translate-y-0.5 rounded-full bg-ui-white" />
+          <span aria-hidden="true" className="h-1 w-12 -translate-y-0.5 rounded-full bg-ui-muted" />
         </button>
         <Link to={titleTo} aria-label={titleLabel} className="absolute left-3 top-0 z-10 flex h-[24px] items-center gap-1 text-[13px] font-bold tracking-[0.12em] text-brand no-underline">{isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
         {data?.snapshotTime && <span className="absolute right-3 top-0 flex h-[24px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
