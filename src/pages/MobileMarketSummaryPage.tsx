@@ -29,9 +29,8 @@ const MARKETS: { value: MarketQuery; label: string }[] = [
   { value: 'KOSPI', label: '코스피' },
   { value: 'KOSDAQ', label: '코스닥' },
 ]
-// 설정창이 열려 있는지는 MAP↔GRAPH를 오가도 이어지게 이 탭의 메모리에 기억한다(두 화면은 서로 다른 페이지라 컴포넌트가 새로 만들어진다).
-// 새로고침하면 닫힌 상태로 돌아간다.
-let settingsOpenMemory = true
+// 설정창은 첫 진입 때 닫고, MAP↔GRAPH를 오갈 때는 이 탭의 메모리에 상태를 이어간다.
+let settingsOpenMemory = false
 
 // 주식 지도에 그리는 종목 수(시가총액 상위) — 설정에서 고르지 않고 고정한다.
 const STOCK_MAP_COUNT = 30
@@ -243,7 +242,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const pageContentRef = useRef<HTMLElement>(null)
   const pageRootRef = useRef<HTMLElement>(null)
   const settingsSectionRef = useRef<HTMLElement>(null)
-  const pullGestureRef = useRef<{ startX: number; startY: number; eligible: boolean } | null>(null)
+  const pullGestureRef = useRef<{ startX: number; startY: number; eligible: boolean; inOpenSettings: boolean; scrollable: HTMLElement | null } | null>(null)
   const refreshInProgressRef = useRef(false)
   const pullDistanceRef = useRef(0)
   const refreshActionRef = useRef<() => Promise<void>>(async () => {})
@@ -290,7 +289,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     const root = pageRootRef.current
     if (!root) return
     const findScrollableAncestor = (target: EventTarget | null) => {
-      let element = target instanceof Element ? target : null
+      let element = target instanceof HTMLElement ? target : target instanceof Element ? target.parentElement : null
       while (element && element !== root) {
         const style = window.getComputedStyle(element)
         if (/(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight) return element
@@ -306,15 +305,23 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       pullGestureRef.current = {
         startX: touch.clientX,
         startY: touch.clientY,
+        inOpenSettings: Boolean(inOpenSettings),
+        scrollable,
         eligible: !inOpenSettings && (!scrollable || scrollable.scrollTop <= 0),
       }
     }
     const onTouchMove = (event: TouchEvent) => {
       const gesture = pullGestureRef.current
       const touch = event.touches[0]
-      if (!gesture?.eligible || !touch || refreshInProgressRef.current) return
+      if (!gesture || !touch || refreshInProgressRef.current) return
       const dx = touch.clientX - gesture.startX
       const dy = touch.clientY - gesture.startY
+      if (gesture.inOpenSettings) {
+        // 설정 내용은 스크롤을 허용하되, 맨 위에서 바깥쪽으로 당겨 브라우저가 갱신하는 동작은 막는다.
+        if (dy > 8 && Math.abs(dx) <= Math.abs(dy) && (!gesture.scrollable || gesture.scrollable.scrollTop <= 0)) event.preventDefault()
+        return
+      }
+      if (!gesture.eligible) return
       if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) {
         gesture.eligible = false
         pullDistanceRef.current = 0
