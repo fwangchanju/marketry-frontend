@@ -440,9 +440,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const isHeatmapLoading = isSnapshotLoading || (isRangeActive && (rangePreviousDay === undefined || isRangeStartLoading))
   const isError = isSnapshotError || (isRangeActive && isRangeStartError)
   const isHeatmapSuccess = isSnapshotSuccess && (!isRangeActive || rangeResult !== null)
-  const refetchHeatmap = () => {
-    void refetchSnapshot()
-    if (isRangeActive) void refetchRangeStart()
+  const refetchHeatmap = async () => {
+    await Promise.all([
+      refetchSnapshot(),
+      ...(isRangeActive ? [refetchRangeStart()] : []),
+    ])
   }
   const dataSnapshotTime = data?.snapshotTime
   // 종가 시각 목록을 기다리는 동안은 지도가 그대로라 아무 변화가 없어 보이므로, 이때부터 "불러오는 중" 화면을 띄운다.

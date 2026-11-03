@@ -21,7 +21,7 @@ import { LABEL_LINE_HEIGHT, fitStockLabel, stockFitBaseFontPx, useFontsVersion }
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 import { collectAtDepth } from '@/utils/sectorDepth'
-import { summarizeMobileSector, type MobileSectorSummary } from '@/utils/mobileSectorSummary'
+import { summarizeSector, type SectorSummary } from '@/utils/sectorAverage'
 import { resolveMobileStockSelection } from '@/utils/mobileStockSelection'
 
 const MARKETS: { value: MarketQuery; label: string }[] = [
@@ -53,7 +53,7 @@ type MobileSectorItem = MobileSectorMapItem & {
 }
 
 // 모바일 지도 전용 업종 집계로 수치와 박스 면적을 만든다. `stocks`는 현재 분류 트리에서 볼 종목들이다.
-function toMobileSectorItem(node: FilteredHeatmapSectorNode, path: string, boxSizeRatio: number, summary: MobileSectorSummary | null): MobileSectorItem | null {
+function toMobileSectorItem(node: FilteredHeatmapSectorNode, path: string, boxSizeRatio: number, summary: SectorSummary | null): MobileSectorItem | null {
   if (!summary || summary.marketValue <= 0) return null
   const stocks = collectAllItems(node)
   return {
@@ -235,12 +235,20 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const isGraph = mode === 'graph'
   const isStockMode = mode === 'stock'
   const isSectorMode = mode === 'sector'
-  const { data: marketSummary } = useMarketSummary(isGraph)
+  const { data: marketSummary, refetch: refetchMarketSummary } = useMarketSummary(isGraph)
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
   const { pathname } = location
   const navigate = useNavigate()
   const pageContentRef = useRef<HTMLElement>(null)
+  const pageRootRef = useRef<HTMLElement>(null)
+  const settingsSectionRef = useRef<HTMLElement>(null)
+  const pullGestureRef = useRef<{ startX: number; startY: number; eligible: boolean } | null>(null)
+  const refreshInProgressRef = useRef(false)
+  const pullDistanceRef = useRef(0)
+  const refreshActionRef = useRef<() => Promise<void>>(async () => {})
+  const [pullDistance, setPullDistance] = useState(0)
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false)
   const {
     settingsModalProps,
     market,
@@ -275,6 +283,83 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     settingsOpenMemory = open
     setSettingsOpenState(open)
   }
+  refreshActionRef.current = async () => {
+    await Promise.all([refetchHeatmap(), ...(isGraph ? [refetchMarketSummary()] : [])])
+  }
+  useEffect(() => {
+    const root = pageRootRef.current
+    if (!root) return
+    const findScrollableAncestor = (target: EventTarget | null) => {
+      let element = target instanceof Element ? target : null
+      while (element && element !== root) {
+        const style = window.getComputedStyle(element)
+        if (/(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight) return element
+        element = element.parentElement
+      }
+      return null
+    }
+    const onTouchStart = (event: TouchEvent) => {
+      const touch = event.touches[0]
+      if (!touch) return
+      const inOpenSettings = settingsOpenMemory && settingsSectionRef.current?.contains(event.target as Node)
+      const scrollable = findScrollableAncestor(event.target)
+      pullGestureRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        eligible: !inOpenSettings && (!scrollable || scrollable.scrollTop <= 0),
+      }
+    }
+    const onTouchMove = (event: TouchEvent) => {
+      const gesture = pullGestureRef.current
+      const touch = event.touches[0]
+      if (!gesture?.eligible || !touch || refreshInProgressRef.current) return
+      const dx = touch.clientX - gesture.startX
+      const dy = touch.clientY - gesture.startY
+      if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) {
+        gesture.eligible = false
+        pullDistanceRef.current = 0
+        setPullDistance(0)
+        return
+      }
+      if (dy > 8) {
+        event.preventDefault()
+        pullDistanceRef.current = Math.min(dy, 88)
+        setPullDistance(pullDistanceRef.current)
+      }
+    }
+    const onTouchEnd = (cancelled: boolean) => {
+      const gesture = pullGestureRef.current
+      pullGestureRef.current = null
+      if (cancelled || !gesture?.eligible || pullDistanceRef.current < 64 || refreshInProgressRef.current) {
+        pullDistanceRef.current = 0
+        setPullDistance(0)
+        return
+      }
+      refreshInProgressRef.current = true
+      setIsPullRefreshing(true)
+      pullDistanceRef.current = 64
+      setPullDistance(64)
+      const finishRefresh = () => {
+        refreshInProgressRef.current = false
+        setIsPullRefreshing(false)
+        pullDistanceRef.current = 0
+        setPullDistance(0)
+      }
+      void refreshActionRef.current().then(finishRefresh, finishRefresh)
+    }
+    const onTouchEndEvent = () => onTouchEnd(false)
+    const onTouchCancelEvent = () => onTouchEnd(true)
+    root.addEventListener('touchstart', onTouchStart, { passive: true })
+    root.addEventListener('touchmove', onTouchMove, { passive: false })
+    root.addEventListener('touchend', onTouchEndEvent, { passive: true })
+    root.addEventListener('touchcancel', onTouchCancelEvent, { passive: true })
+    return () => {
+      root.removeEventListener('touchstart', onTouchStart)
+      root.removeEventListener('touchmove', onTouchMove)
+      root.removeEventListener('touchend', onTouchEndEvent)
+      root.removeEventListener('touchcancel', onTouchCancelEvent)
+    }
+  }, [])
   // 열린 채로 새 페이지가 만들어지면 내용 높이를 알 수 있는 첫 그리기 직후에 한 번 더 그려서 높이를 맞춘다.
   const [, setHeightTick] = useState(0)
   useLayoutEffect(() => { if (settingsOpenMemory) setHeightTick(tick => tick + 1) }, [])
@@ -339,7 +424,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const marketItems = useMemo(() => {
     const summaryOf = (node: FilteredHeatmapSectorNode) => {
       const original = originalSectors.get(node.sectorId)
-      return original ? summarizeMobileSector(original, excludedMarketValueTiers) : null
+      return original ? summarizeSector(original, excludedMarketValueTiers) : null
     }
     const parent = mid ?? major
     if (isGraph && !parent && graphDepth > 1 && selectableDepth > 1) {
@@ -634,7 +719,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
             : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface p-1"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={() => undefined} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>
 
   return (
-    <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
+    <main ref={pageRootRef} className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
+      {pullDistance > 0 && <div role="status" aria-label={isPullRefreshing ? '새로고침 중' : '새로고침하려면 더 당기세요'} className="pointer-events-none absolute left-1/2 top-2 z-30 -translate-x-1/2 rounded-full bg-ui-panel/95 p-2 shadow-lg" style={{ transform: `translate(-50%, ${Math.max(0, pullDistance - 32)}px)` }}><span aria-hidden="true" className={`block h-5 w-5 rounded-full border-2 border-ui-border border-t-[var(--brand)] ${isPullRefreshing || pullDistance >= 64 ? 'animate-spin' : ''}`} /></div>}
       <MobileTopBar
         title={isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}
         titleTo={titleTo}
@@ -692,7 +778,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         </div>}
       </section>
 
-      <section role="region" aria-label="설정" className="relative z-10 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
+      <section ref={settingsSectionRef} role="region" aria-label="설정" className="relative z-10 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
         <div className="relative h-[24px]">
         <button type="button" aria-label={settingsOpen ? '설정 닫기' : '설정 열기'} aria-expanded={settingsOpen} onClick={() => {
           if (suppressClickRef.current) { suppressClickRef.current = false; return }
