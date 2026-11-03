@@ -12,7 +12,7 @@ import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { useLongPress } from '@/hooks/useLongPress'
 import { IDENTITY, panTransform, pinchTransform, type Point, type ZoomTransform } from '@/utils/mapZoom'
-import type { HeatmapItem, HeatmapSectorNode } from '@/types/api'
+import type { HeatmapItem } from '@/types/api'
 import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
@@ -23,6 +23,7 @@ import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector, type SectorSummary } from '@/utils/sectorAverage'
+import { indexSectorsByPath, sectorPathKey } from '@/utils/sectorPath'
 import { resolveMobileStockSelection } from '@/utils/mobileStockSelection'
 
 const MARKETS: { value: MarketQuery; label: string }[] = [
@@ -413,36 +414,35 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     setSearchParams(next, { replace: true })
   }, [isStockMode, searchParams, setSearchParams])
 
-  // 모바일 업종 집계는 선택 필터에 잘리기 전 원본 트리를 기준으로 하므로 업종 번호로 원본 노드를 찾는다.
-  const originalSectors = useMemo(() => {
-    const byId = new Map<number, HeatmapSectorNode>()
-    const walk = (nodes: HeatmapSectorNode[]) => { for (const node of nodes) { byId.set(node.sectorId, node); walk(node.children) } }
-    walk(rootNodes)
-    return byId
-  }, [rootNodes])
+  // 모바일 업종 집계는 선택 필터에 잘리기 전 원본 트리를 기준으로 찾는다. 거래소 업종은 모든 sectorId가 0이라 id로 찾지 않는다.
+  const originalSectorsByPath = useMemo(() => indexSectorsByPath(rootNodes), [rootNodes])
 
   const marketItems = useMemo(() => {
-    const summaryOf = (node: FilteredHeatmapSectorNode) => {
-      const original = originalSectors.get(node.sectorId)
+    const summaryOf = (path: string) => {
+      const original = originalSectorsByPath.get(path)
       return original ? summarizeSector(original, excludedMarketValueTiers) : null
     }
     const parent = mid ?? major
     if (isGraph && !parent && graphDepth > 1 && selectableDepth > 1) {
       return collectAtDepth(filteredRootNodes, Math.min(graphDepth, selectableDepth), new Set<number>())
-        .map(({ node, pathKey }) => toMobileSectorItem(node as FilteredHeatmapSectorNode, pathKey, boxSizeMarketCapRatio, summaryOf(node as FilteredHeatmapSectorNode)))
+        .map(({ node, pathKey }) => toMobileSectorItem(node as FilteredHeatmapSectorNode, pathKey, boxSizeMarketCapRatio, summaryOf(pathKey)))
         .filter((item): item is MobileSectorItem => item !== null)
     }
     if (parent && (mid || selectableDepth >= 2)) {
       const children = parent.children
-        .map(node => toMobileSectorItem(node, `${mid ? `${major?.sectorName}>${mid.sectorName}` : parent.sectorName}>${node.sectorName}`, boxSizeMarketCapRatio, summaryOf(node)))
+        .map(node => {
+          const parentPath = mid ? sectorPathKey(major?.sectorName ?? '', mid.sectorName) : parent.sectorName
+          const path = sectorPathKey(parentPath, node.sectorName)
+          return toMobileSectorItem(node, path, boxSizeMarketCapRatio, summaryOf(path))
+        })
         .filter((item): item is MobileSectorItem => item !== null)
       const directItems = toDirectStocksItem(parent.items, parent.sectorName, boxSizeMarketCapRatio)
       return directItems ? [...children, directItems] : children
     }
     return filteredRootNodes
-      .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio, summaryOf(node)))
+      .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio, summaryOf(node.sectorName)))
       .filter((item): item is MobileSectorItem => item !== null)
-  }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, originalSectors, excludedMarketValueTiers, major, mid, isGraph, graphDepth])
+  }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, originalSectorsByPath, excludedMarketValueTiers, major, mid, isGraph, graphDepth])
 
   // 선택은 업종 키로 유지하고, 종목은 매번 갱신된 트리에서 찾는다. 없어진 업종은 빈 목록으로 표시한다.
   const selectedStocks = resolveMobileStockSelection(stockSelection, market, marketItems)
@@ -731,12 +731,12 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       />
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
-      <header className="shrink-0 bg-ui-surface px-3 py-0">
+      <header className="shrink-0 bg-ui-background px-3 py-0">
         <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-on-dark" />
+          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
           {pathCrumbs.map(crumb => crumb.go
-            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-on-dark active:bg-ui-on-dark/35">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
-            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-on-dark">{crumb.label}</span>)}
+            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
+            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
         </nav>
       </header>
 
@@ -790,7 +790,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         </div>}
       </section>
 
-      <section ref={settingsSectionRef} role="region" aria-label="설정" className="relative z-10 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
+      <section ref={settingsSectionRef} data-mobile-settings-panel role="region" aria-label="설정" className="relative z-10 mx-2 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
         <div className="relative h-[24px]">
         <button type="button" aria-label={settingsOpen ? '설정 닫기' : '설정 열기'} aria-expanded={settingsOpen} onClick={() => {
           if (suppressClickRef.current) { suppressClickRef.current = false; return }
