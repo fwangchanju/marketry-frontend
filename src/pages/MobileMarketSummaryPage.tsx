@@ -75,7 +75,7 @@ function toDirectStocksItem(stocks: HeatmapItem[], parentPath: string, boxSizeRa
   if (marketValue <= 0) return null
   return {
     key: `${parentPath}>direct-stocks`,
-    name: '직접 종목',
+    name: '나머지',
     marketValue,
     layoutValue: stocks.reduce((sum, stock) => sum + stockLayoutValue(stock, boxSizeRatio), 0),
     changeRate: stocks.reduce((sum, stock) => sum + stock.changeRate * stock.totalMarketValue, 0) / marketValue,
