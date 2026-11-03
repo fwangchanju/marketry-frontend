@@ -37,6 +37,7 @@ let settingsOpenMemory = false
 // 주식 지도에 그리는 종목 수(시가총액 상위) — 설정에서 고르지 않고 고정한다.
 const STOCK_MAP_COUNT = 30
 const MOBILE_SETTINGS_BAR_HEIGHT = 24
+const MOBILE_PAGE_SWIPE_EDGE_GUARD = 24
 const MOBILE_DECIMAL_PLACES = 1
 
 function stockLayoutValue(stock: HeatmapItem, ratio: number) {
@@ -666,6 +667,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     const mobilePointer = event.pointerType === 'touch' || event.pointerType === 'pen'
       || (event.pointerType === 'mouse' && window.matchMedia('(max-width: 767px)').matches)
     if (!mobilePointer) return
+    if (event.clientX <= MOBILE_PAGE_SWIPE_EDGE_GUARD || event.clientX >= window.innerWidth - MOBILE_PAGE_SWIPE_EDGE_GUARD) return
     if (pageSwipePreviewRef.current) return
     const map = (event.target as HTMLElement).closest<HTMLElement>('[data-mobile-map-scale]')
     if (map && Number(map.dataset.mobileMapScale) > 1.05) return
