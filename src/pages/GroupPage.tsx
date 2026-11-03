@@ -256,13 +256,13 @@ export default function GroupPage() {
     if (!displayNow) return { current: buildRankChart([]), delta: buildRankChart([]) }
 
     const beforeByPath = new Map<string, HeatmapSectorNode>(
-      collectAtDepth(displayBefore?.items ?? [], effectiveDepth, new Set<number>()).map(({ node, pathKey }) => [pathKey, node]),
+      collectAtDepth(displayBefore?.items ?? [], effectiveDepth, new Set<number>(), new Set<string>(), effectiveDepth < 3).map(({ node, pathKey }) => [pathKey, node]),
     )
 
     const currentEntries: RankColumnItem[] = []
     const deltaEntries: RankColumnItem[] = []
 
-    for (const { node, pathKey } of collectAtDepth(displayNow.items, effectiveDepth, excludedSectorIds, excludedMarketValueTiers)) {
+    for (const { node, pathKey } of collectAtDepth(displayNow.items, effectiveDepth, excludedSectorIds, excludedMarketValueTiers, effectiveDepth < 3)) {
       const nowAverage = computeSectorAverage(node, excludedMarketValueTiers)
       const nowValue = avgChangeRateUseSimple ? nowAverage.simpleAvg : nowAverage.weightedAvg
       // 새 트리는 종목이 하나도 없는 최상위 섹터도 노드로 준다 — 그런 섹터는 평균이 null이라
