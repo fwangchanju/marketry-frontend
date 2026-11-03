@@ -52,7 +52,9 @@ import { withStableSectorIds } from '@/utils/guestSectorIds'
 import type { HeatmapResponse, HeatmapSectorNode } from '@/types/api'
 import { profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
 import { useCustomPreferences } from './useCustomPreferences'
+import { useDefaultPreferences } from './useDefaultPreferences'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
+import { excludedNamesForPaths } from '@/utils/excludedSectorPaths'
 
 // 한 부호의 구간들을 절댓값이 작은 것부터 정렬해(몇 번째 구간인지 = 순서) 원래 배열의 인덱스와 함께 돌려준다. 등락률 막대의 손잡이 순서이자 상승·하락 거울 짝의 기준이다.
 function sortedSignRows(thresholds: ColorScaleThreshold[], positive: boolean): { threshold: ColorScaleThreshold; index: number }[] {
@@ -195,6 +197,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const defaults = settingDefaultsFor(isLoggedIn)
   const { requireLogin } = useLoginGate()
   const { data: preferenceValues, isLoaded: preferencesLoaded, setPreference } = useCustomPreferences()
+  const defaultPreferences = useDefaultPreferences()
   // 트리 조회 마켓은 경로를 따른다 — /map, /sector 둘 다 경로 세그먼트가 곧 마켓이라 여기서 바로
   // 우선순위(쿼리 > 경로 > 저장값 > 기본값)를 적용하면, 이 훅을 그대로 쓰는 지도 페이지는 물론
   // 트리 조회만 공유하는 섹터 페이지도 같은 마켓으로 트리를 받는다(docs/instructions-route-market-first-render.md 결정 2).
@@ -216,6 +219,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const settingsProfile: SettingsProfile = isTelegramCapture || options?.readOnlyTelegramSnapshot
     ? 'marketry'
     : isCustom ? 'mine' : isMarketry ? 'marketry' : 'exchange'
+  const profileDefaults = settingDefaultsFor(isLoggedIn, settingsProfile)
   const profileKey = (key: string) => profileSettingKey(settingsProfile, key)
   // NXT 종목만 보기 — 어느 분류(거래소/MARKETRY)이든 오늘의 시간표가 정한 필터 구간에만
   // 분류는 그대로 두고 NXT 거래 종목만 남기고, 그 밖의 시간에는 전체 종목을 보여준다. 사용자가 직접 켜고 끄지 않는다.
@@ -237,12 +241,12 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     : allowChangeRateMode && isAfterHoursControlsVisible ? storedChangeRateChoice : 'daily'
   const requestedBasis: ChangeRateMode = requestedChoice === 'afterHours' ? 'afterHours' : 'daily'
   // 섹터 랭킹/강세 업종 계산에 쓰는 평균 방식은 박스 크기 비율과 별도로 저장한다.
-  const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting(profileKey('heatmap.avgChangeRateUseSimple'), defaults.avgChangeRateUseSimple)
+  const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting(profileKey('heatmap.avgChangeRateUseSimple'), profileDefaults.avgChangeRateUseSimple)
   // 0은 동일 크기, 100은 시가총액 비례이며 중간값은 시가총액 차이를 거듭제곱으로 압축한다.
-  const [storedBoxSizeMarketCapRatio, setBoxSizeMarketCapRatio] = usePageSetting(profileKey('heatmap.boxSizeMarketCapRatio'), defaults.boxSizeMarketCapRatio)
+  const [storedBoxSizeMarketCapRatio, setBoxSizeMarketCapRatio] = usePageSetting(profileKey('heatmap.boxSizeMarketCapRatio'), profileDefaults.boxSizeMarketCapRatio)
   const [storedStrongIndustryColor, setStrongIndustryColor] = usePageSetting(
     profileKey('heatmap.strongIndustryColor'),
-    defaults.strongIndustryColor,
+    profileDefaults.strongIndustryColor,
   )
   const isLegacyStrongIndustryColor = storedStrongIndustryColor.toLowerCase() === LEGACY_STRONG_INDUSTRY_COLOR
   const strongIndustryColor = isLegacyStrongIndustryColor
@@ -257,7 +261,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const boxSizeMarketCapRatio = Math.max(0, Math.min(100, Math.round(storedBoxSizeMarketCapRatio)))
   const [storedDepthMetric, setStoredDepthMetric] = usePageSetting<StoredDepthMetric>(
     profileKey('heatmap.activeDepthMetric'),
-    defaults.depthMetric,
+    profileDefaults.depthMetric,
   )
   const selectedDepthMetric = resolveDepthMetric(storedDepthMetric)
   const [depthMetricEnabled, setDepthMetricEnabled] = usePageSetting(
@@ -266,25 +270,25 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   )
   // 분류별 데이터 깊이에 맞춰 화면에 적용하되, 사용자가 고른 범위는 전환해도 보존한다.
   // 기본값: 대분류~중분류(index 0~1) — 렌더러가 스크린샷으로 찍는 기본 화면에 등락률이 보이도록.
-  const [depthMetricMinIndex, setDepthMetricMinIndex] = usePageSetting(profileKey('heatmap.depthMetricMinIndex'), defaults.depthMetricMinIndex)
-  const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting(profileKey('heatmap.depthMetricMaxIndex'), defaults.depthMetricMaxIndex)
+  const [depthMetricMinIndex, setDepthMetricMinIndex] = usePageSetting(profileKey('heatmap.depthMetricMinIndex'), profileDefaults.depthMetricMinIndex)
+  const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting(profileKey('heatmap.depthMetricMaxIndex'), profileDefaults.depthMetricMaxIndex)
   // avgChangeRateUseSimple은 섹터 랭킹에 사용한다. 강세 업종은 업종 탭 표시 지표를 따른다.
   // 종목 박스가 전체 히트맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다(섹터 헤더와는 무관).
   // 실험 탭의 3-3 텍스트 표시 기준은 저장하지 않는다(새로고침하면 기본값).
-  const [boxLabelMinAreaPercent] = useTransientSetting(profileKey('heatmap.boxLabelMinAreaPercent'), defaults.boxLabelMinAreaPercent)
+  const [boxLabelMinAreaPercent] = useTransientSetting(profileKey('heatmap.boxLabelMinAreaPercent'), profileDefaults.boxLabelMinAreaPercent)
   // 종목 박스에 이름만/등락률만/둘 다/끄기 중 뭘 보여줄지 — 기본은 둘 다(기존 동작 유지, 배열 앞에
   // "끄기"가 추가되면서 both의 인덱스가 2에서 3으로 밀림).
-  const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting(profileKey('heatmap.stockLabelModeIndex'), defaults.stockLabelModeIndex)
+  const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting(profileKey('heatmap.stockLabelModeIndex'), profileDefaults.stockLabelModeIndex)
   // 기존 저장값 0(끄기)도 유지하며, 켜고 끄는 동안 선택한 표기 방식은 보존한다.
   const [stockLabelEnabled, setStockLabelEnabled] = usePageSetting(profileKey('heatmap.stockLabelEnabled'), stockLabelModeIndex !== 0)
   const selectedStockLabelModeIndex = stockLabelModeIndex || 3
   const stockLabelMode = stockLabelEnabled ? STOCK_LABEL_MODES[selectedStockLabelModeIndex] : 'off'
   // 지도 페이지에 표시되는 모든 등락률(%)의 소수점 자릿수 — 인덱스가 그대로 자릿수(0=정수, 1=소수
   // 1자리, 2=소수 2자리). 기본값 1(소수 1자리).
-  const [decimalPlacesIndex, setDecimalPlacesIndex] = usePageSetting(profileKey('heatmap.decimalPlacesIndex'), defaults.decimalPlacesIndex)
+  const [decimalPlacesIndex, setDecimalPlacesIndex] = usePageSetting(profileKey('heatmap.decimalPlacesIndex'), profileDefaults.decimalPlacesIndex)
   // 종목 박스 설명 팝업을 여는 방식 — false=우클릭(기존 동작), true=커서를 박스 위로 옮길 때. 섹터(대/중/소분류)
   // 팝업은 이 설정과 무관하게 항상 우클릭이다.
-  const [stockPopupOnHover, setStockPopupOnHover] = useTransientSetting(profileKey('heatmap.stockPopupOnHover'), defaults.stockPopupOnHover)
+  const [stockPopupOnHover, setStockPopupOnHover] = useTransientSetting(profileKey('heatmap.stockPopupOnHover'), profileDefaults.stockPopupOnHover)
   const decimalPlaces = decimalPlacesIndex
   // 시가총액 구간 범위는 같은 분류의 지도와 섹터 랭킹이 공유한다.
   const {
@@ -296,37 +300,26 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     excludedMarketValueTiers,
     isTierRangeReady: isMarketValueTierRangeReady,
   } = useMarketValueTierRange(true, settingsProfile)
-  const [exchangeExcludedSectorNames, setExchangeExcludedSectorNames] = usePersistedState<Map<number, string>>(
-    'heatmap.excludedSectorNames.exchange',
-    new Map(),
-    {
-      serialize: map => [...map.entries()],
-      deserialize: raw => new Map(raw as [number, string][]),
-    },
-  )
   const [mineExcludedSectorNames, setMineExcludedSectorNames] = usePersistedState<Map<number, string>>(
     'heatmap.excludedSectorNames.mine', new Map(),
     { serialize: map => [...map.entries()], deserialize: raw => new Map(raw as [number, string][]) },
   )
-  const [guestMarketryExcludedKeys, setGuestMarketryExcludedKeys] = usePersistedState<string[]>(
-    'heatmap.excludedSectorKeys.marketry.guest', [],
-  )
   // 섹터 제외를 목록별로 켜고 끄는 게 아니라, 제외 적용 자체를 통째로 켜고 끄는 마스터 스위치.
-  const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting(profileKey('heatmap.sectorFilterEnabled'), defaults.sectorFilterEnabled)
-  const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<StockChangeFilter>(profileKey('heatmap.stockChangeFilter'), defaults.stockChangeFilter)
+  const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting(profileKey('heatmap.sectorFilterEnabled'), profileDefaults.sectorFilterEnabled)
+  const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<StockChangeFilter>(profileKey('heatmap.stockChangeFilter'), profileDefaults.stockChangeFilter)
   // 실험 탭의 업종 등락 방향·깊이는 저장하지 않는다(새로고침하면 기본값).
-  const [storedSectorChangeFilter] = useTransientSetting<SectorChangeFilter>(profileKey('heatmap.sectorChangeFilter'), defaults.sectorChangeFilter)
+  const [storedSectorChangeFilter] = useTransientSetting<SectorChangeFilter>(profileKey('heatmap.sectorChangeFilter'), profileDefaults.sectorChangeFilter)
   const sectorChangeFilter: SectorChangeFilter = storedSectorChangeFilter === 'rising' || storedSectorChangeFilter === 'falling' ? storedSectorChangeFilter : 'all'
-  const [storedSectorChangeDepth] = useTransientSetting(profileKey('heatmap.sectorChangeDepth'), defaults.sectorChangeDepth)
+  const [storedSectorChangeDepth] = useTransientSetting(profileKey('heatmap.sectorChangeDepth'), profileDefaults.sectorChangeDepth)
   const sectorChangeDepth = Number.isInteger(storedSectorChangeDepth) && storedSectorChangeDepth >= 0 ? storedSectorChangeDepth : 0
   // null = 제한 없음(전체 뎁스 표시). 슬라이더의 실제 상한(availableMaxDepth)은 트리 계산 후에 나온다.
   // 기본값 2(렌더러 스크린샷 기준 화면에 맞춤).
-  const [selectedMaxDepth, setMaxDepth] = usePageSetting<number | null>(profileKey('heatmap.selectedMaxDepth'), defaults.maxDepth)
-  const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting(profileKey('heatmap.sectorLevelEnabled'), defaults.sectorLevelEnabled)
+  const [selectedMaxDepth, setMaxDepth] = usePageSetting<number | null>(profileKey('heatmap.selectedMaxDepth'), profileDefaults.maxDepth)
+  const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting(profileKey('heatmap.sectorLevelEnabled'), profileDefaults.sectorLevelEnabled)
   const maxDepth = sectorLevelEnabled ? selectedMaxDepth : 0
   // 선호 업종 — 선택한 절대 depth에서 등락률 상위 N개 섹터를 지도 전체에 강조한다.
-  const [topPickDepth, setTopPickDepth] = usePageSetting(profileKey('heatmap.topPickDepth'), defaults.topPickDepth)
-  const [topPickCount, setTopPickCount] = usePageSetting(profileKey('heatmap.topPickCount'), defaults.topPickCount)
+  const [topPickDepth, setTopPickDepth] = usePageSetting(profileKey('heatmap.topPickDepth'), profileDefaults.topPickDepth)
+  const [topPickCount, setTopPickCount] = usePageSetting(profileKey('heatmap.topPickCount'), profileDefaults.topPickCount)
   const [topPickEnabled, setTopPickEnabled] = usePageSetting(profileKey('heatmap.topPickEnabled'), topPickCount !== 0)
   const selectedTopPickCount = topPickCount || 2
   // 설정 사이드바 열림 상태. 페이지 진입 시 기본으로 연다.
@@ -466,9 +459,20 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     () => (isLoggedIn || isMarketry ? (rawRootNodes ?? []) : withStableSectorIds(rawRootNodes ?? [])),
     [isLoggedIn, isMarketry, rawRootNodes],
   )
+  const defaultExchangeNames = defaultPreferences.data?.exchange?.excludedSectorNames
+  const defaultExchangeSelection = new Set(Array.isArray(defaultExchangeNames) ? defaultExchangeNames.filter((item): item is string => typeof item === 'string') : [])
+  const initialExchangeExclusions = excludedNamesForPaths(rootNodes, [...defaultExchangeSelection])
+  const [exchangeExcludedSectorNames, setExchangeExcludedSectorNames] = usePersistedState<Map<number, string>>(
+    'heatmap.excludedSectorNames.exchange',
+    initialExchangeExclusions,
+    { liveDefault: true, serialize: map => [...map.entries()], deserialize: raw => new Map(raw as [number, string][]) },
+  )
 
   const [savedMarketryExcludedKeys, setSavedMarketryExcludedKeys] = usePageSetting<string[]>(
     profileSettingKey('marketry', 'heatmap.excludedSectorKeys'), seedExcludedSectorKeys(rootNodes),
+  )
+  const [guestMarketryExcludedKeys, setGuestMarketryExcludedKeys] = usePersistedState<string[]>(
+    'heatmap.excludedSectorKeys.marketry.guest', savedMarketryExcludedKeys, { liveDefault: true },
   )
   const marketryExcludedSectorNames = useMemo(
     () => excludedNamesForStableKeys(rootNodes, isLoggedIn ? savedMarketryExcludedKeys : guestMarketryExcludedKeys),
@@ -630,7 +634,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   }, [isSessionLoading, colorScaleServerData, isLoggedIn, localColorScale, colorOwner])
   // "색상 커스텀 사용" 토글 — 순수 로컬(세션스토리지) 상태. draft(=저장 대상)와는 완전히 분리돼 있어서
   // 꺼도 draft에 저장해둔 값은 건드리지 않고, 그냥 실제 지도에 넘기는 값만 빈 스케일(=기본 프리셋)로 바꿔치기한다.
-  const [colorCustomOn, setColorCustomOn] = usePageSetting(profileKey('heatmap.colorCustomOn'), defaults.colorCustomOn)
+  const [colorCustomOn, setColorCustomOn] = usePageSetting(profileKey('heatmap.colorCustomOn'), profileDefaults.colorCustomOn)
   // 같은 부호/퍼센트에 편집 중인 행이 이미 있는 임계값과 겹치면 편집 중인 값을 우선한다.
   // resolver는 같은 thresholdPercent 중 마지막 값을 유효점으로 삼으므로, 저장 draft의 배열 순서를
   // 바꾸지 않고 렌더링 입력에서만 편집 행을 뒤로 보낸다.
@@ -1043,7 +1047,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     rangeExcludedStocks,
     refetchHeatmap,
     isRefetchingHeatmap,
-    isLoading: isHeatmapLoading || isWaitingForSession || isCloseWaiting || (isTelegramCapture && (telegramCaptureSetting.isPending || isSessionLoading || !isMarketValueTierRangeReady)),
+    isLoading: isHeatmapLoading || isWaitingForSession || isCloseWaiting || (!defaultPreferences.isSuccess && !defaultPreferences.isError) || (isLoggedIn && !preferencesLoaded) || (isTelegramCapture && (telegramCaptureSetting.isPending || isSessionLoading || !isMarketValueTierRangeReady)),
+    // 관리 기본값 조회가 실패하면 코드 기본값으로 지도를 그린다. 공개 기본값 API 장애가
+    // 지도 전체 오류 화면으로 번지지 않게 하고, 로딩 중에는 위에서만 잠시 대기한다.
     isError: isError || (isTelegramCapture && telegramCaptureSetting.isError),
     isHeatmapSuccess,
     isMarketValueTierRangeReady,

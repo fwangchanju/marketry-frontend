@@ -79,6 +79,7 @@ export const MEMBER_DEFAULTS: SettingDefaults = {
 
 export const GUEST_DEFAULTS: SettingDefaults = { ...MEMBER_DEFAULTS }
 
-export function settingDefaultsFor(isLoggedIn: boolean): SettingDefaults {
-  return isLoggedIn ? MEMBER_DEFAULTS : GUEST_DEFAULTS
+export function settingDefaultsFor(isLoggedIn: boolean, profile?: 'marketry' | 'exchange' | 'mine'): SettingDefaults {
+  const defaults = isLoggedIn ? MEMBER_DEFAULTS : GUEST_DEFAULTS
+  return profile === 'exchange' ? { ...defaults, strongIndustryColor: '#90bff9' } : defaults
 }

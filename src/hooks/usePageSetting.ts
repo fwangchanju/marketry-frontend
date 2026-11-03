@@ -4,6 +4,8 @@ import { useIsLoggedIn } from './useSession'
 import { isTelegramMapCapture, useTelegramCaptureSetting } from './useTelegramImageSetting'
 import { resolveTelegramPreference } from '@/utils/telegramImageSetting'
 import { clearDraft, readDraft, registerDraftKey, useDraftVersion, writeDraft } from '@/utils/settingsDraft'
+import { useDefaultPreferences } from './useDefaultPreferences'
+import { profileDefaultForSettingKey } from '@/utils/settingsSchema'
 
 // 화면 설정(마켓맵/섹터 페이지의 옵션 사이드바 값 등) 하나를 다루는 훅 — useState와 같은 [value, setValue] 시그니처.
 //
@@ -16,7 +18,9 @@ import { clearDraft, readDraft, registerDraftKey, useDraftVersion, writeDraft } 
 export function usePageSetting<T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
   const isLoggedIn = useIsLoggedIn()
   const { data: preferences, isLoaded } = useCustomPreferences()
+  const defaults = useDefaultPreferences()
   const capture = useTelegramCaptureSetting()
+  const isCapture = isTelegramMapCapture()
   useDraftVersion()
   useEffect(() => {
     registerDraftKey(key)
@@ -25,9 +29,17 @@ export function usePageSetting<T>(key: string, initialValue: T): [T, Dispatch<Se
   const draft = readDraft(key)
   const useServer = isLoggedIn && isLoaded
   const hasServerValue = useServer && preferences !== undefined && Object.hasOwn(preferences, key)
-  const savedValue = hasServerValue ? (preferences![key] as T) : initialValue
+  const configured = profileDefaultForSettingKey(defaults.data, key, initialValue)
+  const savedValue = hasServerValue
+    ? (preferences![key] as T)
+    : configured.value
+  // 텔레그램 지도는 소유자 계정의 개인 설정이 아니라 MARKETRY 관리 기본값으로 그린다.
+  // 캡처 응답에 아직 없는 항목은 코드 기본값으로 처리해 개인값이 새어 들어오지 않게 한다.
+  const captureFallback = configured.value
   const capturePreferences = capture.data?.values?.preferences
-  const value = resolveTelegramPreference(isTelegramMapCapture(), capturePreferences, key, draft.found ? (draft.value as T) : savedValue)
+  const value = isCapture
+    ? resolveTelegramPreference(true, capturePreferences, key, captureFallback)
+    : draft.found ? (draft.value as T) : savedValue
 
   const setValue = useCallback<Dispatch<SetStateAction<T>>>(
     next => {
