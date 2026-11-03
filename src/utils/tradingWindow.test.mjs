@@ -58,9 +58,10 @@ const at = (schedule, time) => new Date(`${schedule.date}T${time}+09:00`)
 
 test('정상 거래일은 기존 문구와 구간을 그대로 사용한다', () => {
   for (const [time, expected] of [
-    ['07:59:59', '마켓 종료'], ['08:00:00', '프리 마켓'], ['08:50:00', '프리 마켓'],
+    ['07:59:59', '애프터 마켓'], ['08:00:00', '프리 마켓'], ['08:50:00', '프리 마켓'],
     ['09:00:00', '메인 마켓'], ['15:29:59', '메인 마켓'], ['15:30:00', '메인 마켓'],
-    ['15:39:59', '메인 마켓'], ['15:40:00', '애프터 마켓'], ['20:00:00', '마켓 종료'],
+    ['15:39:59', '메인 마켓'], ['15:40:00', '애프터 마켓'], ['20:00:00', '애프터 마켓'],
+    ['23:59:59', '애프터 마켓'],
   ]) assert.equal(currentTradingSession(at(normal, time), normal), expected, time)
 })
 
@@ -76,7 +77,7 @@ test('수능일에는 프리장을 만들지 않고 메인·애프터 시작과 
   for (const [time, expected] of [
     ['08:30:00', '마켓 종료'], ['09:30:00', '마켓 종료'], ['10:00:00', '메인 마켓'],
     ['16:29:59', '메인 마켓'], ['16:30:00', '메인 마켓'], ['16:39:59', '메인 마켓'],
-    ['16:40:00', '애프터 마켓'], ['20:00:00', '마켓 종료'],
+    ['16:40:00', '애프터 마켓'], ['20:00:00', '애프터 마켓'],
   ]) assert.equal(currentTradingSession(at(exam, time), exam), expected, time)
 })
 
@@ -107,10 +108,17 @@ test('FAILED·누락·조회 오류 시 기존 평일 판정을 유지한다', (
   }
 })
 
-test('실패한 주말 시간표는 기존대로 종료 표시하고 필터를 끈다', () => {
+test('실패한 주말 시간표는 애프터 마켓을 표시하고 NXT 필터는 끈다', () => {
   const failed = { ...normal, date: '2026-01-03', status: 'FAILED' }
-  assert.equal(currentTradingSession(at(failed, '09:00:00'), failed), '마켓 종료')
+  assert.equal(currentTradingSession(at(failed, '09:00:00'), failed), '애프터 마켓')
   assert.equal(currentNxtOnlyWindow(at(failed, '08:30:00'), failed), null)
+})
+
+test('합산·단독 선택지가 보이는 야간과 주말에는 애프터 마켓을 유지하고 다음 프리장에 전환한다', () => {
+  assert.equal(currentTradingSession(new Date('2026-01-02T23:00:00+09:00')), '애프터 마켓')
+  assert.equal(currentTradingSession(new Date('2026-01-03T12:00:00+09:00')), '애프터 마켓')
+  assert.equal(currentTradingSession(new Date('2026-01-05T07:59:59+09:00')), '애프터 마켓')
+  assert.equal(currentTradingSession(new Date('2026-01-05T08:00:00+09:00')), '프리 마켓')
 })
 
 test('전날 휴장 캐시를 다음 거래일에 적용하지 않는다', () => {

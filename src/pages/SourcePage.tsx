@@ -12,7 +12,7 @@ const DATA_SOURCES: { source: string; category: string; items: string[] }[] = [
 const PROCESSING_RULES: { title: string; description: string }[] = [
   {
     title: '시각·거래 세션',
-    description: '시계는 화면 데이터의 기준 시각이며 모든 시간은 한국 시간(UTC+9)입니다. 거래일 시간표를 우선 적용하고, 없을 때는 프리 08:00~09:00 · 메인 09:00~15:40 · 애프터 15:40~20:00 · 그 외 마켓 종료로 표시합니다.',
+    description: '시계는 화면 데이터의 기준 시각이며 모든 시간은 한국 시간(UTC+9)입니다. 거래일 시간표를 우선 적용하고, 없을 때는 프리 08:00~09:00 · 메인 09:00~15:40 · 애프터 15:40~다음 개장 직전으로 표시합니다.',
   },
   {
     title: '지도 박스 크기',
@@ -20,7 +20,7 @@ const PROCESSING_RULES: { title: string; description: string }[] = [
   },
   {
     title: '등락률·업종',
-    description: '등락률은 선택한 기준(종가·누적·시간외 별도)의 기준 가격과 현재 가격으로 계산합니다. 업종 시가총액은 포함 종목을 합산하며 MARKETRY 분류 또는 이용자의 내 기준을 사용합니다.',
+    description: '등락률은 선택한 기준(종가·합산·단독)의 기준 가격과 현재 가격으로 계산합니다. 업종 시가총액은 포함 종목을 합산하며 MARKETRY 분류 또는 이용자의 내 기준을 사용합니다.',
   },
 ]
 

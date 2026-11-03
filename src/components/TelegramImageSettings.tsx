@@ -175,7 +175,7 @@ function TelegramImageSettingsForUser({ userId }: { userId: number | null }) {
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-ui-white"><img src={marketrySymbol} alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain" />기본 <span className="h-px flex-1 bg-ui-border" /></h3>
         {[
           { tab: '설정창 밖', name: '분류 기준', value: 'MARKETRY' },
-          { tab: '기본', name: '등락률 기준', value: '종가 → 별도 자동' },
+          { tab: '기본', name: '등락률 기준', value: '종가 → 단독 자동' },
         ].map(item => <div key={item.name} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-2 border-t border-ui-border/50 py-2 first:border-0">
           <span className={LABEL_CLASS}>{item.name}</span><span className={VALUE_CLASS}>{item.value}</span><span className={VALUE_CLASS}>고정</span>
         </div>)}
