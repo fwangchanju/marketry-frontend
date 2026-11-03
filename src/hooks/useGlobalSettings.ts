@@ -237,11 +237,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     : allowChangeRateMode && isAfterHoursControlsVisible ? storedChangeRateChoice : 'daily'
   const requestedBasis: ChangeRateMode = requestedChoice === 'afterHours' ? 'afterHours' : 'daily'
   // 섹터 랭킹/강세 업종 계산에 쓰는 평균 방식은 박스 크기 비율과 별도로 저장한다.
-  const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting('heatmap.avgChangeRateUseSimple', defaults.avgChangeRateUseSimple)
+  const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting(profileKey('heatmap.avgChangeRateUseSimple'), defaults.avgChangeRateUseSimple)
   // 0은 동일 크기, 100은 시가총액 비례이며 중간값은 시가총액 차이를 거듭제곱으로 압축한다.
-  const [storedBoxSizeMarketCapRatio, setBoxSizeMarketCapRatio] = usePageSetting('heatmap.boxSizeMarketCapRatio', defaults.boxSizeMarketCapRatio)
+  const [storedBoxSizeMarketCapRatio, setBoxSizeMarketCapRatio] = usePageSetting(profileKey('heatmap.boxSizeMarketCapRatio'), defaults.boxSizeMarketCapRatio)
   const [storedStrongIndustryColor, setStrongIndustryColor] = usePageSetting(
-    'heatmap.strongIndustryColor',
+    profileKey('heatmap.strongIndustryColor'),
     defaults.strongIndustryColor,
   )
   const isLegacyStrongIndustryColor = storedStrongIndustryColor.toLowerCase() === LEGACY_STRONG_INDUSTRY_COLOR
@@ -271,23 +271,22 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // avgChangeRateUseSimple은 섹터 랭킹에 사용한다. 강세 업종은 업종 탭 표시 지표를 따른다.
   // 종목 박스가 전체 히트맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다(섹터 헤더와는 무관).
   // 실험 탭의 3-3 텍스트 표시 기준은 저장하지 않는다(새로고침하면 기본값).
-  const [boxLabelMinAreaPercent] = useTransientSetting('heatmap.boxLabelMinAreaPercent', defaults.boxLabelMinAreaPercent)
+  const [boxLabelMinAreaPercent] = useTransientSetting(profileKey('heatmap.boxLabelMinAreaPercent'), defaults.boxLabelMinAreaPercent)
   // 종목 박스에 이름만/등락률만/둘 다/끄기 중 뭘 보여줄지 — 기본은 둘 다(기존 동작 유지, 배열 앞에
   // "끄기"가 추가되면서 both의 인덱스가 2에서 3으로 밀림).
-  const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting('heatmap.stockLabelModeIndex', defaults.stockLabelModeIndex)
+  const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting(profileKey('heatmap.stockLabelModeIndex'), defaults.stockLabelModeIndex)
   // 기존 저장값 0(끄기)도 유지하며, 켜고 끄는 동안 선택한 표기 방식은 보존한다.
-  const [stockLabelEnabled, setStockLabelEnabled] = usePageSetting('heatmap.stockLabelEnabled', stockLabelModeIndex !== 0)
+  const [stockLabelEnabled, setStockLabelEnabled] = usePageSetting(profileKey('heatmap.stockLabelEnabled'), stockLabelModeIndex !== 0)
   const selectedStockLabelModeIndex = stockLabelModeIndex || 3
   const stockLabelMode = stockLabelEnabled ? STOCK_LABEL_MODES[selectedStockLabelModeIndex] : 'off'
   // 지도 페이지에 표시되는 모든 등락률(%)의 소수점 자릿수 — 인덱스가 그대로 자릿수(0=정수, 1=소수
   // 1자리, 2=소수 2자리). 기본값 1(소수 1자리).
-  const [decimalPlacesIndex, setDecimalPlacesIndex] = usePageSetting('heatmap.decimalPlacesIndex', defaults.decimalPlacesIndex)
+  const [decimalPlacesIndex, setDecimalPlacesIndex] = usePageSetting(profileKey('heatmap.decimalPlacesIndex'), defaults.decimalPlacesIndex)
   // 종목 박스 설명 팝업을 여는 방식 — false=우클릭(기존 동작), true=커서를 박스 위로 옮길 때. 섹터(대/중/소분류)
   // 팝업은 이 설정과 무관하게 항상 우클릭이다.
-  const [stockPopupOnHover, setStockPopupOnHover] = useTransientSetting('heatmap.stockPopupOnHover', defaults.stockPopupOnHover)
+  const [stockPopupOnHover, setStockPopupOnHover] = useTransientSetting(profileKey('heatmap.stockPopupOnHover'), defaults.stockPopupOnHover)
   const decimalPlaces = decimalPlacesIndex
-  // 시가총액 구간 범위 필터 — 마켓맵/섹터 랭킹 화면이 세션스토리지 키를 공유한다(useMarketValueTierRange 참고).
-  // 시가총액 구간 필터는 분류 체계와 무관한 표시 설정이라 두 분류 모두에서 적용한다.
+  // 시가총액 구간 범위는 같은 분류의 지도와 섹터 랭킹이 공유한다.
   const {
     tiers: valueTiers,
     minIndex: tierRangeMinIndex,
@@ -296,7 +295,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     setMaxIndex: setTierRangeMaxIndex,
     excludedMarketValueTiers,
     isTierRangeReady: isMarketValueTierRangeReady,
-  } = useMarketValueTierRange(true)
+  } = useMarketValueTierRange(true, settingsProfile)
   const [exchangeExcludedSectorNames, setExchangeExcludedSectorNames] = usePersistedState<Map<number, string>>(
     'heatmap.excludedSectorNames.exchange',
     new Map(),
@@ -314,11 +313,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   )
   // 섹터 제외를 목록별로 켜고 끄는 게 아니라, 제외 적용 자체를 통째로 켜고 끄는 마스터 스위치.
   const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting(profileKey('heatmap.sectorFilterEnabled'), defaults.sectorFilterEnabled)
-  const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<StockChangeFilter>('heatmap.stockChangeFilter', defaults.stockChangeFilter)
+  const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<StockChangeFilter>(profileKey('heatmap.stockChangeFilter'), defaults.stockChangeFilter)
   // 실험 탭의 업종 등락 방향·깊이는 저장하지 않는다(새로고침하면 기본값).
-  const [storedSectorChangeFilter] = useTransientSetting<SectorChangeFilter>('heatmap.sectorChangeFilter', defaults.sectorChangeFilter)
+  const [storedSectorChangeFilter] = useTransientSetting<SectorChangeFilter>(profileKey('heatmap.sectorChangeFilter'), defaults.sectorChangeFilter)
   const sectorChangeFilter: SectorChangeFilter = storedSectorChangeFilter === 'rising' || storedSectorChangeFilter === 'falling' ? storedSectorChangeFilter : 'all'
-  const [storedSectorChangeDepth] = useTransientSetting('heatmap.sectorChangeDepth', defaults.sectorChangeDepth)
+  const [storedSectorChangeDepth] = useTransientSetting(profileKey('heatmap.sectorChangeDepth'), defaults.sectorChangeDepth)
   const sectorChangeDepth = Number.isInteger(storedSectorChangeDepth) && storedSectorChangeDepth >= 0 ? storedSectorChangeDepth : 0
   // null = 제한 없음(전체 뎁스 표시). 슬라이더의 실제 상한(availableMaxDepth)은 트리 계산 후에 나온다.
   // 기본값 2(렌더러 스크린샷 기준 화면에 맞춤).
@@ -517,7 +516,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   const captureExcluded = telegramCaptureSetting.data?.values?.excludedSectors
   const snapshotExcludedSectorNames = options?.readOnlyTelegramSnapshot && data
-    ? excludedNamesForStableKeys(data.items, captureExcluded?.map(([key]) => key) ?? seedExcludedSectorKeys(data.items))
+    ? isTelegramCapture
+      ? excludedNamesForStableKeys(data.items, captureExcluded?.map(([key]) => key) ?? seedExcludedSectorKeys(data.items))
+      : marketryExcludedSectorNames
     : excludedSectorNames
 
   // 로그인 사용자의 거래소 분류 트리는 사용자 정의 섹터를 쓰지 않으므로 isExcluded와 제외 목록을 적용하지 않는다.
@@ -625,7 +626,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   }, [isSessionLoading, colorScaleServerData, isLoggedIn, localColorScale, colorOwner])
   // "색상 커스텀 사용" 토글 — 순수 로컬(세션스토리지) 상태. draft(=저장 대상)와는 완전히 분리돼 있어서
   // 꺼도 draft에 저장해둔 값은 건드리지 않고, 그냥 실제 지도에 넘기는 값만 빈 스케일(=기본 프리셋)로 바꿔치기한다.
-  const [colorCustomOn, setColorCustomOn] = usePageSetting('heatmap.colorCustomOn', defaults.colorCustomOn)
+  const [colorCustomOn, setColorCustomOn] = usePageSetting(profileKey('heatmap.colorCustomOn'), defaults.colorCustomOn)
   // 같은 부호/퍼센트에 편집 중인 행이 이미 있는 임계값과 겹치면 편집 중인 값을 우선한다.
   // resolver는 같은 thresholdPercent 중 마지막 값을 유효점으로 삼으므로, 저장 draft의 배열 순서를
   // 바꾸지 않고 렌더링 입력에서만 편집 행을 뒤로 보낸다.
