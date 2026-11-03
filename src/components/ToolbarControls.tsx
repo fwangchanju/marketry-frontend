@@ -8,7 +8,7 @@ import ToolbarChip from '@/components/ToolbarChip'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
-// 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·누적·별도 토글의 선택 칸에도 쓴다).
+// 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·합산·단독 토글의 선택 칸에도 쓴다).
 const SESSION_DOT_COLOR: Record<TradingSession, string> = {
   '프리 마켓': 'var(--sub-yellow)',
   '메인 마켓': 'var(--brand)',
@@ -80,7 +80,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
           {SESSION_GUIDE.map(row => (
-            <div key={row.session} className="flex items-center justify-between gap-4 px-2 py-1">
+            <div key={row.session} className={`flex items-center justify-between gap-4 px-2 py-1 ${row.session === '마켓 종료' ? 'hidden' : ''}`}>
               <span className="flex items-center">
                 <span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[row.session] }} />
                 {row.session}
@@ -101,8 +101,8 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
 
 const CHANGE_RATE_OPTIONS = [
   { value: 'close' as const, label: '종가', titlePrefix: '메인 마켓 ', descriptionBefore: '전일 종가', descriptionAfter: '당일 종가' },
-  { value: 'daily' as const, label: '누적', titlePrefix: '애프터 마켓 ', descriptionBefore: '전일 종가', descriptionAfter: '현재가' },
-  { value: 'afterHours' as const, label: '별도', titlePrefix: '애프터 마켓 ', descriptionBefore: '당일 종가', descriptionAfter: '현재가' },
+  { value: 'daily' as const, label: '합산', titlePrefix: '애프터 마켓 ', descriptionBefore: '전일 종가', descriptionAfter: '현재가' },
+  { value: 'afterHours' as const, label: '단독', titlePrefix: '애프터 마켓 ', descriptionBefore: '당일 종가', descriptionAfter: '현재가' },
 ]
 
 function ChangeRateModeSelector({ basis, selectable, onChange }: {
@@ -136,13 +136,13 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
         <button
           type="button"
           data-change-rate-mode
-          aria-label={`등락률 기준: ${options.find(option => option.value === basis)?.label ?? '누적'}`}
+          aria-label={`등락률 기준: ${options.find(option => option.value === basis)?.label ?? '합산'}`}
           aria-expanded={isOpen}
           aria-haspopup="dialog"
           onClick={() => setIsOpen(open => !open)}
           className={`toolbar-badge-control ${FONT_BAR_TIME} flex h-6 items-center border-0 px-1.5 font-semibold text-[var(--sub-purple)] outline-none transition-colors ${isOpen ? 'bg-[var(--ui-control)]' : 'bg-transparent hover:bg-[var(--ui-control)] focus-visible:bg-[var(--ui-control)]'}`}
         >
-          {options.find(option => option.value === basis)?.label ?? '누적'}
+          {options.find(option => option.value === basis)?.label ?? '합산'}
         </button>
       </ToolbarChip>
       {/* 눈에 보이는 칩보다 감싸는 칸이 2px 짧아서 mt-1.5로 칩 기준 4px(DROPDOWN_GAP_PX)를 맞춘다. */}

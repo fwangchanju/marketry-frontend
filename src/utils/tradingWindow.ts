@@ -53,7 +53,7 @@ export function currentNxtOnlyWindow(now: Date, schedule?: MarketTradingSchedule
 // 다음 개장까지 이전 거래일 스냅샷을 보여줄 때도 그 스냅샷 날짜의 경계로 판단한다.
 const AFTER_HOURS_START = '15:40'
 
-// 애프터 마켓 시작부터 다음 프리 마켓 개장 직전까지 누적/별도 버튼을 표시한다.
+// 애프터 마켓 시작부터 다음 프리 마켓 개장 직전까지 합산/단독 버튼을 표시한다.
 // 주말에는 다음 평일 08:00 개장까지 유지한다. 다른 시간대 판단과 같이 공휴일은 별도로 구분하지 않는다.
 export function shouldShowAfterHoursControls(now: Date, afterHoursStart?: string | null): boolean {
   const parts = KST_PARTS.formatToParts(now)
@@ -78,6 +78,9 @@ export function isAfterHoursSelectable(snapshotTime: string | null | undefined, 
 export type TradingSession = '프리 마켓' | '메인 마켓' | '애프터 마켓' | '마켓 종료'
 
 export function currentTradingSession(now: Date, schedule?: MarketTradingSchedule): TradingSession {
+  // 합산·단독 선택지가 표시되는 동안은 마지막 세션명인 애프터 마켓을 유지한다.
+  const afterHoursStart = schedule?.date === getKstDate(now) ? schedule.afterMarket?.startTime : undefined
+  if (shouldShowAfterHoursControls(now, afterHoursStart)) return '애프터 마켓'
   if (schedule?.date === getKstDate(now)) {
     if (schedule.status === 'HOLIDAY') return '마켓 종료'
     if (schedule.status === 'TRADING_DAY') {

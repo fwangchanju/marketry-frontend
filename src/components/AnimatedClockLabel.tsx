@@ -7,7 +7,7 @@ const CLOCK_TWEEN_MS = 1000
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
-// 툴바 시계의 "HH:mm". 종가·누적을 바꾸거나 새 스냅샷이 오면 이전 시각에서 새 시각까지 숫자가 올라가거나 내려가며 바뀐다(설정창 종목 수와 같은 방식).
+// 툴바 시계의 "HH:mm". 종가·합산을 바꾸거나 새 스냅샷이 오면 이전 시각에서 새 시각까지 숫자가 올라가거나 내려가며 바뀐다(설정창 종목 수와 같은 방식).
 // 시각이 바뀌면 설정창 종목 수처럼 숫자가 청록색으로 켜졌다가 돌아온다. 처음 그릴 때는 켜지 않는다.
 // 데이터가 없으면 같은 폭의 견본 시각을 숨겨서 자리를 잡는다.
 export default function AnimatedClockLabel({ snapshotTime, icon }: { snapshotTime: string | null; icon?: ReactNode }) {
