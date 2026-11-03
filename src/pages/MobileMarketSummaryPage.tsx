@@ -428,7 +428,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     }
     const parent = mid ?? major
     if (isGraph && !parent && graphDepth > 1 && selectableDepth > 1) {
-      return collectAtDepth(filteredRootNodes, Math.min(graphDepth, selectableDepth), new Set<number>())
+      const effectiveGraphDepth = Math.min(graphDepth, selectableDepth)
+      return collectAtDepth(filteredRootNodes, effectiveGraphDepth, new Set<number>(), new Set<string>(), effectiveGraphDepth < 3)
         .map(({ node, pathKey }) => toMobileSectorItem(node as FilteredHeatmapSectorNode, pathKey, summaryOf(pathKey)))
         .filter((item): item is MobileSectorItem => item !== null)
     }

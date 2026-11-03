@@ -1,5 +1,5 @@
 import type { HeatmapSectorNode } from '@/types/api'
-import { isMarketValueExcluded } from './marketValueTier'
+import { isMarketValueExcluded } from './marketValueTier.ts'
 
 export interface DepthEntry {
   node: HeatmapSectorNode
@@ -14,13 +14,15 @@ function hasVisibleStocks(node: HeatmapSectorNode, excludedSectorIds: Set<number
   return node.children.some(child => hasVisibleStocks(child, excludedSectorIds, excludedTiers))
 }
 
-// 고른 깊이(1=대분류, 2=중분류, 3=소분류)의 업종을 모은다. 그 깊이에 닿기 전에 하위 업종이 끝나는 업종은 그대로 한 막대가 된다.
+// 고른 깊이(1=대분류, 2=중분류, 3=소분류)의 업종을 모은다.
+// includeShallowerLeaves가 true면 그 깊이에 닿기 전에 하위 업종이 끝난 항목도 포함한다.
 // 제외한 업종은 그 밑까지 뺀다.
 export function collectAtDepth(
   nodes: HeatmapSectorNode[],
   depth: number,
   excludedSectorIds: Set<number>,
   excludedTiers: Set<string> = new Set<string>(),
+  includeShallowerLeaves = true,
   parentKey = '',
   level = 1,
 ): DepthEntry[] {
@@ -28,8 +30,8 @@ export function collectAtDepth(
   for (const node of nodes) {
     if (!hasVisibleStocks(node, excludedSectorIds, excludedTiers)) continue
     const pathKey = parentKey ? `${parentKey}>${node.sectorName}` : node.sectorName
-    if (level >= depth || node.children.length === 0) entries.push({ node, pathKey })
-    else entries.push(...collectAtDepth(node.children, depth, excludedSectorIds, excludedTiers, pathKey, level + 1))
+    if (level >= depth || (includeShallowerLeaves && node.children.length === 0)) entries.push({ node, pathKey })
+    else entries.push(...collectAtDepth(node.children, depth, excludedSectorIds, excludedTiers, includeShallowerLeaves, pathKey, level + 1))
   }
   return entries
 }
