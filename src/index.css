@@ -1413,3 +1413,25 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   body { user-select: none; -webkit-user-select: none; }
   input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-select: text; }
 }
+@keyframes mobile-page-slide-out {
+  to { transform: translateX(-100%); }
+}
+
+@keyframes mobile-page-slide-in {
+  from { transform: translateX(100%); }
+}
+
+html[data-mobile-page-slide='next']::view-transition-old(root) {
+  animation: 180ms cubic-bezier(0.2, 0.7, 0.2, 1) both mobile-page-slide-out;
+}
+
+html[data-mobile-page-slide='next']::view-transition-new(root) {
+  animation: 180ms cubic-bezier(0.2, 0.7, 0.2, 1) both mobile-page-slide-in;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-mobile-page-slide='next']::view-transition-old(root),
+  html[data-mobile-page-slide='next']::view-transition-new(root) {
+    animation-duration: 1ms;
+  }
+}
