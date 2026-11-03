@@ -16,7 +16,7 @@ import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
-import { LABEL_LINE_HEIGHT, fitStockLabel, stockBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
+import { LABEL_LINE_HEIGHT, fitStockLabel, stockFitBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 import { collectAtDepth } from '@/utils/sectorDepth'
@@ -178,7 +178,7 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
   }, [boxSizeRatio, size, stocks])
 
   return (
-    <div ref={ref} onPointerDown={handleZoomPointerDown} onPointerMove={handleZoomPointerMove} onPointerUp={handleZoomPointerEnd} onPointerCancel={handleZoomPointerEnd} onClickCapture={event => { if (suppressClickRef.current) { suppressClickRef.current = false; event.stopPropagation() } }} style={{ touchAction: 'none' }} className="relative h-full min-h-0 w-full overflow-hidden bg-ui-surface p-1">
+    <div ref={ref} data-mobile-map-scale={zoom.scale} onPointerDown={handleZoomPointerDown} onPointerMove={handleZoomPointerMove} onPointerUp={handleZoomPointerEnd} onPointerCancel={handleZoomPointerEnd} onClickCapture={event => { if (suppressClickRef.current) { suppressClickRef.current = false; event.stopPropagation() } }} style={{ touchAction: 'none' }} className="relative h-full min-h-0 w-full overflow-hidden bg-ui-surface p-1">
       {boxes.map(box => {
         const { stock } = box
         const x = box.x * zoom.scale + zoom.x + 1
@@ -193,10 +193,11 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
         const visibleTop = Math.max(0, y)
         const visibleWidth = Math.min(size.width, x + width) - visibleLeft
         const visibleHeight = Math.min(size.height, y + height) - visibleTop
-        // PC 지도의 종목 박스와 같은 이름 나누기 규칙을 쓴다(공백 > 접미어(우·지주·홀딩스) > 영문·한글 경계·그룹명 뒤 > 가장 균형 잡힌 자리).
+        // PC 지도와 같은 면적·높이 기준으로 시작 글자 크기를 정하고, 확대 중이면 보이는 칸 크기를 쓴다.
+        // 이름 나누기와 최종 맞춤은 PC 지도와 같은 규칙이며, 맞지 않으면 fitStockLabel이 줄인다.
         const name = stock.alias ?? stock.stockName
         const rateText = toPctSigned(stock.changeRate, decimalPlaces)
-        const fit = fitStockLabel({ name, rateText, width: visibleWidth, height: visibleHeight, baseFont: stockBaseFontPx(visibleWidth, visibleHeight), wantName: true, wantRate: true })
+        const fit = fitStockLabel({ name, rateText, width: visibleWidth, height: visibleHeight, baseFont: stockFitBaseFontPx(visibleWidth, visibleHeight, true), wantName: true, wantRate: true })
         const press = bindLongPress(() => onLongPress(stock))
         return (
           <button key={stock.stockCode} type="button" aria-label={`${stock.stockName} ${toPctSigned(stock.changeRate, decimalPlaces)}`} onClick={() => { if (!consumeClick()) onSelect(stock) }} {...press} className="select-none [-webkit-touch-callout:none] absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight text-white" style={{ left: x, top: y, width, height, backgroundColor: color }}>
@@ -272,6 +273,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const settingsContentRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ y: number; start: number; max: number; moved: boolean } | null>(null)
   const suppressClickRef = useRef(false)
+  const pageSwipeRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
+  const suppressPageClickRef = useRef(false)
   // 설정창이 열리는 최대 높이 — 화면의 40%(손잡이 줄 28px 제외)다. 눕힌 폰처럼 화면이 낮으면(500px 이하, index.css의 모바일 판정과 같은 기준)
   // 40%가 내용보다 작아 아래 줄이 잘리므로 60%까지 열어 준다. CSS 한도(아래 max-h)도 같은 값이다.
   const settingsHeight = () => Math.min(settingsContentRef.current?.scrollHeight ?? 0, window.innerHeight * (window.innerHeight <= 500 ? 0.6 : 0.4) - 28)
@@ -495,6 +498,28 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 종목 지도 순서로 이동한다(마켓은 유지).
   const titleTo = isStockMode ? `/home?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
   const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '종목 지도로 이동'
+  const titleFrom = isStockMode ? marketRoute('/graph', market) : isSectorMode ? marketRoute('/map', market) : `/home?map&market=${market}`
+  const beginPageSwipe = (event: React.PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+    const map = (event.target as HTMLElement).closest<HTMLElement>('[data-mobile-map-scale]')
+    if (map && Number(map.dataset.mobileMapScale) > 1.05) return
+    if (pageSwipeRef.current) {
+      if (pageSwipeRef.current.pointerId !== event.pointerId) pageSwipeRef.current = null
+      return
+    }
+    pageSwipeRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
+  }
+  const endPageSwipe = (event: React.PointerEvent<HTMLElement>) => {
+    const start = pageSwipeRef.current
+    if (!start || start.pointerId !== event.pointerId) return
+    pageSwipeRef.current = null
+    const dx = event.clientX - start.x
+    const dy = event.clientY - start.y
+    if (Math.abs(dx) < 64 || Math.abs(dx) < Math.abs(dy) * 1.25) return
+    suppressPageClickRef.current = true
+    window.setTimeout(() => { suppressPageClickRef.current = false }, 0)
+    navigate(dx < 0 ? titleTo : titleFrom)
+  }
 
   return (
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
@@ -510,7 +535,14 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         </nav>
       </header>
 
-      <section aria-label={isGraph ? (viewMode === 'sector' ? '업종 등락률 그래프' : '종목 등락률 그래프') : (viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵')} className="relative min-h-0 flex-1 p-1">
+      <section
+        aria-label={isGraph ? (viewMode === 'sector' ? '업종 등락률 그래프' : '종목 등락률 그래프') : (viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵')}
+        onPointerDownCapture={beginPageSwipe}
+        onPointerUpCapture={endPageSwipe}
+        onPointerCancelCapture={event => { if (pageSwipeRef.current?.pointerId === event.pointerId) pageSwipeRef.current = null }}
+        onClickCapture={event => { if (suppressPageClickRef.current) { suppressPageClickRef.current = false; event.preventDefault(); event.stopPropagation() } }}
+        className="relative min-h-0 flex-1 touch-pan-y p-1"
+      >
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
           : isError ? <div className="flex h-full flex-col items-center justify-center gap-2 text-center"><p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p><button type="button" onClick={refetchHeatmap} className="min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />

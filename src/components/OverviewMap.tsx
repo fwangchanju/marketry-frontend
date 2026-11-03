@@ -197,6 +197,7 @@ export default function OverviewMap({
   return (
     <div
       ref={ref}
+      data-mobile-map-scale={zoomable ? zoom.scale : undefined}
       onPointerDown={handleZoomPointerDown}
       onPointerMove={handleZoomPointerMove}
       onPointerUp={handleZoomPointerEnd}
