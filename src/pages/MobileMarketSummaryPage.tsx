@@ -34,7 +34,7 @@ const MARKETS: { value: MarketQuery; label: string }[] = [
 let settingsOpenMemory = false
 
 // 주식 지도에 그리는 종목 수(시가총액 상위) — 설정에서 고르지 않고 고정한다.
-const STOCK_MAP_COUNT = 30
+const STOCK_MAP_COUNT = 50
 const MOBILE_SETTINGS_BAR_HEIGHT = 24
 const MOBILE_DECIMAL_PLACES = 1
 
@@ -304,6 +304,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const [boxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio] = usePageSetting<number>('mobile.boxSizeMarketCapRatio', 100)
   // 경로의 맨 앞은 전체일 때 국내 증시, 그 밖에는 고른 마켓 이름이다.
   const marketLabel = market === 'ALL_STOCK' ? '국내 증시' : MARKETS.find(option => option.value === market)?.label ?? '국내 증시'
+  const marketHeadingLabel = isStockMode ? `${marketLabel} 상위 ${STOCK_MAP_COUNT}` : marketLabel
   const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : 3
   // 종목 지도에서는 주소의 ?sector=가 대분류다(PC 지도와 같다). 중분류·소분류 단계는 지도에 없다.
   const sectorParam = isStockMode ? searchParams.get('sector') : null
@@ -374,7 +375,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
 
   // 위쪽 경로 — PC 지도 화면과 같다: 앞 단계는 이름 오른쪽에 ↩ 아이콘이 붙은 버튼(누르면 그 단계로 되돌아감), 마지막(현재 위치)은 강조색 글씨다.
   const pathCrumbs: { key: string; label: string; go: (() => void) | null }[] = [
-    { key: 'market', label: marketLabel, go: isStockMode ? (major ? () => navigate(marketRoute('/map', market)) : null) : major || mid || selectedStocks ? () => { setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector') } : null },
+    { key: 'market', label: marketHeadingLabel, go: isStockMode ? (major ? () => navigate(marketRoute('/map', market)) : null) : major || mid || selectedStocks ? () => { setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector') } : null },
     ...(major && (!isGraph || graphEntryOffset < 1) ? [{ key: 'major', label: major.sectorName, go: mid || selectedStocks ? () => { setMidName(null); setSelectedStocks(null); setViewMode('sector') } : null }] : []),
     ...(mid && (!isGraph || graphEntryOffset < 2) ? [{ key: 'mid', label: mid.sectorName, go: selectedStocks ? () => { setSelectedStocks(null); setViewMode('sector') } : null }] : []),
     ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
@@ -632,11 +633,12 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         titleTo={titleTo}
         titleLabel={titleLabel}
         onTitleClick={transitionToNextMode}
+        showDivider={false}
       />
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
-      <header className="shrink-0 bg-brand-surface px-3 py-0.5">
-        <nav aria-label="업종 이동 경로" className="flex h-[36px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
+      <header className="shrink-0 bg-ui-surface px-3 py-0">
+        <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
           <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-on-dark" />
           {pathCrumbs.map(crumb => crumb.go
             ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-on-dark active:bg-ui-on-dark/35">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
