@@ -49,7 +49,7 @@ export default function MobileTopBar({ title, titleTo, titleLabel, onTitleClick,
         {isLoading ? <span className="block h-[44px] w-[44px]" aria-hidden="true" /> : session?.authenticated ? (
           <>
             <button ref={buttonRef} type="button" aria-label={menuOpen ? '계정 메뉴 닫기' : '계정 메뉴 열기'} aria-expanded={menuOpen} onClick={() => setMenuOpen(open => !open)} className="flex h-[44px] w-[44px] items-center justify-center border-0 bg-transparent p-1">
-              <ProfileAvatar className="size-9 object-cover" />
+              <ProfileAvatar lightMode={theme === 'light'} className="size-9 object-cover" />
             </button>
             {menuOpen && <div className="absolute right-0 top-full z-30 min-w-[140px] rounded-[4px] border border-ui-border bg-ui-panel p-2 shadow-lg">
               <p className="truncate px-2 py-1 text-[16px] font-medium text-ui-white">{session.nickname || '내 계정'}</p>

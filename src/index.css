@@ -407,6 +407,9 @@
     --ui-text: #1a1a1a;
     --ui-data-text-mix: 60%;
   }
+  :root[data-theme="light"] [data-mobile-settings-panel] {
+    border-top-color: var(--ui-control-hover);
+  }
   /* 청록 바탕 위 글자는 주간에서도 흰색이고, 그 안의 브랜드색 글자는 야간과 같은 밝은 청록이다 — 안쪽에서 두 변수를 쓰는 글자·아이콘이 모두 따라온다. */
   :root[data-theme="light"] :is([class*="bg-brand-surface"], [class*="bg-[var(--brand-surface)]"]) {
     --ui-white: var(--ui-on-dark);
