@@ -365,9 +365,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const rangeStartTime = rangeSelection === null || pinnedSnapshotTime === undefined
     ? undefined
     : (rangeNeedsLookup ? (rangeMonthDays?.find(day => day.date === rangeSelection.snapshotTime.slice(0, 10))?.snapshotTime ?? rangeSelection.snapshotTime) : rangeSelection.snapshotTime)
+  // NXT는 별도 거래소/설정 프로필이 아니라 특정 시간대에만 적용하는 종목 필터다.
   // NXT 종목만 보기는 실시간 지도에만 쓴다 — 그 시간대(15:40~16:00 등)에도 종가·지난 날짜·기간은 그날의 전종목을 보여 준다.
   // (종가는 오늘 정규장이 어떻게 끝났는지 보는 것이라 NXT 거래 종목만이 아니다.) 종목 수 분모도 받아 온 종목 수라 같이 전종목이 된다.
   const nxtOnly = nxtOnlyWindow !== null && pinnedSnapshotTime === undefined && requestedChoice !== 'close'
+  // 이 계산의 'NXT'는 시간대 필터 상태를 기존 UI에 전달하기 위한 내부값이다. 프로필 분리·저장 키에 사용하지 않는다.
   const taxonomy: TaxonomyKey = isMarketry ? 'MARKETRY' : isCustom ? 'MINE' : nxtOnly ? 'NXT' : 'KRX'
   // 달력이 "오늘(실시간)"을 알아보려면 지난 날짜를 보는 동안에도 최신 스냅샷 시각을 기억해야 한다.
 
