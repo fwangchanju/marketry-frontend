@@ -11,6 +11,7 @@ import DisclaimerFooter from '@/components/DisclaimerFooter'
 import { InfoPageHeading } from '@/components/InfoDocument'
 import TelegramImageSettings from '@/components/TelegramImageSettings'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useHeatmap } from '@/hooks/useHeatmap'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSession } from '@/hooks/useSession'
@@ -20,7 +21,7 @@ import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
 import { defaultExcludedTierLabels } from '@/utils/marketValueTier'
-import type { MarketValueTierItem } from '@/types/api'
+import type { HeatmapSectorNode, MarketValueTierItem } from '@/types/api'
 
 type ProfileSnapshot = {
   values: TelegramImageValues
@@ -28,6 +29,15 @@ type ProfileSnapshot = {
   tierRangeMaxIndex: number
   avgChangeRateUseSimple: boolean
   colorCustomOn: boolean
+}
+
+function marketrySectorNames(nodes: HeatmapSectorNode[], ancestors: string[] = [], names = new Map<string, string>()) {
+  for (const node of nodes) {
+    const path = [...ancestors, node.sectorName].join(' > ')
+    if (node.stableKey) names.set(node.stableKey, path)
+    marketrySectorNames(node.children, [...ancestors, node.sectorName], names)
+  }
+  return names
 }
 
 function ProfileReader({
@@ -89,7 +99,7 @@ function profilePayload(snapshot: ProfileSnapshot, profile: 'marketry' | 'exchan
   return result
 }
 
-function savedView(profileSettings: Record<string, unknown> | undefined, current: ProfileSnapshot | null, profile: 'marketry' | 'exchange', tiers: MarketValueTierItem[]) {
+function savedView(profileSettings: Record<string, unknown> | undefined, current: ProfileSnapshot | null, profile: 'marketry' | 'exchange', tiers: MarketValueTierItem[], sectorNames: Map<string, string>) {
   const codeDefaults = settingDefaultsFor(true, profile)
   const baseMin = tiers.length ? Math.max(0, tiers.length - 3) : 0
   const baseRange = codeDefaults.tierRange === 'all'
@@ -129,8 +139,11 @@ function savedView(profileSettings: Record<string, unknown> | undefined, current
   }
   const exclusionKey = profile === 'marketry' ? 'excludedSectorKeys' : 'excludedSectorNames'
   const savedKeys = new Set(Array.isArray(profileSettings?.[exclusionKey]) ? profileSettings[exclusionKey] as string[] : [])
-  const excludedSectors = current?.values.excludedSectors.filter(([key, name]) => savedKeys.has(profile === 'marketry' ? key : name))
-    ?? [...savedKeys].map(key => [key, key] as [string, string])
+  const currentNames = new Map(current?.values.excludedSectors ?? [])
+  const excludedSectors = [...savedKeys].map(key => [
+    key,
+    profile === 'marketry' ? currentNames.get(key) ?? sectorNames.get(key) ?? '업종명 확인 중' : key,
+  ] as [string, string])
   return { preferences, excludedSectors }
 }
 
@@ -157,6 +170,10 @@ export default function AdminDefaultPage() {
     enabled: isAdmin,
     retry: false,
   })
+  const marketryExcludedKeys = defaults.data?.marketry?.excludedSectorKeys
+  const hasMarketryExclusions = Array.isArray(marketryExcludedKeys) && marketryExcludedKeys.length > 0
+  const marketryMap = useHeatmap('ALL_STOCK', 'MARKETRY', false, { enabled: isAdmin && hasMarketryExclusions })
+  const marketryNames = marketrySectorNames(marketryMap.data?.items ?? [])
   const save = useMutation({
     mutationFn: saveAdminDefaults,
     onSuccess: result => {
@@ -174,7 +191,7 @@ export default function AdminDefaultPage() {
   const handleSave = async (profile: 'marketry' | 'exchange') => {
     const snapshot = snapshots[profile]
     if (!snapshot || !defaults.data || save.isPending) return
-    if (!await appConfirm(`현재 ${profile === 'marketry' ? 'MARKETRY' : '거래소'} 설정을 기본값으로 저장하시겠습니까?`, { title: '기본값 저장' })) return
+    if (!await appConfirm(`[${profile === 'marketry' ? 'MARKETRY' : '거래소'}] 설정을 기본값으로 저장하시겠습니까?`, { title: '기본값 저장' })) return
     const next: DefaultProfiles = {
       ...defaults.data,
       [profile]: profilePayload(snapshot, profile),
@@ -192,8 +209,8 @@ export default function AdminDefaultPage() {
             <Toolbar><ToolbarModeText page="ADMIN" label="DEFAULT" /></Toolbar>
             <PageMainFrame className="p-0" heading={<div className="mx-auto w-full max-w-4xl"><InfoPageHeading flushBottom title="기본값" summary="MARKETRY와 거래소 기본 설정을 각각 저장합니다." /></div>}>
               {defaults.isError ? <p role="alert" className="m-0 text-sm text-ui-text">기본값을 불러오지 못했습니다.</p> : <article aria-label="기본값" className="mx-auto min-h-full w-full max-w-4xl space-y-5">
-                <TelegramImageSettings number="1" title="MARKETRY 모드" profileLabel="MARKETRY" saved={savedView(defaults.data?.marketry, snapshots.marketry, 'marketry', tiers)} current={snapshots.marketry?.values ?? null} loadState={loadStates.marketry} onLoad={() => handleLoad('marketry')} onSave={() => void handleSave('marketry')} />
-                <TelegramImageSettings number="2" title="거래소 모드" profileLabel="거래소" saved={savedView(defaults.data?.exchange, snapshots.exchange, 'exchange', tiers)} current={snapshots.exchange?.values ?? null} loadState={loadStates.exchange} onLoad={() => handleLoad('exchange')} onSave={() => void handleSave('exchange')} />
+                <TelegramImageSettings number="1" title="MARKETRY 모드" profileLabel="MARKETRY" saved={savedView(defaults.data?.marketry, snapshots.marketry, 'marketry', tiers, marketryNames)} current={snapshots.marketry?.values ?? null} loadState={loadStates.marketry} onLoad={() => handleLoad('marketry')} onSave={() => void handleSave('marketry')} />
+                <TelegramImageSettings number="2" title="거래소 모드" profileLabel="거래소" saved={savedView(defaults.data?.exchange, snapshots.exchange, 'exchange', tiers, marketryNames)} current={snapshots.exchange?.values ?? null} loadState={loadStates.exchange} onLoad={() => handleLoad('exchange')} onSave={() => void handleSave('exchange')} />
               </article>}
             </PageMainFrame>
           </>}
