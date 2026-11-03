@@ -15,6 +15,7 @@ export function usePopupBounds(
   triggerRef: React.RefObject<HTMLElement | null>,
   popupRef: React.RefObject<HTMLElement | null>,
   preferredWidth: number,
+  onScrollOutside: () => void,
 ) {
   const [bounds, setBounds] = useState<PopupBounds | null>(null)
 
@@ -61,23 +62,23 @@ export function usePopupBounds(
     const handleScroll = (event: Event) => {
       const target = event.target
       if (target instanceof Node && popup.contains(target)) return
-      update()
+      onScrollOutside()
     }
     const observer = new ResizeObserver(update)
     observer.observe(frame)
     observer.observe(popup)
-    // document 캡처는 내부 스크롤을, window는 화면 스크롤을 감지해 트리거 기준 좌표를 다시 잰다.
+    // 팝업 내부 목록은 스크롤할 수 있고, 바깥 페이지를 스크롤하면 닫는다.
     document.addEventListener('scroll', handleScroll, true)
-    window.addEventListener('scroll', update)
+    window.addEventListener('scroll', handleScroll)
     window.addEventListener('resize', update)
     update()
     return () => {
       observer.disconnect()
       document.removeEventListener('scroll', handleScroll, true)
-      window.removeEventListener('scroll', update)
+      window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', update)
     }
-  }, [isOpen, positionReady, preferredWidth, popupRef, triggerRef])
+  }, [isOpen, positionReady, preferredWidth, popupRef, triggerRef, onScrollOutside])
 
   return bounds
 }

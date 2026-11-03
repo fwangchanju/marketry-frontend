@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import { usePopupPosition } from '@/hooks/usePopupPosition'
@@ -68,8 +68,9 @@ export default function BannerDatePicker({
   const { data: colorScale } = useHeatmapColorScale()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
+  const closeOnScroll = useCallback(() => setIsOpen(false), [])
   const position = usePopupPosition(isOpen, setIsOpen, triggerRef, popupRef, undefined, 0.8, false, false)
-  const popupBounds = usePopupBounds(isOpen, position !== null, triggerRef, popupRef, POPUP_WIDTH)
+  const popupBounds = usePopupBounds(isOpen, position !== null, triggerRef, popupRef, POPUP_WIDTH, closeOnScroll)
 
   useEffect(() => {
     if (dateAnimationKey === undefined || previousDateAnimationKey.current === dateAnimationKey) return
@@ -177,7 +178,7 @@ export default function BannerDatePicker({
               오늘
             </button>
           </div>
-          <div className="relative w-60 shrink-0">
+          <div className="relative w-full min-w-0">
             {view === 'day' && (
               <>
                 <div className="mb-1 flex items-center justify-between">
