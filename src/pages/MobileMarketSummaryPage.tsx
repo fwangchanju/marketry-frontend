@@ -12,7 +12,7 @@ import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { useLongPress } from '@/hooks/useLongPress'
 import { IDENTITY, panTransform, pinchTransform, type Point, type ZoomTransform } from '@/utils/mapZoom'
-import type { HeatmapItem, HeatmapSectorNode } from '@/types/api'
+import type { HeatmapItem } from '@/types/api'
 import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
@@ -23,6 +23,7 @@ import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector, type SectorSummary } from '@/utils/sectorAverage'
+import { indexSectorsByPath, sectorPathKey } from '@/utils/sectorPath'
 import { resolveMobileStockSelection } from '@/utils/mobileStockSelection'
 
 const MARKETS: { value: MarketQuery; label: string }[] = [
@@ -413,36 +414,35 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     setSearchParams(next, { replace: true })
   }, [isStockMode, searchParams, setSearchParams])
 
-  // 모바일 업종 집계는 선택 필터에 잘리기 전 원본 트리를 기준으로 하므로 업종 번호로 원본 노드를 찾는다.
-  const originalSectors = useMemo(() => {
-    const byId = new Map<number, HeatmapSectorNode>()
-    const walk = (nodes: HeatmapSectorNode[]) => { for (const node of nodes) { byId.set(node.sectorId, node); walk(node.children) } }
-    walk(rootNodes)
-    return byId
-  }, [rootNodes])
+  // 모바일 업종 집계는 선택 필터에 잘리기 전 원본 트리를 기준으로 찾는다. 거래소 업종은 모든 sectorId가 0이라 id로 찾지 않는다.
+  const originalSectorsByPath = useMemo(() => indexSectorsByPath(rootNodes), [rootNodes])
 
   const marketItems = useMemo(() => {
-    const summaryOf = (node: FilteredHeatmapSectorNode) => {
-      const original = originalSectors.get(node.sectorId)
+    const summaryOf = (path: string) => {
+      const original = originalSectorsByPath.get(path)
       return original ? summarizeSector(original, excludedMarketValueTiers) : null
     }
     const parent = mid ?? major
     if (isGraph && !parent && graphDepth > 1 && selectableDepth > 1) {
       return collectAtDepth(filteredRootNodes, Math.min(graphDepth, selectableDepth), new Set<number>())
-        .map(({ node, pathKey }) => toMobileSectorItem(node as FilteredHeatmapSectorNode, pathKey, boxSizeMarketCapRatio, summaryOf(node as FilteredHeatmapSectorNode)))
+        .map(({ node, pathKey }) => toMobileSectorItem(node as FilteredHeatmapSectorNode, pathKey, boxSizeMarketCapRatio, summaryOf(pathKey)))
         .filter((item): item is MobileSectorItem => item !== null)
     }
     if (parent && (mid || selectableDepth >= 2)) {
       const children = parent.children
-        .map(node => toMobileSectorItem(node, `${mid ? `${major?.sectorName}>${mid.sectorName}` : parent.sectorName}>${node.sectorName}`, boxSizeMarketCapRatio, summaryOf(node)))
+        .map(node => {
+          const parentPath = mid ? sectorPathKey(major?.sectorName ?? '', mid.sectorName) : parent.sectorName
+          const path = sectorPathKey(parentPath, node.sectorName)
+          return toMobileSectorItem(node, path, boxSizeMarketCapRatio, summaryOf(path))
+        })
         .filter((item): item is MobileSectorItem => item !== null)
       const directItems = toDirectStocksItem(parent.items, parent.sectorName, boxSizeMarketCapRatio)
       return directItems ? [...children, directItems] : children
     }
     return filteredRootNodes
-      .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio, summaryOf(node)))
+      .map(node => toMobileSectorItem(node, node.sectorName, boxSizeMarketCapRatio, summaryOf(node.sectorName)))
       .filter((item): item is MobileSectorItem => item !== null)
-  }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, originalSectors, excludedMarketValueTiers, major, mid, isGraph, graphDepth])
+  }, [boxSizeMarketCapRatio, selectableDepth, filteredRootNodes, originalSectorsByPath, excludedMarketValueTiers, major, mid, isGraph, graphDepth])
 
   // 선택은 업종 키로 유지하고, 종목은 매번 갱신된 트리에서 찾는다. 없어진 업종은 빈 목록으로 표시한다.
   const selectedStocks = resolveMobileStockSelection(stockSelection, market, marketItems)
