@@ -35,7 +35,6 @@ let settingsOpenMemory = false
 // 주식 지도에 그리는 종목 수(시가총액 상위) — 설정에서 고르지 않고 고정한다.
 const STOCK_MAP_COUNT = 30
 const MOBILE_SETTINGS_BAR_HEIGHT = 24
-let mobilePageSlideId = 0
 
 function stockLayoutValue(stock: HeatmapItem, ratio: number) {
   return ratio <= 0 ? 1 : Math.pow(Math.max(stock.totalMarketValue, 0), ratio / 100)
@@ -237,7 +236,6 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const location = useLocation()
   const { pathname } = location
   const navigate = useNavigate()
-  const mobilePageSlide = (location.state as { mobilePageSlide?: { id: string; direction: 'next' | 'previous' } } | null)?.mobilePageSlide
   const pageContentRef = useRef<HTMLElement>(null)
   const {
     settingsModalProps,
@@ -279,21 +277,26 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const dragRef = useRef<{ y: number; start: number; max: number; moved: boolean } | null>(null)
   const suppressClickRef = useRef(false)
   const pageSwipeRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
+  const pageSwipeSettleTimerRef = useRef<number | null>(null)
+  const [pageSwipePreview, setPageSwipePreviewState] = useState<{
+    direction: 'next' | 'previous'
+    targetMode: 'stock' | 'sector' | 'graph'
+    offset: number
+    settling: 'finish' | 'cancel' | null
+  } | null>(null)
+  const pageSwipePreviewRef = useRef(pageSwipePreview)
+  const setPageSwipePreview = (preview: typeof pageSwipePreview) => {
+    pageSwipePreviewRef.current = preview
+    setPageSwipePreviewState(preview)
+  }
   const suppressPageClickRef = useRef(false)
   // 설정창이 열리는 최대 높이 — 화면의 40%(손잡이 줄 24px 제외)다. 눕힌 폰처럼 화면이 낮으면(500px 이하, index.css의 모바일 판정과 같은 기준)
   // 40%가 내용보다 작아 아래 줄이 잘리므로 60%까지 열어 준다. CSS 한도(아래 max-h)도 같은 값이다.
   const settingsHeight = () => Math.min(settingsContentRef.current?.scrollHeight ?? 0, window.innerHeight * (window.innerHeight <= 500 ? 0.6 : 0.4) - MOBILE_SETTINGS_BAR_HEIGHT)
 
-  useEffect(() => {
-    if (!mobilePageSlide) return
-    const timer = window.setTimeout(() => {
-      if (window.location.pathname !== pathname || window.location.search !== location.search) return
-      const rest = { ...((location.state as Record<string, unknown> | null) ?? {}) }
-      delete rest.mobilePageSlide
-      navigate(`${pathname}${location.search}`, { replace: true, state: Object.keys(rest).length > 0 ? rest : null })
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [location.key, location.search, location.state, mobilePageSlide, navigate, pathname])
+  useEffect(() => () => {
+    if (pageSwipeSettleTimerRef.current !== null) window.clearTimeout(pageSwipeSettleTimerRef.current)
+  }, [])
 
   // 분류 단계: MARKETRY·내 기준은 대·중·소분류(3단계), 거래소는 1단계. 눌러서 들어갈 때 하위 분류가 있으면 그 분류로, 없으면 바로 종목으로 간다.
   // 박스 크기는 PC 설정과 따로 두고, 폰의 기본은 시총 비례(100)다. 동일 0 · 균형 50 · 시총 비례 100.
@@ -510,42 +513,45 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       }
     }
   }
+  const swipeGraphItems: MobileGraphItem[] = mapItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
+  if (showLiveIndexes) {
+    for (const index of marketSummary?.marketOverviews.items ?? []) {
+      if (index.market === 'KOSPI' || index.market === 'KOSDAQ') {
+        swipeGraphItems.push({ key: `market-index:${index.market}`, name: index.market === 'KOSPI' ? '코스피' : '코스닥', value: index.changeRate, reference: true })
+      }
+    }
+  }
 
   // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 종목 지도 순서로 이동한다(마켓은 유지).
   const titleTo = isStockMode ? `/home?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
   const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '종목 지도로 이동'
-  const titleFrom = isStockMode ? marketRoute('/graph', market) : isSectorMode ? marketRoute('/map', market) : `/home?map&market=${market}`
-  const navigateWithPageSlide = (target: string, direction: 'next' | 'previous') => {
-    const current = pageContentRef.current
-    if (current && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const rect = current.getBoundingClientRect()
-      const snapshot = current.cloneNode(true) as HTMLElement
-      snapshot.setAttribute('aria-hidden', 'true')
-      snapshot.inert = true
-      Object.assign(snapshot.style, {
-        position: 'fixed',
-        top: `${rect.top}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
-        height: `${rect.height}px`,
-        margin: '0',
-        zIndex: '60',
-        pointerEvents: 'none',
-        willChange: 'transform',
-      })
-      document.body.appendChild(snapshot)
-      const exitX = direction === 'next' ? '-100%' : '100%'
-      const animation = snapshot.animate(
-        [{ transform: 'translateX(0)' }, { transform: `translateX(${exitX})` }],
-        { duration: 260, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)', fill: 'forwards' },
-      )
-      void animation.finished.then(() => snapshot.remove(), () => snapshot.remove())
-    }
-    mobilePageSlideId += 1
-    navigate(target, { state: { mobilePageSlide: { id: `${Date.now()}-${mobilePageSlideId}`, direction } } })
+  const modeForSwipe = (direction: 'next' | 'previous') => {
+    const order = ['stock', 'sector', 'graph'] as const
+    const index = order.indexOf(mode)
+    return order[(index + (direction === 'next' ? 1 : order.length - 1)) % order.length]
+  }
+  const routeForMode = (targetMode: 'stock' | 'sector' | 'graph') => targetMode === 'stock'
+    ? marketRoute('/map', market)
+    : targetMode === 'sector'
+      ? `/home?map&market=${market}`
+      : marketRoute('/graph', market)
+  const finishSwipe = (finish: boolean) => {
+    const preview = pageSwipePreviewRef.current
+    if (!preview) return
+    setPageSwipePreview({ ...preview, settling: finish ? 'finish' : 'cancel' })
+    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180
+    if (pageSwipeSettleTimerRef.current !== null) window.clearTimeout(pageSwipeSettleTimerRef.current)
+    pageSwipeSettleTimerRef.current = window.setTimeout(() => {
+      pageSwipeSettleTimerRef.current = null
+      if (finish) navigate(routeForMode(preview.targetMode))
+      else setPageSwipePreview(null)
+    }, duration)
   }
   const beginPageSwipe = (event: React.PointerEvent<HTMLElement>) => {
-    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+    const mobilePointer = event.pointerType === 'touch' || event.pointerType === 'pen'
+      || (event.pointerType === 'mouse' && window.matchMedia('(max-width: 767px)').matches)
+    if (!mobilePointer) return
+    if (pageSwipePreviewRef.current) return
     const map = (event.target as HTMLElement).closest<HTMLElement>('[data-mobile-map-scale]')
     if (map && Number(map.dataset.mobileMapScale) > 1.05) return
     if (pageSwipeRef.current) {
@@ -554,17 +560,59 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     }
     pageSwipeRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
   }
+  const movePageSwipe = (event: React.PointerEvent<HTMLElement>) => {
+    const start = pageSwipeRef.current
+    if (!start || start.pointerId !== event.pointerId || pageSwipePreviewRef.current?.settling) return
+    const dx = event.clientX - start.x
+    const dy = event.clientY - start.y
+    if (Math.abs(dx) < 4 || Math.abs(dx) < Math.abs(dy) * 1.1) return
+    const direction = dx < 0 ? 'next' : 'previous'
+    const width = pageContentRef.current?.clientWidth ?? window.innerWidth
+    const offset = Math.max(-width, Math.min(width, dx))
+    setPageSwipePreview({ direction, targetMode: modeForSwipe(direction), offset, settling: null })
+  }
   const endPageSwipe = (event: React.PointerEvent<HTMLElement>) => {
     const start = pageSwipeRef.current
     if (!start || start.pointerId !== event.pointerId) return
     pageSwipeRef.current = null
     const dx = event.clientX - start.x
     const dy = event.clientY - start.y
-    if (Math.abs(dx) < 64 || Math.abs(dx) < Math.abs(dy) * 1.25) return
+    const preview = pageSwipePreviewRef.current
+    if (!preview || Math.abs(dx) < Math.max(24, (pageContentRef.current?.clientWidth ?? window.innerWidth) * 0.08) || Math.abs(dx) < Math.abs(dy) * 1.1) {
+      if (preview) finishSwipe(false)
+      return
+    }
     suppressPageClickRef.current = true
     window.setTimeout(() => { suppressPageClickRef.current = false }, 0)
-    navigateWithPageSlide(dx < 0 ? titleTo : titleFrom, dx < 0 ? 'next' : 'previous')
+    finishSwipe(true)
   }
+
+  const swipePreviewTransform = pageSwipePreview
+    ? pageSwipePreview.settling === 'finish' ? 'translateX(0)'
+      : pageSwipePreview.settling === 'cancel' ? (pageSwipePreview.direction === 'next' ? 'translateX(100%)' : 'translateX(-100%)')
+        : pageSwipePreview.direction === 'next' ? `translateX(calc(100% + ${pageSwipePreview.offset}px))` : `translateX(calc(-100% + ${pageSwipePreview.offset}px))`
+    : ''
+  const currentSwipeTransform = pageSwipePreview
+    ? pageSwipePreview.settling === 'finish' ? (pageSwipePreview.direction === 'next' ? 'translateX(-100%)' : 'translateX(100%)')
+      : pageSwipePreview.settling === 'cancel' ? 'translateX(0)'
+        : `translateX(${pageSwipePreview.offset}px)`
+    : ''
+  const swipeTransition = pageSwipePreview?.settling
+    ? `transform ${window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180}ms cubic-bezier(0.2, 0.7, 0.2, 1)`
+    : 'none'
+  const renderSwipePreview = () => pageSwipePreview?.targetMode === 'graph'
+    ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
+      : isError ? <div className="flex h-full items-center justify-center text-center text-sm text-ui-text">시장 데이터를 불러오지 못했습니다.</div>
+        : <MobileGraphBars items={swipeGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
+    : pageSwipePreview?.targetMode === 'stock'
+      ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
+        : isError ? <div className="flex h-full items-center justify-center text-center text-sm text-ui-text">시장을 불러오지 못했습니다.</div>
+          : stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p>
+            : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={decimalPlaces} onSelect={() => undefined} onLongPress={() => undefined} />
+      : isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
+        : isError ? <div className="flex h-full items-center justify-center text-center text-sm text-ui-text">시장을 불러오지 못했습니다.</div>
+          : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p>
+            : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface p-1"><OverviewMap items={mapItems} colorScale={colorScale} onSelect={() => undefined} hoverPopup={false} /></div>
 
   return (
     <main className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
@@ -584,11 +632,17 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         ref={pageContentRef}
         aria-label={isGraph ? (viewMode === 'sector' ? '업종 등락률 그래프' : '종목 등락률 그래프') : (viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵')}
         onPointerDownCapture={beginPageSwipe}
+        onPointerMoveCapture={movePageSwipe}
         onPointerUpCapture={endPageSwipe}
-        onPointerCancelCapture={event => { if (pageSwipeRef.current?.pointerId === event.pointerId) pageSwipeRef.current = null }}
+        onPointerCancelCapture={event => {
+          if (pageSwipeRef.current?.pointerId !== event.pointerId) return
+          pageSwipeRef.current = null
+          if (pageSwipePreviewRef.current) finishSwipe(false)
+        }}
         onClickCapture={event => { if (suppressPageClickRef.current) { suppressPageClickRef.current = false; event.preventDefault(); event.stopPropagation() } }}
-        className={`relative min-h-0 flex-1 touch-pan-y p-1${mobilePageSlide ? ` mobile-map-page-slide-in-from-${mobilePageSlide.direction === 'next' ? 'right' : 'left'}` : ''}`}
+        className="relative min-h-0 flex-1 touch-pan-y overflow-hidden"
       >
+        <div className="absolute inset-0 p-1" style={{ transform: currentSwipeTransform, transition: swipeTransition, willChange: pageSwipePreview ? 'transform' : undefined }}>
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
           : isError ? <div className="flex h-full flex-col items-center justify-center gap-2 text-center"><p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p><button type="button" onClick={refetchHeatmap} className="min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
@@ -607,6 +661,10 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
               </button>}
               <OverviewMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} hoverPopup={false} zoomable />
             </div>}
+        </div>
+        {pageSwipePreview && <div aria-hidden="true" inert className="absolute inset-0 p-1" style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
+          {renderSwipePreview()}
+        </div>}
       </section>
 
       <section role="region" aria-label="설정" className="relative z-10 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
@@ -635,7 +693,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           dragRef.current = null
           setDragHeight(null)
         }} onPointerCancel={() => { dragRef.current = null; setDragHeight(null) }} className="absolute left-1/2 top-0 flex h-[24px] w-16 -translate-x-1/2 touch-none items-center justify-center border-0 bg-transparent p-0 text-ui-white before:absolute before:left-1/2 before:top-1/2 before:h-[48px] before:w-[48px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']">
-          <span aria-hidden="true" className="h-1 w-12 -translate-y-0.5 rounded-full bg-ui-muted" />
+          <span aria-hidden="true" className="h-1 w-12 -translate-y-0.5 rounded-full bg-ui-white" />
         </button>
         <Link to={titleTo} aria-label={titleLabel} className="absolute left-3 top-0 z-10 flex h-[24px] items-center gap-1 text-[13px] font-bold tracking-[0.12em] text-brand no-underline">{isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}<ChevronDownIcon aria-hidden="true" className="h-3 w-3" /></Link>
         {data?.snapshotTime && <span className="absolute right-3 top-0 flex h-[24px] items-center text-[13px] tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}

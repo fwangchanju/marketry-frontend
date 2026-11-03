@@ -22,7 +22,7 @@ export default function MobileGraphBars({ items, colorScale, highlightColor }: {
   const rowCap = sorted.length < 8 ? 'max-h-[48px]' : ''
   if (!sorted.length) return <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 항목이 없습니다.</p>
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full touch-pan-y overflow-y-auto">
       <div className="flex min-h-full flex-col" style={{ height: `max(100%, ${sorted.length * 24}px)` }}>
         {sorted.map(item => {
           if ('hiddenCount' in item && item.hiddenCount !== undefined) return <div key={item.key} className={`flex min-h-[24px] ${rowCap} flex-1 items-center gap-2 text-[14px] text-ui-muted`}><span className="w-[108px] shrink-0 pr-2 text-right font-bold">외 {item.hiddenCount}개</span><span aria-hidden="true">⋮</span></div>
