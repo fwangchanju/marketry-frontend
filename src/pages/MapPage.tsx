@@ -54,9 +54,7 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
-import { limitDepth, flattenAllItems, type FilteredHeatmapSectorNode, type SectorChangeFilter } from '@/hooks/useFilteredHeatmap'
-import { useTransientSetting } from '@/hooks/useTransientSetting'
-import { MEMBER_DEFAULTS } from '@/utils/settingDefaults'
+import { limitDepth, flattenAllItems, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import type { MarketQuery, HeatmapSectorNode, HeatmapItem } from '@/types/api'
 import { isAdminSession } from '@/utils/adminAccess'
 
@@ -278,6 +276,10 @@ export default function MapPage() {
     refetchHeatmap,
     isRefetchingHeatmap,
     sectorChangeMaxDepth,
+    sectorChangeFilter,
+    sectorChangeDepth,
+    setSectorChangeFilter,
+    setSectorChangeDepth,
     isLoading,
     isError,
     rootNodes,
@@ -297,8 +299,10 @@ export default function MapPage() {
     onChangeAvgChangeRateUseSimple,
     onChangeSectorFilterEnabled,
     boxLabelMinAreaPercent,
+    setBoxLabelMinAreaPercent,
     stockLabelMode,
     stockPopupOnHover,
+    setStockPopupOnHover,
     decimalPlaces,
     colorScale,
     handleExcludeSector,
@@ -307,10 +311,6 @@ export default function MapPage() {
   const isAdmin = isAdminSession(session)
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
   const isSpecialMember = isAdmin || (session?.authenticated === true && session.special === true)
-  const [adminSectorChangeFilter, setAdminSectorChangeFilter] = useTransientSetting<SectorChangeFilter>('heatmap.sectorChangeFilter', MEMBER_DEFAULTS.sectorChangeFilter)
-  const [adminSectorChangeDepth, setAdminSectorChangeDepth] = useTransientSetting('heatmap.sectorChangeDepth', MEMBER_DEFAULTS.sectorChangeDepth)
-  const [, setAdminBoxLabelMinAreaPercent] = useTransientSetting('heatmap.boxLabelMinAreaPercent', MEMBER_DEFAULTS.boxLabelMinAreaPercent)
-  const [, setAdminStockPopupOnHover] = useTransientSetting('heatmap.stockPopupOnHover', MEMBER_DEFAULTS.stockPopupOnHover)
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/단독 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
@@ -913,16 +913,16 @@ export default function MapPage() {
                     }}
                   />
                   <SettingsSectorChangeSection
-                    value={adminSectorChangeFilter === 'rising' || adminSectorChangeFilter === 'falling' ? adminSectorChangeFilter : 'all'}
-                    onChange={setAdminSectorChangeFilter}
-                    depth={Math.min(Number.isInteger(adminSectorChangeDepth) && adminSectorChangeDepth >= 0 ? adminSectorChangeDepth : 0, sectorChangeMaxDepth - 1)}
-                    onChangeDepth={setAdminSectorChangeDepth}
+                    value={sectorChangeFilter}
+                    onChange={setSectorChangeFilter}
+                    depth={sectorChangeDepth}
+                    onChangeDepth={setSectorChangeDepth}
                     maxSelectableDepth={sectorChangeMaxDepth}
                     noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
                   />
                   <SettingsStockMoveSection enabled={stockMoveEnabled} onChange={handleChangeStockMoveEnabled} />
-                  <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setAdminStockPopupOnHover} />
-                  <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setAdminBoxLabelMinAreaPercent} />
+                  <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
+                  <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
                 </div>
               </SettingsPanelGroup>}
             </SettingsPanel>

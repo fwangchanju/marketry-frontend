@@ -275,7 +275,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // avgChangeRateUseSimple은 섹터 랭킹에 사용한다. 강세 업종은 업종 탭 표시 지표를 따른다.
   // 종목 박스가 전체 히트맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다(섹터 헤더와는 무관).
   // 실험 탭의 3-3 텍스트 표시 기준은 저장하지 않는다(새로고침하면 기본값).
-  const [boxLabelMinAreaPercent] = useTransientSetting(profileKey('heatmap.boxLabelMinAreaPercent'), profileDefaults.boxLabelMinAreaPercent)
+  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = useTransientSetting(profileKey('heatmap.boxLabelMinAreaPercent'), profileDefaults.boxLabelMinAreaPercent)
   // 종목 박스에 이름만/등락률만/둘 다/끄기 중 뭘 보여줄지 — 기본은 둘 다(기존 동작 유지, 배열 앞에
   // "끄기"가 추가되면서 both의 인덱스가 2에서 3으로 밀림).
   const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting(profileKey('heatmap.stockLabelModeIndex'), profileDefaults.stockLabelModeIndex)
@@ -308,9 +308,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting(profileKey('heatmap.sectorFilterEnabled'), profileDefaults.sectorFilterEnabled)
   const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<StockChangeFilter>(profileKey('heatmap.stockChangeFilter'), profileDefaults.stockChangeFilter)
   // 실험 탭의 업종 등락 방향·깊이는 저장하지 않는다(새로고침하면 기본값).
-  const [storedSectorChangeFilter] = useTransientSetting<SectorChangeFilter>(profileKey('heatmap.sectorChangeFilter'), profileDefaults.sectorChangeFilter)
+  const [storedSectorChangeFilter, setSectorChangeFilter] = useTransientSetting<SectorChangeFilter>(profileKey('heatmap.sectorChangeFilter'), profileDefaults.sectorChangeFilter)
   const sectorChangeFilter: SectorChangeFilter = storedSectorChangeFilter === 'rising' || storedSectorChangeFilter === 'falling' ? storedSectorChangeFilter : 'all'
-  const [storedSectorChangeDepth] = useTransientSetting(profileKey('heatmap.sectorChangeDepth'), profileDefaults.sectorChangeDepth)
+  const [storedSectorChangeDepth, setSectorChangeDepth] = useTransientSetting(profileKey('heatmap.sectorChangeDepth'), profileDefaults.sectorChangeDepth)
   const sectorChangeDepth = Number.isInteger(storedSectorChangeDepth) && storedSectorChangeDepth >= 0 ? storedSectorChangeDepth : 0
   // null = 제한 없음(전체 뎁스 표시). 슬라이더의 실제 상한(availableMaxDepth)은 트리 계산 후에 나온다.
   // 기본값 2(렌더러 스크린샷 기준 화면에 맞춤).
@@ -1059,6 +1059,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     onChangeStockChangeFilter: setStockChangeFilter,
     sectorChangeFilter,
     sectorChangeDepth: effectiveSectorChangeDepth,
+    setSectorChangeFilter,
+    setSectorChangeDepth,
     sectorChangeMaxDepth,
     availableMaxDepth,
     // 선택한 업종 단계는 KRX와 MARKETRY 분류에 동일하게 적용한다.
@@ -1078,9 +1080,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     onChangeAvgChangeRateUseSimple: setAvgChangeRateUseSimple,
     excludedMarketValueTiers,
     boxLabelMinAreaPercent,
+    setBoxLabelMinAreaPercent,
     stockLabelMode,
     decimalPlaces,
     stockPopupOnHover,
+    setStockPopupOnHover,
     colorScale,
     excludedSectorNames,
     onChangeSectorFilterEnabled: setSectorFilterEnabled,
