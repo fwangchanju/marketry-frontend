@@ -4,7 +4,7 @@ import DocumentPageLayout from '@/components/DocumentPageLayout'
 import { INFO_FACTS, INFO_LIST, InfoCallout, InfoFact, InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 
 const CONTACT_EMAIL = 'marketry2026@gmail.com'
-const EFFECTIVE_DATE = '2026-10-25'
+const EFFECTIVE_DATE = '2026-11-04'
 
 export default function PrivacyPolicyPage() {
   return (
@@ -73,7 +73,7 @@ export default function PrivacyPolicyPage() {
 
         <InfoSection number="6" title="보관 기간과 삭제">
           <div className={INFO_FACTS}>
-            <InfoFact label="회원 정보">탈퇴하기 전까지 보관합니다. 1년 동안 접속하지 않은 계정은 삭제될 수 있습니다. 탈퇴하면 운영 데이터에서 개인정보와 저장한 데이터를 삭제합니다.</InfoFact>
+            <InfoFact label="회원 정보">탈퇴하기 전까지 보관합니다. 탈퇴하면 운영 데이터에서 개인정보와 저장한 데이터를 삭제합니다.</InfoFact>
             <InfoFact label="장애 대비 백업">서버 백업은 7일, Cloudflare R2 백업은 10일 보관한 뒤 자동으로 삭제합니다. 백업 복원 시 탈퇴한 정보는 다시 삭제합니다.</InfoFact>
             <InfoFact label="비회원 방문 집계">180일 보관한 뒤 삭제합니다.</InfoFact>
             <InfoFact label="운영 지표">날짜별 합계로 30일 보관한 뒤 삭제합니다.</InfoFact>
@@ -99,6 +99,7 @@ export default function PrivacyPolicyPage() {
 
         <InfoSection title="개정 이력">
           <ul className={INFO_LIST}>
+            <li>2026-11-04: 1년 미접속 계정 삭제 안내 삭제</li>
             <li>2026-10-25: 소셜 로그인·임시 인증 쿠키·공지/광고 배너·방문자 가명 집계·운영 지표 안내 반영</li>
             <li>2026-10-22: 비회원 방문자 집계, 접속 기록, Cloudflare 백업, 탈퇴·미접속 계정 삭제, 보관 기간, 저장 정보 안내 반영</li>
             <li>2026-10-11: 서비스 이름·주소 변경과 수집 항목·쿠키·저장소·외부 서비스·이용자 권리 안내 보강</li>

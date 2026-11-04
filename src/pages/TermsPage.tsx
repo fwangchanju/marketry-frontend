@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { INFO_LIST, InfoCallout, InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 
 const CONTACT_EMAIL = 'marketry2026@gmail.com'
-const EFFECTIVE_DATE = '2026-10-25'
+const EFFECTIVE_DATE = '2026-11-04'
 
 export default function TermsPage() {
   return (
@@ -36,7 +36,6 @@ export default function TermsPage() {
             <li>구글·네이버·카카오 계정으로 가입하거나 로그인할 수 있습니다. 로그인 과정에서 이메일 주소를 제공하지 않으면 회원 가입과 로그인을 할 수 없습니다.</li>
             <li>한 사람이 여러 계정을 만들어 서비스를 방해해서는 안 됩니다.</li>
             <li>프로필 화면에서 언제든 탈퇴할 수 있습니다. 탈퇴하면 운영 데이터에서 개인정보와 저장한 데이터를 삭제합니다. 장애 대비 백업에는 삭제한 정보가 최대 10일 남을 수 있고, 복구할 수 없습니다.</li>
-            <li>1년 동안 접속하지 않은 계정은 삭제될 수 있습니다.</li>
           </ul>
         </InfoSection>
 
@@ -89,6 +88,7 @@ export default function TermsPage() {
 
         <InfoSection title="개정 이력">
           <ul className={INFO_LIST}>
+            <li>2026-11-04: 1년 미접속 계정 삭제 조항 삭제</li>
             <li>2026-10-25: 구글·네이버·카카오 가입·로그인, 공지·광고 배너, 탈퇴 후 백업 보관 안내 반영</li>
             <li>2026-10-22: 최초 시행</li>
           </ul>
