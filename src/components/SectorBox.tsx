@@ -42,6 +42,7 @@ interface Props {
   stockLabelMode: StockLabelMode
   // 하위 StockBox까지 그대로 관통해서 전달 — 등락률(%) 표시 소수점 자릿수.
   decimalPlaces: number
+  currencyUnit?: '원' | '엔'
   topPickSectorKeys: Set<string>
   strongIndustryColor: string
   // 현재 화면의 상대 depth 0이 트리에서 몇 번째 단계인지 나타내는 절대 depth 오프셋.
@@ -83,6 +84,7 @@ function SectorBox({
   labelMinAreaPercent,
   stockLabelMode,
   decimalPlaces,
+  currencyUnit = '원',
   topPickSectorKeys,
   strongIndustryColor,
   depthOffset = 0,
@@ -102,7 +104,7 @@ function SectorBox({
         `시총 가중: ${sector.weightedAvgChangeRate === null ? '-' : toPctSigned(sector.weightedAvgChangeRate, decimalPlaces)}`,
         `동일 가중: ${sector.simpleAvgChangeRate === null ? '-' : toPctSigned(sector.simpleAvgChangeRate, decimalPlaces)}`,
         `등락 종목: ▲${advancerCount} ▼${declinerCount} ■${unchangedCount}`,
-        `그룹 시총: ${toJoEokDecimal(sector.totalMarketValue / 100_000_000)}`,
+        `그룹 시총: ${toJoEokDecimal(sector.totalMarketValue / 100_000_000)}${currencyUnit === '엔' ? ' 엔' : ''}`,
       ],
       // 위 숫자는 제외한 업종·시가총액 구간을 뺀 종목만으로 계산한 값이다(업종 화면 표는 그룹 안 전체 종목).
       note: '필터 적용 종목 기준',
@@ -124,7 +126,7 @@ function SectorBox({
     isInDepthRange(upDownCountDepthRange, depth)
       ? `▲${advancerCount} ▼${declinerCount} ■${unchangedCount}`
       : null,
-    isInDepthRange(marketValueDepthRange, depth) ? toJoEokDecimal(sector.totalMarketValue / 100_000_000) : null,
+    isInDepthRange(marketValueDepthRange, depth) ? `${toJoEokDecimal(sector.totalMarketValue / 100_000_000)}${currencyUnit === '엔' ? ' 엔' : ''}` : null,
   ].filter((part): part is string => part !== null)
   const headerSuffix = headerParts.length > 0 ? `${TAB_GAP}${headerParts.join(TAB_GAP)}` : ''
   const absoluteDepth = depthOffset + depth
@@ -271,6 +273,7 @@ function SectorBox({
           labelMinAreaPercent={labelMinAreaPercent}
           stockLabelMode={stockLabelMode}
           decimalPlaces={decimalPlaces}
+          currencyUnit={currencyUnit}
           topPickSectorKeys={topPickSectorKeys}
           strongIndustryColor={strongIndustryColor}
           depthOffset={depthOffset}
@@ -289,6 +292,7 @@ function SectorBox({
           labelMinAreaPercent={labelMinAreaPercent}
           stockLabelMode={stockLabelMode}
           decimalPlaces={decimalPlaces}
+          currencyUnit={currencyUnit}
           colorScale={colorScale}
           onOpenPopup={onOpenPopup}
           onClosePopup={onClosePopup}
