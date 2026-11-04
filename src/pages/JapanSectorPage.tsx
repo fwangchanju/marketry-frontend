@@ -18,7 +18,8 @@ import type { SectorItem } from '@/types/api'
 import stocks from '@/data/japanStocks.json'
 
 type Category = { id: number; parentId: number | null; name: string }
-type Classification = { sector: string | null; industry: string | null }
+type Classification = { sector: string | null; industry: string | null; subIndustry: string | null }
+const MAX_DEPTH = 2
 const categoriesKey = ['admin', 'overseas-classification-categories', 'JAPAN'] as const
 const classificationsKey = ['admin', 'overseas-stock-classifications', 'JAPAN'] as const
 const endpoint = '/admin/overseas-classification-categories/JAPAN'
@@ -32,20 +33,27 @@ function marketCapEok(value: string): number {
 
 export default function JapanSectorPage() {
   const queryClient = useQueryClient()
+  const depthOf = (parentId: number | null): number => (parentId === null ? -1 : sectors.find(item => item.id === parentId)?.depth ?? 0)
   const categories = useQuery({ queryKey: categoriesKey, queryFn: async () => (await client.get<Category[]>(endpoint)).data })
   const classifications = useQuery({ queryKey: classificationsKey, queryFn: async () => (await client.get<Record<string, Classification>>('/admin/overseas-stock-classifications/JAPAN')).data })
   const invalidate = () => { void queryClient.invalidateQueries({ queryKey: categoriesKey }); void queryClient.invalidateQueries({ queryKey: classificationsKey }) }
-  const create = useMutation({ meta: { failure: '분류를 추가하지 못했습니다.' }, mutationFn: async ({ name, parentId }: { name: string; parentId: number | null }): Promise<SectorItem> => { const item = (await client.post<Category>(endpoint, { name, parentId })).data; return { ...item, depth: item.parentId === null ? 0 : 1 } }, onSuccess: invalidate })
+  const create = useMutation({ meta: { failure: '분류를 추가하지 못했습니다.' }, mutationFn: async ({ name, parentId }: { name: string; parentId: number | null }): Promise<SectorItem> => { const item = (await client.post<Category>(endpoint, { name, parentId })).data; return { ...item, depth: depthOf(item.parentId) + 1 } }, onSuccess: invalidate })
   const rename = useMutation({ meta: { failure: '분류 이름을 바꾸지 못했습니다.' }, mutationFn: async ({ id, name }: { id: number; name: string }) => client.put(`${endpoint}/${id}`, { name }), onSuccess: invalidate })
   const reparent = useMutation({ meta: { failure: '분류를 옮기지 못했습니다.' }, mutationFn: async ({ id, parentId }: { id: number; parentId: number | null }) => client.put(`${endpoint}/${id}/parent`, { parentId }), onSuccess: invalidate })
-  const sectors = useMemo<SectorItem[]>(() => (categories.data ?? []).map(item => ({ ...item, depth: item.parentId === null ? 0 : 1 })), [categories.data])
+  const sectors = useMemo<SectorItem[]>(() => {
+    const all = categories.data ?? []
+    const depth = (item: Category): number => { const parent = all.find(candidate => candidate.id === item.parentId); return parent ? depth(parent) + 1 : 0 }
+    return all.map(item => ({ ...item, depth: Math.min(depth(item), MAX_DEPTH) }))
+  }, [categories.data])
   const stats = useMemo(() => {
     const result = new Map<number, { marketValue: number; stockCount: number }>()
     for (const category of sectors) {
-      const parent = category.parentId === null ? category : sectors.find(item => item.id === category.parentId)
+      const path: string[] = []
+      for (let current: SectorItem | undefined = category; current; current = sectors.find(item => item.id === current?.parentId)) path.unshift(current.name)
       const matching = stocks.filter(stock => {
         const classification = classifications.data?.[stock.code]
-        return classification?.sector === parent?.name && (category.parentId === null || classification?.industry === category.name)
+        const values = [classification?.sector, classification?.industry, classification?.subIndustry]
+        return path.every((name, index) => values[index] === name)
       })
       result.set(category.id, { marketValue: matching.reduce((sum, stock) => sum + marketCapEok(stock.marketCap) * 100_000_000, 0), stockCount: matching.length })
     }
@@ -80,7 +88,7 @@ export default function JapanSectorPage() {
     <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
       <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold"><ToolbarModeText page="CUSTOM" label="J-SECTOR" /><div ref={setToolbar} className="min-w-0 flex-1" /></div>
-        {categories.isLoading || classifications.isLoading ? <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]"><Spinner showElapsed /></div> : categories.isError || classifications.isError ? <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void categories.refetch(); void classifications.refetch() }} /></div> : <AdminSectorTable sectors={sectors} sectorStats={stats} toolbarContainer={toolbar} settingsActionsTarget={settingsActions} onCountLabelChange={setCount} levels={['섹터', '업종']} overseasActions={{ create, rename, reparent, remove }} />}
+        {categories.isLoading || classifications.isLoading ? <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]"><Spinner showElapsed /></div> : categories.isError || classifications.isError ? <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void categories.refetch(); void classifications.refetch() }} /></div> : <AdminSectorTable sectors={sectors} sectorStats={stats} toolbarContainer={toolbar} settingsActionsTarget={settingsActions} onCountLabelChange={setCount} overseasActions={{ create, rename, reparent, remove }} />}
         <DisclaimerFooter />
       </main>
       <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}><SettingsPanel pageLabel="Custom" stockCountLabel={count} showPreferenceActions={false} isOpen={settingsOpen} onOpenChange={setSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}><SettingsPanelGroup section="custom"><div className="settings-empty-message">읽기 전용</div></SettingsPanelGroup><SettingsPanelGroup section="adminOps"><div ref={setSettingsActions} /></SettingsPanelGroup></SettingsPanel></div>

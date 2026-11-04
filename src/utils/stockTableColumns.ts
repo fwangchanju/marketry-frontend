@@ -16,6 +16,7 @@ export type StockColumnKey =
   | 'parentSector'
   | 'midSector'
   | 'subSector'
+  | 'overseasSubSector'
 
 // 맨 왼쪽 체크박스 칸 폭(px).
 export const STOCK_CHECKBOX_COLUMN_PX = 29
