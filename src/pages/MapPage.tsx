@@ -818,8 +818,8 @@ export default function MapPage() {
               data-map-mobile-capture-frame
               data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
               data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
-              // 두 경로 모두 아래 4px를 자른 9:16 이미지를 만든다.
-              style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT + 4}px`, padding: '4px 4px 0', boxSizing: 'border-box' }}
+              // 모바일 캡처와 텔레그램 지도는 동일한 5:8 프레임과 여백을 쓴다.
+              style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }}
               className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"
             >
             <div
