@@ -345,7 +345,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
         const diff =
           activeSortKey === 'totalMarketValue'
             ? a.totalMarketValue - b.totalMarketValue
-            // 종목 크기는 시가총액이 클수록 큰 구간이라 시가총액 순서와 같다.
+            // 규모는 시가총액이 클수록 큰 구간이라 시가총액 순서와 같다.
             : activeSortKey === 'sizeTier'
               ? a.totalMarketValue - b.totalMarketValue
               : activeSortKey === 'nxt'
@@ -397,7 +397,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
     }))) : rows),
     [rows, trimmed, showAlias],
   )
-  // 머리글 필터 — 종목 크기·마켓·거래소 분류·대/중/소분류·NXT. 값이 없으면 '-'이다.
+  // 머리글 필터 — 규모·마켓·거래소 분류·대/중/소분류·NXT. 값이 없으면 '-'이다.
   const filterValueOf = useCallback(
     (row: (typeof rows)[number], key: StockFilterKey): string => {
       switch (key) {
@@ -414,7 +414,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
   )
   const filters = useStockColumnFilters(searchedRows, filterValueOf)
   const visibleRows = filters.filteredRows
-  // 종목 크기 필터의 보기 순서 — 큰 구간부터(Top 2, 대형주, ...).
+  // 규모 필터의 보기 순서 — 큰 구간부터(Top 2, 대형주, ...).
   const { data: valueTiers } = useMarketValueTiers()
   const tierOrder = useMemo(() => [...(valueTiers ?? [])].sort((a, b) => b.thresholdValue - a.thresholdValue).map(tier => tier.label), [valueTiers])
   const sectorParentHints = useMemo(
@@ -521,7 +521,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
               {header('stockName', '종목명', undefined, showAlias ? 1 : 2)}
               {showAlias && header('alias', '약칭')}
               {header('totalMarketValue', '시가총액')}
-              {header('sizeTier', '종목 크기', filterButton('sizeTier', '종목 크기', { optionOrder: tierOrder }))}
+              {header('sizeTier', '규모', filterButton('sizeTier', '규모', { optionOrder: tierOrder }))}
               {header('market', '마켓', filterButton('market', '마켓', { optionOrder: ['코스피', '코스닥'] }))}
               {header('nxt', 'NXT', filterButton('nxt', 'NXT', { optionOrder: ['O', '-'], labelOf: value => (value === 'O' ? 'NXT 거래' : 'NXT 미거래') }))}
               {header(showHierarchy ? 'industryName' : 'sectorName', '거래소 분류', filterButton('industry', '거래소 분류'))}

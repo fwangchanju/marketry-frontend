@@ -29,6 +29,13 @@ interface Props {
   onCountLabelChange?: (label: string | undefined) => void
   // 업종 번호별 시가총액 합·종목 수(지도 데이터의 전체 종목 기준) — 열의 기본 순서와 숫자 칸에 쓴다.
   sectorStats?: SectorStats
+  levels?: readonly string[]
+  overseasActions?: {
+    create: ReturnType<typeof useCreateSector>
+    rename: ReturnType<typeof useRenameSector>
+    reparent: ReturnType<typeof useReparentSector>
+    remove: (id: number, name: string) => void
+  }
 }
 
 // 업종 열의 정렬 기준 — 기본은 시가총액 합이 큰 순서이고, 아랫줄 머리글을 눌러 바꾼다(열마다 따로).
@@ -48,7 +55,6 @@ const MAX_SECTOR_DEPTH = 3
 const SECTOR_PATH_SEPARATOR = ' > '
 // 보호 업종(신규 상장·거래 정지·미분류) — 삭제·이름 변경·이동·하위 업종 만들기가 막히고, 대분류에만 있다(서버도 막는다).
 const isProtectedSector = (sector: SectorItem) => sector.parentId === null && isProtectedSectorName(sector.name)
-const MAX_SECTOR_LEVELS = MAX_SECTOR_DEPTH + 1
 // "하위 업종 추가" 아이콘은 대분류·중분류(깊이 0·1)에만 보여 준다 — 소분류 이하에는 더 만들지 않는다. 이미 있는 4단계 업종은 그대로 둔다.
 const ADD_CHILD_MAX_PARENT_DEPTH = 1
 
@@ -173,7 +179,9 @@ function DroppableSectorRow({
   )
 }
 
-export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS }: Props) {
+export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, levels = ['대분류', '중분류', '소분류'], overseasActions }: Props) {
+  const maxDepth = overseasActions ? 1 : MAX_SECTOR_DEPTH
+  const addChildMaxParentDepth = overseasActions ? 0 : ADD_CHILD_MAX_PARENT_DEPTH
   const [query, setQuery] = useState('')
   const [sortByDepth, setSortByDepth] = useState<Record<number, SectorSort | undefined>>({})
   // 머리글 필터 목록의 보기 순서 — 가나다 순(기본) 또는 시가총액 합 순.
@@ -220,10 +228,14 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     else next.add(value)
     return { ...previous, [depth]: next }
   })
-  const createSector = useCreateSector()
-  const renameSector = useRenameSector()
-  const { remove } = useSectorDeleteFlow()
-  const reparentSector = useReparentSector()
+  const domesticCreateSector = useCreateSector()
+  const domesticRenameSector = useRenameSector()
+  const { remove: domesticRemove } = useSectorDeleteFlow()
+  const domesticReparentSector = useReparentSector()
+  const createSector = overseasActions?.create ?? domesticCreateSector
+  const renameSector = overseasActions?.rename ?? domesticRenameSector
+  const remove = overseasActions?.remove ?? domesticRemove
+  const reparentSector = overseasActions?.reparent ?? domesticReparentSector
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const hasChildren = (id: number) => sectors.some(c => c.parentId === id)
@@ -248,8 +260,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       !isDescendant(candidate, moved.id) &&
       candidate.id !== moved.parentId &&
       // 소분류(깊이 2) 이하에는 더 넣지 않는다 — 옮긴 뒤 가장 깊은 업종도 소분류(깊이 2)를 넘지 않아야 한다.
-      candidate.depth <= ADD_CHILD_MAX_PARENT_DEPTH &&
-      candidate.depth + 1 + subtreeHeight <= ADD_CHILD_MAX_PARENT_DEPTH + 1,
+      candidate.depth <= addChildMaxParentDepth &&
+      candidate.depth + 1 + subtreeHeight <= addChildMaxParentDepth + 1,
     )
   }
 
@@ -326,8 +338,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
 
   const toggleAddChild = (id: number) => {
     const parent = sectors.find(c => c.id === id)
-    if (parent && parent.depth >= MAX_SECTOR_DEPTH) {
-      appAlert(`업종은 ${MAX_SECTOR_LEVELS}단계까지만 만들 수 있습니다.`, { title: '추가 제한' })
+    if (parent && parent.depth >= maxDepth) {
+      appAlert(`업종은 ${maxDepth + 1}단계까지만 만들 수 있습니다.`, { title: '추가 제한' })
       return
     }
     if (parent?.depth === 0) { setSelectedMajorId(id); setSelectedMiddleId(null) }
@@ -359,7 +371,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
 
   const handleCreateChild = (parentId: number) => {
     const parent = sectors.find(c => c.id === parentId)
-    if (parent && parent.depth >= MAX_SECTOR_DEPTH) return
+    if (parent && parent.depth >= maxDepth) return
     const trimmed = (childNameByParent[parentId] ?? '').trim()
     if (!trimmed) return
     createSector.mutate({ name: trimmed, parentId }, {
@@ -428,10 +440,10 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     viewSectors.filter(sector => sector.depth >= 2).length,
   ]
   // 가장 깊이 선택된 열 — 이 열의 머리글만 강조색으로 칠하고 화살표를 붙인다.
-  const activeColumn = selectedMiddleId !== null ? 2 : selectedMajorId !== null ? 1 : 0
+  const activeColumn = selectedMiddleId !== null ? Math.min(2, levels.length - 1) : selectedMajorId !== null ? 1 : 0
   // 설정창 머리글 개수는 대분류만 센다 — MARKETRY·거래소(읽기 전용 표)와 같은 기준이다. 중·소분류 개수는 위 열 머리글에 따로 적혀 있다.
   const topLevelTotal = sectors.filter(sector => sector.depth === 0).length
-  useReportCountLabel(`${toCount(sectorCounts[0])}/${toCount(topLevelTotal)}업종`, onCountLabelChange)
+  useReportCountLabel(`${toCount(sectorCounts[0])}/${toCount(topLevelTotal)}${overseasActions ? '섹터' : '업종'}`, onCountLabelChange)
   const depthOptions = sectorNamesByDepth(sectors, sectorStats).map(names => [...new Set(names)])
   const sortSiblings = useCallback((items: SectorItem[], depth: number) => {
     const { key, direction } = sortByDepth[depth] ?? DEFAULT_SECTOR_SORT
@@ -575,7 +587,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   if (e.key === 'Enter') handleCreateChild(parentId)
                   if (e.key === 'Escape') setAddingChildFor(null)
                 }}
-                placeholder={`${row.depth === 1 ? '중분류' : '소분류'} 추가`}
+                placeholder={`${levels[row.depth] ?? '업종'} 추가`}
                 data-hint={`${chainLabel} 하위 업종 추가`}
                 aria-label={`${chainLabel} 하위 업종명`}
                 className="h-7 w-40 rounded-md border-0 bg-[var(--ui-panel)] px-2 text-sm font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
@@ -656,7 +668,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   >{itemNumber}</DraggableNumberBadge>
                   <button
                     type="button"
-                    data-hint={isProtectedSector(sector) ? getProtectedSectorHint(sector.name) : undefined}
+                    data-hint={isProtectedSector(sector) ? (overseasActions ? '삭제한 분류의 종목이 이 그룹으로 옮겨집니다.' : getProtectedSectorHint(sector.name)) : undefined}
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
                     className={`truncate border-0 bg-transparent p-0 text-left text-sm ${isProtectedSector(sector) ? PROTECTED_SECTOR_TEXT_CLASS : 'text-ui-white'}`}
                   >
@@ -665,7 +677,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   {/* 선택한 항목은 하위 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 업종명을 덜 가리도록 업종 칸의 오른쪽 끝(시가총액 합 칸과의 세로선)에 바짝 붙이고 여백을 줄였다. 옆 칸 숫자를 덮지 않는다. 번호 칸을 끄는 중에는 숨긴다. */}
                   {selectedSectorId === sector.id && !isMoveDrag && (
                     <span className="ml-auto flex shrink-0 items-center gap-0.5 pl-1">
-                      {sector.depth <= ADD_CHILD_MAX_PARENT_DEPTH && !isProtectedSector(sector) && (
+                      {sector.depth <= addChildMaxParentDepth && !isProtectedSector(sector) && (
                         <button type="button" data-no-row-select data-hint="하위 업종 추가" aria-label={`${sector.name} 하위 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
                           <PlusIcon className="h-4 w-4" />
                         </button>
@@ -757,16 +769,16 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             inline
             query={query}
             onChange={setQuery}
-            placeholder="업종 검색"
-            ariaLabel="업종 검색"
+            placeholder={overseasActions ? '섹터 · 업종 검색' : '업종 검색'}
+            ariaLabel={overseasActions ? '섹터 · 업종 검색' : '업종 검색'}
           />,
           toolbarContainer,
         )}
-        <div className="relative grid min-h-0 flex-1 grid-cols-3 overflow-hidden border border-ui-border select-none [&_input]:select-text">
-          {(['대분류', '중분류', '소분류'] as const).map((label, index) => (
+        <div className={`relative grid min-h-0 flex-1 overflow-hidden border border-ui-border select-none [&_input]:select-text ${levels.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          {levels.map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">
               {(() => {
-                const headerClass = `flex shrink-0 flex-col bg-[var(--ui-panel)] text-sm font-bold shadow-[inset_0_-1px_0_var(--ui-border)] ${index < 2 ? 'border-r border-ui-white/20' : ''}`
+                const headerClass = `flex shrink-0 flex-col bg-[var(--ui-panel)] text-sm font-bold shadow-[inset_0_-1px_0_var(--ui-border)] ${index < levels.length - 1 ? 'border-r border-ui-white/20' : ''}`
                 const depth = index
                 const excluded = excludedByDepth[depth] ?? new Set<string>()
                 const { key: sortKey, direction: sortDirection } = sortByDepth[depth] ?? DEFAULT_SECTOR_SORT
@@ -799,7 +811,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 // 아랫줄 — MARKETRY·거래소 업종 표와 같은 업종 / 시가총액 합 / 종목 수 정렬 머리글.
                 const bottomRow = (
                   <div className="flex border-t border-ui-border text-ui-white" style={{ height: HEADER_HALF_PX }}>
-                    {([['name', '업종'], ['marketValue', '시가총액 합'], ['stockCount', '종목 수']] as const).map(([key, text], cell) => (
+                    {([['name', overseasActions ? label : '업종'], ['marketValue', '시가총액 합'], ['stockCount', '종목 수']] as const).map(([key, text], cell) => (
                       <div key={key} className="flex items-center justify-center whitespace-nowrap" style={{ width: SECTOR_COLUMN_WIDTHS[cell] }}>
                         <SortLabel label={text} active={sortKey === key && !(isSearching && depth > 0)} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
                       </div>
@@ -810,8 +822,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   <ColumnDropHeader depth={depth} className={headerClass} style={{ height: STOCK_HEADER_ROW_PX }}>{topRow}{bottomRow}</ColumnDropHeader>
                 )
               })()}
-              <ScrollArea overlay scrollLabel={`${label} 업종 목록`} className={`min-h-0 flex-1 ${index < 2 ? 'border-r border-ui-border' : ''}`}>
-                <table className="nes-table is-dark custom-page-table custom-sector-table w-full table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><colgroup>{SECTOR_COLUMN_WIDTHS.map(width => <col key={width + index} style={{ width }} />)}</colgroup><tbody>{columnRows[index].map(renderRow)}</tbody></table>
+              <ScrollArea overlay scrollLabel={`${label} 업종 목록`} className={`min-h-0 flex-1 ${index < levels.length - 1 ? 'border-r border-ui-border' : ''}`}>
+                <table className="nes-table is-dark custom-page-table custom-sector-table w-full table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><colgroup>{SECTOR_COLUMN_WIDTHS.map((width, cell) => <col key={cell} style={{ width }} />)}</colgroup><tbody>{columnRows[index].map(renderRow)}</tbody></table>
               </ScrollArea>
             </div>
           ))}
@@ -838,17 +850,17 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     </DndContext>
     {settingsActionsTarget && createPortal(
       <>
-      <section aria-label="업종 추가" className="settings-item settings-custom-control">
-        <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 추가</h2>
-        <p className="settings-description m-0 mt-1 max-w-full text-xs/4 font-medium text-ui-muted">업종명을 입력한 뒤 엔터</p>
+      <section aria-label={overseasActions ? '섹터 추가' : '업종 추가'} className="settings-item settings-custom-control">
+        <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">{overseasActions ? '섹터 추가' : '업종 추가'}</h2>
+        <p className="settings-description m-0 mt-1 max-w-full text-xs/4 font-medium text-ui-muted">{overseasActions ? '섹터명을 입력한 뒤 엔터' : '업종명을 입력한 뒤 엔터'}</p>
         <div className="flex min-w-0 max-w-full settings-control-inset items-center gap-2">
           <SectorNameInput
             wrapperClassName="flex min-w-0 flex-1"
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
-            placeholder="업종을 추가하세요"
-            aria-label="최상위 업종명"
+            placeholder={overseasActions ? '섹터를 추가하세요' : '업종을 추가하세요'}
+            aria-label={overseasActions ? '최상위 섹터명' : '최상위 업종명'}
             className={`h-[25px] min-w-0 flex-1 rounded-[5px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-text focus:border-[var(--brand)] ${sectors.length === 0 ? 'animate-input-attention' : ''}`}
           />
         </div>
