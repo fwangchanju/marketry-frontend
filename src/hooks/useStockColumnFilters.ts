@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 
-// 종목 표에서 머리글 필터를 둘 수 있는 열 — 종목코드·종목명·약칭은 위쪽 검색창이, 시가총액은 종목 크기 필터가 대신한다.
+// 종목 표에서 머리글 필터를 둘 수 있는 열 — 종목코드·종목명·약칭은 위쪽 검색창이, 시가총액은 규모 필터가 대신한다.
 export type StockFilterKey = 'sizeTier' | 'market' | 'industry' | 'parentSector' | 'midSector' | 'subSector' | 'nxt'
 
 const STOCK_FILTER_KEYS: readonly StockFilterKey[] = ['sizeTier', 'market', 'industry', 'parentSector', 'midSector', 'subSector', 'nxt']

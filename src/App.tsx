@@ -21,6 +21,7 @@ const MapPage = lazy(() => import('./pages/MapPage'))
 const GroupPage = lazy(() => import('./pages/GroupPage'))
 const CustomPage = lazy(() => import('./pages/CustomPage'))
 const JapanStockPage = lazy(() => import('./pages/JapanStockPage'))
+const JapanSectorPage = lazy(() => import('./pages/JapanSectorPage'))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
 const SourcePage = lazy(() => import('./pages/SourcePage'))
@@ -153,6 +154,7 @@ export default function App() {
           <Route path="/custom/stock" element={<CustomPage />} />
           <Route element={<AdminRouteGuard />}>
             <Route path="/custom/japan/stock" element={<JapanStockPage />} />
+            <Route path="/custom/japan/sector" element={<JapanSectorPage />} />
           </Route>
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}
           <Route path="/info" element={<Navigate to="/info/guide" replace />} />

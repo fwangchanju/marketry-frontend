@@ -112,7 +112,7 @@ const COLUMNS: { key: SortKey; columnKey: StockColumnKey; header: string; align:
   { key: 'stockName', columnKey: 'stockName', header: '종목명', align: 'left' },
   { key: 'alias', columnKey: 'alias', header: '약칭', align: 'left' },
   { key: 'totalMarketValue', columnKey: 'totalMarketValue', header: '시가총액', align: 'right' },
-  { key: 'sizeTier', columnKey: 'sizeTier', header: '종목 크기', align: 'center' },
+  { key: 'sizeTier', columnKey: 'sizeTier', header: '규모', align: 'center' },
   { key: 'market', columnKey: 'market', header: '마켓', align: 'center' },
   { key: 'nxt', columnKey: 'nxt', header: 'NXT', align: 'center' },
   { key: 'originCategoryName', columnKey: 'industry', header: '거래소 분류', align: 'left' },
@@ -147,7 +147,7 @@ function compareByKey(
   key: SortKey,
   displayByStockCode: Map<string, ItemDisplayValues>,
 ): number {
-  // 종목 크기는 시가총액이 클수록 큰 구간이라 시가총액 순서와 같다.
+  // 규모는 시가총액이 클수록 큰 구간이라 시가총액 순서와 같다.
   if (key === 'totalMarketValue' || key === 'sizeTier') {
     return (a.totalMarketValue ?? -Infinity) - (b.totalMarketValue ?? -Infinity)
   }
@@ -439,7 +439,7 @@ function SectorSearchPopup({
 
 // 대분류/소분류 셀. 검색창 열림 상태를 이 컴포넌트 안에서만 갖고 있어서,
 // 타이핑해도 전체 종목 테이블(2700여 행)이 다시 렌더되지 않는다.
-function AdminStockSectorCell({
+export function AdminStockSectorCell({
   value,
   options,
   onAssign,
@@ -536,7 +536,7 @@ function AdminStockSectorCell({
 }
 
 // 체크된 종목들을 한 섹터로 한 번에 재배정하는 버튼. 팝업 자체는 AdminStockSectorCell과 동일하게 동작한다.
-function BulkAssignButton({
+export function BulkAssignButton({
   count,
   options,
   onAssign,
@@ -1375,7 +1375,7 @@ export default function AdminStockTable({
     })))
   }, [items, trimmedSearch, isAdmin])
 
-  // 머리글 필터 — 종목 크기·마켓·거래소 분류·대/중/소분류·NXT. 값이 없으면 '-'이다.
+  // 머리글 필터 — 규모·마켓·거래소 분류·대/중/소분류·NXT. 값이 없으면 '-'이다.
   const filterValueOf = useCallback(
     (item: StockSectorListItem, key: StockFilterKey): string => {
       const display = displayByStockCode.get(item.stockCode)
@@ -1420,7 +1420,7 @@ export default function AdminStockTable({
     const kept = searched.filter(item => pinnedStockCodes.has(item.stockCode) && !matchedStockCodes.has(item.stockCode))
     return kept.length === 0 ? rows : [...rows, ...kept]
   }, [columnFilters.filteredRows, pinnedStockCodes, searched])
-  // 종목 크기 필터의 보기 순서 — 큰 구간부터(Top 2, 대형주, ...).
+  // 규모 필터의 보기 순서 — 큰 구간부터(Top 2, 대형주, ...).
   const { data: valueTiers } = useMarketValueTiers()
   const tierOrder = useMemo(() => [...(valueTiers ?? [])].sort((a, b) => b.thresholdValue - a.thresholdValue).map(tier => tier.label), [valueTiers])
 
@@ -1563,7 +1563,7 @@ export default function AdminStockTable({
         return {
           종목코드: item.stockCode,
           종목명: item.stockName,
-          '종목 크기': item.marketValueTier ?? '',
+          '규모': item.marketValueTier ?? '',
           마켓: display.market,
           '거래소 분류': display.originCategoryName,
           '대분류': display.parentSectorName,
@@ -1572,8 +1572,8 @@ export default function AdminStockTable({
         }
       })
       await exportRowsToExcel(filename, '업종 분류', rows, {
-        alignByHeader: { 종목코드: 'center', '종목 크기': 'center', 마켓: 'center' },
-        fixedWidths: { 종목코드: 15, 종목명: 30, '종목 크기': 15, 마켓: 10, '거래소 분류': 20, 대분류: 20, 중분류: 20, 소분류: 20 },
+        alignByHeader: { 종목코드: 'center', '규모': 'center', 마켓: 'center' },
+        fixedWidths: { 종목코드: 15, 종목명: 30, '규모': 15, 마켓: 10, '거래소 분류': 20, 대분류: 20, 중분류: 20, 소분류: 20 },
         // 업로드로 바꾸는 대·중·소분류만 수정할 수 있고 나머지 열은 잠근다.
         editableHeaders: ['대분류', '중분류', '소분류'],
       })

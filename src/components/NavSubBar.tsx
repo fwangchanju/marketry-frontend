@@ -106,7 +106,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   // 관리자 계정에만 Admin 메뉴가 더 보인다 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
-  const customLink = isAdmin ? { ...CUSTOM_LINK, options: [...(CUSTOM_LINK.options ?? []), { label: 'J-STOCK', to: '/custom/japan/stock' }] } : CUSTOM_LINK
+  const customLink = isAdmin ? { ...CUSTOM_LINK, options: [...(CUSTOM_LINK.options ?? []), { label: 'J-SECTOR', to: '/custom/japan/sector' }, { label: 'J-STOCK', to: '/custom/japan/stock' }] } : CUSTOM_LINK
   const links = isAdmin ? [...BASE_LINKS, customLink, ADMIN_LINK] : [...BASE_LINKS, customLink]
   const [openTo, setOpenTo] = useState<string | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
