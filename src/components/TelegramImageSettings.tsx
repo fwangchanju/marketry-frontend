@@ -6,7 +6,7 @@ import { ACCENT_PALETTE } from '@/utils/accentPalette'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
 import { compareKoreanText } from '@/utils/koreanSort'
-import marketrySymbol from '@/assets/marketry-symbol.png'
+import marketrySymbol from '@/assets/marketry-symbol.webp'
 import krxLogo from '@/assets/krx-logo.png'
 
 const DEPTHS = ['대분류', '중분류', '소분류']
