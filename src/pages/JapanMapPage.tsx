@@ -46,6 +46,7 @@ const NO_DIRECTION_FILTERS = { stockChangeFilter: 'all', sectorChangeFilter: 'al
 const { colorScale } = JAPAN_MAP_FIXED
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 const FLAT_GROUP_NAME = '__flat__'
+const NO_TAXONOMY_CHANGE = () => {}
 const SECTION_ORDER: SettingsPanelSectionId[] = ['industry', 'stockDisplay']
 
 function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
@@ -197,7 +198,7 @@ export default function JapanMapPage() {
           </div>
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Map" tabStorageName={JAPAN_SETTINGS_TAB_STORAGE.map} taxonomyAtBottom stockCountLabel={`${shownCount}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
+          <SettingsPanel pageLabel="Map" tabStorageName={JAPAN_SETTINGS_TAB_STORAGE.map} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
             <SettingsPanelGroup section="industry"><SettingsSectorLevelSection {...sectorLevelProps} showStockDisplay={false} /></SettingsPanelGroup>
             <SettingsPanelGroup section="stockDisplay">
               <SettingsStockSizeSelector marketCapRatio={preferences.boxSizeMarketCapRatio} onChangeMarketCapRatio={value => update({ boxSizeMarketCapRatio: value })} />
