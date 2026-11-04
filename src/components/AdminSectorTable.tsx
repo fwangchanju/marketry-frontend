@@ -443,7 +443,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const activeColumn = selectedMiddleId !== null ? Math.min(2, levels.length - 1) : selectedMajorId !== null ? 1 : 0
   // 설정창 머리글 개수는 대분류만 센다 — MARKETRY·거래소(읽기 전용 표)와 같은 기준이다. 중·소분류 개수는 위 열 머리글에 따로 적혀 있다.
   const topLevelTotal = sectors.filter(sector => sector.depth === 0).length
-  useReportCountLabel(`${toCount(sectorCounts[0])}/${toCount(topLevelTotal)}업종`, onCountLabelChange)
+  useReportCountLabel(`${toCount(sectorCounts[0])}/${toCount(topLevelTotal)}${overseasActions ? '섹터' : '업종'}`, onCountLabelChange)
   const depthOptions = sectorNamesByDepth(sectors, sectorStats).map(names => [...new Set(names)])
   const sortSiblings = useCallback((items: SectorItem[], depth: number) => {
     const { key, direction } = sortByDepth[depth] ?? DEFAULT_SECTOR_SORT
@@ -668,7 +668,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   >{itemNumber}</DraggableNumberBadge>
                   <button
                     type="button"
-                    data-hint={isProtectedSector(sector) ? getProtectedSectorHint(sector.name) : undefined}
+                    data-hint={isProtectedSector(sector) ? (overseasActions ? '삭제한 분류의 종목이 이 그룹으로 옮겨집니다.' : getProtectedSectorHint(sector.name)) : undefined}
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
                     className={`truncate border-0 bg-transparent p-0 text-left text-sm ${isProtectedSector(sector) ? PROTECTED_SECTOR_TEXT_CLASS : 'text-ui-white'}`}
                   >
@@ -769,8 +769,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             inline
             query={query}
             onChange={setQuery}
-            placeholder="업종 검색"
-            ariaLabel="업종 검색"
+            placeholder={overseasActions ? '섹터 · 업종 검색' : '업종 검색'}
+            ariaLabel={overseasActions ? '섹터 · 업종 검색' : '업종 검색'}
           />,
           toolbarContainer,
         )}
@@ -811,7 +811,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 // 아랫줄 — MARKETRY·거래소 업종 표와 같은 업종 / 시가총액 합 / 종목 수 정렬 머리글.
                 const bottomRow = (
                   <div className="flex border-t border-ui-border text-ui-white" style={{ height: HEADER_HALF_PX }}>
-                    {([['name', '업종'], ['marketValue', '시가총액 합'], ['stockCount', '종목 수']] as const).map(([key, text], cell) => (
+                    {([['name', overseasActions ? label : '업종'], ['marketValue', '시가총액 합'], ['stockCount', '종목 수']] as const).map(([key, text], cell) => (
                       <div key={key} className="flex items-center justify-center whitespace-nowrap" style={{ width: SECTOR_COLUMN_WIDTHS[cell] }}>
                         <SortLabel label={text} active={sortKey === key && !(isSearching && depth > 0)} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
                       </div>
@@ -823,7 +823,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 )
               })()}
               <ScrollArea overlay scrollLabel={`${label} 업종 목록`} className={`min-h-0 flex-1 ${index < levels.length - 1 ? 'border-r border-ui-border' : ''}`}>
-                <table className="nes-table is-dark custom-page-table custom-sector-table w-full table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><colgroup>{SECTOR_COLUMN_WIDTHS.map(width => <col key={width + index} style={{ width }} />)}</colgroup><tbody>{columnRows[index].map(renderRow)}</tbody></table>
+                <table className="nes-table is-dark custom-page-table custom-sector-table w-full table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><colgroup>{SECTOR_COLUMN_WIDTHS.map((width, cell) => <col key={cell} style={{ width }} />)}</colgroup><tbody>{columnRows[index].map(renderRow)}</tbody></table>
               </ScrollArea>
             </div>
           ))}
