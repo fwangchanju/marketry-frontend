@@ -232,7 +232,8 @@ export default function ScreenshotModal({
 
   // 높이는 화면(버튼 줄과 팝업 여백을 뺀 만큼)과 상한 중 작은 쪽, 폭은 화면 폭 안에서 이미지 비율로 정한다 — 큰 창에서도 팝업이 끝없이 커지지 않게
   // 높이에 상한을 둔다(보여 주는 크기만 정하며 캡처 이미지에는 영향이 없다). 스피너 칸과 이미지가 같은 값을 써서, 미리보기가 뜰 때 팝업 크기가 바뀌지 않는다.
-  const fitWidth = previewRatio ? `min(calc(100vw - 4rem), calc(min(100dvh - 11rem, ${PREVIEW_MAX_HEIGHT_PX}px) * ${previewRatio}))` : undefined
+  const frameRatio = mobileRegionOption ? elementRatio(screenshotTarget, undefined, undefined, fullPreviewPadding) : previewRatio
+  const fitWidth = frameRatio ? `min(calc(100vw - 4rem), calc(min(100dvh - 11rem, ${PREVIEW_MAX_HEIGHT_PX}px) * ${frameRatio}))` : undefined
   const displayPreviewSrc = contextPreviewSrc ?? previewSrc
   const toolbar = screenshotTarget?.querySelector<HTMLElement>('.main-toolbar')
   const headerSelections = toolbar && screenshotTarget && highlightRegion
@@ -256,7 +257,7 @@ export default function ScreenshotModal({
     : []
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-ui-background/70">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-ui-background/70" onClick={onClose}>
       {/* 팝업은 미리보기 이미지 크기에 딱 맞게 줄어든다(w-fit) — 이미지 주변에 빈 여백(레터박스)이 생기지
           않는다. 이미지는 화면(폭 95vw, 높이 85dvh에서 버튼 줄을 뺀 만큼) 안에서 비율을 유지한 채 최대한
           크게 그린다. 스크린샷 전(스피너)에는 임시 크기 칸으로 자리를 잡는다. */}
@@ -291,7 +292,7 @@ export default function ScreenshotModal({
             {emptyPreview}
           </div>
         ) : displayPreviewSrc ? (
-          <div className="relative max-w-full self-center overflow-hidden" style={fitWidth ? { width: fitWidth } : undefined}>
+          <div className="relative flex max-w-full self-center items-center justify-center overflow-hidden" style={fitWidth ? { width: fitWidth, ...(mobileRegionOption && frameRatio ? { aspectRatio: frameRatio } : {}) } : undefined}>
             <img
               src={displayPreviewSrc}
               alt="마켓 화면 미리보기"
@@ -299,7 +300,7 @@ export default function ScreenshotModal({
               onLoad={e => {
                 if (!highlightRegion) setPreviewRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)
               }}
-              className="block h-auto w-full"
+              className={mobileRegionOption ? 'block max-h-full max-w-full object-contain' : 'block h-auto w-full'}
             />
             {highlightRegion && (
               <>
@@ -329,7 +330,7 @@ export default function ScreenshotModal({
         ) : (
           <div
             className={`flex items-center justify-center self-center [container-type:size] ${fitWidth ? '' : 'h-[50dvh] w-[60vw]'}`}
-            style={fitWidth && previewRatio ? { width: fitWidth, aspectRatio: previewRatio } : undefined}
+            style={fitWidth && frameRatio ? { width: fitWidth, aspectRatio: frameRatio } : undefined}
           >
             <Spinner key={captureAttempt} className="h-[min(20rem,90cqw,90cqh)] w-[min(20rem,90cqw,90cqh)]" showElapsed={!captureError} errorMessage={captureError ?? undefined} onRetry={captureError ? retryCapture : undefined} />
           </div>
