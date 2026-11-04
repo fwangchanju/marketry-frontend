@@ -10,16 +10,6 @@ export const JAPAN_MARKET_HOLIDAYS_2026: ReadonlySet<string> = new Set([
 export const JAPAN_CALENDAR_FIRST_MONTH = '2026-01'
 export const JAPAN_CALENDAR_LAST_MONTH = '2026-12'
 
-// 지금 가진 종가 스냅샷. 사용자가 제공한 2026-11-04 종가 목록 하나뿐이고, 시각은 정규장 마감 시각이다.
-export const JAPAN_SNAPSHOT_TIMES: Readonly<Record<string, string>> = { '2026-11-04': '2026-11-04T15:30:00' }
-export const JAPAN_LATEST_SNAPSHOT_TIME = '2026-11-04T15:30:00'
-
-export const JAPAN_SESSION_GUIDE = [
-  { label: '오전장', session: '메인 마켓', range: '09:00~11:30' },
-  { label: '점심 휴장', session: '마켓 종료', range: '11:30~12:30' },
-  { label: '오후장', session: '메인 마켓', range: '12:30~15:30' },
-] as const
-
 export function isJapanMarketClosed(date: string): boolean {
   const weekday = new Date(`${date}T00:00:00`).getDay()
   return weekday === 0 || weekday === 6 || JAPAN_MARKET_HOLIDAYS_2026.has(date)

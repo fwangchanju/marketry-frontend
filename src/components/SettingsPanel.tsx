@@ -2323,6 +2323,8 @@ interface Props {
   // 헤더에 그대로 표시 — NavSubBar 탭 이름과 동일한 문구(MAP, GROUP 등)를 각 페이지가 그대로 넘겨준다. 안 넘기면 "설정".
   // 생략하면 페이지 이름 없이 "설정"만 표시한다(페이지 이름을 반복하는 동어 반복을 피하고 싶은 페이지용).
   pageLabel?: string
+  // 고른 탭을 기억하는 이름 — 같은 pageLabel을 쓰는 화면끼리 탭 기억을 나눌 때 준다. 없으면 pageLabel을 쓴다.
+  tabStorageName?: string
   // 설정 저장·초기화 기능을 제공하는 페이지에서만 헤더 버튼을 표시한다.
   showPreferenceActions?: boolean
   // 한 탭 안에 순서대로 쌓는 본문 — 홈·그룹·커스텀용. 여러 탭 분류(children의
@@ -2376,6 +2378,7 @@ function isSettingsPanelGroup(node: ReactNode): node is ReactElement<SettingsPan
 
 export default function SettingsPanel({
   pageLabel,
+  tabStorageName,
   showPreferenceActions = true,
   sectionOrder,
   sectionIconOverrides,
@@ -2439,7 +2442,7 @@ export default function SettingsPanel({
     return () => clearTimeout(timer)
   }, [isLoggedIn, preferencesLoaded])
   // 좌우 이동 탭은 "Basis" 줄(앞에 색 막대가 있는 줄)의 높이에 맞춘다. 그 줄이 없으면 가운데에 둔다.
-  const tabStorageKey = `marketry:settings-panel-tab:${pageLabel ?? 'Settings'}`
+  const tabStorageKey = `marketry:settings-panel-tab:${tabStorageName ?? pageLabel ?? 'Settings'}`
   const [activeSection, setActiveSection] = useState<SettingsPanelSectionId>(() => {
     try {
       return (localStorage.getItem(tabStorageKey) as SettingsPanelSectionId | null) ?? sectionOrder?.[0] ?? 'composition'

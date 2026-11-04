@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
-import { toSnapshotDateLabel } from '@/utils/format'
-import { JAPAN_CALENDAR_FIRST_MONTH, JAPAN_CALENDAR_LAST_MONTH, JAPAN_SNAPSHOT_TIMES, isJapanMarketClosed } from '@/utils/japanMarketCalendar'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel } from '@/utils/format'
+import { JAPAN_CALENDAR_FIRST_MONTH, JAPAN_CALENDAR_LAST_MONTH, isJapanMarketClosed } from '@/utils/japanMarketCalendar'
 import { getKstDate } from '@/utils/tradingWindow'
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -12,10 +12,20 @@ const toMonthKey = (year: number, monthIndex: number) => `${year}-${String(month
 
 // 일본 지도의 날짜 칩과 달력 — 국내 달력과 같은 모양이다. 국내는 서버의 거래 일정을 묻지만 일본은 아직 서버 일정이 없어 utils/japanMarketCalendar.ts를 쓴다.
 // 스냅샷이 있는 날만 누를 수 있고, 주말·휴장일은 휴장 색으로 표시한다.
-export default function JapanDatePicker({ snapshotTime, holidayColor, onSelect }: { snapshotTime: string; holidayColor: string; onSelect: (snapshotTime: string) => void }) {
+export default function JapanDatePicker({ snapshotTime, snapshotTimes, holidayColor, onSelect }: { snapshotTime: string | null; snapshotTimes: readonly string[]; holidayColor: string; onSelect: (snapshotTime: string) => void }) {
+  // 오름차순으로 오므로 하루에 여러 시각이 있으면 그날의 마지막 시각이 남는다.
+  const timeByDate = new Map(snapshotTimes.map(time => [time.slice(0, 10), time]))
   const [isOpen, setIsOpen] = useState(false)
-  const selectedDate = snapshotTime.slice(0, 10)
-  const [shown, setShown] = useState({ year: Number(selectedDate.slice(0, 4)), monthIndex: Number(selectedDate.slice(5, 7)) - 1 })
+  const selectedDate = snapshotTime?.slice(0, 10) ?? null
+  const toShownMonth = () => {
+    const date = selectedDate ?? getKstDate(new Date())
+    return { year: Number(date.slice(0, 4)), monthIndex: Number(date.slice(5, 7)) - 1 }
+  }
+  const [shown, setShown] = useState(toShownMonth)
+  const toggleOpen = () => {
+    if (!isOpen) setShown(toShownMonth())
+    setIsOpen(open => !open)
+  }
   const rootRef = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     if (!isOpen) return
@@ -40,9 +50,10 @@ export default function JapanDatePicker({ snapshotTime, holidayColor, onSelect }
   const today = getKstDate(new Date())
   return (
     <span ref={rootRef} className="relative z-40 flex items-center">
-      <button type="button" aria-label="날짜 선택" aria-expanded={isOpen} aria-haspopup="dialog" onClick={() => setIsOpen(open => !open)} className={`toolbar-badge-control flex h-6 items-center gap-1 border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-ui-control focus-visible:bg-ui-control ${isOpen ? 'bg-ui-control' : 'bg-transparent'}`}>
+      <button type="button" aria-label="날짜 선택" aria-expanded={isOpen} aria-haspopup="dialog" onClick={toggleOpen} className={`toolbar-badge-control flex h-6 items-center gap-1 border-0 px-1.5 text-inherit outline-none transition-colors hover:bg-ui-control focus-visible:bg-ui-control ${isOpen ? 'bg-ui-control' : 'bg-transparent'}`}>
         <CalendarIcon strokeWidth={2.2} className={`h-[15px] w-[15px] shrink-0 ${isOpen ? FILLED_ICON_CLASS : ''}`} aria-hidden />
-        {toSnapshotDateLabel(snapshotTime)}
+        {/* 국내 지도와 같이 데이터가 없어도 같은 폭의 견본 날짜를 숨겨서 자리를 잡는다. */}
+        <span className={snapshotTime ? undefined : 'invisible'}>{toSnapshotDateLabel(snapshotTime ?? MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO)}</span>
       </button>
       {isOpen && (
         <div role="dialog" aria-label="날짜 선택 달력" className="absolute left-0 top-full z-50 mt-1 w-[16rem] rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl">
@@ -59,7 +70,7 @@ export default function JapanDatePicker({ snapshotTime, holidayColor, onSelect }
             {days.map(day => {
               const date = `${monthKey}-${String(day).padStart(2, '0')}`
               const closed = isJapanMarketClosed(date)
-              const target = JAPAN_SNAPSHOT_TIMES[date]
+              const target = timeByDate.get(date)
               const selected = date === selectedDate
               const isToday = date === today
               return (

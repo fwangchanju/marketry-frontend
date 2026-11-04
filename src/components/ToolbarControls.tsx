@@ -39,7 +39,7 @@ const SESSION_GUIDE: { session: TradingSession; range: string }[] = [
 
 // 시장 시간대 칩 — 눌러서 시간대별 시간 범위를 안내하는 팝업을 칩 아래에 연다(달력 팝업과 같은 색·테두리).
 // 바깥을 누르거나 Esc를 누르면 닫힌다.
-export function TradingSessionChip({ session: sessionOverride, guide = SESSION_GUIDE }: { session?: TradingSession; guide?: readonly { label?: string; session: TradingSession; range: string }[] }) {
+function TradingSessionChip({ session: sessionOverride }: { session?: TradingSession }) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
 
@@ -79,11 +79,11 @@ export function TradingSessionChip({ session: sessionOverride, guide = SESSION_G
           aria-label="시장 시간대 안내"
           className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
-          {guide.map(row => (
-            <div key={row.label ?? row.session} className={`flex items-center justify-between gap-4 px-2 py-1 ${row.session === '마켓 종료' && !row.label ? 'hidden' : ''}`}>
+          {SESSION_GUIDE.map(row => (
+            <div key={row.session} className={`flex items-center justify-between gap-4 px-2 py-1 ${row.session === '마켓 종료' ? 'hidden' : ''}`}>
               <span className="flex items-center">
                 <span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[row.session] }} />
-                {row.label ?? row.session}
+                {row.session}
               </span>
               {/* 범위는 한 문자열로 붙여 쓰고, 값 칸 폭은 11ch로 고정해 '그 외'도 물결표 위치에 가운데 정렬한다. */}
               {row.range.includes('~') ? (

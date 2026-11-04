@@ -4,44 +4,49 @@ import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import client from '@/api/client'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
+import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Heatmap from '@/components/Heatmap'
 import NavBar from '@/components/NavBar'
 import JapanDatePicker from '@/components/JapanDatePicker'
+import JapanSessionChip from '@/components/JapanSessionChip'
 import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
-import { TradingSessionChip } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import ToolbarChip from '@/components/ToolbarChip'
 import stocks from '@/data/japanStocks.json'
-import { useFilteredHeatmap, limitDepth, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
-import { useHeatmapColorScale } from '@/hooks/useHeatmapColorScale'
+import { useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
+import { flattenAllItems, useFilteredHeatmap, limitDepth, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
+import { useJapanMapPreferences } from '@/hooks/useJapanMapPreferences'
 import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
-import { createDefaultColorScale, resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
+import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
+import { JAPAN_MAP_FIXED, JAPAN_SETTINGS_TAB_STORAGE } from '@/utils/japanMapSettings'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
-import { JAPAN_LATEST_SNAPSHOT_TIME, JAPAN_SESSION_GUIDE } from '@/utils/japanMarketCalendar'
+import { japanSessionAt } from '@/utils/japanMarketSession'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
-import { MEMBER_DEFAULTS } from '@/utils/settingDefaults'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 
-const REFRESH_HELP = '시세는 고정된 스냅샷이라 바뀌지 않습니다.\n분류와 한글명만 다시 받습니다.'
+const REFRESH_HELP = '저장된 최신 시세와 분류를 다시 받습니다.'
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 const LEVEL_LABELS = ['대분류', '중분류', '소분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
 const NO_EXCLUDED_TIERS = new Set<string>()
 const NO_TOP_PICKS = new Set<string>()
 const NO_DIRECTION_FILTERS = { stockChangeFilter: 'all', sectorChangeFilter: 'all', sectorChangeDepth: 0, sectorUseSimpleAverage: false } as const
-const DEPTH_METRIC_RANGE: [number, number] = [MEMBER_DEFAULTS.depthMetricMinIndex, MEMBER_DEFAULTS.depthMetricMaxIndex]
+const { colorScale } = JAPAN_MAP_FIXED
+const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
+const FLAT_GROUP_NAME = '__flat__'
+const SECTION_ORDER: SettingsPanelSectionId[] = ['industry', 'stockDisplay']
 
 function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
   return {
@@ -59,27 +64,61 @@ export default function JapanMapPage() {
   const categories = useQuery({ queryKey: ['admin', 'overseas-classification-categories', 'JAPAN'], queryFn: async () => (await client.get<JapanCategory[]>('/admin/overseas-classification-categories/JAPAN')).data })
   const classifications = useQuery({ queryKey: ['admin', 'overseas-stock-classifications', 'JAPAN'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/admin/overseas-stock-classifications/JAPAN')).data })
   const names = useQuery({ queryKey: ['admin', 'japan-stock-names'], queryFn: async () => (await client.get<Record<string, string>>('/admin/japan-stock-names')).data })
-  const { data: serverColorScale } = useHeatmapColorScale()
-  const colorScale = serverColorScale && serverColorScale.thresholds.length > 0 ? serverColorScale : createDefaultColorScale()
-  const tree = useMemo(() => (categories.data && classifications.data && names.data ? buildJapanTree(stocks, categories.data, classifications.data, names.data) : []), [categories.data, classifications.data, names.data])
-  const { filteredRootNodes } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
+  const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const quotes = useJapanQuotes(selectedTime)
+  const snapshotTimes = useJapanSnapshotTimes()
+  const snapshotTime = quotes.data?.snapshotTime ?? null
+  const tree = useMemo(() => (categories.data && classifications.data && names.data && quotes.data && quotes.data.snapshotTime ? buildJapanTree(stocks, categories.data, classifications.data, names.data, quotes.data.quotes, quotes.data.snapshotTime) : []), [categories.data, classifications.data, names.data, quotes.data])
+  const { preferences, update } = useJapanMapPreferences()
+  const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
   const { path, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
-  const [snapshotTime, setSnapshotTime] = useState(JAPAN_LATEST_SNAPSHOT_TIME)
-  const refetchAll = () => Promise.all([categories.refetch(), classifications.refetch(), names.refetch()])
+  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch()])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  // 국내 지도의 회원 기본값과 같다. 중분류까지 보여 주고, 더 깊이 들어가면 바로 아래 단계를 보여 준다.
-  const visibleDepth = Math.max(1, MEMBER_DEFAULTS.maxDepth - path.length)
-  const groups: DisplayGroup[] = currentNode
-    ? [toDisplayGroup({ ...currentNode, children: limitDepth(currentNode.children, visibleDepth) })]
-    : limitDepth(currentSiblings, visibleDepth).map(toDisplayGroup)
-  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading
-  const isError = categories.isError || classifications.isError || names.isError
+  // 업종 단계를 끄면 박스를 묶지 않고 종목만 그린다. 켜면 고른 단계까지 보여 주고, 더 깊이 들어가면 최소 바로 아래 단계는 보여 준다.
+  const isFullyFlattened = !preferences.sectorLevelEnabled
+  const visibleDepth = preferences.maxDepth === null ? null : Math.max(1, preferences.maxDepth - path.length)
+  const limit = (nodes: FilteredHeatmapSectorNode[]) => (visibleDepth === null ? nodes : limitDepth(nodes, visibleDepth))
+  let groups: DisplayGroup[]
+  if (isFullyFlattened) {
+    const items = flattenAllItems(currentNode ? [currentNode] : currentSiblings)
+    groups = [{ sectorId: -1, sectorName: FLAT_GROUP_NAME, totalMarketValue: items.reduce((sum, item) => sum + item.totalMarketValue, 0), weightedAvgChangeRate: null, simpleAvgChangeRate: null, items, children: [] }]
+  } else {
+    groups = currentNode ? [toDisplayGroup({ ...currentNode, children: limit(currentNode.children) })] : limit(currentSiblings).map(toDisplayGroup)
+  }
+  const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
+  const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
+  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading
+  const isError = categories.isError || classifications.isError || names.isError || quotes.isError
+  // 국내 지도처럼 데이터가 없으면 지금 시각의 세션을 보여 준다.
+  const session = japanSessionAt(snapshotTime ?? new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T'))
+  const shownCount = quotes.data?.quotes.length ?? 0
+  const sectorLevelProps = {
+    taxonomy: 'MARKETRY' as const,
+    availableMaxDepth,
+    maxDepth: preferences.maxDepth,
+    sectorLevelEnabled: preferences.sectorLevelEnabled,
+    onToggleSectorLevel: () => update({ sectorLevelEnabled: !preferences.sectorLevelEnabled }),
+    onChangeMaxDepth: (value: number) => update({ maxDepth: value }),
+    activeDepthMetric: preferences.activeDepthMetric,
+    onChangeActiveDepthMetric: (metric: typeof preferences.activeDepthMetric) => update({ activeDepthMetric: metric }),
+    depthMetricEnabled: preferences.depthMetricEnabled,
+    onToggleDepthMetric: () => update({ depthMetricEnabled: !preferences.depthMetricEnabled }),
+    depthMetricMinIndex: preferences.depthMetricMinIndex,
+    depthMetricMaxIndex: preferences.depthMetricMaxIndex,
+    onChangeDepthMetricRange: (minIndex: number, maxIndex: number) => update({ depthMetricMinIndex: minIndex, depthMetricMaxIndex: maxIndex }),
+    stockLabelModeIndex: preferences.stockLabelModeIndex,
+    stockLabelEnabled: preferences.stockLabelEnabled,
+    onToggleStockLabel: () => update({ stockLabelEnabled: !preferences.stockLabelEnabled }),
+    onChangeStockLabelModeIndex: (index: number) => update({ stockLabelModeIndex: index }),
+    decimalPlacesIndex: preferences.decimalPlaces,
+    onChangeDecimalPlacesIndex: (index: number) => update({ decimalPlaces: index }),
+  }
   const copy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotRef.current) return
     setCopyStatus('copying')
@@ -104,9 +143,9 @@ export default function JapanMapPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label="NIKKEI 225" />
-              <ToolbarChip bare><JapanDatePicker snapshotTime={snapshotTime} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={setSnapshotTime} /></ToolbarChip>
-              <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={categories.isFetching || classifications.isFetching || names.isFetching} helpText={REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
-              <TradingSessionChip session="마켓 종료" guide={JAPAN_SESSION_GUIDE} />
+              <ToolbarChip bare><JapanDatePicker snapshotTime={snapshotTime} snapshotTimes={snapshotTimes.data ?? []} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={setSelectedTime} /></ToolbarChip>
+              <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching} helpText={REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
+              <JapanSessionChip session={session} />
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>
@@ -123,29 +162,31 @@ export default function JapanMapPage() {
               <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]"><Spinner showElapsed /></div>
             ) : isError ? (
               <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
+            ) : shownCount === 0 ? (
+              <div className="relative flex-1"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="-top-1" /></div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col">
                 <Heatmap
                   groups={groups}
-                  selfSectorName={currentNode?.sectorName ?? null}
+                  selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
                   depth={path.length}
                   onSelectSector={name => { enterSector(name) }}
                   onExcludeSector={() => {}}
                   heightClassName="min-h-0 flex-1"
-                  marketValueDepthRange={null}
-                  weightedAvgDepthRange={DEPTH_METRIC_RANGE}
-                  simpleAvgDepthRange={null}
-                  upDownCountDepthRange={null}
-                  boxSizeMarketCapRatio={MEMBER_DEFAULTS.boxSizeMarketCapRatio}
+                  marketValueDepthRange={metricRange('marketValue')}
+                  weightedAvgDepthRange={metricRange('weightedAvgChangeRate')}
+                  simpleAvgDepthRange={metricRange('simpleAvgChangeRate')}
+                  upDownCountDepthRange={metricRange('upDownCount')}
+                  boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio}
                   tile={mapTileMethod()}
                   canExclude={false}
                   colorScale={colorScale}
-                  labelMinAreaPercent={MEMBER_DEFAULTS.boxLabelMinAreaPercent}
-                  stockLabelMode="both"
-                  stockPopupOnHover={MEMBER_DEFAULTS.stockPopupOnHover}
-                  decimalPlaces={MEMBER_DEFAULTS.decimalPlacesIndex}
+                  labelMinAreaPercent={JAPAN_MAP_FIXED.boxLabelMinAreaPercent}
+                  stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'}
+                  stockPopupOnHover={JAPAN_MAP_FIXED.stockPopupOnHover}
+                  decimalPlaces={preferences.decimalPlaces}
                   topPickSectorKeys={NO_TOP_PICKS}
-                  strongIndustryColor={MEMBER_DEFAULTS.strongIndustryColor}
+                  strongIndustryColor={JAPAN_MAP_FIXED.strongIndustryColor}
                   zoomOutRequestDepth={zoomOutRequestDepth}
                   onZoomOutComplete={depth => { goToDepth(depth); setZoomOutRequestDepth(null) }}
                   currencyUnit="엔"
@@ -156,8 +197,12 @@ export default function JapanMapPage() {
           </div>
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Map" stockCountLabel={`${stocks.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom']}>
-            <SettingsPanelGroup section="custom"><div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">데이터: Yahoo Finance 스냅샷</span></span></div></SettingsPanelGroup>
+          <SettingsPanel pageLabel="Map" tabStorageName={JAPAN_SETTINGS_TAB_STORAGE.map} taxonomyAtBottom stockCountLabel={`${shownCount}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
+            <SettingsPanelGroup section="industry"><SettingsSectorLevelSection {...sectorLevelProps} showStockDisplay={false} /></SettingsPanelGroup>
+            <SettingsPanelGroup section="stockDisplay">
+              <SettingsStockSizeSelector marketCapRatio={preferences.boxSizeMarketCapRatio} onChangeMarketCapRatio={value => update({ boxSizeMarketCapRatio: value })} />
+              <SettingsSectorLevelSection {...sectorLevelProps} showTaxonomy={false} showDecimalPlaces />
+            </SettingsPanelGroup>
           </SettingsPanel>
         </div>
       </div>
