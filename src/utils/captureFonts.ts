@@ -87,6 +87,50 @@ function wait(ms: number): Promise<void> {
   return new Promise(resolve => window.setTimeout(resolve, ms))
 }
 
+// 렌더러는 캡처마다 새 페이지를 열어 메모리의 글꼴이 사라진다. 렌더러 판(capture=mobile)에서만 받은 조각을 브라우저 저장소에 두고 다음 페이지에서 다시 쓴다.
+// 일반 사용자 캡처는 이 저장소를 쓰지 않는다. 저장소를 못 쓰면 지금처럼 서버에서 받는다.
+const FONT_DB_NAME = 'marketry-capture-fonts'
+const FONT_STORE_NAME = 'fonts'
+let fontDbPromise: Promise<IDBDatabase | null> | null = null
+
+function openFontDb(): Promise<IDBDatabase | null> {
+  if (fontDbPromise) return fontDbPromise
+  fontDbPromise = new Promise(resolve => {
+    if (typeof indexedDB === 'undefined' || typeof location === 'undefined' || new URLSearchParams(location.search).get('capture') !== 'mobile') {
+      resolve(null)
+      return
+    }
+    const request = indexedDB.open(FONT_DB_NAME, 1)
+    request.onupgradeneeded = () => { request.result.createObjectStore(FONT_STORE_NAME) }
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => resolve(null)
+    request.onblocked = () => resolve(null)
+  })
+  return fontDbPromise
+}
+
+async function readStoredFont(url: string): Promise<string | null> {
+  const db = await openFontDb()
+  if (!db) return null
+  return new Promise(resolve => {
+    const request = db.transaction(FONT_STORE_NAME).objectStore(FONT_STORE_NAME).get(url)
+    request.onsuccess = () => resolve(typeof request.result === 'string' && request.result.startsWith('data:') ? request.result : null)
+    request.onerror = () => resolve(null)
+  })
+}
+
+async function writeStoredFont(url: string, dataUrl: string): Promise<void> {
+  const db = await openFontDb()
+  if (!db) return
+  await new Promise<void>(resolve => {
+    const transaction = db.transaction(FONT_STORE_NAME, 'readwrite')
+    transaction.objectStore(FONT_STORE_NAME).put(dataUrl, url)
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => resolve()
+    transaction.onabort = () => resolve()
+  })
+}
+
 async function fetchFontDataUrl(url: string): Promise<string> {
   let lastError: unknown
   for (let attempt = 1; attempt <= FONT_FETCH_ATTEMPTS; attempt += 1) {
@@ -117,12 +161,18 @@ async function fetchFontDataUrl(url: string): Promise<string> {
 function embedFontUrl(url: string): Promise<string> {
   const cached = embeddedFonts.get(url)
   if (cached) return cached
-  // 여러 캡처가 동시에 시작돼도 같은 페이지의 글꼴 요청은 한 번에 하나씩 보낸다.
-  const loading = fontRequestQueue.then(async () => {
-    await wait(FONT_REQUEST_INTERVAL_MS)
-    return fetchFontDataUrl(url)
+  const loading = readStoredFont(url).then(stored => {
+    if (stored) return stored
+    // 여러 캡처가 동시에 시작돼도 같은 페이지의 글꼴 요청은 한 번에 하나씩 보낸다.
+    const queued = fontRequestQueue.then(async () => {
+      await wait(FONT_REQUEST_INTERVAL_MS)
+      const dataUrl = await fetchFontDataUrl(url)
+      await writeStoredFont(url, dataUrl)
+      return dataUrl
+    })
+    fontRequestQueue = queued.then(() => undefined, () => undefined)
+    return queued
   })
-  fontRequestQueue = loading.then(() => undefined, () => undefined)
   // 실패한 요청은 다음 캡처에서 다시 시도한다.
   loading.catch(() => embeddedFonts.delete(url))
   embeddedFonts.set(url, loading)
