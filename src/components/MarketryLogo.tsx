@@ -2,7 +2,7 @@ import { useId } from 'react'
 import marketryLogo from '@/assets/marketry-logo.png'
 // 세로형·가로형(깨끗한)이 쓰는 건 그림 왼쪽 425×400(나무)뿐이라 그 부분만 잘라 둔 파일을 쓴다. 글자는 아래에서 따로 그린다.
 // 파일은 289×272(425×400과 같은 비율)로 줄여 두었고 아래 <image>의 425×400은 SVG 좌표라 그대로 늘려 그린다. 가장 크게 쓰는 곳(스피너·홈 로고)도 화면에서 약 120px 이하다.
-import marketrySymbol from '@/assets/marketry-symbol.png'
+import marketrySymbol from '@/assets/marketry-symbol.webp'
 import { MARKETRY_WORDMARK_PATH, MARKETRY_WORDMARK_WIDTH } from '@/components/marketryWordmarkPath'
 
 interface Props {
