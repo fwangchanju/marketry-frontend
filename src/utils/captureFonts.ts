@@ -79,6 +79,9 @@ function usedCodePoints(root: HTMLElement): Set<number> {
 const embeddedFonts = new Map<string, Promise<string>>()
 
 const FONT_FETCH_ATTEMPTS = 3
+// nginx의 일반 요청 제한(초당 20건)에 화면의 다른 요청도 들어가므로 여유를 둔다.
+const FONT_REQUEST_INTERVAL_MS = 100
+let fontRequestQueue: Promise<void> = Promise.resolve()
 
 function wait(ms: number): Promise<void> {
   return new Promise(resolve => window.setTimeout(resolve, ms))
@@ -89,7 +92,13 @@ async function fetchFontDataUrl(url: string): Promise<string> {
   for (let attempt = 1; attempt <= FONT_FETCH_ATTEMPTS; attempt += 1) {
     try {
       const response = await fetch(url)
-      if (!response.ok) throw new Error(`글꼴을 받지 못했습니다(${response.status}): ${url}`)
+      if (!response.ok) {
+        if (response.status === 429 && attempt < FONT_FETCH_ATTEMPTS) {
+          await wait(1000 * attempt)
+          continue
+        }
+        throw new Error(`글꼴을 받지 못했습니다(${response.status}): ${url}`)
+      }
       const blob = await response.blob()
       return await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
@@ -108,7 +117,12 @@ async function fetchFontDataUrl(url: string): Promise<string> {
 function embedFontUrl(url: string): Promise<string> {
   const cached = embeddedFonts.get(url)
   if (cached) return cached
-  const loading = fetchFontDataUrl(url)
+  // 여러 캡처가 동시에 시작돼도 같은 페이지의 글꼴 요청은 한 번에 하나씩 보낸다.
+  const loading = fontRequestQueue.then(async () => {
+    await wait(FONT_REQUEST_INTERVAL_MS)
+    return fetchFontDataUrl(url)
+  })
+  fontRequestQueue = loading.then(() => undefined, () => undefined)
   // 실패한 요청은 다음 캡처에서 다시 시도한다.
   loading.catch(() => embeddedFonts.delete(url))
   embeddedFonts.set(url, loading)
@@ -120,11 +134,11 @@ async function embedFontUrls(cssText: string): Promise<string> {
   const urls = [...new Set(Array.from(cssText.matchAll(/url\((['"]?)([^)'"]+)\1\)/g), match => match[2]))]
   // 일부 조각만 빠지면 해당 글자만 대체 글꼴로 그려져 한 이미지 안에서 폭과 굵기가 달라진다.
   // 필요한 글꼴은 전부 넣거나 캡처를 실패시킨다.
-  const entries = await Promise.all(
-    urls.map(async url => [url, await embedFontUrl(new URL(url, document.baseURI).href)] as const),
-  )
   let embedded = cssText
-  for (const [url, dataUrl] of entries) embedded = embedded.split(url).join(dataUrl)
+  for (const url of urls) {
+    const dataUrl = await embedFontUrl(new URL(url, document.baseURI).href)
+    embedded = embedded.split(url).join(dataUrl)
+  }
   return embedded
 }
 
