@@ -163,6 +163,7 @@ function revealMobileCapture(cloned: Node, keepPageLabel = true) {
     toolbar.className = 'main-toolbar home-capture-toolbar relative mt-[3px] mb-0 flex h-7 w-full shrink-0 items-center overflow-hidden bg-ui-background/70 text-sm font-bold text-ui-white'
     // 복제본에 새로 넣는 요소는 클래스 스타일이 적용되지 않으므로 홈 판 툴바와 같은 위치·정렬은 인라인으로 준다.
     toolbar.style.marginTop = '3px'
+    toolbar.style.height = '28px'
     toolbar.style.alignItems = 'center'
     const leftContent = toolbarLeft.cloneNode(true) as HTMLElement
     leftContent.style.minWidth = '0'
