@@ -196,7 +196,7 @@ export default function JapanStockPage() {
         </main>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel pageLabel="Custom" stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}>
-            <SettingsPanelGroup section="custom"><div className="settings-empty-message"><span className="text-center text-ui-muted">한글명·섹터·업종은 관리자 공통으로 저장<br />시가총액은 제공받은 목록의 스냅샷<br />원화 환산: 1엔 = 8.5원 (고정)<br />야후 섹터·업종은 Yahoo Finance 조회값</span></div></SettingsPanelGroup>
+            <SettingsPanelGroup section="custom"><div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">데이터: Yahoo Finance<br />계산: 100엔 당 850원</span></span></div></SettingsPanelGroup>
             <SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control">
               <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일괄 변경</h2>
               <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">{selected.size ? `선택한 종목 ${selected.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택하세요'}</p>
