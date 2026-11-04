@@ -107,7 +107,8 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
   const customLink = isAdmin ? { ...CUSTOM_LINK, options: [...(CUSTOM_LINK.options ?? []), { label: 'J-SECTOR', to: '/custom/japan/sector' }, { label: 'J-STOCK', to: '/custom/japan/stock' }] } : CUSTOM_LINK
-  const links = isAdmin ? [...BASE_LINKS, customLink, ADMIN_LINK] : [...BASE_LINKS, customLink]
+  const baseLinks = isAdmin ? BASE_LINKS.map(link => link.label === 'Map' ? { ...link, options: [...(link.options ?? []), { label: 'JAPAN', to: '/map/japan' }] } : link) : BASE_LINKS
+  const links = isAdmin ? [...baseLinks, customLink, ADMIN_LINK] : [...baseLinks, customLink]
   const [openTo, setOpenTo] = useState<string | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const barRef = useRef<HTMLDivElement>(null)

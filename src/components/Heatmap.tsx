@@ -47,6 +47,8 @@ interface Props {
   // 실험 탭의 종목 이동 — 켜져 있으면 종목 박스를 끌어 다른 업종에 놓을 수 있고, 놓으면 onMoveStock을 부른다(저장은 부르는 쪽 몫이다).
   stockMoveEnabled?: boolean
   onMoveStock?: (drop: StockDrop) => void
+  // 금액 단위 — 일본 지도는 엔으로 표시한다.
+  currencyUnit?: '원' | '엔'
 }
 
 // 컨테이너 기준 0~1 비율 좌표 — 컨테이너 크기가 나중에 달라져도(리사이즈) 값이 그대로 유효하다.
@@ -119,6 +121,7 @@ export default function Heatmap({
   onZoomOutComplete,
   stockMoveEnabled = false,
   onMoveStock,
+  currencyUnit = '원',
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   useStockDrag(containerRef, stockMoveEnabled && onMoveStock !== undefined, drop => onMoveStock?.(drop))
@@ -385,6 +388,7 @@ export default function Heatmap({
               labelMinAreaPercent={labelMinAreaPercent}
               stockLabelMode={stockLabelMode}
               decimalPlaces={decimalPlaces}
+              currencyUnit={currencyUnit}
               topPickSectorKeys={topPickSectorKeys}
               strongIndustryColor={strongIndustryColor}
             />
@@ -414,6 +418,7 @@ export default function Heatmap({
             labelMinAreaPercent={labelMinAreaPercent}
             stockLabelMode={stockLabelMode}
             decimalPlaces={decimalPlaces}
+            currencyUnit={currencyUnit}
             topPickSectorKeys={topPickSectorKeys}
             strongIndustryColor={strongIndustryColor}
           />
