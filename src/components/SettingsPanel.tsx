@@ -1241,11 +1241,14 @@ function SettingsTaxonomySelector({
   onSelectTaxonomy,
   atBottom = false,
   snapshotTime,
+  onlyTaxonomy,
 }: {
   taxonomy: TaxonomyKey
   onSelectTaxonomy: (taxonomy: TaxonomyKey) => void
   atBottom?: boolean
   snapshotTime?: string | null
+  // 이 분류만 고를 수 있는 화면 — 나머지 칸은 보이되 눌리지 않고, 국내 설정의 저장 안 한 변경 표시를 쓰지 않으며, 업데이트 시각 줄은 자리만 잡고 숨긴다.
+  onlyTaxonomy?: TaxonomyKey
 }) {
   const marketryDirty = useHasDrafts('marketry')
   const exchangeDirty = useHasDrafts('exchange')
@@ -1258,7 +1261,8 @@ function SettingsTaxonomySelector({
   ]
   const isExchange = taxonomy === 'KRX' || taxonomy === 'NXT'
   const isSelected = (key: TaxonomyKey) => (key === 'KRX' ? isExchange : taxonomy === key)
-  const hasDraft = (key: TaxonomyKey) => key === 'MARKETRY' ? marketryDirty : key === 'MINE' ? mineDirty : exchangeDirty
+  const hasDraft = (key: TaxonomyKey) => !onlyTaxonomy && (key === 'MARKETRY' ? marketryDirty : key === 'MINE' ? mineDirty : exchangeDirty)
+  const isLocked = (key: TaxonomyKey) => onlyTaxonomy !== undefined && key !== onlyTaxonomy
 
   return (
     <div data-settings-side-toggle-top-anchor={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
@@ -1275,9 +1279,11 @@ function SettingsTaxonomySelector({
             type="button"
             role="radio"
             aria-checked={isSelected(option.key)}
+            aria-disabled={isLocked(option.key) || undefined}
+            data-hint={isLocked(option.key) ? `${TAXONOMY_NAMES[onlyTaxonomy ?? 'MARKETRY'].title} 분류만 제공합니다.` : undefined}
             aria-label={hasDraft(option.key) ? `${option.label}, 저장하지 않은 변경 있음` : option.label}
-            onClick={() => !isSelected(option.key) && onSelectTaxonomy(option.key)}
-            className="settings-choice-hover relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap text-ui-white transition-colors duration-[500ms]"
+            onClick={() => !isSelected(option.key) && !isLocked(option.key) && onSelectTaxonomy(option.key)}
+            className="settings-choice-hover aria-disabled:cursor-not-allowed aria-disabled:opacity-40 relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap text-ui-white transition-colors duration-[500ms]"
           >
             {option.label}
             {hasDraft(option.key) && <span aria-hidden="true" className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-brand" />}
@@ -1286,7 +1292,7 @@ function SettingsTaxonomySelector({
       </div>
       {/* 업데이트 시각이 없어도(올린 MARKETRY가 아직 없을 때 등) 줄은 그대로 둬서 다른 분류와 모양이 달라지지 않게 한다. 시각 글자만 같은 폭으로 자리를 잡고 숨긴다. */}
       {atBottom && (
-        <p className={`${FONT_BAR_TIME_SHAPE} mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium text-ui-text`}>
+        <p aria-hidden={onlyTaxonomy ? true : undefined} className={`${onlyTaxonomy ? 'invisible ' : ''}${FONT_BAR_TIME_SHAPE} mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium text-ui-text`}>
           <span className="flex items-center">
             업데이트
             <SettingHelpBubble
@@ -2325,6 +2331,8 @@ interface Props {
   pageLabel?: string
   // 고른 탭을 기억하는 이름 — 같은 pageLabel을 쓰는 화면끼리 탭 기억을 나눌 때 준다. 없으면 pageLabel을 쓴다.
   tabStorageName?: string
+  // Basis에서 이 분류만 고를 수 있게 한다.
+  onlyTaxonomy?: TaxonomyKey
   // 설정 저장·초기화 기능을 제공하는 페이지에서만 헤더 버튼을 표시한다.
   showPreferenceActions?: boolean
   // 한 탭 안에 순서대로 쌓는 본문 — 홈·그룹·커스텀용. 여러 탭 분류(children의
@@ -2379,6 +2387,7 @@ function isSettingsPanelGroup(node: ReactNode): node is ReactElement<SettingsPan
 export default function SettingsPanel({
   pageLabel,
   tabStorageName,
+  onlyTaxonomy,
   showPreferenceActions = true,
   sectionOrder,
   sectionIconOverrides,
@@ -2656,7 +2665,7 @@ export default function SettingsPanel({
       </div>
       {taxonomyAtBottom && hasTaxonomySelector && (
         <>
-          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom snapshotTime={snapshotTime} />
+          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom snapshotTime={snapshotTime} onlyTaxonomy={onlyTaxonomy} />
         </>
       )}
     </div>
