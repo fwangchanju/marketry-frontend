@@ -55,3 +55,64 @@ test('일시적인 429 뒤에는 글꼴을 다시 받아 삽입한다', async ()
   assert.match(await freshFontCssFor(root), /data:font\/woff2/)
   assert.equal(attempts, 2)
 })
+
+function fakeIndexedDb() {
+  const stored = new Map()
+  const done = (request, result) => {
+    request.result = result
+    queueMicrotask(() => request.onsuccess?.())
+    return request
+  }
+  const store = transaction => ({
+    get: url => done({}, stored.get(url)),
+    put: (value, url) => {
+      stored.set(url, value)
+      queueMicrotask(() => transaction.oncomplete?.())
+    },
+  })
+  const db = {
+    transaction: () => {
+      const transaction = { objectStore: () => store(transaction) }
+      return transaction
+    },
+  }
+  return { stored, open: () => done({}, db) }
+}
+
+test('렌더러 판은 저장소에 둔 글꼴을 다음 페이지에서 서버 요청 없이 쓴다', async () => {
+  const db = fakeIndexedDb()
+  globalThis.indexedDB = db
+  globalThis.location = { search: '?capture=mobile' }
+  document.styleSheets = [{ cssRules: [new FakeFontFace('/stored.woff2')] }]
+  let requests = 0
+  globalThis.fetch = async () => { requests += 1; return { ok: true, blob: async () => new Blob(['font']) } }
+  try {
+    const { fontCssFor: firstPage } = await import('./captureFonts.ts?store-first')
+    assert.match(await firstPage(root), /data:font\/woff2/)
+    assert.equal(requests, 1)
+    assert.equal(db.stored.size, 1)
+
+    const { fontCssFor: nextPage } = await import('./captureFonts.ts?store-next')
+    assert.match(await nextPage(root), /data:font\/woff2/)
+    assert.equal(requests, 1)
+  } finally {
+    delete globalThis.indexedDB
+    delete globalThis.location
+  }
+})
+
+test('일반 페이지는 글꼴을 저장소에 두지 않는다', async () => {
+  const db = fakeIndexedDb()
+  globalThis.indexedDB = db
+  globalThis.location = { search: '' }
+  document.styleSheets = [{ cssRules: [new FakeFontFace('/normal.woff2')] }]
+  globalThis.fetch = async () => ({ ok: true, blob: async () => new Blob(['font']) })
+  try {
+    const { fontCssFor: normalPage } = await import('./captureFonts.ts?store-normal')
+    assert.match(await normalPage(root), /data:font\/woff2/)
+    assert.equal(db.stored.size, 0)
+  } finally {
+    delete globalThis.indexedDB
+    delete globalThis.location
+  }
+})
