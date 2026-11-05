@@ -721,15 +721,15 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     ? <div className="h-full overflow-hidden bg-ui-background px-3 pt-6"><InfoPageHeading flushBottom title="가이드" summary="국내증시의 클래식한 업종 분류로는 놓치기 쉬운 시장의 흐름을 나만의 새로운 분류 방법으로 관찰해보세요." /></div>
     : pageSwipePreview?.targetMode === 'graph'
     ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
-      : isError ? <div className="flex h-full items-center justify-center text-center text-sm text-ui-text">시장 데이터를 불러오지 못했습니다.</div>
+      : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
         : <MobileGraphBars items={swipeGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
     : pageSwipePreview?.targetMode === 'stock'
       ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
-        : isError ? <div className="flex h-full items-center justify-center text-center text-sm text-ui-text">시장을 불러오지 못했습니다.</div>
+        : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
           : stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p>
             : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={() => undefined} onLongPress={() => undefined} />
       : isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
-        : isError ? <div className="flex h-full items-center justify-center text-center text-sm text-ui-text">시장을 불러오지 못했습니다.</div>
+        : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
           : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p>
             : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface p-1"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={() => undefined} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>
 
@@ -770,7 +770,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       >
         <div className="absolute inset-0 p-1" style={{ transform: currentSwipeTransform, transition: swipeTransition, willChange: pageSwipePreview ? 'transform' : undefined }}>
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
-          : isError ? <div className="flex h-full flex-col items-center justify-center gap-2 text-center"><p className="text-sm text-ui-text">시장 지도를 불러오지 못했습니다.</p><button type="button" onClick={refetchHeatmap} className="min-h-11 px-4 font-semibold text-brand underline underline-offset-4">다시 불러오기</button></div>
+          : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
               <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={stock => { setStockPinned(false); setFocusedStockCode(current => current === stock.stockCode ? null : stock.stockCode) }} onLongPress={stock => {
