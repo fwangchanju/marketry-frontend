@@ -131,6 +131,26 @@ async function writeStoredFont(url: string, dataUrl: string): Promise<void> {
   })
 }
 
+async function responseToDataUrl(response: Response): Promise<string> {
+  const blob = await response.blob()
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(blob)
+  })
+}
+
+// 화면을 그리며 이미 받은 조각은 브라우저 캐시에 있다. 서버에 요청하지 않으므로 요청 간격을 두지 않고 바로 쓴다. 없거나 확인할 수 없으면 null이다.
+async function readHttpCachedFont(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, { cache: 'only-if-cached', mode: 'same-origin' })
+    return response.ok ? await responseToDataUrl(response) : null
+  } catch {
+    return null
+  }
+}
+
 async function fetchFontDataUrl(url: string): Promise<string> {
   let lastError: unknown
   for (let attempt = 1; attempt <= FONT_FETCH_ATTEMPTS; attempt += 1) {
@@ -143,13 +163,7 @@ async function fetchFontDataUrl(url: string): Promise<string> {
         }
         throw new Error(`글꼴을 받지 못했습니다(${response.status}): ${url}`)
       }
-      const blob = await response.blob()
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(String(reader.result))
-        reader.onerror = () => reject(reader.error)
-        reader.readAsDataURL(blob)
-      })
+      return await responseToDataUrl(response)
     } catch (error) {
       lastError = error
       if (attempt < FONT_FETCH_ATTEMPTS) await wait(300 * attempt)
@@ -161,8 +175,13 @@ async function fetchFontDataUrl(url: string): Promise<string> {
 function embedFontUrl(url: string): Promise<string> {
   const cached = embeddedFonts.get(url)
   if (cached) return cached
-  const loading = readStoredFont(url).then(stored => {
+  const loading = readStoredFont(url).then(async stored => {
     if (stored) return stored
+    const httpCached = await readHttpCachedFont(url)
+    if (httpCached) {
+      await writeStoredFont(url, httpCached)
+      return httpCached
+    }
     // 여러 캡처가 동시에 시작돼도 같은 페이지의 글꼴 요청은 한 번에 하나씩 보낸다.
     const queued = fontRequestQueue.then(async () => {
       await wait(FONT_REQUEST_INTERVAL_MS)
