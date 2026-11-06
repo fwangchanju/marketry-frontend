@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
@@ -20,7 +20,7 @@ interface MenuLink {
   icon: NavIconName
   // 관리자 전용 메뉴 — 글자 색만 관리자 전용 색이다.
   admin?: boolean
-  // 커서를 올리면 아래로 펼쳐지는 목록 — 없으면 그냥 이동만 하는 메뉴(Home).
+  // 누르면 아래로 펼쳐지는 목록 — 없으면 그냥 이동만 하는 메뉴(Home).
   options?: MenuOption[]
 }
 
@@ -87,9 +87,6 @@ function NavIcon({ icon }: { icon: NavIconName }) {
   )
 }
 
-// 목록이 닫히기 전에 커서가 메뉴 글자에서 목록으로 건너갈 시간(ms).
-const CLOSE_DELAY_MS = 120
-
 interface Props {
   // 페이지별 옵션 버튼 — 재사용되지 않는 페이지 전용 UI라 각 페이지가 인라인으로 만들어 넘긴다.
   actions?: ReactNode
@@ -110,17 +107,11 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const baseLinks = isAdmin ? BASE_LINKS.map(link => link.label === 'Map' ? { ...link, options: [...(link.options ?? []), { label: 'JAPAN', to: '/map/japan' }] } : link) : BASE_LINKS
   const links = isAdmin ? [...baseLinks, customLink, ADMIN_LINK] : [...baseLinks, customLink]
   const [openTo, setOpenTo] = useState<string | null>(null)
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const barRef = useRef<HTMLDivElement>(null)
-  // 터치로 누르기 직전에 이 메뉴 목록이 열려 있었는지 — 터치는 누르면 마우스 이벤트가 먼저 와서 목록을 열어 버리므로 누르기 전 상태를 따로 기억한다.
-  const touchStartRef = useRef<{ to: string; wasOpen: boolean } | null>(null)
-  // 메뉴를 떠날 때 예약해 둔 닫기 타이머가 화면이 바뀐 뒤에 실행되지 않게 정리한다.
-  useEffect(() => () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current) }, [])
-  // 목록이 열려 있을 때 메뉴 밖을 누르면 닫는다(터치 화면은 커서를 치울 수 없어서 필요하다).
+  // 목록은 누르면 열려 그대로 있고, 메뉴 밖을 누르면 닫는다. 메뉴 사이 빈 곳도 메뉴 밖이다.
   useEffect(() => {
     if (openTo === null) return
     const handlePointerDown = (event: PointerEvent) => {
-      if (!barRef.current?.contains(event.target as Node)) setOpenTo(null)
+      if (!(event.target as Element).closest?.('[data-nav-menu-item]')) setOpenTo(null)
     }
     document.addEventListener('pointerdown', handlePointerDown)
     return () => document.removeEventListener('pointerdown', handlePointerDown)
@@ -136,14 +127,6 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const linkClassName = (to: string) =>
     `${NAV_TAB_CLASS} ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
 
-  const open = (to: string) => {
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-    setOpenTo(to)
-  }
-  const closeSoon = () => {
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-    closeTimerRef.current = setTimeout(() => setOpenTo(null), CLOSE_DELAY_MS)
-  }
   // 목록에서 지금 보고 있는 항목인지 — Custom은 /custom/sector와 /custom/stock 두 화면 중 하나이고, Map·Graph는 주소의 시장 이름이다.
   const isCurrentOption = (option: MenuOption) => location.pathname === option.to
   const handleSelect = (option: MenuOption) => {
@@ -155,28 +138,27 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   return (
     <div className="relative z-30 mb-[15px] flex h-[30px] after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs">
       {/* 이 줄의 하단선은 메인·설정 행의 세로 기준이다. 아이콘 28px과 같은 높이로 두고, 하단선에서 설정창까지는 페이지 쪽의 4px만 남긴다. */}
-      <div ref={barRef} data-nav-menus className="flex h-7 items-center gap-3">
+      <div data-nav-menus className="flex h-7 items-center gap-3">
         {links.map(link => (
           <div
             key={link.to}
+            data-nav-menu-item
             className="relative flex h-7 items-center"
-            onMouseEnter={() => link.options && open(link.to)}
-            onMouseLeave={() => link.options && closeSoon()}
           >
             <Link
               to={link.to}
               className={link.admin ? `${NAV_TAB_CLASS} transition-colors hover:text-admin-only-hover ${isLinkActive(link.to) ? 'text-admin-only-hover' : 'text-admin-only'}` : linkClassName(link.to)}
-              onPointerDown={event => {
-                touchStartRef.current = event.pointerType === 'touch' ? { to: link.to, wasOpen: openTo === link.to } : null
-              }}
+              aria-expanded={link.options ? openTo === link.to : undefined}
               onClick={event => {
-                // 터치 화면은 목록이 닫혀 있을 때 처음 누르면 이동하지 않고 목록을 연다(다시 누르면 기본 화면으로 이동한다).
-                const touch = touchStartRef.current
-                touchStartRef.current = null
-                if (link.options && touch?.to === link.to && !touch.wasOpen) {
-                  event.preventDefault()
-                  open(link.to)
+                if (!link.options) {
+                  setOpenTo(null)
+                  return
                 }
+                // Cmd·Ctrl·Shift를 누른 클릭은 브라우저의 새 탭·새 창 열기로 둔다.
+                if (event.metaKey || event.ctrlKey || event.shiftKey) return
+                // 목록이 있는 메뉴는 이동하지 않고 목록을 열거나 닫는다. 화면은 목록에서 고른다.
+                event.preventDefault()
+                setOpenTo(current => (current === link.to ? null : link.to))
               }}
             >
               <NavIcon icon={link.icon} />
