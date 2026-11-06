@@ -2262,12 +2262,8 @@ export function SettingsColorSection({
   )
 }
 
-// 선택지는 상단바 시간대 점과 같은 값을 쓰도록 utils/accentPalette에 둔다.
-// 거래소 하늘색과 구별되는 파랑을 추가하고 같은 계열을 위아래로 둔다.
+// 강조색 선택지는 부드러운 색상 7개만 한 줄로 표시한다.
 const STRONG_INDUSTRY_COLOR_OPTIONS = [
-  ...ACCENT_PALETTE.slice(0, 5),
-  { label: '선명한 파랑', value: '#6688ff' },
-  ACCENT_PALETTE[6],
   { label: '연회색', value: '#c8ccd1' },
   ...ACCENT_PALETTE.slice(8, 12),
   { label: '연한 파랑', value: '#aabaff' },
@@ -2301,9 +2297,9 @@ export function SettingsStrongIndustryColorSection({
         />
       </p>
       <SettingDescription>업종명과 상위 업종의 강조 색상</SettingDescription>
-      {/* 같은 색 계열을 위아래로 비교할 수 있도록 7칸씩 두 줄로 배치한다. */}
+      {/* 부드러운 색상 7개만 한 줄로 배치한다. */}
       <div className="flex min-h-[82px] flex-1 items-center pb-3">
-        <div className="settings-slider-control grid grid-cols-[repeat(7,22px)] justify-between gap-y-3.5">
+        <div className="settings-slider-control strong-color-options grid grid-cols-[repeat(7,16px)] justify-between">
           {STRONG_INDUSTRY_COLOR_OPTIONS.map(option => (
             <span key={option.value} className="group relative inline-flex">
               <button
@@ -2315,13 +2311,9 @@ export function SettingsStrongIndustryColorSection({
                 onPointerDown={event => { if (event.button === 0) pick(option.value) }}
                 onClick={event => { if (event.detail === 0) pick(option.value) }}
                 style={{ backgroundColor: option.value }}
-                className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/35 p-0 disabled:cursor-not-allowed"
+                className={`h-[48px] w-[16px] shrink-0 border border-ui-white/45 p-0 [clip-path:polygon(50%_0,100%_18%,100%_100%,0_100%,0_18%)] disabled:cursor-not-allowed ${selectedColor === option.value ? 'ring-2 ring-ui-white' : ''}`}
               >
-                {selectedColor === option.value && (
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? 'var(--ui-surface)' : 'var(--ui-white)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12.5l4.5 4.5L19 7" />
-                  </svg>
-                )}
+                {selectedColor === option.value && <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? 'var(--ui-surface)' : 'var(--ui-white)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>}
               </button>
               <span
                 role="tooltip"

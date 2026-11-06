@@ -868,6 +868,7 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   margin-right: 0;
 }
 
+
 .settings-panel-tab-content .settings-section-bullet::before,
 .settings-panel-tab-content .settings-subsection-num::before {
   counter-increment: none;
