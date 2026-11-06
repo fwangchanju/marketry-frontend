@@ -178,10 +178,17 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
                         role="option"
                         aria-selected={isCurrent}
                         onClick={() => handleSelect(option)}
-                        className={`font-roboto-latin block h-[30px] w-full rounded-none border-0 ${isMarketChild ? 'pl-6 pr-3' : 'px-3'} text-left text-sm font-medium transition-colors ${
+                        className={`font-roboto-latin block h-[30px] w-full rounded-none border-0 px-3 text-left text-sm font-medium transition-colors ${
                           isCurrent ? 'bg-[var(--brand-surface)] text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'
                         }`}
                       >
+                        {/* 하위 시장은 윗줄 KOREA에 맞춘다: 화살표는 KO 가운데, 글자는 R 시작 위치. 숨긴 KO로 폭을 잡아 글꼴이 달라도 맞는다. */}
+                        {isMarketChild && (
+                          <span aria-hidden="true" className="relative inline-block">
+                            <span className="invisible">KO</span>
+                            <span className="absolute inset-0 text-center">▸</span>
+                          </span>
+                        )}
                         {option.label}
                       </button>
                     )
