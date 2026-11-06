@@ -2263,19 +2263,31 @@ export function SettingsColorSection({
 }
 
 // 선택지는 상단바 시간대 점과 같은 값을 쓰도록 utils/accentPalette에 둔다.
-const STRONG_INDUSTRY_COLOR_OPTIONS = ACCENT_PALETTE
+// 거래소 하늘색과 구별되는 파랑을 추가하고 같은 계열을 위아래로 둔다.
+const STRONG_INDUSTRY_COLOR_OPTIONS = [
+  ...ACCENT_PALETTE.slice(0, 5),
+  { label: '선명한 파랑', value: '#6688ff' },
+  ACCENT_PALETTE[6],
+  { label: '연회색', value: '#c8ccd1' },
+  ...ACCENT_PALETTE.slice(8, 12),
+  { label: '연한 파랑', value: '#aabaff' },
+  ACCENT_PALETTE[13],
+]
 
 export function SettingsStrongIndustryColorSection({
   color,
   onChange,
+  fixed = false,
 }: {
   color: string
   onChange: (color: string) => void
+  fixed?: boolean
 }) {
   // 색을 고르면 지도 전체가 다시 그려져 선택 링이 늦게 보이므로, 링은 누른 즉시 따로 보여 주고 지도 색 반영은 한 프레임 뒤로 미룬다(이 값은 외부 저장소라 startTransition으로는 미뤄지지 않는다).
   const [pendingColor, setPendingColor] = useState<{ value: string; base: string } | null>(null)
   const selectedColor = pendingColor && pendingColor.base === color.toLowerCase() ? pendingColor.value : color.toLowerCase()
   const pick = (value: string) => {
+    if (fixed) return
     setPendingColor({ value, base: color.toLowerCase() })
     requestAnimationFrame(() => setTimeout(() => onChange(value), 0))
   }
@@ -2289,7 +2301,7 @@ export function SettingsStrongIndustryColorSection({
         />
       </p>
       <SettingDescription>업종명과 상위 업종의 강조 색상</SettingDescription>
-      {/* 같은 색 계열을 위아래로 비교할 수 있도록 7칸씩 두 줄로 배치한다. 양 끝은 슬라이더 폭에 맞춘다. */}
+      {/* 같은 색 계열을 위아래로 비교할 수 있도록 7칸씩 두 줄로 배치한다. */}
       <div className="flex min-h-[82px] flex-1 items-center pb-3">
         <div className="settings-slider-control grid grid-cols-[repeat(7,22px)] justify-between gap-y-3.5">
           {STRONG_INDUSTRY_COLOR_OPTIONS.map(option => (
@@ -2298,11 +2310,12 @@ export function SettingsStrongIndustryColorSection({
                 type="button"
                 aria-label={`${option.label} 색상 선택`}
                 aria-pressed={selectedColor === option.value}
+                disabled={fixed}
                 // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
                 onPointerDown={event => { if (event.button === 0) pick(option.value) }}
                 onClick={event => { if (event.detail === 0) pick(option.value) }}
                 style={{ backgroundColor: option.value }}
-                className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/35 p-0"
+                className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/35 p-0 disabled:cursor-not-allowed"
               >
                 {selectedColor === option.value && (
                   <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? 'var(--ui-surface)' : 'var(--ui-white)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2358,6 +2371,7 @@ interface Props {
   onToggleCustom?: () => void
   // 지도의 Basis 선택(KRX / NXT / MARKETRY) — 주면 선택 탭이 이 값을 쓰고, 안 주면 isCustom으로 KRX/MARKETRY만 고른다.
   taxonomy?: TaxonomyKey
+  strongIndustryColor?: string
   onSelectTaxonomy?: (taxonomy: TaxonomyKey) => void
   // 지도 페이지의 현재/전체 종목 수를 제목 바로 옆에 표시한다.
   stockCountLabel?: string
@@ -2400,6 +2414,7 @@ export default function SettingsPanel({
   isCustom,
   onToggleCustom,
   taxonomy,
+  strongIndustryColor,
   onSelectTaxonomy,
   stockCountLabel,
   onRequestLogin,
@@ -2568,7 +2583,7 @@ export default function SettingsPanel({
       data-settings-panel
       data-settings-profile={hasTaxonomySelector ? settingsProfile : undefined}
       className="relative tabular-nums select-none flex w-[300px] shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-ui-panel"
-      style={{ '--accent': 'var(--panel-gray)', '--accent-hover': 'var(--ui-white)', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
+      style={{ '--accent': 'var(--panel-gray)', '--accent-hover': 'var(--ui-white)', '--accent-light': 'var(--panel-gray)', '--mine-accent': strongIndustryColor ?? '#fff59d' } as CSSProperties}
     >
       {/* 메인 툴바의 줄 높이(상하 여백 포함 39px)에 맞춘다. 제목과 헤더 조작부는 28px 안에서 세로 가운데 둔다. */}
       <SettingsPanelHeader>

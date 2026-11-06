@@ -23,6 +23,7 @@ function toValueLabel(value: number, decimalPlaces: number): string {
 export default function RankBars({
   chart,
   highlightColor,
+  referenceValueColor,
   colorScale,
   onSelectSector,
   onSelectIndex,
@@ -31,6 +32,7 @@ export default function RankBars({
 }: {
   chart: RankColumnsChart
   highlightColor: string
+  referenceValueColor?: string
   colorScale: ColorScaleConfig
   onSelectSector?: (sectorName: string) => void
   onSelectIndex?: (market: 'KOSPI' | 'KOSDAQ') => void
@@ -151,7 +153,7 @@ export default function RankBars({
                     className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1.5 font-bold tabular-nums"
                     style={{
                       left: axisPosition,
-                      color: resolveHeatmapExtremeColor(item.value, colorScale),
+                      color: item.isReference && referenceValueColor ? referenceValueColor : resolveHeatmapExtremeColor(item.value, colorScale),
                     }}
                   >
                     {toValueLabel(item.value, decimalPlaces)}

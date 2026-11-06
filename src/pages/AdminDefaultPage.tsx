@@ -100,6 +100,7 @@ function profilePayload(snapshot: ProfileSnapshot, profile: 'marketry' | 'exchan
   }
   if (profile === 'marketry') result.excludedSectorKeys = snapshot.values.excludedSectors.map(([key]) => key)
   else result.excludedSectorNames = snapshot.values.excludedSectors.map(([, name]) => name)
+  result.strongIndustryColor = settingDefaultsFor(true, profile).strongIndustryColor
   return result
 }
 
@@ -138,7 +139,7 @@ function savedView(profileSettings: Record<string, unknown> | undefined, current
     'heatmap.topPickEnabled': codeDefaults.topPickCount !== 0,
   }
   for (const [key, value] of Object.entries(profileSettings ?? {})) {
-    if (key === 'excludedSectorKeys' || key === 'excludedSectorNames') continue
+    if (key === 'excludedSectorKeys' || key === 'excludedSectorNames' || key === 'strongIndustryColor') continue
     preferences[`heatmap.${key}`] = value
   }
   const exclusionKey = profile === 'marketry' ? 'excludedSectorKeys' : 'excludedSectorNames'

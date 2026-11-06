@@ -81,5 +81,6 @@ export const GUEST_DEFAULTS: SettingDefaults = { ...MEMBER_DEFAULTS }
 
 export function settingDefaultsFor(isLoggedIn: boolean, profile?: 'marketry' | 'exchange' | 'mine'): SettingDefaults {
   const defaults = isLoggedIn ? MEMBER_DEFAULTS : GUEST_DEFAULTS
-  return profile === 'exchange' ? { ...defaults, strongIndustryColor: '#90bff9' } : defaults
+  const profileAccent = { marketry: '#12b8a6', exchange: '#55c8f2', mine: '#fff59d' } as const
+  return profile ? { ...defaults, strongIndustryColor: profileAccent[profile] } : defaults
 }

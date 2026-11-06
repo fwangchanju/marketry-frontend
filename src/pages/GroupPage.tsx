@@ -213,7 +213,7 @@ export default function GroupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 파라미터가 있을 때만 반응하면 됨
   }, [searchParams])
   // 맵·커스텀 페이지와 같은 청록색 분류자명 버튼을 표시한다.
-  const modeStatusText = <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
+  const modeStatusText = <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} strongIndustryColor={strongIndustryColor} />
 
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const [isShareOpen, setIsShareOpen] = useState(false)
@@ -476,7 +476,7 @@ export default function GroupPage() {
               </SettingsPanelGroup>
               <SettingsPanelGroup section="colors">
                 <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
-                <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
+                <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} fixed={settingsModalProps.taxonomy !== 'MINE'} />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="graph">
                 <SettingsGroupDepthSection depth={groupDepth} onChange={setGroupDepth} selectableDepth={selectableDepth} />

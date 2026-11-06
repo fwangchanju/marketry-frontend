@@ -342,6 +342,8 @@
   /* UI 기본 원색 12개. 지도·그래프 데이터 팔레트는 별도 관리한다. */
   --brand: #12b8a6;
   --brand-surface: #20635d;
+  --exchange-accent: #55c8f2;
+  --exchange-surface: #2e6f9c;
   --sub-yellow: #e6d04a;
   --sub-purple: #b39ddb;
   --sub-gold: #d6a45a; /* 관리자 전용 표시 색 — --admin-only가 이 색을 가리킨다 */
@@ -827,6 +829,20 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
 
 /* 설정 창 전체(스크롤 영역 밖인 하단 Basis 선택 포함)의 선택 버튼(radiogroup)은 글자가 두 줄이 되어도(줄바꿈 또는 글자가 길어져 넘칠 때) 줄 간격이 같도록 한곳에서 정한다.
    새 선택 버튼도 이 값을 따르므로 버튼마다 leading을 따로 지정하지 않는다. */
+[data-settings-panel][data-settings-profile="exchange"] {
+  --brand: var(--exchange-accent);
+  --brand-surface: var(--exchange-surface);
+  --brand-surface-hover: color-mix(in srgb, var(--brand-surface) 80%, var(--brand));
+  --brand-surface-dark: var(--brand-surface);
+}
+
+[data-settings-panel][data-settings-profile="mine"] {
+  --brand: var(--mine-accent, #fff59d);
+  --brand-surface: color-mix(in srgb, var(--brand) 60%, #0a0a0a);
+  --brand-surface-hover: color-mix(in srgb, var(--brand-surface) 80%, var(--brand));
+  --brand-surface-dark: var(--brand-surface);
+}
+
 [data-settings-panel] [role="radiogroup"] button {
   line-height: 1.3;
 }

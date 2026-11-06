@@ -30,7 +30,8 @@ function won(value: number) {
 }
 
 function ColorValue({ color }: { color: string }) {
-  const label = ACCENT_PALETTE.find(option => option.value.toLowerCase() === color.toLowerCase())?.label ?? color
+  const fixedLabels: Record<string, string> = { '#12b8a6': '청록', '#55c8f2': '하늘', '#6688ff': '선명한 파랑', '#aabaff': '연한 파랑' }
+  const label = fixedLabels[color.toLowerCase()] ?? ACCENT_PALETTE.find(option => option.value.toLowerCase() === color.toLowerCase())?.label ?? color
   return <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-3.5 rounded-full border border-ui-white/35" style={{ backgroundColor: color }} />{label}</span>
 }
 

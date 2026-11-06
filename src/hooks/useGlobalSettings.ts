@@ -249,15 +249,15 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     profileDefaults.strongIndustryColor,
   )
   const isLegacyStrongIndustryColor = storedStrongIndustryColor.toLowerCase() === LEGACY_STRONG_INDUSTRY_COLOR
-  const strongIndustryColor = isLegacyStrongIndustryColor
-    ? DEFAULT_STRONG_INDUSTRY_COLOR
-    : storedStrongIndustryColor
+  const strongIndustryColor = settingsProfile !== 'mine'
+    ? profileDefaults.strongIndustryColor
+    : isLegacyStrongIndustryColor ? DEFAULT_STRONG_INDUSTRY_COLOR : storedStrongIndustryColor
 
   // 스크린샷 렌더러와 로그인 사용자 설정은 저장된 색을 사용한다. 예전 기본 금색 값이 남아 있으면
   // 첫 화면부터 청록색으로 표시하고, sessionStorage 또는 서버 설정에도 새 값을 저장한다.
   useEffect(() => {
-    if (isLegacyStrongIndustryColor) setStrongIndustryColor(DEFAULT_STRONG_INDUSTRY_COLOR)
-  }, [isLegacyStrongIndustryColor, setStrongIndustryColor])
+    if (settingsProfile === 'mine' && isLegacyStrongIndustryColor) setStrongIndustryColor(DEFAULT_STRONG_INDUSTRY_COLOR)
+  }, [isLegacyStrongIndustryColor, setStrongIndustryColor, settingsProfile])
   const boxSizeMarketCapRatio = Math.max(0, Math.min(100, Math.round(storedBoxSizeMarketCapRatio)))
   const [storedDepthMetric, setStoredDepthMetric] = usePageSetting<StoredDepthMetric>(
     profileKey('heatmap.activeDepthMetric'),
@@ -890,6 +890,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   const settingsModalProps = {
     isCustom,
+    strongIndustryColor,
     // 지도·평균에서 항상 빼는 정지 종목 수 — 설정창의 업종 제외 목록에 고정 항목으로 보여 준다.
     suspendedStockCount: data?.suspendedStockCount ?? 0,
     onToggleCustom: handleToggleCustom,
