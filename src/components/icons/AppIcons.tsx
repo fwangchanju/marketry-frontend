@@ -91,7 +91,7 @@ export function RefreshIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-// 지도 위쪽 이동 경로의 "되돌아가기" 표시와 2-4 제외 업종 목록이 같은 모양을 쓴다.
+// 지도 위쪽 이동 경로의 "되돌아가기" 표시와 1-2 업종 제외 목록이 같은 모양을 쓴다.
 // git 커밋 모양 — 세로선 가운데에 원이 있는 모양. 버전 하나를 확정한다는 뜻이다.
 export function CommitIcon(props: SVGProps<SVGSVGElement>) {
   return (

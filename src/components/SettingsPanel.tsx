@@ -186,14 +186,13 @@ const SETTINGS_SECTION_NUMBERS = Object.fromEntries(
 // 각 탭 안에서 항목이 놓인 순서(1부터).
 type SettingItemId =
   | 'depthLevel' | 'depthMetric' | 'depthRange' | 'topPick'
-  | 'marketValueRange' | 'stockChange' | 'excludeSector'
+  | 'marketValueRange' | 'excludeSector'
   | 'boxSize' | 'boxLabel' | 'decimalPlaces'
   | 'colorScale' | 'strongColor' | 'bannerList' | 'bannerUnpublished' | 'bannerEnded' | 'bannerRotation'
 
 const SETTING_ITEM_POSITIONS: Partial<Record<SettingItemId, { section: SettingsPanelSectionId; item: number }>> = {
   marketValueRange: { section: 'composition', item: 1 },
   excludeSector: { section: 'composition', item: 2 },
-  stockChange: { section: 'composition', item: 3 },
   depthLevel: { section: 'industry', item: 1 },
   depthMetric: { section: 'industry', item: 2 },
   depthRange: { section: 'industry', item: 3 },
@@ -620,7 +619,7 @@ function DepthStairRange({
   disabled?: boolean
   maxSelectableIndex: number
   blockedHint: string
-  // 켜진 칸마다 배지 옆에 보이는 값(1-2) 업종 지표에서 고른 이름).
+  // 켜진 칸마다 배지 옆에 보이는 값(2-2) 업종 지표에서 고른 이름).
   valueLabel?: string
 }) {
   const last = labels.length - 1
@@ -723,7 +722,7 @@ function DepthStairRange({
   )
 }
 
-// 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 깊이(1-1)보다 깊거나 분류에 없는 단계는 비활성이고,
+// 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 깊이(2-1)보다 깊거나 분류에 없는 단계는 비활성이고,
 // 올리거나 누르면 이유를 커서 옆 말풍선으로 알려준다.
 // 양쪽 끝에 핸들이 있으면 전체 구간 다 보여주고, 핸들을 안쪽으로 옮기면 그 구간(포함) 밖은 제외된다.
 // 두 핸들은 서로를 지나칠 수 없다(겹치는 건 허용 — 그러면 그 한 칸만 표시).
@@ -1611,7 +1610,7 @@ export function SettingsSectorLevelSection({
               <SettingDescription>박스 안에 표시할 내용</SettingDescription>
             </div>
             <div className={`settings-control-inset max-w-full ${stockLabelEnabled ? '' : 'opacity-35'}`}>
-              {/* 1-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
+              {/* 2-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
               <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                 <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
               </div>
@@ -1939,7 +1938,7 @@ export function SettingsSectorChangeSection({
                 key: String(index),
                 label,
                 disabled: index >= maxSelectableDepth,
-                hint: noDataLimited ? `현재 ${label} 데이터가 없어 비활성화되어 있습니다.` : '업종 분류 깊이에서 더 깊은 업종 단계를 선택하면 활성화됩니다.',
+                hint: noDataLimited ? `현재 ${label} 데이터가 없어 비활성화되어 있습니다.` : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`,
               }))}
               value={String(depth)}
               onChange={key => onChangeDepth(Number(key))}
