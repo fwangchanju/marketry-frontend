@@ -237,7 +237,7 @@ function SectorBox({
               width: `calc(100% - ${PADDING * 2}px)`,
               ...(isTopPick ? { backgroundColor: strongIndustryColor, color: 'var(--ui-surface)' } : absoluteDepth === 0 ? { color: strongIndustryColor } : {}),
             } as CSSProperties}
-            className={`heatmap-sector-header ${isTopPick ? 'heatmap-top-pick-header z-[31]' : 'z-[2]'} absolute top-0 flex items-center overflow-hidden truncate ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
+            className={`heatmap-sector-header ${isTopPick ? 'heatmap-top-pick-header z-[31]' : 'z-[2]'} absolute top-0 flex items-center overflow-hidden whitespace-nowrap ${isTopPick ? 'px-1' : 'px-0'} text-left font-bold ${headerStyle.border} ${headerStyle.text ?? ''} ${headerStyle.background}`}
           >
             {/* 글줄 높이는 레이아웃이 확보한 헤더 높이와 같아야 한다.
                 지표는 작은 글꼴의 기준선만 공유하고 별도 줄 높이를 더하지 않는다. */}
@@ -245,7 +245,7 @@ function SectorBox({
               className={`flex h-full min-w-0 items-center ${isTopPick ? '' : 'rounded-[3px] px-1'}`}
               style={{ background: isTopPick ? undefined : nameChipBackground }}
             >
-              <span className="truncate">
+              <span className="overflow-hidden whitespace-nowrap">
                 {depthMark}{sector.sectorName}
                 {headerSuffix && <span className="text-[0.9em] font-normal tabular-nums" style={{ lineHeight: 0 }}>{headerSuffix}</span>}
               </span>
