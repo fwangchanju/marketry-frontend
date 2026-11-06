@@ -683,7 +683,7 @@ function AdminAliasCell({
             if (e.key === 'Enter') submit()
             if (e.key === 'Escape') stopEdit()
           }}
-          className="nes-input is-dark h-5 w-full rounded-md border-0 bg-[var(--ui-panel)] px-1 text-left text-sm text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
+          className="nes-input is-dark block h-5 w-full rounded-md border-0 bg-[var(--ui-panel)] px-1 text-left text-sm text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
         />
       </td>
     )
