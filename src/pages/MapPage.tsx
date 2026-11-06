@@ -368,7 +368,7 @@ export default function MapPage() {
   const isMineEmpty = isCustom && collectRawItems(rootNodes).length === 0
 
   // 상단 오른쪽 분류 배지(설정창 분류 선택 버튼과 같은 청록색).
-  const modeStatusText = <TaxonomyBadge taxonomy={taxonomy} />
+  const modeStatusText = <TaxonomyBadge taxonomy={taxonomy} strongIndustryColor={strongIndustryColor} />
 
   // market은 이제 useGlobalSettings(useRouteAwareMarket)가 경로를 반영해서 매 렌더 계산해준다 —
   // 여기서는 그 값이 바뀔 때(NavSubBar에서 마켓을 고르는 등) 드릴다운만 초기화한다. 첫 렌더는 초기화할
@@ -900,7 +900,7 @@ export default function MapPage() {
               <SettingsPanelGroup section="colors">
                 <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
                 {strongIndustryColor && onChangeStrongIndustryColor && (
-                  <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
+                  <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} fixed={settingsModalProps.taxonomy !== 'MINE'} />
                 )}
                 <SettingsTopPickSection {...settingsModalProps} />
               </SettingsPanelGroup>

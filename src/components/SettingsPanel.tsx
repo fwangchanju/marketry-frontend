@@ -186,14 +186,13 @@ const SETTINGS_SECTION_NUMBERS = Object.fromEntries(
 // 각 탭 안에서 항목이 놓인 순서(1부터).
 type SettingItemId =
   | 'depthLevel' | 'depthMetric' | 'depthRange' | 'topPick'
-  | 'marketValueRange' | 'stockChange' | 'excludeSector'
+  | 'marketValueRange' | 'excludeSector'
   | 'boxSize' | 'boxLabel' | 'decimalPlaces'
   | 'colorScale' | 'strongColor' | 'bannerList' | 'bannerUnpublished' | 'bannerEnded' | 'bannerRotation'
 
 const SETTING_ITEM_POSITIONS: Partial<Record<SettingItemId, { section: SettingsPanelSectionId; item: number }>> = {
   marketValueRange: { section: 'composition', item: 1 },
   excludeSector: { section: 'composition', item: 2 },
-  stockChange: { section: 'composition', item: 3 },
   depthLevel: { section: 'industry', item: 1 },
   depthMetric: { section: 'industry', item: 2 },
   depthRange: { section: 'industry', item: 3 },
@@ -620,7 +619,7 @@ function DepthStairRange({
   disabled?: boolean
   maxSelectableIndex: number
   blockedHint: string
-  // 켜진 칸마다 배지 옆에 보이는 값(1-2) 업종 지표에서 고른 이름).
+  // 켜진 칸마다 배지 옆에 보이는 값(2-2) 업종 지표에서 고른 이름).
   valueLabel?: string
 }) {
   const last = labels.length - 1
@@ -723,7 +722,7 @@ function DepthStairRange({
   )
 }
 
-// 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 깊이(1-1)보다 깊거나 분류에 없는 단계는 비활성이고,
+// 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 깊이(2-1)보다 깊거나 분류에 없는 단계는 비활성이고,
 // 올리거나 누르면 이유를 커서 옆 말풍선으로 알려준다.
 // 양쪽 끝에 핸들이 있으면 전체 구간 다 보여주고, 핸들을 안쪽으로 옮기면 그 구간(포함) 밖은 제외된다.
 // 두 핸들은 서로를 지나칠 수 없다(겹치는 건 허용 — 그러면 그 한 칸만 표시).
@@ -1611,7 +1610,7 @@ export function SettingsSectorLevelSection({
               <SettingDescription>박스 안에 표시할 내용</SettingDescription>
             </div>
             <div className={`settings-control-inset max-w-full ${stockLabelEnabled ? '' : 'opacity-35'}`}>
-              {/* 1-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
+              {/* 2-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
               <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                 <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
               </div>
@@ -1939,7 +1938,7 @@ export function SettingsSectorChangeSection({
                 key: String(index),
                 label,
                 disabled: index >= maxSelectableDepth,
-                hint: noDataLimited ? `현재 ${label} 데이터가 없어 비활성화되어 있습니다.` : '업종 분류 깊이에서 더 깊은 업종 단계를 선택하면 활성화됩니다.',
+                hint: noDataLimited ? `현재 ${label} 데이터가 없어 비활성화되어 있습니다.` : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`,
               }))}
               value={String(depth)}
               onChange={key => onChangeDepth(Number(key))}
@@ -2264,19 +2263,31 @@ export function SettingsColorSection({
 }
 
 // 선택지는 상단바 시간대 점과 같은 값을 쓰도록 utils/accentPalette에 둔다.
-const STRONG_INDUSTRY_COLOR_OPTIONS = ACCENT_PALETTE
+// 거래소 하늘색과 구별되는 파랑을 추가하고 같은 계열을 위아래로 둔다.
+const STRONG_INDUSTRY_COLOR_OPTIONS = [
+  ...ACCENT_PALETTE.slice(0, 5),
+  { label: '선명한 파랑', value: '#6688ff' },
+  ACCENT_PALETTE[6],
+  { label: '연회색', value: '#c8ccd1' },
+  ...ACCENT_PALETTE.slice(8, 12),
+  { label: '연한 파랑', value: '#aabaff' },
+  ACCENT_PALETTE[13],
+]
 
 export function SettingsStrongIndustryColorSection({
   color,
   onChange,
+  fixed = false,
 }: {
   color: string
   onChange: (color: string) => void
+  fixed?: boolean
 }) {
   // 색을 고르면 지도 전체가 다시 그려져 선택 링이 늦게 보이므로, 링은 누른 즉시 따로 보여 주고 지도 색 반영은 한 프레임 뒤로 미룬다(이 값은 외부 저장소라 startTransition으로는 미뤄지지 않는다).
   const [pendingColor, setPendingColor] = useState<{ value: string; base: string } | null>(null)
   const selectedColor = pendingColor && pendingColor.base === color.toLowerCase() ? pendingColor.value : color.toLowerCase()
   const pick = (value: string) => {
+    if (fixed) return
     setPendingColor({ value, base: color.toLowerCase() })
     requestAnimationFrame(() => setTimeout(() => onChange(value), 0))
   }
@@ -2290,7 +2301,7 @@ export function SettingsStrongIndustryColorSection({
         />
       </p>
       <SettingDescription>업종명과 상위 업종의 강조 색상</SettingDescription>
-      {/* 같은 색 계열을 위아래로 비교할 수 있도록 7칸씩 두 줄로 배치한다. 양 끝은 슬라이더 폭에 맞춘다. */}
+      {/* 같은 색 계열을 위아래로 비교할 수 있도록 7칸씩 두 줄로 배치한다. */}
       <div className="flex min-h-[82px] flex-1 items-center pb-3">
         <div className="settings-slider-control grid grid-cols-[repeat(7,22px)] justify-between gap-y-3.5">
           {STRONG_INDUSTRY_COLOR_OPTIONS.map(option => (
@@ -2299,11 +2310,12 @@ export function SettingsStrongIndustryColorSection({
                 type="button"
                 aria-label={`${option.label} 색상 선택`}
                 aria-pressed={selectedColor === option.value}
+                disabled={fixed}
                 // 마우스·터치는 누르는 순간 바로 고르고(떼기를 기다리지 않는다), 키보드(Enter/Space)는 click(detail 0)으로 고른다.
                 onPointerDown={event => { if (event.button === 0) pick(option.value) }}
                 onClick={event => { if (event.detail === 0) pick(option.value) }}
                 style={{ backgroundColor: option.value }}
-                className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/35 p-0"
+                className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-ui-white/35 p-0 disabled:cursor-not-allowed"
               >
                 {selectedColor === option.value && (
                   <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? 'var(--ui-surface)' : 'var(--ui-white)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2359,6 +2371,7 @@ interface Props {
   onToggleCustom?: () => void
   // 지도의 Basis 선택(KRX / NXT / MARKETRY) — 주면 선택 탭이 이 값을 쓰고, 안 주면 isCustom으로 KRX/MARKETRY만 고른다.
   taxonomy?: TaxonomyKey
+  strongIndustryColor?: string
   onSelectTaxonomy?: (taxonomy: TaxonomyKey) => void
   // 지도 페이지의 현재/전체 종목 수를 제목 바로 옆에 표시한다.
   stockCountLabel?: string
@@ -2401,6 +2414,7 @@ export default function SettingsPanel({
   isCustom,
   onToggleCustom,
   taxonomy,
+  strongIndustryColor,
   onSelectTaxonomy,
   stockCountLabel,
   onRequestLogin,
@@ -2569,7 +2583,7 @@ export default function SettingsPanel({
       data-settings-panel
       data-settings-profile={hasTaxonomySelector ? settingsProfile : undefined}
       className="relative tabular-nums select-none flex w-[300px] shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-ui-panel"
-      style={{ '--accent': 'var(--panel-gray)', '--accent-hover': 'var(--ui-white)', '--accent-light': 'var(--panel-gray)' } as CSSProperties}
+      style={{ '--accent': 'var(--panel-gray)', '--accent-hover': 'var(--ui-white)', '--accent-light': 'var(--panel-gray)', '--mine-accent': strongIndustryColor ?? '#fff59d' } as CSSProperties}
     >
       {/* 메인 툴바의 줄 높이(상하 여백 포함 39px)에 맞춘다. 제목과 헤더 조작부는 28px 안에서 세로 가운데 둔다. */}
       <SettingsPanelHeader>

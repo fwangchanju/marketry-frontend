@@ -249,15 +249,15 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     profileDefaults.strongIndustryColor,
   )
   const isLegacyStrongIndustryColor = storedStrongIndustryColor.toLowerCase() === LEGACY_STRONG_INDUSTRY_COLOR
-  const strongIndustryColor = isLegacyStrongIndustryColor
-    ? DEFAULT_STRONG_INDUSTRY_COLOR
-    : storedStrongIndustryColor
+  const strongIndustryColor = settingsProfile !== 'mine'
+    ? profileDefaults.strongIndustryColor
+    : isLegacyStrongIndustryColor ? DEFAULT_STRONG_INDUSTRY_COLOR : storedStrongIndustryColor
 
   // 스크린샷 렌더러와 로그인 사용자 설정은 저장된 색을 사용한다. 예전 기본 금색 값이 남아 있으면
   // 첫 화면부터 청록색으로 표시하고, sessionStorage 또는 서버 설정에도 새 값을 저장한다.
   useEffect(() => {
-    if (isLegacyStrongIndustryColor) setStrongIndustryColor(DEFAULT_STRONG_INDUSTRY_COLOR)
-  }, [isLegacyStrongIndustryColor, setStrongIndustryColor])
+    if (settingsProfile === 'mine' && isLegacyStrongIndustryColor) setStrongIndustryColor(DEFAULT_STRONG_INDUSTRY_COLOR)
+  }, [isLegacyStrongIndustryColor, setStrongIndustryColor, settingsProfile])
   const boxSizeMarketCapRatio = Math.max(0, Math.min(100, Math.round(storedBoxSizeMarketCapRatio)))
   const [storedDepthMetric, setStoredDepthMetric] = usePageSetting<StoredDepthMetric>(
     profileKey('heatmap.activeDepthMetric'),
@@ -542,7 +542,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   )
 
   // 거래소(KRX·NXT) 분류는 대분류(0)만 있다. 1-2 업종 등락 방향의 단계도 저장값은 두고 여기서만 따라간다.
-  // 업종 등락 방향의 업종 단계는 지금 그려지는 업종 단계(1-1 업종 분류 깊이)를 넘을 수 없다. 거래소 분류는 대분류만 있고, 업종 단계를 끄면 대분류만 그려진다.
+  // 업종 등락 방향의 업종 단계는 지금 그려지는 업종 단계(2-1 업종 분류 깊이)를 넘을 수 없다. 거래소 분류는 대분류만 있고, 업종 단계를 끄면 대분류만 그려진다.
   // 저장된 값은 건드리지 않고 여기서만 따라간다(깊이를 다시 늘리면 원래 값이 살아난다). 설정창에 보이는 선택값과 실제로 적용되는 값이 같아야 한다.
   const sectorChangeMaxDepth = Math.max(1, usesCustomTree ? (maxDepth ?? 3) : 1)
   const effectiveSectorChangeDepth = Math.min(sectorChangeDepth, sectorChangeMaxDepth - 1)
@@ -584,7 +584,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 선호 업종 라디오의 활성 상한은 업종 단계 설정을 따른다. 대/중/소분류 설정은 데이터가 얕아도
   // 미리 선택할 수 있게 두고, 현재 데이터에 해당 섹터가 없으면 강조 대상만 빈 Set으로 둔다.
   // 거래소(KRX·NXT) 분류는 대분류만 있어서, MARKETRY에서 중·소분류로 골라 둔 값은 저장은 그대로 두고
-  // 여기서만 대분류로 따라간다(1-1 업종 분류 깊이와 같은 한계). MARKETRY로 돌아오면 원래 값이 살아난다.
+  // 여기서만 대분류로 따라간다(2-1 업종 분류 깊이와 같은 한계). MARKETRY로 돌아오면 원래 값이 살아난다.
   const taxonomyMaxDepth = usesCustomTree ? null : 1
   const topPickMaxSelectableDepth = Math.min(
     maxDepth === null ? Math.max(3, availableMaxDepth) : maxDepth,
@@ -890,6 +890,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
 
   const settingsModalProps = {
     isCustom,
+    strongIndustryColor,
     // 지도·평균에서 항상 빼는 정지 종목 수 — 설정창의 업종 제외 목록에 고정 항목으로 보여 준다.
     suspendedStockCount: data?.suspendedStockCount ?? 0,
     onToggleCustom: handleToggleCustom,

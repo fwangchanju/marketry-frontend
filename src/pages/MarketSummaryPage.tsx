@@ -66,14 +66,14 @@ function earliestTrendDate(endDate: string): string {
   start.setUTCFullYear(start.getUTCFullYear() - TREND_MAX_YEARS)
   return start.toISOString().slice(0, 10)
 }
-const SUMMARY_BADGE_CLASS = FRAME_BADGE_CLASS
+const EXCHANGE_BADGE_CLASS = FRAME_BADGE_CLASS.replace('bg-[var(--brand-surface)]', 'bg-[var(--exchange-surface)]')
 
 const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
 const DEFAULT_HOME_FRAME_ORDER = ['업종 지도', '그룹 등락률 (%)']
 
-function SortableHomeFrame({ title, captureId, index, children, captureUntil }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string }) {
+function SortableHomeFrame({ title, captureId, index, children, captureUntil, isExchange, mineColor }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; isExchange: boolean; mineColor?: string }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
-  const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" className={`${SUMMARY_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title}</span>
+  const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" style={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} className={`${isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title}</span>
   return (
     <section
       ref={setNodeRef}
@@ -96,11 +96,11 @@ function SortableHomeFrame({ title, captureId, index, children, captureUntil }: 
 }
 
 // 3:4 캡처용 판의 틀 — SortableHomeFrame의 안쪽 틀(insetHeader)과 같은 모양이다(끌기·정렬 없이 고정).
-function CaptureFrame({ title, className = '', children }: { title: string; className?: string; children: ReactNode }) {
+function CaptureFrame({ title, className = '', children, isExchange, mineColor }: { title: string; className?: string; children: ReactNode; isExchange: boolean; mineColor?: string }) {
   return (
     <div className={`flex min-h-0 flex-col rounded-sm border border-transparent bg-ui-background pb-1.5 pl-[7px] pr-[7px] pt-[7px] ${className}`}>
       <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
-        <span className={SUMMARY_BADGE_CLASS}>{title}</span>
+        <span style={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} className={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS}>{title}</span>
       </div>
       <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{children}</div>
     </div>
@@ -121,6 +121,8 @@ export default function MarketSummaryPage() {
     market, nxtOnly, nxtOnlyWindow, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
     isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
   } = useGlobalSettings({ allowChangeRateMode: true })
+  const isExchange = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'
+  const mineColor = settingsModalProps.taxonomy === 'MINE' ? strongIndustryColor : undefined
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [homeFrameOrder, setHomeFrameOrder] = useLocalPersistedState(HOME_FRAME_ORDER_KEY, DEFAULT_HOME_FRAME_ORDER)
   const frameSensors = useSensors(
@@ -304,7 +306,7 @@ export default function MarketSummaryPage() {
               )}
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>
-              <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} />
+              <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} strongIndustryColor={strongIndustryColor} />
             </div>
     </>
   )
@@ -321,7 +323,7 @@ export default function MarketSummaryPage() {
                 title: '그룹 등락률 (%)',
                 captureId: 'group-change-rate',
                 body: (
-                  <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={handleSelectSector} onSelectIndex={handleSelectIndex} applyAxisBreak={rangeStartTime === undefined} decimalPlaces={1} />
+                  <RankBars chart={overview.chart} highlightColor={isExchange ? 'var(--exchange-accent)' : strongIndustryColor} referenceValueColor={isExchange ? 'var(--exchange-accent)' : mineColor} colorScale={colorScale} onSelectSector={handleSelectSector} onSelectIndex={handleSelectIndex} applyAxisBreak={rangeStartTime === undefined} decimalPlaces={1} />
                 ),
               },
             ]
@@ -397,7 +399,7 @@ export default function MarketSummaryPage() {
             <SortableContext items={safeHomeFrameOrder} strategy={horizontalListSortingStrategy}>
             <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
             {orderedHomeFrames.map((frame, frameIndex) => (
-              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined}>
+              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} isExchange={isExchange} mineColor={mineColor}>
                 {frame.body}
               </SortableHomeFrame>
             ))}
@@ -430,7 +432,7 @@ export default function MarketSummaryPage() {
               </SettingsPanelGroup>
               <SettingsPanelGroup section="colors">
                 <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
-                <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} />
+                <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} fixed={settingsModalProps.taxonomy !== 'MINE'} />
               </SettingsPanelGroup>
           </SettingsPanel>
         </div>
@@ -449,7 +451,7 @@ export default function MarketSummaryPage() {
                 <CustomPageBadgeLink />
               </EmptyLogoMessage>
             ) : mobileCaptureFrames.map(frame => (
-              <CaptureFrame key={frame.captureId} title={frame.title} className="min-w-0 flex-1">
+              <CaptureFrame key={frame.captureId} title={frame.title} className="min-w-0 flex-1" isExchange={isExchange} mineColor={mineColor}>
                 {frame.body as ReactNode}
               </CaptureFrame>
             ))}
@@ -468,7 +470,7 @@ export default function MarketSummaryPage() {
             {orderedHomeFrames.map(frame => (
               <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: HOME_CAPTURE_FRAME_WIDTH }}>
                 <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
-                <CaptureFrame title={frame.title} className="min-h-0 flex-1">
+                <CaptureFrame title={frame.title} className="min-h-0 flex-1" isExchange={isExchange} mineColor={mineColor}>
                   {isMineEmpty ? (
                     <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
                       <CustomPageBadgeLink />
