@@ -1,8 +1,9 @@
 import { compareKoreanText } from '@/utils/koreanSort'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { usePersistedState } from './usePersistedState'
 import { useTaxonomySelection, type TaxonomySelection } from './useTaxonomySelection'
+import { hasMineSheetRequest, mineSheetReturnPath, withoutSheetParam } from '@/utils/mineSheetReturn'
 import { MEMBER_DEFAULTS, settingDefaultsFor } from '@/utils/settingDefaults'
 import type { TaxonomySource, TaxonomyKey } from '@/utils/taxonomyNames'
 import { useNxtOnlyWindow } from '@/hooks/useNxtOnlyWindow'
@@ -190,7 +191,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 등락률 기준(누적/시간외) 선택은 지도 페이지만 쓴다. 그룹 페이지는 now·before 쌍을 따로 받아 누적 기준으로 그리므로
   // 같은 값을 실으면 화면이 섞인다.
   const allowChangeRateMode = options?.allowChangeRateMode ?? false
-  const { pathname } = useLocation()
+  const { pathname, search, hash } = useLocation()
+  const navigate = useNavigate()
   const isLoggedIn = useIsLoggedIn()
   const { data: session, isLoading: isSessionLoading } = useSession()
   // 설정 기본값은 utils/settingDefaults.ts에 모아 두었다(비로그인과 회원이 다르다). 사용자가 값을 바꾸면 저장값이 우선한다.
@@ -205,7 +207,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const market = options?.readOnlyTelegramSnapshot ? 'ALL_STOCK' : routeMarket
   // 기존 계정 설정은 브라우저 선택이 없을 때만 기본값으로 사용한다. 새 선택은 세 페이지가 localStorage로 공유한다.
   const [savedIsCustom] = usePageSetting('heatmap.isCustom', defaults.isCustom)
-  const [selectedTaxonomy, setSelectedTaxonomy] = useTaxonomySelection(options?.defaultTaxonomy ?? (savedIsCustom ? 'MARKETRY' : 'KRX'), options?.taxonomyStorageKey)
+  const [storedTaxonomy, setSelectedTaxonomy] = useTaxonomySelection(options?.defaultTaxonomy ?? (savedIsCustom ? 'MARKETRY' : 'KRX'), options?.taxonomyStorageKey)
+  // 로그인 팝업이 돌려보낸 주소의 sheet=MINE — 공용 선택을 쓰는 화면에서만 받는다. 첫 화면부터 내 기준을 요청하도록 저장값보다 먼저 본다.
+  const requestsMineSheet = !options?.taxonomyStorageKey && !options?.readOnlyTelegramSnapshot && hasMineSheetRequest(search)
+  const selectedTaxonomy = requestsMineSheet ? 'MINE' : storedTaxonomy
   // 내 분류(mine)는 로그인이 필요하다 — 로그아웃 상태에서는 처음 화면인 MARKETRY로 보이고, 브라우저에 저장한 선택 자체는 보존한다.
   // MARKETRY는 올린 분류라 로그인 없이 읽는다(읽기 전용).
   const source: TaxonomySource = isTelegramCapture || options?.readOnlyTelegramSnapshot ? 'MARKETRY' : selectedTaxonomy === 'MINE' && !isLoggedIn ? 'MARKETRY' : selectedTaxonomy
@@ -844,14 +849,21 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // NXT 거래 종목만 남길지 자동으로 정한다(taxonomy 값은 그 결과로 'KRX' 또는 'NXT'가 된다).
   // 비로그인이 내 분류를 누르면 로그인 안내만 띄우고, 보던 분류(MARKETRY 또는 거래소)에 그대로 머문다.
   // 새로고침 직후처럼 로그인 여부를 아직 모르는 동안은 안내를 띄우지 않고 선택만 받는다.
+  // 로그인에 성공하면 돌아온 주소의 sheet=MINE으로 내 기준을 저장한다. 팝업을 닫거나 로그인에 실패하면 선택은 그대로다.
   const handleSelectTaxonomy = (next: TaxonomyKey) => {
     if (next === 'MINE' && !isLoggedIn && !isSessionLoading) {
-      requireLogin(pathname)
+      requireLogin(mineSheetReturnPath(pathname, search, hash))
       return
     }
     setSelectedTaxonomy(next === 'MARKETRY' || next === 'MINE' ? next : 'KRX')
   }
   const handleToggleCustom = () => handleSelectTaxonomy(isCustom ? 'KRX' : 'MINE')
+  // 로그인 여부가 정해진 뒤 sheet=MINE을 처리하고 주소에서 지운다. 비로그인이면 선택을 바꾸지 않는다.
+  useEffect(() => {
+    if (!requestsMineSheet || isSessionLoading) return
+    if (isLoggedIn) setSelectedTaxonomy('MINE')
+    navigate({ pathname, search: withoutSheetParam(search), hash }, { replace: true })
+  }, [requestsMineSheet, isSessionLoading, isLoggedIn, setSelectedTaxonomy, navigate, pathname, search, hash])
 
   const handleChangeActiveDepthMetric = (metric: DepthMetric) => setStoredDepthMetric(metric)
 

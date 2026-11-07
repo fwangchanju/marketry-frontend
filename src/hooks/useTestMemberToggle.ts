@@ -12,7 +12,8 @@ export function useTestMemberToggle() {
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loginAs = async (account: DevAccount) => {
+  // returnTo를 주면 실제 로그인처럼 그 주소로 돌아온다. 없으면 지금 주소를 다시 연다.
+  const loginAs = async (account: DevAccount, returnTo?: string) => {
     setIsPending(true)
     setError(null)
     cancelPendingPreferenceSave()
@@ -27,9 +28,9 @@ export function useTestMemberToggle() {
       }
       // 이전 회원의 캐시를 비우고, 자동 로그인을 다시 허용한다.
       setLocalGuestMode(false)
-      const currentUrl = new URL(window.location.href)
-      currentUrl.searchParams.delete('guest')
-      window.location.assign(currentUrl.href)
+      const nextUrl = new URL(returnTo ?? window.location.href, window.location.origin)
+      nextUrl.searchParams.delete('guest')
+      window.location.assign(nextUrl.href)
     } catch {
       setError(account === 'admin' ? '로그인 실패: 관리자 계정으로 들어가지 못했습니다.' : '로그인 실패: 백엔드 local 프로필을 확인하세요.')
       setIsPending(false)

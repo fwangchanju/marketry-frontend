@@ -78,7 +78,7 @@ export default function LoginModal({ returnTo, hideMessage = false, loginError =
           <a
             href={googleLoginUrl(returnTo)}
             ref={googleLinkRef}
-            onClick={isLocalDev ? event => { event.preventDefault(); if (!isDevLoginPending) void loginAs('admin') } : undefined}
+            onClick={isLocalDev ? event => { event.preventDefault(); if (!isDevLoginPending) void loginAs('admin', returnTo) } : undefined}
             aria-label="구글 로그인"
             className="relative flex items-stretch overflow-hidden rounded-lg bg-ui-white text-sm font-bold text-[#202124] transition-colors hover:bg-[#f1f3f4] max-[767px]:min-h-[44px] max-[767px]:items-center max-[767px]:text-[14px]"
           >

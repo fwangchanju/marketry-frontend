@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
+import { mineSheetReturnPath } from '@/utils/mineSheetReturn'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
@@ -33,7 +34,7 @@ type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 // 커스텀 섹터·종목 배정 관리 화면 — admin 역할이 아니라 로그인 여부로 접근을 가른다. 누구든 로그인하면 자신의 커스텀 섹터를
 // 관리할 수 있다. 비로그인도 MARKETRY·거래소 분류는 읽을 수 있고, 내 분류를 누르면 로그인 팝업이 뜬다.
 export default function CustomPage() {
-  const { pathname } = useLocation()
+  const { pathname, search, hash } = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   // /custom/sector는 업종 화면이고, /custom/stock은 종목 화면이다.
   const mode = pathname === '/custom/stock' || searchParams.get('mode') === 'stock' ? 'stock' : 'sector'
@@ -64,7 +65,7 @@ export default function CustomPage() {
   // 비로그인이 내 분류를 누르면 로그인 안내만 띄우고, 보던 분류에 그대로 머문다.
   const handleSelectSheet = (next: TaxonomySelection) => {
     if (next === 'MINE' && isGuestKnown) {
-      requireLogin(pathname)
+      requireLogin(mineSheetReturnPath(pathname, search, hash))
       return
     }
     setSelectedTaxonomy(next)
@@ -79,14 +80,14 @@ export default function CustomPage() {
     if (!explicitSheet) return
     // 내 분류 주소는 로그인 여부가 확정된 뒤에 처리한다 — 비로그인이면 선택을 옮기지 않고 팝업만 띄운다.
     if (explicitSheet === 'MINE' && isSessionLoading) return
-    if (explicitSheet === 'MINE' && isGuestKnown) requireLogin(pathname)
+    if (explicitSheet === 'MINE' && isGuestKnown) requireLogin(mineSheetReturnPath(pathname, search, hash))
     else setSelectedTaxonomy(explicitSheet)
     setSearchParams(previous => {
       const params = new URLSearchParams(previous)
       params.delete('sheet')
       return params
     }, { replace: true })
-  }, [explicitSheet, sheetParam, isSessionLoading, isGuestKnown, pathname, requireLogin, setSelectedTaxonomy, setSearchParams])
+  }, [explicitSheet, sheetParam, isSessionLoading, isGuestKnown, pathname, search, hash, requireLogin, setSelectedTaxonomy, setSearchParams])
   // AdminStockTable의 툴바(종목수/실행취소·다시실행/필터/엑셀 등)를 이 DOM 노드로 포털링해서 세
   // 번째 바 안에 그린다 — useRef 대신 useState인 이유는, ref 콜백이 커밋 단계에서 실행되므로
   // useState로 받아야 그 노드가 준비된 뒤 리렌더가 한 번 더 일어나 AdminStockTable에 null이 아닌
