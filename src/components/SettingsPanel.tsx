@@ -2234,7 +2234,7 @@ export function SettingsColorSection({
         </p>
         <div className={`flex items-center gap-3 ${fixed ? 'opacity-35' : ''}`}>
           <ToggleSwitch
-            checked={colorCustomOn && !fixed}
+            checked={colorCustomOn}
             disabled={fixed}
             onChange={() => {
               onChangeColorCustomOn(!colorCustomOn)
