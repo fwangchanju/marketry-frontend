@@ -4,7 +4,8 @@ import { INFO_LIST, InfoPageHeading, InfoSection } from '@/components/InfoDocume
 const DATA_SOURCES: { source: string; category: string; items: string[] }[] = [
   { source: '키움증권', category: '시장·종목 데이터', items: ['시세·등락률·시가총액', '코스피·코스닥 지수·거래대금', '종목명·업종명', '신규 상장 종목', 'NXT 거래 가능 종목'] },
   { source: '토스증권', category: '거래 일정·상태', items: ['날짜·시간·거래 세션·휴장일', '거래정지·상장폐지 종목'] },
-  { source: 'NEXTRADE', category: 'NXT 거래 정보', items: ['NXT 거래 가능 종목 (키움증권 데이터가 없을 때만)'] },
+  { source: 'NEXTRADE', category: 'NXT 거래 정보', items: ['NXT 거래 가능 종목 (키움증권 데이터 누락 시 보조)'] },
+  { source: 'Yahoo Finance', category: '일본 시장 데이터', items: ['일본 종목 시세·등락률', '일본 종목 영문명·업종'] },
   { source: 'MARKETRY', category: '서비스 분류', items: ['종목·업종 분류'] },
   { source: '내 기준', category: '이용자 설정', items: ['이용자가 직접 만든 분류'] },
 ]
