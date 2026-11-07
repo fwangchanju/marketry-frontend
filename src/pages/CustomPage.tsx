@@ -186,7 +186,7 @@ export default function CustomPage() {
     }
     if (emptyGuideShownRef.current) return
     emptyGuideShownRef.current = true
-    void appAlert('먼저 업종 페이지(Custom > Sector)에서 업종을 추가하세요. 그리고 종목 페이지(Custom > Stock)로 가서 종목을 분류해보세요.', { title: '내 기준 시작하기' })
+    void appAlert('먼저 업종 페이지(Custom > Sector)에서 업종을 추가해 주세요. 그리고 종목 페이지(Custom > Stock)로 가서 종목을 분류해 보세요.', { title: '내 기준 시작하기' })
   }, [isEmptyMineData])
 
   const actions = (

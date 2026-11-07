@@ -718,7 +718,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     ? `transform ${window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180}ms cubic-bezier(0.2, 0.7, 0.2, 1)`
     : 'none'
   const renderSwipePreview = () => pageSwipePreview?.targetMode === 'guide'
-    ? <div className="h-full overflow-hidden bg-ui-background px-3 pt-6"><InfoPageHeading flushBottom title="가이드" summary="국내증시의 클래식한 업종 분류로는 놓치기 쉬운 시장의 흐름을 나만의 새로운 분류 방법으로 관찰해보세요." /></div>
+    ? <div className="h-full overflow-hidden bg-ui-background px-3 pt-6"><InfoPageHeading flushBottom title="가이드" summary="국내증시의 클래식한 업종 분류로는 놓치기 쉬운 시장의 흐름을 나만의 새로운 분류 방법으로 관찰해 보세요." /></div>
     : pageSwipePreview?.targetMode === 'graph'
     ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
       : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>

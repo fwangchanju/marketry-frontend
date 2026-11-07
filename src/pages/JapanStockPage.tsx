@@ -96,13 +96,13 @@ export default function JapanStockPage() {
   const { rowProps, selectionHint } = useRowRangeSelection(useMemo(() => filtered.map(stock => stock.code), [filtered]), tableContainerRef, selected, setSelected)
   const submitName = async (code: string, currentName: string) => {
     const name = draftName.trim()
-    if (!name) { void appAlert('한글명을 입력해주세요.', { title: '한글명 저장' }); return }
+    if (!name) { void appAlert('한글명을 입력해 주세요.', { title: '한글명 저장' }); return }
     if (name === currentName) { setEditingCode(null); return }
     const normalize = (text: string) => text.replace(/\s+/g, '').toLowerCase()
     const conflict = stocks.find(stock => stock.code !== code && normalize(namesQuery.data?.[stock.code] ?? stock.name) === normalize(name))
     if (conflict) { void appAlert(`다른 종목의 한글명과 겹칩니다.\n겹치는 종목: ${conflict.code} ${namesQuery.data?.[conflict.code] ?? conflict.name}`, { title: '한글명 저장' }); return }
     try { await saveName.mutateAsync({ code, name }); setEditingCode(null) }
-    catch { void appAlert('한글명을 저장하지 못했습니다. 다시 시도해주세요.', { title: '한글명 저장' }) }
+    catch { void appAlert('한글명을 저장하지 못했습니다. 다시 시도해 주세요.', { title: '한글명 저장' }) }
   }
   const changeSort = (key: SortKey) => setSort(previous => ({ key, direction: previous.key === key && previous.direction === 'asc' ? 'desc' : 'asc' }))
   const filterButton = (key: FilterKey, label: string) => <ColumnFilterButton label={label} getOptions={() => [...new Set(rows.map(stock => stock[key] || '-'))]} excluded={excluded[key]} onToggle={value => setExcluded(previous => {
@@ -205,11 +205,11 @@ export default function JapanStockPage() {
             <SettingsPanelGroup section="custom"><div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">데이터: Yahoo Finance<br />계산: 100엔 당 850원</span></span></div></SettingsPanelGroup>
             <SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control">
               <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일괄 변경</h2>
-              <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">{selected.size ? `선택한 종목 ${selected.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택하세요'}</p>
+              <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">{selected.size ? `선택한 종목 ${selected.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택해 주세요'}</p>
               <div className="grid max-w-full settings-control-inset grid-cols-3 gap-[6px]">
                 <BulkAssignButton count={selected.size} options={categoryOptions('sector')} onAssign={id => void assignCategory([...selected], id, true)} label="대분류" title="대분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} />
-                <BulkAssignButton count={selected.size} options={categoryOptions('industry', sharedSector)} onAssign={id => void assignCategory([...selected], id, true)} label="중분류" title="중분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={!sharedSector || categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} disabledHint={'선택한 종목의 대분류가 같아야 합니다.\n다르면 대분류를 먼저 일괄적용하세요'} />
-                <BulkAssignButton count={selected.size} options={categoryOptions('subIndustry', sharedSector, sharedIndustry)} onAssign={id => void assignCategory([...selected], id, true)} label="소분류" title="소분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={!sharedIndustry || categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} disabledHint={'선택한 종목의 중분류가 같아야 합니다.\n다르면 중분류를 먼저 일괄적용하세요'} />
+                <BulkAssignButton count={selected.size} options={categoryOptions('industry', sharedSector)} onAssign={id => void assignCategory([...selected], id, true)} label="중분류" title="중분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={!sharedSector || categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} disabledHint={'선택한 종목의 대분류가 같아야 합니다.\n다르면 대분류를 먼저 일괄적용해 주세요'} />
+                <BulkAssignButton count={selected.size} options={categoryOptions('subIndustry', sharedSector, sharedIndustry)} onAssign={id => void assignCategory([...selected], id, true)} label="소분류" title="소분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={!sharedIndustry || categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} disabledHint={'선택한 종목의 중분류가 같아야 합니다.\n다르면 중분류를 먼저 일괄적용해 주세요'} />
               </div></div></div></SettingsPanelGroup>
           </SettingsPanel>
         </div>

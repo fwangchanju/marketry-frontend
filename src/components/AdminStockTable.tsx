@@ -883,7 +883,7 @@ const AdminStockRow = memo(function AdminStockRow({
         onEditingChange={editing => setCellEditing('sector3', editing)}
         contextLabel={chain.midName ? `중분류: ${chain.midName}` : undefined}
         disabled={chain.midId == null || isSuspendedStock}
-        disabledHint={isSuspendedStock ? SUSPENDED_STOCK_HINT : '중분류를 먼저 지정하세요'}
+        disabledHint={isSuspendedStock ? SUSPENDED_STOCK_HINT : '중분류를 먼저 지정해 주세요'}
         title="소분류 개별 변경"
         orderMode={cellOrderMode}
       />
@@ -1742,7 +1742,7 @@ export default function AdminStockTable({
         <div className="settings-custom-control">
           <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일괄 변경</h2>
           <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">
-            {selectedStockCodes.size > 0 ? `선택한 종목 ${selectedStockCodes.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택하세요'}
+            {selectedStockCodes.size > 0 ? `선택한 종목 ${selectedStockCodes.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택해 주세요'}
           </p>
           <div className="grid max-w-full settings-control-inset grid-cols-3 gap-[6px]">
             <BulkAssignButton count={selectedStockCodes.size} options={bulkParentOptions} onAssign={handleBulkAssignParent} label="대분류" title="대분류 일괄 변경" orderMode={bulkOrderMode} />
@@ -1754,7 +1754,7 @@ export default function AdminStockTable({
               title="중분류 일괄 변경"
               orderMode={bulkOrderMode}
               disabled={effectiveParentId == null}
-              disabledHint={'선택한 종목의 대분류가 같아야 합니다.\n다르면 대분류를 먼저 일괄적용하세요'}
+              disabledHint={'선택한 종목의 대분류가 같아야 합니다.\n다르면 대분류를 먼저 일괄적용해 주세요'}
             />
             <BulkAssignButton
               count={selectedStockCodes.size}
@@ -1764,7 +1764,7 @@ export default function AdminStockTable({
               title="소분류 일괄 변경"
               orderMode={bulkOrderMode}
               disabled={effectiveMidId == null}
-              disabledHint={'선택한 종목의 중분류가 같아야 합니다.\n다르면 중분류를 먼저 일괄적용하세요'}
+              disabledHint={'선택한 종목의 중분류가 같아야 합니다.\n다르면 중분류를 먼저 일괄적용해 주세요'}
             />
           </div>
         </div>,
