@@ -336,13 +336,13 @@ export default function CustomPage() {
                     {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
                     {mode === 'stock' && <div ref={setStockResetTarget} className="settings-item" />}
                   </>
-                ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">내 기준 모드만 쓰기 가능</span></span></div>}
+                ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">[내 기준] 모드만 쓰기 가능</span></span></div>}
               </SettingsPanelGroup>
               {isAdmin && <SettingsPanelGroup section="adminOps">
                 <div className="settings-plain-content">
                   <div className="settings-ops-item h-[180px] text-sm">
                     <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
-                    <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">내 기준을 MARKETRY 분류로 업데이트·롤백</p>
+                    <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">내 기준을 MARKETRY로 업데이트·롤백</p>
                     <div className="settings-button-area max-w-full settings-control-inset"><MarketryPublishControls /></div>
                   </div>
                 </div>

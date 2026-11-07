@@ -827,7 +827,7 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   .active-banner-slide-in { animation: active-banner-fade-in 300ms ease-out both; }
 }
 
-/* 설정 창 전체(스크롤 영역 밖인 하단 Basis 선택 포함)의 선택 버튼(radiogroup)은 글자가 두 줄이 되어도(줄바꿈 또는 글자가 길어져 넘칠 때) 줄 간격이 같도록 한곳에서 정한다.
+/* 설정 창 전체(스크롤 영역 밖인 하단 Mode 선택 포함)의 선택 버튼(radiogroup)은 글자가 두 줄이 되어도(줄바꿈 또는 글자가 길어져 넘칠 때) 줄 간격이 같도록 한곳에서 정한다.
    새 선택 버튼도 이 값을 따르므로 버튼마다 leading을 따로 지정하지 않는다. */
 [data-settings-panel][data-settings-profile="exchange"] {
   --brand: var(--exchange-accent);

@@ -898,7 +898,7 @@ export default function MapPage() {
                 <SettingsSectorLevelSection {...settingsModalProps} showTaxonomy={false} showDecimalPlaces />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="colors">
-                <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} />
+                <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} fixed={settingsModalProps.taxonomy !== 'MINE'} />
                 {strongIndustryColor && onChangeStrongIndustryColor && (
                   <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} fixed={settingsModalProps.taxonomy !== 'MINE'} />
                 )}

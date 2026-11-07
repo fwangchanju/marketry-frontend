@@ -652,12 +652,15 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
         ],
       }
     : EMPTY_COLOR_SCALE
-  const colorScale = !isTelegramCapture && colorCustomOn ? colorScaleDraftForRendering : EMPTY_COLOR_SCALE
+  // MARKETRY·거래소는 모두 같은 기본 색으로 보여 준다. 사용자가 고친 색은 지우지 않고 내 기준에서만 쓴다.
+  const isColorScaleFixed = settingsProfile !== 'mine'
+  const usesCustomColorScale = !isTelegramCapture && !isColorScaleFixed && colorCustomOn
+  const colorScale = usesCustomColorScale ? colorScaleDraftForRendering : EMPTY_COLOR_SCALE
   const legendSwatches = resolveLegendSwatches(colorScale, {
     // 편집을 시작하기 전부터 비어 있던 부호는 기본 2/5/8 슬롯을 유지한다. 이번 편집으로 처음
     // 비어진 부호만 숨겨 fallback 슬롯이 새로 늘어나는 것을 막는다.
     // 색상 범위 커스텀을 끈 동안에는 지도가 기본 색을 쓰므로 범례도 기본 7칸을 모두 보여준다(흐리게 표시) — 이때는 숨기지 않는다.
-    includeFallbacksForEmptySides: !colorCustomOn || colorEditIndices.length === 0 || !colorEditSnapshotRef.current
+    includeFallbacksForEmptySides: !usesCustomColorScale || colorEditIndices.length === 0 || !colorEditSnapshotRef.current
       ? true
       : {
           negative: !colorEditSnapshotRef.current.thresholds.some(threshold => threshold.thresholdPercent < 0),
@@ -826,7 +829,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     : []
   // 편집 영역을 항상 열어두기 위해, 편집 중인 칸이 없으면(처음, 저장·되돌리기 직후) 마지막으로 보던 칸을 다시 연다.
   useEffect(() => {
-    if (!colorCustomOn || !colorScaleDraft || colorEditIndices.length > 0 || isApplyingColorEdit) return
+    if (!usesCustomColorScale || !colorScaleDraft || colorEditIndices.length > 0 || isApplyingColorEdit) return
     // 처음에는 가장 큰 상승 칸(기본 +12%)을 편집 대상으로 연다.
     const swatch = legendSwatches.find(item => Number.parseFloat(item.label) === selectedColorPercentRef.current)
       ?? legendSwatches.at(-1)
@@ -845,7 +848,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     setColorCustomOn(on)
   }
 
-  // Basis 선택(MARKETRY / 거래소 / 내 분류). 내 분류만 로그인이 필요하다. 거래소는 KRX·NXT를 합친 한 칸이고, 시간대에 따라
+  // Mode 선택(MARKETRY / 거래소 / 내 분류). 내 분류만 로그인이 필요하다. 거래소는 KRX·NXT를 합친 한 칸이고, 시간대에 따라
   // NXT 거래 종목만 남길지 자동으로 정한다(taxonomy 값은 그 결과로 'KRX' 또는 'NXT'가 된다).
   // 비로그인이 내 분류를 누르면 로그인 안내만 띄우고, 보던 분류(MARKETRY 또는 거래소)에 그대로 머문다.
   // 새로고침 직후처럼 로그인 여부를 아직 모르는 동안은 안내를 띄우지 않고 선택만 받는다.
@@ -990,8 +993,24 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   })
   useEffect(() => () => unregisterDraftParticipant('heatmap.colorScale'), [])
 
-  const colorEditorPanelProps =
-    colorEditThresholds.length > 0
+  // 고정 모드는 사용자가 고친 값 대신 기본 색 막대를 어둡게 보여 준다. 조작은 설정창이 막으므로 동작은 비워 둔다.
+  const fixedColorScale = createDefaultColorScale().thresholds
+  const fixedPositiveRows = sortedSignRows(fixedColorScale, true)
+  const fixedNegativeRows = sortedSignRows(fixedColorScale, false)
+  const colorEditorPanelProps = isColorScaleFixed
+    ? {
+        bar: {
+          positive: fixedPositiveRows.map(row => ({ percent: row.threshold.thresholdPercent, color: row.threshold.color })),
+          negative: fixedNegativeRows.map(row => ({ percent: -row.threshold.thresholdPercent, color: row.threshold.color })),
+          side: 'up' as const,
+          selectedRank: fixedPositiveRows.length - 1,
+          zeroColor: fixedColorScale.find(threshold => threshold.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR,
+        },
+        onChangeRankPercent: () => {},
+        onSelectRank: () => {},
+        onSelectZero: () => {},
+      }
+    : colorEditThresholds.length > 0
       ? {
           bar: {
             positive: barPositiveRows.map(row => ({ percent: row.threshold.thresholdPercent, color: row.threshold.color })),

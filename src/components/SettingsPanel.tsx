@@ -389,9 +389,9 @@ function CursorHintBubble({ hint, children }: { hint: CursorHint; children: Reac
   )
 }
 
-// 막힌 컨트롤을 누르면 그 자리에서 왜 안 되는지 말풍선으로 알려 준다(커서가 벗어나면 사라진다).
+// 막힌 컨트롤을 누르면 그 자리에서 왜 안 되는지 말풍선으로 알려 준다(커서가 벗어나면 사라진다). showOnHover를 주면 마우스를 올린 동안에도 커서를 따라 보여 준다.
 // 막힌 영역 위에 투명한 덮개를 얹는 방식은 상위 업종 강조가 막혔을 때와 같다 — 덮개를 얹을 부모는 relative여야 한다.
-function BlockedClickHint({ className, children }: { className: string; children: ReactNode }) {
+function BlockedClickHint({ className, showOnHover = false, children }: { className: string; showOnHover?: boolean; children: ReactNode }) {
   const [hint, setHint] = useState<CursorHint | null>(null)
   return (
     <>
@@ -402,6 +402,7 @@ function BlockedClickHint({ className, children }: { className: string; children
           e.preventDefault()
           setHint(cursorHintFrom(e))
         }}
+        onPointerMove={showOnHover ? e => setHint(cursorHintFrom(e)) : undefined}
         onPointerLeave={() => setHint(null)}
       />
       {hint && <CursorHintBubble hint={hint}>{children}</CursorHintBubble>}
@@ -1279,13 +1280,13 @@ function SettingsTaxonomySelector({
             role="radio"
             aria-checked={isSelected(option.key)}
             aria-disabled={isLocked(option.key) || undefined}
-            data-hint={isLocked(option.key) ? `${TAXONOMY_NAMES[onlyTaxonomy ?? 'MARKETRY'].title} 분류만 제공합니다.` : undefined}
             aria-label={hasDraft(option.key) ? `${option.label}, 저장하지 않은 변경 있음` : option.label}
             onClick={() => !isSelected(option.key) && !isLocked(option.key) && onSelectTaxonomy(option.key)}
             className="settings-choice-hover aria-disabled:cursor-not-allowed aria-disabled:opacity-40 relative z-10 flex min-h-[34px] items-center justify-center rounded-[4px] border-0 bg-transparent px-0.5 py-1 text-center text-sm leading-none font-medium whitespace-nowrap text-ui-white transition-colors duration-[500ms]"
           >
             {option.label}
             {hasDraft(option.key) && <span aria-hidden="true" className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-brand" />}
+            {isLocked(option.key) && <BlockedClickHint className="inset-0" showOnHover>[{TAXONOMY_NAMES[onlyTaxonomy ?? 'MARKETRY'].title}] 모드만 제공합니다.</BlockedClickHint>}
           </button>
         ))}
       </div>
@@ -1561,7 +1562,7 @@ export function SettingsSectorLevelSection({
                 maxSelectableIndex={depthMetricMaxSelectableIndex}
                 valueLabel={GROUP_TAB_METRIC_OPTIONS.find(option => option.key === activeDepthMetric)?.label}
                 blockedHint={selectableDepth < depthLabelCount
-                  ? '거래소 분류는\n대분류만 제공합니다.'
+                  ? '[거래소] 모드는\n대분류만 제공합니다.'
                   : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
                 onChange={onChangeDepthMetricRange}
                 disabled={isDepthMetricRangeDisabled}
@@ -2185,6 +2186,7 @@ export function SettingsColorSection({
   onResetColorScale,
   isResettingColorScale,
   colorEditorProps,
+  fixed = false,
 }: {
   isCustom: boolean
   // 마켓맵 등락률 컬러 스케일 draft(및 그 setter) — null이면 아직 서버 조회 전. 실제 히트맵/범례에
@@ -2198,6 +2200,7 @@ export function SettingsColorSection({
   onResetColorScale: () => void
   isResettingColorScale: boolean
   colorEditorProps?: ColorThresholdEditorProps | null
+  fixed?: boolean
 }) {
   // 색상 설정은 비로그인에게도 보인다 — 기본 색상(공개 /map/scale)으로 시작해서 바꿀 수 있고, 비로그인의
   // 변경은 서버에 저장되지 않고 이 탭의 세션에만 남는다(다른 화면 설정과 같다).
@@ -2212,25 +2215,27 @@ export function SettingsColorSection({
   if (colorScaleDraft === null) return null
 
   return (
-    <div className="settings-first-color settings-auto-item text-ui-white">
+    <div className="settings-first-color settings-auto-item relative text-ui-white">
+      {fixed && <BlockedClickHint className="inset-0" showOnHover>등락률 색상은 [내 기준] 모드에서만 바꿀 수 있습니다.</BlockedClickHint>}
       {/* "색상 커스텀 모드" 토글을 별도 줄로 두지 않고, 제목 바로 우측에 스위치만 붙인다. 초기화 버튼(26px)은 위아래 여백을 -2px씩 줘서 줄 높이를 다른 항목의 제목 줄(22px)과 같게 둔다 — 그래야 메뉴를 바꿔도 제목·토글 위치가 같다. */}
       <div className="flex items-center justify-between">
-        <p className="flex items-center text-[15px]">
+        <p className={`flex items-center text-[15px] ${fixed ? 'opacity-35' : ''}`}>
           <SettingTitle>등락률 색상</SettingTitle>
           <button
             type="button"
             aria-label="초기화"
             data-hint="기본값으로 초기화"
             onClick={async () => { if (await appConfirm('등락률 색상을 기본값으로 초기화하시겠습니까?', { title: '색상 초기화' })) runWithFeedback(onResetColorScale) }}
-            disabled={isResettingColorScale}
+            disabled={isResettingColorScale || fixed}
             className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-brand focus-visible:text-brand disabled:cursor-wait disabled:opacity-70"
           >
             <RefreshIcon className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </p>
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${fixed ? 'opacity-35' : ''}`}>
           <ToggleSwitch
-            checked={colorCustomOn}
+            checked={colorCustomOn && !fixed}
+            disabled={fixed}
             onChange={() => {
               onChangeColorCustomOn(!colorCustomOn)
               setColorOffNoticeVisible(colorCustomOn)
@@ -2240,11 +2245,11 @@ export function SettingsColorSection({
           />
         </div>
       </div>
-      <SettingDescription dimmed={!colorCustomOn}>등락률 구간별 종목 박스 색상</SettingDescription>
+      <SettingDescription dimmed={fixed || !colorCustomOn}>등락률 구간별 종목 박스 색상</SettingDescription>
       {/* 맨 위 9칸 색상바는 9칸이 설정창 폭에 들어가지 않아 지웠다(칸 선택은 아래 막대의 손잡이·0% 표식·상승/하락 선택으로 한다). 지도 하단 범례 바는 그대로다. */}
       <div className="settings-auto-control relative">
         {colorEditorProps && (
-          <div className={colorCustomOn ? '' : 'opacity-35'} inert={!colorCustomOn}>
+          <div className={colorCustomOn && !fixed ? '' : 'opacity-35'} inert={fixed || !colorCustomOn}>
             <HeatmapColorThresholdEditorPanel {...colorEditorProps} />
           </div>
         )}
@@ -2289,14 +2294,16 @@ export function SettingsStrongIndustryColorSection({
   }
   return (
     <div className="settings-second-strong-color flex flex-col text-ui-white pt-3">
-      <p className="flex items-center text-[15px]">
+      <p className={`flex items-center text-[15px] ${fixed ? 'opacity-35' : ''}`}>
         <SettingTitle help>강조 색상</SettingTitle>
         <SettingHelpBubble
           label="강조 색상"
           description={<>지도 내 업종명(대분류)과<br /><span className="inline-block whitespace-nowrap font-bold">{settingNumber('topPick')}) 상위 업종 강조</span>의 색상을 설정합니다.</>}
         />
       </p>
-      <SettingDescription>업종명과 상위 업종의 강조 색상</SettingDescription>
+      <div className="relative flex min-h-0 flex-1 flex-col">
+      {fixed && <BlockedClickHint className="inset-0" showOnHover>강조 색상은 [내 기준] 모드에서만 바꿀 수 있습니다.</BlockedClickHint>}
+      <SettingDescription dimmed={fixed}>업종명과 상위 업종의 강조 색상</SettingDescription>
       {/* 부드러운 색상 7개만 한 줄로 배치한다. */}
       <div className="flex min-h-[82px] flex-1 items-center pb-3">
         <div className="settings-slider-control strong-color-options grid grid-cols-[repeat(7,16px)] justify-between">
@@ -2311,7 +2318,7 @@ export function SettingsStrongIndustryColorSection({
                 onPointerDown={event => { if (event.button === 0) pick(option.value) }}
                 onClick={event => { if (event.detail === 0) pick(option.value) }}
                 style={{ backgroundColor: option.value }}
-                className={`h-[48px] w-[16px] shrink-0 border border-ui-white/45 p-0 [clip-path:polygon(50%_0,100%_18%,100%_100%,0_100%,0_18%)] disabled:cursor-not-allowed ${selectedColor === option.value ? 'ring-2 ring-ui-white' : ''}`}
+                className={`h-[48px] w-[16px] shrink-0 border border-ui-white/45 p-0 [clip-path:polygon(50%_0,100%_18%,100%_100%,0_100%,0_18%)] disabled:cursor-not-allowed disabled:opacity-35 ${selectedColor === option.value ? 'ring-2 ring-ui-white' : ''}`}
               >
                 {selectedColor === option.value && <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-3 w-3" fill="none" stroke={hexToHsl(option.value).l > 45 ? 'var(--ui-surface)' : 'var(--ui-white)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>}
               </button>
@@ -2325,6 +2332,7 @@ export function SettingsStrongIndustryColorSection({
           ))}
         </div>
       </div>
+      </div>
     </div>
   )
 }
@@ -2335,7 +2343,7 @@ interface Props {
   pageLabel?: string
   // 고른 탭을 기억하는 이름 — 같은 pageLabel을 쓰는 화면끼리 탭 기억을 나눌 때 준다. 없으면 pageLabel을 쓴다.
   tabStorageName?: string
-  // Basis에서 이 분류만 고를 수 있게 한다.
+  // Mode에서 이 분류만 고를 수 있게 한다.
   onlyTaxonomy?: TaxonomyKey
   // 설정 저장·초기화 기능을 제공하는 페이지에서만 헤더 버튼을 표시한다.
   showPreferenceActions?: boolean
@@ -2352,7 +2360,7 @@ interface Props {
   taxonomyAtBottom?: boolean
   // 설정창 헤더 오른쪽 끝에 놓을 표시(관리자 페이지의 경고 표시 등).
   headerRight?: ReactNode
-  // 하단 Basis 선택 아래에 표시할 종목 분류 최종 변경 시각(지도 상단 표기와 같은 형식).
+  // 하단 Mode 선택 아래에 표시할 종목 분류 최종 변경 시각(지도 상단 표기와 같은 형식).
   snapshotTime?: string | null
   // 사이드바 열림 상태는 페이지가 관리한다.
   isOpen: boolean
@@ -2361,7 +2369,7 @@ interface Props {
   taxonomySection?: 'industry'
   isCustom?: boolean
   onToggleCustom?: () => void
-  // 지도의 Basis 선택(KRX / NXT / MARKETRY) — 주면 선택 탭이 이 값을 쓰고, 안 주면 isCustom으로 KRX/MARKETRY만 고른다.
+  // 지도의 Mode 선택(KRX / NXT / MARKETRY) — 주면 선택 탭이 이 값을 쓰고, 안 주면 isCustom으로 KRX/MARKETRY만 고른다.
   taxonomy?: TaxonomyKey
   strongIndustryColor?: string
   onSelectTaxonomy?: (taxonomy: TaxonomyKey) => void
@@ -2456,7 +2464,7 @@ export default function SettingsPanel({
     const timer = setTimeout(() => setLoadWaitExpired(true), SETTINGS_LOAD_WAIT_MS)
     return () => clearTimeout(timer)
   }, [isLoggedIn, preferencesLoaded])
-  // 좌우 이동 탭은 "Basis" 줄(앞에 색 막대가 있는 줄)의 높이에 맞춘다. 그 줄이 없으면 가운데에 둔다.
+  // 좌우 이동 탭은 "Mode" 줄(앞에 색 막대가 있는 줄)의 높이에 맞춘다. 그 줄이 없으면 가운데에 둔다.
   const tabStorageKey = `marketry:settings-panel-tab:${tabStorageName ?? pageLabel ?? 'Settings'}`
   const [activeSection, setActiveSection] = useState<SettingsPanelSectionId>(() => {
     try {
@@ -2547,7 +2555,7 @@ export default function SettingsPanel({
             return
           }
           const taxonomyName = TAXONOMY_NAMES[selectedTaxonomy].title
-          if (!await appConfirm(`[${taxonomyName}] 분류의 변경사항을 저장하시겠습니까?`, { title: `[${taxonomyName}] 저장하기` })) return
+          if (!await appConfirm(`[${taxonomyName}] 모드의 변경사항을 저장하시겠습니까?`, { title: `[${taxonomyName}] 저장하기` })) return
           // 저장에 실패하면 임시값은 그대로 남아 있으니 알리고, 사용자가 다시 저장하게 한다.
           setIsSavingPreferences(true)
           runPreferenceAction(() => {
@@ -2582,7 +2590,7 @@ export default function SettingsPanel({
         <div className="flex min-w-0 items-center gap-2">
           <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
             {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Graph에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
-            {/* 아래 Basis 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
+            {/* 아래 Mode 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
             <span aria-hidden="true" className={`mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm ${isAdminPage ? 'bg-admin-only' : 'bg-brand'}`} />
             {isAdminPage ? 'Admin' : pageLabel ?? '설정'}
           </p>
