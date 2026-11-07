@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getHeatmap, getSnapshotDays, getStockCatalog, getTradingDayGap, type ChangeRateMode, type SnapshotDay } from '@/api/heatmap'
+import { getHeatmap, getSnapshotDays, getStockCatalog, getPriceAdjustments, getTradingDayGap, type ChangeRateMode, type SnapshotDay } from '@/api/heatmap'
 import { heatmapKeys } from './queryKeys'
 import { MARKET_DATA_CACHE, STATIC_REFERENCE_CACHE } from './cacheConfig'
 import type { MarketQuery } from '@/types/api'
@@ -47,6 +47,17 @@ export function usePreviousTradingDay(market: MarketQuery, date: string | null, 
   if (!enabled || date === null || current.isLoading || previous.isLoading) return undefined
   const earlier = [...(previous.data ?? []), ...(current.data ?? [])].filter(day => day.date < date).sort((a, b) => a.date.localeCompare(b.date))
   return earlier.at(-1) ?? null
+}
+
+// 기간 등락률의 기준가 비율. 두 날짜가 정해진 뒤에만 조회한다.
+export function usePriceAdjustments(from: string | null, to: string | null, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: heatmapKeys.priceAdjustments(from ?? '', to ?? ''),
+    queryFn: () => getPriceAdjustments(from ?? '', to ?? ''),
+    enabled: from !== null && to !== null && (options?.enabled ?? true),
+    retry: 1,
+    staleTime: 60_000,
+  })
 }
 
 // 지난 날짜(from)가 실시간 날짜(to)보다 몇 거래일 전인지. 두 날짜가 정해진 뒤에만 조회한다.

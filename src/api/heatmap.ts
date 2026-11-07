@@ -46,6 +46,12 @@ export const getHeatmap = (
     })
     .then(r => HeatmapResponseSchema.parse(r.data))
 
+// 기간 등락률의 기준가를 맞출 비율 — from 다음 날부터 to까지 분할·병합·감자가 있었던 종목만 온다.
+export const getPriceAdjustments = (from: string, to: string) =>
+  client
+    .get('/map/price-adjustments', { params: { from, to } })
+    .then(r => z.record(z.string(), z.number()).parse(r.data))
+
 // 달력에서 고를 수 있는 날짜 — month는 'yyyy-MM'. 날짜마다 그날 종가 스냅샷 시각이 같이 온다(getHeatmap의 snapshotTime에 그대로 쓴다).
 const SnapshotDaySchema = z.object({ date: z.string(), snapshotTime: z.string() })
 export type SnapshotDay = z.infer<typeof SnapshotDaySchema>

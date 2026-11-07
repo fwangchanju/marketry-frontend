@@ -15,7 +15,7 @@ import { usePageSetting } from './usePageSetting'
 import { useRouteAwareMarket } from './useRouteAwareMarket'
 import { useIsLoggedIn, useSession } from './useSession'
 import { useLoginGate } from './useLoginGate'
-import { useHeatmap, useSnapshotDays, usePreviousTradingDay } from './useHeatmap'
+import { useHeatmap, usePriceAdjustments, useSnapshotDays, usePreviousTradingDay } from './useHeatmap'
 import { useSnapshotSelection } from './useSnapshotSelection'
 import { useHeatmapColorScale } from './useHeatmapColorScale'
 import {
@@ -56,6 +56,8 @@ import { useCustomPreferences } from './useCustomPreferences'
 import { useDefaultPreferences } from './useDefaultPreferences'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
 import { excludedNamesForPaths } from '@/utils/excludedSectorPaths'
+
+const NO_RANGE_ADJUSTMENTS: Readonly<Record<string, number>> = {}
 
 // 한 부호의 구간들을 절댓값이 작은 것부터 정렬해(몇 번째 구간인지 = 순서) 원래 배열의 인덱스와 함께 돌려준다. 등락률 막대의 손잡이 순서이자 상승·하락 거울 짝의 기준이다.
 function sortedSignRows(thresholds: ColorScaleThreshold[], positive: boolean): { threshold: ColorScaleThreshold; index: number }[] {
@@ -416,9 +418,14 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 종료일 가격의 이름 — 종료일의 종가 지도 시각 목록에 있으면 종가, 없으면(장중 실시간 지도) 현재가. 종목 팝업에 보인다.
   const { data: rangeEndMonthDays } = useSnapshotDays(market, pinnedSnapshotTime?.slice(0, 7) ?? '', { enabled: isRangeActive, retry: 1 })
   const rangeEndPriceLabel = rangeEndMonthDays?.some(day => day.snapshotTime === pinnedSnapshotTime) === false ? '현재가' : '종가'
+  // 기준일 다음 날부터 종료일까지의 분할·병합·감자 비율. 기준일 지도가 전일 종가를 쓰는 경우는 시작일 자체의 변경이 이미 반영돼 있다.
+  const rangeAdjustmentFrom = rangeBaseSnapshotTime?.slice(0, 10) ?? null
+  const rangeAdjustments = usePriceAdjustments(rangeAdjustmentFrom, pinnedSnapshotTime?.slice(0, 10) ?? null, { enabled: isRangeActive })
+  // 비율을 못 받으면 하루치처럼 숨기지 않고 보정 없이 그린다. 분할이 없는 대부분의 종목은 값이 같다.
+  const rangeAdjustmentData = rangeAdjustments.data ?? (rangeAdjustments.isError ? NO_RANGE_ADJUSTMENTS : undefined)
   const rangeResult = useMemo(
-    () => (snapshotData && rangeStartData ? buildRangeChangeRateTree(snapshotData.items, rangeStartData.items, rangeBaseKind, rangeEndPriceLabel) : null),
-    [snapshotData, rangeStartData, rangeBaseKind, rangeEndPriceLabel],
+    () => (snapshotData && rangeStartData && rangeAdjustmentData ? buildRangeChangeRateTree(snapshotData.items, rangeStartData.items, rangeBaseKind, rangeEndPriceLabel, rangeAdjustmentData) : null),
+    [snapshotData, rangeStartData, rangeBaseKind, rangeEndPriceLabel, rangeAdjustmentData],
   )
   // 기간 등락률을 보는 동안 두 지도가 다 오기 전에는 값이 없다 — 종료일 지도 그대로의(하루치) 등락률을 기간 값처럼 보여 주지 않는다.
   const data: HeatmapResponse | undefined = useMemo(
