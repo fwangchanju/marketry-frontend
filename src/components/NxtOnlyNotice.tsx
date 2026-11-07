@@ -58,7 +58,7 @@ function Notice({ active, window, ready, nodes }: Props) {
           {window.label.replace(/ /g, '')}에는 NXT 종목만 표시됩니다.
           <br />
           <span className="text-[var(--ui-control)]">(총 {toCount(stockTotal)}종목이며, 설정에 따라 다를 수 있습니다.)</span>
-          {window.fromMinutes >= 12 * 60 && <><br />종가 확인은 상단 애프터 마켓 배지 우측 버튼을 이용하세요.</>}
+          {window.fromMinutes >= 12 * 60 && <><br />종가 확인은 상단 애프터 마켓 배지 우측 버튼을 이용해 주세요.</>}
         </p>
         <div className="mt-auto flex justify-end pt-3">
           <button type="button" onClick={() => setDismissed(true)} className="rounded-lg border-0 bg-ui-selection px-4 py-2 text-sm font-bold text-ui-surface transition-colors hover:bg-ui-control-hover">닫기</button>

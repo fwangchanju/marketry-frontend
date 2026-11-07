@@ -60,7 +60,7 @@ export default function GuidePage() {
         <InfoPageHeading
           flushBottom
           title="가이드"
-          summary="국내증시의 클래식한 업종 분류로는 놓치기 쉬운 시장의 흐름을 나만의 새로운 분류 방법으로 관찰해보세요."
+          summary="국내증시의 클래식한 업종 분류로는 놓치기 쉬운 시장의 흐름을 나만의 새로운 분류 방법으로 관찰해 보세요."
         />
       )}
     >
@@ -69,7 +69,7 @@ export default function GuidePage() {
           <p>서로 다른 업종에 있는 종목도 내 기준으로 새롭게 묶어서 볼 수 있습니다. 원치 않는 그룹은 지도에서 숨길 수도 있습니다.</p>
           <IndustryGroupingExample />
           <div className="!mt-12 space-y-3">
-            <p>또 다른 새로운 접근 방식이 있다면, 직접 그룹을 분류해보세요.</p>
+            <p>또 다른 새로운 접근 방식이 있다면, 직접 그룹을 분류해 보세요.</p>
             {/* 커스텀 화면의 기존 주소 규칙(?sheet=MINE): 로그인했으면 내 기준으로 열고, 비로그인이면 로그인 안내를 띄운다. 모바일은 커스텀 화면이 없어 안내만 한다. */}
             {isNarrow ? (
               <p className="text-ui-muted">내 업종 설정은 PC 화면에서 할 수 있습니다.</p>

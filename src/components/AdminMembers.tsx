@@ -323,7 +323,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
                 onClick={() => void handleChangeSpecial(special)}
                 disabled={selectedIds.size === 0 || isChangingSpecial}
                 className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
-                data-hint={selectedIds.size === 0 ? '표에서 회원을 먼저 체크하세요.' : `체크한 ${selectedIds.size}명을 ${special ? '특별 회원으로 지정' : '일반 회원으로 해제'}합니다.`}
+                data-hint={selectedIds.size === 0 ? '표에서 회원을 먼저 체크해 주세요.' : `체크한 ${selectedIds.size}명을 ${special ? '특별 회원으로 지정' : '일반 회원으로 해제'}합니다.`}
               >
                 {label}
               </button>
@@ -342,7 +342,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
               onClick={() => void handleResetNickname()}
               disabled={selectedIds.size === 0 || isResettingNickname}
               className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-[var(--ui-control)] text-[13px] leading-[1.3] font-medium text-ui-white disabled:cursor-not-allowed disabled:opacity-35"
-              data-hint={selectedIds.size === 0 ? '표에서 회원을 먼저 체크하세요.' : `체크한 ${selectedIds.size}명의 닉네임을 지웁니다.`}
+              data-hint={selectedIds.size === 0 ? '표에서 회원을 먼저 체크해 주세요.' : `체크한 ${selectedIds.size}명의 닉네임을 지웁니다.`}
             >
               지우기
             </button>

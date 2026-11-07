@@ -858,7 +858,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
-            placeholder="업종을 추가하세요"
+            placeholder="업종을 추가해 주세요"
             aria-label="최상위 업종명"
             className={`h-[25px] min-w-0 flex-1 rounded-[5px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-text focus:border-[var(--brand)] ${sectors.length === 0 ? 'animate-input-attention' : ''}`}
           />
