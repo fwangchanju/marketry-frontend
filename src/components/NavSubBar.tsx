@@ -5,12 +5,14 @@ import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/
 import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
 import { useSession } from '@/hooks/useSession'
-import { isAdminSession } from '@/utils/adminAccess'
+import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 interface MenuOption {
   label: string
   to: string
+  // 특별 회원 전용 항목 — 글자를 특별 회원 색(보라)으로 표시한다.
+  special?: boolean
 }
 
 interface MenuLink {
@@ -103,8 +105,9 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   // 관리자 계정에만 Admin 메뉴가 더 보인다 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
-  const customLink = isAdmin ? { ...CUSTOM_LINK, options: [...(CUSTOM_LINK.options ?? []), { label: 'J-SECTOR', to: '/custom/japan/sector' }, { label: 'J-STOCK', to: '/custom/japan/stock' }] } : CUSTOM_LINK
-  const baseLinks = isAdmin ? BASE_LINKS.map(link => link.label === 'Map' ? { ...link, options: [...(link.options ?? []), { label: 'JAPAN', to: '/map/japan' }] } : link) : BASE_LINKS
+  const canSeeJapan = !isSessionLoading && isSpecialSession(session)
+  const customLink = canSeeJapan ? { ...CUSTOM_LINK, options: [...(CUSTOM_LINK.options ?? []), { label: 'J-SECTOR', to: '/custom/japan/sector', special: true }, { label: 'J-STOCK', to: '/custom/japan/stock', special: true }] } : CUSTOM_LINK
+  const baseLinks = canSeeJapan ? BASE_LINKS.map(link => link.label === 'Map' || link.label === 'Graph' ? { ...link, options: [...(link.options ?? []), { label: 'JAPAN', to: `/${link.label.toLowerCase()}/japan`, special: true }] } : link) : BASE_LINKS
   const links = isAdmin ? [...baseLinks, customLink, ADMIN_LINK] : [...baseLinks, customLink]
   const [openTo, setOpenTo] = useState<string | null>(null)
   // 목록은 누르면 열려 그대로 있고, 메뉴 밖을 누르면 닫는다. 메뉴 사이 빈 곳도 메뉴 밖이다.
@@ -179,7 +182,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
                         aria-selected={isCurrent}
                         onClick={() => handleSelect(option)}
                         className={`font-roboto-latin block h-[30px] w-full rounded-none border-0 px-3 text-left text-sm font-medium transition-colors ${
-                          isCurrent ? 'bg-[var(--brand-surface)] text-ui-white' : 'bg-transparent text-ui-white hover:bg-ui-white/10'
+                          isCurrent ? 'bg-[var(--brand-surface)]' : 'bg-transparent hover:bg-ui-white/10'} ${option.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'
                         }`}
                       >
                         {/* 하위 시장은 윗줄 KOREA에 맞춘다: 화살표는 KO 가운데, 글자는 R 시작 위치. 숨긴 KO로 폭을 잡아 글꼴이 달라도 맞는다. */}

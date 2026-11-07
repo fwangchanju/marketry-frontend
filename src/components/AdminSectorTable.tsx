@@ -29,6 +29,8 @@ interface Props {
   onCountLabelChange?: (label: string | undefined) => void
   // 업종 번호별 시가총액 합·종목 수(지도 데이터의 전체 종목 기준) — 열의 기본 순서와 숫자 칸에 쓴다.
   sectorStats?: SectorStats
+  // 수정 권한이 없는 회원이 보는 화면이다. 끌기와 추가·이름 변경·삭제 아이콘을 숨긴다.
+  readOnly?: boolean
   overseasActions?: {
     create: ReturnType<typeof useCreateSector>
     rename: ReturnType<typeof useRenameSector>
@@ -178,7 +180,7 @@ function DroppableSectorRow({
   )
 }
 
-export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, overseasActions }: Props) {
+export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, overseasActions, readOnly = false }: Props) {
   // 일본 분류는 세 단계까지만 있다. 국내는 예전에 만든 네 번째 단계를 그대로 둔다.
   const maxDepth = overseasActions ? MAX_SECTOR_DEPTH - 1 : MAX_SECTOR_DEPTH
   const [query, setQuery] = useState('')
@@ -663,7 +665,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                     sectorId={sector.id}
                     parentId={sector.parentId}
                     dropState={isMoveDrag && draggedSector?.id !== sector.id ? (isMoveDropTarget(draggedSector, sector) ? (moveOverId === sector.id ? 'over' : 'target') : 'blocked') : null}
-                    locked={isProtectedSector(sector)}
+                    locked={readOnly || isProtectedSector(sector)}
                   >{itemNumber}</DraggableNumberBadge>
                   <button
                     type="button"
@@ -674,7 +676,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                     {sector.name}
                   </button>
                   {/* 선택한 항목은 하위 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 업종명을 덜 가리도록 업종 칸의 오른쪽 끝(시가총액 합 칸과의 세로선)에 바짝 붙이고 여백을 줄였다. 옆 칸 숫자를 덮지 않는다. 번호 칸을 끄는 중에는 숨긴다. */}
-                  {selectedSectorId === sector.id && !isMoveDrag && (
+                  {!readOnly && selectedSectorId === sector.id && !isMoveDrag && (
                     <span className="ml-auto flex shrink-0 items-center gap-0.5 pl-1">
                       {sector.depth <= ADD_CHILD_MAX_PARENT_DEPTH && !isProtectedSector(sector) && (
                         <button type="button" data-no-row-select data-hint="하위 업종 추가" aria-label={`${sector.name} 하위 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">

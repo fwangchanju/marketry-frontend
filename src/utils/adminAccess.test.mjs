@@ -3,10 +3,18 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
-import { isAdminSession } from './adminAccess.ts'
+import { isAdminSession, isSpecialSession } from './adminAccess.ts'
 
 test('로그인한 관리자만 관리자로 본다', () => {
   assert.equal(isAdminSession({ authenticated: true, role: 'ADMIN' }), true)
+})
+
+test('특별 회원 화면은 특별 회원과 관리자만 본다', () => {
+  assert.equal(isSpecialSession({ authenticated: true, role: 'USER', special: true }), true)
+  assert.equal(isSpecialSession({ authenticated: true, role: 'ADMIN', special: false }), true)
+  assert.equal(isSpecialSession({ authenticated: true, role: 'USER', special: false }), false)
+  assert.equal(isSpecialSession({ authenticated: false, role: 'USER', special: true }), false)
+  assert.equal(isSpecialSession(null), false)
 })
 
 test('일반 회원·특별 회원은 관리자가 아니다', () => {
