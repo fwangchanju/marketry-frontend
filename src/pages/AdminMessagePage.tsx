@@ -59,6 +59,11 @@ function isSameDraft(a: TelegramSendSettingInput, b: TelegramSendSettingInput) {
   )
 }
 
+// 발송 미리보기가 스크롤 없이 보이도록 화면 높이에 맞춰 카드 전체를 줄인다. 400px은 카드 위아래 고정 영역, 1.9는 카드 높이÷너비(이미지 비율 1295/810 + 글자 줄)다.
+const SAMPLE_CARD_MAX_WIDTH = 'min(26rem, calc((100dvh - 400px) / 1.9))'
+// 카드 안 글자도 카드 너비에 맞춰 함께 줄인다. 최대 18px은 기존 text-lg와 같다.
+const SAMPLE_TEXT = 'text-[clamp(8px,4.35cqw,18px)]'
+
 // 관리자 전용 메시지 페이지 — 텔레그램으로 나가는 정기 발송(홈 화면 이미지)을 운영자가 켜고 끄고 시각을 바꾼다.
 // 저장된 값이 없으면 꺼짐이고 시각은 서버 기본값이다. 수집 실패 알림(개발자 채널)은 이 스위치와 별개로 간다.
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다.
@@ -207,8 +212,8 @@ export default function AdminMessagePage() {
                       {setting.isError ? (
                         <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                       ) : saved ? (
-                        <div className="mx-auto w-full max-w-[26rem] rounded-2xl rounded-bl-md bg-ui-control p-1">
-                          <p className="m-0 px-3 pb-1 pt-1.5 text-lg font-medium text-[var(--sub-yellow)]">MARKETRY</p>
+                        <div className="mx-auto w-full rounded-2xl rounded-bl-md bg-ui-control p-1 [container-type:inline-size]" style={{ maxWidth: SAMPLE_CARD_MAX_WIDTH }}>
+                          <p className={`m-0 px-3 pb-1 pt-1.5 ${SAMPLE_TEXT} font-medium text-[var(--sub-yellow)]`}>MARKETRY</p>
                           <div className="relative overflow-hidden rounded-[10px]">
                             <img src={sampleMapImage} alt="텔레그램 발송 이미지 예시 — 시장 지도" className="block h-auto w-full" draggable={false} />
                             {sendOnce.isPending && (
@@ -218,8 +223,8 @@ export default function AdminMessagePage() {
                             )}
                           </div>
                           <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
-                            <p className="m-0 whitespace-pre-line text-lg leading-snug text-ui-white">{SAMPLE_CAPTION}</p>
-                            <span className="flex shrink-0 items-center gap-1.5 text-lg text-ui-text">
+                            <p className={`m-0 whitespace-pre-line ${SAMPLE_TEXT} leading-snug text-ui-white`}>{SAMPLE_CAPTION}</p>
+                            <span className={`flex shrink-0 items-center gap-1.5 ${SAMPLE_TEXT} text-ui-text`}>
                               <svg aria-hidden="true" viewBox="0 0 24 24" className="size-[1em] fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                               2
                               <span className="ml-1.5">{SAMPLE_TIME}</span>
@@ -256,6 +261,23 @@ export default function AdminMessagePage() {
                       <>
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
+                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 테스트</h2>
+                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">최신 데이터로 발송 테스트</p>
+                            <div className="mt-auto mb-auto flex max-w-full settings-control-inset justify-center">
+                              <button
+                                type="button"
+                                disabled={sendOnce.isPending}
+                                aria-busy={sendOnce.isPending}
+                                onClick={() => void handleSendOnce()}
+                                className="flex h-[25px] w-full items-center justify-center rounded-[4px] border-0 bg-brand-surface px-3 text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
+                              >
+                                {sendOnce.isPending ? <Spinner className="h-4 w-4" /> : '발송 테스트'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="settings-ops-item h-[180px] text-sm">
+                          <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">정기발송</h2>
                             <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">정기 리포트를 텔레그램으로 보낼지</p>
                             <SettingsSegmentedControl label="정기발송" options={SEND_OPTIONS} value={draft.enabled} onChange={value => updateDraft({ enabled: value })} />
@@ -281,23 +303,6 @@ export default function AdminMessagePage() {
                               <span className="col-start-3 ml-3 inline-flex h-5 w-[42px] shrink-0 items-center justify-center rounded-[4px] bg-ui-control px-1.5 text-xs font-semibold leading-none tabular-nums text-ui-white" aria-live="polite">
                                 {draft.sectorSendIntervalMinutes}분
                               </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="settings-ops-item h-[180px] text-sm">
-                          <div className="settings-custom-control">
-                            <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 테스트</h2>
-                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">최신 데이터로 발송 테스트</p>
-                            <div className="mt-auto mb-auto flex max-w-full settings-control-inset justify-center">
-                              <button
-                                type="button"
-                                disabled={sendOnce.isPending}
-                                aria-busy={sendOnce.isPending}
-                                onClick={() => void handleSendOnce()}
-                                className="flex h-[25px] w-full items-center justify-center rounded-[4px] border-0 bg-brand-surface px-3 text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
-                              >
-                                {sendOnce.isPending ? <Spinner className="h-4 w-4" /> : '발송 테스트'}
-                              </button>
                             </div>
                           </div>
                         </div>
