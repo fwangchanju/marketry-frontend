@@ -20,6 +20,7 @@ export const heatmapKeys = {
     snapshotTime: string | null = null,
     includeSuspended = false,
   ) => [...heatmapKeys.all, 'map', market, source, nxtOnly, basis, snapshotTime, includeSuspended] as const,
+  priceAdjustments: (from: string, to: string) => [...heatmapKeys.all, 'price-adjustments', from, to] as const,
   tradingDayGap: (from: string, to: string) => [...heatmapKeys.all, 'trading-day-gap', from, to] as const,
   snapshotDays: (market: MarketQuery, month: string) => [...heatmapKeys.all, 'snapshot-days', market, month] as const,
   scale: () => [...heatmapKeys.all, 'scale'] as const,
