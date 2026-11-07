@@ -29,7 +29,7 @@ import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
-import { JAPAN_MAP_FIXED, JAPAN_SETTINGS_TAB_STORAGE } from '@/utils/japanMapSettings'
+import { JAPAN_MAP_FIXED, JAPAN_SETTINGS_TAB_STORAGE, NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { mapTileMethod } from '@/utils/mapStretch'
@@ -46,7 +46,6 @@ const NO_DIRECTION_FILTERS = { stockChangeFilter: 'all', sectorChangeFilter: 'al
 const { colorScale } = JAPAN_MAP_FIXED
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 const FLAT_GROUP_NAME = '__flat__'
-const NO_TAXONOMY_CHANGE = () => {}
 const SECTION_ORDER: SettingsPanelSectionId[] = ['industry', 'stockDisplay']
 
 function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
