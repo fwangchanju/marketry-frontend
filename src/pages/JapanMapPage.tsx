@@ -36,7 +36,7 @@ import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 
-const REFRESH_HELP = '저장된 최신 시세와 분류를 다시 받습니다.'
+const REFRESH_HELP = '09:03부터 5분 간격으로 데이터를 수집합니다.\n수집 후 배포까지 3분 가량 지연이 있을 수 있습니다.\n~~(수집: 09:03 → 배포: 09:06 → 수집: 09:08)~~'
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 const LEVEL_LABELS = ['대분류', '중분류', '소분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
