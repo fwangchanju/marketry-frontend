@@ -15,4 +15,4 @@ export const TAXONOMY_NAMES = {
 } as const
 
 // 설정창 아래쪽 선택 버튼 묶음(MARKETRY / 거래소 / 내 기준)의 제목. 이름을 또 바꿀 때는 여기만 고친다.
-export const TAXONOMY_SELECT_TITLE = 'Basis'
+export const TAXONOMY_SELECT_TITLE = 'Mode'

@@ -9,7 +9,7 @@ export const PROTECTED_SECTOR_TEXT_CLASS = 'text-[var(--sub-yellow)]'
 
 // 이름에 마우스를 올렸을 때 공통 툴팁(data-hint)으로 보여 주는 안내.
 const PROTECTED_SECTOR_HINTS: Record<string, string> = {
-  [NEW_LISTING_SECTOR_NAME]: '신규 상장시 이 그룹으로 자동 배정됩니다.\n~~(거래소 모드에서는 거래소 기준으로 배정됩니다.)~~',
+  [NEW_LISTING_SECTOR_NAME]: '신규 상장시 이 그룹으로 자동 배정됩니다.\n~~([거래소] 모드에서는 거래소 기준으로 배정됩니다.)~~',
   [SUSPENDED_SECTOR_NAME]: '연속 5거래일 이상 거래가 정지된 종목이 이 그룹으로 자동 배정되며, 다른 업종으로 옮길 수 없습니다.',
   [UNCLASSIFIED_SECTOR_NAME]: '삭제한 업종의 종목과 거래가 재개된 종목이 이 그룹으로 옮겨집니다.',
 }

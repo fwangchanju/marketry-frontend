@@ -14,9 +14,9 @@ test('같은 이름이 다른 경로에 있으면 내 분류와 파일을 구분
   assert.throws(() => buildUploadPlan(rows, sectors, currentSectorIdByCode), error => {
     assert.ok(error instanceof ClassificationUploadError)
     assert.match(error.message, /서로 다른 경로에 있어 올릴 수 없습니다\. \(2건\)/)
-    assert.match(error.message, /\[콘텐츠\]\n내 분류: 임의소비재 > 콘텐츠\n파일: 임의 소비재 > 콘텐츠/)
-    assert.match(error.message, /\[은행\]\n내 분류: 금융 > 은행\n파일: 금 융 > 은행/)
-    assert.match(error.message, /내 분류의 업종 이름을 파일에 맞게 바꾼 뒤 다시 올려 주세요\./)
+    assert.match(error.message, /\[콘텐츠\]\n내 기준: 임의소비재 > 콘텐츠\n파일: 임의 소비재 > 콘텐츠/)
+    assert.match(error.message, /\[은행\]\n내 기준: 금융 > 은행\n파일: 금 융 > 은행/)
+    assert.match(error.message, /내 기준의 업종 이름을 파일에 맞게 바꾼 뒤 다시 올려 주세요\./)
     return true
   })
 })

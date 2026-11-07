@@ -74,10 +74,10 @@ const MAX_SHOWN_CONFLICTS = 5
 // 어느 쪽이 내 분류이고 어느 쪽이 파일인지, 어떻게 고치면 되는지까지 알려 주는 문구다.
 export function buildConflictMessage(conflicts: readonly NameConflict[]): string {
   const blocks = conflicts.slice(0, MAX_SHOWN_CONFLICTS).map(conflict =>
-    `[${conflict.name}]\n${conflict.otherFromFile ? '파일(앞줄)' : '내 분류'}: ${conflict.otherPath.join(' > ')}\n파일: ${conflict.filePath.join(' > ')}`)
+    `[${conflict.name}]\n${conflict.otherFromFile ? '파일(앞줄)' : '내 기준'}: ${conflict.otherPath.join(' > ')}\n파일: ${conflict.filePath.join(' > ')}`)
   const rest = conflicts.length > MAX_SHOWN_CONFLICTS ? `\n외 ${conflicts.length - MAX_SHOWN_CONFLICTS}건` : ''
   const fix = conflicts.some(conflict => !conflict.otherFromFile)
-    ? '파일의 경로를 내 분류와 같게 고치거나,\n내 분류의 업종 이름을 파일에 맞게 바꾼 뒤 다시 올려 주세요.'
+    ? '파일의 경로를 내 기준과 같게 고치거나,\n내 기준의 업종 이름을 파일에 맞게 바꾼 뒤 다시 올려 주세요.'
     : '파일 안에서 같은 이름의 업종이 서로 다른 경로에 있습니다.\n파일의 경로를 하나로 맞춘 뒤 다시 올려 주세요.'
   return `같은 이름의 업종이 서로 다른 경로에 있어 올릴 수 없습니다. (${conflicts.length}건)\n\n${blocks.join('\n\n')}${rest}\n\n${fix}`
 }

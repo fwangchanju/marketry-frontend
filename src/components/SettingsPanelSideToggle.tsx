@@ -23,7 +23,7 @@ export default function SettingsPanelSideToggle({ isOnLeft, onToggleSide, panelN
         button.style.top = `${Math.round(topLine.top - panelBounds.top)}px`
         button.style.height = `${Math.max(1, Math.round(badgeTopLine.top - topLine.top))}px`
       } else {
-        // Basis가 없는 패널은 Basis 기준선에 대응하는 높이·위치를 사용한다.
+        // Mode가 없는 패널은 Mode 기준선에 대응하는 높이·위치를 사용한다.
         button.style.top = `${Math.round(panelBounds.height - FALLBACK_BOTTOM_GAP_PX - FALLBACK_HEIGHT_PX)}px`
         button.style.height = `${FALLBACK_HEIGHT_PX}px`
       }

@@ -78,7 +78,7 @@ export default function MarketryPublishControls() {
 
   const handlePublish = async () => {
     const { confirmed, value: memo } = await appWarnConfirmWithInput(
-      `${toDateTimeLabel(createPublicationLabel(new Date()))}\n[내 기준]을 [MARKETRY] 분류로 업데이트하시겠습니까?`,
+      `${toDateTimeLabel(createPublicationLabel(new Date()))}\n[내 기준]을 [MARKETRY]로 업데이트하시겠습니까?`,
       { title: 'MARKETRY 업데이트', placeholder: '메모', maxLength: MEMO_MAX_LENGTH },
     )
     if (!confirmed) return
@@ -88,7 +88,7 @@ export default function MarketryPublishControls() {
       const published = await publishMarketry(memo || createPublicationLabel(new Date()))
       setVersions(null)
       await refreshMaps()
-      appAlert(`${versionHeadLines(published)}\nMARKETRY 분류가 업데이트되었습니다.`, { title: '업데이트 완료' })
+      appAlert(`${versionHeadLines(published)}\n[MARKETRY] 모드가 업데이트되었습니다.`, { title: '업데이트 완료' })
     } catch {
       appAlert('MARKETRY에 올리지 못했습니다.', { title: '업데이트 실패' })
     } finally {
@@ -112,7 +112,7 @@ export default function MarketryPublishControls() {
   }
 
   const handleRestore = async (version: MarketryPublication) => {
-    const confirmed = await appWarnConfirm(`${versionHeadLines(version)}\n[MARKETRY] 분류를 되돌리시겠습니까?`, { title: 'MARKETRY 롤백' })
+    const confirmed = await appWarnConfirm(`${versionHeadLines(version)}\n[MARKETRY]를 이전으로 되돌리시겠습니까?`, { title: 'MARKETRY 롤백' })
     if (!confirmed) return
     setIsBusy(true)
     try {
