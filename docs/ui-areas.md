@@ -76,6 +76,7 @@
 | MARKETRY / 거래소 / 내 기준 선택 | `Taxonomy` (`TaxonomyKey`, `useTaxonomySelection`, `SettingsTaxonomySelector`) | **Mode** (설정창 제목) |
 | 분류 값 | `MARKETRY` · `KRX` · `MINE` · `NXT` | MARKETRY · 거래소 · 내 기준 |
 | 페이지 | `MapPage` · `GroupPage` · `CustomPage` | Map · Graph · Custom (`GroupPage`의 화면 이름이 Graph, 주소는 `/graph`) |
+| 일본 페이지 | `JapanMapPage` · `JapanGraphPage` · `JapanSectorPage` · `JapanStockPage` | 주소는 `/map/japan`·`/graph/japan`·`/custom/japan/sector`·`/custom/japan/stock`. 특별 회원과 관리자만 보며 메뉴 항목은 보라색이다. 조회는 `/api/japan/**`, 수정은 관리자만 `/api/admin/**`로 한다 |
 | 상단 영역의 메뉴 줄 | `NavSubBar` | 메뉴 줄 |
 | 상단 영역 메뉴(Map·Graph·Custom·Admin)를 누르면 뜨는 목록(누른 채 고정, 다시 누르거나 밖을 누르면 닫힘) (Map·Graph는 KOREA·KOSPI·KOSDAQ 시장, KOSPI·KOSDAQ은 KOREA 아래 단계로, 지도 하위 업종과 같은 `▸`를 KOREA의 KO 가운데에 두고 글자는 R 위치에서 시작; 툴바 배지는 K-STOCK 유지. Custom은 업종·종목) | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |
 | 툴바 맨 왼쪽의 현재 시장·화면 이름 배지 (서브 청록색 박스 + 윗변에 걸친 메인 청록색 페이지 이름 + 흰 제목 글자, 고르는 것은 메뉴 목록) | `ToolbarModeText` | 제목 배지 |

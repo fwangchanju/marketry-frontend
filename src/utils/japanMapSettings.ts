@@ -48,7 +48,9 @@ export function readJapanMapPreferences(stored: string | null): JapanMapPreferen
 }
 
 // 설정창이 고른 탭을 기억하는 이름. 국내 화면과 겹치지 않게 일본 화면마다 따로 둔다.
-export const JAPAN_SETTINGS_TAB_STORAGE = { map: 'JapanMap', stock: 'JapanStock', sector: 'JapanSector' } as const
+export const JAPAN_REFRESH_HELP = '09:03부터 5분 간격으로 데이터를 수집합니다.\n수집 후 배포까지 3분 가량 지연이 있을 수 있습니다.\n~~(수집: 09:03 → 배포: 09:06 → 수집: 09:08)~~'
+
+export const JAPAN_SETTINGS_TAB_STORAGE = { map: 'JapanMap', graph: 'JapanGraph', stock: 'JapanStock', sector: 'JapanSector' } as const
 
 // 일본 화면의 Basis는 MARKETRY만 제공해서 다른 분류를 고를 수 없다. 공통 선택 영역에 넘기는 빈 동작이다.
 export const NO_TAXONOMY_CHANGE = () => {}

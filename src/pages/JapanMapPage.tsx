@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import client from '@/api/client'
 import ChangeRateBar from '@/components/ChangeRateBar'
@@ -29,14 +30,13 @@ import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
-import { JAPAN_MAP_FIXED, JAPAN_SETTINGS_TAB_STORAGE, NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
+import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE, NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 
-const REFRESH_HELP = '09:03부터 5분 간격으로 데이터를 수집합니다.\n수집 후 배포까지 3분 가량 지연이 있을 수 있습니다.\n~~(수집: 09:03 → 배포: 09:06 → 수집: 09:08)~~'
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 const LEVEL_LABELS = ['대분류', '중분류', '소분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
@@ -61,9 +61,9 @@ function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
 }
 
 export default function JapanMapPage() {
-  const categories = useQuery({ queryKey: ['admin', 'overseas-classification-categories', 'JAPAN'], queryFn: async () => (await client.get<JapanCategory[]>('/admin/overseas-classification-categories/JAPAN')).data })
-  const classifications = useQuery({ queryKey: ['admin', 'overseas-stock-classifications', 'JAPAN'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/admin/overseas-stock-classifications/JAPAN')).data })
-  const names = useQuery({ queryKey: ['admin', 'japan-stock-names'], queryFn: async () => (await client.get<Record<string, string>>('/admin/japan-stock-names')).data })
+  const categories = useQuery({ queryKey: ['japan', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/japan/categories')).data })
+  const classifications = useQuery({ queryKey: ['japan', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/japan/classifications')).data })
+  const names = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data })
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const quotes = useJapanQuotes(selectedTime)
   const snapshotTimes = useJapanSnapshotTimes()
@@ -73,6 +73,15 @@ export default function JapanMapPage() {
   const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
   const { path, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
+  // 일본 그래프에서 막대를 누르면 그 업종을 연 상태로 들어온다. 주소 값은 한 번만 쓰고 지운다.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const sectorParam = searchParams.get('sector')
+  useEffect(() => {
+    if (!sectorParam || filteredRootNodes.length === 0) return
+    enterSector(sectorParam)
+    setSearchParams(previous => { const next = new URLSearchParams(previous); next.delete('sector'); return next }, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 주소 값이 있고 트리가 준비됐을 때만 반응하면 된다(enterSector는 매 렌더 새 함수)
+  }, [sectorParam, filteredRootNodes])
   const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch()])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
@@ -144,7 +153,7 @@ export default function JapanMapPage() {
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label="NIKKEI 225" />
               <ToolbarChip bare><JapanDatePicker snapshotTime={snapshotTime} snapshotTimes={snapshotTimes.data ?? []} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={setSelectedTime} /></ToolbarChip>
-              <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching} helpText={REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
+              <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching} helpText={JAPAN_REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
               <JapanSessionChip session={session} />
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>

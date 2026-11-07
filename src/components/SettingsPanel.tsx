@@ -29,7 +29,7 @@ import type { SettingsProfile } from '@/utils/settingsSchema'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
-import { isAdminSession } from '@/utils/adminAccess'
+import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
 
 export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'adminBanner' | 'special' | 'graph'
 const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage', 'adminBanner'])
@@ -2492,7 +2492,7 @@ export default function SettingsPanel({
   const session = useSession().data
   const isAdminSessionNow = isAdminSession(session)
   const isAdminPage = isAdminSessionNow && ['Banner', 'Dashboard', 'Member', 'Message'].includes(pageLabel ?? '')
-  const isSpecialSession = isAdminSessionNow || session?.special === true
+  const canSeeSpecialSections = isSpecialSession(session)
   const childNodes = Children.toArray(children)
   const sectionContent = new Map<SettingsPanelSectionId, ReactNode[]>()
   const addSectionContent = (section: SettingsPanelSectionId, content: ReactNode) => {
@@ -2513,7 +2513,7 @@ export default function SettingsPanel({
   const hasTaxonomySelector = Boolean(taxonomy && onSelectTaxonomy) || (typeof isCustom === 'boolean' && Boolean(onToggleCustom))
   const handleSelectTaxonomy = onSelectTaxonomy ?? (() => onToggleCustom?.())
 
-  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSessionNow || !ADMIN_ONLY_SECTIONS.has(section.id)) && (isSpecialSession || !SPECIAL_SECTIONS.has(section.id)))
+  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSessionNow || !ADMIN_ONLY_SECTIONS.has(section.id)) && (canSeeSpecialSections || !SPECIAL_SECTIONS.has(section.id)))
   if (sectionOrder) {
     availableSections.sort((a, b) => sectionOrder.indexOf(a.id) - sectionOrder.indexOf(b.id))
   }

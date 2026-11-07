@@ -11,7 +11,7 @@ import Spinner from './components/Spinner'
 import { marketRoute } from '@/utils/marketRoute'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
-import { isAdminSession } from './utils/adminAccess'
+import { isAdminSession, isSpecialSession } from './utils/adminAccess'
 import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
 
 // 화면별로 코드를 나눠 받는다. 모바일 홈·지도는 첫 화면이라 바로 번들에 두고,
@@ -23,6 +23,7 @@ const CustomPage = lazy(() => import('./pages/CustomPage'))
 const JapanStockPage = lazy(() => import('./pages/JapanStockPage'))
 const JapanSectorPage = lazy(() => import('./pages/JapanSectorPage'))
 const JapanMapPage = lazy(() => import('./pages/JapanMapPage'))
+const JapanGraphPage = lazy(() => import('./pages/JapanGraphPage'))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
 const SourcePage = lazy(() => import('./pages/SourcePage'))
@@ -91,6 +92,12 @@ function AdminRouteGuard() {
   return isAdminSession(session) ? <Outlet /> : <Navigate to="/home" replace />
 }
 
+function SpecialRouteGuard() {
+  const { data: session, isLoading } = useSession()
+  if (isLoading) return null
+  return isSpecialSession(session) ? <Outlet /> : <Navigate to="/home" replace />
+}
+
 function ResponsiveHomePage() {
   const isNarrow = useIsNarrowScreen()
   const [searchParams] = useSearchParams()
@@ -153,10 +160,11 @@ export default function App() {
           <Route path="/custom" element={<Navigate to="/custom/sector" replace />} />
           <Route path="/custom/sector" element={<CustomPage />} />
           <Route path="/custom/stock" element={<CustomPage />} />
-          <Route element={<AdminRouteGuard />}>
+          <Route element={<SpecialRouteGuard />}>
             <Route path="/custom/japan/stock" element={<JapanStockPage />} />
             <Route path="/custom/japan/sector" element={<JapanSectorPage />} />
             <Route path="/map/japan" element={<JapanMapPage />} />
+            <Route path="/graph/japan" element={<JapanGraphPage />} />
           </Route>
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}
           <Route path="/info" element={<Navigate to="/info/guide" replace />} />
