@@ -23,7 +23,7 @@ import ToolbarModeText from '@/components/ToolbarModeText'
 import { ClockIcon } from '@/components/icons/AppIcons'
 import stocks from '@/data/japanStocks.json'
 import { useJapanGraphPreferences } from '@/hooks/useJapanGraphPreferences'
-import { useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
+import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
@@ -57,11 +57,15 @@ export default function JapanGraphPage() {
   const classifications = useQuery({ queryKey: ['japan', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/japan/classifications')).data })
   const names = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data })
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [rangeStart, setRangeStart] = useState<string | null>(null)
   const quotes = useJapanQuotes(selectedTime)
   const snapshotTimes = useJapanSnapshotTimes()
+  const liveQuotes = useJapanQuotes()
+  const periodQuotes = useJapanPeriodQuotes(rangeStart, selectedTime)
+  const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const { preferences, update } = useJapanGraphPreferences()
-  const showDelta = preferences.graphMode === 'delta'
+  const showDelta = rangeStart === null && preferences.graphMode === 'delta'
   const toggleGraph = () => update({ graphMode: showDelta ? 'current' : 'delta' })
   // N분 전 시세가 저장돼 있을 때만 비교한다. 없으면 비교 그래프는 데이터 없음으로 표시한다.
   const beforeTime = useMemo(() => {
@@ -85,7 +89,7 @@ export default function JapanGraphPage() {
     const entriesOf = (nodes: HeatmapSectorNode[]) => collectAtDepth(nodes, depth, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, depth < 3)
     const beforeByPath = new Map(entriesOf(beforeTime ? treeOf(beforeQuotes.data) : []).map(({ node, pathKey }) => [pathKey, node]))
     const entries: RankColumnItem[] = []
-    for (const { node, pathKey } of entriesOf(treeOf(quotes.data))) {
+    for (const { node, pathKey } of entriesOf(treeOf(shownQuotes))) {
       const now = valueOf(node)
       if (now === null) continue
       if (!showDelta) {
@@ -98,19 +102,19 @@ export default function JapanGraphPage() {
     }
     return buildRankChart(entries)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- treeOf는 아래 값들로만 결과가 정해진다
-  }, [categories.data, classifications.data, names.data, quotes.data, beforeQuotes.data, beforeTime, showDelta, preferences.groupDepth, preferences.avgChangeRateUseSimple])
+  }, [categories.data, classifications.data, names.data, shownQuotes, beforeQuotes.data, beforeTime, showDelta, preferences.groupDepth, preferences.avgChangeRateUseSimple])
 
-  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch()])
+  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || snapshotTimes.isLoading || beforeQuotes.isLoading
-  const isError = categories.isError || classifications.isError || names.isError || quotes.isError || beforeQuotes.isError
+  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading || snapshotTimes.isLoading || beforeQuotes.isLoading
+  const isError = categories.isError || classifications.isError || names.isError || quotes.isError || periodQuotes.isError || beforeQuotes.isError
   const session = japanSessionAt(snapshotTime ?? new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T'))
-  const shownCount = quotes.data?.quotes.length ?? 0
+  const shownCount = shownQuotes?.quotes.length ?? 0
   const copy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotRef.current) return
     setCopyStatus('copying')
@@ -134,9 +138,13 @@ export default function JapanGraphPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="GRAPH" label="NIKKEI 225" />
-              <ToolbarChip bare><JapanDatePicker snapshotTime={snapshotTime} snapshotTimes={snapshotTimes.data ?? []} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={setSelectedTime} /></ToolbarChip>
-              <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching} helpText={JAPAN_REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
-              <JapanSessionChip session={session} />
+              <ToolbarChip bare><JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
+              {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveQuotes.data?.snapshotTime?.slice(0, 10)) && (
+                <>
+                <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching} helpText={JAPAN_REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
+                <JapanSessionChip session={session} />
+                </>
+              )}
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>

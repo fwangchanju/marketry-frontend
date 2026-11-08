@@ -1,21 +1,37 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useQueries } from '@tanstack/react-query'
 import { CalendarIcon, ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
-import { getMarketTradingSchedule } from '@/api/heatmap'
-import { INFREQUENT_DATA_CACHE } from '@/hooks/cacheConfig'
-import { heatmapKeys } from '@/hooks/queryKeys'
-import { KOREAN_PUBLIC_HOLIDAY_DATES } from '@/utils/koreanPublicHolidayDates'
+import { useKoreanCalendarHolidays } from '@/hooks/useKoreanCalendarHolidays'
+import { useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
+import { isJapanMarketClosed } from '@/utils/japanMarketCalendar'
 import { getKstDate } from '@/utils/tradingWindow'
 import Spinner from '@/components/Spinner'
 import { toSnapshotDateLabel } from '@/utils/format'
 import type { MarketQuery } from '@/types/api'
 
+type CalendarMarket = MarketQuery | 'JAPAN'
+
+function useCalendarDays(market: CalendarMarket, month: string, options?: { enabled?: boolean; retry?: number | false }) {
+  const korea = useSnapshotDays(market === 'JAPAN' ? 'KOSPI' : market, month, { ...options, enabled: market !== 'JAPAN' && (options?.enabled ?? true) })
+  const japan = useJapanSnapshotTimes(market === 'JAPAN' && (options?.enabled ?? true))
+  if (market !== 'JAPAN') return korea
+  const byDate = new Map((japan.data ?? []).filter(time => time.startsWith(month)).map(time => [time.slice(0, 10), time]))
+  return { ...japan, data: japan.data === undefined ? undefined : [...byDate].map(([date, snapshotTime]) => ({ date, snapshotTime })) }
+}
+
+function useCalendarGap(market: CalendarMarket, from: string | null, to: string | null) {
+  const korea = useTradingDayGap(market === 'JAPAN' ? null : from, market === 'JAPAN' ? null : to)
+  const japan = useJapanSnapshotTimes(market === 'JAPAN' && from !== null && to !== null)
+  if (market !== 'JAPAN') return korea
+  const days = new Set((japan.data ?? []).map(time => time.slice(0, 10)))
+  return { ...japan, data: japan.data && from && to ? [...days].filter(date => date > from && date <= to).length : undefined }
+}
+
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
 interface Props {
-  market: MarketQuery
+  market: MarketQuery | 'JAPAN'
   // 지금 화면에 보이는 지도의 스냅샷 시각(ISO). 달력이 처음 보여 줄 달과 선택 표시를 정한다.
   viewedSnapshotTime: string | null
   // 실시간(최신) 지도의 스냅샷 시각. 이 날짜를 고르면 지난 날짜가 아니라 실시간으로 돌아간다.
@@ -59,8 +75,8 @@ const addMonths = (month: ShownMonth, delta: number): ShownMonth => {
 }
 
 // 월 선택 화면의 한 칸 — 그 달의 종가 지도 목록을 받아서 비어 있으면(데이터가 없는 달) 누르지 못하게 한다. 받기 전이나 오류일 때는 막지 않는다.
-function MonthChoice({ market, month, isCurrent, isAllowed, onChoose }: { market: MarketQuery; month: ShownMonth; isCurrent: boolean; isAllowed: boolean; onChoose: () => void }) {
-  const { data: days } = useSnapshotDays(market, toMonthKey(month), { retry: 1 })
+function MonthChoice({ market, month, isCurrent, isAllowed, onChoose }: { market: MarketQuery | 'JAPAN'; month: ShownMonth; isCurrent: boolean; isAllowed: boolean; onChoose: () => void }) {
+  const { data: days } = useCalendarDays(market, toMonthKey(month), { retry: 1 })
   const isEmpty = days !== undefined && days.length === 0
   const disabled = !isAllowed || isEmpty
   return (
@@ -81,7 +97,7 @@ function MonthChoice({ market, month, isCurrent, isAllowed, onChoose }: { market
 type MonthGridView = 'day' | 'month' | 'year'
 
 interface MonthGridProps {
-  market: MarketQuery
+  market: MarketQuery | 'JAPAN'
   holidayColor?: string
   // 보여 줄 달 — 위에서 정해 주고, 이전·다음 달 버튼은 onMoveMonth로 알린다(기간 달력은 두 달이 함께 움직인다).
   month: ShownMonth
@@ -120,16 +136,16 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
     setView(next)
   }
   // 서버 오류가 계속되면 기본 재시도(3회)가 달력을 30초 넘게 기다리게 하므로 1번만 다시 시도하고, 그 뒤에는 "다시 시도"로 받는다.
-  const { data: days, isLoading, isError, refetch } = useSnapshotDays(market, monthKey, { retry: 1 })
+  const { data: days, isLoading, isError, refetch } = useCalendarDays(market, monthKey, { retry: 1 })
   const closingTimeByDate = new Map((days ?? []).map(day => [day.date, day.snapshotTime]))
   // 이전 달 목록도 함께 본다 — 데이터가 없는 달로는 넘어가지 못하게 하고, 앞선 거래일이 있는지도 따진다.
   const previousMonthKey = toMonthKey(addMonths(month, -1))
-  const { data: previousMonthDays, isSuccess: isPreviousMonthLoaded } = useSnapshotDays(market, previousMonthKey, { retry: 1 })
+  const { data: previousMonthDays, isSuccess: isPreviousMonthLoaded } = useCalendarDays(market, previousMonthKey, { retry: 1 })
   // 이전 달 목록을 받았는데 비어 있으면 그 달로는 넘어가지 않는다(받기 전이나 오류일 때는 막지 않는다).
-  const isPreviousMonthEmpty = isPreviousMonthLoaded && previousMonthDays.length === 0
+  const isPreviousMonthEmpty = isPreviousMonthLoaded && previousMonthDays?.length === 0
   // 연 단위 이동도 같은 규칙이다 — 1년 전 같은 달 목록을 받았는데 비어 있으면 넘어가지 않는다.
-  const { data: previousYearDays, isSuccess: isPreviousYearLoaded } = useSnapshotDays(market, toMonthKey(addMonths(month, -12)), { enabled: showPrevButton, retry: 1 })
-  const isPreviousYearEmpty = isPreviousYearLoaded && previousYearDays.length === 0
+  const { data: previousYearDays, isSuccess: isPreviousYearLoaded } = useCalendarDays(market, toMonthKey(addMonths(month, -12)), { enabled: showPrevButton, retry: 1 })
+  const isPreviousYearEmpty = isPreviousYearLoaded && previousYearDays?.length === 0
   const firstDataDate = [...(previousMonthDays ?? []), ...(days ?? [])].map(day => day.date).sort()[0] ?? null
   const hasPreviousDay = (date: string) => firstDataDate !== null && date > firstDataDate
 
@@ -145,27 +161,17 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
   ]
   // 모든 달을 6주 높이로 고정해 월 이동 시 달력 팝업 높이가 흔들리지 않게 한다.
   const cells: (number | null)[] = [...monthCells, ...Array.from({ length: 42 - monthCells.length }, () => null)]
-  // 전 거래일 데이터가 연결된 휴장일도 있으므로, 종가 지도 유무와 무관하게 평일 일정을 확인한다.
-  const holidayCandidates = cells.flatMap(day => {
+  const koreaHolidays = useKoreanCalendarHolidays(monthKey, cells, liveDate, market !== 'JAPAN')
+  const japanTimes = useJapanSnapshotTimes(market === 'JAPAN')
+  const japanDates = new Set((japanTimes.data ?? []).map(time => time.slice(0, 10)))
+  const latestJapanDate = japanTimes.data?.at(-1)?.slice(0, 10)
+  const firstJapanDate = japanTimes.data?.[0]?.slice(0, 10)
+  const holidayDates = market === 'JAPAN' ? new Set(cells.flatMap(day => {
     if (day === null) return []
     const date = `${monthKey}-${String(day).padStart(2, '0')}`
-    const weekday = new Date(`${date}T00:00:00`).getDay()
-    return weekday >= 1 && weekday <= 5 && (liveDate === null || date <= liveDate) ? [date] : []
-  })
-  const holidaySchedules = useQueries({
-    queries: holidayCandidates.map(date => ({
-      queryKey: heatmapKeys.tradingSchedule(date),
-      queryFn: () => getMarketTradingSchedule(date),
-      retry: 1,
-      ...INFREQUENT_DATA_CACHE,
-    })),
-  })
-  const knownPublicHolidayDates = [...KOREAN_PUBLIC_HOLIDAY_DATES].filter(date => date.startsWith(`${monthKey}-`))
-  const holidayDates = new Set([
-    ...knownPublicHolidayDates,
-    ...holidaySchedules.flatMap((result, index) => result.data?.status === 'HOLIDAY' ? [holidayCandidates[index]] : []),
-  ])
-  const pendingScheduleDates = new Set(holidayCandidates.filter((_, index) => holidaySchedules[index].isPending))
+    return (isJapanMarketClosed(date) || (firstJapanDate && latestJapanDate && date >= firstJapanDate && date <= latestJapanDate && !japanDates.has(date))) ? [date] : []
+  })) : koreaHolidays.holidayDates
+  const pendingScheduleDates = market === 'JAPAN' ? new Set<string>() : koreaHolidays.pendingScheduleDates
 
   return (
     <div className="relative w-60 shrink-0">
@@ -429,17 +435,17 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
   const isRangeCalendar = isRangeMode && onSelectRange !== undefined
   const displayRangeStart = isOpen && isRangeCalendar ? draftStart?.date ?? null : isViewingRange ? rangeStartDate : null
   const displayRangeEnd = isOpen && isRangeCalendar ? draftEnd?.date ?? null : isViewingRange ? viewedSnapshotTime?.slice(0, 10) ?? null : null
-  const { data: displayRangeGap } = useTradingDayGap(displayRangeStart, displayRangeEnd)
+  const { data: displayRangeGap } = useCalendarGap(market, displayRangeStart, displayRangeEnd)
   const displayDayDate = isOpen && !isRangeCalendar
     ? draftDay?.date ?? (isPast && !isViewingRange ? anchorDate : null)
     : isPast && !isViewingRange ? viewedSnapshotTime?.slice(0, 10) ?? null : null
-  const { data: displayDayGap } = useTradingDayGap(displayDayDate, displayDayDate !== null ? liveDate : null)
+  const { data: displayDayGap } = useCalendarGap(market, displayDayDate, displayDayDate !== null ? liveDate : null)
   const tradingDayBadge = isRangeCalendar
     ? displayRangeGap !== undefined ? `${displayRangeGap + 1}거래일` : null
     : displayDayDate !== null && displayDayGap !== undefined ? `${displayDayGap} 거래일 전` : null
   // 두 모드가 같은 두 달의 요청을 공유하고, 로딩·오류 표시는 두 달 위에 하나만 둔다.
-  const rangeLeftDays = useSnapshotDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen, retry: 1 })
-  const rangeRightDays = useSnapshotDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen, retry: 1 })
+  const rangeLeftDays = useCalendarDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen, retry: 1 })
+  const rangeRightDays = useCalendarDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen, retry: 1 })
   const isCalendarLoading = rangeLeftDays.isLoading || rangeRightDays.isLoading
   const isCalendarError = !isCalendarLoading && (rangeLeftDays.isError || rangeRightDays.isError)
   // 오류 화면의 "다시 시도"는 실패한 달만 다시 받는다.
@@ -504,7 +510,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
 
   // ── 지금 버튼 — 날짜 칸을 가장 최근 지도의 날짜로 채운다(적용을 눌러야 지도가 바뀐다). 하루는 실시간이고, 기간은 종료일이 된다. ──
   // 최근 거래일의 종가 지도가 있으면 그 시각, 아직 없으면(장중) 실시간 지도의 시각을 종료로 쓴다.
-  const { data: liveMonthDays } = useSnapshotDays(market, liveDate?.slice(0, 7) ?? '', { enabled: isOpen && isRangeCalendar && liveDate !== null, retry: 1 })
+  const { data: liveMonthDays } = useCalendarDays(market, liveDate?.slice(0, 7) ?? '', { enabled: isOpen && isRangeCalendar && liveDate !== null, retry: 1 })
   const pickToday = () => {
     if (liveDate === null) return
     if (isRangeCalendar) {
