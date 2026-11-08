@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
+import { calculateJapanPeriod } from '@/utils/japanPeriod'
 
 export type JapanQuote = { stockCode: string; currentPrice: number; lastPrice: number; changeRate: number; totalMarketValue: number }
-type JapanQuoteSnapshot = { snapshotTime: string | null; quotes: JapanQuote[] }
+export type JapanQuoteSnapshot = { snapshotTime: string | null; quotes: JapanQuote[] }
 
 const ENDPOINT = '/japan/quotes'
 
@@ -15,9 +16,21 @@ export function useJapanQuotes(snapshotTime: string | null = null, enabled = tru
   })
 }
 
-export function useJapanSnapshotTimes() {
+export function useJapanSnapshotTimes(enabled = true) {
   return useQuery({
     queryKey: ['japan', 'quotes', 'snapshots'],
+    enabled,
     queryFn: async () => (await client.get<string[]>(`${ENDPOINT}/snapshots`)).data,
   })
+}
+
+// 기간 시작일의 전일 종가와 종료일 시세가 모두 있는 종목만 계산한다.
+export function useJapanPeriodQuotes(startTime: string | null, endTime: string | null) {
+  const start = useJapanQuotes(startTime, startTime !== null)
+  const end = useJapanQuotes(endTime, startTime !== null && endTime !== null)
+  const data = startTime !== null && end.data && start.data ? {
+    ...end.data,
+    quotes: calculateJapanPeriod(start.data.quotes, end.data.quotes),
+  } : undefined
+  return { data, isLoading: startTime !== null && (start.isLoading || end.isLoading), isError: startTime !== null && (start.isError || end.isError), refetch: () => Promise.all([start.refetch(), end.refetch()]) }
 }

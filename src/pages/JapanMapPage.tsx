@@ -22,7 +22,7 @@ import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import ToolbarChip from '@/components/ToolbarChip'
 import stocks from '@/data/japanStocks.json'
-import { useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
+import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import { flattenAllItems, useFilteredHeatmap, limitDepth, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { useJapanMapPreferences } from '@/hooks/useJapanMapPreferences'
 import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
@@ -65,10 +65,14 @@ export default function JapanMapPage() {
   const classifications = useQuery({ queryKey: ['japan', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/japan/classifications')).data })
   const names = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data })
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [rangeStart, setRangeStart] = useState<string | null>(null)
   const quotes = useJapanQuotes(selectedTime)
   const snapshotTimes = useJapanSnapshotTimes()
+  const liveQuotes = useJapanQuotes()
+  const periodQuotes = useJapanPeriodQuotes(rangeStart, selectedTime)
+  const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
-  const tree = useMemo(() => (categories.data && classifications.data && names.data && quotes.data && quotes.data.snapshotTime ? buildJapanTree(stocks, categories.data, classifications.data, names.data, quotes.data.quotes, quotes.data.snapshotTime) : []), [categories.data, classifications.data, names.data, quotes.data])
+  const tree = useMemo(() => (categories.data && classifications.data && names.data && shownQuotes && shownQuotes.snapshotTime ? buildJapanTree(stocks, categories.data, classifications.data, names.data, shownQuotes.quotes, shownQuotes.snapshotTime) : []), [categories.data, classifications.data, names.data, shownQuotes])
   const { preferences, update } = useJapanMapPreferences()
   const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
   const { path, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
@@ -82,7 +86,7 @@ export default function JapanMapPage() {
     setSearchParams(previous => { const next = new URLSearchParams(previous); next.delete('sector'); return next }, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 주소 값이 있고 트리가 준비됐을 때만 반응하면 된다(enterSector는 매 렌더 새 함수)
   }, [sectorParam, filteredRootNodes])
-  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch()])
+  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
@@ -102,11 +106,11 @@ export default function JapanMapPage() {
   }
   const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
-  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading
-  const isError = categories.isError || classifications.isError || names.isError || quotes.isError
+  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading
+  const isError = categories.isError || classifications.isError || names.isError || quotes.isError || periodQuotes.isError
   // 국내 지도처럼 데이터가 없으면 지금 시각의 세션을 보여 준다.
   const session = japanSessionAt(snapshotTime ?? new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T'))
-  const shownCount = quotes.data?.quotes.length ?? 0
+  const shownCount = shownQuotes?.quotes.length ?? 0
   const sectorLevelProps = {
     taxonomy: 'MARKETRY' as const,
     availableMaxDepth,
@@ -152,9 +156,13 @@ export default function JapanMapPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label="NIKKEI 225" />
-              <ToolbarChip bare><JapanDatePicker snapshotTime={snapshotTime} snapshotTimes={snapshotTimes.data ?? []} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={setSelectedTime} /></ToolbarChip>
-              <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching} helpText={JAPAN_REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
-              <JapanSessionChip session={session} />
+              <ToolbarChip bare><JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
+              {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveQuotes.data?.snapshotTime?.slice(0, 10)) && (
+                <>
+                <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching} helpText={JAPAN_REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
+                <JapanSessionChip session={session} />
+                </>
+              )}
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>

@@ -5,7 +5,7 @@ const DATA_SOURCES: { source: string; category: string; items: string[] }[] = [
   { source: '키움증권', category: '시장·종목 데이터', items: ['시세·등락률·시가총액', '코스피·코스닥 지수·거래대금', '종목명·업종명', '신규 상장 종목', 'NXT 거래 가능 종목'] },
   { source: '토스증권', category: '거래 일정·상태', items: ['날짜·시간·거래 세션·휴장일', '거래정지·상장폐지 종목'] },
   { source: 'NEXTRADE', category: 'NXT 거래 정보', items: ['NXT 거래 가능 종목 (키움증권 데이터 누락 시 보조)'] },
-  { source: 'Yahoo Finance', category: '일본 시장 데이터', items: ['일본 종목 시세·등락률', '일본 종목 영문명·업종'] },
+  { source: 'Yahoo Finance', category: '일본 시장 데이터', items: ['일본 종목 시세·등락률·시가총액', '일본 종목 영문명·업종'] },
   { source: 'MARKETRY', category: '서비스 분류', items: ['종목·업종 분류'] },
   { source: '내 기준', category: '이용자 설정', items: ['이용자가 직접 만든 분류'] },
 ]
@@ -21,7 +21,7 @@ const PROCESSING_RULES: { title: string; description: string }[] = [
   },
   {
     title: '등락률·업종',
-    description: '등락률은 선택한 기준(종가·합산·단독)의 기준 가격과 현재 가격으로 계산합니다. 업종 시가총액은 포함 종목을 합산하며 MARKETRY 분류 또는 이용자의 내 기준을 사용합니다.',
+    description: '등락률은 선택한 기준(종가·합산·단독)의 기준 가격과 현재 가격으로 계산합니다. 업종 시가총액은 포함 종목을 합산하며 MARKETRY 분류 또는 이용자의 내 기준을 사용합니다. 일본 과거 시가총액은 야후의 최신 시가총액을 주가 비율로 환산한 값입니다.',
   },
 ]
 
