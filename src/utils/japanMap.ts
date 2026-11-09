@@ -16,8 +16,12 @@ export function japanFilterQueryState(enabled: boolean, snapshotLoading: boolean
   }
 }
 
+export function findJapanCloseSnapshotTime(snapshotTimes: readonly string[], date: string): string | null {
+  return snapshotTimes.find(time => time.slice(0, 10) === date && time.slice(11, 16) === '15:30') ?? null
+}
+
 export function excludePreviousCloseQuotes(quotes: readonly JapanQuote[], previous: readonly JapanQuote[]): JapanQuote[] {
-  const previousByCode = new Map(previous.map(quote => [quote.stockCode, quote]))
+  const previousByCode = new Map(previous.filter(quote => quote.closeVerified === true).map(quote => [quote.stockCode, quote]))
   return quotes.filter(quote => {
     const close = previousByCode.get(quote.stockCode)
     return !close || (quote.changeRate === 0 && close.changeRate === 0) || quote.currentPrice !== close.currentPrice || quote.changeRate !== close.changeRate
