@@ -5,6 +5,25 @@ export type JapanStock = { code: string; name: string }
 export type JapanCategory = { id: number; parentId: number | null; name: string }
 export type JapanClassification = { sector: string | null; industry: string | null; subIndustry: string | null }
 
+export function shouldFilterJapanQuotes(snapshotTime: string | null, today: string, rangeStart: string | null): boolean {
+  return rangeStart === null && snapshotTime?.slice(0, 10) === today
+}
+
+export function japanFilterQueryState(enabled: boolean, snapshotLoading: boolean, snapshotError: boolean, previousTime: string | null, previousLoading: boolean, previousError: boolean) {
+  return {
+    isLoading: enabled && (snapshotLoading || (previousTime !== null && previousLoading)),
+    isError: enabled && (snapshotError || (previousTime !== null && previousError)),
+  }
+}
+
+export function excludePreviousCloseQuotes(quotes: readonly JapanQuote[], previous: readonly JapanQuote[]): JapanQuote[] {
+  const previousByCode = new Map(previous.map(quote => [quote.stockCode, quote]))
+  return quotes.filter(quote => {
+    const close = previousByCode.get(quote.stockCode)
+    return !close || (quote.changeRate === 0 && close.changeRate === 0) || quote.currentPrice !== close.currentPrice || quote.changeRate !== close.changeRate
+  })
+}
+
 function toItem(quote: JapanQuote, name: string, snapshotTime: string): HeatmapItem {
   return {
     stockCode: quote.stockCode,
