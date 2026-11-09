@@ -231,7 +231,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
               const isToday = date === todayDate
               const hasClosingMap = closingTimeByDate.has(date)
               // 휴장일은 전 거래일 지도 데이터가 연결돼 있어도 선택할 수 없게 한다.
-              const selectable = !holidayDates.has(date) && !pendingScheduleDates.has(date) && isSelectable(date, hasClosingMap, hasPreviousDay(date))
+              const selectable = (market === 'JAPAN' || date >= '2020-01-02') && !holidayDates.has(date) && !pendingScheduleDates.has(date) && isSelectable(date, hasClosingMap, hasPreviousDay(date))
               const selected = isSelected(date)
               const weekday = (firstWeekday + day - 1) % 7
               // 주말은 항상 거래 휴장일이고, 평일은 서버 거래 일정이 HOLIDAY라고 확인된 경우에만 휴장 색을 쓴다.
