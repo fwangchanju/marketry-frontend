@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { HeatmapItem } from '@/types/api'
 import type { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
-import { toCount, toJoEok, toPctSigned } from '@/utils/format'
+import { toCount, toJoEok, toPctSignedGrouped } from '@/utils/format'
 
 // 모바일 종목 찾기 — 종목명·종목코드로 걸러 시가총액 순으로 보여 주는 검색 목록.
 // 2026-10-29 지도 설정 줄이 지도를 가리지 않게 하려고 화면에서 뺐다(어디에도 연결돼 있지 않다). 다시 쓰려면 원하는 자리에서 불러 쓴다.
@@ -45,7 +45,7 @@ export default function MobileStockList({ stocks, colorScale, decimalPlaces }: {
                 <p className="mt-0.5 text-xs text-ui-muted">{stock.stockCode} · 시가총액 {toJoEok(stock.totalMarketValue / 100_000_000)}</p>
               </div>
               <span className="shrink-0 rounded-[4px] px-2 py-1 text-[13px] font-bold tabular-nums" style={{ backgroundColor: color, color: textColor }}>
-                {toPctSigned(stock.changeRate, decimalPlaces)}
+                {toPctSignedGrouped(stock.changeRate, decimalPlaces)}
               </span>
             </li>
           )

@@ -2,7 +2,7 @@ import { memo, useRef, type CSSProperties } from 'react'
 import StockBox from './StockBox'
 import type { PopupContent } from './Popup'
 import { sectorHeaderFontSize, sectorHeaderHeight, PADDING, type LaidOutSector } from '@/hooks/useHeatmapLayout'
-import { TAB_GAP, toJoEokDecimal, toPctSigned } from '@/utils/format'
+import { TAB_GAP, toJoEokDecimal, toPctSignedGrouped } from '@/utils/format'
 import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 
@@ -101,8 +101,8 @@ function SectorBox({
     onOpenPopup({
       title: sector.sectorName,
       rows: [
-        `시총 가중: ${sector.weightedAvgChangeRate === null ? '-' : toPctSigned(sector.weightedAvgChangeRate, decimalPlaces)}`,
-        `동일 가중: ${sector.simpleAvgChangeRate === null ? '-' : toPctSigned(sector.simpleAvgChangeRate, decimalPlaces)}`,
+        `시총 가중: ${sector.weightedAvgChangeRate === null ? '-' : toPctSignedGrouped(sector.weightedAvgChangeRate, decimalPlaces)}`,
+        `동일 가중: ${sector.simpleAvgChangeRate === null ? '-' : toPctSignedGrouped(sector.simpleAvgChangeRate, decimalPlaces)}`,
         `등락 종목: ▲${advancerCount} ▼${declinerCount} ■${unchangedCount}`,
         `그룹 시총: ${toJoEokDecimal(sector.totalMarketValue / 100_000_000)}${currencyUnit === '엔' ? ' 엔' : ''}`,
       ],
@@ -118,10 +118,10 @@ function SectorBox({
   // 선택한 한 항목의 값만 이름 없이 표시한다.
   const headerParts = [
     isInDepthRange(weightedAvgDepthRange, depth) && sector.weightedAvgChangeRate !== null
-      ? toPctSigned(sector.weightedAvgChangeRate, decimalPlaces)
+      ? toPctSignedGrouped(sector.weightedAvgChangeRate, decimalPlaces)
       : null,
     isInDepthRange(simpleAvgDepthRange, depth) && sector.simpleAvgChangeRate !== null
-      ? toPctSigned(sector.simpleAvgChangeRate, decimalPlaces)
+      ? toPctSignedGrouped(sector.simpleAvgChangeRate, decimalPlaces)
       : null,
     isInDepthRange(upDownCountDepthRange, depth)
       ? `▲${advancerCount} ▼${declinerCount} ■${unchangedCount}`

@@ -13,6 +13,14 @@ export const toPctSigned = (value: number, decimalPlaces = 2): string => {
   return `${sign}${value.toFixed(decimalPlaces)}%`
 }
 
+/** 지도 종목·업종의 큰 등락률에도 천 단위 구분자를 표시한다. */
+export const toPctSignedGrouped = (value: number, decimalPlaces = 2): string => {
+  const sign = value > 0 ? '+' : ''
+  const [whole, fraction] = value.toFixed(decimalPlaces).split('.')
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return `${sign}${grouped}${fraction === undefined ? '' : `.${fraction}`}%`
+}
+
 // TODO: 아래 날짜/시간 포맷터들은 백엔드가 항상 고정 자릿수 ISO 문자열(LocalDate/LocalDateTime)을
 // 보낸다는 전제로 slice 기반으로 짜여있음. 요일 표시, 로케일별 포맷 등 더 복잡한 표기가 필요해지면
 // new Date(iso) + Intl.DateTimeFormat 기반으로 전환할 것.

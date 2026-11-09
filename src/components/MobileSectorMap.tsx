@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy'
 import { useLongPress } from '@/hooks/useLongPress'
-import { toPctSigned } from '@/utils/format'
+import { toPctSignedGrouped } from '@/utils/format'
 import { resolveHeatmapColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
 import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { useFontsVersion } from '@/utils/stockLabelFit'
@@ -116,7 +116,7 @@ export default function MobileSectorMap({
   }, [items, size])
 
   const labels = useMemo(() => new Map(rects.map(({ item, width, height }) => {
-    const rateText = toPctSigned(item.changeRate, decimalPlaces)
+    const rateText = toPctSignedGrouped(item.changeRate, decimalPlaces)
     // 업종 지도의 기존 방식처럼 확대된 박스 전체 크기로 글자를 맞춘다.
     return [item.key, layoutOverviewLabel(item.name, rateText, width * zoom.scale, height * zoom.scale, fontsVersion, { splitInsideWord: true })] as const
   })), [decimalPlaces, fontsVersion, rects, zoom.scale])
@@ -131,7 +131,7 @@ export default function MobileSectorMap({
       <div className="absolute inset-0" style={{ transformOrigin: '0 0', transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})` }}>
         {rects.map(({ item, x, y, width, height }) => {
           const background = resolveHeatmapColor(item.changeRate, colorScale)
-          const rateText = toPctSigned(item.changeRate, decimalPlaces)
+          const rateText = toPctSignedGrouped(item.changeRate, decimalPlaces)
           const label = labels.get(item.key) ?? { lines: [], nameSize: 12, rateSize: null }
           const press = bindLongPress(onLongPress ? () => onLongPress(item) : undefined)
           return (
