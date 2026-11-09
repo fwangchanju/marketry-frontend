@@ -1,7 +1,7 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { PopupContent } from './Popup'
 import type { HeatmapItem } from '@/types/api'
-import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
+import { toJoEok, toPctSignedGrouped, toVolume } from '@/utils/format'
 import { isLightColor, resolveHeatmapColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 import { LABEL_LINE_HEIGHT, fitStockLabel, stockFitBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
@@ -63,7 +63,7 @@ export default function StockBox({
   const fontSize = stockFitBaseFontPx(width, height, wantRate)
   const fontsVersion = useFontsVersion()
   const name = item.alias ?? item.stockName
-  const rateText = toPctSigned(item.changeRate, decimalPlaces)
+  const rateText = toPctSignedGrouped(item.changeRate, decimalPlaces)
   const fit = useMemo(
     () => fitStockLabel({ name, rateText, width, height, baseFont: fontSize, wantName, wantRate }),
     // fontsVersion은 글꼴이 늦게 로드돼 글자 폭이 달라졌을 때 다시 계산하려는 값이다.
@@ -79,7 +79,7 @@ export default function StockBox({
     onOpenPopup({
       title: item.stockName,
       rows: [
-        `등락률: ${toPctSigned(item.changeRate, decimalPlaces)}`,
+        `등락률: ${toPctSignedGrouped(item.changeRate, decimalPlaces)}`,
         // 기간 등락률에서는 시작일의 기준가와 종료일의 종가(장중이면 현재가)를 보여 준다.
         `${item.rangeLabels?.end ?? '현재가'}: ${toVolume(item.currentPrice)}${currencyUnit}`,
         `${item.rangeLabels?.base ?? '전일종가'}: ${toVolume(item.lastPrice)}${currencyUnit}`,
