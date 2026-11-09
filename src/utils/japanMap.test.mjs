@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildJapanTree, excludePreviousCloseQuotes, japanFilterQueryState, shouldFilterJapanQuotes } from './japanMap.ts'
+import { buildJapanTree, excludePreviousCloseQuotes, findJapanCloseSnapshotTime, japanFilterQueryState, shouldFilterJapanQuotes } from './japanMap.ts'
 
 const TIME = '2026-11-04T15:30:00'
 const stock = code => ({ code, name: code })
@@ -13,13 +13,30 @@ const categories = [
 ]
 
 test('전일 가격과 등락률이 모두 같은 종목만 지도에서 제외한다', () => {
-  const previous = [quote('2914'), quote('4519'), quote('5214')]
+  const previous = [quote('2914'), quote('4519'), quote('5214')].map(item => ({ ...item, closeVerified: true }))
   const current = [quote('2914'), { ...quote('4519'), changeRate: 0 }, { ...quote('5214'), currentPrice: 101 }, quote('9999')]
   assert.deepEqual(excludePreviousCloseQuotes(current, previous).map(item => item.stockCode), ['4519', '5214', '9999'])
 })
 
+test('직전 거래일 종가가 확인되지 않은 종목은 비교 대상에서 제외하지 않는다', () => {
+  const previous = [{ ...quote('2914'), closeVerified: false }]
+  const current = [quote('2914')]
+  assert.deepEqual(excludePreviousCloseQuotes(current, previous), current)
+})
+
+test('직전 거래일 15시 30분 종가가 없으면 더 오래된 날짜를 대신 선택하지 않는다', () => {
+  assert.equal(findJapanCloseSnapshotTime([
+    '2026-11-05T15:30:00',
+    '2026-11-09T15:30:00',
+  ], '2026-11-06'), null)
+  assert.equal(findJapanCloseSnapshotTime([
+    '2026-11-06T15:25:00',
+    '2026-11-06T15:30:00',
+  ], '2026-11-06'), '2026-11-06T15:30:00')
+})
+
 test('전일과 당일이 모두 0%면 가격이 같아도 표시한다', () => {
-  const unchanged = { ...quote('2914'), changeRate: 0 }
+  const unchanged = { ...quote('2914'), changeRate: 0, closeVerified: true }
   assert.deepEqual(excludePreviousCloseQuotes([unchanged], [unchanged]), [unchanged])
 })
 

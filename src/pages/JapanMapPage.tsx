@@ -22,7 +22,7 @@ import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import ToolbarChip from '@/components/ToolbarChip'
 import stocks from '@/data/japanStocks.json'
-import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
+import { useJapanPeriodQuotes, useJapanPreviousTradingDay, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import { flattenAllItems, useFilteredHeatmap, limitDepth, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { useJapanMapPreferences } from '@/hooks/useJapanMapPreferences'
 import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
@@ -31,7 +31,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
 import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE, NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
-import { buildJapanTree, excludePreviousCloseQuotes, japanFilterQueryState, shouldFilterJapanQuotes, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
+import { buildJapanTree, excludePreviousCloseQuotes, findJapanCloseSnapshotTime, japanFilterQueryState, shouldFilterJapanQuotes, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
@@ -73,7 +73,10 @@ export default function JapanMapPage() {
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const applyQuoteFilter = shouldFilterJapanQuotes(snapshotTime, new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }), rangeStart)
-  const previousTime = applyQuoteFilter && snapshotTime ? (snapshotTimes.data ?? []).filter(time => time.slice(0, 10) < snapshotTime.slice(0, 10)).sort().at(-1) ?? null : null
+  const previousTradingDay = useJapanPreviousTradingDay(snapshotTime?.slice(0, 10) ?? null, applyQuoteFilter)
+  const previousTime = applyQuoteFilter && previousTradingDay.data
+    ? findJapanCloseSnapshotTime(snapshotTimes.data ?? [], previousTradingDay.data)
+    : null
   const previousQuotes = useJapanQuotes(previousTime, previousTime !== null)
   const mapQuotes = useMemo(() => {
     if (!applyQuoteFilter || !shownQuotes || !quotes.data || !previousQuotes.data) return shownQuotes?.quotes ?? []
@@ -114,7 +117,7 @@ export default function JapanMapPage() {
   }
   const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
-  const filterState = japanFilterQueryState(applyQuoteFilter, snapshotTimes.isLoading, snapshotTimes.isError, previousTime, previousQuotes.isLoading, previousQuotes.isError)
+  const filterState = japanFilterQueryState(applyQuoteFilter, snapshotTimes.isLoading || previousTradingDay.isLoading, snapshotTimes.isError, previousTime, previousQuotes.isLoading, previousQuotes.isError)
   const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading || filterState.isLoading
   const isError = categories.isError || classifications.isError || names.isError || quotes.isError || periodQuotes.isError || filterState.isError
   // 국내 지도처럼 데이터가 없으면 지금 시각의 세션을 보여 준다.

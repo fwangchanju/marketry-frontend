@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import { calculateJapanPeriod } from '@/utils/japanPeriod'
 
-export type JapanQuote = { stockCode: string; currentPrice: number; lastPrice: number; changeRate: number; totalMarketValue: number }
+export type JapanQuote = { stockCode: string; currentPrice: number; lastPrice: number; changeRate: number; totalMarketValue: number; closeVerified?: boolean | null }
 export type JapanQuoteSnapshot = { snapshotTime: string | null; quotes: JapanQuote[] }
 
 const ENDPOINT = '/japan/quotes'
@@ -21,6 +21,14 @@ export function useJapanSnapshotTimes(enabled = true) {
     queryKey: ['japan', 'quotes', 'snapshots'],
     enabled,
     queryFn: async () => (await client.get<string[]>(`${ENDPOINT}/snapshots`)).data,
+  })
+}
+
+export function useJapanPreviousTradingDay(date: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ['japan', 'quotes', 'previous-trading-day', date],
+    enabled: enabled && date !== null,
+    queryFn: async () => (await client.get<string>(`${ENDPOINT}/previous-trading-day`, { params: { date } })).data,
   })
 }
 
