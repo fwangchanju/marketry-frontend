@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildJapanTree } from './japanMap.ts'
+import { buildJapanTree, excludePreviousCloseQuotes, japanFilterQueryState, shouldFilterJapanQuotes } from './japanMap.ts'
 
 const TIME = '2026-11-04T15:30:00'
 const stock = code => ({ code, name: code })
@@ -11,6 +11,30 @@ const categories = [
   { id: 3, parentId: 2, name: '생명 보험' },
   { id: 4, parentId: null, name: '미분류' },
 ]
+
+test('전일 가격과 등락률이 모두 같은 종목만 지도에서 제외한다', () => {
+  const previous = [quote('2914'), quote('4519'), quote('5214')]
+  const current = [quote('2914'), { ...quote('4519'), changeRate: 0 }, { ...quote('5214'), currentPrice: 101 }, quote('9999')]
+  assert.deepEqual(excludePreviousCloseQuotes(current, previous).map(item => item.stockCode), ['4519', '5214', '9999'])
+})
+
+test('전일과 당일이 모두 0%면 가격이 같아도 표시한다', () => {
+  const unchanged = { ...quote('2914'), changeRate: 0 }
+  assert.deepEqual(excludePreviousCloseQuotes([unchanged], [unchanged]), [unchanged])
+})
+
+test('당일 하루 지도에만 전일값 필터를 적용한다', () => {
+  assert.equal(shouldFilterJapanQuotes('2026-11-09T09:10:00', '2026-11-09', null), true)
+  assert.equal(shouldFilterJapanQuotes('2026-11-06T15:30:00', '2026-11-09', null), false)
+  assert.equal(shouldFilterJapanQuotes('2026-11-09T15:30:00', '2026-11-09', '2026-11-06T15:30:00'), false)
+  assert.equal(shouldFilterJapanQuotes(null, '2026-11-09', null), false)
+})
+
+test('전일 비교 조회 상태는 당일 필터가 켜졌을 때만 지도를 막는다', () => {
+  assert.deepEqual(japanFilterQueryState(false, true, true, '2026-11-06T15:30:00', true, true), { isLoading: false, isError: false })
+  assert.deepEqual(japanFilterQueryState(true, true, false, null, false, false), { isLoading: true, isError: false })
+  assert.deepEqual(japanFilterQueryState(true, false, false, '2026-11-06T15:30:00', false, true), { isLoading: false, isError: true })
+})
 
 test('분류 단계대로 종목을 넣고 시가총액을 위로 합친다', () => {
   const tree = buildJapanTree([stock('8750'), stock('8766')], categories, {

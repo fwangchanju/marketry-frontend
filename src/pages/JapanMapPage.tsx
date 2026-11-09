@@ -31,7 +31,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
 import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE, NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
-import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
+import { buildJapanTree, excludePreviousCloseQuotes, japanFilterQueryState, shouldFilterJapanQuotes, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
@@ -72,7 +72,15 @@ export default function JapanMapPage() {
   const periodQuotes = useJapanPeriodQuotes(rangeStart, selectedTime)
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
-  const tree = useMemo(() => (categories.data && classifications.data && names.data && shownQuotes && shownQuotes.snapshotTime ? buildJapanTree(stocks, categories.data, classifications.data, names.data, shownQuotes.quotes, shownQuotes.snapshotTime) : []), [categories.data, classifications.data, names.data, shownQuotes])
+  const applyQuoteFilter = shouldFilterJapanQuotes(snapshotTime, new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }), rangeStart)
+  const previousTime = applyQuoteFilter && snapshotTime ? (snapshotTimes.data ?? []).filter(time => time.slice(0, 10) < snapshotTime.slice(0, 10)).sort().at(-1) ?? null : null
+  const previousQuotes = useJapanQuotes(previousTime, previousTime !== null)
+  const mapQuotes = useMemo(() => {
+    if (!applyQuoteFilter || !shownQuotes || !quotes.data || !previousQuotes.data) return shownQuotes?.quotes ?? []
+    const valid = new Set(excludePreviousCloseQuotes(quotes.data.quotes, previousQuotes.data.quotes).map(quote => quote.stockCode))
+    return shownQuotes.quotes.filter(quote => valid.has(quote.stockCode))
+  }, [applyQuoteFilter, shownQuotes, quotes.data, previousQuotes.data])
+  const tree = useMemo(() => (categories.data && classifications.data && names.data && shownQuotes && shownQuotes.snapshotTime ? buildJapanTree(stocks, categories.data, classifications.data, names.data, mapQuotes, shownQuotes.snapshotTime) : []), [categories.data, classifications.data, names.data, shownQuotes, mapQuotes])
   const { preferences, update } = useJapanMapPreferences()
   const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
   const { path, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
@@ -86,7 +94,7 @@ export default function JapanMapPage() {
     setSearchParams(previous => { const next = new URLSearchParams(previous); next.delete('sector'); return next }, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 주소 값이 있고 트리가 준비됐을 때만 반응하면 된다(enterSector는 매 렌더 새 함수)
   }, [sectorParam, filteredRootNodes])
-  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
+  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch(), ...(previousTime ? [previousQuotes.refetch()] : []), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
@@ -106,11 +114,12 @@ export default function JapanMapPage() {
   }
   const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
-  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading
-  const isError = categories.isError || classifications.isError || names.isError || quotes.isError || periodQuotes.isError
+  const filterState = japanFilterQueryState(applyQuoteFilter, snapshotTimes.isLoading, snapshotTimes.isError, previousTime, previousQuotes.isLoading, previousQuotes.isError)
+  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading || filterState.isLoading
+  const isError = categories.isError || classifications.isError || names.isError || quotes.isError || periodQuotes.isError || filterState.isError
   // 국내 지도처럼 데이터가 없으면 지금 시각의 세션을 보여 준다.
   const session = japanSessionAt(snapshotTime ?? new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T'))
-  const shownCount = shownQuotes?.quotes.length ?? 0
+  const shownCount = mapQuotes.length
   const sectorLevelProps = {
     taxonomy: 'MARKETRY' as const,
     availableMaxDepth,
