@@ -3,6 +3,7 @@ import { getMarketTradingSchedule } from '@/api/heatmap'
 import { INFREQUENT_DATA_CACHE } from '@/hooks/cacheConfig'
 import { heatmapKeys } from '@/hooks/queryKeys'
 import { KOREAN_PUBLIC_HOLIDAY_DATES } from '@/utils/koreanPublicHolidayDates'
+import { KOREAN_MARKET_ADDITIONAL_HOLIDAYS } from '@/utils/koreanMarketHolidays'
 
 // 전 거래일 데이터가 연결된 휴장일도 있으므로, 종가 지도 유무와 무관하게 평일 일정을 확인한다.
 export function useKoreanCalendarHolidays(monthKey: string, cells: (number | null)[], liveDate: string | null, enabled = true) {
@@ -23,6 +24,7 @@ export function useKoreanCalendarHolidays(monthKey: string, cells: (number | nul
   return {
     holidayDates: new Set([
       ...[...KOREAN_PUBLIC_HOLIDAY_DATES].filter(date => date.startsWith(`${monthKey}-`)),
+      ...[...KOREAN_MARKET_ADDITIONAL_HOLIDAYS].filter(date => date.startsWith(`${monthKey}-`)),
       ...schedules.flatMap((result, index) => result.data?.status === 'HOLIDAY' ? [candidates[index]] : []),
     ]),
     pendingScheduleDates: new Set(candidates.filter((_, index) => schedules[index].isPending)),
