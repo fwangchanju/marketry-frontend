@@ -1,3 +1,5 @@
+import { revealMobileCapture } from '@/utils/revealMobileCapture'
+import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
@@ -100,6 +102,7 @@ export default function JapanMapPage() {
   const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch(), ...(previousTime ? [previousQuotes.refetch()] : []), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
+  const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
@@ -122,6 +125,7 @@ export default function JapanMapPage() {
   const isError = categories.isError || classifications.isError || names.isError || quotes.isError || periodQuotes.isError || filterState.isError
   // 국내 지도처럼 데이터가 없으면 지금 시각의 세션을 보여 준다.
   const session = japanSessionAt(snapshotTime ?? new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T'))
+  const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
   const shownCount = mapQuotes.length
   const sectorLevelProps = {
     taxonomy: 'MARKETRY' as const,
@@ -168,7 +172,7 @@ export default function JapanMapPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label="NIKKEI 225" />
-              <ToolbarChip bare><JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
+              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
               {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveQuotes.data?.snapshotTime?.slice(0, 10)) && (
                 <>
                 <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching} helpText={JAPAN_REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
@@ -224,6 +228,18 @@ export default function JapanMapPage() {
             )}
             <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
           </div>
+          {isShareOpen && isMobileScreenshotSelected && !isLoading && !isError && shownCount > 0 && (
+            <div aria-hidden="true" data-map-mobile-capture-frame style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }} className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background">
+              <div data-map-mobile-capture style={{ opacity: 0, width: '100%', height: '100%' }} className="flex flex-col bg-ui-background">
+                <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
+                <div aria-hidden="true" className="h-2 shrink-0" />
+                {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>JAPAN<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={JAPAN_MAP_FIXED.boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={NO_TOP_PICKS} strongIndustryColor={JAPAN_MAP_FIXED.strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit="엔" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel pageLabel="Map" tabStorageName={JAPAN_SETTINGS_TAB_STORAGE.map} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
@@ -235,7 +251,7 @@ export default function JapanMapPage() {
           </SettingsPanel>
         </div>
       </div>
-      {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} />}
+      {isShareOpen && <ScreenshotModal onClose={() => { setIsShareOpen(false); setIsMobileScreenshotSelected(false) }} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} captureReady={!isLoading} mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }} onMobileSelectionChange={setIsMobileScreenshotSelected} />}
     </div>
   )
 }
