@@ -126,7 +126,7 @@ export default function AdminMessagePage() {
     onError: error => {
       const response = isAxiosError(error) ? error.response : undefined
       const body = response?.data as
-        | { errorCode?: string; detail?: string; properties?: { errorCode?: string } }
+        | { errorCode?: string; properties?: { errorCode?: string } }
         | string
         | undefined
       const errorCode = typeof body === 'object' && body !== null ? body.errorCode ?? body.properties?.errorCode : undefined
@@ -136,10 +136,8 @@ export default function AdminMessagePage() {
         JAPAN_MAP_CAPTURE_FAILED: '일본 지도 캡처에 실패했습니다.',
         JAPAN_TELEGRAM_SEND_FAILED: '텔레그램 전송에 실패했습니다.',
       }
-      const detail = typeof body === 'object' && body !== null ? body.detail : undefined
       const message =
         messages[errorCode ?? ''] ??
-        detail ??
         (response
           ? `일본 지도 발송에 실패했습니다. (HTTP ${response.status}) 다시 시도해 주세요.`
           : '서버 응답을 확인하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.')
