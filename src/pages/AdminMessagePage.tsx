@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import sampleMapImage from '@/assets/telegram-map-sample.png'
+import sampleJapanMapImage from '@/assets/telegram-japan-map-sample.png'
 import {
   getTelegramSendSetting,
   saveTelegramSendSetting,
   sendTelegramReportOnce,
+  sendJapanTelegramReportOnce,
   type TelegramSendSetting,
   type TelegramSendSettingInput,
 } from '@/api/adminTelegram'
@@ -32,8 +34,9 @@ import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/sc
 import { isAdminSession } from '@/utils/adminAccess'
 
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
-const SAMPLE_TIME = '오후 8:00'
-const SAMPLE_CAPTION = '필수 소비재 +1.1%\n헬스케어 +0.7%'
+const SAMPLE_TIME = '15:40'
+const KOREA_SAMPLE_CAPTION = '[#KOSPI #KOSDAQ]\nAI 인프라 +7.8%\n배터리 +6.9%'
+const JAPAN_SAMPLE_CAPTION = '[#니케이225] (20분 지연)\n기술 +4.4%\n커뮤니케이션 +3.0%'
 
 function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
   return {
@@ -100,17 +103,31 @@ export default function AdminMessagePage() {
     },
   })
 
-  const sendOnce = useMutation({
+  const sendKoreaOnce = useMutation({
     mutationFn: sendTelegramReportOnce,
     meta: { skipGlobalError: true },
     onSuccess: () => {
-      void appAlert('가장 최근 공통 스냅샷으로 홈 리포트를 텔레그램에 보냈습니다.', { title: '발송 완료' })
+      void appAlert('국내증시 지도를 텔레그램에 보냈습니다.', { title: '국내 발송 완료' })
     },
     onError: error => {
       const message = isAxiosError(error) && error.response?.status === 409
-        ? '발송할 공통 스냅샷이 없어 보내지 않았습니다.'
+        ? '발송할 국내 공통 스냅샷이 없어 보내지 않았습니다.'
         : '캡처 또는 텔레그램 전송에 실패했습니다. 다시 시도해 주세요.'
-      void appAlert(message, { title: '발송 실패' })
+      void appAlert(message, { title: '국내 발송 실패' })
+    },
+  })
+
+  const sendJapanOnce = useMutation({
+    mutationFn: sendJapanTelegramReportOnce,
+    meta: { skipGlobalError: true },
+    onSuccess: () => {
+      void appAlert('일본 지도를 텔레그램에 보냈습니다.', { title: '일본 발송 완료' })
+    },
+    onError: error => {
+      const message = isAxiosError(error) && error.response?.status === 409
+        ? '발송할 일본 시세가 없어 보내지 않았습니다.'
+        : '일본 지도 캡처 또는 텔레그램 전송에 실패했습니다. 다시 시도해 주세요.'
+      void appAlert(message, { title: '일본 발송 실패' })
     },
   })
 
@@ -145,10 +162,16 @@ export default function AdminMessagePage() {
     }
     if (await appConfirm('지금 변경사항을 저장하시겠습니까?', { title: '저장하기' })) save.mutate(draft)
   }
-  const handleSendOnce = async () => {
-    if (sendOnce.isPending) return
-    if (await appWarnConfirm('정기 발송 설정과 관계없이 가장 최근 공통 스냅샷으로 홈 리포트를 한 번 전송합니다.', { title: '발송 테스트 1회' })) {
-      sendOnce.mutate()
+  const handleSendKoreaOnce = async () => {
+    if (sendKoreaOnce.isPending || sendJapanOnce.isPending) return
+    if (await appWarnConfirm('정기 발송 설정과 관계없이 가장 최근 국내 공통 스냅샷으로 국내 지도를 한 번 전송합니다.', { title: '국내 발송 테스트 1회' })) {
+      sendKoreaOnce.mutate()
+    }
+  }
+  const handleSendJapanOnce = async () => {
+    if (sendKoreaOnce.isPending || sendJapanOnce.isPending) return
+    if (await appWarnConfirm('정기 발송 설정과 관계없이 가장 최근 일본 시세로 일본 지도를 한 번 전송합니다.', { title: '일본 발송 테스트 1회' })) {
+      sendJapanOnce.mutate()
     }
   }
   const headerActions = (
@@ -202,7 +225,7 @@ export default function AdminMessagePage() {
                       <InfoPageHeading
                         flushBottom
                         title="텔레그램"
-                        summary="국내증시 지도를 텔레그램 메시지로 받아봅니다. 발송 여부와 시각은 설정창에서 조정합니다."
+                        summary="국내·일본 증시 지도를 각각 텔레그램 메시지로 받아봅니다. 정기 발송 여부와 시각은 설정창에서 조정합니다."
                       />
                     </div>
                   )}
@@ -212,24 +235,42 @@ export default function AdminMessagePage() {
                       {setting.isError ? (
                         <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                       ) : saved ? (
-                        <div className="mx-auto w-full rounded-2xl rounded-bl-md bg-ui-control p-1 [container-type:inline-size]" style={{ maxWidth: SAMPLE_CARD_MAX_WIDTH }}>
-                          <p className={`m-0 px-3 pb-1 pt-1.5 ${SAMPLE_TEXT} font-medium text-[var(--sub-yellow)]`}>MARKETRY</p>
-                          <div className="relative overflow-hidden rounded-[10px]">
-                            <img src={sampleMapImage} alt="텔레그램 발송 이미지 예시 — 시장 지도" className="block h-auto w-full" draggable={false} />
-                            {sendOnce.isPending && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-ui-background/60">
-                                <Spinner className="h-16 w-16" />
+                        <div className="grid grid-cols-1 items-start justify-items-center gap-4 lg:grid-cols-2">
+                          {[{
+                            key: 'korea',
+                            title: 'MARKETRY',
+                            image: sampleMapImage,
+                            alt: '텔레그램 국내증시 지도 발송 예시',
+                            caption: KOREA_SAMPLE_CAPTION,
+                            pending: sendKoreaOnce.isPending,
+                          }, {
+                            key: 'japan',
+                            title: 'MARKETRY',
+                            image: sampleJapanMapImage,
+                            alt: '텔레그램 일본증시 지도 발송 예시',
+                            caption: JAPAN_SAMPLE_CAPTION,
+                            pending: sendJapanOnce.isPending,
+                          }].map(sample => (
+                            <div key={sample.key} className="mx-auto w-full rounded-2xl rounded-bl-md bg-ui-control p-1 [container-type:inline-size]" style={{ maxWidth: SAMPLE_CARD_MAX_WIDTH }}>
+                              <p className={`m-0 px-3 pb-1 pt-1.5 ${SAMPLE_TEXT} font-medium text-[var(--sub-yellow)]`}>{sample.title}</p>
+                              <div className="relative overflow-hidden rounded-[10px]">
+                                <img src={sample.image} alt={sample.alt} className="block h-auto w-full" draggable={false} />
+                                {sample.pending && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-ui-background/60">
+                                    <Spinner className="h-16 w-16" />
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
-                            <p className={`m-0 whitespace-pre-line ${SAMPLE_TEXT} leading-snug text-ui-white`}>{SAMPLE_CAPTION}</p>
-                            <span className={`flex shrink-0 items-center gap-1.5 ${SAMPLE_TEXT} text-ui-text`}>
-                              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-[1em] fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
-                              2
-                              <span className="ml-1.5">{SAMPLE_TIME}</span>
-                            </span>
-                          </div>
+                              <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
+                                <p className={`m-0 whitespace-pre-line ${SAMPLE_TEXT} leading-snug text-ui-white`}>{sample.caption}</p>
+                                <span className={`flex shrink-0 items-center gap-1.5 ${SAMPLE_TEXT} text-ui-text`}>
+                                  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-[1em] fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+                                  2
+                                  <span className="ml-1.5">{SAMPLE_TIME}</span>
+                                </span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="flex justify-center py-10"><Spinner className="h-12 w-12" /></div>
@@ -262,16 +303,25 @@ export default function AdminMessagePage() {
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 테스트</h2>
-                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">최신 데이터로 발송 테스트</p>
-                            <div className="mt-auto mb-auto flex max-w-full settings-control-inset justify-center">
+                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">국내·일본 지도를 따로 전송</p>
+                            <div className="mt-auto mb-auto grid max-w-full grid-cols-2 gap-[6px] settings-control-inset">
                               <button
                                 type="button"
-                                disabled={sendOnce.isPending}
-                                aria-busy={sendOnce.isPending}
-                                onClick={() => void handleSendOnce()}
-                                className="flex h-[25px] w-full items-center justify-center rounded-[4px] border-0 bg-brand-surface px-3 text-[13px] leading-[1.3] font-medium text-ui-white settings-chip-hover focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
+                                disabled={sendKoreaOnce.isPending || sendJapanOnce.isPending}
+                                aria-busy={sendKoreaOnce.isPending}
+                                onClick={() => void handleSendKoreaOnce()}
+                                className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-brand-surface text-[13px] leading-[1.3] font-medium text-ui-white focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
                               >
-                                {sendOnce.isPending ? <Spinner className="h-4 w-4" /> : '발송 테스트'}
+                                {sendKoreaOnce.isPending ? <Spinner className="h-4 w-4" /> : '국내 증시'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={sendKoreaOnce.isPending || sendJapanOnce.isPending}
+                                aria-busy={sendJapanOnce.isPending}
+                                onClick={() => void handleSendJapanOnce()}
+                                className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-brand-surface text-[13px] leading-[1.3] font-medium text-ui-white focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
+                              >
+                                {sendJapanOnce.isPending ? <Spinner className="h-4 w-4" /> : '일본 증시'}
                               </button>
                             </div>
                           </div>

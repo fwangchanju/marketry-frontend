@@ -36,6 +36,10 @@ export function sendTelegramReportOnce() {
   return client.post('/admin/telegram-settings/send-once').then(() => undefined)
 }
 
+export function sendJapanTelegramReportOnce() {
+  return client.post('/admin/telegram-settings/send-japan-once').then(() => undefined)
+}
+
 export function getTelegramImageSetting(signal?: AbortSignal) {
   return client.get<TelegramImageSetting>('/admin/telegram-image-setting', { signal }).then(response => response.data)
 }

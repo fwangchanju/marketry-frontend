@@ -48,6 +48,7 @@ interface Props {
   // 현재 화면의 상대 depth 0이 트리에서 몇 번째 단계인지 나타내는 절대 depth 오프셋.
   depthOffset?: number
   depth?: number
+  captureRowMetric?: 'weightedAvgChangeRate' | 'simpleAvgChangeRate'
 }
 
 function isInDepthRange(range: [number, number] | null, depth: number): boolean {
@@ -89,6 +90,7 @@ function SectorBox({
   strongIndustryColor,
   depthOffset = 0,
   depth = 0,
+  captureRowMetric,
 }: Props) {
   const boxRef = useRef<HTMLDivElement>(null)
   // 이 섹터까지의 전체 경로(루트부터) — 하이라이트 키와 하위로 넘길 ancestorPath에 그대로 쓴다.
@@ -167,6 +169,9 @@ function SectorBox({
       } as CSSProperties}
       data-sector-id={sector.sectorId}
       data-sector-name={sector.sectorName}
+      data-japan-report-row={captureRowMetric && sector[captureRowMetric] !== null
+        ? JSON.stringify({ name: sector.sectorName, value: toPctSignedGrouped(sector[captureRowMetric]!, decimalPlaces).replace('%', '') })
+        : undefined}
       className={`heatmap-sector-box box-content ${isPinned ? 'is-pinned' : ''}`}
     >
       {/* 강조 테두리 — border(박스를 4px 키워서 지도 맨 아래·오른쪽 끝에서 잘렸다)가 아니라 박스 안쪽 가장자리에 덮어 그리는 층이다.
