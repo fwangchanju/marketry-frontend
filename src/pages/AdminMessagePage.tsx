@@ -124,14 +124,25 @@ export default function AdminMessagePage() {
       void appAlert('일본 지도를 텔레그램에 보냈습니다.', { title: '일본 발송 완료' })
     },
     onError: error => {
-      const errorCode = isAxiosError<{ errorCode?: string }>(error) ? error.response?.data?.errorCode : undefined
+      const response = isAxiosError(error) ? error.response : undefined
+      const body = response?.data as
+        | { errorCode?: string; detail?: string; properties?: { errorCode?: string } }
+        | string
+        | undefined
+      const errorCode = typeof body === 'object' && body !== null ? body.errorCode ?? body.properties?.errorCode : undefined
       const messages: Record<string, string> = {
         NO_JAPAN_QUOTES: '발송할 일본 시세가 없습니다.',
         JAPAN_QUOTE_LOOKUP_FAILED: '일본 시세 조회에 실패했습니다.',
         JAPAN_MAP_CAPTURE_FAILED: '일본 지도 캡처에 실패했습니다.',
         JAPAN_TELEGRAM_SEND_FAILED: '텔레그램 전송에 실패했습니다.',
       }
-      const message = messages[errorCode ?? ''] ?? '일본 지도 발송에 실패했습니다. 다시 시도해 주세요.'
+      const detail = typeof body === 'object' && body !== null ? body.detail : undefined
+      const message =
+        messages[errorCode ?? ''] ??
+        detail ??
+        (response
+          ? `일본 지도 발송에 실패했습니다. (HTTP ${response.status}) 다시 시도해 주세요.`
+          : '서버 응답을 확인하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.')
       void appAlert(message, { title: '일본 발송 실패' })
     },
   })
