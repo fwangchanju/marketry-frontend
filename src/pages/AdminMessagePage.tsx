@@ -35,7 +35,7 @@ import { isAdminSession } from '@/utils/adminAccess'
 
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
 const SAMPLE_TIME = '15:40'
-const KOREA_SAMPLE_CAPTION = '#KOSPI #KOSDAQ\nAI 인프라 +7.8%\n배터리 +6.9%'
+const KOREA_SAMPLE_CAPTION = '#코스피 #코스닥\nAI 인프라 +7.8%\n배터리 +6.9%'
 const JAPAN_SAMPLE_CAPTION = '#니케이225 (20분 지연)\n기술 +4.4%\n커뮤니케이션 +3.0%'
 
 function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
