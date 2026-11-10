@@ -172,6 +172,9 @@ function SectorBox({
       data-japan-report-row={captureRowMetric && sector[captureRowMetric] !== null
         ? JSON.stringify({ name: sector.sectorName, value: toPctSignedGrouped(sector[captureRowMetric]!, decimalPlaces).replace('%', '') })
         : undefined}
+      data-capture-row={captureRowMetric && sector[captureRowMetric] !== null
+        ? JSON.stringify({ name: sector.sectorName, value: toPctSignedGrouped(sector[captureRowMetric]!, decimalPlaces).replace('%', '') })
+        : undefined}
       className={`heatmap-sector-box box-content ${isPinned ? 'is-pinned' : ''}`}
     >
       {/* 강조 테두리 — border(박스를 4px 키워서 지도 맨 아래·오른쪽 끝에서 잘렸다)가 아니라 박스 안쪽 가장자리에 덮어 그리는 층이다.
