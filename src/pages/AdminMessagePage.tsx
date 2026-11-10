@@ -35,8 +35,8 @@ import { isAdminSession } from '@/utils/adminAccess'
 
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
 const SAMPLE_TIME = '15:40'
-const KOREA_SAMPLE_CAPTION = '[#KOSPI #KOSDAQ]\nAI 인프라 +7.8%\n배터리 +6.9%'
-const JAPAN_SAMPLE_CAPTION = '[#니케이225] (20분 지연)\n기술 +4.4%\n커뮤니케이션 +3.0%'
+const KOREA_SAMPLE_CAPTION = '#KOSPI #KOSDAQ\nAI 인프라 +7.8%\n배터리 +6.9%'
+const JAPAN_SAMPLE_CAPTION = '#니케이225 (20분 지연)\n기술 +4.4%\n커뮤니케이션 +3.0%'
 
 function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
   return {
@@ -124,9 +124,14 @@ export default function AdminMessagePage() {
       void appAlert('일본 지도를 텔레그램에 보냈습니다.', { title: '일본 발송 완료' })
     },
     onError: error => {
-      const message = isAxiosError(error) && error.response?.status === 409
-        ? '발송할 일본 시세가 없어 보내지 않았습니다.'
-        : '일본 지도 캡처 또는 텔레그램 전송에 실패했습니다. 다시 시도해 주세요.'
+      const errorCode = isAxiosError<{ errorCode?: string }>(error) ? error.response?.data?.errorCode : undefined
+      const messages: Record<string, string> = {
+        NO_JAPAN_QUOTES: '발송할 일본 시세가 없습니다.',
+        JAPAN_QUOTE_LOOKUP_FAILED: '일본 시세 조회에 실패했습니다.',
+        JAPAN_MAP_CAPTURE_FAILED: '일본 지도 캡처에 실패했습니다.',
+        JAPAN_TELEGRAM_SEND_FAILED: '텔레그램 전송에 실패했습니다.',
+      }
+      const message = messages[errorCode ?? ''] ?? '일본 지도 발송에 실패했습니다. 다시 시도해 주세요.'
       void appAlert(message, { title: '일본 발송 실패' })
     },
   })
@@ -164,13 +169,19 @@ export default function AdminMessagePage() {
   }
   const handleSendKoreaOnce = async () => {
     if (sendKoreaOnce.isPending || sendJapanOnce.isPending) return
-    if (await appWarnConfirm('정기 발송 설정과 관계없이 가장 최근 국내 공통 스냅샷으로 국내 지도를 한 번 전송합니다.', { title: '국내 발송 테스트 1회' })) {
+    if (await appWarnConfirm('가장 최근 국내증시 지도를 1회 전송합니다.', {
+      title: '국내 발송 테스트 1회',
+      mutedMessage: '(정기발송은 그대로 진행됩니다.)',
+    })) {
       sendKoreaOnce.mutate()
     }
   }
   const handleSendJapanOnce = async () => {
     if (sendKoreaOnce.isPending || sendJapanOnce.isPending) return
-    if (await appWarnConfirm('정기 발송 설정과 관계없이 가장 최근 일본 시세로 일본 지도를 한 번 전송합니다.', { title: '일본 발송 테스트 1회' })) {
+    if (await appWarnConfirm('가장 최근 일본증시 지도를 1회 전송합니다.', {
+      title: '일본 발송 테스트 1회',
+      mutedMessage: '(정기발송은 그대로 진행됩니다.)',
+    })) {
       sendJapanOnce.mutate()
     }
   }
