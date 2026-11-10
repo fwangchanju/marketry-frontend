@@ -37,6 +37,21 @@ const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '
 const SAMPLE_TIME = '15:40'
 const KOREA_SAMPLE_CAPTION = '#코스피 #코스닥\nAI 인프라 +7.8%\n배터리 +6.9%'
 const JAPAN_SAMPLE_CAPTION = '#니케이225 (20분 지연)\n기술 +4.4%\n커뮤니케이션 +3.0%'
+const SAMPLE_HASHTAG_PATTERN = /(#코스피|#코스닥|#니케이225)/g
+
+function renderSampleCaption(caption: string) {
+  const lines = caption.split('\n')
+  return lines.map((line, lineIndex) => (
+    <span key={lineIndex}>
+      {line.split(SAMPLE_HASHTAG_PATTERN).map((part, partIndex) => (
+        /^#(?:코스피|코스닥|니케이225)$/.test(part)
+          ? <span key={partIndex} className="text-[var(--sub-yellow)]">{part}</span>
+          : part
+      ))}
+      {lineIndex < lines.length - 1 && '\n'}
+    </span>
+  ))
+}
 
 function toDraft(setting: TelegramSendSetting): TelegramSendSettingInput {
   return {
@@ -282,7 +297,7 @@ export default function AdminMessagePage() {
                                 )}
                               </div>
                               <div className="flex flex-wrap items-end justify-between gap-2 px-3 pb-1.5 pt-2">
-                                <p className={`m-0 whitespace-pre-line ${SAMPLE_TEXT} leading-snug text-ui-white`}>{sample.caption}</p>
+                                <p className={`m-0 whitespace-pre-line ${SAMPLE_TEXT} leading-snug text-ui-white`}>{renderSampleCaption(sample.caption)}</p>
                                 <span className={`flex shrink-0 items-center gap-1.5 ${SAMPLE_TEXT} text-ui-text`}>
                                   <svg aria-hidden="true" viewBox="0 0 24 24" className="size-[1em] fill-none stroke-current" strokeWidth="2"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" /><circle cx="12" cy="12" r="3" /></svg>
                                   2
