@@ -1,5 +1,6 @@
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
-import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
+import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
+import { useSettled } from '@/hooks/useSettled'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
@@ -38,6 +39,12 @@ import { japanSessionAt } from '@/utils/japanMarketSession'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
+
+declare global {
+  interface Window {
+    marketryCaptureMap?: () => Promise<string>
+  }
+}
 
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 const LEVEL_LABELS = ['대분류', '중분류', '소분류']
@@ -92,6 +99,8 @@ export default function JapanMapPage() {
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
   // 일본 그래프에서 막대를 누르면 그 업종을 연 상태로 들어온다. 주소 값은 한 번만 쓰고 지운다.
   const [searchParams, setSearchParams] = useSearchParams()
+  const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
+  const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const sectorParam = searchParams.get('sector')
   useEffect(() => {
     if (!sectorParam || filteredRootNodes.length === 0) return
@@ -127,6 +136,32 @@ export default function JapanMapPage() {
   const session = japanSessionAt(snapshotTime ?? new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T'))
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
   const shownCount = mapQuotes.length
+  const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && shownCount > 0
+  const isMobileCaptureSettled = useSettled(canShowMobileCapture, snapshotTime ?? '', 1300)
+  useEffect(() => {
+    if (!isMobileCaptureSettled || isMobileCaptureReady) return
+    let rafId = 0
+    const revealWhenLaidOut = () => {
+      if (!document.querySelector('[data-map-mobile-capture] [data-heatmap-layout-ready="true"]')) {
+        rafId = requestAnimationFrame(revealWhenLaidOut)
+        return
+      }
+      revealMobileCapture(document.body, true)
+      setIsMobileCaptureReady(true)
+    }
+    rafId = requestAnimationFrame(revealWhenLaidOut)
+    return () => cancelAnimationFrame(rafId)
+  }, [isMobileCaptureSettled, isMobileCaptureReady])
+  useEffect(() => {
+    if (!isMobileCaptureMode || !isMobileCaptureReady) return
+    const capture = () => {
+      const root = screenshotRef.current
+      if (!root) throw new Error('캡처할 지도 영역이 없습니다.')
+      return screenshotElementToDataUrl(root, '[data-map-mobile-capture-frame]', 'element', revealMobileCapture)
+    }
+    window.marketryCaptureMap = capture
+    return () => { delete window.marketryCaptureMap }
+  }, [isMobileCaptureMode, isMobileCaptureReady])
   const sectorLevelProps = {
     taxonomy: 'MARKETRY' as const,
     availableMaxDepth,
@@ -228,14 +263,14 @@ export default function JapanMapPage() {
             )}
             <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
           </div>
-          {isShareOpen && isMobileScreenshotSelected && !isLoading && !isError && shownCount > 0 && (
-            <div aria-hidden="true" data-map-mobile-capture-frame style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }} className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background">
+          {((isShareOpen && isMobileScreenshotSelected) || isMobileCaptureMode) && !isLoading && !isError && shownCount > 0 && (
+            <div aria-hidden="true" data-map-mobile-capture-frame data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined} data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined} style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }} className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background">
               <div data-map-mobile-capture style={{ opacity: 0, width: '100%', height: '100%' }} className="flex flex-col bg-ui-background">
                 <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
                 <div aria-hidden="true" className="h-2 shrink-0" />
                 {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>JAPAN<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={JAPAN_MAP_FIXED.boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={NO_TOP_PICKS} strongIndustryColor={JAPAN_MAP_FIXED.strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit="엔" />
+                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={JAPAN_MAP_FIXED.boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={NO_TOP_PICKS} strongIndustryColor={JAPAN_MAP_FIXED.strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit="엔" captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
                 </div>
               </div>
             </div>
