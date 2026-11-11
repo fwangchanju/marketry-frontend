@@ -28,6 +28,7 @@ import SettingsPanel, {
 import ScreenshotModal from '@/components/ScreenshotModal'
 import Toolbar from '@/components/Toolbar'
 import Heatmap from '@/components/Heatmap'
+import { isInDepthRange } from '@/utils/sectorDepth'
 import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ChangeRateBar from '@/components/ChangeRateBar'
@@ -223,6 +224,10 @@ export default function MapPage() {
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
   // 텔레그램 렌더러가 이 함수를 호출해 화면 캡처와 같은 글꼴·여백·배율로 저장한다.
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
+  // 텔레그램 캡션은 지도 첫 화면 업종 헤더에 실제로 보이는 등락률을 읽는다. 동일 가중만 보이면 동일 가중, 그 밖에는 시총 가중이다.
+  const captureRowMetric = isInDepthRange(simpleAvgDepthRange, 0) && !isInDepthRange(weightedAvgDepthRange, 0)
+    ? 'simpleAvgChangeRate'
+    : 'weightedAvgChangeRate'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
@@ -763,6 +768,7 @@ export default function MapPage() {
                   strongIndustryColor={strongIndustryColor}
                   zoomOutRequestDepth={null}
                   onZoomOutComplete={() => {}}
+                  captureRowMetric={captureRowMetric}
                 />
               </div>
             </div>
