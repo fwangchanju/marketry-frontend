@@ -158,7 +158,7 @@ const SettingsProfileContext = createContext<SettingsProfile | null>(null)
 function SettingChangeDot({ draftKeys }: { draftKeys: readonly string[] }) {
   const profile = useContext(SettingsProfileContext)
   const keys = profile === null ? draftKeys : draftKeys.flatMap(key => [key, profileSettingKey(profile, key)])
-  if (!useHasDraftForKeys(keys)) return null
+  if (!useHasDraftForKeys(keys, profile ?? undefined)) return null
   return (
     <>
       <span aria-hidden="true" className="ml-[2px] inline-block h-1 w-1 shrink-0 translate-y-[3px] rounded-full bg-brand align-top" />

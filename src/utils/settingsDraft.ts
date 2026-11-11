@@ -112,13 +112,18 @@ export function useHasDrafts(scope?: SettingsProfile): boolean {
 
 // 주어진 저장 이름 중 하나라도 저장값과 다른 임시값이 있으면 true — 설정창 항목 제목 옆 변경 점에 쓴다.
 // 별도 API로 저장되는 항목(색상 구간 등)은 참여자 등록 이름으로도 확인한다.
-export function hasDraftForKeys(keys: readonly string[]): boolean {
-  return keys.some(key => readDraft(key).found || (participants.get(key)?.hasChanges ?? false))
+// scope를 주면 그 분류에 속한 참여자의 변경만 본다(내 기준 전용 색상 구간이 다른 분류 항목에 점을 찍지 않게).
+export function hasDraftForKeys(keys: readonly string[], scope?: SettingsProfile): boolean {
+  return keys.some(key => {
+    if (readDraft(key).found) return true
+    const participant = participants.get(key)
+    return participant !== undefined && participant.hasChanges && inScope(participant.scope, scope)
+  })
 }
 
-export function useHasDraftForKeys(keys: readonly string[]): boolean {
+export function useHasDraftForKeys(keys: readonly string[], scope?: SettingsProfile): boolean {
   useSyncExternalStore(subscribe, () => version)
-  return hasDraftForKeys(keys)
+  return hasDraftForKeys(keys, scope)
 }
 
 // 임시값이 바뀌거나 버려질 때 설정을 쓰는 화면이 다시 그려지게 하는 구독.
