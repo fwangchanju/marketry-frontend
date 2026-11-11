@@ -35,3 +35,8 @@ export function collectAtDepth(
   }
   return entries
 }
+
+// 설정에서 고른 단계 범위(시작·끝 포함)에 이 단계가 들어가는지. 범위가 없으면 어느 단계에도 표시하지 않는다.
+export function isInDepthRange(range: [number, number] | null, depth: number): boolean {
+  return range !== null && depth >= range[0] && depth <= range[1]
+}

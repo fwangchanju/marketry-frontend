@@ -5,6 +5,7 @@ import { sectorHeaderFontSize, sectorHeaderHeight, PADDING, type LaidOutSector }
 import { TAB_GAP, toJoEokDecimal, toPctSignedGrouped } from '@/utils/format'
 import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
+import { isInDepthRange } from '@/utils/sectorDepth'
 
 interface Props {
   sector: LaidOutSector
@@ -49,10 +50,6 @@ interface Props {
   depthOffset?: number
   depth?: number
   captureRowMetric?: 'weightedAvgChangeRate' | 'simpleAvgChangeRate'
-}
-
-function isInDepthRange(range: [number, number] | null, depth: number): boolean {
-  return range !== null && depth >= range[0] && depth <= range[1]
 }
 
 // 절대 depth(트리 기준 실제 단계) → 배경/글자색. 배열 끝을 넘으면 마지막 값을 반복한다.
