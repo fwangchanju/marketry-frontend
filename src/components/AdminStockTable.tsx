@@ -13,7 +13,7 @@ import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { findAliasConflict } from '@/utils/aliasConflict'
 import { ClassificationUploadError, buildUploadPlan, readClassificationFile } from '@/utils/classificationUpload'
 import { getErrorDetail } from '@/utils/errorMessage'
-import { SUSPENDED_STOCK_HINT, isProtectedSectorName, isSuspendedSectorName } from '@/utils/protectedSector'
+import { PROTECTED_SECTOR_TEXT_CLASS, SUSPENDED_STOCK_HINT, isProtectedSectorName, isSuspendedSectorName, placeProtectedSectorsLast } from '@/utils/protectedSector'
 import { exportRowsToExcel } from '@/utils/exportExcel'
 import { fileTimestamp } from '@/utils/fileTimestamp'
 import { invalidateCustomTaxonomy, useAssignStockSector, useBulkAssignStockSector, useResetCustomClassification, useUpdateStockAlias } from '@/hooks/useHeatmapCustom'
@@ -424,9 +424,9 @@ function SectorSearchPopup({
               type="button"
               onClick={() => onSelect(opt.id)}
               onMouseEnter={() => search.setHighlightedIndex(index)}
-              className={`flex min-h-7 w-full items-center truncate rounded-none border-0 py-1 pr-3 pl-4 text-left text-sm font-normal text-ui-white shadow-none outline-none ${
-                index === search.highlightedIndex ? 'bg-ui-white/10' : 'bg-transparent'
-              }`}
+              className={`flex min-h-7 w-full items-center truncate rounded-none border-0 py-1 pr-3 pl-4 text-left text-sm font-normal shadow-none outline-none ${
+                opt.parentId === null && isProtectedSectorName(opt.name) ? PROTECTED_SECTOR_TEXT_CLASS : 'text-ui-white'
+              } ${index === search.highlightedIndex ? 'bg-ui-white/10' : 'bg-transparent'}`}
             >
               {isSingleLevel ? opt.name : opt.label}
             </button>
@@ -783,7 +783,11 @@ const AdminStockRow = memo(function AdminStockRow({
   const arrange = (options: SectorOption[]) => (sectorOrderMode === 'alpha' ? options : sortByMarketValue(options, sectorStats))
   // 거래 정지 업종은 서버만 종목을 넣으므로 고를 수 있는 목록에서 뺀다. 이미 거래 정지인 종목은 업종 칸을 눌러도 바뀌지 않는다.
   const isSuspendedStock = isSuspendedSectorName(chain.rootName)
-  const parentSectorOptions = arrange(sectorOptions.filter(opt => opt.parentId === null && !isSuspendedSectorName(opt.name)))
+  // 보호 업종(미분류·신규 상장)은 정렬 방식과 상관없이 맨 아래에 둔다 — 업종 표·필터와 같은 규칙이다.
+  const parentSectorOptions = placeProtectedSectorsLast(
+    arrange(sectorOptions.filter(opt => opt.parentId === null && !isSuspendedSectorName(opt.name))),
+    opt => opt.name,
+  )
   // 이미 한 단계 위로 좁혀진 목록이라 "- " 들여쓰기 접두어가 필요 없다 — 그냥 이름 그대로 보여준다.
   const midSectorOptions = arrange(sectorOptions.filter(opt => opt.parentId === chain.rootId))
     .map(opt => ({ ...opt, label: opt.name }))
@@ -1358,7 +1362,10 @@ export default function AdminStockTable({
     return sectorFilterMode === 'alpha' ? children : sortByMarketValue(children, sectorStats)
   }
   // 일괄 변경으로도 거래 정지 업종에는 넣을 수 없다 — 목록에서 뺀다.
-  const bulkParentOptions = orderedChildren(null).filter(opt => !isSuspendedSectorName(opt.name))
+  const bulkParentOptions = placeProtectedSectorsLast(
+    orderedChildren(null).filter(opt => !isSuspendedSectorName(opt.name)),
+    opt => opt.name,
+  )
   const bulkMidOptions = effectiveParentId != null ? orderedChildren(effectiveParentId) : []
   const bulkSubOptions = effectiveMidId != null ? orderedChildren(effectiveMidId) : []
 
