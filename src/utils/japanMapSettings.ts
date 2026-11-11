@@ -48,7 +48,7 @@ export function readJapanMapPreferences(stored: string | null): JapanMapPreferen
 }
 
 // 설정창이 고른 탭을 기억하는 이름. 국내 화면과 겹치지 않게 일본 화면마다 따로 둔다.
-export const JAPAN_REFRESH_HELP = '09:18부터 5분 간격으로 데이터를 수집합니다.\n시세 기준 시각보다 약 20분 지연되어 반영됩니다.'
+export const JAPAN_REFRESH_HELP = '09:18부터 5분 간격으로 데이터를 수집합니다.\n시세는 약 20분 지연되어 반영됩니다.'
 
 export const JAPAN_SETTINGS_TAB_STORAGE = { map: 'JapanMap', graph: 'JapanGraph', stock: 'JapanStock', sector: 'JapanSector' } as const
 
