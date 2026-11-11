@@ -32,6 +32,34 @@ export const JAPAN_MAP_FIXED = {
 } as const
 
 export const JAPAN_MAP_PREFERENCES_STORAGE = 'marketry:japan-map-settings'
+// 일본 지도 설정을 서버에 저장하는 이름 — 국내 지도처럼 설정창의 저장 버튼으로 올라가고 계정에 저장된다.
+// 일본 지도 설정은 항목마다 저장 이름을 따로 둔다. 설정창 항목의 저장 안 한 변경 점이 항목별로 찍히게 하기 위해서다.
+export const JAPAN_MAP_SETTING_PREFIX = 'japan.map.'
+export const japanMapSettingKey = (name: keyof typeof JAPAN_MAP_DEFAULTS) => `${JAPAN_MAP_SETTING_PREFIX}${name}`
+
+// 설정창 항목이 국내 설정 이름으로 적어 둔 변경 점 이름을 일본 지도 저장 이름으로 바꾼다.
+export const JAPAN_MAP_DRAFT_KEY_MAP: Readonly<Record<string, string>> = {
+  'heatmap.sectorLevelEnabled': japanMapSettingKey('sectorLevelEnabled'),
+  'heatmap.selectedMaxDepth': japanMapSettingKey('maxDepth'),
+  'heatmap.activeDepthMetric': japanMapSettingKey('activeDepthMetric'),
+  'heatmap.depthMetricEnabled': japanMapSettingKey('depthMetricEnabled'),
+  'heatmap.depthMetricMinIndex': japanMapSettingKey('depthMetricMinIndex'),
+  'heatmap.depthMetricMaxIndex': japanMapSettingKey('depthMetricMaxIndex'),
+  'heatmap.boxSizeMarketCapRatio': japanMapSettingKey('boxSizeMarketCapRatio'),
+  'heatmap.stockLabelEnabled': japanMapSettingKey('stockLabelEnabled'),
+  'heatmap.stockLabelModeIndex': japanMapSettingKey('stockLabelModeIndex'),
+  'heatmap.decimalPlacesIndex': japanMapSettingKey('decimalPlaces'),
+  'heatmap.topPickEnabled': japanMapSettingKey('topPickEnabled'),
+  'heatmap.topPickDepth': japanMapSettingKey('topPickDepth'),
+  'heatmap.topPickCount': japanMapSettingKey('topPickCount'),
+}
+
+// 계정에 저장된 설정에서 일본 지도 항목만 골라 형식이 맞는 것만 돌려준다.
+export function japanMapSavedValues(account: Record<string, unknown> | undefined): Partial<JapanMapPreferences> {
+  const picked: Record<string, unknown> = {}
+  for (const name of Object.keys(JAPAN_MAP_DEFAULTS)) picked[name] = account?.[`${JAPAN_MAP_SETTING_PREFIX}${name}`]
+  return pickJapanMapPreferenceValues(picked)
+}
 
 // 값 중 이름과 형식이 맞는 것만 골라낸다. 나머지는 버린다.
 export function pickJapanMapPreferenceValues(source: unknown): Partial<JapanMapPreferences> {

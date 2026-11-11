@@ -23,7 +23,8 @@ import type { DefaultProfiles } from '@/hooks/useDefaultPreferences'
 import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
-import { JAPAN_MAP_PREFERENCES_STORAGE, japanMapDisplayValues, japanMapManagedDefaults, japanMapPublishPayload, readJapanMapPreferences, type JapanMapPreferences } from '@/utils/japanMapSettings'
+import { japanMapDisplayValues, japanMapManagedDefaults, japanMapPublishPayload, japanMapSavedValues, type JapanMapPreferences } from '@/utils/japanMapSettings'
+import { useCustomPreferences } from '@/hooks/useCustomPreferences'
 import { defaultExcludedTierLabels } from '@/utils/marketValueTier'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import type { HeatmapSectorNode, MarketValueTierItem } from '@/types/api'
@@ -181,7 +182,7 @@ export default function AdminDefaultPage() {
   const [loadVersions, setLoadVersions] = useState({ marketry: 0, exchange: 0 })
   const [loadStates, setLoadStates] = useState<Record<'marketry' | 'exchange', 'idle' | 'loading' | 'ready' | 'error'>>({ marketry: 'idle', exchange: 'idle' })
   const [savedSnapshots, setSavedSnapshots] = useState<Record<DefaultProfile, string | null>>({ marketry: null, exchange: null, japan: null })
-  // 일본 지도는 이 브라우저에 저장된 일본 지도 설정을 불러와 기본값으로 저장한다(국내와 같은 불러오기 → 저장 순서).
+  // 일본 지도는 이 계정에 저장된 일본 지도 설정을 불러와 기본값으로 저장한다(국내와 같은 불러오기 → 저장 순서).
   const [japanSnapshot, setJapanSnapshot] = useState<JapanMapPreferences | null>(null)
   const updateSnapshot = useCallback((profile: 'marketry' | 'exchange', snapshot: ProfileSnapshot | null) => {
     setSnapshots(previous => {
@@ -218,11 +219,10 @@ export default function AdminDefaultPage() {
     setLoadVersions(previous => ({ ...previous, [profile]: previous[profile] + 1 }))
   }
   const japanManaged = japanMapManagedDefaults(defaults.data)
+  const { data: ownPreferences } = useCustomPreferences()
   const handleLoadJapan = () => {
-    let stored: string | null = null
-    try { stored = localStorage.getItem(JAPAN_MAP_PREFERENCES_STORAGE) } catch { stored = null }
     setSavedSnapshots(previous => ({ ...previous, japan: null }))
-    setJapanSnapshot(readJapanMapPreferences(stored, japanManaged))
+    setJapanSnapshot({ ...japanManaged, ...japanMapSavedValues(ownPreferences) })
   }
   const handleSaveJapan = async () => {
     if (!japanSnapshot || !defaults.data || save.isPending) return

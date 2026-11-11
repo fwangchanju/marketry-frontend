@@ -6,6 +6,9 @@ import {
   japanMapDisplayValues,
   japanMapManagedDefaults,
   japanMapPublishPayload,
+  japanMapSavedValues,
+  JAPAN_MAP_DRAFT_KEY_MAP,
+  japanMapSettingKey,
   pickJapanMapPreferenceValues,
   readJapanMapOverrides,
   readJapanMapPreferences,
@@ -58,4 +61,15 @@ test('기본값 화면에는 국내와 같은 이름으로 일본 설정을 옮�
   assert.equal(preferences['heatmap.decimalPlacesIndex'], JAPAN_MAP_DEFAULTS.decimalPlaces)
   assert.equal(preferences['heatmap.strongIndustryColor'], JAPAN_MAP_FIXED.strongIndustryColor)
   assert.deepEqual(excludedSectors, [])
+})
+
+test('설정창 항목의 변경 점 이름은 일본 지도 저장 이름으로 바뀌고 계정에 저장된 값에서 일본 항목만 읽는다', () => {
+  assert.equal(JAPAN_MAP_DRAFT_KEY_MAP['heatmap.topPickCount'], 'japan.map.topPickCount')
+  assert.equal(JAPAN_MAP_DRAFT_KEY_MAP['heatmap.selectedMaxDepth'], japanMapSettingKey('maxDepth'))
+  assert.equal(JAPAN_MAP_DRAFT_KEY_MAP['heatmap.decimalPlacesIndex'], japanMapSettingKey('decimalPlaces'))
+  assert.deepEqual(
+    japanMapSavedValues({ 'japan.map.topPickCount': 2, 'japan.map.topPickEnabled': 'x', 'heatmap.topPickCount': 3 }),
+    { topPickCount: 2 },
+  )
+  assert.deepEqual(japanMapSavedValues(undefined), {})
 })

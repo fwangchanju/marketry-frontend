@@ -155,14 +155,19 @@ const SettingsProfileContext = createContext<SettingsProfile | null>(null)
 // 저장 아이콘이 있는 설정창(저장해야 반영되는 설정)에서만 변경 점을 보여 준다. 일본 지도처럼 바꾸는 즉시 저장되는 화면은 저장하지 않은 변경이 없고,
 // 다른 화면에서 바꾼 임시값이 같은 이름의 항목에 점으로 새지 않게 한다.
 const SettingsDraftDotsContext = createContext(true)
+// 국내 설정 이름으로 적어 둔 항목의 변경 점을 다른 저장 이름(일본 지도 설정 등)으로 찾게 한다. 없으면 국내 설정 이름 그대로 본다.
+const SettingsDraftKeyMapContext = createContext<Readonly<Record<string, string>> | null>(null)
 
 // 저장하지 않은 변경이 있는 항목의 제목 오른쪽 위에 찍는 작은 점. 상단 저장 아이콘·분류 배지의 점과 같은 청록이고, 글자 옆이라 더 작다(4px).
 // draftKeys는 그 항목이 쓰는 저장 이름이다. 분류별 저장 이름은 지금 분류 것만 본다.
 function SettingChangeDot({ draftKeys }: { draftKeys: readonly string[] }) {
   const profile = useContext(SettingsProfileContext)
   const dotsEnabled = useContext(SettingsDraftDotsContext)
-  const keys = profile === null ? draftKeys : draftKeys.flatMap(key => [key, profileSettingKey(profile, key)])
-  const hasDraft = useHasDraftForKeys(keys, profile ?? undefined)
+  const keyMap = useContext(SettingsDraftKeyMapContext)
+  const keys = keyMap
+    ? draftKeys.map(key => keyMap[key] ?? key)
+    : profile === null ? draftKeys : draftKeys.flatMap(key => [key, profileSettingKey(profile, key)])
+  const hasDraft = useHasDraftForKeys(keys, keyMap ? undefined : profile ?? undefined)
   if (!dotsEnabled || !hasDraft) return null
   return (
     <>
@@ -1264,6 +1269,7 @@ function SettingsTaxonomySelector({
   atBottom = false,
   snapshotTime,
   onlyTaxonomy,
+  ownDraftKeys,
 }: {
   taxonomy: TaxonomyKey
   onSelectTaxonomy: (taxonomy: TaxonomyKey) => void
@@ -1271,7 +1277,10 @@ function SettingsTaxonomySelector({
   snapshotTime?: string | null
   // 이 분류만 고를 수 있는 화면 — 나머지 칸은 보이되 눌리지 않고, 국내 설정의 저장 안 한 변경 표시를 쓰지 않으며, 업데이트 시각 줄은 자리만 잡고 숨긴다.
   onlyTaxonomy?: TaxonomyKey
+  // 이 분류만 고르는 화면(일본 지도 등)이 자기 설정의 저장 안 한 변경을 분류 칸에 표시할 때 쓰는 저장 이름.
+  ownDraftKeys?: readonly string[]
 }) {
+  const ownDirty = useHasDraftForKeys(ownDraftKeys ?? [])
   const marketryDirty = useHasDrafts('marketry')
   const exchangeDirty = useHasDrafts('exchange')
   const mineDirty = useHasDrafts('mine')
@@ -1283,7 +1292,9 @@ function SettingsTaxonomySelector({
   ]
   const isExchange = taxonomy === 'KRX' || taxonomy === 'NXT'
   const isSelected = (key: TaxonomyKey) => (key === 'KRX' ? isExchange : taxonomy === key)
-  const hasDraft = (key: TaxonomyKey) => !onlyTaxonomy && (key === 'MARKETRY' ? marketryDirty : key === 'MINE' ? mineDirty : exchangeDirty)
+  const hasDraft = (key: TaxonomyKey) => onlyTaxonomy
+    ? key === onlyTaxonomy && ownDirty
+    : key === 'MARKETRY' ? marketryDirty : key === 'MINE' ? mineDirty : exchangeDirty
   const isLocked = (key: TaxonomyKey) => onlyTaxonomy !== undefined && key !== onlyTaxonomy
 
   return (
@@ -2377,6 +2388,8 @@ interface Props {
   plainTabLabel?: string
   plainTabIcon?: SettingsSectionIconName
   sectionOrder?: readonly SettingsPanelSectionId[]
+  // 국내 설정 이름으로 적은 항목·분류 칸의 저장 안 한 변경 점을 이 이름들로 찾는다(일본 지도 설정).
+  draftKeyMap?: Readonly<Record<string, string>>
   sectionIconOverrides?: Partial<Record<SettingsPanelSectionId, SettingsSectionIconName>>
   sectionLabelOverrides?: Partial<Record<SettingsPanelSectionId, string>>
   onSectionChange?: (section: SettingsPanelSectionId) => void
@@ -2428,6 +2441,7 @@ export default function SettingsPanel({
   sectionOrder,
   sectionIconOverrides,
   sectionLabelOverrides,
+  draftKeyMap,
   onSectionChange,
   taxonomyAtBottom = false,
   headerRight,
@@ -2676,6 +2690,7 @@ export default function SettingsPanel({
       <SettingsFeedbackContext.Provider value={runPreferenceAction}>
       <SettingsProfileContext.Provider value={settingsProfile}>
       <SettingsDraftDotsContext.Provider value={showPreferenceActions}>
+      <SettingsDraftKeyMapContext.Provider value={draftKeyMap ?? null}>
       {selectedSection && (
         <div
           role="tabpanel"
@@ -2694,6 +2709,7 @@ export default function SettingsPanel({
           {sectionContent.get(selectedSection.id)?.map((content, index) => <Fragment key={index}>{content}</Fragment>)}
         </div>
       )}
+      </SettingsDraftKeyMapContext.Provider>
       </SettingsDraftDotsContext.Provider>
       </SettingsProfileContext.Provider>
       </SettingsFeedbackContext.Provider>
@@ -2706,7 +2722,7 @@ export default function SettingsPanel({
       </div>
       {taxonomyAtBottom && hasTaxonomySelector && (
         <>
-          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom snapshotTime={snapshotTime} onlyTaxonomy={onlyTaxonomy} />
+          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom snapshotTime={snapshotTime} onlyTaxonomy={onlyTaxonomy} ownDraftKeys={draftKeyMap ? Object.values(draftKeyMap) : undefined} />
         </>
       )}
     </div>
