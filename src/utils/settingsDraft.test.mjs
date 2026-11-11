@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 import {
-  clearDraft, commitDrafts, discardDrafts, readDraft, registerDraftKey,
+  clearDraft, commitDrafts, discardDrafts, hasDraftForKeys, readDraft, registerDraftKey,
   unregisterDraftParticipant, updateDraftParticipant, writeDraft,
 } from './settingsDraft.ts'
 
@@ -121,4 +121,22 @@ test('모드별 설정 draft는 전환·저장·초기화 때 다른 모드에 �
   discardDrafts('exchange')
   assert.equal(readDraft(exchangeKey).found, false)
   assert.equal(readDraft(mineKey).found, false)
+})
+
+test('항목의 저장 이름 중 하나라도 임시값이 있으면 변경 점을 켠다', () => {
+  const otherKey = 'test.other'
+  assert.equal(hasDraftForKeys([settingKey, otherKey]), false)
+  writeDraft(settingKey, 3)
+  assert.equal(hasDraftForKeys([settingKey, otherKey]), true)
+  assert.equal(hasDraftForKeys([otherKey]), false)
+  clearDraft(settingKey)
+  assert.equal(hasDraftForKeys([settingKey]), false)
+})
+
+test('별도 API로 저장되는 항목도 참여자에 변경이 있으면 변경 점을 켠다', () => {
+  assert.equal(hasDraftForKeys([colorKey]), false)
+  updateDraftParticipant(colorKey, { hasChanges: true, save: async () => {}, discard: () => {} })
+  assert.equal(hasDraftForKeys([colorKey]), true)
+  updateDraftParticipant(colorKey, { hasChanges: false, save: async () => {}, discard: () => {} })
+  assert.equal(hasDraftForKeys([colorKey]), false)
 })

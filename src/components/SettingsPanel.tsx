@@ -24,8 +24,8 @@ import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel, toSnapshotTim
 import { useIsLoggedIn, useSession } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
-import { commitDrafts, discardDrafts, useHasDrafts } from '@/utils/settingsDraft'
-import type { SettingsProfile } from '@/utils/settingsSchema'
+import { commitDrafts, discardDrafts, useHasDraftForKeys, useHasDrafts } from '@/utils/settingsDraft'
+import { profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
@@ -150,11 +150,28 @@ function SettingHelpBubble({ label, description }: { label: string; description:
 // 설정 반영 때 설정창 전체에 로딩 화면을 잠깐 덮는 실행기 — 저장·되돌리기와 같은 로딩 화면을 하위 항목(색상 초기화 등)도 쓰게 한다.
 const SettingsFeedbackContext = createContext<(action: () => void) => void>(action => action())
 
-// 항목 제목. 번호는 CSS 자동 카운터(settings-section-num)가 그린다.
-function SettingTitle({ className = '', children }: { className?: string; help?: boolean; children: string }) {
+// 지금 설정창이 보여 주는 분류(MARKETRY·거래소·내 기준). 항목의 저장 이름을 이 분류의 이름으로 바꿔 변경 여부를 볼 때 쓴다.
+const SettingsProfileContext = createContext<SettingsProfile | null>(null)
+
+// 저장하지 않은 변경이 있는 항목의 제목 오른쪽 위에 찍는 작은 점. 상단 저장 아이콘·분류 배지의 점과 같은 청록이고, 글자 옆이라 더 작다(4px).
+// draftKeys는 그 항목이 쓰는 저장 이름이다. 분류별 저장 이름은 지금 분류 것만 본다.
+function SettingChangeDot({ draftKeys }: { draftKeys: readonly string[] }) {
+  const profile = useContext(SettingsProfileContext)
+  const keys = profile === null ? draftKeys : draftKeys.flatMap(key => [key, profileSettingKey(profile, key)])
+  if (!useHasDraftForKeys(keys)) return null
   return (
     <>
-      <span className={`settings-section-num ${className}`}>{children}</span>
+      <span aria-hidden="true" className="ml-[2px] inline-block h-1 w-1 shrink-0 translate-y-[3px] rounded-full bg-brand align-top" />
+      <span className="sr-only">, 저장하지 않은 변경 있음</span>
+    </>
+  )
+}
+
+// 항목 제목. 번호는 CSS 자동 카운터(settings-section-num)가 그린다.
+function SettingTitle({ className = '', draftKeys, children }: { className?: string; help?: boolean; draftKeys?: readonly string[]; children: string }) {
+  return (
+    <>
+      <span className={`settings-section-num ${className}`}>{children}{draftKeys && <SettingChangeDot draftKeys={draftKeys} />}</span>
     </>
   )
 }
@@ -1108,7 +1125,7 @@ export function SettingsGroupDepthSection({
     <div className="settings-first-depth-level settings-auto-item text-sm">
       <div className="flex max-w-full items-center justify-between">
         <span className="flex items-center text-left text-ui-white">
-          <span className="settings-plain-title text-[15px] font-medium leading-[22px]">업종 분류 단계</span>
+          <span className="settings-plain-title text-[15px] font-medium leading-[22px]">업종 분류 단계<SettingChangeDot draftKeys={['groupPage.depth']} /></span>
         </span>
       </div>
       <SettingDescription>그래프 막대가 가리킬 단계 하나 선택</SettingDescription>
@@ -1146,7 +1163,7 @@ export function SettingsAverageModeSection({
   return (
     <div className="settings-first-depth-level settings-graph-item text-sm">
       <div className="flex max-w-full items-center justify-between text-left text-[15px] font-medium leading-[22px]">
-        <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준</span>
+        <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준<SettingChangeDot draftKeys={['heatmap.avgChangeRateUseSimple']} /></span>
         <span className="relative inline-flex">
           <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
           {toggleDisabled && <BlockedClickHint className="-inset-1">기간 등락률을 보는 동안에는<br />N분 전 대비로 바꿀 수 없습니다.</BlockedClickHint>}
@@ -1216,7 +1233,7 @@ export function SettingsBeforeMinutesSection({
       {disabled && <BlockedClickHint className="inset-0">기간 등락률을 보는 동안에는<br />N분 전 대비를 사용할 수 없습니다.</BlockedClickHint>}
       <div className="flex max-w-full items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`flex items-center gap-1 ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>
-          <span className="settings-plain-title">비교 시점</span>
+          <span className="settings-plain-title">비교 시점<SettingChangeDot draftKeys={['groupPage.graphMode']} /></span>
         </span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="비교 그래프" hideLabel disabled={disabled} />
       </div>
@@ -1334,7 +1351,7 @@ export function SettingsStockSizeSelector({
     <div className="settings-first-stock-size settings-auto-item text-ui-white mb-6 pt-3 pb-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <SettingTitle help className="text-[15px]">박스 크기</SettingTitle>
+          <SettingTitle help className="text-[15px]" draftKeys={['heatmap.boxSizeMarketCapRatio']}>박스 크기</SettingTitle>
           <SettingHelpBubble label="박스 크기" description={"박스 면적은 시가총액^(비율÷100)으로 계산합니다.\n0%는 모든 종목을 같은 크기로 표시합니다.\n50%는 시가총액의 제곱근 비율로 표시합니다.\n100%는 시가총액에 비례해 표시합니다."} />
         </div>
       </div>
@@ -1457,7 +1474,7 @@ export function SettingsSectorLevelSection({
           <div className="settings-first-depth-level settings-auto-item text-sm">
             <div className="flex max-w-full items-center justify-between">
               <span className="flex items-center text-left text-ui-white">
-                <SettingTitle className="text-[15px]" help>업종 분류 깊이</SettingTitle>
+                <SettingTitle className="text-[15px]" help draftKeys={['heatmap.selectedMaxDepth', 'heatmap.sectorLevelEnabled']}>업종 분류 깊이</SettingTitle>
                 <SettingHelpBubble
                   label="업종 분류 깊이"
                   description={<>선택한 단계까지 업종을 세분화합니다.<br />끄면 업종 구분 없이 종목만 표시하고,<br /><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthMetric')}) 업종 지표</span>와<br /><span className="inline-block whitespace-nowrap font-bold">{settingNumber('topPick')}) 상위 업종 강조</span>도<br />함께 비활성화됩니다.</>}
@@ -1487,7 +1504,7 @@ export function SettingsSectorLevelSection({
             <div className={`settings-auto-content ${isDepthMetricDisabled ? 'opacity-35' : ''}`}>
               <div className="flex max-w-full items-center justify-between">
                 <span className="flex items-center text-left text-ui-white">
-                  <SettingTitle className="text-[15px]">업종 지표</SettingTitle>
+                  <SettingTitle className="text-[15px]" draftKeys={['heatmap.activeDepthMetric', 'heatmap.depthMetricEnabled']}>업종 지표</SettingTitle>
                 </span>
                 <ToggleSwitch
                   checked={depthMetricEnabled}
@@ -1549,7 +1566,7 @@ export function SettingsSectorLevelSection({
             className={`settings-third-depth-range settings-auto-item relative text-sm mt-6 ${isDepthMetricRangeDisabled ? 'cursor-not-allowed' : ''}`}
           >
             <span className={`flex items-center text-left text-[15px] text-ui-white ${isDepthMetricRangeDisabled ? 'opacity-35' : ''}`}>
-              <SettingTitle>지표 표시 단계</SettingTitle>
+              <SettingTitle draftKeys={['heatmap.depthMetricMinIndex', 'heatmap.depthMetricMaxIndex']}>지표 표시 단계</SettingTitle>
             </span>
             <div className={isDepthMetricRangeDisabled ? 'opacity-35' : ''}>
               <SettingDescription>지표를 표시할 업종 단계 범위</SettingDescription>
@@ -1597,7 +1614,7 @@ export function SettingsSectorLevelSection({
           <div className="settings-second-stock-label settings-auto-item text-sm mt-2">
             <div className="flex max-w-full items-center justify-between">
               <span className="flex items-center text-left text-ui-white">
-                <SettingTitle className="text-[15px]">박스 내 표기</SettingTitle>
+                <SettingTitle className="text-[15px]" draftKeys={['heatmap.stockLabelEnabled', 'heatmap.stockLabelModeIndex']}>박스 내 표기</SettingTitle>
               </span>
               <ToggleSwitch
                 checked={stockLabelEnabled}
@@ -1658,7 +1675,7 @@ export function SettingsSectorLevelSection({
             >
               <div className={`settings-auto-content ${isDecimalPlacesDisabled ? 'opacity-35' : ''}`}>
               <span className="flex max-w-full items-center text-left text-[15px] text-ui-white">
-                <SettingTitle>등락률 소수점</SettingTitle>
+                <SettingTitle draftKeys={['heatmap.decimalPlacesIndex']}>등락률 소수점</SettingTitle>
               </span>
               <SettingDescription>종목 등락률의 소수점 자릿수</SettingDescription>
               {/* 3-2)와 같은 가짜 종목 상자 — 세 칸이 0·1·2자리 눈금이고, 슬라이더 손잡이가 각 칸 가운데에 멈춘다. */}
@@ -1870,7 +1887,7 @@ export function SettingsMarketValueSection({
   return (
     <div className={`settings-market-value flex flex-col text-ui-white ${showDivider ? 'mt-6 pt-8' : 'pt-3'}`}>
       <p className="flex items-center text-[15px]">
-        <SettingTitle help>시가총액 범위</SettingTitle>
+        <SettingTitle help draftKeys={['heatmap.tierRangeMinIndex', 'heatmap.tierRangeMaxIndex', 'heatmap.tierRangeMinValue', 'heatmap.tierRangeMaxValue']}>시가총액 범위</SettingTitle>
         {tierRangeLines && <SettingHelpBubble label="시가총액 구간" description={tierRangeLines} />}
       </p>
       <SettingDescription>지도를 구성할 종목들의 시가총액</SettingDescription>
@@ -2032,6 +2049,7 @@ export function SettingsExcludeSection({
           checked={sectorFilterEnabled}
           onChange={onToggleSectorFilter}
           label="업종 제외"
+          labelSuffix={<SettingChangeDot draftKeys={['heatmap.sectorFilterEnabled', 'heatmap.excludedSectorKeys']} />}
           forceLabelWhite
           labelClassName="text-[15px] settings-section-num"
 
@@ -2113,7 +2131,7 @@ export function SettingsTopPickSection({
       <div className={`settings-auto-content ${isTopPickDisabled ? 'opacity-35' : ''}`}>
         <div className="flex max-w-full items-center justify-between">
           <span className="flex items-center text-left text-ui-white">
-            <SettingTitle className="text-[15px]" help>상위 업종 강조</SettingTitle>
+            <SettingTitle className="text-[15px]" help draftKeys={['heatmap.topPickEnabled', 'heatmap.topPickDepth', 'heatmap.topPickCount']}>상위 업종 강조</SettingTitle>
             <SettingHelpBubble
               label="상위 업종 강조"
               description={<><span className="inline-block whitespace-nowrap font-bold">{settingNumber('depthMetric')}) 업종 지표</span>에서<br />동일 가중 등락률을 선택하면<br />동일 가중 등락률로,<br />나머지 지표를 선택하면<br />시총 가중 등락률로 순위를 매깁니다.</>}
@@ -2220,7 +2238,7 @@ export function SettingsColorSection({
       {/* "색상 커스텀 모드" 토글을 별도 줄로 두지 않고, 제목 바로 우측에 스위치만 붙인다. 초기화 버튼(26px)은 위아래 여백을 -2px씩 줘서 줄 높이를 다른 항목의 제목 줄(22px)과 같게 둔다 — 그래야 메뉴를 바꿔도 제목·토글 위치가 같다. */}
       <div className="flex items-center justify-between">
         <p className={`flex items-center text-[15px] ${fixed ? 'opacity-35' : ''}`}>
-          <SettingTitle>등락률 색상</SettingTitle>
+          <SettingTitle draftKeys={['heatmap.colorCustomOn', 'heatmap.colorScale']}>등락률 색상</SettingTitle>
           <button
             type="button"
             aria-label="초기화"
@@ -2295,7 +2313,7 @@ export function SettingsStrongIndustryColorSection({
   return (
     <div className="settings-second-strong-color flex flex-col text-ui-white pt-3">
       <p className={`flex items-center text-[15px] ${fixed ? 'opacity-35' : ''}`}>
-        <SettingTitle help>강조 색상</SettingTitle>
+        <SettingTitle help draftKeys={['heatmap.strongIndustryColor']}>강조 색상</SettingTitle>
         <SettingHelpBubble
           label="강조 색상"
           description={<>지도 내 업종명(대분류)과<br /><span className="inline-block whitespace-nowrap font-bold">{settingNumber('topPick')}) 상위 업종 강조</span>의 색상을 설정합니다.</>}
@@ -2651,6 +2669,7 @@ export default function SettingsPanel({
       )}
       {!plainContent && availableSections.length === 0 && <div className="min-h-0 flex-1" />}
       <SettingsFeedbackContext.Provider value={runPreferenceAction}>
+      <SettingsProfileContext.Provider value={settingsProfile}>
       {selectedSection && (
         <div
           role="tabpanel"
@@ -2669,6 +2688,7 @@ export default function SettingsPanel({
           {sectionContent.get(selectedSection.id)?.map((content, index) => <Fragment key={index}>{content}</Fragment>)}
         </div>
       )}
+      </SettingsProfileContext.Provider>
       </SettingsFeedbackContext.Provider>
       </div>
       {isPreferenceFeedbackActive && (
