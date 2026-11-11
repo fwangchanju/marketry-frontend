@@ -992,10 +992,12 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     && thresholdSignature(colorEditSnapshotRef.current.thresholds) !== thresholdSignature(colorScaleDraft?.thresholds)
 
   useEffect(() => {
+    // 색상 구간은 내 기준 모드에서만 고칠 수 있다(isColorScaleFixed). 다른 분류의 변경 점·저장·되돌리기에 섞이지 않게 내 기준 전용으로 등록한다.
     updateDraftParticipant('heatmap.colorScale', {
       hasChanges: colorEditHasChanges,
       save: handleSaveColorScale,
       discard: handleDiscardColorScale,
+      scope: 'mine',
     })
   })
   useEffect(() => () => unregisterDraftParticipant('heatmap.colorScale'), [])

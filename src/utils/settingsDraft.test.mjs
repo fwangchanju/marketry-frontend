@@ -140,3 +140,26 @@ test('별도 API로 저장되는 항목도 참여자에 변경이 있으면 변�
   updateDraftParticipant(colorKey, { hasChanges: false, save: async () => {}, discard: () => {} })
   assert.equal(hasDraftForKeys([colorKey]), false)
 })
+
+test('내 기준 전용 참여자는 다른 분류의 변경 점·저장·되돌리기에 섞이지 않는다', async () => {
+  let saved = 0
+  let discarded = 0
+  updateDraftParticipant(colorKey, {
+    hasChanges: true,
+    scope: 'mine',
+    save: async () => { saved += 1 },
+    discard: () => { discarded += 1 },
+  })
+  assert.equal(hasDraftForKeys([colorKey], 'mine'), true)
+  assert.equal(hasDraftForKeys([colorKey], 'exchange'), false)
+  assert.equal(hasDraftForKeys([colorKey], 'marketry'), false)
+
+  await commitDrafts(async () => assert.fail('일반 설정 변경은 없다'), 'exchange')
+  discardDrafts('marketry')
+  assert.equal(saved, 0)
+  assert.equal(discarded, 0)
+
+  await commitDrafts(async () => assert.fail('일반 설정 변경은 없다'), 'mine')
+  assert.equal(saved, 1)
+})
+
