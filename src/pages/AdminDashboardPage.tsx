@@ -29,7 +29,7 @@ type Period = (typeof PERIOD_OPTIONS)[number]
 const DASHBOARD_CARD_MIN_HEIGHT = 280
 const DASHBOARD_GRID_GAP = 12
 // 접속 빈도 구간의 막대 색 — 자주 올수록 진한 청록이고, 한 번도 안 온 회원은 흐린 회색이다.
-const VISITOR_SOURCE_LABELS = { NAVER: '네이버', GOOGLE: '구글', DIRECT: '직접', OTHER: '기타' } as const
+const VISITOR_SOURCE_LABELS = { NAVER: '네이버', GOOGLE: '구글', DIRECT: '주소 입력', OTHER: '기타' } as const
 const DASHBOARD_PAGE_LABELS: Record<string, string> = { HOME: 'Home', MAP: 'Map', GRAPH: 'Graph', CUSTOM: 'Custom' }
 const FREQUENCY_BAR_CLASSES = ['bg-ui-muted', 'bg-[var(--brand)]/35', 'bg-[var(--brand)]/50', 'bg-[var(--brand)]/85', 'bg-[var(--brand)]']
 
