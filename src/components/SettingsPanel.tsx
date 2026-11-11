@@ -152,13 +152,18 @@ const SettingsFeedbackContext = createContext<(action: () => void) => void>(acti
 
 // 지금 설정창이 보여 주는 분류(MARKETRY·거래소·내 기준). 항목의 저장 이름을 이 분류의 이름으로 바꿔 변경 여부를 볼 때 쓴다.
 const SettingsProfileContext = createContext<SettingsProfile | null>(null)
+// 저장 아이콘이 있는 설정창(저장해야 반영되는 설정)에서만 변경 점을 보여 준다. 일본 지도처럼 바꾸는 즉시 저장되는 화면은 저장하지 않은 변경이 없고,
+// 다른 화면에서 바꾼 임시값이 같은 이름의 항목에 점으로 새지 않게 한다.
+const SettingsDraftDotsContext = createContext(true)
 
 // 저장하지 않은 변경이 있는 항목의 제목 오른쪽 위에 찍는 작은 점. 상단 저장 아이콘·분류 배지의 점과 같은 청록이고, 글자 옆이라 더 작다(4px).
 // draftKeys는 그 항목이 쓰는 저장 이름이다. 분류별 저장 이름은 지금 분류 것만 본다.
 function SettingChangeDot({ draftKeys }: { draftKeys: readonly string[] }) {
   const profile = useContext(SettingsProfileContext)
+  const dotsEnabled = useContext(SettingsDraftDotsContext)
   const keys = profile === null ? draftKeys : draftKeys.flatMap(key => [key, profileSettingKey(profile, key)])
-  if (!useHasDraftForKeys(keys, profile ?? undefined)) return null
+  const hasDraft = useHasDraftForKeys(keys, profile ?? undefined)
+  if (!dotsEnabled || !hasDraft) return null
   return (
     <>
       <span aria-hidden="true" className="ml-[2px] inline-block h-1 w-1 shrink-0 translate-y-[3px] rounded-full bg-brand align-top" />
@@ -2670,6 +2675,7 @@ export default function SettingsPanel({
       {!plainContent && availableSections.length === 0 && <div className="min-h-0 flex-1" />}
       <SettingsFeedbackContext.Provider value={runPreferenceAction}>
       <SettingsProfileContext.Provider value={settingsProfile}>
+      <SettingsDraftDotsContext.Provider value={showPreferenceActions}>
       {selectedSection && (
         <div
           role="tabpanel"
@@ -2688,6 +2694,7 @@ export default function SettingsPanel({
           {sectionContent.get(selectedSection.id)?.map((content, index) => <Fragment key={index}>{content}</Fragment>)}
         </div>
       )}
+      </SettingsDraftDotsContext.Provider>
       </SettingsProfileContext.Provider>
       </SettingsFeedbackContext.Provider>
       </div>

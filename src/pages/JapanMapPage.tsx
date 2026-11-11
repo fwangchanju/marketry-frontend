@@ -16,7 +16,9 @@ import JapanSessionChip from '@/components/JapanSessionChip'
 import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import SettingsPanel, { SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
+import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
@@ -26,7 +28,7 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import ToolbarChip from '@/components/ToolbarChip'
 import stocks from '@/data/japanStocks.json'
 import { useJapanPeriodQuotes, useJapanPreviousTradingDay, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
-import { flattenAllItems, useFilteredHeatmap, limitDepth, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
+import { collectSectorsAtDepth, flattenAllItems, useFilteredHeatmap, limitDepth, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { useJapanMapPreferences } from '@/hooks/useJapanMapPreferences'
 import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
@@ -55,7 +57,7 @@ const NO_DIRECTION_FILTERS = { stockChangeFilter: 'all', sectorChangeFilter: 'al
 const { colorScale } = JAPAN_MAP_FIXED
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 const FLAT_GROUP_NAME = '__flat__'
-const SECTION_ORDER: SettingsPanelSectionId[] = ['industry', 'stockDisplay']
+const SECTION_ORDER: SettingsPanelSectionId[] = ['industry', 'stockDisplay', 'colors']
 
 function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
   return {
@@ -96,6 +98,12 @@ export default function JapanMapPage() {
   const { preferences, update } = useJapanMapPreferences()
   const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
   const { path, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
+  // 상위 업종 강조 — 국내 지도와 같은 규칙으로 고른 단계의 업종 중 등락률이 높은 순서로 뽑는다. 필터가 적용된 전체 트리 기준이라 드릴다운해도 바뀌지 않는다.
+  const topPickMaxSelectableDepth = preferences.maxDepth === null ? Math.max(3, availableMaxDepth) : preferences.maxDepth
+  const topPickSectorKeys = useMemo(() => {
+    if (!preferences.topPickEnabled || preferences.topPickDepth < 0 || preferences.topPickDepth >= topPickMaxSelectableDepth) return NO_TOP_PICKS
+    return pickTopSectorKeys(collectSectorsAtDepth(filteredRootNodes, preferences.topPickDepth), preferences.topPickCount, preferences.activeDepthMetric)
+  }, [filteredRootNodes, preferences.topPickEnabled, preferences.topPickDepth, preferences.topPickCount, preferences.activeDepthMetric, topPickMaxSelectableDepth])
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
   // 일본 그래프에서 막대를 누르면 그 업종을 연 상태로 들어온다. 주소 값은 한 번만 쓰고 지운다.
   const [searchParams, setSearchParams] = useSearchParams()
@@ -162,6 +170,18 @@ export default function JapanMapPage() {
     window.marketryCaptureMap = capture
     return () => { delete window.marketryCaptureMap }
   }, [isMobileCaptureMode, isMobileCaptureReady])
+  const topPickProps = {
+    taxonomy: 'MARKETRY' as const,
+    availableMaxDepth,
+    sectorLevelEnabled: preferences.sectorLevelEnabled,
+    topPickDepth: preferences.topPickDepth,
+    topPickCount: preferences.topPickCount,
+    topPickEnabled: preferences.topPickEnabled,
+    onToggleTopPick: () => update({ topPickEnabled: !preferences.topPickEnabled }),
+    topPickMaxSelectableDepth,
+    onChangeTopPickDepth: (depth: number) => update({ topPickDepth: depth }),
+    onChangeTopPickCount: (count: number) => update({ topPickCount: count }),
+  }
   const sectorLevelProps = {
     taxonomy: 'MARKETRY' as const,
     availableMaxDepth,
@@ -253,7 +273,7 @@ export default function JapanMapPage() {
                   stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'}
                   stockPopupOnHover={JAPAN_MAP_FIXED.stockPopupOnHover}
                   decimalPlaces={preferences.decimalPlaces}
-                  topPickSectorKeys={NO_TOP_PICKS}
+                  topPickSectorKeys={topPickSectorKeys}
                   strongIndustryColor={JAPAN_MAP_FIXED.strongIndustryColor}
                   zoomOutRequestDepth={zoomOutRequestDepth}
                   onZoomOutComplete={depth => { goToDepth(depth); setZoomOutRequestDepth(null) }}
@@ -270,7 +290,7 @@ export default function JapanMapPage() {
                 <div aria-hidden="true" className="h-2 shrink-0" />
                 {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>JAPAN<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={JAPAN_MAP_FIXED.boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={NO_TOP_PICKS} strongIndustryColor={JAPAN_MAP_FIXED.strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit="엔" captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
+                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={JAPAN_MAP_FIXED.boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={isMobileCaptureMode ? NO_TOP_PICKS : topPickSectorKeys} strongIndustryColor={JAPAN_MAP_FIXED.strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit="엔" captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
                 </div>
               </div>
             </div>
@@ -282,6 +302,21 @@ export default function JapanMapPage() {
             <SettingsPanelGroup section="stockDisplay">
               <SettingsStockSizeSelector marketCapRatio={preferences.boxSizeMarketCapRatio} onChangeMarketCapRatio={value => update({ boxSizeMarketCapRatio: value })} />
               <SettingsSectorLevelSection {...sectorLevelProps} showTaxonomy={false} showDecimalPlaces />
+            </SettingsPanelGroup>
+            <SettingsPanelGroup section="colors">
+              {/* 국내 MARKETRY 모드와 같은 구성이다. 등락률 색상·강조 색상은 잠가 두고(나중에 일본에도 내 기준 모드를 만들 자리) 상위 업종 강조만 쓴다. */}
+              <SettingsColorSection
+                isCustom={false}
+                colorScaleDraft={JAPAN_MAP_FIXED.colorScale}
+                colorCustomOn
+                onChangeColorCustomOn={() => {}}
+                onResetColorScale={() => {}}
+                isResettingColorScale={false}
+                colorEditorProps={buildFixedColorEditorProps()}
+                fixed
+              />
+              <SettingsStrongIndustryColorSection color={JAPAN_MAP_FIXED.strongIndustryColor} onChange={() => {}} fixed />
+              <SettingsTopPickSection {...topPickProps} />
             </SettingsPanelGroup>
           </SettingsPanel>
         </div>

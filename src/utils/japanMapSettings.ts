@@ -1,4 +1,5 @@
 import { createDefaultColorScale } from './heatmapColorScale.ts'
+import { settingDefaultsFor } from './settingDefaults.ts'
 
 export type JapanDepthMetric = 'weightedAvgChangeRate' | 'simpleAvgChangeRate' | 'upDownCount' | 'marketValue'
 
@@ -14,6 +15,10 @@ export const JAPAN_MAP_DEFAULTS = {
   stockLabelEnabled: true,
   stockLabelModeIndex: 3, // 이름과 등락률
   decimalPlaces: 1,
+  // 상위 업종 강조 — 국내 지도의 MARKETRY 기본값과 같다(중분류 기준 3개). 일본 지도의 이 브라우저에만 저장한다.
+  topPickEnabled: true,
+  topPickDepth: 1,
+  topPickCount: 3,
 }
 export type JapanMapPreferences = typeof JAPAN_MAP_DEFAULTS
 
@@ -21,7 +26,8 @@ export type JapanMapPreferences = typeof JAPAN_MAP_DEFAULTS
 export const JAPAN_MAP_FIXED = {
   boxLabelMinAreaPercent: 0.01,
   stockPopupOnHover: false,
-  strongIndustryColor: '#d8ed77',
+  // 국내 지도 MARKETRY 모드의 강조 색상과 같은 값을 그대로 쓴다(청록). 일본 지도·그래프의 업종명과 상위 업종 강조가 같은 색이다.
+  strongIndustryColor: settingDefaultsFor(false, 'marketry').strongIndustryColor,
   colorScale: createDefaultColorScale(),
 } as const
 
