@@ -188,8 +188,10 @@ export default function AdminDashboardPage() {
                     {botVisits.isError ? (
                       <DashboardMetricError />
                     ) : botVisits.data ? (
-                      <div className="flex min-h-0 flex-1 flex-col gap-2">
-                        <DailyAccessChart rows={botVisits.data.byDay.map(row => ({ date: row.date, members: row.visits }))} ariaLabelPrefix="검색 로봇 방문 수" />
+                      <div className="flex h-full min-h-0 w-full flex-col gap-2">
+                        <div className="min-h-0 flex-1">
+                          <DailyAccessChart rows={botVisits.data.byDay.map(row => ({ date: row.date, members: row.visits }))} ariaLabelPrefix="검색 로봇 방문 수" />
+                        </div>
                         <p className="m-0 truncate text-xs text-ui-muted">
                           {botVisits.data.byName.length === 0
                             ? '기간 안에 기록된 로봇 방문이 없습니다.'
