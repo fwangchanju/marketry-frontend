@@ -41,7 +41,7 @@ export function revealMobileCapture(cloned: Node, keepPageLabel = true) {
       refreshButton.classList.remove('cursor-pointer')
       refreshButton.style.pointerEvents = 'none'
     }
-    // 모바일 캡처에서는 종가·합산·단독 중 현재 기준만 남기고, 세 버튼 중 첫 칸에 둔다.
+    // 모바일 캡처에서는 종가·합산·별도 중 현재 기준만 남기고, 세 버튼 중 첫 칸에 둔다.
     const changeRateSelector = leftContent.querySelector<HTMLElement>('[data-change-rate-selector]')
     const changeRateButton = changeRateSelector?.querySelector<HTMLButtonElement>('[data-change-rate-mode]')
     if (changeRateButton && changeRateSelector) {

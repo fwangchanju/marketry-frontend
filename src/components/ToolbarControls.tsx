@@ -8,7 +8,7 @@ import ToolbarChip from '@/components/ToolbarChip'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
-// 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·합산·단독 토글의 선택 칸에도 쓴다).
+// 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·합산·별도 토글의 선택 칸에도 쓴다).
 const SESSION_DOT_COLOR: Record<TradingSession, string> = {
   '프리 마켓': 'var(--sub-yellow)',
   '메인 마켓': 'var(--brand)',
@@ -102,7 +102,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
 const CHANGE_RATE_OPTIONS = [
   { value: 'close' as const, label: '종가', titlePrefix: '메인 마켓 ', descriptionBefore: '전일 종가', descriptionAfter: '당일 종가' },
   { value: 'daily' as const, label: '합산', titlePrefix: '애프터 마켓 ', descriptionBefore: '전일 종가', descriptionAfter: '현재가' },
-  { value: 'afterHours' as const, label: '단독', titlePrefix: '애프터 마켓 ', descriptionBefore: '당일 종가', descriptionAfter: '현재가' },
+  { value: 'afterHours' as const, label: '별도', titlePrefix: '애프터 마켓 ', descriptionBefore: '당일 종가', descriptionAfter: '현재가' },
 ]
 
 function ChangeRateModeSelector({ basis, selectable, onChange }: {

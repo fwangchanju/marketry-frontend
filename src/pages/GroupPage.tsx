@@ -103,7 +103,7 @@ export default function GroupPage() {
     colorScale,
     settingsProfile,
   } = useGlobalSettings({ allowChangeRateMode: true })
-  // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/단독 표시는 숨긴다(실시간 정보라서).
+  // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
   const [graphMode, setGraphMode] = usePageSetting<GroupGraphMode>(profileSettingKey(settingsProfile, 'groupPage.graphMode'), 'current')
@@ -339,7 +339,7 @@ export default function GroupPage() {
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="GRAPH" label={MARKET_LABEL[market]} />
-                {/* 로딩 원이나 오류 문구가 보이는 동안에도 시계·시간대·합산/단독·분류명을 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
+                {/* 로딩 원이나 오류 문구가 보이는 동안에도 시계·시간대·합산/별도·분류명을 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                   <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
                   <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>

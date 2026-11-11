@@ -1314,7 +1314,7 @@ function SettingsTaxonomySelector({
             업데이트
             <SettingHelpBubble
               label="업데이트"
-              // 말풍선마다 주어를 빨간 굵은 글씨로 강조한다(합산/단독 말풍선의 전일·당일과 같은 모양). 조사(가)는 강조하지 않는다.
+              // 말풍선마다 주어를 빨간 굵은 글씨로 강조한다(합산/별도 말풍선의 전일·당일과 같은 모양). 조사(가)는 강조하지 않는다.
               description={
                 isExchange ? (
                   <>
