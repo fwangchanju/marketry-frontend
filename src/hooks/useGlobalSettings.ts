@@ -26,7 +26,6 @@ import {
 import {
   collectSectorsAtDepth,
   useFilteredHeatmap,
-  type FilteredHeatmapSectorNode,
   type StockChangeFilter,
   type SectorChangeFilter,
 } from './useFilteredHeatmap'
@@ -56,16 +55,10 @@ import { useCustomPreferences } from './useCustomPreferences'
 import { useDefaultPreferences } from './useDefaultPreferences'
 import { buildRangeChangeRateTree } from '@/utils/rangeChangeRate'
 import { excludedNamesForPaths } from '@/utils/excludedSectorPaths'
+import { buildFixedColorEditorProps, sortedSignRows } from '@/utils/fixedColorEditor'
+import { pickTopSectorKeys } from '@/utils/topPickSectors'
 
 const NO_RANGE_ADJUSTMENTS: Readonly<Record<string, number>> = {}
-
-// 한 부호의 구간들을 절댓값이 작은 것부터 정렬해(몇 번째 구간인지 = 순서) 원래 배열의 인덱스와 함께 돌려준다. 등락률 막대의 손잡이 순서이자 상승·하락 거울 짝의 기준이다.
-function sortedSignRows(thresholds: ColorScaleThreshold[], positive: boolean): { threshold: ColorScaleThreshold; index: number }[] {
-  return thresholds
-    .map((threshold, index) => ({ threshold, index }))
-    .filter(({ threshold }) => (positive ? threshold.thresholdPercent > 0 : threshold.thresholdPercent < 0))
-    .sort((a, b) => Math.abs(a.threshold.thresholdPercent) - Math.abs(b.threshold.thresholdPercent))
-}
 
 // 조회 실패/로딩 중이거나 "색상 커스텀 사용"이 꺼져있을 때 쓰는 폴백 — thresholds가 비어있으면 어차피
 // 기본 프리셋으로 귀결된다(resolveHeatmapColor/resolveLegendSwatches 참고).
@@ -159,11 +152,6 @@ function collectCoveredExcludedIds(nodes: HeatmapSectorNode[], excluded: Map<num
     collectCoveredExcludedIds(node.children, excluded, covered || isExcluded, out)
   }
   return out
-}
-
-function topPickAverage(node: FilteredHeatmapSectorNode, metric: DepthMetric): number | null {
-  // 강세 업종은 업종 탭 표시 지표를 따른다. 평균이 아닌 지표를 고르면 시총 가중으로 계산한다.
-  return metric === 'simpleAvgChangeRate' ? node.simpleAvgChangeRate : node.weightedAvgChangeRate
 }
 
 // "설정" 사이드바(SettingsPanel) + 색상 구간 편집 패널이 필요로 하는 상태/로직 전부를
@@ -607,18 +595,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     if (!topPickEnabled || effectiveTopPickDepth < 0 || effectiveTopPickDepth >= topPickMaxSelectableDepth) {
       return new Set<string>()
     }
-
-    const candidates = collectSectorsAtDepth(filteredRootNodes, effectiveTopPickDepth)
-      .map((node, index) => ({ node, index, average: topPickAverage(node, selectedDepthMetric) }))
-      .filter((candidate): candidate is { node: FilteredHeatmapSectorNode; index: number; average: number } => {
-        return candidate.average !== null
-      })
-      .sort((a, b) => b.average - a.average || b.node.totalMarketValue - a.node.totalMarketValue || a.index - b.index)
-
-    // KRX 업종은 모두 sectorId=0이므로 이름까지 포함해 구별한다.
-    return new Set(candidates.slice(0, selectedTopPickCount).map(candidate =>
-      JSON.stringify([candidate.node.sectorId, candidate.node.sectorName]),
-    ))
+    return pickTopSectorKeys(collectSectorsAtDepth(filteredRootNodes, effectiveTopPickDepth), selectedTopPickCount, selectedDepthMetric)
   }, [
     selectedDepthMetric,
     filteredRootNodes,
@@ -1003,22 +980,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   useEffect(() => () => unregisterDraftParticipant('heatmap.colorScale'), [])
 
   // 고정 모드는 사용자가 고친 값 대신 기본 색 막대를 어둡게 보여 준다. 조작은 설정창이 막으므로 동작은 비워 둔다.
-  const fixedColorScale = createDefaultColorScale().thresholds
-  const fixedPositiveRows = sortedSignRows(fixedColorScale, true)
-  const fixedNegativeRows = sortedSignRows(fixedColorScale, false)
   const colorEditorPanelProps = isColorScaleFixed
-    ? {
-        bar: {
-          positive: fixedPositiveRows.map(row => ({ percent: row.threshold.thresholdPercent, color: row.threshold.color })),
-          negative: fixedNegativeRows.map(row => ({ percent: -row.threshold.thresholdPercent, color: row.threshold.color })),
-          side: 'up' as const,
-          selectedRank: fixedPositiveRows.length - 1,
-          zeroColor: fixedColorScale.find(threshold => threshold.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR,
-        },
-        onChangeRankPercent: () => {},
-        onSelectRank: () => {},
-        onSelectZero: () => {},
-      }
+    ? buildFixedColorEditorProps()
     : colorEditThresholds.length > 0
       ? {
           bar: {
