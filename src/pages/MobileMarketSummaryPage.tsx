@@ -10,7 +10,7 @@ import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphB
 import { useMarketSummary } from '@/hooks/useMarketSummary'
 import Spinner from '@/components/Spinner'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
-import { usePageSetting } from '@/hooks/usePageSetting'
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { useLongPress } from '@/hooks/useLongPress'
 import { IDENTITY, panTransform, pinchTransform, type Point, type ZoomTransform } from '@/utils/mapZoom'
 import type { HeatmapItem } from '@/types/api'
@@ -264,7 +264,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const [midSelection, setMidSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [stockSelection, setStockSelection] = useState<{ market: MarketQuery; key: string; categoryName: string } | null>(null)
   const [graphEntryOffset, setGraphEntryOffset] = useState(0)
-  const [graphDepth, setGraphDepth] = usePageSetting<number>('mobile.graphDepth', 1)
+  // 모바일 화면 설정은 저장 버튼 없이 이 브라우저에 바로 기억한다. 분류 모드와 상관없이 공통이다(화면 취향은 브라우저 저장, 2026-10-03 결정).
+  const [graphDepth, setGraphDepth] = useLocalPersistedState<number>('mobile.graphDepth', 1)
   const [viewModeState, setViewMode] = useState<'sector' | 'stock'>('sector')
   const viewMode = isStockMode ? 'stock' : viewModeState
   const [focusedStockCode, setFocusedStockCode] = useState<string | null>(null)
@@ -396,7 +397,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
 
   // 분류 단계: MARKETRY·내 기준은 대·중·소분류(3단계), 거래소는 1단계. 눌러서 들어갈 때 하위 분류가 있으면 그 분류로, 없으면 바로 종목으로 간다.
   // 박스 크기는 PC 설정과 따로 두고, 폰의 기본은 시총 비례(100)다. 동일 0 · 균형 50 · 시총 비례 100.
-  const [storedBoxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio] = usePageSetting<number>('mobile.boxSizeMarketCapRatio', 100)
+  const [storedBoxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
   const boxSizeMarketCapRatio = normalizeMobileBoxSizeRatio(storedBoxSizeMarketCapRatio)
   // 경로의 맨 앞은 전체일 때 국내 증시, 그 밖에는 고른 마켓 이름이다.
   const marketLabel = market === 'ALL_STOCK' ? '국내 증시' : MARKETS.find(option => option.value === market)?.label ?? '국내 증시'
