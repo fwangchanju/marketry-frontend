@@ -212,7 +212,7 @@ export default function MapPage() {
   const isAdmin = isAdminSession(session)
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
   const isSpecialMember = isAdmin || (session?.authenticated === true && session.special === true)
-  // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/단독 표시는 숨긴다(실시간 정보라서).
+  // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
   const [searchParams, setSearchParams] = useSearchParams()
@@ -505,7 +505,7 @@ export default function MapPage() {
 
   // 렌더러용 모바일 판 — 데이터가 오고 히트맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
   const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && visibleItems.length > 0
-  // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 복제하지 않는다 — 종가·단독 기준으로 옮겨 가면 시각이 바뀐다.
+  // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 복제하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
   const isMobileCaptureSettled = useSettled(canShowMobileCapture, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
   useEffect(() => {
     if (!isMobileCaptureSettled || isMobileCaptureReady) return
@@ -568,7 +568,7 @@ export default function MapPage() {
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} />
-                {/* 로딩·오류·빈 화면에서도 시계·시간대·합산/단독을 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
+                {/* 로딩·오류·빈 화면에서도 시계·시간대·합산/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
                   <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
@@ -607,7 +607,7 @@ export default function MapPage() {
                       </PageRefreshButton>
                     </ToolbarChip>
                   )}
-                {/* 시장 시간대 말머리와 합산/단독 — 시간과 관련된 표시라 시계 옆에 붙인다. */}
+                {/* 시장 시간대 말머리와 합산/별도 — 시간과 관련된 표시라 시계 옆에 붙인다. */}
                 {isPastSnapshot === false && (
                   <span className="flex shrink-0">
                     <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} onChange={onChangeChangeRateMode} />

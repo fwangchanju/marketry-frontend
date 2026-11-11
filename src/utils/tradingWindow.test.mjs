@@ -114,7 +114,7 @@ test('실패한 주말 시간표는 애프터 마켓을 표시하고 NXT 필터�
   assert.equal(currentNxtOnlyWindow(at(failed, '08:30:00'), failed), null)
 })
 
-test('합산·단독 선택지가 보이는 야간과 주말에는 애프터 마켓을 유지하고 다음 프리장에 전환한다', () => {
+test('합산·별도 선택지가 보이는 야간과 주말에는 애프터 마켓을 유지하고 다음 프리장에 전환한다', () => {
   assert.equal(currentTradingSession(new Date('2026-01-02T23:00:00+09:00')), '애프터 마켓')
   assert.equal(currentTradingSession(new Date('2026-01-03T12:00:00+09:00')), '애프터 마켓')
   assert.equal(currentTradingSession(new Date('2026-01-05T07:59:59+09:00')), '애프터 마켓')

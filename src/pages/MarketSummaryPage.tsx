@@ -263,7 +263,7 @@ export default function MarketSummaryPage() {
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="HOME" label="K-STOCK" />
               {/* 지도·그룹 페이지와 같은 날짜·시각·시간대 — 홈도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
-                  애프터 마켓 시간에는 등락률 기준(종가·합산·단독) 선택도 지도·그룹 페이지와 같이 보인다. 로딩·오류에서도 제자리에 둔다. */}
+                  애프터 마켓 시간에는 등락률 기준(종가·합산·별도) 선택도 지도·그룹 페이지와 같이 보인다. 로딩·오류에서도 제자리에 둔다. */}
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                 <SnapshotDatePicker
                   market={market}
@@ -333,7 +333,7 @@ export default function MarketSummaryPage() {
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const isMineEmpty = settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0)
-  // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 준비됐다고 하지 않는다 — 종가·단독 기준으로 옮겨 가면 시각이 바뀐다.
+  // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 준비됐다고 하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
   const isMobileCaptureLoaded = !isLoading && !isError && Boolean(data?.snapshotTime) && marketSummary !== undefined
   const isMobileCaptureReady = useSettled(isMobileCaptureLoaded, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
   const mobileCaptureFrames = ['market-map', 'group-change-rate']
