@@ -192,11 +192,11 @@ export default function AdminDashboardPage() {
                         <div className="min-h-0 flex-1">
                           <DailyAccessChart rows={botVisits.data.byDay.map(row => ({ date: row.date, members: row.visits }))} ariaLabelPrefix="검색 로봇 방문 수" />
                         </div>
-                        <p className="m-0 truncate text-xs text-ui-muted">
-                          {botVisits.data.byName.length === 0
-                            ? '기간 안에 기록된 로봇 방문이 없습니다.'
-                            : botVisits.data.byName.map(row => `${row.name} ${formatCount(row.visits)}회`).join(' · ')}
-                        </p>
+                        {botVisits.data.byName.length > 0 && (
+                          <p className="m-0 truncate text-xs text-ui-muted">
+                            {botVisits.data.byName.map(row => `${row.name} ${formatCount(row.visits)}회`).join(' · ')}
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
