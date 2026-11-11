@@ -33,24 +33,51 @@ export const JAPAN_MAP_FIXED = {
 
 export const JAPAN_MAP_PREFERENCES_STORAGE = 'marketry:japan-map-settings'
 
-// 저장된 값 중 형식이 맞는 것만 쓰고 나머지는 기본값으로 둔다.
-export function readJapanMapPreferences(stored: string | null): JapanMapPreferences {
-  if (!stored) return { ...JAPAN_MAP_DEFAULTS }
-  try {
-    const parsed: unknown = JSON.parse(stored)
-    if (typeof parsed !== 'object' || parsed === null) return { ...JAPAN_MAP_DEFAULTS }
-    const source = parsed as Record<string, unknown>
-    const result: Record<string, unknown> = { ...JAPAN_MAP_DEFAULTS }
-    for (const [key, fallback] of Object.entries(JAPAN_MAP_DEFAULTS)) {
-      const value = source[key]
-      if (value === null ? key === 'maxDepth' : typeof value === typeof fallback || (key === 'maxDepth' && typeof value === 'number')) {
-        if (value !== undefined) result[key] = value
-      }
+// 값 중 이름과 형식이 맞는 것만 골라낸다. 나머지는 버린다.
+export function pickJapanMapPreferenceValues(source: unknown): Partial<JapanMapPreferences> {
+  if (typeof source !== 'object' || source === null) return {}
+  const record = source as Record<string, unknown>
+  const result: Record<string, unknown> = {}
+  for (const [key, fallback] of Object.entries(JAPAN_MAP_DEFAULTS)) {
+    const value = record[key]
+    if (value === undefined) continue
+    if (value === null ? key === 'maxDepth' : typeof value === typeof fallback || (key === 'maxDepth' && typeof value === 'number')) {
+      result[key] = value
     }
-    return result as JapanMapPreferences
-  } catch {
-    return { ...JAPAN_MAP_DEFAULTS }
   }
+  return result as Partial<JapanMapPreferences>
+}
+
+// 이 브라우저에 저장된 값 중 형식이 맞는 것만 읽는다.
+export function readJapanMapOverrides(stored: string | null): Partial<JapanMapPreferences> {
+  if (!stored) return {}
+  try {
+    return pickJapanMapPreferenceValues(JSON.parse(stored))
+  } catch {
+    return {}
+  }
+}
+
+// 저장된 값 중 형식이 맞는 것만 쓰고 나머지는 기본값(관리자가 정한 기본값이 있으면 그 값)으로 둔다.
+export function readJapanMapPreferences(stored: string | null, base: JapanMapPreferences = JAPAN_MAP_DEFAULTS): JapanMapPreferences {
+  return { ...base, ...readJapanMapOverrides(stored) }
+}
+
+// 관리자가 정한 일본 지도 기본값(서버의 관리 기본값 japan)을 코드 기본값 위에 얹는다. 형식이 맞지 않는 값은 쓰지 않는다.
+export function japanMapManagedDefaults(profiles: Record<string, unknown> | undefined): JapanMapPreferences {
+  return { ...JAPAN_MAP_DEFAULTS, ...pickJapanMapPreferenceValues(profiles?.japan) }
+}
+
+// 관리자가 서버에 저장할 값 — 설정 이름 그대로 모든 항목을 보낸다.
+export function japanMapPublishPayload(preferences: JapanMapPreferences): Record<string, unknown> {
+  const payload: Record<string, unknown> = {}
+  for (const key of Object.keys(JAPAN_MAP_DEFAULTS)) payload[key] = preferences[key as keyof JapanMapPreferences]
+  return payload
+}
+
+// 텔레그램 렌더러가 여는 일본 지도 화면인지. 이때는 이 브라우저의 저장값을 쓰지 않고 관리자가 정한 기본값만 쓴다.
+export function isJapanMapCapture() {
+  return window.location.pathname === '/map/japan' && new URLSearchParams(window.location.search).get('capture') === 'mobile'
 }
 
 // 설정창이 고른 탭을 기억하는 이름. 국내 화면과 겹치지 않게 일본 화면마다 따로 둔다.
