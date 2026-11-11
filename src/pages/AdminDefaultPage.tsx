@@ -23,9 +23,12 @@ import type { DefaultProfiles } from '@/hooks/useDefaultPreferences'
 import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
+import { JAPAN_MAP_PREFERENCES_STORAGE, japanMapDisplayValues, japanMapManagedDefaults, japanMapPublishPayload, readJapanMapPreferences, type JapanMapPreferences } from '@/utils/japanMapSettings'
 import { defaultExcludedTierLabels } from '@/utils/marketValueTier'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import type { HeatmapSectorNode, MarketValueTierItem } from '@/types/api'
+
+type DefaultProfile = 'marketry' | 'exchange' | 'japan'
 
 type ProfileSnapshot = {
   values: TelegramImageValues
@@ -177,7 +180,9 @@ export default function AdminDefaultPage() {
   const [snapshots, setSnapshots] = useState<Record<'marketry' | 'exchange', ProfileSnapshot | null>>({ marketry: null, exchange: null })
   const [loadVersions, setLoadVersions] = useState({ marketry: 0, exchange: 0 })
   const [loadStates, setLoadStates] = useState<Record<'marketry' | 'exchange', 'idle' | 'loading' | 'ready' | 'error'>>({ marketry: 'idle', exchange: 'idle' })
-  const [savedSnapshots, setSavedSnapshots] = useState<Record<'marketry' | 'exchange', string | null>>({ marketry: null, exchange: null })
+  const [savedSnapshots, setSavedSnapshots] = useState<Record<DefaultProfile, string | null>>({ marketry: null, exchange: null, japan: null })
+  // 일본 지도는 이 브라우저에 저장된 일본 지도 설정을 불러와 기본값으로 저장한다(국내와 같은 불러오기 → 저장 순서).
+  const [japanSnapshot, setJapanSnapshot] = useState<JapanMapPreferences | null>(null)
   const updateSnapshot = useCallback((profile: 'marketry' | 'exchange', snapshot: ProfileSnapshot | null) => {
     setSnapshots(previous => {
       if (JSON.stringify(previous[profile]) === JSON.stringify(snapshot)) return previous
@@ -197,7 +202,7 @@ export default function AdminDefaultPage() {
   const marketryMap = useHeatmap('ALL_STOCK', 'MARKETRY', false, { enabled: isAdmin && hasMarketryExclusions })
   const marketryNames = marketrySectorNames(marketryMap.data?.items ?? [])
   const save = useMutation({
-    mutationFn: ({ value }: { value: DefaultProfiles; profile: 'marketry' | 'exchange'; snapshot: string }) => saveAdminDefaults(value),
+    mutationFn: ({ value }: { value: DefaultProfiles; profile: DefaultProfile; snapshot: string }) => saveAdminDefaults(value),
     onSuccess: (result, variables) => {
       queryClient.setQueryData(['admin-default-preferences'], result)
       queryClient.setQueryData(['default-preferences'], result)
@@ -211,6 +216,18 @@ export default function AdminDefaultPage() {
     setSnapshots(previous => ({ ...previous, [profile]: null }))
     setLoadStates(previous => ({ ...previous, [profile]: 'loading' }))
     setLoadVersions(previous => ({ ...previous, [profile]: previous[profile] + 1 }))
+  }
+  const japanManaged = japanMapManagedDefaults(defaults.data)
+  const handleLoadJapan = () => {
+    let stored: string | null = null
+    try { stored = localStorage.getItem(JAPAN_MAP_PREFERENCES_STORAGE) } catch { stored = null }
+    setSavedSnapshots(previous => ({ ...previous, japan: null }))
+    setJapanSnapshot(readJapanMapPreferences(stored, japanManaged))
+  }
+  const handleSaveJapan = async () => {
+    if (!japanSnapshot || !defaults.data || save.isPending) return
+    if (!await appConfirm('[일본 지도] 설정을 기본값으로 저장하시겠습니까?', { title: '기본값 저장' })) return
+    save.mutate({ value: { ...defaults.data, japan: japanMapPublishPayload(japanSnapshot) }, profile: 'japan', snapshot: JSON.stringify(japanSnapshot) })
   }
   const handleSave = async (profile: 'marketry' | 'exchange') => {
     const snapshot = snapshots[profile]
@@ -231,10 +248,11 @@ export default function AdminDefaultPage() {
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
           {isLoading ? <p role="status" className="m-auto text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p> : !isAdmin ? <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p> : <>
             <Toolbar><ToolbarModeText page="ADMIN" label="DEFAULT" /></Toolbar>
-            <PageMainFrame className="p-0" heading={<div className="mx-auto w-full max-w-4xl"><InfoPageHeading flushBottom title="기본값" summary="MARKETRY와 거래소 기본 설정을 각각 저장합니다." /></div>}>
+            <PageMainFrame className="p-0" heading={<div className="mx-auto w-full max-w-4xl"><InfoPageHeading flushBottom title="기본값" summary="MARKETRY, 거래소, 일본 지도 기본 설정을 각각 저장합니다." /></div>}>
               {defaults.isError ? <p role="alert" className="m-0 text-sm text-ui-text">기본값을 불러오지 못했습니다.</p> : <article aria-label="기본값" className="mx-auto min-h-full w-full max-w-4xl space-y-5">
                 <TelegramImageSettings number="1" title="MARKETRY 모드" profileLabel="MARKETRY" saved={savedView(defaults.data?.marketry, snapshots.marketry, 'marketry', tiers, marketryNames)} current={snapshots.marketry?.values ?? null} loadState={loadStates.marketry} isSaved={savedSnapshots.marketry !== null && savedSnapshots.marketry === JSON.stringify(snapshots.marketry)} onLoad={() => handleLoad('marketry')} onSave={() => void handleSave('marketry')} />
                 <TelegramImageSettings number="2" title="거래소 모드" profileLabel="거래소" saved={savedView(defaults.data?.exchange, snapshots.exchange, 'exchange', tiers, marketryNames)} current={snapshots.exchange?.values ?? null} loadState={loadStates.exchange} isSaved={savedSnapshots.exchange !== null && savedSnapshots.exchange === JSON.stringify(snapshots.exchange)} onLoad={() => handleLoad('exchange')} onSave={() => void handleSave('exchange')} />
+                <TelegramImageSettings number="3" title="일본 지도" profileLabel="일본" saved={japanMapDisplayValues(japanManaged)} current={japanSnapshot ? japanMapDisplayValues(japanSnapshot) : null} loadState={japanSnapshot ? 'ready' : 'idle'} isSaved={savedSnapshots.japan !== null && savedSnapshots.japan === JSON.stringify(japanSnapshot)} onLoad={handleLoadJapan} onSave={() => void handleSaveJapan()} />
               </article>}
             </PageMainFrame>
           </>}

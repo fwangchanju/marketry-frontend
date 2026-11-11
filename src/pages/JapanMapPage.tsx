@@ -2,7 +2,7 @@ import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import { useSettled } from '@/hooks/useSettled'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import client from '@/api/client'
@@ -30,16 +30,12 @@ import stocks from '@/data/japanStocks.json'
 import { useJapanPeriodQuotes, useJapanPreviousTradingDay, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import { collectSectorsAtDepth, flattenAllItems, useFilteredHeatmap, limitDepth, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { useJapanMapPreferences } from '@/hooks/useJapanMapPreferences'
-import { useSession } from '@/hooks/useSession'
-import { isAdminSession } from '@/utils/adminAccess'
-import { appAlert, appConfirm } from '@/utils/appDialogBus'
-import { saveAdminDefaultProfile } from '@/api/adminDefaults'
 import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
-import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE, NO_TAXONOMY_CHANGE, japanMapPublishPayload } from '@/utils/japanMapSettings'
+import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE, NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
 import { buildJapanTree, excludePreviousCloseQuotes, findJapanCloseSnapshotTime, japanFilterQueryState, shouldFilterJapanQuotes, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { mapTileMethod } from '@/utils/mapStretch'
@@ -62,10 +58,6 @@ const { colorScale } = JAPAN_MAP_FIXED
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 const FLAT_GROUP_NAME = '__flat__'
 const SECTION_ORDER: SettingsPanelSectionId[] = ['industry', 'stockDisplay', 'colors']
-const ADMIN_SECTION_ORDER: SettingsPanelSectionId[] = [...SECTION_ORDER, 'adminManage']
-// 관리자에게만 보이는 텔레그램 탭 — 이름과 아이콘만 바꿔 쓴다.
-const TELEGRAM_SECTION_ICONS = { adminManage: 'mail' } as const
-const TELEGRAM_SECTION_LABELS = { adminManage: '텔레그램' } as const
 
 function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
   return {
@@ -104,25 +96,6 @@ export default function JapanMapPage() {
   }, [applyQuoteFilter, shownQuotes, quotes.data, previousQuotes.data])
   const tree = useMemo(() => (categories.data && classifications.data && names.data && shownQuotes && shownQuotes.snapshotTime ? buildJapanTree(stocks, categories.data, classifications.data, names.data, mapQuotes, shownQuotes.snapshotTime) : []), [categories.data, classifications.data, names.data, shownQuotes, mapQuotes])
   const { preferences, update, isLoadingDefaults } = useJapanMapPreferences()
-  const { data: authSession } = useSession()
-  const isAdmin = isAdminSession(authSession)
-  const queryClient = useQueryClient()
-  const [isPublishing, setIsPublishing] = useState(false)
-  // 지금 화면의 설정을 관리자가 정한 일본 지도 기본값으로 저장한다. 텔레그램 일본 이미지가 이 값을 읽는다.
-  const publishTelegramSettings = async () => {
-    if (isPublishing) return
-    if (!await appConfirm('지금 일본 지도 설정을 텔레그램 이미지의 기본값으로 저장합니다.\n설정을 바꾸지 않은 화면에도 같은 값이 기본으로 쓰입니다.', { title: '텔레그램 이미지 적용' })) return
-    setIsPublishing(true)
-    try {
-      await saveAdminDefaultProfile('japan', japanMapPublishPayload(preferences))
-      await queryClient.invalidateQueries({ queryKey: ['default-preferences'] })
-      void appAlert('일본 지도 설정을 텔레그램 이미지에 적용했습니다.\n다음 발송부터 반영됩니다.', { title: '적용 완료' })
-    } catch {
-      void appAlert('적용하지 못했습니다. 잠시 후 다시 시도해 주세요.', { title: '적용 실패' })
-    } finally {
-      setIsPublishing(false)
-    }
-  }
   const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
   const { path, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
   // 상위 업종 강조 — 국내 지도와 같은 규칙으로 고른 단계의 업종 중 등락률이 높은 순서로 뽑는다. 필터가 적용된 전체 트리 기준이라 드릴다운해도 바뀌지 않는다.
@@ -324,7 +297,7 @@ export default function JapanMapPage() {
           )}
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Map" tabStorageName={JAPAN_SETTINGS_TAB_STORAGE.map} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={isAdmin ? ADMIN_SECTION_ORDER : SECTION_ORDER} sectionIconOverrides={TELEGRAM_SECTION_ICONS} sectionLabelOverrides={TELEGRAM_SECTION_LABELS}>
+          <SettingsPanel pageLabel="Map" tabStorageName={JAPAN_SETTINGS_TAB_STORAGE.map} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
             <SettingsPanelGroup section="industry"><SettingsSectorLevelSection {...sectorLevelProps} showStockDisplay={false} /></SettingsPanelGroup>
             <SettingsPanelGroup section="stockDisplay">
               <SettingsStockSizeSelector marketCapRatio={preferences.boxSizeMarketCapRatio} onChangeMarketCapRatio={value => update({ boxSizeMarketCapRatio: value })} />
@@ -345,29 +318,6 @@ export default function JapanMapPage() {
               <SettingsStrongIndustryColorSection color={JAPAN_MAP_FIXED.strongIndustryColor} onChange={() => {}} fixed />
               <SettingsTopPickSection {...topPickProps} />
             </SettingsPanelGroup>
-            {isAdmin && (
-              <SettingsPanelGroup section="adminManage">
-                <div className="settings-plain-content">
-                  <div className="settings-ops-item h-[180px] text-sm">
-                    <div className="settings-custom-control">
-                      <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">텔레그램 이미지</h2>
-                      <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">지금 설정을 일본 지도 이미지에 적용</p>
-                      <div className="mt-auto mb-auto grid max-w-full grid-cols-1 gap-[6px] settings-control-inset">
-                        <button
-                          type="button"
-                          disabled={isPublishing}
-                          aria-busy={isPublishing}
-                          onClick={() => void publishTelegramSettings()}
-                          className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-brand-surface text-[13px] leading-[1.3] font-medium text-ui-white focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {isPublishing ? '적용 중' : '현재 설정 적용'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </SettingsPanelGroup>
-            )}
           </SettingsPanel>
         </div>
       </div>

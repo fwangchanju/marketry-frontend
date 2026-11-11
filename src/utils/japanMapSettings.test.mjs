@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import {
   JAPAN_MAP_DEFAULTS,
   JAPAN_MAP_FIXED,
+  japanMapDisplayValues,
   japanMapManagedDefaults,
   japanMapPublishPayload,
   pickJapanMapPreferenceValues,
@@ -48,4 +49,13 @@ test('서버에 저장하는 값은 일본 설정의 모든 이름을 그대로 
   const payload = japanMapPublishPayload({ ...JAPAN_MAP_DEFAULTS, topPickCount: 2 })
   assert.deepEqual(Object.keys(payload).sort(), Object.keys(JAPAN_MAP_DEFAULTS).sort())
   assert.equal(payload.topPickCount, 2)
+})
+
+test('기본값 화면에는 국내와 같은 이름으로 일본 설정을 옮겨 보여 준다', () => {
+  const { preferences, excludedSectors } = japanMapDisplayValues({ ...JAPAN_MAP_DEFAULTS, topPickCount: 2, maxDepth: null })
+  assert.equal(preferences['heatmap.topPickCount'], 2)
+  assert.equal(preferences['heatmap.selectedMaxDepth'], null)
+  assert.equal(preferences['heatmap.decimalPlacesIndex'], JAPAN_MAP_DEFAULTS.decimalPlaces)
+  assert.equal(preferences['heatmap.strongIndustryColor'], JAPAN_MAP_FIXED.strongIndustryColor)
+  assert.deepEqual(excludedSectors, [])
 })

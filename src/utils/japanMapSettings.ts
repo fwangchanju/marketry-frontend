@@ -68,6 +68,32 @@ export function japanMapManagedDefaults(profiles: Record<string, unknown> | unde
   return { ...JAPAN_MAP_DEFAULTS, ...pickJapanMapPreferenceValues(profiles?.japan) }
 }
 
+// 기본값 화면(관리자)이 보여 주는 모양 — 국내 MARKETRY·거래소와 같은 줄을 쓰도록 같은 이름('heatmap.*')으로 옮긴다.
+// 일본 지도에 없는 항목(시가총액 범위, 업종 제외)은 전체·없음으로 둔다.
+export function japanMapDisplayValues(preferences: JapanMapPreferences): { preferences: Record<string, unknown>; excludedSectors: Array<[string, string]> } {
+  return {
+    preferences: {
+      'heatmap.tierRangeMinValue': 0,
+      'heatmap.tierRangeMaxValue': null,
+      'heatmap.sectorLevelEnabled': preferences.sectorLevelEnabled,
+      'heatmap.selectedMaxDepth': preferences.maxDepth,
+      'heatmap.activeDepthMetric': preferences.activeDepthMetric,
+      'heatmap.depthMetricEnabled': preferences.depthMetricEnabled,
+      'heatmap.depthMetricMinIndex': preferences.depthMetricMinIndex,
+      'heatmap.depthMetricMaxIndex': preferences.depthMetricMaxIndex,
+      'heatmap.boxSizeMarketCapRatio': preferences.boxSizeMarketCapRatio,
+      'heatmap.stockLabelEnabled': preferences.stockLabelEnabled,
+      'heatmap.stockLabelModeIndex': preferences.stockLabelModeIndex,
+      'heatmap.decimalPlacesIndex': preferences.decimalPlaces,
+      'heatmap.strongIndustryColor': JAPAN_MAP_FIXED.strongIndustryColor,
+      'heatmap.topPickEnabled': preferences.topPickEnabled,
+      'heatmap.topPickDepth': preferences.topPickDepth,
+      'heatmap.topPickCount': preferences.topPickCount,
+    },
+    excludedSectors: [],
+  }
+}
+
 // 관리자가 서버에 저장할 값 — 설정 이름 그대로 모든 항목을 보낸다.
 export function japanMapPublishPayload(preferences: JapanMapPreferences): Record<string, unknown> {
   const payload: Record<string, unknown> = {}
