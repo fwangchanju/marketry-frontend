@@ -1133,5 +1133,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     excludedSectorIds,
     handleExcludeSector,
     handleRemoveExcludedSector,
+    // 화면별 설정(그래프 페이지 등)도 지금 분류 기준으로 따로 저장하도록 내보낸다.
+    settingsProfile,
   }
 }

@@ -10,7 +10,7 @@
 // 버전이 없는 저장값은 0으로 본다. 현재 버전보다 높은 값(더 새로운 화면에서 저장한 것)은 건드리지 않는다.
 
 export const SETTINGS_VERSION_KEY = 'settings.version'
-export const SETTINGS_SCHEMA_VERSION = 4
+export const SETTINGS_SCHEMA_VERSION = 5
 
 export type SettingsProfile = 'exchange' | 'marketry' | 'mine'
 export const SETTINGS_PROFILES: SettingsProfile[] = ['exchange', 'marketry', 'mine']
@@ -58,7 +58,21 @@ const PROFILED_SETTING_KEYS = [
   'heatmap.colorCustomOn',
 ]
 
+// 그래프 페이지의 비교 그래프 켜기와 업종 단계도 분류별로 따로 저장한다(2026-11-11). 기존 공통 값은 세 분류의 처음 값으로 복사한다.
+const GRAPH_PROFILED_SETTING_KEYS = ['groupPage.graphMode', 'groupPage.depth']
+
 const MIGRATIONS: Record<number, (preferences: Preferences) => Preferences> = {
+  4: preferences => {
+    const next = { ...preferences }
+    for (const key of GRAPH_PROFILED_SETTING_KEYS) {
+      if (!Object.hasOwn(preferences, key)) continue
+      for (const profile of SETTINGS_PROFILES) {
+        const target = profileSettingKey(profile, key)
+        if (!Object.hasOwn(next, target)) next[target] = preferences[key]
+      }
+    }
+    return next
+  },
   3: preferences => {
     const next = { ...preferences }
     for (const key of ['heatmap.tierRangeMinIndex', 'heatmap.tierRangeMaxIndex', 'heatmap.tierRangeMinValue', 'heatmap.tierRangeMaxValue']) {
