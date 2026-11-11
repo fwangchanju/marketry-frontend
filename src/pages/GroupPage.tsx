@@ -32,6 +32,7 @@ import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { usePersistedState } from '@/hooks/usePersistedState'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { usePageSetting } from '@/hooks/usePageSetting'
+import { profileSettingKey } from '@/utils/settingsSchema'
 import { collectItems, computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredHeatmap'
 import { CAPTURE_ID } from '@/utils/captureIds'
@@ -100,13 +101,14 @@ export default function GroupPage() {
     excludedMarketValueTiers,
     excludedSectorIds,
     colorScale,
+    settingsProfile,
   } = useGlobalSettings({ allowChangeRateMode: true })
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/단독 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
-  const [graphMode, setGraphMode] = usePageSetting<GroupGraphMode>('groupPage.graphMode', 'current')
+  const [graphMode, setGraphMode] = usePageSetting<GroupGraphMode>(profileSettingKey(settingsProfile, 'groupPage.graphMode'), 'current')
   // 막대 하나가 가리키는 업종 분류 깊이(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 고를 수 있다.
-  const [groupDepth, setGroupDepth] = usePageSetting<number>('groupPage.depth', 1)
+  const [groupDepth, setGroupDepth] = usePageSetting<number>(profileSettingKey(settingsProfile, 'groupPage.depth'), 1)
   const selectableDepth = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT' ? 1 : 3
   const effectiveDepth = Math.min(groupDepth, selectableDepth)
 

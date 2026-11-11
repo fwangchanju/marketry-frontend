@@ -30,7 +30,7 @@ test('기존 분류 설정을 세 프로필의 최초 값으로 복사하고 이
   })
 
   assert.equal(result.changed, true)
-  assert.equal(result.preferences['settings.version'], 4)
+  assert.equal(result.preferences['settings.version'], 5)
   assert.equal(result.preferences[profileSettingKey('exchange', 'heatmap.selectedMaxDepth')], 2)
   assert.equal(result.preferences[profileSettingKey('marketry', 'heatmap.selectedMaxDepth')], 1)
   assert.equal(result.preferences[profileSettingKey('mine', 'heatmap.selectedMaxDepth')], 2)
@@ -38,7 +38,7 @@ test('기존 분류 설정을 세 프로필의 최초 값으로 복사하고 이
 })
 
 test('새 스키마는 다시 이관하지 않는다', () => {
-  const raw = { 'settings.version': 4, [profileSettingKey('exchange', 'heatmap.selectedMaxDepth')]: 1 }
+  const raw = { 'settings.version': 5, [profileSettingKey('exchange', 'heatmap.selectedMaxDepth')]: 1 }
   const result = migratePreferences(raw)
   assert.equal(result.changed, false)
   assert.equal(result.preferences, raw)
@@ -51,7 +51,7 @@ test('기존 공통 지도 표시값도 세 프로필로 복사해 전환 시 �
     'heatmap.decimalPlacesIndex': 2,
   })
 
-  assert.equal(result.preferences['settings.version'], 4)
+  assert.equal(result.preferences['settings.version'], 5)
   for (const profile of ['exchange', 'marketry', 'mine']) {
     assert.equal(result.preferences[profileSettingKey(profile, 'heatmap.boxSizeMarketCapRatio')], 45)
     assert.equal(result.preferences[profileSettingKey(profile, 'heatmap.decimalPlacesIndex')], 2)
@@ -66,4 +66,22 @@ test('공통 시가총액 범위를 각 프로필에 복사하고 기존 프로�
     assert.equal(preferences[profileSettingKey(profile, 'heatmap.tierRangeMinValue')], 500)
     assert.equal(preferences[profileSettingKey(profile, 'heatmap.tierRangeMaxValue')], null)
   }
+})
+
+test('그래프 페이지의 비교 그래프 켜기와 업종 단계를 세 분류의 처음 값으로 복사한다', () => {
+  const result = migratePreferences({
+    'settings.version': 4,
+    'groupPage.graphMode': 'delta',
+    'groupPage.depth': 2,
+    [profileSettingKey('mine', 'groupPage.depth')]: 3,
+  })
+
+  assert.equal(result.changed, true)
+  assert.equal(result.preferences['settings.version'], 5)
+  for (const profile of ['exchange', 'marketry', 'mine']) {
+    assert.equal(result.preferences[profileSettingKey(profile, 'groupPage.graphMode')], 'delta')
+  }
+  assert.equal(result.preferences[profileSettingKey('exchange', 'groupPage.depth')], 2)
+  assert.equal(result.preferences[profileSettingKey('marketry', 'groupPage.depth')], 2)
+  assert.equal(result.preferences[profileSettingKey('mine', 'groupPage.depth')], 3)
 })
