@@ -32,25 +32,106 @@ export const JAPAN_MAP_FIXED = {
 } as const
 
 export const JAPAN_MAP_PREFERENCES_STORAGE = 'marketry:japan-map-settings'
+// 일본 지도 설정을 서버에 저장하는 이름 — 국내 지도처럼 설정창의 저장 버튼으로 올라가고 계정에 저장된다.
+// 일본 지도 설정은 항목마다 저장 이름을 따로 둔다. 설정창 항목의 저장 안 한 변경 점이 항목별로 찍히게 하기 위해서다.
+export const JAPAN_MAP_SETTING_PREFIX = 'japan.map.'
+export const japanMapSettingKey = (name: keyof typeof JAPAN_MAP_DEFAULTS) => `${JAPAN_MAP_SETTING_PREFIX}${name}`
 
-// 저장된 값 중 형식이 맞는 것만 쓰고 나머지는 기본값으로 둔다.
-export function readJapanMapPreferences(stored: string | null): JapanMapPreferences {
-  if (!stored) return { ...JAPAN_MAP_DEFAULTS }
-  try {
-    const parsed: unknown = JSON.parse(stored)
-    if (typeof parsed !== 'object' || parsed === null) return { ...JAPAN_MAP_DEFAULTS }
-    const source = parsed as Record<string, unknown>
-    const result: Record<string, unknown> = { ...JAPAN_MAP_DEFAULTS }
-    for (const [key, fallback] of Object.entries(JAPAN_MAP_DEFAULTS)) {
-      const value = source[key]
-      if (value === null ? key === 'maxDepth' : typeof value === typeof fallback || (key === 'maxDepth' && typeof value === 'number')) {
-        if (value !== undefined) result[key] = value
-      }
+// 설정창 항목이 국내 설정 이름으로 적어 둔 변경 점 이름을 일본 지도 저장 이름으로 바꾼다.
+export const JAPAN_MAP_DRAFT_KEY_MAP: Readonly<Record<string, string>> = {
+  'heatmap.sectorLevelEnabled': japanMapSettingKey('sectorLevelEnabled'),
+  'heatmap.selectedMaxDepth': japanMapSettingKey('maxDepth'),
+  'heatmap.activeDepthMetric': japanMapSettingKey('activeDepthMetric'),
+  'heatmap.depthMetricEnabled': japanMapSettingKey('depthMetricEnabled'),
+  'heatmap.depthMetricMinIndex': japanMapSettingKey('depthMetricMinIndex'),
+  'heatmap.depthMetricMaxIndex': japanMapSettingKey('depthMetricMaxIndex'),
+  'heatmap.boxSizeMarketCapRatio': japanMapSettingKey('boxSizeMarketCapRatio'),
+  'heatmap.stockLabelEnabled': japanMapSettingKey('stockLabelEnabled'),
+  'heatmap.stockLabelModeIndex': japanMapSettingKey('stockLabelModeIndex'),
+  'heatmap.decimalPlacesIndex': japanMapSettingKey('decimalPlaces'),
+  'heatmap.topPickEnabled': japanMapSettingKey('topPickEnabled'),
+  'heatmap.topPickDepth': japanMapSettingKey('topPickDepth'),
+  'heatmap.topPickCount': japanMapSettingKey('topPickCount'),
+}
+
+// 계정에 저장된 설정에서 일본 지도 항목만 골라 형식이 맞는 것만 돌려준다.
+export function japanMapSavedValues(account: Record<string, unknown> | undefined): Partial<JapanMapPreferences> {
+  const picked: Record<string, unknown> = {}
+  for (const name of Object.keys(JAPAN_MAP_DEFAULTS)) picked[name] = account?.[`${JAPAN_MAP_SETTING_PREFIX}${name}`]
+  return pickJapanMapPreferenceValues(picked)
+}
+
+// 값 중 이름과 형식이 맞는 것만 골라낸다. 나머지는 버린다.
+export function pickJapanMapPreferenceValues(source: unknown): Partial<JapanMapPreferences> {
+  if (typeof source !== 'object' || source === null) return {}
+  const record = source as Record<string, unknown>
+  const result: Record<string, unknown> = {}
+  for (const [key, fallback] of Object.entries(JAPAN_MAP_DEFAULTS)) {
+    const value = record[key]
+    if (value === undefined) continue
+    if (value === null ? key === 'maxDepth' : typeof value === typeof fallback || (key === 'maxDepth' && typeof value === 'number')) {
+      result[key] = value
     }
-    return result as JapanMapPreferences
-  } catch {
-    return { ...JAPAN_MAP_DEFAULTS }
   }
+  return result as Partial<JapanMapPreferences>
+}
+
+// 이 브라우저에 저장된 값 중 형식이 맞는 것만 읽는다.
+export function readJapanMapOverrides(stored: string | null): Partial<JapanMapPreferences> {
+  if (!stored) return {}
+  try {
+    return pickJapanMapPreferenceValues(JSON.parse(stored))
+  } catch {
+    return {}
+  }
+}
+
+// 저장된 값 중 형식이 맞는 것만 쓰고 나머지는 기본값(관리자가 정한 기본값이 있으면 그 값)으로 둔다.
+export function readJapanMapPreferences(stored: string | null, base: JapanMapPreferences = JAPAN_MAP_DEFAULTS): JapanMapPreferences {
+  return { ...base, ...readJapanMapOverrides(stored) }
+}
+
+// 관리자가 정한 일본 지도 기본값(서버의 관리 기본값 japan)을 코드 기본값 위에 얹는다. 형식이 맞지 않는 값은 쓰지 않는다.
+export function japanMapManagedDefaults(profiles: Record<string, unknown> | undefined): JapanMapPreferences {
+  return { ...JAPAN_MAP_DEFAULTS, ...pickJapanMapPreferenceValues(profiles?.japan) }
+}
+
+// 기본값 화면(관리자)이 보여 주는 모양 — 국내 MARKETRY·거래소와 같은 줄을 쓰도록 같은 이름('heatmap.*')으로 옮긴다.
+// 일본 지도에 없는 항목(시가총액 범위, 업종 제외)은 전체·없음으로 둔다.
+export function japanMapDisplayValues(preferences: JapanMapPreferences): { preferences: Record<string, unknown>; excludedSectors: Array<[string, string]> } {
+  return {
+    preferences: {
+      'heatmap.tierRangeMinValue': 0,
+      'heatmap.tierRangeMaxValue': null,
+      'heatmap.sectorLevelEnabled': preferences.sectorLevelEnabled,
+      'heatmap.selectedMaxDepth': preferences.maxDepth,
+      'heatmap.activeDepthMetric': preferences.activeDepthMetric,
+      'heatmap.depthMetricEnabled': preferences.depthMetricEnabled,
+      'heatmap.depthMetricMinIndex': preferences.depthMetricMinIndex,
+      'heatmap.depthMetricMaxIndex': preferences.depthMetricMaxIndex,
+      'heatmap.boxSizeMarketCapRatio': preferences.boxSizeMarketCapRatio,
+      'heatmap.stockLabelEnabled': preferences.stockLabelEnabled,
+      'heatmap.stockLabelModeIndex': preferences.stockLabelModeIndex,
+      'heatmap.decimalPlacesIndex': preferences.decimalPlaces,
+      'heatmap.strongIndustryColor': JAPAN_MAP_FIXED.strongIndustryColor,
+      'heatmap.topPickEnabled': preferences.topPickEnabled,
+      'heatmap.topPickDepth': preferences.topPickDepth,
+      'heatmap.topPickCount': preferences.topPickCount,
+    },
+    excludedSectors: [],
+  }
+}
+
+// 관리자가 서버에 저장할 값 — 설정 이름 그대로 모든 항목을 보낸다.
+export function japanMapPublishPayload(preferences: JapanMapPreferences): Record<string, unknown> {
+  const payload: Record<string, unknown> = {}
+  for (const key of Object.keys(JAPAN_MAP_DEFAULTS)) payload[key] = preferences[key as keyof JapanMapPreferences]
+  return payload
+}
+
+// 텔레그램 렌더러가 여는 일본 지도 화면인지. 이때는 이 브라우저의 저장값을 쓰지 않고 관리자가 정한 기본값만 쓴다.
+export function isJapanMapCapture() {
+  return window.location.pathname === '/map/japan' && new URLSearchParams(window.location.search).get('capture') === 'mobile'
 }
 
 // 설정창이 고른 탭을 기억하는 이름. 국내 화면과 겹치지 않게 일본 화면마다 따로 둔다.
