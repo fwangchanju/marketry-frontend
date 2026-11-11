@@ -300,15 +300,19 @@ export default function AdminDashboardPage() {
                   <ChartFrame title="화면 속도·오류" note="화면별 첫 렌더링·오류, 지도 캡처 시간">
                     {dashboardMetrics.isError ? <DashboardMetricError /> : dashboardMetrics.data ? (
                       <div className="w-full self-center px-1">
-                        <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 border-b border-ui-border pb-1 text-[10px] text-ui-muted"><span>화면</span><span>첫 렌더링 평균</span><span>오류</span></div>
-                        {dashboardMetrics.data.pages.length ? dashboardMetrics.data.pages.map(row => (
-                          <div key={row.page} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
+                        <div className="grid grid-cols-3 gap-x-3 border-b border-ui-border pb-1 text-[10px] text-ui-muted"><span>화면</span><span className="text-center">첫 렌더링 평균</span><span className="text-right">오류</span></div>
+                        {dashboardMetrics.data.pages.length ? [...dashboardMetrics.data.pages].sort((a, b) => b.clientErrors - a.clientErrors || a.page.localeCompare(b.page)).map(row => (
+                          <div key={row.page} className="grid grid-cols-3 items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
                             <span>{DASHBOARD_PAGE_LABELS[row.page] ?? row.page}</span>
-                            <span className="tabular-nums">{row.pageLoads ? `${row.averageLoadMs} ms` : '—'}</span>
-                            <span className="min-w-5 text-right tabular-nums">{formatCount(row.clientErrors)}</span>
+                            <span className="text-center tabular-nums">{row.pageLoads ? `${row.averageLoadMs} ms` : '—'}</span>
+                            <span className="text-right tabular-nums">{formatCount(row.clientErrors)}</span>
                           </div>
                         )) : <p className="m-0 py-3 text-center text-xs text-ui-muted">화면 지표를 수집하는 중입니다.</p>}
-                        <div className="mt-3 flex items-center justify-between gap-2 text-xs"><span className="text-ui-muted">모바일 지도 캡처 평균</span><span className="font-medium tabular-nums text-ui-white">{dashboardMetrics.data.mobileCaptures ? `${dashboardMetrics.data.averageMobileCaptureMs} ms · ${formatCount(dashboardMetrics.data.mobileCaptures)}회` : '기록 대기'}</span></div>
+                        <div className="mt-3 grid grid-cols-3 items-center gap-x-3 text-xs text-ui-text">
+                          <span>모바일 지도 캡처 평균</span>
+                          <span className="text-center tabular-nums">{dashboardMetrics.data.mobileCaptures ? `${dashboardMetrics.data.averageMobileCaptureMs} ms` : '—'}</span>
+                          <span className="text-right tabular-nums">{dashboardMetrics.data.mobileCaptures ? `${formatCount(dashboardMetrics.data.mobileCaptures)}회` : '기록 대기'}</span>
+                        </div>
                       </div>
                     ) : <DashboardMetricLoading />}
                   </ChartFrame>
