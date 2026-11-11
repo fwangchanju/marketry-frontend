@@ -71,6 +71,16 @@ export function getAdminVisitors(days: number, signal?: AbortSignal) {
 
 const VisitorSourceSchema = z.array(z.object({ source: z.enum(['NAVER', 'GOOGLE', 'DIRECT', 'OTHER']), visitors: z.number() }))
 
+const BotVisitSchema = z.object({
+  byName: z.array(z.object({ name: z.string(), visits: z.number() })),
+  byDay: z.array(z.object({ date: z.string(), visits: z.number() })),
+})
+
+// 최근 N일(오늘 포함)의 검색 로봇 방문 — 이름별 합과 날짜별 합. 사람 방문과 따로 센 값이다.
+export function getAdminBotVisits(days: number, signal?: AbortSignal) {
+  return client.get('/admin/members/bot-visits', { params: { days }, signal }).then(response => BotVisitSchema.parse(response.data))
+}
+
 // 최근 N일(오늘 포함)의 비회원 방문을 유입 경로별로 센 값 — 네 경로가 모두 오고, 경로를 기록하기 전의 방문은 빠진다.
 export function getAdminVisitorSources(days: number, signal?: AbortSignal) {
   return client.get('/admin/members/visitor-sources', { params: { days }, signal }).then(response => VisitorSourceSchema.parse(response.data))

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getAdminAccessFrequency, getAdminDailyAccess, getAdminSignups, getAdminVisitorSources, getAdminVisitors } from '@/api/adminMembers'
+import { getAdminAccessFrequency, getAdminBotVisits, getAdminDailyAccess, getAdminSignups, getAdminVisitorSources, getAdminVisitors } from '@/api/adminMembers'
 import { getAdminDashboardMetrics } from '@/api/adminDashboard'
 import DailyAccessChart from '@/components/DailyAccessChart'
 import FrameBadge from '@/components/FrameBadge'
@@ -88,6 +88,13 @@ export default function AdminDashboardPage() {
   const countedDays = (visitors.data ?? []).filter(row => row.visitors > 0)
   const totalVisitors = countedDays.reduce((sum, row) => sum + row.visitors, 0)
   const totalJoined = countedDays.reduce((sum, row) => sum + row.joined, 0)
+  const botVisits = useQuery({
+    queryKey: ['admin-member-bot-visits', session?.userId, period],
+    queryFn: ({ signal }) => getAdminBotVisits(period, signal),
+    enabled: isAdmin,
+    staleTime: 30_000,
+    retry: false,
+  })
   const visitorSources = useQuery({
     queryKey: ['admin-member-visitor-sources', session?.userId, period],
     queryFn: ({ signal }) => getAdminVisitorSources(period, signal),
@@ -173,6 +180,22 @@ export default function AdminDashboardPage() {
                       <DashboardMetricError />
                     ) : visitors.data ? (
                       <DailyAccessChart rows={visitors.data.map(row => ({ date: row.date, members: row.visitors }))} ariaLabelPrefix="비회원 방문자 수" />
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
+                  <ChartFrame title="검색 로봇" note="사람 방문과 별도">
+                    {botVisits.isError ? (
+                      <DashboardMetricError />
+                    ) : botVisits.data ? (
+                      <div className="flex min-h-0 flex-1 flex-col gap-2">
+                        <DailyAccessChart rows={botVisits.data.byDay.map(row => ({ date: row.date, members: row.visits }))} ariaLabelPrefix="검색 로봇 방문 수" />
+                        <p className="m-0 truncate text-xs text-ui-muted">
+                          {botVisits.data.byName.length === 0
+                            ? '기간 안에 기록된 로봇 방문이 없습니다.'
+                            : botVisits.data.byName.map(row => `${row.name} ${formatCount(row.visits)}회`).join(' · ')}
+                        </p>
+                      </div>
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
