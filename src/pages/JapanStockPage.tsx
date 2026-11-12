@@ -29,6 +29,8 @@ import { AdminStockSectorCell, BulkAssignButton } from '@/components/AdminStockT
 import { createStockMatcher } from '@/utils/stockSearch'
 import { toJoEokDecimal } from '@/utils/format'
 import { compareKoreanText } from '@/utils/koreanSort'
+import { buildSectorParentHints } from '@/utils/sectorFilterHints'
+import { isProtectedSectorName } from '@/utils/protectedSector'
 import stocks from '@/data/japanStocks.json'
 
 type ClassificationField = 'sector' | 'industry' | 'subIndustry'
@@ -115,7 +117,12 @@ export default function JapanStockPage() {
     if (next.has(value)) next.delete(value)
     else next.add(value)
     return { ...previous, [key]: next }
-  })} onSelectAll={() => setExcluded(previous => ({ ...previous, [key]: new Set() }))} onSelectNone={values => setExcluded(previous => ({ ...previous, [key]: new Set(values) }))} />
+  })} onSelectAll={() => setExcluded(previous => ({ ...previous, [key]: new Set() }))} onSelectNone={values => setExcluded(previous => ({ ...previous, [key]: new Set(values) }))}
+    selectOnlyOnSearch
+    isProtected={key === 'customSector' ? isProtectedSectorName : undefined}
+    hintOf={key === 'customIndustry' ? value => sectorParentHints.midSector.get(value) : key === 'customSubIndustry' ? value => sectorParentHints.subSector.get(value) : undefined}
+    optionOrder={key === 'customSector' ? categoryChoices.levelOrder[0] : key === 'customIndustry' ? categoryChoices.levelOrder[1] : key === 'customSubIndustry' ? categoryChoices.levelOrder[2] : undefined}
+    orderMode={key === 'customSector' || key === 'customIndustry' || key === 'customSubIndustry' ? { value: orderMode, onChange: setOrderMode } : undefined} />
   const columns: { key: SortKey; label: string; filter?: FilterKey }[] = [
     { key: 'code', label: '종목코드' }, { key: 'englishName', label: '종목명' }, { key: 'name', label: '한글명' }, { key: 'marketCap', label: '시가총액 (¥)' }, { key: 'marketCapKrw', label: '시가총액 (₩)' }, { key: 'sector', label: '야후 섹터', filter: 'sector' }, { key: 'industry', label: '야후 업종', filter: 'industry' }, { key: 'customSector', label: '대분류', filter: 'customSector' }, { key: 'customIndustry', label: '중분류', filter: 'customIndustry' }, { key: 'customSubIndustry', label: '소분류', filter: 'customSubIndustry' },
   ]
@@ -138,8 +145,22 @@ export default function JapanStockPage() {
       if (b.name === '미분류') return -1
       return (orderMode === 'cap' ? (totals.get(b.id) ?? 0) - (totals.get(a.id) ?? 0) : 0) || compareKoreanText(a.name, b.name)
     }).map(category => ({ ...category, label: category.name }))
-    return { all, roots: sort(roots), childrenOf: (parentId: number | undefined) => parentId === undefined ? [] : sort(all.filter(category => category.parentId === parentId)) }
+    const parentOf = new Map(all.map(category => [category.id, category.parentId]))
+    const depthOf = (category: Category) => { let depth = 0; let parent = parentOf.get(category.id) ?? null; while (parent !== null && depth < 3) { depth += 1; parent = parentOf.get(parent) ?? null } return depth }
+    // 필터가 쓰는 단계별 전체 이름 순서 — 고른 보기 순서(가나다·시가총액)를 따른다.
+    const levelOrder = [0, 1, 2].map(depth => sort(all.filter(category => depthOf(category) === depth)).map(category => category.name))
+    return { all, roots: sort(roots), levelOrder, childrenOf: (parentId: number | undefined) => parentId === undefined ? [] : sort(all.filter(category => category.parentId === parentId)) }
   }, [categoryQuery.data, orderMode, rows])
+  const sectorParentHints = useMemo(() => {
+    const all = categoryQuery.data ?? []
+    const byId = new Map(all.map(category => [category.id, category]))
+    return buildSectorParentHints(all.map(category => {
+      const path: string[] = []
+      let current: Category | undefined = category
+      while (current && path.length < 4) { path.unshift(current.name); current = current.parentId === null ? undefined : byId.get(current.parentId) }
+      return path
+    }))
+  }, [categoryQuery.data])
   const findCategory = (name: string, parentId: number | null | undefined) => categoryChoices.all.find(category => category.parentId === parentId && category.name === name)
   const categoryOptions = (field: ClassificationField, sector = '', industry = '') => {
     const root = findCategory(sector, null)
@@ -156,7 +177,7 @@ export default function JapanStockPage() {
       }
     } catch { void appAlert('분류를 저장하지 못했습니다. 다시 시도해 주세요.', { title: bulk ? '일괄 변경 실패' : '분류 저장 실패' }) }
   }
-  const classificationCell = (code: string, field: ClassificationField, value: string, sector: string, industry = '') => <AdminStockSectorCell value={value || '-'} options={categoryOptions(field, sector, industry)} onAssign={id => void assignCategory([code], id)} isHighlighted={false} rowHoverClass="hover:bg-[var(--brand)]/35" onHoverStart={() => {}} onHoverEnd={() => {}} onEditingChange={() => {}} disabled={!canEdit || categoryQuery.isLoading || categoryQuery.isError || assignClassification.isPending || (field === 'industry' && !sector) || (field === 'subIndustry' && !industry)} />
+  const classificationCell = (code: string, field: ClassificationField, value: string, sector: string, industry = '') => <AdminStockSectorCell value={value || '-'} options={categoryOptions(field, sector, industry)} onAssign={id => void assignCategory([code], id)} isHighlighted={false} rowHoverClass="hover:bg-[var(--brand)]/35" onHoverStart={() => {}} onHoverEnd={() => {}} onEditingChange={() => {}} contextLabel={field === 'industry' && sector ? `대분류: ${sector}` : field === 'subIndustry' && industry ? `중분류: ${industry}` : undefined} disabled={!canEdit || categoryQuery.isLoading || categoryQuery.isError || assignClassification.isPending || (field === 'industry' && !sector) || (field === 'subIndustry' && !industry)} disabledHint={field === 'subIndustry' ? '중분류를 먼저 지정해 주세요' : undefined} title={`${field === 'sector' ? '대분류' : field === 'industry' ? '중분류' : '소분류'} 개별 변경`} orderMode={{ value: orderMode, onChange: setOrderMode }} />
   const selectedSectors = new Set([...selected].map(code => rows.find(row => row.code === code)?.customSector || ''))
   const sharedSector = selectedSectors.size === 1 ? [...selectedSectors][0] : ''
   const selectedIndustries = new Set([...selected].map(code => rows.find(row => row.code === code)?.customIndustry || ''))
