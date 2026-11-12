@@ -39,9 +39,13 @@ type FilterKey = 'sector' | 'industry' | 'customSector' | 'customIndustry' | 'cu
 type Classification = { sector: string | null; industry: string | null; subIndustry: string | null }
 type Category = { id: number; parentId: number | null; name: string }
 const COLUMN_WIDTH_KEYS: readonly StockColumnKey[] = ['stockCode', 'stockName', 'alias', 'totalMarketValue', 'totalMarketValueKrw', 'industry', 'parentSector', 'midSector', 'subSector', 'overseasSubSector']
-// 국내 종목 표의 고정 열과 가변 열을 기준으로 이름 두 칸의 폭을 맞춘다.
+// 국내 종목 표의 고정 열과 가변 열을 기준으로 일본 표의 칸 경계를 국내 표와 같은 위치에 맞춘다.
+// 국내: 종목코드 | 종목명 | 약칭 | 시가총액 | [규모·마켓·NXT·거래소 분류] | 대분류 | 중분류 | 소분류 (가변 6칸은 남는 폭을 같게 나눔)
+// 일본: 종목코드 | 종목명 | 한글명 | 시가총액(¥) | [시가총액(₩)·야후 섹터·야후 업종] | 대분류 | 중분류 | 소분류
+// 대괄호 묶음은 칸 수가 달라 묶음 전체 폭만 같게 한다(국내 규모·마켓·NXT 고정 폭 합 + 가변 한 칸).
 const STOCK_FIXED_KEYS: readonly StockColumnKey[] = ['stockCode', 'totalMarketValue', 'sizeTier', 'market', 'nxt']
 const STOCK_FIXED_WIDTH = STOCK_CHECKBOX_COLUMN_PX + STOCK_FIXED_KEYS.reduce((sum, key) => sum + (stockColumnFixedPx(key) ?? 0), 0)
+const MIDDLE_GROUP_FIXED_PX = (['sizeTier', 'market', 'nxt'] as const).reduce((sum, key) => sum + (stockColumnFixedPx(key) ?? 0), 0)
 // 임시 환산 기준: 1엔당 8.5원 (실시간 환율 연동 전).
 const JPY_TO_KRW = 8.5
 const YEN_PER_EOK = 100_000_000
@@ -70,16 +74,22 @@ export default function JapanStockPage() {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLElement>(null)
   const tableContainerRef = useRef<HTMLDivElement>(null)
-  const [nameColumnWidth, setNameColumnWidth] = useState(FLEX_COLUMN_MIN_PX)
+  const [flexColumnWidth, setFlexColumnWidth] = useState(FLEX_COLUMN_MIN_PX)
   useEffect(() => {
     const container = tableContainerRef.current
     if (!container) return
-    const updateWidth = () => setNameColumnWidth(Math.max(FLEX_COLUMN_MIN_PX, (container.clientWidth - STOCK_FIXED_WIDTH) / 6))
+    const updateWidth = () => setFlexColumnWidth(Math.max(FLEX_COLUMN_MIN_PX, (container.clientWidth - STOCK_FIXED_WIDTH) / 6))
     const observer = new ResizeObserver(updateWidth)
     observer.observe(container)
     updateWidth()
     return () => observer.disconnect()
   }, [])
+  // 열 키 이름은 폭 자리만 뜻한다: industry=야후 섹터, parentSector=야후 업종, midSector=대분류, subSector=중분류, overseasSubSector=소분류.
+  // 시가총액(₩)은 고정 폭이고, 가운데 묶음(₩·섹터·업종)은 국내 규모·마켓·NXT + 가변 한 칸과 같은 폭이 되도록 섹터·업종이 나눠 갖는다.
+  const columnWidths = useMemo<Partial<Record<StockColumnKey, number>>>(() => {
+    const middleVariable = (MIDDLE_GROUP_FIXED_PX + flexColumnWidth - (stockColumnFixedPx('totalMarketValueKrw') ?? 0)) / 2
+    return { stockName: flexColumnWidth, alias: flexColumnWidth, industry: middleVariable, parentSector: middleVariable, midSector: flexColumnWidth, subSector: flexColumnWidth, overseasSubSector: flexColumnWidth }
+  }, [flexColumnWidth])
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const rows = useMemo(() => {
@@ -217,7 +227,7 @@ export default function JapanStockPage() {
           </div>
           <div ref={tableContainerRef} className={`min-h-0 flex-1 ${isLoading || isError ? 'flex items-center justify-center pt-4 pb-[47.5px]' : 'overflow-auto border border-ui-border'}`}>
             {isLoading ? <Spinner showElapsed /> : isError ? <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void namesQuery.refetch(); void classificationsQuery.refetch(); void categoryQuery.refetch(); void quotesQuery.refetch() }} /> : <table style={{ minWidth: stockTableMinWidthPx(COLUMN_WIDTH_KEYS) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
-              <StockTableColGroup keys={COLUMN_WIDTH_KEYS} widths={{ stockName: nameColumnWidth, alias: nameColumnWidth }} />
+              <StockTableColGroup keys={COLUMN_WIDTH_KEYS} widths={columnWidths} />
               <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]"><tr style={{ height: STOCK_HEADER_ROW_PX }}><th className="bg-[var(--ui-panel)] px-0 text-center">{canEdit && <input type="checkbox" className="mx-auto my-0 block thin-check" checked={allVisibleSelected} onChange={toggleVisible} aria-label="표시된 종목 전체 선택" />}</th>{columns.map(column => <th key={column.key} scope="col" className="whitespace-nowrap bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white"><StockSortHeader label={column.label} state={sort.key === column.key ? sort.direction : null} onSort={() => changeSort(column.key)} filter={column.filter ? filterButton(column.filter, column.label) : undefined} /></th>)}</tr></thead>
               <tbody>{filtered.map((stock, index) => <tr key={stock.code} {...(canEdit ? { ...rowProps(index), onMouseDown: (event: MouseEvent<HTMLTableRowElement>) => { if (!(event.target as HTMLElement).closest('[data-no-row-select]')) rowProps(index).onMouseDown(event) } } : {})} className={selected.has(stock.code) ? 'bg-[var(--brand)]/20' : 'hover:bg-[var(--brand)]/10'}><td className="px-0 text-center">{canEdit && <input type="checkbox" className="mx-auto my-0 block thin-check" checked={selected.has(stock.code)} onChange={() => {}} aria-label={`${stock.name} 선택`} />}</td><td className="text-center text-ui-muted">{stock.code}</td><td className="truncate pl-2 text-ui-muted" data-hint={stock.englishName || undefined}>{stock.englishName || '—'}</td><td onClick={event => event.stopPropagation()} onMouseDown={event => event.stopPropagation()} className={`truncate px-1 ${canEdit && !namesQuery.isLoading && !namesQuery.isError ? 'cursor-pointer hover:bg-[var(--brand)]/35' : ''}`}>{!canEdit ? <span className="px-1 text-ui-white">{stock.name}</span> : editingCode === stock.code ? <input autoFocus aria-label={`${stock.code} 한글명`} value={draftName} maxLength={100} disabled={saveName.isPending} onChange={event => setDraftName(event.target.value)} onBlur={() => { if (!saveName.isPending) setEditingCode(null) }} onKeyDown={event => { if (event.nativeEvent.isComposing || event.keyCode === 229) return; if (event.key === 'Enter') void submitName(stock.code, stock.name); if (event.key === 'Escape') setEditingCode(null) }} className="nes-input is-dark block h-5 w-full rounded-md border-0 bg-[var(--ui-panel)] px-1 text-left text-sm text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]" /> : <button type="button" disabled={namesQuery.isLoading || namesQuery.isError} onClick={() => { setDraftName(stock.name); setEditingCode(stock.code) }} className="w-full truncate border-0 bg-transparent px-1 text-left text-ui-white disabled:opacity-50">{stock.name}</button>}</td><td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok)} 엔</td><td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok * JPY_TO_KRW)} 원</td><td className="truncate pl-2 text-ui-muted" data-hint={stock.sector || undefined}>{stock.sector || '—'}</td><td className="truncate pl-2 text-ui-muted" data-hint={stock.industry || undefined}>{stock.industry || '—'}</td>{classificationCell(stock.code, 'sector', stock.customSector, stock.customSector)}{classificationCell(stock.code, 'industry', stock.customIndustry, stock.customSector)}{classificationCell(stock.code, 'subIndustry', stock.customSubIndustry, stock.customSector, stock.customIndustry)}</tr>)}</tbody>
             </table>}
