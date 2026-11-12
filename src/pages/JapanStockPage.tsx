@@ -40,9 +40,9 @@ type Classification = { sector: string | null; industry: string | null; subIndus
 type Category = { id: number; parentId: number | null; name: string }
 const COLUMN_WIDTH_KEYS: readonly StockColumnKey[] = ['stockCode', 'stockName', 'alias', 'totalMarketValue', 'totalMarketValueKrw', 'industry', 'parentSector', 'midSector', 'subSector', 'overseasSubSector']
 // 국내 종목 표의 고정 열과 가변 열을 기준으로 일본 표의 칸 경계를 국내 표와 같은 위치에 맞춘다.
-// 국내: 종목코드 | 종목명 | 약칭 | 시가총액 | [규모·마켓·NXT·거래소 분류] | 대분류 | 중분류 | 소분류 (가변 6칸은 남는 폭을 같게 나눔)
-// 일본: 종목코드 | 종목명 | 한글명 | 시가총액(¥) | [시가총액(₩)·야후 섹터·야후 업종] | 대분류 | 중분류 | 소분류
-// 대괄호 묶음은 칸 수가 달라 묶음 전체 폭만 같게 한다(국내 규모·마켓·NXT 고정 폭 합 + 가변 한 칸).
+// 국내: 종목코드 | 종목명 | 약칭 | 시가총액 | [규모·마켓·NXT] | 거래소 분류 | 대분류 | 중분류 | 소분류 (가변 6칸은 남는 폭을 같게 나눔)
+// 일본: 종목코드 | 종목명 | 한글명 | 시가총액(¥) | [시가총액(₩)·야후 섹터] | 야후 업종 | 대분류 | 중분류 | 소분류
+// 대괄호 묶음은 칸 수가 달라 묶음 전체 폭만 같게 한다(국내 규모·마켓·NXT 고정 폭 합). 거래소 분류와 야후 업종부터는 칸마다 같은 위치다.
 const STOCK_FIXED_KEYS: readonly StockColumnKey[] = ['stockCode', 'totalMarketValue', 'sizeTier', 'market', 'nxt']
 const STOCK_FIXED_WIDTH = STOCK_CHECKBOX_COLUMN_PX + STOCK_FIXED_KEYS.reduce((sum, key) => sum + (stockColumnFixedPx(key) ?? 0), 0)
 const MIDDLE_GROUP_FIXED_PX = (['sizeTier', 'market', 'nxt'] as const).reduce((sum, key) => sum + (stockColumnFixedPx(key) ?? 0), 0)
@@ -85,11 +85,16 @@ export default function JapanStockPage() {
     return () => observer.disconnect()
   }, [])
   // 열 키 이름은 폭 자리만 뜻한다: industry=야후 섹터, parentSector=야후 업종, midSector=대분류, subSector=중분류, overseasSubSector=소분류.
-  // 시가총액(₩)은 고정 폭이고, 가운데 묶음(₩·섹터·업종)은 국내 규모·마켓·NXT + 가변 한 칸과 같은 폭이 되도록 섹터·업종이 나눠 갖는다.
-  const columnWidths = useMemo<Partial<Record<StockColumnKey, number>>>(() => {
-    const middleVariable = (MIDDLE_GROUP_FIXED_PX + flexColumnWidth - (stockColumnFixedPx('totalMarketValueKrw') ?? 0)) / 2
-    return { stockName: flexColumnWidth, alias: flexColumnWidth, industry: middleVariable, parentSector: middleVariable, midSector: flexColumnWidth, subSector: flexColumnWidth, overseasSubSector: flexColumnWidth }
-  }, [flexColumnWidth])
+  // 시가총액(₩)은 고정 폭이고, 가운데 묶음(₩·섹터)은 국내 규모·마켓·NXT 폭 합과 같게 섹터가 나머지를 가진다. 야후 업종부터는 국내 가변 칸과 같은 폭이다.
+  const columnWidths = useMemo<Partial<Record<StockColumnKey, number>>>(() => ({
+    stockName: flexColumnWidth,
+    alias: flexColumnWidth,
+    industry: MIDDLE_GROUP_FIXED_PX - (stockColumnFixedPx('totalMarketValueKrw') ?? 0),
+    parentSector: flexColumnWidth,
+    midSector: flexColumnWidth,
+    subSector: flexColumnWidth,
+    overseasSubSector: flexColumnWidth,
+  }), [flexColumnWidth])
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const rows = useMemo(() => {
