@@ -554,7 +554,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
                   <td colSpan={showAlias ? 1 : 2} className={`${STOCK_BODY_CELL} truncate text-left !pl-2 ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>{row.stockName}</td>
                   {showAlias && <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{row.alias ?? '-'}</td>}
                   {/* MARKETRY 종목 표와 같은 표기('1,613.6조')와 오른쪽 정렬이다. */}
-                  <td className={`${STOCK_BODY_CELL} text-right !pr-2 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>
+                  <td className={`${STOCK_BODY_CELL} text-right !pr-3 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>
                   <td className={`${STOCK_BODY_CELL} text-center`}>{row.sizeTier || '-'}</td>
                   <td className={`${STOCK_BODY_CELL} text-center ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>
                     {row.market ? MARKET_LABEL[row.market] : '-'}
