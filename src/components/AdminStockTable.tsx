@@ -23,7 +23,8 @@ import { SearchBar } from './ReadOnlyTaxonomySheet'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 import { createStockMatcher } from '@/utils/stockSearch'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from './EmptyMessage'
-import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
+import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
+import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
 import { usePopupPosition, type PopupPosition } from '@/hooks/usePopupPosition'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import StockTableColGroup from '@/components/StockTableColGroup'
@@ -98,8 +99,8 @@ type SortKey =
   | 'nxt'
 type SortDirection = 'asc' | 'desc'
 
-// 체크박스(20px)가 줄 높이(29px)에서 남기는 상하 여백(약 4.5px)과 비슷하게 좌우 여백도 4.5px씩 둔다(20 + 9 = 29px).
-const CHECKBOX_COLUMN_WIDTH = '29px'
+// 체크박스(20px)가 줄 높이(29px)에서 남기는 상하 여백(약 4.5px)과 비슷하게 좌우 여백도 5px씩 둔다(20 + 10 = 30px).
+const CHECKBOX_COLUMN_WIDTH = `${STOCK_CHECKBOX_COLUMN_PX}px`
 // nes.css의 셀 좌우 패딩(1rem)이 남지 않도록 인라인으로 0에 가깝게 고정한다.
 const CHECKBOX_CELL_STYLE = { width: CHECKBOX_COLUMN_WIDTH, minWidth: CHECKBOX_COLUMN_WIDTH, maxWidth: CHECKBOX_COLUMN_WIDTH, paddingLeft: 0, paddingRight: 0 } as const
 
@@ -122,7 +123,7 @@ const COLUMNS: { key: SortKey; columnKey: StockColumnKey; header: string; align:
 ]
 
 const alignClass = (align: 'center' | 'left' | 'right') =>
-  align === 'right' ? 'text-right pr-3' : align === 'left' ? 'text-left pl-4' : 'text-center'
+  align === 'right' ? 'text-right pr-2' : align === 'left' ? 'text-left pl-4' : 'text-center'
 
 const MARKET_LABEL: Record<'KOSPI' | 'KOSDAQ', string> = { KOSPI: '코스피', KOSDAQ: '코스닥' }
 const marketColorClass = (market: 'KOSPI' | 'KOSDAQ') => (market === 'KOSPI' ? 'text-ui-muted' : 'text-[var(--brand)]')
@@ -1610,6 +1611,7 @@ export default function AdminStockTable({
   // 실제 <table>/<tr> 구조는 유지한 채(NES.css 스타일이 table 요소를 대상으로 하므로), 보이는 행 앞뒤로
   // 스페이서 <tr>만 넣어서 스크롤 높이를 흉내내는 방식.
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const columnWidths = useStockColumnWidths(scrollContainerRef)
   const rowVirtualizer = useVirtualizer({
     count: sorted.length,
     getScrollElement: () => scrollContainerRef.current,
@@ -1787,8 +1789,8 @@ export default function AdminStockTable({
         {isSelectionHintOpen && <SelectionHintBubble onClose={() => setIsSelectionHintOpen(false)} />}
         <div ref={scrollContainerRef} className="relative h-full overflow-auto">
           {/* 표 글자는 드래그해도 파랗게 선택되지 않게 한다(줄 드래그 선택과 겹치기 때문). 입력창 안의 글자는 그대로 선택할 수 있다. */}
-          <table style={{ minWidth: stockTableMinWidthPx(columnKeys) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [&_input]:select-text [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
-          <StockTableColGroup keys={columnKeys} />
+          <table style={{ minWidth: stockColumnWidthsTotal(columnWidths) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [&_input]:select-text [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
+          <StockTableColGroup keys={columnKeys} widths={columnWidths} />
           <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th
