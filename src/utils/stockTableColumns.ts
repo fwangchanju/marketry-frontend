@@ -26,11 +26,15 @@ export const STOCK_CHECKBOX_COLUMN_PX = 29
 // 종목코드·시가총액은 필터 아이콘이 없다(종목코드는 검색창으로 찾고, 시가총액은 규모 필터가 대신한다).
 const FIXED_COLUMN_PX: Partial<Record<StockColumnKey, number>> = {
   stockCode: 66,
-  totalMarketValue: 98,
-  totalMarketValueKrw: 98,
+  totalMarketValue: 110,
+  totalMarketValueKrw: 110,
   sizeTier: 86,
   market: 60,
   nxt: 64,
+  // 대·중·소분류는 글자 길이에 비해 넓어서 고정 폭으로 줄이고, 그 폭을 시가총액에 준다(국내·일본 표가 같은 값을 쓴다).
+  parentSector: 112.5,
+  midSector: 112.5,
+  subSector: 112.5,
 }
 
 // 남는 폭을 나눠 갖는 열의 최소 폭 — 이보다 좁아지면 표가 더 줄지 않고 옆으로 스크롤한다.
@@ -39,8 +43,8 @@ export const FLEX_COLUMN_MIN_PX = 110
 export const stockColumnFixedPx = (key: StockColumnKey): number | undefined => FIXED_COLUMN_PX[key]
 
 // 표 전체의 최소 폭 — 보이는 열로 계산한다.
-export const stockTableMinWidthPx = (keys: readonly StockColumnKey[]): number =>
-  STOCK_CHECKBOX_COLUMN_PX + keys.reduce((sum, key) => sum + (FIXED_COLUMN_PX[key] ?? FLEX_COLUMN_MIN_PX), 0)
+export const stockTableMinWidthPx = (keys: readonly StockColumnKey[], widths?: Partial<Record<StockColumnKey, number>>): number =>
+  STOCK_CHECKBOX_COLUMN_PX + keys.reduce((sum, key) => sum + (widths?.[key] ?? FIXED_COLUMN_PX[key] ?? FLEX_COLUMN_MIN_PX), 0)
 
 // 표 머리글 줄 높이(px) — 본문 한 줄(29px)의 두 배다. 글자 위아래 화살표와 글자 사이에 숨 쉴 간격을 둔다.
 export const STOCK_HEADER_ROW_PX = 58
