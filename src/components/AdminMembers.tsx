@@ -214,7 +214,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
       <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-auto" aria-busy={members.isFetching}>
         {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
         <table className="nes-table is-dark custom-page-table w-full min-w-[1150px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
-          <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 96 }} /><col style={{ width: 268 }} /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /><col style={{ width: 90 }} /></colgroup>
+          <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 96 }} /><col /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /><col style={{ width: 90 }} /></colgroup>
           <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th
