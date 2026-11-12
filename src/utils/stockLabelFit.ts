@@ -88,12 +88,12 @@ const GROUP_PREFIXES = [
 ]
 const isAsciiChar = (ch: string) => /[\x21-\x7E]/.test(ch)
 
-function groupSplitPositions(chars: string[]): number[] {
+function groupSplitPositions(chars: string[], prefixes: readonly string[] = GROUP_PREFIXES): number[] {
   let lead = 0
   while (lead < chars.length && isAsciiChar(chars[lead])) lead += 1
   const rest = chars.slice(lead).join('')
   const positions: number[] = []
-  for (const prefix of GROUP_PREFIXES) {
+  for (const prefix of prefixes) {
     const length = Array.from(prefix).length
     if (rest.startsWith(prefix) && Array.from(rest).length > length) positions.push(lead + length)
   }
@@ -108,25 +108,37 @@ const DESCRIPTOR_WORDS = [
   '증권', '소프트웨어', '소프트', '정보통신', '일렉트릭', '에너지', '머티리얼즈', '머티리얼', '로보틱스', '디스플레이', '반도체', '엔지니어링', '이엔씨', '콘덴서', '스마트', '마트', '신소재',
 ].sort((a, b) => b.length - a.length)
 
-function descriptorSplitPosition(chars: string[]): number | null {
+// 일본 종목명(일본어 이름을 한글로 읽어 쓴 사명) 전용 규칙 — 국내 종목에는 쓰지 않는다. 앞쪽 그룹·지역 이름 뒤와 끝쪽 업종 단어 앞에서 줄을 나눈다(미쓰비시/상사, 도쿄/일렉트론, 신에츠/화학).
+// 국내 목록과 섞지 않는 이유는 국내 종목의 줄 나눔이 달라지지 않게 하려는 것이다.
+export type LabelMarket = 'korea' | 'japan'
+const JAPAN_GROUP_PREFIXES = [
+  '미쓰비시', '미쓰이', '스미토모', '도쿄', '동일본', '서일본', '일본', '도카이', '간사이', '주부', '후지', '닛산', '닛폰', '다이이치', '다이이찌', '다이와', '다이니폰',
+  '시즈오카', '후쿠오카', '요코하마', '도큐', '가와사키', '이세탄', '세키스이', '재팬', '도요타', '마루', '오사카', '신에츠', '요코가와', '야스카와',
+]
+const JAPAN_DESCRIPTOR_WORDS = [
+  '자동차', '상사', '물산', '쯔우쇼', '중공업', '공업', '제작소', '화학', '제약', '제강', '제철', '제분', '양조', '제지', '전기', '전력', '가스', '철도', '전철', '해운', '상선', '기선',
+  '항공', '은행', '부동산', '건설', '식품', '증권', '보험', '일렉트론', '일렉트릭', '인쇄', '시멘트', '고무', '광산', '금속', '석유', '개발', '토바코', '연구소', '파이낸셜', '인슈어런스', '금융',
+].sort((a, b) => b.length - a.length)
+
+function descriptorSplitPosition(chars: string[], words: readonly string[] = DESCRIPTOR_WORDS): number | null {
   const name = chars.join('')
-  const word = DESCRIPTOR_WORDS.find(candidate => name.endsWith(candidate))
+  const word = words.find(candidate => name.endsWith(candidate))
   if (!word) return null
   const position = Array.from(name.slice(0, name.length - word.length)).length
   return position >= 1 ? position : null
 }
 
 // 그룹명 뒤에 의미 단어가 붙고 뒤에 이름이 더 이어지면 그 단어 뒤도 줄바꿈 후보로 둔다(삼성바이오/로직스).
-function groupDescriptorSplitPositions(chars: string[]): number[] {
+function groupDescriptorSplitPositions(chars: string[], prefixes: readonly string[] = GROUP_PREFIXES, words: readonly string[] = DESCRIPTOR_WORDS): number[] {
   let lead = 0
   while (lead < chars.length && isAsciiChar(chars[lead])) lead += 1
   const rest = chars.slice(lead).join('')
   const positions: number[] = []
-  for (const prefix of GROUP_PREFIXES) {
+  for (const prefix of prefixes) {
     const prefixLength = Array.from(prefix).length
     if (!rest.startsWith(prefix)) continue
     const afterPrefix = rest.slice(prefix.length)
-    for (const descriptor of DESCRIPTOR_WORDS) {
+    for (const descriptor of words) {
       if (afterPrefix.startsWith(descriptor) && Array.from(afterPrefix).length > Array.from(descriptor).length) {
         positions.push(lead + prefixLength + Array.from(descriptor).length)
       }
@@ -221,7 +233,9 @@ const MAX_WORD_SPLIT_DIFF = 3
 // 두 줄로 나눌 자리 후보. 영문·숫자·기호 한 덩어리(E1, OCI, F&F) 안에서는 나누지 않는다.
 // atSpaces: 공백. atMeaning: 영문·한글 경계(영어/한글, 한글/영어: LG/이노텍, BNK/금융)와 그룹명 뒤(한화/비전). 공백과 그룹명 뒤는 두 줄의 글자 수 차이가 MAX_WORD_SPLIT_DIFF 이하인 자리만 두고, 영문·한글 경계는 차이와 상관없이 둔다.
 // atSuffix: 우선주·지주사 접미어 앞. all: 아무 자리.
-function splitCandidates(chars: string[]) {
+function splitCandidates(chars: string[], market: LabelMarket = 'korea') {
+  const prefixes = market === 'japan' ? JAPAN_GROUP_PREFIXES : GROUP_PREFIXES
+  const words = market === 'japan' ? JAPAN_DESCRIPTOR_WORDS : DESCRIPTOR_WORDS
   const cluster = letterClusterBoundaries(chars)
   const clusterEnd = cluster ? cluster[cluster.length - 1] : 0
   // 영문·숫자·기호 덩어리 안과 한글 알파벳 이름 한 글자(에이치, 케이 등) 안에서는 나누지 않는다.
@@ -236,10 +250,10 @@ function splitCandidates(chars: string[]) {
   const atScriptEdge = all.filter(i => chars[i] !== ' ' && chars[i - 1] !== ' ' && isAsciiChar(chars[i - 1]) !== isAsciiChar(chars[i]))
   // 한글 알파벳 묶음 끝(케이씨/텍, 엔씨/소프트)과 끝 단어 앞(넥슨/게임즈)도 그룹명 뒤처럼 글자 수 차이가 3 이하일 때 쓴다.
   const clusterSplit = cluster && clusterEnd < chars.length ? [clusterEnd] : []
-  const descriptorAt = descriptorSplitPosition(chars)
-  const groupAt = closeEnough(groupSplitPositions(chars).filter(i => all.includes(i)))
+  const descriptorAt = descriptorSplitPosition(chars, words)
+  const groupAt = closeEnough(groupSplitPositions(chars, prefixes).filter(i => all.includes(i)))
   const trailingCluster = trailingLetterClusterPosition(chars)
-  const atMeaning = Array.from(new Set([...atScriptEdge, ...(trailingCluster === null || !all.includes(trailingCluster) ? [] : [trailingCluster]), ...closeEnough([...groupSplitPositions(chars), ...groupDescriptorSplitPositions(chars), ...clusterSplit].filter(i => all.includes(i))), ...(groupAt.length > 0 || descriptorAt === null || !all.includes(descriptorAt) ? [] : closeEnough([descriptorAt]))])).sort((a, b) => a - b)
+  const atMeaning = Array.from(new Set([...atScriptEdge, ...(trailingCluster === null || !all.includes(trailingCluster) ? [] : [trailingCluster]), ...closeEnough([...groupSplitPositions(chars, prefixes), ...groupDescriptorSplitPositions(chars, prefixes, words), ...clusterSplit].filter(i => all.includes(i))), ...(groupAt.length > 0 || descriptorAt === null || !all.includes(descriptorAt) ? [] : closeEnough([descriptorAt]))])).sort((a, b) => a - b)
   const suffixAt = suffixSplitPosition(chars)
   const atSuffix = suffixAt !== null && all.includes(suffixAt) ? [suffixAt] : []
   return { all, atSpaces, atMeaning, atSuffix }
@@ -247,7 +261,7 @@ function splitCandidates(chars: string[]) {
 
 // 두 줄로 나눌 자리를 고른다. 순서는 (1) 공백 (2) 접미어(우·지주·홀딩스) (3) 영문·한글 경계와 그룹명 뒤 (4) 긴 줄이 가장 짧아지는 아무 자리.
 // 폭이 같으면 윗줄이 더 긴 쪽을 고른다(테크/윙). 앞 단계 자리가 폭에 안 들어가면 다음 단계로 넘어간다.
-function splitTwoLines(name: string, size: number, avail: number, mode: 'suffix' | 'semantic' | 'any'): [string, string] | null {
+function splitTwoLines(name: string, size: number, avail: number, mode: 'suffix' | 'semantic' | 'any', market: LabelMarket): [string, string] | null {
   const chars = Array.from(name)
   const bestSplit = (positions: number[]): { lines: [string, string]; max: number } | null => {
     let best: { lines: [string, string]; max: number } | null = null
@@ -260,7 +274,7 @@ function splitTwoLines(name: string, size: number, avail: number, mode: 'suffix'
     }
     return best
   }
-  const { all, atSpaces, atMeaning, atSuffix } = splitCandidates(chars)
+  const { all, atSpaces, atMeaning, atSuffix } = splitCandidates(chars, market)
   const stages = mode === 'suffix' ? [atSpaces, atSuffix] : mode === 'semantic' ? [atSpaces, atSuffix, atMeaning] : [atSpaces, atSuffix, atMeaning, all]
   for (const positions of stages) {
     const found = bestSplit(positions)
@@ -283,6 +297,7 @@ export function fitStockLabel({
   baseFont,
   wantName,
   wantRate,
+  market = 'korea',
 }: {
   name: string
   rateText: string
@@ -291,6 +306,8 @@ export function fitStockLabel({
   baseFont: number
   wantName: boolean
   wantRate: boolean
+  // 일본 종목은 일본 사명 전용 줄 나눔 규칙을 쓴다(기본은 국내).
+  market?: LabelMarket
 }): StockLabelFit {
   const innerHeight = height - 2
   const nameAvail = width - NAME_SIDE
@@ -306,7 +323,7 @@ export function fitStockLabel({
   const none: StockLabelFit = { nameLines: null, nameSize: baseFont, rateSize: null }
   if (wantName) {
     // 접미어(우선주 우·지주·홀딩스)가 있으면 그 앞에서, 뜻이 갈리는 자리(공백, 영문·한글 경계, 그룹명 뒤)가 있으면 그 자리에서 글자를 줄여서라도 나눈다. 그래도 안 되면 아무 자리에서나 나눈다.
-    const { atSpaces, atMeaning, atSuffix } = splitCandidates(Array.from(name))
+    const { atSpaces, atMeaning, atSuffix } = splitCandidates(Array.from(name), market)
     const passes: Array<'suffix' | 'semantic' | 'any'> = atSuffix.length > 0 ? ['suffix', 'semantic', 'any'] : atSpaces.length + atMeaning.length > 0 ? ['semantic', 'any'] : ['any']
     const searchName = (withRate: boolean): StockLabelFit | null => {
       const heightOf = (size: number, lines: number) => {
@@ -325,7 +342,7 @@ export function fitStockLabel({
         for (let size = baseFont; size >= MIN_FONT && !two; size -= 0.5) {
           const { rate, fits } = heightOf(size, 2)
           if (!fits) continue
-          const lines = splitTwoLines(name, size, nameAvail, mode)
+          const lines = splitTwoLines(name, size, nameAvail, mode, market)
           if (lines) two = { nameLines: lines, nameSize: size, rateSize: rate }
         }
         if (two) break
