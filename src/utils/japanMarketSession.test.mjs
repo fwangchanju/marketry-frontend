@@ -40,11 +40,10 @@ test('일본 지도는 국내 지도의 설정을 읽지 않는다', () => {
   for (const name of ['settingDefaults', 'useHeatmapColorScale', 'useGlobalSettings', 'MEMBER_DEFAULTS']) assert.equal(source.includes(name), false, name)
 })
 
-test('일본 지도 설정은 잘못된 저장값을 기본값으로 되돌린다', async () => {
-  const { JAPAN_MAP_DEFAULTS, readJapanMapPreferences } = await import('./japanMapSettings.ts')
-  assert.deepEqual(readJapanMapPreferences(null), JAPAN_MAP_DEFAULTS)
-  assert.deepEqual(readJapanMapPreferences('깨진 값'), JAPAN_MAP_DEFAULTS)
-  const stored = readJapanMapPreferences(JSON.stringify({ boxSizeMarketCapRatio: 80, decimalPlaces: '많이', maxDepth: null }))
+test('일본 지도 기본값은 형식이 맞지 않는 값을 코드 기본값으로 되돌린다', async () => {
+  const { JAPAN_MAP_DEFAULTS, japanMapManagedDefaults } = await import('./japanMapSettings.ts')
+  assert.deepEqual(japanMapManagedDefaults(undefined), JAPAN_MAP_DEFAULTS)
+  const stored = japanMapManagedDefaults({ japan: { boxSizeMarketCapRatio: 80, decimalPlaces: '많이', maxDepth: null } })
   assert.equal(stored.boxSizeMarketCapRatio, 80)
   assert.equal(stored.decimalPlaces, JAPAN_MAP_DEFAULTS.decimalPlaces)
   assert.equal(stored.maxDepth, null)

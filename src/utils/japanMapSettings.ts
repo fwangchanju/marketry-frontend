@@ -31,7 +31,6 @@ export const JAPAN_MAP_FIXED = {
   colorScale: createDefaultColorScale(),
 } as const
 
-export const JAPAN_MAP_PREFERENCES_STORAGE = 'marketry:japan-map-settings'
 // 일본 지도 설정을 서버에 저장하는 이름 — 국내 지도처럼 설정창의 저장 버튼으로 올라가고 계정에 저장된다.
 // 일본 지도 설정은 항목마다 저장 이름을 따로 둔다. 설정창 항목의 저장 안 한 변경 점이 항목별로 찍히게 하기 위해서다.
 export const JAPAN_MAP_SETTING_PREFIX = 'japan.map.'
@@ -74,21 +73,6 @@ export function pickJapanMapPreferenceValues(source: unknown): Partial<JapanMapP
     }
   }
   return result as Partial<JapanMapPreferences>
-}
-
-// 이 브라우저에 저장된 값 중 형식이 맞는 것만 읽는다.
-export function readJapanMapOverrides(stored: string | null): Partial<JapanMapPreferences> {
-  if (!stored) return {}
-  try {
-    return pickJapanMapPreferenceValues(JSON.parse(stored))
-  } catch {
-    return {}
-  }
-}
-
-// 저장된 값 중 형식이 맞는 것만 쓰고 나머지는 기본값(관리자가 정한 기본값이 있으면 그 값)으로 둔다.
-export function readJapanMapPreferences(stored: string | null, base: JapanMapPreferences = JAPAN_MAP_DEFAULTS): JapanMapPreferences {
-  return { ...base, ...readJapanMapOverrides(stored) }
 }
 
 // 관리자가 정한 일본 지도 기본값(서버의 관리 기본값 japan)을 코드 기본값 위에 얹는다. 형식이 맞지 않는 값은 쓰지 않는다.
