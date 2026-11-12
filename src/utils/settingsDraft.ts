@@ -58,6 +58,8 @@ export function readDraft(key: string): { found: boolean; value?: unknown } {
 
 export function writeDraft(key: string, value: unknown) {
   if (memoryDrafts.has(key) && Object.is(memoryDrafts.get(key), value)) return
+  // 임시값을 쓰는 이름은 설정 이름이다. 코드가 다시 불러와져(개발 중 핫 리로드) 등록 목록이 비어도 저장 아이콘·분류 칸의 변경 점이 사라지지 않게 함께 등록한다.
+  registeredKeys.add(key)
   memoryDrafts.set(key, value)
   notify()
 }
