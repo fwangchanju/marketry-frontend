@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import type { SettingsProfile } from './settingsSchema'
 
-type DraftScope = SettingsProfile | 'common'
+// 일본 화면(지도·그래프)의 임시값은 국내 분류 세 칸과 따로 센다 — 'japan.'으로 시작하는 저장 이름이 여기 속한다.
+export type DraftScope = SettingsProfile | 'common' | 'japan'
 
 // "임시로 써보기" 값 저장소. 설정창에서 바꾼 값은 서버에 바로 올리지 않고 이 화면의 메모리에만 둔다(새로고침하면 사라진다) —
 // 저장 버튼을 눌러야 서버로 올라가고(commitDrafts), 초기화 버튼이나 브라우저 종료·새로고침이면 저장값으로 돌아온다(discardDrafts).
@@ -57,20 +58,23 @@ export function readDraft(key: string): { found: boolean; value?: unknown } {
 
 export function writeDraft(key: string, value: unknown) {
   if (memoryDrafts.has(key) && Object.is(memoryDrafts.get(key), value)) return
+  // 임시값을 쓰는 이름은 설정 이름이다. 코드가 다시 불러와져(개발 중 핫 리로드) 등록 목록이 비어도 저장 아이콘·분류 칸의 변경 점이 사라지지 않게 함께 등록한다.
+  registeredKeys.add(key)
   memoryDrafts.set(key, value)
   notify()
 }
 
 function scopeForKey(key: string): DraftScope {
+  if (key.startsWith('japan.')) return 'japan'
   const match = key.match(/^heatmap\.profile\.(exchange|marketry|mine)\./)
   return match ? match[1] as SettingsProfile : 'common'
 }
 
-function inScope(itemScope: DraftScope, scope?: SettingsProfile): boolean {
+function inScope(itemScope: DraftScope, scope?: DraftScope): boolean {
   return scope === undefined || itemScope === 'common' || itemScope === scope
 }
 
-function activeDraftKeys(scope?: SettingsProfile): string[] {
+function activeDraftKeys(scope?: DraftScope): string[] {
   return [...registeredKeys].filter(key => inScope(scopeForKey(key), scope) && readDraft(key).found)
 }
 
@@ -79,7 +83,7 @@ export function clearDraft(key: string, notifySubscribers = true) {
   if (removed && notifySubscribers) notify()
 }
 
-export function discardDrafts(scope?: SettingsProfile) {
+export function discardDrafts(scope?: DraftScope) {
   participants.forEach(participant => {
     if (participant.hasChanges && inScope(participant.scope, scope)) participant.discard()
   })
@@ -91,7 +95,7 @@ export function discardDrafts(scope?: SettingsProfile) {
 // 저장이 성공한 뒤에만 임시값을 지운다 — 실패하면 던지고 임시값을 그대로 둬서 다시 저장할 수 있다.
 export async function commitDrafts(
   save: (entries: Array<[string, unknown]>) => Promise<void>,
-  scope?: SettingsProfile,
+  scope?: DraftScope,
 ) {
   const entries = activeDraftKeys(scope).map(key => [key, readDraft(key).value] as [string, unknown])
   const pending = [...participants.values()].filter(participant => participant.hasChanges && inScope(participant.scope, scope))
@@ -103,7 +107,7 @@ export async function commitDrafts(
 }
 
 // 임시값이 하나라도 있으면 true. 값이 바뀔 때마다 다시 그려지게 구독한다.
-export function useHasDrafts(scope?: SettingsProfile): boolean {
+export function useHasDrafts(scope?: DraftScope): boolean {
   useSyncExternalStore(subscribe, () => version)
   return activeDraftKeys(scope).length > 0 || [...participants.values()].some(
     participant => participant.hasChanges && inScope(participant.scope, scope),
@@ -113,7 +117,7 @@ export function useHasDrafts(scope?: SettingsProfile): boolean {
 // 주어진 저장 이름 중 하나라도 저장값과 다른 임시값이 있으면 true — 설정창 항목 제목 옆 변경 점에 쓴다.
 // 별도 API로 저장되는 항목(색상 구간 등)은 참여자 등록 이름으로도 확인한다.
 // scope를 주면 그 분류에 속한 참여자의 변경만 본다(내 기준 전용 색상 구간이 다른 분류 항목에 점을 찍지 않게).
-export function hasDraftForKeys(keys: readonly string[], scope?: SettingsProfile): boolean {
+export function hasDraftForKeys(keys: readonly string[], scope?: DraftScope): boolean {
   return keys.some(key => {
     if (readDraft(key).found) return true
     const participant = participants.get(key)
@@ -121,7 +125,7 @@ export function hasDraftForKeys(keys: readonly string[], scope?: SettingsProfile
   })
 }
 
-export function useHasDraftForKeys(keys: readonly string[], scope?: SettingsProfile): boolean {
+export function useHasDraftForKeys(keys: readonly string[], scope?: DraftScope): boolean {
   useSyncExternalStore(subscribe, () => version)
   return hasDraftForKeys(keys, scope)
 }

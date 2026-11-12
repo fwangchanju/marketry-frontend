@@ -163,3 +163,18 @@ test('내 기준 전용 참여자는 다른 분류의 변경 점·저장·되돌
   assert.equal(saved, 1)
 })
 
+
+test('일본 화면의 임시값은 국내 분류 범위에 섞이지 않고 일본 범위에서만 센다', async () => {
+  const japanKey = 'japan.map.decimalPlaces'
+  registerDraftKey(japanKey)
+  writeDraft(japanKey, 2)
+  assert.equal(hasDraftForKeys([japanKey]), true)
+  discardDrafts('marketry')
+  assert.equal(readDraft(japanKey).found, true)
+  const saved = []
+  await commitDrafts(async entries => { saved.push(...entries) }, 'marketry')
+  assert.deepEqual(saved, [])
+  assert.equal(readDraft(japanKey).found, true)
+  await commitDrafts(async entries => { saved.push(...entries) }, 'japan')
+  assert.deepEqual(saved, [[japanKey, 2]])
+})

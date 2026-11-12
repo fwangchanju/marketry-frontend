@@ -24,7 +24,7 @@ import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel, toSnapshotTim
 import { useIsLoggedIn, useSession } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
-import { commitDrafts, discardDrafts, useHasDraftForKeys, useHasDrafts } from '@/utils/settingsDraft'
+import { commitDrafts, discardDrafts, useHasDraftForKeys, useHasDrafts, type DraftScope } from '@/utils/settingsDraft'
 import { profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
@@ -160,15 +160,47 @@ const SettingsDraftKeyMapContext = createContext<Readonly<Record<string, string>
 
 // 저장하지 않은 변경이 있는 항목의 제목 오른쪽 위에 찍는 작은 점. 상단 저장 아이콘·분류 배지의 점과 같은 청록이고, 글자 옆이라 더 작다(4px).
 // draftKeys는 그 항목이 쓰는 저장 이름이다. 분류별 저장 이름은 지금 분류 것만 본다.
-function SettingChangeDot({ draftKeys }: { draftKeys: readonly string[] }) {
-  const profile = useContext(SettingsProfileContext)
-  const dotsEnabled = useContext(SettingsDraftDotsContext)
-  const keyMap = useContext(SettingsDraftKeyMapContext)
+function useSettingDraftDot(
+  draftKeys: readonly string[],
+  // 탭 목록은 아래 문맥 제공자 바깥에 있어 설정창이 값을 직접 넘긴다. 항목 제목은 문맥에서 읽는다.
+  given?: { profile: SettingsProfile | null; dotsEnabled: boolean; keyMap: Readonly<Record<string, string>> | null },
+) {
+  const contextProfile = useContext(SettingsProfileContext)
+  const contextDotsEnabled = useContext(SettingsDraftDotsContext)
+  const contextKeyMap = useContext(SettingsDraftKeyMapContext)
+  const profile = given ? given.profile : contextProfile
+  const dotsEnabled = given ? given.dotsEnabled : contextDotsEnabled
+  const keyMap = given ? given.keyMap : contextKeyMap
   const keys = keyMap
     ? draftKeys.map(key => keyMap[key] ?? key)
     : profile === null ? draftKeys : draftKeys.flatMap(key => [key, profileSettingKey(profile, key)])
   const hasDraft = useHasDraftForKeys(keys, keyMap ? undefined : profile ?? undefined)
-  if (!dotsEnabled || !hasDraft) return null
+  return dotsEnabled && hasDraft
+}
+
+// 설정창 탭에 속한 항목들의 저장 이름 — 항목 제목의 변경 점과 같은 이름이다. 탭 아이콘 우상단 점이 이 중 하나라도 바뀌었는지 본다.
+const SECTION_DRAFT_KEYS: Partial<Record<SettingsPanelSectionId, readonly string[]>> = {
+  composition: ['heatmap.tierRangeMinIndex', 'heatmap.tierRangeMaxIndex', 'heatmap.tierRangeMinValue', 'heatmap.tierRangeMaxValue', 'heatmap.sectorFilterEnabled', 'heatmap.excludedSectorKeys'],
+  industry: ['heatmap.selectedMaxDepth', 'heatmap.sectorLevelEnabled', 'heatmap.activeDepthMetric', 'heatmap.depthMetricEnabled', 'heatmap.depthMetricMinIndex', 'heatmap.depthMetricMaxIndex', 'heatmap.topPickEnabled', 'heatmap.topPickDepth', 'heatmap.topPickCount'],
+  stockDisplay: ['heatmap.boxSizeMarketCapRatio', 'heatmap.stockLabelEnabled', 'heatmap.stockLabelModeIndex', 'heatmap.decimalPlacesIndex'],
+  colors: ['heatmap.colorCustomOn', 'heatmap.colorScale', 'heatmap.strongIndustryColor'],
+  graph: ['groupPage.depth', 'groupPage.graphMode', 'heatmap.avgChangeRateUseSimple'],
+}
+
+// 탭 아이콘 우상단의 저장 안 한 변경 점. 어느 탭을 고쳤는지 찾을 수 있게 한다.
+function SettingTabDot({ sectionId, profile, dotsEnabled, keyMap }: { sectionId: SettingsPanelSectionId; profile: SettingsProfile | null; dotsEnabled: boolean; keyMap: Readonly<Record<string, string>> | null }) {
+  const hasDraft = useSettingDraftDot(SECTION_DRAFT_KEYS[sectionId] ?? [], { profile, dotsEnabled, keyMap })
+  if (!hasDraft) return null
+  return (
+    <>
+      <span aria-hidden="true" className="absolute -right-[3px] -top-[1px] h-1.5 w-1.5 rounded-full bg-brand" />
+      <span className="sr-only">, 저장하지 않은 변경 있음</span>
+    </>
+  )
+}
+
+function SettingChangeDot({ draftKeys }: { draftKeys: readonly string[] }) {
+  if (!useSettingDraftDot(draftKeys)) return null
   return (
     <>
       <span aria-hidden="true" className="ml-[2px] inline-block h-1 w-1 shrink-0 translate-y-[3px] rounded-full bg-brand align-top" />
@@ -2474,7 +2506,8 @@ export default function SettingsPanel({
   const settingsProfile: SettingsProfile = selectedTaxonomy === 'MARKETRY'
     ? 'marketry'
     : selectedTaxonomy === 'MINE' ? 'mine' : 'exchange'
-  const hasDrafts = useHasDrafts(settingsProfile)
+  const draftScope: DraftScope = draftKeyMap ? 'japan' : settingsProfile
+  const hasDrafts = useHasDrafts(draftScope)
   const [isPreferenceFeedbackVisible, setIsPreferenceFeedbackVisible] = useState(false)
   const [isSavingPreferences, setIsSavingPreferences] = useState(false)
   const isPreferenceFeedbackActive = isPreferenceFeedbackVisible || isSavingPreferences
@@ -2574,7 +2607,7 @@ export default function SettingsPanel({
   const preferenceActions = showPreferenceActions ? (
     <div className="-mr-[7px] ml-auto flex shrink-0 items-center gap-1">
       <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
-          if (hasDrafts && await appConfirm('현재 분류의 기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(() => discardDrafts(settingsProfile))
+          if (hasDrafts && await appConfirm('현재 분류의 기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(() => discardDrafts(draftScope))
         }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
         <HistoryIcon className="h-5 w-5" aria-hidden="true" />
       </button>
@@ -2596,7 +2629,7 @@ export default function SettingsPanel({
           // 저장에 실패하면 임시값은 그대로 남아 있으니 알리고, 사용자가 다시 저장하게 한다.
           setIsSavingPreferences(true)
           runPreferenceAction(() => {
-            commitDrafts(commitPreferences, settingsProfile)
+            commitDrafts(commitPreferences, draftScope)
               .catch(() => appAlert('저장하지 못했습니다.\n변경한 값은 그대로 남아 있으니 잠시 후 다시 저장해 주세요.', { title: '저장 실패' }))
               .finally(() => setIsSavingPreferences(false))
           })
@@ -2663,11 +2696,14 @@ export default function SettingsPanel({
                     ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/50 hover:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? selected ? 'text-[var(--sub-purple)]' : 'text-[var(--sub-purple)] opacity-50 hover:opacity-100 focus-visible:opacity-100' : selected ? 'text-brand' : 'text-ui-muted hover:text-ui-white'
                 }`}
               >
-                {icon ? <SettingsSectionIcon
+                <span className="relative inline-flex shrink-0">
+                  {icon ? <SettingsSectionIcon
                   icon={icon}
                   className={`${SETTINGS_PANEL_TAB_ICON_CLASS} transition-colors ${icon === 'industry' ? 'scale-90' : icon === 'ad' ? 'scale-[1.2]' : ''} ${ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/50 group-hover:text-admin-only group-focus-visible:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? 'text-[var(--sub-purple)]' : ''}`}
                   strokeWidth={icon === 'industry' ? 1.22 : icon === 'ad' ? 0.92 : 1.1}
                 /> : <span aria-hidden="true" className={`${SETTINGS_PANEL_TAB_ICON_CLASS} shrink-0`} />}
+                  {section.id !== 'plain' && <SettingTabDot sectionId={section.id} profile={settingsProfile} dotsEnabled={showPreferenceActions} keyMap={draftKeyMap ?? null} />}
+                </span>
                 <span className="max-w-full truncate font-bold">{section.id === 'plain' ? section.label : sectionLabelOverrides?.[section.id] ?? section.label}</span>
                 <span
                   aria-hidden="true"
