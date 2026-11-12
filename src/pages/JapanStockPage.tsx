@@ -1,3 +1,5 @@
+import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
+import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
@@ -229,6 +231,8 @@ export default function JapanStockPage() {
           <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold">
             <ToolbarModeText page="CUSTOM" label="J-STOCK" />
             <SearchBar inline query={search} onChange={setSearch} placeholder="종목코드 · 종목명 · 한글명 · 업종 검색" ariaLabel="일본 종목 검색" />
+            <div className="min-w-0 flex-1" />
+            <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </div>
           <div ref={tableContainerRef} className={`min-h-0 flex-1 ${isLoading || isError ? 'flex items-center justify-center pt-4 pb-[47.5px]' : 'overflow-auto border border-ui-border'}`}>
             {isLoading ? <Spinner showElapsed /> : isError ? <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void namesQuery.refetch(); void classificationsQuery.refetch(); void categoryQuery.refetch(); void quotesQuery.refetch() }} /> : <table style={{ minWidth: stockTableMinWidthPx(COLUMN_WIDTH_KEYS) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
