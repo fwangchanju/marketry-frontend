@@ -122,7 +122,7 @@ const COLUMNS: { key: SortKey; columnKey: StockColumnKey; header: string; align:
 ]
 
 const alignClass = (align: 'center' | 'left' | 'right') =>
-  align === 'right' ? 'text-right pr-4' : align === 'left' ? 'text-left pl-4' : 'text-center'
+  align === 'right' ? 'text-right pr-2' : align === 'left' ? 'text-left pl-4' : 'text-center'
 
 const MARKET_LABEL: Record<'KOSPI' | 'KOSDAQ', string> = { KOSPI: '코스피', KOSDAQ: '코스닥' }
 const marketColorClass = (market: 'KOSPI' | 'KOSDAQ') => (market === 'KOSPI' ? 'text-ui-muted' : 'text-[var(--brand)]')
