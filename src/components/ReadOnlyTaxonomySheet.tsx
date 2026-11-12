@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { createPortal } from 'react-dom'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
-import { STOCK_HEADER_ROW_PX, stockTableMinWidthPx, type StockColumnKey } from '@/utils/stockTableColumns'
+import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
+import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
 import { KRX_PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorHint, placeProtectedSectorsLast } from '@/utils/protectedSector'
@@ -96,7 +97,7 @@ const STOCK_ROW_HEIGHT = 29
 const STOCK_HEADER_CELL = 'whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white'
 const STOCK_BODY_CELL = 'text-sm'
 // 맨 왼쪽 체크박스 칸 — MARKETRY 종목 표(AdminStockTable)와 같은 폭(체크박스 20px + 좌우 4.5px씩)이다.
-const CHECKBOX_COLUMN_WIDTH = '29px'
+const CHECKBOX_COLUMN_WIDTH = `${STOCK_CHECKBOX_COLUMN_PX}px`
 const CHECKBOX_CELL_STYLE = { width: CHECKBOX_COLUMN_WIDTH, minWidth: CHECKBOX_COLUMN_WIDTH, maxWidth: CHECKBOX_COLUMN_WIDTH, paddingLeft: 0, paddingRight: 0 } as const
 
 interface Props {
@@ -452,6 +453,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
   // 화면에 보이는 행(+위아래 여유)만 그리고, 나머지 높이는 앞뒤 스페이서 <tr>로 채운다(AdminStockTable과 같은 방식).
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
+  const columnWidths = useStockColumnWidths(scrollContainerRef)
   // 줄 누르기·Shift+클릭 범위·끌어서 연속 선택 — MARKETRY 종목 표와 같은 동작이다.
   const { rowProps, selectionHint } = useRowRangeSelection(
     useMemo(() => visibleRows.map(row => row.stockCode), [visibleRows]),
@@ -503,8 +505,8 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
       {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
       <div ref={scrollContainerRef} className="relative h-full overflow-auto">
         {/* 내 분류와 같은 표·테두리·스크롤 규칙을 쓴다. 마지막 열은 남는 폭을 받아 KRX의 NXT가 대·중·소분류 합계 폭과 일치한다. */}
-        <table className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1" style={{ minWidth: stockTableMinWidthPx(STOCK_COLUMN_KEYS) }}>
-          <StockTableColGroup keys={STOCK_COLUMN_KEYS} />
+        <table className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1" style={{ minWidth: stockColumnWidthsTotal(columnWidths) }}>
+          <StockTableColGroup keys={STOCK_COLUMN_KEYS} widths={columnWidths} />
           <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]">
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               <th className="cursor-pointer bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white" style={CHECKBOX_CELL_STYLE} onClick={toggleSelectAllVisible}>
@@ -554,7 +556,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
                   <td colSpan={showAlias ? 1 : 2} className={`${STOCK_BODY_CELL} truncate text-left !pl-2 ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>{row.stockName}</td>
                   {showAlias && <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{row.alias ?? '-'}</td>}
                   {/* MARKETRY 종목 표와 같은 표기('1,613.6조')와 오른쪽 정렬이다. */}
-                  <td className={`${STOCK_BODY_CELL} text-right !pr-3 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>
+                  <td className={`${STOCK_BODY_CELL} text-right !pr-2 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>
                   <td className={`${STOCK_BODY_CELL} text-center`}>{row.sizeTier || '-'}</td>
                   <td className={`${STOCK_BODY_CELL} text-center ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>
                     {row.market ? MARKET_LABEL[row.market] : '-'}
