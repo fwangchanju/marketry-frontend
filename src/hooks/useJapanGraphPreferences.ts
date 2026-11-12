@@ -1,30 +1,25 @@
-import { useState } from 'react'
+import { useMemo } from 'react'
+import { usePageSetting } from './usePageSetting'
+import { usePersistedState } from './usePersistedState'
+import { japanGraphSettingKey, type JapanGraphPreferences } from '@/utils/japanGraphSettings'
 
-const STORAGE_KEY = 'marketry:japan-graph-settings'
-const DEFAULTS = { graphMode: 'current' as 'current' | 'delta', groupDepth: 1, avgChangeRateUseSimple: false, beforeMinutes: 15 }
-export type JapanGraphPreferences = typeof DEFAULTS
-
-function read(): JapanGraphPreferences {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<JapanGraphPreferences>
-    return {
-      graphMode: parsed.graphMode === 'delta' ? 'delta' : 'current',
-      groupDepth: parsed.groupDepth === 2 || parsed.groupDepth === 3 ? parsed.groupDepth : DEFAULTS.groupDepth,
-      avgChangeRateUseSimple: parsed.avgChangeRateUseSimple === true,
-      beforeMinutes: typeof parsed.beforeMinutes === 'number' ? parsed.beforeMinutes : DEFAULTS.beforeMinutes,
-    }
-  } catch {
-    return { ...DEFAULTS }
-  }
-}
-
-// 일본 그래프의 표시 설정 — 일본 지도처럼 서버에 저장하지 않고 이 브라우저에만 둔다.
+// 일본 그래프의 표시 설정 — 국내 그래프(섹터 페이지)와 같이 바꾼 값은 임시값이고 설정창의 저장을 눌러야 계정에 저장된다(usePageSetting).
+// 항목마다 저장 이름이 따로라 설정창 항목 제목에 저장 안 한 변경 점이 항목별로 찍힌다.
+// 비교 시점의 분 수는 국내 그래프처럼 저장 대상이 아니라 이 브라우저에만 둔다.
 export function useJapanGraphPreferences() {
-  const [preferences, setPreferences] = useState(read)
-  const update = (changes: Partial<JapanGraphPreferences>) => setPreferences(previous => {
-    const next = { ...previous, ...changes }
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch { /* 저장소 접근이 막혀도 화면 변경은 유지한다. */ }
-    return next
-  })
+  const [graphMode, setGraphMode] = usePageSetting<JapanGraphPreferences['graphMode']>(japanGraphSettingKey('graphMode'), 'current')
+  const [groupDepth, setGroupDepth] = usePageSetting(japanGraphSettingKey('groupDepth'), 1)
+  const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting(japanGraphSettingKey('avgChangeRateUseSimple'), false)
+  const [beforeMinutes, setBeforeMinutes] = usePersistedState('japan.graph.beforeMinutes', 15)
+  const preferences = useMemo<JapanGraphPreferences>(
+    () => ({ graphMode, groupDepth, avgChangeRateUseSimple, beforeMinutes }),
+    [graphMode, groupDepth, avgChangeRateUseSimple, beforeMinutes],
+  )
+  const update = (changes: Partial<JapanGraphPreferences>) => {
+    if ('graphMode' in changes) setGraphMode(changes.graphMode!)
+    if ('groupDepth' in changes) setGroupDepth(changes.groupDepth!)
+    if ('avgChangeRateUseSimple' in changes) setAvgChangeRateUseSimple(changes.avgChangeRateUseSimple!)
+    if ('beforeMinutes' in changes) setBeforeMinutes(changes.beforeMinutes!)
+  }
   return { preferences, update }
 }
