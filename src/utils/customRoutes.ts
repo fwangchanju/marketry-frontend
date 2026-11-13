@@ -6,12 +6,11 @@ export const STOCK_KOREA = '/stock/korea'
 export const STOCK_JAPAN = '/stock/japan'
 
 // 옛 주소 → 새 주소. 즐겨찾기·가이드 링크·로그인 뒤 돌아오는 주소가 끊기지 않게 새 주소로 이동시킨다.
+// 일본 화면(/custom/sector/japan, /custom/stock/japan)은 특별 회원만 보던 비공개 화면이라 옛 주소 이동을 두지 않는다.
 const LEGACY_TARGETS: Readonly<Record<string, string>> = {
   '/custom': SECTOR_KOREA,
   '/custom/sector': SECTOR_KOREA,
   '/custom/stock': STOCK_KOREA,
-  '/custom/sector/japan': SECTOR_JAPAN,
-  '/custom/stock/japan': STOCK_JAPAN,
 }
 
 export function legacyCustomTarget(pathname: string): string | null {

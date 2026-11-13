@@ -89,7 +89,7 @@ function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   return <Navigate to={`${marketRoute(basePath, market ?? 'ALL_STOCK')}${rest ? `?${rest}` : ''}${hash}`} replace />
 }
 
-// 예전 /custom 아래 주소(/custom/sector, /custom/stock, 일본 두 화면)를 새 주소(/sector/korea 등)로 옮긴다. 쿼리(?sheet=MINE)와 해시는 그대로 둔다.
+// 예전 /custom 아래 한국 주소(/custom, /custom/sector, /custom/stock)를 새 주소(/sector/korea, /stock/korea)로 옮긴다. 쿼리(?sheet=MINE)와 해시는 그대로 둔다.
 function LegacyCustomRedirect() {
   const { pathname, search, hash } = useLocation()
   return <Navigate to={`${legacyCustomTarget(pathname) ?? SECTOR_KOREA}${search}${hash}`} replace />
@@ -166,14 +166,12 @@ export default function App() {
           <Route path="/graph/kospi" element={<ResponsiveGraphPage />} />
           <Route path="/graph/kosdaq" element={<ResponsiveGraphPage />} />
           <Route path="/graph/korea" element={<ResponsiveGraphPage />} />
-          {/* 섹터·스톡 화면의 주소. 예전 /custom 아래 주소는 모두 새 주소로 이동시킨다(뒤의 ?sheet=MINE 같은 값도 유지). */}
+          {/* 섹터·스톡 화면의 주소. 예전 /custom 아래 한국 주소는 새 주소로 이동시킨다(뒤의 ?sheet=MINE 같은 값도 유지). 일본은 비공개 화면이라 옛 주소가 없다. */}
           <Route path={SECTOR_KOREA} element={<CustomPage />} />
           <Route path={STOCK_KOREA} element={<CustomPage />} />
           <Route path="/custom" element={<LegacyCustomRedirect />} />
           <Route path="/custom/sector" element={<LegacyCustomRedirect />} />
           <Route path="/custom/stock" element={<LegacyCustomRedirect />} />
-          <Route path="/custom/sector/japan" element={<LegacyCustomRedirect />} />
-          <Route path="/custom/stock/japan" element={<LegacyCustomRedirect />} />
           <Route element={<SpecialRouteGuard />}>
             <Route path={STOCK_JAPAN} element={<JapanStockPage />} />
             <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
