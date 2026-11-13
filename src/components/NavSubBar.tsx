@@ -26,22 +26,17 @@ interface MenuLink {
   options?: MenuOption[]
 }
 
-// Map·Graph는 KOREA / KOSPI / KOSDAQ, Custom은 SECTOR / STOCK을 고른다.
+// Map·Graph는 KOREA / KOSPI / KOSDAQ을 고르고, Sector·Stock은 KOREA를 바로 연다(특별 회원은 JAPAN도 고른다).
 const BASE_LINKS: MenuLink[] = [
   { to: '/home', label: 'Home', icon: 'home' },
   { to: marketRoute('/map', 'ALL_STOCK'), label: 'Map', icon: 'composition', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/map', option.market) })) },
   { to: marketRoute('/graph', 'ALL_STOCK'), label: 'Graph', icon: 'bar-chart', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/graph', option.market) })) },
 ]
 // 비로그인에게도 열려 있다 — 마켓트리·거래소 시트는 읽고, 내 분류는 비어 있으며 수정하려 할 때 로그인 팝업이 뜬다.
-const CUSTOM_LINK: MenuLink = {
-  to: '/custom/sector',
-  label: 'Custom',
-  icon: 'custom-edit',
-  options: [
-    { label: 'SECTOR', to: '/custom/sector' },
-    { label: 'STOCK', to: '/custom/stock' },
-  ],
-}
+// 예전 Custom 메뉴를 Sector·Stock 두 메뉴로 나눴다. 주소(/custom/sector, /custom/stock)는 그대로다.
+// 일반 회원은 누르면 바로 한국 화면으로 가고, 특별 회원은 KOREA / JAPAN 목록이 열린다.
+const SECTOR_LINK: MenuLink = { to: '/custom/sector', label: 'Sector', icon: 'industry' }
+const STOCK_LINK: MenuLink = { to: '/custom/stock', label: 'Stock', icon: 'stock-single' }
 
 // 관리자 계정에만 보이는 Admin 메뉴 — 회원 명단(MEMBER), 대시보드(DASHBOARD, 차트 모음), 메시지(MESSAGE, 주소는 /admin/message), 배너(BANNER)로 나뉜다.
 const ADMIN_LINK: MenuLink = {
@@ -66,25 +61,31 @@ const NAV_TAB_CLASS = `${FONT_NAV_TAB.replace('text-lg', 'text-[15px]')} inline-
 // 아이콘 중심이 글자 대문자 높이의 중심보다 약 1.4px 낮아서 그만큼 올린다(-translate-y-[1.4px]). 선 굵기는 화면에서 모두 약 1.35px가 되도록 잘린 크기에 맞춰 정한다(굵기 × 잘린 변 ÷ 18).
 const NAV_ICON_PX = 18
 const NAV_ICON_STROKE_PX = 1.35
-type NavIconName = Extract<SettingsSectionIconName, 'home' | 'composition' | 'bar-chart' | 'custom-edit' | 'member'>
-const NAV_ICON_EXTENT: Record<NavIconName, { cx: number; cy: number; size: number }> = {
+type NavIconName = Extract<SettingsSectionIconName, 'home' | 'composition' | 'bar-chart' | 'custom-edit' | 'member' | 'industry' | 'stock-single'>
+const NAV_ICON_EXTENT: Record<NavIconName, { cx: number; cy: number; size: number; px?: number }> = {
   home: { cx: 12, cy: 12, size: 18 },
   composition: { cx: 12, cy: 12, size: 16 },
   'bar-chart': { cx: 12, cy: 12, size: 18 },
   'custom-edit': { cx: 12.31, cy: 12.69, size: 18.62 },
   member: { cx: 12, cy: 12.5, size: 17 },
+  industry: { cx: 12, cy: 12, size: 20 },
+  // 네모(10칸)에 맞춰 자르고, 칸(px)도 같은 비율(18px ÷ 22칸)로 줄여 네모 크기는 그대로 두되 양옆 빈 여백만 없앤다.
+  // 18px 칸에 그대로 넣으면 네모가 칸의 절반만 차서 글자와의 간격이 다른 아이콘보다 넓어 보인다.
+  'stock-single': { cx: 12, cy: 12, size: 10, px: 9.8 },
 }
 
 // 광고 배너(AdBannerSlot)가 메뉴에 걸릴 만큼 화면이 좁으면 배너 자리가 html에 data-nav-compact를 달아서 글자 앞 아이콘을 숨기고 메뉴 폭을 줄인다.
 function NavIcon({ icon }: { icon: NavIconName }) {
-  const { cx, cy, size } = NAV_ICON_EXTENT[icon]
+  const { cx, cy, size, px = NAV_ICON_PX } = NAV_ICON_EXTENT[icon]
   const side = size + 2
+  // 칸 크기(px)는 대부분 18px이고, 그보다 작은 아이콘(stock-single)만 따로 줄인다. 클래스는 소스에 문자열로 있어야 만들어진다.
+  const boxClass = px === NAV_ICON_PX ? 'h-[18px] w-[18px]' : 'h-[9.8px] w-[9.8px]'
   return (
     <SettingsSectionIcon
       icon={icon}
-      className="-translate-y-[1.4px] h-[18px] w-[18px] [html[data-nav-compact]_&]:hidden"
+      className={`-translate-y-[1.4px] ${boxClass} [html[data-nav-compact]_&]:hidden`}
       viewBox={`${cx - side / 2} ${cy - side / 2} ${side} ${side}`}
-      strokeWidth={(NAV_ICON_STROKE_PX * side) / NAV_ICON_PX}
+      strokeWidth={(NAV_ICON_STROKE_PX * side) / px}
     />
   )
 }
@@ -106,11 +107,12 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
   const canSeeJapan = !isSessionLoading && isSpecialSession(session)
-  const customLink = canSeeJapan ? { ...CUSTOM_LINK, options: [...(CUSTOM_LINK.options ?? []), { label: 'J-SECTOR', to: '/custom/sector/japan', special: true }, { label: 'J-STOCK', to: '/custom/stock/japan', special: true }] } : CUSTOM_LINK
+  const withJapan = (link: MenuLink): MenuLink => canSeeJapan ? { ...link, options: [{ label: 'KOREA', to: link.to }, { label: 'JAPAN', to: `${link.to}/japan`, special: true }] } : link
+  const customLinks = [withJapan(SECTOR_LINK), withJapan(STOCK_LINK)]
   // 해외 항목은 특별 회원과 관리자에게만 보인다.
   const overseasOptions = (label: string) => [{ label: 'JAPAN', to: `/${label.toLowerCase()}/japan`, special: true }, { label: 'USA', to: `/${label.toLowerCase()}/usa`, special: true }]
   const baseLinks = canSeeJapan ? BASE_LINKS.map(link => link.label === 'Map' || link.label === 'Graph' ? { ...link, options: [...(link.options ?? []), ...overseasOptions(link.label)] } : link) : BASE_LINKS
-  const links = isAdmin ? [...baseLinks, customLink, ADMIN_LINK] : [...baseLinks, customLink]
+  const links = isAdmin ? [...baseLinks, ...customLinks, ADMIN_LINK] : [...baseLinks, ...customLinks]
   const [openTo, setOpenTo] = useState<string | null>(null)
   // 목록은 누르면 열려 그대로 있고, 메뉴 밖을 누르면 닫는다. 메뉴 사이 빈 곳도 메뉴 밖이다.
   useEffect(() => {
@@ -125,14 +127,15 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const isLinkActive = (to: string) => {
     if (to === marketRoute('/map', 'ALL_STOCK')) return location.pathname.startsWith('/map/')
     if (to === marketRoute('/graph', 'ALL_STOCK')) return location.pathname.startsWith('/graph/')
-    if (to === '/custom/sector') return location.pathname.startsWith('/custom')
+    if (to === '/custom/sector') return location.pathname.startsWith('/custom/sector')
+    if (to === '/custom/stock') return location.pathname.startsWith('/custom/stock')
     if (to === '/admin/member') return location.pathname.startsWith('/admin')
     return location.pathname === to
   }
   const linkClassName = (to: string) =>
     `${NAV_TAB_CLASS} ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
 
-  // 목록에서 지금 보고 있는 항목인지 — Custom은 /custom/sector와 /custom/stock 두 화면 중 하나이고, Map·Graph는 주소의 시장 이름이다.
+  // 목록에서 지금 보고 있는 항목인지 — Sector·Stock은 한국(/custom/sector, /custom/stock)과 일본(/japan) 화면이고, Map·Graph는 주소의 시장 이름이다.
   const isCurrentOption = (option: MenuOption) => location.pathname === option.to
   const handleSelect = (option: MenuOption) => {
     setOpenTo(null)

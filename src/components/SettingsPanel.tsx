@@ -2418,6 +2418,10 @@ interface Props {
   plainContent?: ReactNode
   // 탭 하나로 구성된 페이지도 맵·어드민과 같은 메뉴 줄을 쓴다.
   plainTabLabel?: string
+  // '커스텀' 탭(섹터·스톡 화면)의 이름을 화면마다 따로 줄 때 쓴다(섹터 화면은 '섹터', 종목 화면은 '종목'). 탭의 기억 이름표는 그대로 id를 쓴다.
+  customTabLabel?: string
+  // '커스텀' 탭의 아이콘 — 상단 Sector·Stock 메뉴 아이콘과 같은 것을 준다(industry·stock-single).
+  customTabIcon?: SettingsSectionIconName
   plainTabIcon?: SettingsSectionIconName
   sectionOrder?: readonly SettingsPanelSectionId[]
   // 국내 설정 이름으로 적은 항목·분류 칸의 저장 안 한 변경 점을 이 이름들로 찾는다(일본 지도 설정).
@@ -2491,6 +2495,8 @@ export default function SettingsPanel({
   onToggleSide,
   plainContent,
   plainTabLabel,
+  customTabLabel,
+  customTabIcon,
   plainTabIcon,
   children,
 }: Props) {
@@ -2583,7 +2589,7 @@ export default function SettingsPanel({
   const hasTaxonomySelector = Boolean(taxonomy && onSelectTaxonomy) || (typeof isCustom === 'boolean' && Boolean(onToggleCustom))
   const handleSelectTaxonomy = onSelectTaxonomy ?? (() => onToggleCustom?.())
 
-  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSessionNow || !ADMIN_ONLY_SECTIONS.has(section.id)) && (canSeeSpecialSections || !SPECIAL_SECTIONS.has(section.id)))
+  const availableSections = SETTINGS_SECTIONS.filter(section => sectionContent.has(section.id) && (isAdminSessionNow || !ADMIN_ONLY_SECTIONS.has(section.id)) && (canSeeSpecialSections || !SPECIAL_SECTIONS.has(section.id))).map(section => (section.id === 'custom' ? { ...section, label: customTabLabel ?? section.label, icon: customTabIcon ?? section.icon } : section))
   if (sectionOrder) {
     availableSections.sort((a, b) => sectionOrder.indexOf(a.id) - sectionOrder.indexOf(b.id))
   }
