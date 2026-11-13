@@ -22,7 +22,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useUsaGraphPreferences } from '@/hooks/useUsaGraphPreferences'
 import { useUsaIndexCloses } from '@/hooks/useUsaIndexCloses'
-import { useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
+import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
 import { indexChangeRate, shiftDate } from '@/utils/indexChange'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
@@ -50,22 +50,27 @@ export default function UsaGraphPage() {
   const classifications = useQuery({ queryKey: ['usa', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/usa/classifications')).data })
   const stocks = useUsaStocks()
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [rangeStart, setRangeStart] = useState<string | null>(null)
   const quotes = useUsaQuotes(selectedTime)
+  const periodQuotes = useUsaPeriodQuotes(rangeStart, selectedTime)
+  const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const liveQuotes = useUsaQuotes()
   const snapshotTimes = useUsaSnapshotTimes()
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const treeStocks = useMemo(() => (stocks.data ?? []).map(stock => ({ code: stock.symbol, name: stock.name })), [stocks.data])
   const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, stock.symbol])), [stocks.data])
-  // 지수 막대는 그 거래일 하루의 종가 변동이다. 미국은 저장된 시세가 모두 종가라서 가장 최근 날도 막대를 만든다.
+  // 지수 막대는 하루 보기면 그 거래일의 종가 변동, 기간 보기면 시작일 전 거래일 종가부터 종료일 종가까지의 변동이다.
+  // 미국은 저장된 시세가 모두 종가라서 가장 최근 날도 막대를 만든다.
   const day = snapshotTime ? snapshotTime.slice(0, 10) : null
-  const indexCloses = useUsaIndexCloses(day ? shiftDate(day, -INDEX_LOOKBACK_DAYS) : null, day)
-  const indexRate = day && indexCloses.data ? indexChangeRate(indexCloses.data, day, day) : null
+  const startDay = rangeStart ? rangeStart.slice(0, 10) : day
+  const indexCloses = useUsaIndexCloses(startDay ? shiftDate(startDay, -INDEX_LOOKBACK_DAYS) : null, day)
+  const indexRate = day && startDay && indexCloses.data ? indexChangeRate(indexCloses.data, startDay, day) : null
   const { preferences, update } = useUsaGraphPreferences()
 
   const chart = useMemo(() => {
     const tree: HeatmapSectorNode[] =
-      categories.data && classifications.data && stocks.data && quotes.data?.snapshotTime
-        ? buildJapanTree(treeStocks, categories.data, classifications.data, names, quotes.data.quotes, quotes.data.snapshotTime)
+      categories.data && classifications.data && stocks.data && shownQuotes?.snapshotTime
+        ? buildJapanTree(treeStocks, categories.data, classifications.data, names, shownQuotes.quotes, shownQuotes.snapshotTime)
         : []
     const depth = preferences.groupDepth
     const entries: RankColumnItem[] = []
@@ -76,18 +81,18 @@ export default function UsaGraphPage() {
     }
     if (indexRate !== null) entries.push({ key: 'market-index:SP500', sectorName: INDEX_LABEL, value: indexRate, isReference: true })
     return buildRankChart(entries)
-  }, [categories.data, classifications.data, stocks.data, quotes.data, treeStocks, names, preferences.groupDepth, preferences.avgChangeRateUseSimple, indexRate])
+  }, [categories.data, classifications.data, stocks.data, shownQuotes, treeStocks, names, preferences.groupDepth, preferences.avgChangeRateUseSimple, indexRate])
 
-  const shownCount = quotes.data?.quotes.length ?? 0
-  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch()])
+  const shownCount = shownQuotes?.quotes.length ?? 0
+  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading || snapshotTimes.isLoading || indexCloses.isLoading
-  const isError = categories.isError || classifications.isError || stocks.isError || quotes.isError
+  const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading || periodQuotes.isLoading || snapshotTimes.isLoading || indexCloses.isLoading
+  const isError = categories.isError || classifications.isError || stocks.isError || quotes.isError || periodQuotes.isError
 
   const copy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotRef.current) return
@@ -112,7 +117,7 @@ export default function UsaGraphPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="GRAPH" label="S&P 500" />
-              <ToolbarChip bare><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={setSelectedTime} /></ToolbarChip>
+              <ToolbarChip bare><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>
