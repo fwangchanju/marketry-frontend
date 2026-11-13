@@ -62,27 +62,30 @@ const NAV_TAB_CLASS = `${FONT_NAV_TAB.replace('text-lg', 'text-[15px]')} inline-
 const NAV_ICON_PX = 18
 const NAV_ICON_STROKE_PX = 1.35
 type NavIconName = Extract<SettingsSectionIconName, 'home' | 'composition' | 'bar-chart' | 'custom-edit' | 'member' | 'industry' | 'stock-single'>
-const NAV_ICON_EXTENT: Record<NavIconName, { cx: number; cy: number; size: number }> = {
+const NAV_ICON_EXTENT: Record<NavIconName, { cx: number; cy: number; size: number; px?: number }> = {
   home: { cx: 12, cy: 12, size: 18 },
   composition: { cx: 12, cy: 12, size: 16 },
   'bar-chart': { cx: 12, cy: 12, size: 18 },
   'custom-edit': { cx: 12.31, cy: 12.69, size: 18.62 },
   member: { cx: 12, cy: 12.5, size: 17 },
   industry: { cx: 12, cy: 12, size: 20 },
-  // 작은 네모 하나지만 Sector(industry)와 같은 20칸으로 잘라, 두 아이콘의 작은 네모가 같은 크기로 그려진다.
-  'stock-single': { cx: 12, cy: 12, size: 20 },
+  // 네모(10칸)에 맞춰 자르고, 칸(px)도 같은 비율(18px ÷ 22칸)로 줄여 네모 크기는 그대로 두되 양옆 빈 여백만 없앤다.
+  // 18px 칸에 그대로 넣으면 네모가 칸의 절반만 차서 글자와의 간격이 다른 아이콘보다 넓어 보인다.
+  'stock-single': { cx: 12, cy: 12, size: 10, px: 9.8 },
 }
 
 // 광고 배너(AdBannerSlot)가 메뉴에 걸릴 만큼 화면이 좁으면 배너 자리가 html에 data-nav-compact를 달아서 글자 앞 아이콘을 숨기고 메뉴 폭을 줄인다.
 function NavIcon({ icon }: { icon: NavIconName }) {
-  const { cx, cy, size } = NAV_ICON_EXTENT[icon]
+  const { cx, cy, size, px = NAV_ICON_PX } = NAV_ICON_EXTENT[icon]
   const side = size + 2
+  // 칸 크기(px)는 대부분 18px이고, 그보다 작은 아이콘(stock-single)만 따로 줄인다. 클래스는 소스에 문자열로 있어야 만들어진다.
+  const boxClass = px === NAV_ICON_PX ? 'h-[18px] w-[18px]' : 'h-[9.8px] w-[9.8px]'
   return (
     <SettingsSectionIcon
       icon={icon}
-      className="-translate-y-[1.4px] h-[18px] w-[18px] [html[data-nav-compact]_&]:hidden"
+      className={`-translate-y-[1.4px] ${boxClass} [html[data-nav-compact]_&]:hidden`}
       viewBox={`${cx - side / 2} ${cy - side / 2} ${side} ${side}`}
-      strokeWidth={(NAV_ICON_STROKE_PX * side) / NAV_ICON_PX}
+      strokeWidth={(NAV_ICON_STROKE_PX * side) / px}
     />
   )
 }
