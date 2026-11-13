@@ -23,7 +23,7 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useUsaGraphPreferences } from '@/hooks/useUsaGraphPreferences'
 import { useUsaIndexCloses } from '@/hooks/useUsaIndexCloses'
 import { useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
-import { resolveLegendSwatches } from '@/utils/heatmapColorScale'
+import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
 import { indexChangeRate, shiftDate } from '@/utils/indexChange'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { buildRankChart } from '@/utils/rankChart'
@@ -89,7 +89,6 @@ export default function UsaGraphPage() {
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading || snapshotTimes.isLoading || indexCloses.isLoading
   const isError = categories.isError || classifications.isError || stocks.isError || quotes.isError
-  const isPastSnapshot = snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime
 
   const copy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotRef.current) return
@@ -114,7 +113,7 @@ export default function UsaGraphPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="GRAPH" label="S&P 500" />
-              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} snapshotTimes={snapshotTimes.data ?? []} onSelect={setSelectedTime} /></ToolbarChip>
+              <ToolbarChip bare><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={setSelectedTime} /></ToolbarChip>
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>

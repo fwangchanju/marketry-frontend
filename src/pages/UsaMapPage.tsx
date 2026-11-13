@@ -27,7 +27,7 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useUsaMapPreferences } from '@/hooks/useUsaMapPreferences'
 import { useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
-import { resolveLegendSwatches } from '@/utils/heatmapColorScale'
+import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
@@ -112,7 +112,6 @@ export default function UsaMapPage() {
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
   const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading
   const isError = categories.isError || classifications.isError || stocks.isError || quotes.isError
-  const isPastSnapshot = snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime
   const shownCount = filteredRootNodes.reduce((count, root) => count + flattenAllItems([root]).length, 0)
   const topPickProps = {
     taxonomy: 'MARKETRY' as const,
@@ -171,7 +170,7 @@ export default function UsaMapPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label="S&P 500" />
-              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} snapshotTimes={snapshotTimes.data ?? []} onSelect={setSelectedTime} /></ToolbarChip>
+              <ToolbarChip bare><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={setSelectedTime} /></ToolbarChip>
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>
