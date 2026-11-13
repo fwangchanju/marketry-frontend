@@ -881,6 +881,11 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   scrollbar-gutter: stable;
 }
 
+/* 정보 페이지 본문: 내용이 짧은 페이지(CONTACT)도 스크롤바 자리를 비워 두어 구분선 폭을 다른 페이지와 맞춘다. */
+.page-main-scroll {
+  scrollbar-gutter: stable;
+}
+
 /* 모든 페이지의 설정 항목은 180px. 제목은 4px 내리고, 첫 항목 위의 본문 여백 12px는 별도로 둔다.
    포털 컨테이너의 표시 방식은 바꾸지 않는다. */
 .settings-panel-tab-content[data-align-second-heading] {
