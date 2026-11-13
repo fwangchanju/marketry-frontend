@@ -13,6 +13,7 @@ import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import ToolbarModeText from '@/components/ToolbarModeText'
+import { MARKET_LABEL } from '@/utils/marketOptions'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
@@ -239,7 +240,7 @@ export default function CustomPage() {
           >
             <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 w-full shrink-0 items-center justify-between bg-ui-background/70 text-sm font-bold text-ui-white">
               <div className="flex h-full shrink-0 items-center gap-2">
-                <ToolbarModeText page="CUSTOM" label={mode === 'stock' ? 'STOCK' : 'SECTOR'} />
+                <ToolbarModeText page={mode === 'stock' ? 'STOCK' : 'SECTOR'} label={MARKET_LABEL.ALL_STOCK} />
               </div>
               {/* 검색창(과 필터 초기화) — 종목·업종 표가 모두 이 노드로 포털링해서 그린다. */}
               <div ref={setToolbarContainer} className="ml-1 flex h-full min-h-0 min-w-0 flex-1 items-center" />
@@ -311,7 +312,9 @@ export default function CustomPage() {
           </div>
           <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel
-              pageLabel="Custom"
+              pageLabel={mode === 'stock' ? 'Stock' : 'Sector'}
+              // 헤더 이름이 바뀌어도 고른 탭 기억(저장 이름표)은 예전 'Custom' 그대로 둔다.
+              tabStorageName="Custom"
               plainTabLabel="커스텀"
               plainTabIcon="custom-edit"
               stockCountLabel={countLabel}

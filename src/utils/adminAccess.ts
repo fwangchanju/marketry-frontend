@@ -5,7 +5,7 @@ export function isAdminSession(session: { authenticated?: boolean; role?: string
   return session?.authenticated === true && session.role === 'ADMIN'
 }
 
-// 특별 회원 화면(일본 지도·J-SECTOR·J-STOCK, 설정창 실험 탭)을 볼 수 있는지 정한다. 관리자도 포함한다. 실제 보호는 서버의 /api/japan/** 검사다.
+// 특별 회원 화면(일본 지도·섹터·스톡(JAPAN), 설정창 실험 탭)을 볼 수 있는지 정한다. 관리자도 포함한다. 실제 보호는 서버의 /api/japan/** 검사다.
 export function isSpecialSession(session: { authenticated?: boolean; role?: string | null; special?: boolean | null } | null | undefined): boolean {
   return isAdminSession(session) || (session?.authenticated === true && session.special === true)
 }

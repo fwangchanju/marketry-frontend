@@ -216,7 +216,7 @@ export default function JapanStockPage() {
       <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold">
-            <ToolbarModeText page="CUSTOM" label="J-STOCK" />
+            <ToolbarModeText page="STOCK" label="NIKKEI 225" />
             <SearchBar inline query={search} onChange={setSearch} placeholder="검색" ariaLabel="일본 종목 검색" maxLength={STOCK_SEARCH_MAX_LENGTH} />
             <div className="min-w-0 flex-1" />
             <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
@@ -233,7 +233,7 @@ export default function JapanStockPage() {
           <DisclaimerFooter />
         </main>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Custom" tabStorageName={JAPAN_SETTINGS_TAB_STORAGE.stock} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}>
+          <SettingsPanel pageLabel="Stock" tabStorageName={JAPAN_SETTINGS_TAB_STORAGE.stock} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}>
             <SettingsPanelGroup section="custom"><div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">계산: 100엔 당 850원</span></span></div></SettingsPanelGroup>
             <SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control">
               <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일괄 변경</h2>
