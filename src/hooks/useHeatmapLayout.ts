@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { changeDirectionOf } from '@/utils/changeDirection'
 import { hierarchy, treemap, treemapBinary, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import type { HeatmapItem } from '@/types/api'
 
@@ -246,8 +247,9 @@ export function useHeatmapLayout(
             height: boxHeight,
             areaPercent: ((boxWidth * boxHeight) / (width * height)) * 100,
           })
-          if (child.data.item.changeRate > 0) advancerCount += 1
-          else if (child.data.item.changeRate < 0) declinerCount += 1
+          const direction = changeDirectionOf(child.data.item.changeRate)
+          if (direction === 'up') advancerCount += 1
+          else if (direction === 'down') declinerCount += 1
           else unchangedCount += 1
         } else {
           const subSector = toLaidOutSector(child, node, nodeReal, nodeReal.x0, ny0)
