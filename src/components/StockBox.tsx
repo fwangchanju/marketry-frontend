@@ -5,6 +5,7 @@ import { toJoEok, toPctSignedGrouped, toVolume } from '@/utils/format'
 import { isLightColor, resolveHeatmapColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 import { LABEL_LINE_HEIGHT, fitStockLabel, stockFitBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
+import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 
 interface Props {
   item: HeatmapItem
@@ -21,7 +22,7 @@ interface Props {
   stockLabelMode: StockLabelMode
   // 등락률(%) 표시 소수점 자릿수(설정 사이드바의 "소수점 아래 표시" 슬라이더).
   decimalPlaces: number
-  currencyUnit?: '원' | '엔'
+  currencyUnit?: CurrencyUnit
   // 박스 색칠은 이 설정 하나로만 결정된다(resolveHeatmapColor) — 범례 바(MapPage)도
   // 같은 설정 + 같은 함수를 거치므로 두 화면이 항상 수학적으로 일치한다.
   colorScale: ColorScaleConfig
@@ -83,7 +84,7 @@ export default function StockBox({
         // 기간 등락률에서는 시작일의 기준가와 종료일의 종가(장중이면 현재가)를 보여 준다.
         `${item.rangeLabels?.end ?? '현재가'}: ${toVolume(item.currentPrice)}${currencyUnit}`,
         `${item.rangeLabels?.base ?? '전일종가'}: ${toVolume(item.lastPrice)}${currencyUnit}`,
-        `시가총액: ${toJoEok(item.totalMarketValue / 100_000_000)}${currencyUnit === '엔' ? ' 엔' : ''}`,
+        `시가총액: ${toJoEok(item.totalMarketValue / 100_000_000)}${currencySuffix(currencyUnit)}`,
       ],
       targetKey: stockKey,
       tooltip,

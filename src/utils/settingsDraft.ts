@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import type { SettingsProfile } from './settingsSchema'
 
-// 일본 화면(지도·그래프)의 임시값은 국내 분류 세 칸과 따로 센다 — 'japan.'으로 시작하는 저장 이름이 여기 속한다.
-export type DraftScope = SettingsProfile | 'common' | 'japan'
+// 일본·미국 화면(지도·그래프)의 임시값은 국내 분류 세 칸과 따로, 서로도 따로 센다 — 'japan.' 또는 'usa.'로 시작하는 저장 이름이 각자의 범위에 속한다.
+export type DraftScope = SettingsProfile | 'common' | 'japan' | 'usa'
 
 // "임시로 써보기" 값 저장소. 설정창에서 바꾼 값은 서버에 바로 올리지 않고 이 화면의 메모리에만 둔다(새로고침하면 사라진다) —
 // 저장 버튼을 눌러야 서버로 올라가고(commitDrafts), 초기화 버튼이나 브라우저 종료·새로고침이면 저장값으로 돌아온다(discardDrafts).
@@ -66,6 +66,7 @@ export function writeDraft(key: string, value: unknown) {
 
 function scopeForKey(key: string): DraftScope {
   if (key.startsWith('japan.')) return 'japan'
+  if (key.startsWith('usa.')) return 'usa'
   const match = key.match(/^heatmap\.profile\.(exchange|marketry|mine)\./)
   return match ? match[1] as SettingsProfile : 'common'
 }
@@ -133,4 +134,10 @@ export function useHasDraftForKeys(keys: readonly string[], scope?: DraftScope):
 // 임시값이 바뀌거나 버려질 때 설정을 쓰는 화면이 다시 그려지게 하는 구독.
 export function useDraftVersion(): number {
   return useSyncExternalStore(subscribe, () => version)
+}
+
+// 설정창이 넘긴 변경 점 이름 표(draftKeyMap)가 어느 화면 범위인지 저장 이름의 접두어로 구한다. 표가 비어 있으면 일본으로 본다.
+export function draftScopeOfKeyMap(keyMap: Readonly<Record<string, string>>): DraftScope {
+  const first = Object.values(keyMap)[0]
+  return first === undefined ? 'japan' : scopeForKey(first)
 }

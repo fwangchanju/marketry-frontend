@@ -107,7 +107,9 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const isAdmin = !isSessionLoading && isAdminSession(session)
   const canSeeJapan = !isSessionLoading && isSpecialSession(session)
   const customLink = canSeeJapan ? { ...CUSTOM_LINK, options: [...(CUSTOM_LINK.options ?? []), { label: 'J-SECTOR', to: '/custom/sector/japan', special: true }, { label: 'J-STOCK', to: '/custom/stock/japan', special: true }] } : CUSTOM_LINK
-  const baseLinks = canSeeJapan ? BASE_LINKS.map(link => link.label === 'Map' || link.label === 'Graph' ? { ...link, options: [...(link.options ?? []), { label: 'JAPAN', to: `/${link.label.toLowerCase()}/japan`, special: true }] } : link) : BASE_LINKS
+  // 해외 항목은 특별 회원과 관리자에게만 보인다. 미국 그래프 페이지는 아직 없어서 지도에만 넣는다.
+  const overseasOptions = (label: string) => [{ label: 'JAPAN', to: `/${label.toLowerCase()}/japan`, special: true }, ...(label === 'Map' ? [{ label: 'USA', to: '/map/usa', special: true }] : [])]
+  const baseLinks = canSeeJapan ? BASE_LINKS.map(link => link.label === 'Map' || link.label === 'Graph' ? { ...link, options: [...(link.options ?? []), ...overseasOptions(link.label)] } : link) : BASE_LINKS
   const links = isAdmin ? [...baseLinks, customLink, ADMIN_LINK] : [...baseLinks, customLink]
   const [openTo, setOpenTo] = useState<string | null>(null)
   // 목록은 누르면 열려 그대로 있고, 메뉴 밖을 누르면 닫는다. 메뉴 사이 빈 곳도 메뉴 밖이다.

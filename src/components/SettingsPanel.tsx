@@ -24,7 +24,7 @@ import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel, toSnapshotTim
 import { useIsLoggedIn, useSession } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
-import { commitDrafts, discardDrafts, useHasDraftForKeys, useHasDrafts, type DraftScope } from '@/utils/settingsDraft'
+import { commitDrafts, discardDrafts, draftScopeOfKeyMap, useHasDraftForKeys, useHasDrafts, type DraftScope } from '@/utils/settingsDraft'
 import { profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
@@ -2506,7 +2506,7 @@ export default function SettingsPanel({
   const settingsProfile: SettingsProfile = selectedTaxonomy === 'MARKETRY'
     ? 'marketry'
     : selectedTaxonomy === 'MINE' ? 'mine' : 'exchange'
-  const draftScope: DraftScope = draftKeyMap ? 'japan' : settingsProfile
+  const draftScope: DraftScope = draftKeyMap ? draftScopeOfKeyMap(draftKeyMap) : settingsProfile
   const hasDrafts = useHasDrafts(draftScope)
   const [isPreferenceFeedbackVisible, setIsPreferenceFeedbackVisible] = useState(false)
   const [isSavingPreferences, setIsSavingPreferences] = useState(false)
