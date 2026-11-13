@@ -146,7 +146,8 @@ export default function App() {
       <MobileGate>
       <LoginGateProvider>
         <PageNumberStyle />
-        <Suspense fallback={<Spinner />}>
+        {/* 페이지 코드를 불러오는 동안의 화면. 본문 로딩과 같은 모양을 화면 가운데에 둔다(옵션 없는 Spinner는 32px 링이라 왼쪽 위에 붙는다). */}
+        <Suspense fallback={<div className="flex h-screen items-center justify-center bg-ui-background"><Spinner showElapsed /></div>}>
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<ResponsiveHomePage />} />
