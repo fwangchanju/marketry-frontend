@@ -23,7 +23,7 @@ import { SearchBar } from './ReadOnlyTaxonomySheet'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 import { createStockMatcher } from '@/utils/stockSearch'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from './EmptyMessage'
-import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
+import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, pinnedStockColumns, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
 import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
 import { usePopupPosition, type PopupPosition } from '@/hooks/usePopupPosition'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
@@ -726,6 +726,12 @@ const AdminStockRow = memo(function AdminStockRow({
   onAssign,
   onUpdateAlias,
   showAlias,
+  nameColSpan,
+  showSizeTier,
+  showIndustry,
+  showStockCode,
+  showMarket,
+  showNxt,
   isNxt,
   sectorOrderMode,
   onSectorOrderModeChange,
@@ -747,6 +753,12 @@ const AdminStockRow = memo(function AdminStockRow({
   onAssign: (stockCode: string, sectorId: number) => void
   onUpdateAlias: (stockCode: string, alias: string | null) => void
   showAlias: boolean
+  nameColSpan: number
+  showSizeTier: boolean
+  showIndustry: boolean
+  showStockCode: boolean
+  showMarket: boolean
+  showNxt: boolean
   isNxt: boolean
   // 섹터 선택 팝업의 보기 순서 — 가나다 순이거나 시가총액 합이 큰 순서(sectorStats).
   sectorOrderMode: 'alpha' | 'cap'
@@ -828,8 +840,8 @@ const AdminStockRow = memo(function AdminStockRow({
         {/* 상태 변경은 줄 클릭(handleRowClick)에서 하므로 onChange는 비워 둔다 — 제어되는 체크박스에 필요한 자리표시다. */}
         <input type="checkbox" className="mx-auto my-0 block thin-check" checked={isSelected} onChange={() => {}} />
       </td>
-      <td className={`${alignClass('center')} text-ui-muted ${readOnlyHoverClass}`}>{item.stockCode}</td>
-      <td colSpan={showAlias ? 1 : 2} className={`truncate pl-2 text-left ${marketColorClass(item.market)} ${readOnlyHoverClass}`}>{item.stockName}</td>
+      {showStockCode && <td className={`${alignClass('center')} text-ui-muted ${readOnlyHoverClass}`}>{item.stockCode}</td>}
+      <td colSpan={nameColSpan} className={`truncate pl-2 text-left ${marketColorClass(item.market)} ${readOnlyHoverClass}`}>{item.stockName}</td>
       {showAlias && (
         <AdminAliasCell
           alias={item.alias}
@@ -844,10 +856,10 @@ const AdminStockRow = memo(function AdminStockRow({
       <td className={`${alignClass('right')} text-ui-muted ${readOnlyHoverClass}`}>
         {item.totalMarketValue != null ? toJoEokDecimal(item.totalMarketValue / 100_000_000) : '-'}
       </td>
-      <td className={`text-center text-ui-muted ${readOnlyHoverClass}`}>{item.marketValueTier || '-'}</td>
-      <td className={`text-center ${marketColorClass(item.market)} ${readOnlyHoverClass}`}>{MARKET_LABEL[item.market]}</td>
-      <td className={`text-center ${isNxt ? 'text-ui-muted' : 'text-ui-muted'} ${readOnlyHoverClass}`}>{isNxt ? 'O' : '-'}</td>
-      <td className={`truncate pl-2 text-left text-ui-muted ${readOnlyHoverClass}`}>{item.industryName ?? '-'}</td>
+      {showSizeTier && <td className={`text-center text-ui-muted ${readOnlyHoverClass}`}>{item.marketValueTier || '-'}</td>}
+      {showMarket && <td className={`text-center ${marketColorClass(item.market)} ${readOnlyHoverClass}`}>{MARKET_LABEL[item.market]}</td>}
+      {showNxt && <td className={`text-center ${isNxt ? 'text-ui-muted' : 'text-ui-muted'} ${readOnlyHoverClass}`}>{isNxt ? 'O' : '-'}</td>}
+      {showIndustry && <td className={`truncate pl-2 text-left text-ui-muted ${readOnlyHoverClass}`}>{item.industryName ?? '-'}</td>}
       <AdminStockSectorCell
         value={chain.rootName}
         options={parentSectorOptions}
@@ -1611,7 +1623,19 @@ export default function AdminStockTable({
   // 실제 <table>/<tr> 구조는 유지한 채(NES.css 스타일이 table 요소를 대상으로 하므로), 보이는 행 앞뒤로
   // 스페이서 <tr>만 넣어서 스크롤 높이를 흉내내는 방식.
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const columnWidths = useStockColumnWidths(scrollContainerRef)
+  // 머리글 필터가 걸린 열은 좁은 창에서도 숨기지 않는다.
+  const pinnedColumns = useMemo(() => pinnedStockColumns(columnFilters.excluded), [columnFilters.excluded])
+  const columnWidths = useStockColumnWidths(scrollContainerRef, pinnedColumns)
+  // 좁은 창에서 숨긴 열은 폭 표에 키가 없다 — 머리글·본문 칸·빈 줄의 칸 수를 거기에 맞춘다.
+  // 약칭 열이 숨으면 관리자는 약칭 칸이 없어지고, 일반 사용자는 종목명 칸이 약칭 자리(colSpan 2)를 더는 차지하지 않는다.
+  const isAliasColumnVisible = columnWidths.alias !== undefined
+  const nameColSpan = !isAdmin && isAliasColumnVisible ? 2 : 1
+  const showSizeTier = columnWidths.sizeTier !== undefined
+  const showIndustry = columnWidths.industry !== undefined
+  const showStockCode = columnWidths.stockCode !== undefined
+  const showMarket = columnWidths.market !== undefined
+  const showNxt = columnWidths.nxt !== undefined
+  const tableColSpan = 1 + columnKeys.filter(key => columnWidths[key] !== undefined).length
   const rowVirtualizer = useVirtualizer({
     count: sorted.length,
     getScrollElement: () => scrollContainerRef.current,
@@ -1650,7 +1674,7 @@ export default function AdminStockTable({
           setSearchQuery(query)
           scrollContainerRef.current?.scrollTo({ top: 0 })
         }}
-        placeholder={isAdmin ? '종목코드 · 종목명 · 약칭 · 분류 검색' : '종목코드 · 종목명 · 분류 검색'}
+        placeholder="검색"
         ariaLabel="종목 검색"
         afterInput={
           columnFilters.activeCount > 0 ? (
@@ -1804,7 +1828,7 @@ export default function AdminStockTable({
               >
                 <input type="checkbox" className="mx-auto my-0 block thin-check" checked={isAllVisibleSelected} onChange={toggleSelectAllVisible} />
               </th>
-              {columns.map(col => {
+              {columns.filter(col => columnWidths[col.columnKey] !== undefined).map(col => {
                 const filterKey = FILTER_KEY_BY_COLUMN[col.key]
                 const label = (
                   <StockSortHeader
@@ -1835,7 +1859,7 @@ export default function AdminStockTable({
                   <th
                     key={col.key}
                     data-column-key={col.key}
-                    colSpan={col.key === 'stockName' && !isAdmin ? 2 : undefined}
+                    colSpan={col.key === 'stockName' && nameColSpan === 2 ? 2 : undefined}
                     className="whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white"
                     data-hint={col.key === 'alias' && isAdmin ? '약칭은 운영자만 관리할 수 있습니다.' : undefined}
                   >
@@ -1874,7 +1898,7 @@ export default function AdminStockTable({
           <tbody>
             {isPending ? (
               <tr>
-                <td colSpan={COLUMNS.length + 1} className="p-8">
+                <td colSpan={tableColSpan} className="p-8">
                   {/* 정렬을 바꾸는 동안의 로딩 원 — 지도·그룹 페이지처럼 크게 가운데에 보여준다. */}
                   <div className="flex h-[min(32rem,60vh)] items-center justify-center">
                     <Spinner showElapsed />
@@ -1885,7 +1909,7 @@ export default function AdminStockTable({
               <>
                 {paddingTop > 0 && (
                   <tr>
-                    <td colSpan={COLUMNS.length + 1} style={{ height: paddingTop, padding: 0, border: 'none' }} />
+                    <td colSpan={tableColSpan} style={{ height: paddingTop, padding: 0, border: 'none' }} />
                   </tr>
                 )}
                 {virtualRows.map(virtualRow => {
@@ -1893,7 +1917,13 @@ export default function AdminStockTable({
                   return (
                     <AdminStockRow
                       key={item.stockCode}
-                      showAlias={isAdmin}
+                      showAlias={isAdmin && isAliasColumnVisible}
+                      nameColSpan={nameColSpan}
+                      showSizeTier={showSizeTier}
+                      showIndustry={showIndustry}
+                      showStockCode={showStockCode}
+                      showMarket={showMarket}
+                      showNxt={showNxt}
                       isNxt={nxtStockCodes.has(item.stockCode)}
                       item={item}
                       index={virtualRow.index}
@@ -1918,7 +1948,7 @@ export default function AdminStockTable({
                 })}
                 {paddingBottom > 0 && (
                   <tr>
-                    <td colSpan={COLUMNS.length + 1} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
+                    <td colSpan={tableColSpan} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
                   </tr>
                 )}
               </>

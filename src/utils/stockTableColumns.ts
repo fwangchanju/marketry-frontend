@@ -62,13 +62,51 @@ const KOREAN_COLUMN_ORDER: readonly StockColumnKey[] = ['stockCode', 'stockName'
 
 export type StockColumnWidths = Partial<Record<StockColumnKey, number>>
 
-export function computeStockColumnWidths(containerWidth: number): StockColumnWidths {
-  const fixedTotal = KOREAN_COLUMN_ORDER.reduce((sum, key) => sum + (FIXED_COLUMN_PX[key] ?? 0), STOCK_CHECKBOX_COLUMN_PX)
+// 창이 좁아지면 옆 스크롤이 생기기 직전에 아래 순서로 열을 하나씩 숨긴다(2026-11-13 사용자 지시). 종목명·시가총액과 대·중·소분류는 숨기지 않는다.
+// 앞의 세 열(폭 70px)은 어느 순서든 단계마다 70px씩 줄고, 일본 표는 열 이름이 아니라 규모·마켓·NXT 묶음의 크기를 따른다.
+export const STOCK_COLUMN_HIDE_ORDER: readonly StockColumnKey[] = ['stockCode', 'nxt', 'market', 'alias', 'industry', 'sizeTier']
+
+// 숨기기 전에 견디는 여유 폭(px) — 칸 폭이 최소 폭에 닿은 뒤 이만큼까지는 표가 아주 조금(몇 px) 넘치는 것을 그대로 둔다.
+// 창 너비 1440(영역 1126px)에서 열이 숨지 않고 확정 폭 그대로 보이게 하는 값이다(2026-11-13).
+const HIDE_TOLERANCE_PX = 16
+
+// 머리글 필터가 걸린 열은 숨기지 않는다(보이지 않는 조건 때문에 목록이 줄어든 이유를 알 수 없게 되므로) — 필터가 있는 숨김 후보 열의 이름이다.
+const FILTERABLE_HIDE_KEYS: readonly StockColumnKey[] = ['nxt', 'market', 'industry', 'sizeTier']
+export function pinnedStockColumns(excluded: Partial<Record<string, ReadonlySet<string> | undefined>>): ReadonlySet<StockColumnKey> {
+  return new Set(FILTERABLE_HIDE_KEYS.filter(key => (excluded[key]?.size ?? 0) > 0))
+}
+
+// 보이는 열만으로 계산한 표의 폭 구성 — 고정 폭 합과, 남는 폭을 나눠 갖는 열이 모두 최소 폭 이상이 되려면 필요한 남는 폭이다.
+function layoutFor(hidden: ReadonlySet<StockColumnKey>) {
+  const visible = KOREAN_COLUMN_ORDER.filter(key => !hidden.has(key))
+  const fixedTotal = visible.reduce((sum, key) => sum + (FIXED_COLUMN_PX[key] ?? 0), STOCK_CHECKBOX_COLUMN_PX)
+  const weights = visible.map(key => FLEX_WEIGHTS[key]).filter((weight): weight is number => weight !== undefined)
+  const weightTotal = weights.reduce((sum, weight) => sum + weight, 0)
+  const flexNeeded = weights.length === 0 ? 0 : (FLEX_COLUMN_MIN_PX * weightTotal) / Math.min(...weights)
+  return { visible, fixedTotal, weightTotal, flexNeeded }
+}
+
+// 영역 너비에서 숨길 열 — 숨기는 열이 늘어도 옆 스크롤 없이 들어가는 가장 적은 개수만 숨긴다(필터가 걸린 열은 건너뛴다).
+// 숨길 수 있는 열을 모두 숨겨도 좁으면 나머지는 옆 스크롤이다.
+export function hiddenStockColumnsFor(containerWidth: number, pinned: ReadonlySet<StockColumnKey> = new Set()): ReadonlySet<StockColumnKey> {
+  const width = Math.floor(containerWidth)
+  const candidates = STOCK_COLUMN_HIDE_ORDER.filter(key => !pinned.has(key))
+  for (let count = 0; count <= candidates.length; count += 1) {
+    const hidden = new Set(candidates.slice(0, count))
+    const { fixedTotal, flexNeeded } = layoutFor(hidden)
+    if (width >= fixedTotal + flexNeeded - HIDE_TOLERANCE_PX || count === candidates.length) return hidden
+  }
+  return new Set()
+}
+
+// 숨긴 열은 결과에 키가 없다 — 폭 표에 키가 없으면 표는 그 열의 머리글·칸·열 폭을 그리지 않는다.
+export function computeStockColumnWidths(containerWidth: number, pinned: ReadonlySet<StockColumnKey> = new Set()): StockColumnWidths {
+  const hidden = hiddenStockColumnsFor(containerWidth, pinned)
+  const { visible, fixedTotal, weightTotal } = layoutFor(hidden)
   const flexTotal = Math.max(0, Math.floor(containerWidth) - fixedTotal)
-  const weightTotal = Object.values(FLEX_WEIGHTS).reduce((sum, weight) => sum + (weight ?? 0), 0)
   const widths: StockColumnWidths = {}
   let used = 0
-  for (const key of KOREAN_COLUMN_ORDER) {
+  for (const key of visible) {
     const weight = FLEX_WEIGHTS[key]
     if (weight === undefined) { widths[key] = FIXED_COLUMN_PX[key]; continue }
     widths[key] = Math.max(FLEX_COLUMN_MIN_PX, Math.floor((flexTotal * weight) / weightTotal))
@@ -84,20 +122,26 @@ export const stockColumnWidthsTotal = (widths: StockColumnWidths): number =>
   STOCK_CHECKBOX_COLUMN_PX + Object.values(widths).reduce((sum, width) => sum + (width ?? 0), 0)
 
 // 일본 종목 표의 칸 폭 — 국내 표의 좌표를 따른다.
-// 종목명·한글명(=약칭)·시가총액(¥)·야후 업종(=거래소 분류)·대·중·소분류는 국내와 같다.
+// 종목명 (영어)·종목명 (한글)(=약칭)·시가총액(¥)·야후 업종(=거래소 분류)·대·중·소분류는 국내와 같다.
 // 국내 규모·마켓·NXT(3칸) 묶음은 일본 시가총액(₩)·야후 섹터(2칸) 묶음과 시작·끝이 같다 — 시가총액(₩)은 시가총액(¥)과 같은 폭이고 야후 섹터가 나머지를 가진다.
+// 국내가 마켓·NXT를 숨겨 묶음이 줄면(210 → 140 → 70) 일본은 먼저 시가총액(₩)을 숨기고 야후 섹터가 묶음 전체를 가진다.
+// 묶음이 모두 숨으면(0) 야후 섹터도 숨는다. 종목코드·거래소 분류(=야후 업종)는 국내와 함께 숨기고, 약칭 자리는 종목명 (영어)이 숨는다 — 폭 표에 키가 없다.
 export function stockColumnWidthsForJapan(korean: StockColumnWidths): StockColumnWidths {
   const group = (korean.sizeTier ?? 0) + (korean.market ?? 0) + (korean.nxt ?? 0)
-  return {
-    stockCode: korean.stockCode,
-    stockName: korean.stockName,
-    alias: korean.alias,
+  const showKrw = korean.market !== undefined && korean.nxt !== undefined && korean.sizeTier !== undefined
+  const widths: StockColumnWidths = {
     totalMarketValue: korean.totalMarketValue,
-    totalMarketValueKrw: korean.totalMarketValue,
-    industry: group - (korean.totalMarketValue ?? 0),
-    overseasSubSector: korean.industry,
     parentSector: korean.parentSector,
     midSector: korean.midSector,
     subSector: korean.subSector,
   }
+  if (korean.stockCode !== undefined) widths.stockCode = korean.stockCode
+  // 국내가 약칭을 숨기면 일본은 종목명 (영어)을 숨기고 종목명 (한글)이 국내 종목명 칸의 자리와 폭을 그대로 가져간다(2026-11-13).
+  if (korean.alias !== undefined) { widths.stockName = korean.stockName; widths.alias = korean.alias }
+  else widths.alias = korean.stockName
+  if (korean.industry !== undefined) widths.overseasSubSector = korean.industry
+  if (showKrw) widths.totalMarketValueKrw = korean.totalMarketValue
+  const sector = group - (showKrw ? (korean.totalMarketValue ?? 0) : 0)
+  if (sector > 0) widths.industry = sector
+  return widths
 }

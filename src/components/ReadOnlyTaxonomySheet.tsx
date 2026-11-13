@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { createPortal } from 'react-dom'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
-import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
+import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, pinnedStockColumns, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
 import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
@@ -275,7 +275,7 @@ function CategoryTable({ sectors, source, emptyMessage, extra, onCountLabelChang
           inline
           query={query}
           onChange={setQuery}
-          placeholder="업종 검색"
+          placeholder="검색"
           ariaLabel="업종 검색"
           afterInput={extra}
         />,
@@ -453,7 +453,19 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
   // 화면에 보이는 행(+위아래 여유)만 그리고, 나머지 높이는 앞뒤 스페이서 <tr>로 채운다(AdminStockTable과 같은 방식).
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
-  const columnWidths = useStockColumnWidths(scrollContainerRef)
+  // 머리글 필터가 걸린 열은 좁은 창에서도 숨기지 않는다.
+  const pinnedColumns = useMemo(() => pinnedStockColumns(filters.excluded), [filters.excluded])
+  const columnWidths = useStockColumnWidths(scrollContainerRef, pinnedColumns)
+  // 약칭 열이 숨으면 종목명 칸이 약칭 자리(colSpan 2)를 더는 차지하지 않는다.
+  const isAliasColumnVisible = columnWidths.alias !== undefined
+  const nameColSpan = !showAlias && isAliasColumnVisible ? 2 : 1
+  const showSizeTier = columnWidths.sizeTier !== undefined
+  const showIndustry = columnWidths.industry !== undefined
+  // 좁은 창에서 숨긴 열은 폭 표에 키가 없다 — 머리글·본문 칸·빈 줄의 칸 수를 거기에 맞춘다.
+  const showStockCode = columnWidths.stockCode !== undefined
+  const showMarket = columnWidths.market !== undefined
+  const showNxt = columnWidths.nxt !== undefined
+  const tableColSpan = 1 + STOCK_COLUMN_KEYS.filter(key => columnWidths[key] !== undefined).length
   // 줄 누르기·Shift+클릭 범위·끌어서 연속 선택 — MARKETRY 종목 표와 같은 동작이다.
   const { rowProps, selectionHint } = useRowRangeSelection(
     useMemo(() => visibleRows.map(row => row.stockCode), [visibleRows]),
@@ -482,7 +494,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
           inline
           query={query}
           onChange={setQuery}
-          placeholder={showAlias ? '종목코드 · 종목명 · 약칭 · 분류 검색' : '종목코드 · 종목명 · 분류 검색'}
+          placeholder="검색"
           ariaLabel="종목 검색"
           afterInput={
             <>
@@ -519,14 +531,14 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
                   onClick={event => event.stopPropagation()}
                 />
               </th>
-              {header('stockCode', '종목코드')}
-              {header('stockName', '종목명', undefined, showAlias ? 1 : 2)}
-              {showAlias && header('alias', '약칭')}
+              {showStockCode && header('stockCode', '종목코드')}
+              {header('stockName', '종목명', undefined, nameColSpan)}
+              {showAlias && isAliasColumnVisible && header('alias', '약칭')}
               {header('totalMarketValue', '시가총액')}
-              {header('sizeTier', '규모', filterButton('sizeTier', '규모', { optionOrder: tierOrder }))}
-              {header('market', '마켓', filterButton('market', '마켓', { optionOrder: ['코스피', '코스닥'] }))}
-              {header('nxt', 'NXT', filterButton('nxt', 'NXT', { optionOrder: ['O', '-'], labelOf: value => (value === 'O' ? 'NXT 거래' : 'NXT 미거래') }))}
-              {header(showHierarchy ? 'industryName' : 'sectorName', '거래소 분류', filterButton('industry', '거래소 분류'))}
+              {showSizeTier && header('sizeTier', '규모', filterButton('sizeTier', '규모', { optionOrder: tierOrder }))}
+              {showMarket && header('market', '마켓', filterButton('market', '마켓', { optionOrder: ['코스피', '코스닥'] }))}
+              {showNxt && header('nxt', 'NXT', filterButton('nxt', 'NXT', { optionOrder: ['O', '-'], labelOf: value => (value === 'O' ? 'NXT 거래' : 'NXT 미거래') }))}
+              {showIndustry && header(showHierarchy ? 'industryName' : 'sectorName', '거래소 분류', filterButton('industry', '거래소 분류'))}
               {header('parentSector', '대분류', filterButton('parentSector', '대분류'))}
               {header('midSector', '중분류', filterButton('midSector', '중분류'))}
               {header('subSector', '소분류', filterButton('subSector', '소분류'))}
@@ -535,7 +547,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
           <tbody>
             {paddingTop > 0 && (
               <tr>
-                <td colSpan={STOCK_COLUMN_KEYS.length + 1} style={{ height: paddingTop, padding: 0, border: 'none' }} />
+                <td colSpan={tableColSpan} style={{ height: paddingTop, padding: 0, border: 'none' }} />
               </tr>
             )}
             {virtualRows.map(virtualRow => {
@@ -552,18 +564,20 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
                       onChange={() => {}}
                     />
                   </td>
-                  <td className={`${STOCK_BODY_CELL} text-center`}>{row.stockCode}</td>
-                  <td colSpan={showAlias ? 1 : 2} className={`${STOCK_BODY_CELL} truncate text-left !pl-2 ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>{row.stockName}</td>
-                  {showAlias && <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{row.alias ?? '-'}</td>}
+                  {showStockCode && <td className={`${STOCK_BODY_CELL} text-center`}>{row.stockCode}</td>}
+                  <td colSpan={nameColSpan} className={`${STOCK_BODY_CELL} truncate text-left !pl-2 ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>{row.stockName}</td>
+                  {showAlias && isAliasColumnVisible && <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{row.alias ?? '-'}</td>}
                   {/* MARKETRY 종목 표와 같은 표기('1,613.6조')와 오른쪽 정렬이다. */}
                   <td className={`${STOCK_BODY_CELL} text-right !pr-2 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>
-                  <td className={`${STOCK_BODY_CELL} text-center`}>{row.sizeTier || '-'}</td>
-                  <td className={`${STOCK_BODY_CELL} text-center ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>
-                    {row.market ? MARKET_LABEL[row.market] : '-'}
-                  </td>
-                  <td className={`${STOCK_BODY_CELL} text-center ${!row.nxt ? 'text-ui-muted' : ''}`}>{row.nxt ? 'O' : '-'}</td>
+                  {showSizeTier && <td className={`${STOCK_BODY_CELL} text-center`}>{row.sizeTier || '-'}</td>}
+                  {showMarket && (
+                    <td className={`${STOCK_BODY_CELL} text-center ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>
+                      {row.market ? MARKET_LABEL[row.market] : '-'}
+                    </td>
+                  )}
+                  {showNxt && <td className={`${STOCK_BODY_CELL} text-center ${!row.nxt ? 'text-ui-muted' : ''}`}>{row.nxt ? 'O' : '-'}</td>}
                   {/* 글자 시작 위치는 칸 왼쪽에서 8px로, 종목 표의 다른 글자 칸과 같다. */}
-                  <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{showHierarchy ? row.industryName : row.sectorName}</td>
+                  {showIndustry && <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{showHierarchy ? row.industryName : row.sectorName}</td>}
                   {[row.parentSector, row.midSector, row.subSector].map((name, index) => (
                     <td key={index} className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{(showHierarchy && name) || '-'}</td>
                   ))}
@@ -572,7 +586,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
             })}
             {paddingBottom > 0 && (
               <tr>
-                <td colSpan={STOCK_COLUMN_KEYS.length + 1} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
+                <td colSpan={tableColSpan} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
               </tr>
             )}
           </tbody>

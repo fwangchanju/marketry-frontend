@@ -47,6 +47,10 @@ const DEFAULT_SECTOR_SORT: SectorSort = { key: 'marketValue', direction: 'desc' 
 const HEADER_HALF_PX = STOCK_HEADER_ROW_PX / 2
 // 한 열 안의 세 칸(업종·시가총액 합·종목 수) 폭 비율 — 머리글 아랫줄과 본문이 같이 쓴다.
 const SECTOR_COLUMN_WIDTHS = ['50%', '25%', '25%'] as const
+// 한 열(대·중·소분류)의 폭이 이보다 좁으면 시가총액 합·종목 수 칸을 숨기고 업종 칸이 열 전체를 쓴다(2026-11-13 사용자 지시).
+// 두 칸이 보이면 업종명이 열 폭의 절반만 받아 말줄임표가 생기기 때문이다. 업종명 칸(절반)이 가장 긴 이름(실측 약 133px)보다 넉넉한 150px 이상이면 되는 폭이다.
+const SECTOR_COMPACT_BELOW_COLUMN_PX = 300
+const SECTOR_COMPACT_WIDTHS = ['100%'] as const
 
 // 섹터 깊이 상한(최상위=0) — 4단계(0~3)까지만 허용하고 5단계 섹터는 만들지 못하게 한다. 나중에 한 단계 더
 // 늘릴 때는 이 값만 바꾸면 추가 버튼과 드래그 이동 제한이 같이 따라간다.
@@ -184,6 +188,21 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   // 일본 분류는 세 단계까지만 있다. 국내는 예전에 만든 네 번째 단계를 그대로 둔다.
   const maxDepth = overseasActions ? MAX_SECTOR_DEPTH - 1 : MAX_SECTOR_DEPTH
   const [query, setQuery] = useState('')
+  // 열 폭이 좁으면 시가총액 합·종목 수 칸을 숨긴다(SECTOR_COMPACT_BELOW_COLUMN_PX). 세 열이 같은 폭이라 표 전체 폭의 3분의 1로 잰다.
+  const [isCompact, setIsCompact] = useState(false)
+  // 콜백 ref — 표가 늦게 생기거나 다시 만들어져도 그 요소를 따라가 폭을 잰다.
+  const sectorGridObserver = useRef<ResizeObserver | null>(null)
+  const sectorGridRef = useCallback((element: HTMLDivElement | null) => {
+    sectorGridObserver.current?.disconnect()
+    sectorGridObserver.current = null
+    if (!element) return
+    const update = () => setIsCompact(element.clientWidth / 3 < SECTOR_COMPACT_BELOW_COLUMN_PX)
+    const observer = new ResizeObserver(update)
+    observer.observe(element)
+    sectorGridObserver.current = observer
+    update()
+  }, [])
+  const columnWidths = isCompact ? SECTOR_COMPACT_WIDTHS : SECTOR_COLUMN_WIDTHS
   const [sortByDepth, setSortByDepth] = useState<Record<number, SectorSort | undefined>>({})
   // 머리글 필터 목록의 보기 순서 — 가나다 순(기본) 또는 시가총액 합 순.
   const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>('alpha')
@@ -576,7 +595,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       const chainLabel = `[${row.parentPath.join(SECTOR_PATH_SEPARATOR)}]`
       return (
         <tr key={`add-child-${parentId}`}>
-          <td colSpan={3} className="py-0.5 text-left" style={{ paddingLeft: '14px' }}>
+          <td colSpan={columnWidths.length} className="py-0.5 text-left" style={{ paddingLeft: '14px' }}>
             {/* 입력 글자의 시작선을 생성 후 업종명과 맞춘다. input 내부 여백(8px)만큼 입력칸 자체는 왼쪽에서 시작한다. */}
             <div className="group/create flex items-center gap-2 pl-7">
               <SectorNameInput
@@ -717,8 +736,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             </span>
           )}
         </td>
-        <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toJoEokDecimal((stat?.marketValue ?? 0) / 100_000_000)}{overseasActions ? ' 엔' : ''}</td>
-        <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toCount(stat?.stockCount ?? 0)}</td>
+        {!isCompact && <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toJoEokDecimal((stat?.marketValue ?? 0) / 100_000_000)}{overseasActions ? ' 엔' : ''}</td>}
+        {!isCompact && <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toCount(stat?.stockCount ?? 0)}</td>}
       </DroppableSectorRow>
     )
   }
@@ -770,12 +789,12 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             inline
             query={query}
             onChange={setQuery}
-            placeholder="업종 검색"
+            placeholder="검색"
             ariaLabel="업종 검색"
           />,
           toolbarContainer,
         )}
-        <div className={"relative grid min-h-0 flex-1 grid-cols-3 overflow-hidden border border-ui-border select-none [&_input]:select-text"}>
+        <div ref={sectorGridRef} className={"relative grid min-h-0 flex-1 grid-cols-3 overflow-hidden border border-ui-border select-none [&_input]:select-text"}>
           {(['대분류', '중분류', '소분류'] as const).map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">
               {(() => {
@@ -812,8 +831,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 // 아랫줄 — MARKETRY·거래소 업종 표와 같은 업종 / 시가총액 합 / 종목 수 정렬 머리글.
                 const bottomRow = (
                   <div className="flex border-t border-ui-border text-ui-white" style={{ height: HEADER_HALF_PX }}>
-                    {([['name', '업종'], ['marketValue', overseasActions ? '시가총액 합 (¥)' : '시가총액 합'], ['stockCount', '종목 수']] as const).map(([key, text], cell) => (
-                      <div key={key} className="flex items-center justify-center whitespace-nowrap" style={{ width: SECTOR_COLUMN_WIDTHS[cell] }}>
+                    {([['name', '업종'], ['marketValue', overseasActions ? '시가총액 합 (¥)' : '시가총액 합'], ['stockCount', '종목 수']] as const).slice(0, columnWidths.length).map(([key, text], cell) => (
+                      <div key={key} className="flex items-center justify-center whitespace-nowrap" style={{ width: columnWidths[cell] }}>
                         <SortLabel label={text} active={sortKey === key && !(isSearching && depth > 0)} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
                       </div>
                     ))}
@@ -824,7 +843,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 )
               })()}
               <ScrollArea overlay scrollLabel={`${label} 업종 목록`} className={`min-h-0 flex-1 ${index < 2 ? 'border-r border-ui-border' : ''}`}>
-                <table className="nes-table is-dark custom-page-table custom-sector-table w-full table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><colgroup>{SECTOR_COLUMN_WIDTHS.map((width, cell) => <col key={cell} style={{ width }} />)}</colgroup><tbody>{columnRows[index].map(renderRow)}</tbody></table>
+                <table className="nes-table is-dark custom-page-table custom-sector-table w-full table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:border-r-0"><colgroup>{columnWidths.map((width, cell) => <col key={cell} style={{ width }} />)}</colgroup><tbody>{columnRows[index].map(renderRow)}</tbody></table>
               </ScrollArea>
             </div>
           ))}
