@@ -25,7 +25,7 @@ import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useUsaMapPreferences } from '@/hooks/useUsaMapPreferences'
-import { useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
+import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
 import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
@@ -63,14 +63,17 @@ export default function UsaMapPage() {
   const classifications = useQuery({ queryKey: ['usa', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/usa/classifications')).data })
   const stocks = useUsaStocks()
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [rangeStart, setRangeStart] = useState<string | null>(null)
   const quotes = useUsaQuotes(selectedTime)
+  const periodQuotes = useUsaPeriodQuotes(rangeStart, selectedTime)
+  const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const liveQuotes = useUsaQuotes()
   const snapshotTimes = useUsaSnapshotTimes()
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const treeStocks = useMemo(() => (stocks.data ?? []).map(stock => ({ code: stock.symbol, name: stock.name })), [stocks.data])
   // 박스 라벨은 긴 영문 회사 이름 대신 티커를 쓴다(핀비즈와 같다). 회사 이름은 종목 목록에 있고 화면에는 아직 쓰지 않는다.
   const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, stock.symbol])), [stocks.data])
-  const tree = useMemo(() => (categories.data && classifications.data && stocks.data && quotes.data?.snapshotTime ? buildJapanTree(treeStocks, categories.data, classifications.data, names, quotes.data.quotes, quotes.data.snapshotTime) : []), [categories.data, classifications.data, stocks.data, quotes.data, treeStocks, names])
+  const tree = useMemo(() => (categories.data && classifications.data && stocks.data && shownQuotes?.snapshotTime ? buildJapanTree(treeStocks, categories.data, classifications.data, names, shownQuotes.quotes, shownQuotes.snapshotTime) : []), [categories.data, classifications.data, stocks.data, shownQuotes, treeStocks, names])
   const { preferences, update } = useUsaMapPreferences()
   const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
   const { path, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
@@ -90,7 +93,7 @@ export default function UsaMapPage() {
     setSearchParams(previous => { const next = new URLSearchParams(previous); next.delete('sector'); return next }, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 주소 값이 있고 트리가 준비됐을 때만 반응하면 된다(enterSector는 매 렌더 새 함수)
   }, [sectorParam, filteredRootNodes])
-  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch()])
+  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
@@ -110,8 +113,9 @@ export default function UsaMapPage() {
   }
   const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
-  const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading
-  const isError = categories.isError || classifications.isError || stocks.isError || quotes.isError
+  const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading || periodQuotes.isLoading
+  const isError = categories.isError || classifications.isError || stocks.isError || quotes.isError || periodQuotes.isError
+  const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
   const shownCount = filteredRootNodes.reduce((count, root) => count + flattenAllItems([root]).length, 0)
   const topPickProps = {
     taxonomy: 'MARKETRY' as const,
@@ -170,7 +174,7 @@ export default function UsaMapPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label="S&P 500" />
-              <ToolbarChip bare><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={setSelectedTime} /></ToolbarChip>
+              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>
