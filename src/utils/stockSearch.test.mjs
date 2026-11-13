@@ -41,3 +41,25 @@ test('약칭은 includeAlias일 때만, 분류명은 항상 찾는다', () => {
   assert.deepEqual(find('조선', rows), ['HD현대중공업'])
   assert.deepEqual(find('ㅈㅅ', rows), ['HD현대중공업'])
 })
+
+test('쉼표로 이은 여러 검색어는 하나라도 맞는 종목을 모두 찾는다', () => {
+  assert.deepEqual(find('삼성전자,000660', rows), ['삼성전자', 'SK하이닉스'])
+  assert.deepEqual(find('267250, 329180 ,00279K', rows), ['HD현대', 'HD현대중공업', '아모레퍼시픽홀딩스3우C'])
+  assert.deepEqual(find('삼성전자，하이닉스', rows), ['삼성전자', 'SK하이닉스'])
+})
+
+test('쉼표 앞뒤 공백·빈 칸·겹치는 결과를 정리한다', () => {
+  assert.deepEqual(find('삼성전자,', rows), ['삼성전자'])
+  assert.deepEqual(find(',삼성전자,,', rows), ['삼성전자'])
+  assert.deepEqual(find('hd현대,HD현대중공업', rows), ['HD현대', 'HD현대중공업'])
+})
+
+test('쉼표만 있거나 비어 있으면 전체를 보여 주고, 쉼표가 없으면 이전과 같다', () => {
+  assert.equal(find(',', rows).length, rows.length)
+  assert.equal(find('', rows).length, rows.length)
+  assert.deepEqual(find('HD 현대', rows), ['HD현대', 'HD현대중공업'])
+})
+
+test('쉼표로 이은 검색어도 초성으로 찾는다', () => {
+  assert.deepEqual(find('ㅅㅅㅈㅈ,ㅎㅇㄴㅅ', rows), ['삼성전자', 'SK하이닉스'])
+})

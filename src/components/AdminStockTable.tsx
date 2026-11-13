@@ -21,7 +21,7 @@ import { useSession } from '@/hooks/useSession'
 import Spinner from './Spinner'
 import { SearchBar } from './ReadOnlyTaxonomySheet'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
-import { createStockMatcher } from '@/utils/stockSearch'
+import { STOCK_SEARCH_MAX_LENGTH, createStockMatcher } from '@/utils/stockSearch'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from './EmptyMessage'
 import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, pinnedStockColumns, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
 import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
@@ -1681,6 +1681,7 @@ export default function AdminStockTable({
         }}
         placeholder="검색"
         ariaLabel="종목 검색"
+        maxLength={STOCK_SEARCH_MAX_LENGTH}
         afterInput={
           columnFilters.activeCount > 0 ? (
             <button

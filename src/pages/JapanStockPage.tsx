@@ -29,7 +29,7 @@ import client from '@/api/client'
 import { appAlert } from '@/utils/appDialogBus'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import { AdminStockSectorCell, BulkAssignButton } from '@/components/AdminStockTable'
-import { createStockMatcher } from '@/utils/stockSearch'
+import { STOCK_SEARCH_MAX_LENGTH, createStockMatcher } from '@/utils/stockSearch'
 import { toJoEokDecimal } from '@/utils/format'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { buildSectorParentHints } from '@/utils/sectorFilterHints'
@@ -217,7 +217,7 @@ export default function JapanStockPage() {
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold">
             <ToolbarModeText page="CUSTOM" label="J-STOCK" />
-            <SearchBar inline query={search} onChange={setSearch} placeholder="검색" ariaLabel="일본 종목 검색" />
+            <SearchBar inline query={search} onChange={setSearch} placeholder="검색" ariaLabel="일본 종목 검색" maxLength={STOCK_SEARCH_MAX_LENGTH} />
             <div className="min-w-0 flex-1" />
             <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </div>

@@ -20,7 +20,7 @@ import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from '@/compon
 import type { Market, HeatmapResponse } from '@/types/api'
 import { toCount, toJoEokDecimal } from '@/utils/format'
 import { compareKoreanText } from '@/utils/koreanSort'
-import { createStockMatcher } from '@/utils/stockSearch'
+import { STOCK_SEARCH_MAX_LENGTH, createStockMatcher } from '@/utils/stockSearch'
 import { collectItems } from '@/utils/sectorAverage'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession } from '@/utils/adminAccess'
@@ -183,7 +183,7 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
 
 // 검색어 최대 글자 수 — 분류 이름(대·중·소분류)·약칭 최대 길이(12자)와 같다.
 // 표 위의 검색창과 개수 — 카테고리·종목 화면이 같은 틀(위치·크기)을 쓰도록 한 곳에 둔다. 커스텀 종목 표도 이걸 쓴다.
-export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel, extra, settingsLayout = false, inline = false, inlineWidthClassName = 'w-[250px]', afterInput }: {
+export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel, extra, settingsLayout = false, inline = false, inlineWidthClassName = 'w-[250px]', afterInput, maxLength = SEARCH_MAX_LENGTH }: {
   query: string
   onChange: (query: string) => void
   placeholder: string
@@ -198,15 +198,17 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
   extra?: ReactNode
   // 검색창 바로 오른쪽에 붙는 조작(예: 관리자 버튼, 필터 요약).
   afterInput?: ReactNode
+  // 입력 길이 한도. 기본은 업종 검색 한도이고, 종목 검색은 쉼표로 여러 개를 이어 쓰도록 더 길게 준다.
+  maxLength?: number
 }) {
   return (
     <div className={settingsLayout ? 'mb-6 flex min-w-0 flex-col gap-2' : inline ? 'flex shrink-0 items-center' : 'flex shrink-0 items-center pr-[18px] pb-2'}>
       <input
         type="text"
         value={query}
-        maxLength={SEARCH_MAX_LENGTH}
+        maxLength={maxLength}
         // 한글처럼 글자를 조합하며 치는 입력은 maxLength를 넘는 한 글자가 조합 중에 잠깐 들어온다 — 넘는 순간 바로 잘라 낸다.
-        onChange={event => onChange(event.target.value.slice(0, SEARCH_MAX_LENGTH))}
+        onChange={event => onChange(event.target.value.slice(0, maxLength))}
         placeholder={placeholder}
         aria-label={ariaLabel}
         className={`nes-input is-dark text-sm font-normal focus:placeholder:text-transparent ${
@@ -497,6 +499,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
           onChange={setQuery}
           placeholder="검색"
           ariaLabel="종목 검색"
+          maxLength={STOCK_SEARCH_MAX_LENGTH}
           afterInput={
             <>
               {filters.activeCount > 0 && (
