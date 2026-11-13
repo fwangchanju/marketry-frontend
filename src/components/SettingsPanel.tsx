@@ -181,9 +181,9 @@ function useSettingDraftDot(
 // 설정창 탭에 속한 항목들의 저장 이름 — 항목 제목의 변경 점과 같은 이름이다. 탭 아이콘 우상단 점이 이 중 하나라도 바뀌었는지 본다.
 const SECTION_DRAFT_KEYS: Partial<Record<SettingsPanelSectionId, readonly string[]>> = {
   composition: ['heatmap.tierRangeMinIndex', 'heatmap.tierRangeMaxIndex', 'heatmap.tierRangeMinValue', 'heatmap.tierRangeMaxValue', 'heatmap.sectorFilterEnabled', 'heatmap.excludedSectorKeys'],
-  industry: ['heatmap.selectedMaxDepth', 'heatmap.sectorLevelEnabled', 'heatmap.activeDepthMetric', 'heatmap.depthMetricEnabled', 'heatmap.depthMetricMinIndex', 'heatmap.depthMetricMaxIndex', 'heatmap.topPickEnabled', 'heatmap.topPickDepth', 'heatmap.topPickCount'],
+  industry: ['heatmap.selectedMaxDepth', 'heatmap.sectorLevelEnabled', 'heatmap.activeDepthMetric', 'heatmap.depthMetricEnabled', 'heatmap.depthMetricMinIndex', 'heatmap.depthMetricMaxIndex'],
   stockDisplay: ['heatmap.boxSizeMarketCapRatio', 'heatmap.stockLabelEnabled', 'heatmap.stockLabelModeIndex', 'heatmap.decimalPlacesIndex'],
-  colors: ['heatmap.colorCustomOn', 'heatmap.colorScale', 'heatmap.strongIndustryColor'],
+  colors: ['heatmap.colorCustomOn', 'heatmap.colorScale', 'heatmap.strongIndustryColor', 'heatmap.topPickEnabled', 'heatmap.topPickDepth', 'heatmap.topPickCount'],
   graph: ['groupPage.depth', 'groupPage.graphMode', 'heatmap.avgChangeRateUseSimple'],
 }
 
