@@ -112,13 +112,20 @@ const DESCRIPTOR_WORDS = [
 // 국내 목록과 섞지 않는 이유는 국내 종목의 줄 나눔이 달라지지 않게 하려는 것이다.
 export type LabelMarket = 'korea' | 'japan'
 const JAPAN_GROUP_PREFIXES = [
-  '미쓰비시', '미쓰이', '스미토모', '도쿄', '동일본', '서일본', '일본', '도카이', '간사이', '주부', '후지', '닛산', '닛폰', '다이이치', '다이이찌', '다이와', '다이니폰',
+  '미쓰비시', '미쓰이', '스미토모', '도쿄', '동일본', '서일본', '일본', '도카이', '간사이', '주부', '후지', '닛산', '닛폰', '다이이치', '다이이찌', '다이와', '다이닛폰',
   '시즈오카', '후쿠오카', '요코하마', '도큐', '가와사키', '이세탄', '세키스이', '재팬', '도요타', '마루', '오사카', '신에츠', '요코가와', '야스카와',
 ]
 const JAPAN_DESCRIPTOR_WORDS = [
   '자동차', '상사', '물산', '쯔우쇼', '중공업', '공업', '제작소', '화학', '제약', '제강', '제철', '제분', '양조', '제지', '전기', '전력', '가스', '철도', '전철', '해운', '상선', '기선',
   '항공', '은행', '부동산', '건설', '식품', '증권', '보험', '일렉트론', '일렉트릭', '인쇄', '시멘트', '고무', '광산', '금속', '석유', '개발', '토바코', '연구소', '파이낸셜', '인슈어런스', '금융',
 ].sort((a, b) => b.length - a.length)
+
+// 일본 종목명 중 그룹명·업종 단어 규칙으로는 뜻대로 나눌 수 없는 이름의 줄 나눌 자리(앞 줄의 글자 수). 2026-11-13에 사용자가 확정했다.
+const JAPAN_FIXED_SPLITS: Record<string, number> = {
+  소프트뱅크그룹: 5, 오리엔탈랜드: 4, 세븐일레븐: 2, 이데미츠코산: 4, 베이커런트: 2, 히타치건설기계: 3, 트렌드마이크로: 3, 크레디트세존: 4, 사이버에이전트: 3, 다카시마야: 4, 레이저텍: 3,
+}
+// 앞 그룹명에 걸려 이름 한가운데가 끊기는 짧은 이름은 아예 나누지 않는다(후지/쯔, 이비/덴, 마루/이). 들어가지 않으면 글자를 줄인다.
+const JAPAN_NO_SPLIT = new Set(['후지쯔', '이비덴', '마루이'])
 
 function descriptorSplitPosition(chars: string[], words: readonly string[] = DESCRIPTOR_WORDS): number | null {
   const name = chars.join('')
@@ -234,6 +241,12 @@ const MAX_WORD_SPLIT_DIFF = 3
 // atSpaces: 공백. atMeaning: 영문·한글 경계(영어/한글, 한글/영어: LG/이노텍, BNK/금융)와 그룹명 뒤(한화/비전). 공백과 그룹명 뒤는 두 줄의 글자 수 차이가 MAX_WORD_SPLIT_DIFF 이하인 자리만 두고, 영문·한글 경계는 차이와 상관없이 둔다.
 // atSuffix: 우선주·지주사 접미어 앞. all: 아무 자리.
 function splitCandidates(chars: string[], market: LabelMarket = 'korea') {
+  if (market === 'japan') {
+    const fullName = chars.join('')
+    if (JAPAN_NO_SPLIT.has(fullName)) return { all: [], atSpaces: [], atMeaning: [], atSuffix: [] }
+    const fixed = JAPAN_FIXED_SPLITS[fullName]
+    if (fixed !== undefined) return { all: Array.from({ length: chars.length - 1 }, (_, k) => k + 1), atSpaces: [], atMeaning: [fixed], atSuffix: [] }
+  }
   const prefixes = market === 'japan' ? JAPAN_GROUP_PREFIXES : GROUP_PREFIXES
   const words = market === 'japan' ? JAPAN_DESCRIPTOR_WORDS : DESCRIPTOR_WORDS
   const cluster = letterClusterBoundaries(chars)
