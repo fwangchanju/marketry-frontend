@@ -6,6 +6,8 @@ export default function StockTableColGroup({ keys, widths }: { keys: readonly St
     <colgroup>
       <col style={{ width: STOCK_CHECKBOX_COLUMN_PX }} />
       {keys.map(key => {
+        // 폭 표가 있는데 키가 없으면 좁은 창에서 숨긴 열이다(hiddenStockColumnsFor) — 열 폭도 그리지 않는다.
+        if (widths && widths[key] === undefined) return null
         const width = widths?.[key] ?? stockColumnFixedPx(key)
         return <col key={key} style={width === undefined ? undefined : { width }} />
       })}
