@@ -5,6 +5,7 @@ import Popup, { type PopupContent, type PopupState } from './Popup'
 import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { StockLabelMode } from '@/hooks/useGlobalSettings'
 import { useStockDrag, type StockDrop } from '@/hooks/useStockDrag'
+import type { CurrencyUnit } from '@/utils/currencyUnit'
 
 interface Props {
   groups: DisplayGroup[]
@@ -48,7 +49,7 @@ interface Props {
   stockMoveEnabled?: boolean
   onMoveStock?: (drop: StockDrop) => void
   // 금액 단위 — 일본 지도는 엔으로 표시한다.
-  currencyUnit?: '원' | '엔'
+  currencyUnit?: CurrencyUnit
   captureRowMetric?: 'weightedAvgChangeRate' | 'simpleAvgChangeRate'
 }
 
