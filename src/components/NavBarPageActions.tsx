@@ -36,7 +36,7 @@ const CELL_TIME_CLASS = 'toolbar-badge-control flex h-6 shrink-0 items-center ga
 export const FILLED_ICON_CLASS = 'fill-current/35'
 
 // 스냅샷 수집 주기 안내 — 새로고침 버튼에 커서를 올리거나 포커스하면 보여준다.
-export const SNAPSHOT_REFRESH_HELP = '08:00부터 5분 간격으로 데이터를 수집합니다.\n수집 후 배포까지 1분 가량 지연이 있을 수 있습니다.\n~~(수집: 08:00 → 배포: 08:01 → 수집: 08:05)~~'
+export const SNAPSHOT_REFRESH_HELP = '5분마다 갱신됩니다.\n시세는 약 1분 지연됩니다.'
 
 // 스냅샷 새로고침 아이콘 버튼 — 상단바 우측 묶음(NavBarPageActions)과 콘솔 줄(시계 옆) 어디에 두든 같은 모양이다.
 // helpText를 주면 버튼에 data-hint로 달려, 커서를 올리거나 키보드로 오면 공용 툴팁(HoverHintLayer)이 뜬다.
