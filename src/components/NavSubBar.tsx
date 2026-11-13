@@ -106,7 +106,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
   const canSeeJapan = !isSessionLoading && isSpecialSession(session)
-  const customLink = canSeeJapan ? { ...CUSTOM_LINK, options: [...(CUSTOM_LINK.options ?? []), { label: 'J-SECTOR', to: '/custom/japan/sector', special: true }, { label: 'J-STOCK', to: '/custom/japan/stock', special: true }] } : CUSTOM_LINK
+  const customLink = canSeeJapan ? { ...CUSTOM_LINK, options: [...(CUSTOM_LINK.options ?? []), { label: 'J-SECTOR', to: '/custom/sector/japan', special: true }, { label: 'J-STOCK', to: '/custom/stock/japan', special: true }] } : CUSTOM_LINK
   const baseLinks = canSeeJapan ? BASE_LINKS.map(link => link.label === 'Map' || link.label === 'Graph' ? { ...link, options: [...(link.options ?? []), { label: 'JAPAN', to: `/${link.label.toLowerCase()}/japan`, special: true }] } : link) : BASE_LINKS
   const links = isAdmin ? [...baseLinks, customLink, ADMIN_LINK] : [...baseLinks, customLink]
   const [openTo, setOpenTo] = useState<string | null>(null)

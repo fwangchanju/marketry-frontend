@@ -160,9 +160,12 @@ export default function App() {
           <Route path="/custom" element={<Navigate to="/custom/sector" replace />} />
           <Route path="/custom/sector" element={<CustomPage />} />
           <Route path="/custom/stock" element={<CustomPage />} />
+          {/* 일본 화면의 주소는 /map/japan·/graph/japan처럼 japan이 맨 뒤다(2026-11-13). 예전 주소(/custom/japan/…)는 새 주소로 보낸다. */}
+          <Route path="/custom/japan/stock" element={<Navigate to="/custom/stock/japan" replace />} />
+          <Route path="/custom/japan/sector" element={<Navigate to="/custom/sector/japan" replace />} />
           <Route element={<SpecialRouteGuard />}>
-            <Route path="/custom/japan/stock" element={<JapanStockPage />} />
-            <Route path="/custom/japan/sector" element={<JapanSectorPage />} />
+            <Route path="/custom/stock/japan" element={<JapanStockPage />} />
+            <Route path="/custom/sector/japan" element={<JapanSectorPage />} />
             <Route path="/map/japan" element={<JapanMapPage />} />
             <Route path="/graph/japan" element={<JapanGraphPage />} />
           </Route>
