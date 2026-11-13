@@ -35,7 +35,7 @@ import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import { NO_TAXONOMY_CHANGE, USA_MAP_DRAFT_KEY_MAP, USA_MAP_FIXED, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
 
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
-const LEVEL_LABELS = ['섹터', '업종']
+const LEVEL_LABELS = ['대분류', '중분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
 const NO_EXCLUDED_TIERS = new Set<string>()
 const NO_TOP_PICKS = new Set<string>()

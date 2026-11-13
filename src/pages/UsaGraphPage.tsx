@@ -34,7 +34,7 @@ import { NO_TAXONOMY_CHANGE, USA_MAP_FIXED, USA_SETTINGS_TAB_STORAGE } from '@/u
 import { USA_GRAPH_DRAFT_KEY_MAP } from '@/utils/usaGraphSettings'
 import type { HeatmapSectorNode } from '@/types/api'
 
-const DEPTH_NAMES = ['섹터', '업종']
+const DEPTH_NAMES = ['대분류', '중분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
 const NO_EXCLUDED_TIERS = new Set<string>()
 const SECTION_ORDER: SettingsPanelSectionId[] = ['graph']
