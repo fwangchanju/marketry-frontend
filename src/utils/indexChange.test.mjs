@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { indexChangeRate, indexRange, shiftDate } from './indexChange.ts'
+import { graphIndexValue, indexChangeRate, indexRange, intradayRateAt, shiftDate } from './indexChange.ts'
 
 const near = (actual, expected) => assert.ok(actual !== null && Math.abs(actual - expected) < 1e-9, `${actual} !== ${expected}`)
 const closes = [
@@ -48,4 +48,34 @@ test('지난 날짜를 골랐으면 그날 하루 구간을 돌려준다', () =>
 test('오늘 화면과 시세가 없는 화면은 구간이 없다', () => {
   assert.equal(indexRange(null, '2026-11-13T10:05', '2026-11-13T10:05'), null)
   assert.equal(indexRange(null, null, null), null)
+})
+
+const intraday = [
+  { snapshotTime: '2026-11-13T09:05:00', changeRate: 0.4 },
+  { snapshotTime: '2026-11-13T09:20:00', changeRate: 0.9 },
+]
+
+test('같은 분의 장중 지수 등락률을 찾고 없으면 null이다', () => {
+  assert.equal(intradayRateAt(intraday, '2026-11-13T09:20'), 0.9)
+  assert.equal(intradayRateAt(intraday, '2026-11-13T09:20:00'), 0.9)
+  assert.equal(intradayRateAt(intraday, '2026-11-13T09:10'), null)
+  assert.equal(intradayRateAt([], '2026-11-13T09:05'), null)
+  assert.equal(intradayRateAt(undefined, '2026-11-13T09:05'), null)
+  assert.equal(intradayRateAt(intraday, null), null)
+})
+
+test('지금 보기는 장중 값이 있으면 그것을 쓰고 없으면 종가 기준 값을 쓴다', () => {
+  assert.equal(graphIndexValue({ showDelta: false, nowRate: 0.9, beforeRate: null, dailyRate: -1.2 }), 0.9)
+  assert.equal(graphIndexValue({ showDelta: false, nowRate: null, beforeRate: null, dailyRate: -1.2 }), -1.2)
+  assert.equal(graphIndexValue({ showDelta: false, nowRate: null, beforeRate: null, dailyRate: null }), null)
+})
+
+test('장중 값이 0%여도 값이 있는 것으로 보고 종가 기준 값으로 바꾸지 않는다', () => {
+  assert.equal(graphIndexValue({ showDelta: false, nowRate: 0, beforeRate: null, dailyRate: -1.2 }), 0)
+})
+
+test('N분 전 대비는 지금과 N분 전이 모두 있을 때만 그 차이를 쓴다', () => {
+  near(graphIndexValue({ showDelta: true, nowRate: 0.9, beforeRate: 0.4, dailyRate: -1.2 }), 0.5)
+  assert.equal(graphIndexValue({ showDelta: true, nowRate: 0.9, beforeRate: null, dailyRate: -1.2 }), null)
+  assert.equal(graphIndexValue({ showDelta: true, nowRate: null, beforeRate: 0.4, dailyRate: -1.2 }), null)
 })

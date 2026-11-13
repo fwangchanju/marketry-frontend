@@ -24,6 +24,7 @@ import { ClockIcon } from '@/components/icons/AppIcons'
 import stocks from '@/data/japanStocks.json'
 import { useJapanGraphPreferences } from '@/hooks/useJapanGraphPreferences'
 import { useJapanIndexCloses } from '@/hooks/useJapanIndexCloses'
+import { useJapanIndexQuotes } from '@/hooks/useJapanIndexQuotes'
 import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
@@ -32,7 +33,7 @@ import { JAPAN_GRAPH_DRAFT_KEY_MAP } from '@/utils/japanGraphSettings'
 import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE, NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { japanSessionAt } from '@/utils/japanMarketSession'
-import { indexChangeRate, indexRange, shiftDate } from '@/utils/indexChange'
+import { graphIndexValue, indexChangeRate, indexRange, intradayRateAt, shiftDate } from '@/utils/indexChange'
 import { buildRankChart } from '@/utils/rankChart'
 import { computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAtDepth } from '@/utils/sectorDepth'
@@ -69,7 +70,7 @@ export default function JapanGraphPage() {
   const periodQuotes = useJapanPeriodQuotes(rangeStart, selectedTime)
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
-  // 지수 막대는 기간과 지난 날짜 보기에만 넣는다. 오늘 화면은 종가가 아직 저장되지 않아 막대를 만들지 않는다.
+  // 종가 기준 지수 막대는 기간과 지난 날짜 보기에 쓴다. 오늘 화면은 종가가 아직 저장되지 않아 이 값이 없고, 장중 지수(아래)가 대신한다.
   const indexSpan = indexRange(rangeStart, snapshotTime, liveQuotes.data?.snapshotTime ?? null)
   const indexCloses = useJapanIndexCloses(indexSpan ? shiftDate(indexSpan.startDate, -INDEX_LOOKBACK_DAYS) : null, indexSpan?.endDate ?? null)
   const indexRate = indexSpan && indexCloses.data ? indexChangeRate(indexCloses.data, indexSpan.startDate, indexSpan.endDate) : null
@@ -84,6 +85,15 @@ export default function JapanGraphPage() {
   }, [showDelta, snapshotTime, snapshotTimes.data, preferences.beforeMinutes])
   // 시각이 없으면 조회를 끈다. 이때 data는 최신 시세 캐시일 수 있어 아래에서 쓰지 않는다.
   const beforeQuotes = useJapanQuotes(beforeTime, beforeTime !== null)
+  // 장중 지수 — 하루 보기(기간이 아닌 보기)에서 지금 시각과 N분 전 시각의 닛케이 등락률을 쓴다. 기간 보기는 종가 기준 막대만 쓴다.
+  const indexQuotesNow = useJapanIndexQuotes(rangeStart === null && snapshotTime ? snapshotTime.slice(0, 10) : null)
+  const indexQuotesBefore = useJapanIndexQuotes(showDelta && beforeTime ? beforeTime.slice(0, 10) : null)
+  const indexValue = graphIndexValue({
+    showDelta,
+    nowRate: rangeStart === null ? intradayRateAt(indexQuotesNow.data, snapshotTime) : null,
+    beforeRate: intradayRateAt(indexQuotesBefore.data, beforeTime),
+    dailyRate: indexRate,
+  })
 
   const treeOf = (snapshot: typeof quotes.data): HeatmapSectorNode[] =>
     categories.data && classifications.data && names.data && snapshot?.snapshotTime
@@ -109,10 +119,10 @@ export default function JapanGraphPage() {
       const before = beforeNode ? valueOf(beforeNode) : null
       if (before !== null) entries.push({ key: pathKey, sectorName: node.sectorName, value: now - before })
     }
-    if (!showDelta && indexRate !== null) entries.push({ key: 'market-index:NIKKEI225', sectorName: NIKKEI_LABEL, value: indexRate, isReference: true })
+    if (indexValue !== null) entries.push({ key: 'market-index:NIKKEI225', sectorName: NIKKEI_LABEL, value: indexValue, isReference: true })
     return buildRankChart(entries)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- treeOf는 아래 값들로만 결과가 정해진다
-  }, [categories.data, classifications.data, names.data, shownQuotes, beforeQuotes.data, beforeTime, showDelta, preferences.groupDepth, preferences.avgChangeRateUseSimple, indexRate])
+  }, [categories.data, classifications.data, names.data, shownQuotes, beforeQuotes.data, beforeTime, showDelta, preferences.groupDepth, preferences.avgChangeRateUseSimple, indexValue])
 
   const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
@@ -121,7 +131,7 @@ export default function JapanGraphPage() {
   const screenshotRef = useRef<HTMLDivElement>(null)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading || snapshotTimes.isLoading || beforeQuotes.isLoading || indexCloses.isLoading
+  const isLoading = categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading || snapshotTimes.isLoading || beforeQuotes.isLoading || indexCloses.isLoading || indexQuotesNow.isLoading || indexQuotesBefore.isLoading
   const isError = categories.isError || classifications.isError || names.isError || quotes.isError || periodQuotes.isError || beforeQuotes.isError
   const session = japanSessionAt(snapshotTime ?? new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T'))
   const shownCount = shownQuotes?.quotes.length ?? 0
