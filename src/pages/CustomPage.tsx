@@ -315,7 +315,8 @@ export default function CustomPage() {
               pageLabel={mode === 'stock' ? 'Stock' : 'Sector'}
               // 헤더 이름이 바뀌어도 고른 탭 기억(저장 이름표)은 예전 'Custom' 그대로 둔다.
               tabStorageName="Custom"
-              plainTabLabel="커스텀"
+              plainTabLabel={mode === 'stock' ? '종목' : '섹터'}
+              customTabLabel={mode === 'stock' ? '종목' : '섹터'}
               plainTabIcon="custom-edit"
               stockCountLabel={countLabel}
               // 저장·초기화는 기능 검토 전 임시 숨김. 재요청 시 새 버튼을 만들지 말고 이 옵션을 true로 바꿔 기존 버튼을 복원한다.
