@@ -7,7 +7,12 @@ import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import NavBar from '@/components/NavBar'
-import NavBarPageActions from '@/components/NavBarPageActions'
+import AnimatedClockLabel from '@/components/AnimatedClockLabel'
+import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
+import UsaSessionChip from '@/components/UsaSessionChip'
+import { ClockIcon } from '@/components/icons/AppIcons'
+import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavSubBar from '@/components/NavSubBar'
 import RankColumns, { type RankColumnItem } from '@/components/RankColumns'
 import ScreenshotModal from '@/components/ScreenshotModal'
@@ -118,6 +123,12 @@ export default function UsaGraphPage() {
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="GRAPH" label="S&P 500" />
               <ToolbarChip bare><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
+              {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveQuotes.data?.snapshotTime?.slice(0, 10)) && (
+                <>
+                <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || stocks.isFetching} helpText={usaRefreshHelp(snapshotTime)} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
+                <UsaSessionChip session={USA_SESSION} />
+                </>
+              )}
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>

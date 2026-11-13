@@ -53,8 +53,6 @@ export const USA_MAP_DRAFT_KEY_MAP: Readonly<Record<string, string>> = {
   'heatmap.topPickCount': usaMapSettingKey('topPickCount'),
 }
 
-export const USA_REFRESH_HELP = '미국 마감 후 하루 한 번 갱신됩니다.'
-
 // 설정창이 고른 탭을 기억하는 이름. 국내·일본 화면과 겹치지 않게 미국 화면마다 따로 둔다.
 export const USA_SETTINGS_TAB_STORAGE = { map: 'UsaMap', graph: 'UsaGraph' } as const
 
