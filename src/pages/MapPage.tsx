@@ -502,7 +502,7 @@ export default function MapPage() {
                   {path.map((name, index) => {
                     const isLastPath = index === path.length - 1
                     return isLastPath ? (
-                      <span key={index} aria-current="page" className="px-2 text-[var(--accent)]">{name}</span>
+                      <span key={index} aria-current="page" className="px-2 text-[var(--accent)]" style={strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}</span>
                     ) : (
                       <button
                         key={index}
@@ -600,7 +600,7 @@ export default function MapPage() {
                 <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
                   <span className={BREADCRUMB_LINK_CLASS}>{MARKET_LABEL[market]}<BreadcrumbBackIcon /></span>
                   {path.map((name, index) => (
-                    <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS}>{name}{index < path.length - 1 && <BreadcrumbBackIcon />}</span>
+                    <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 && strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <BreadcrumbBackIcon />}</span>
                   ))}
                 </nav>
               )}

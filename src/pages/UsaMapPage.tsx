@@ -180,7 +180,7 @@ export default function UsaMapPage() {
               <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
                 <button type="button" data-hint="전체로 돌아가기" onClick={() => handleGoToDepth(0)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{MAP_LABEL}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
                 {path.map((name, index) => index === path.length - 1
-                  ? <span key={name} aria-current="page" className="px-2 text-[var(--accent)]">{name}</span>
+                  ? <span key={name} aria-current="page" className="px-2 text-[var(--accent)]" style={{ color: USA_MAP_FIXED.strongIndustryColor }}>{name}</span>
                   : <button key={name} type="button" data-hint={`${LEVEL_LABELS[index]}로 돌아가기`} onClick={() => handleGoToDepth(index + 1)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{name}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>)}
               </nav>
             )}
