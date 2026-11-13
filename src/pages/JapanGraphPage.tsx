@@ -44,7 +44,6 @@ const DEPTH_NAMES = ['대분류', '중분류', '소분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
 const NO_EXCLUDED_TIERS = new Set<string>()
 const SECTION_ORDER: SettingsPanelSectionId[] = ['graph']
-const NO_INDEX_SELECTION = () => {}
 // 휴장이 이어져도 시작일 앞 거래일의 종가가 들어오도록 시작일 앞 며칠을 더 받는다(황금연휴 등).
 const INDEX_LOOKBACK_DAYS = 14
 const NIKKEI_LABEL = '닛케이'
@@ -183,7 +182,7 @@ export default function JapanGraphPage() {
                     그룹에 포함된 종목이 적을수록 왜곡이 커질 수 있습니다.
                   </p>
                   <div className="flex min-h-[260px] min-w-0 w-full flex-1 pl-[1%] pr-[2%]">
-                    <RankColumns chart={chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={name => navigate(`/map/japan?sector=${encodeURIComponent(name)}`)} onSelectIndex={NO_INDEX_SELECTION} applyAxisBreak />
+                    <RankColumns chart={chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={name => navigate(`/map/japan?sector=${encodeURIComponent(name)}`)} onSelectIndex={() => navigate('/map/japan')} applyAxisBreak />
                   </div>
                 </div>
               )}

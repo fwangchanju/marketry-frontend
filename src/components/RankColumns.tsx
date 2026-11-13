@@ -72,7 +72,13 @@ function RankColumnValue({ value, color, heightPercent, axisGapPx = 0 }: { value
 }
 
 // 지수 참조 막대의 key(GroupPage가 정한다) → 시장
-const INDEX_MARKET_BY_KEY: Record<string, 'KOSPI' | 'KOSDAQ'> = { 'market-index:KOSPI': 'KOSPI', 'market-index:KOSDAQ': 'KOSDAQ' }
+export type RankIndexMarket = 'KOSPI' | 'KOSDAQ' | 'NIKKEI225' | 'SP500'
+const INDEX_MARKET_BY_KEY: Record<string, RankIndexMarket> = {
+  'market-index:KOSPI': 'KOSPI',
+  'market-index:KOSDAQ': 'KOSDAQ',
+  'market-index:NIKKEI225': 'NIKKEI225',
+  'market-index:SP500': 'SP500',
+}
 
 // 막대는 절댓값만큼 위로 자라고, 부호는 색과 값으로 구분한다. 항목명은 아래에 45도 사선으로 모은다.
 export default function RankColumns({
@@ -88,7 +94,7 @@ export default function RankColumns({
   colorScale: ColorScaleConfig
   onSelectSector?: (sectorName: string) => void
   // 코스피·코스닥 지수 참조 막대를 눌렀을 때 — 주면 그 막대도 눌러서 이동할 수 있다.
-  onSelectIndex?: (market: 'KOSPI' | 'KOSDAQ') => void
+  onSelectIndex?: (market: RankIndexMarket) => void
   applyAxisBreak?: boolean
 }) {
   const items = chart.rankedItems

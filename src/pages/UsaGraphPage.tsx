@@ -38,7 +38,6 @@ const DEPTH_NAMES = ['섹터', '업종']
 const NO_EXCLUDED_SECTORS = new Set<number>()
 const NO_EXCLUDED_TIERS = new Set<string>()
 const SECTION_ORDER: SettingsPanelSectionId[] = ['graph']
-const NO_INDEX_SELECTION = () => {}
 const NO_TOGGLE = () => {}
 const INDEX_LOOKBACK_DAYS = 14
 const INDEX_LABEL = 'S&P 500'
@@ -141,7 +140,7 @@ export default function UsaGraphPage() {
                     그룹에 포함된 종목이 적을수록 왜곡이 커질 수 있습니다.
                   </p>
                   <div className="flex min-h-[260px] min-w-0 w-full flex-1 pl-[1%] pr-[2%]">
-                    <RankColumns chart={chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={name => navigate(`/map/usa?sector=${encodeURIComponent(name)}`)} onSelectIndex={NO_INDEX_SELECTION} applyAxisBreak />
+                    <RankColumns chart={chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={name => navigate(`/map/usa?sector=${encodeURIComponent(name)}`)} onSelectIndex={() => navigate('/map/usa')} applyAxisBreak />
                   </div>
                 </div>
               )}
