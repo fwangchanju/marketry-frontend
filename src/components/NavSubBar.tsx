@@ -4,6 +4,7 @@ import { FONT_NAV_TAB } from '@/components/FontStyle'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
+import { SECTOR_JAPAN, SECTOR_KOREA, STOCK_JAPAN, STOCK_KOREA } from '@/utils/customRoutes'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
@@ -33,10 +34,10 @@ const BASE_LINKS: MenuLink[] = [
   { to: marketRoute('/graph', 'ALL_STOCK'), label: 'Graph', icon: 'bar-chart', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/graph', option.market) })) },
 ]
 // 비로그인에게도 열려 있다 — 마켓트리·거래소 시트는 읽고, 내 분류는 비어 있으며 수정하려 할 때 로그인 팝업이 뜬다.
-// 예전 Custom 메뉴를 Sector·Stock 두 메뉴로 나눴다. 주소(/custom/sector, /custom/stock)는 그대로다.
+// 예전 Custom 메뉴를 Sector·Stock 두 메뉴로 나눴다. 주소는 /sector/korea·/stock/korea(일본은 /sector/japan·/stock/japan)다. 옛 /custom 주소는 새 주소로 이동한다.
 // 일반 회원은 누르면 바로 한국 화면으로 가고, 특별 회원은 KOREA / JAPAN 목록이 열린다.
-const SECTOR_LINK: MenuLink = { to: '/custom/sector', label: 'Sector', icon: 'industry' }
-const STOCK_LINK: MenuLink = { to: '/custom/stock', label: 'Stock', icon: 'stock-single' }
+const SECTOR_LINK: MenuLink = { to: SECTOR_KOREA, label: 'Sector', icon: 'industry' }
+const STOCK_LINK: MenuLink = { to: STOCK_KOREA, label: 'Stock', icon: 'stock-single' }
 
 // 관리자 계정에만 보이는 Admin 메뉴 — 회원 명단(MEMBER), 대시보드(DASHBOARD, 차트 모음), 메시지(MESSAGE, 주소는 /admin/message), 배너(BANNER)로 나뉜다.
 const ADMIN_LINK: MenuLink = {
@@ -107,8 +108,8 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
   const canSeeJapan = !isSessionLoading && isSpecialSession(session)
-  const withJapan = (link: MenuLink): MenuLink => canSeeJapan ? { ...link, options: [{ label: 'KOREA', to: link.to }, { label: 'JAPAN', to: `${link.to}/japan`, special: true }] } : link
-  const customLinks = [withJapan(SECTOR_LINK), withJapan(STOCK_LINK)]
+  const withJapan = (link: MenuLink, japanTo: string): MenuLink => canSeeJapan ? { ...link, options: [{ label: 'KOREA', to: link.to }, { label: 'JAPAN', to: japanTo, special: true }] } : link
+  const customLinks = [withJapan(SECTOR_LINK, SECTOR_JAPAN), withJapan(STOCK_LINK, STOCK_JAPAN)]
   // 해외 항목은 특별 회원과 관리자에게만 보인다.
   const overseasOptions = (label: string) => [{ label: 'JAPAN', to: `/${label.toLowerCase()}/japan`, special: true }, { label: 'USA', to: `/${label.toLowerCase()}/usa`, special: true }]
   const baseLinks = canSeeJapan ? BASE_LINKS.map(link => link.label === 'Map' || link.label === 'Graph' ? { ...link, options: [...(link.options ?? []), ...overseasOptions(link.label)] } : link) : BASE_LINKS
@@ -127,15 +128,15 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const isLinkActive = (to: string) => {
     if (to === marketRoute('/map', 'ALL_STOCK')) return location.pathname.startsWith('/map/')
     if (to === marketRoute('/graph', 'ALL_STOCK')) return location.pathname.startsWith('/graph/')
-    if (to === '/custom/sector') return location.pathname.startsWith('/custom/sector')
-    if (to === '/custom/stock') return location.pathname.startsWith('/custom/stock')
+    if (to === SECTOR_KOREA) return location.pathname.startsWith('/sector/')
+    if (to === STOCK_KOREA) return location.pathname.startsWith('/stock/')
     if (to === '/admin/member') return location.pathname.startsWith('/admin')
     return location.pathname === to
   }
   const linkClassName = (to: string) =>
     `${NAV_TAB_CLASS} ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
 
-  // 목록에서 지금 보고 있는 항목인지 — Sector·Stock은 한국(/custom/sector, /custom/stock)과 일본(/japan) 화면이고, Map·Graph는 주소의 시장 이름이다.
+  // 목록에서 지금 보고 있는 항목인지 — Sector·Stock은 한국(/sector/korea, /stock/korea)과 일본(/sector/japan, /stock/japan) 화면이고, Map·Graph는 주소의 시장 이름이다.
   const isCurrentOption = (option: MenuOption) => location.pathname === option.to
   const handleSelect = (option: MenuOption) => {
     setOpenTo(null)

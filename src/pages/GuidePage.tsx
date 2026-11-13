@@ -5,6 +5,7 @@ import { InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
+import { SECTOR_KOREA } from '@/utils/customRoutes'
 import { marketRoute } from '@/utils/marketRoute'
 
 const destinations = [
@@ -74,7 +75,7 @@ export default function GuidePage() {
             {isNarrow ? (
               <p className="text-ui-muted">내 업종 설정은 PC 화면에서 할 수 있습니다.</p>
             ) : (
-              <Link to="/custom/sector?sheet=MINE" className="inline-flex min-h-11 items-center border border-brand px-3 text-sm font-bold text-brand hover:bg-brand/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
+              <Link to={`${SECTOR_KOREA}?sheet=MINE`} className="inline-flex min-h-11 items-center border border-brand px-3 text-sm font-bold text-brand hover:bg-brand/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
                 내 업종 설정하기<span aria-hidden="true" className="ml-2">↗</span>
               </Link>
             )}

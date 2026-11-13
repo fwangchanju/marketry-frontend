@@ -2,6 +2,7 @@ import { useContext, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import Spinner from '@/components/Spinner'
+import { SECTOR_KOREA } from '@/utils/customRoutes'
 import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
 
 // 표에 보여줄 줄이 없을 때의 안내 — 한가운데에 크게 보여준다. 부모는 relative여야 한다.
@@ -18,7 +19,7 @@ const MESSAGE_CLASS = 'pointer-events-none absolute inset-x-0 bottom-0 flex item
 // 원 안(로딩 숫자·"다시 시도"가 오는 자리)에 놓는 "바로 가기" 배지 링크(커스텀 페이지의 업종 화면(대·중·소분류를 먼저 만드는 곳)으로 이동) — 눌러서 커스텀 페이지로 이동한다. 크기는 로딩 화면의 "다시 시도" 버튼(Spinner, 기본 원 320px 기준)과 같다. 안내 영역은 마우스를 받지 않으므로 링크만 다시 받게 한다.
 export function CustomPageBadgeLink({ onClick }: { onClick?: () => void }) {
   return (
-    <Link to="/custom/sector" onClick={onClick} className="pointer-events-auto inline-block whitespace-nowrap rounded border-0 bg-[var(--brand-surface)] px-[8.3px] py-[2.6px] text-[13.6px] font-bold text-ui-white no-underline transition-colors hover:brightness-125">
+    <Link to={SECTOR_KOREA} onClick={onClick} className="pointer-events-auto inline-block whitespace-nowrap rounded border-0 bg-[var(--brand-surface)] px-[8.3px] py-[2.6px] text-[13.6px] font-bold text-ui-white no-underline transition-colors hover:brightness-125">
       바로 가기
     </Link>
   )

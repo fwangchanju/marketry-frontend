@@ -1,3 +1,5 @@
+import { isCustomPagePath } from './customRoutes.ts'
+
 export type MetricPage = 'HOME' | 'MAP' | 'GRAPH' | 'CUSTOM'
 export type MetricType = 'PAGE_LOAD' | 'CLIENT_ERROR' | 'MAP_MOBILE_CAPTURE'
 
@@ -5,7 +7,7 @@ export function metricPageFromPath(pathname: string): MetricPage | null {
   if (pathname === '/home' || pathname === '/') return 'HOME'
   if (pathname === '/map' || pathname.startsWith('/map/')) return 'MAP'
   if (pathname === '/graph' || pathname.startsWith('/graph/')) return 'GRAPH'
-  if (pathname === '/custom' || pathname.startsWith('/custom/')) return 'CUSTOM'
+  if (isCustomPagePath(pathname)) return 'CUSTOM'
   return null
 }
 
