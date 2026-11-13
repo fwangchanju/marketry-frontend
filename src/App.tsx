@@ -9,6 +9,7 @@ import MobileNotice from './components/MobileNotice'
 import SearchMetadata from './components/SearchMetadata'
 import Spinner from './components/Spinner'
 import { marketRoute } from '@/utils/marketRoute'
+import { SECTOR_JAPAN, SECTOR_KOREA, STOCK_JAPAN, STOCK_KOREA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
 import { isAdminSession, isSpecialSession } from './utils/adminAccess'
@@ -66,7 +67,7 @@ function ClientMetricsReporter() {
 function PageNumberStyle() {
   const { pathname } = useLocation()
   const useTabularNumbers = pathname === '/graph' || pathname.startsWith('/graph/')
-    || pathname === '/custom' || pathname.startsWith('/custom/')
+    || isCustomPagePath(pathname)
 
   useLayoutEffect(() => {
     document.body.classList.toggle('tabular-nums', useTabularNumbers)
@@ -86,6 +87,12 @@ function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   if (market) params.delete('market')
   const rest = params.toString()
   return <Navigate to={`${marketRoute(basePath, market ?? 'ALL_STOCK')}${rest ? `?${rest}` : ''}${hash}`} replace />
+}
+
+// 예전 /custom 아래 주소(/custom/sector, /custom/stock, 일본 두 화면)를 새 주소(/sector/korea 등)로 옮긴다. 쿼리(?sheet=MINE)와 해시는 그대로 둔다.
+function LegacyCustomRedirect() {
+  const { pathname, search, hash } = useLocation()
+  return <Navigate to={`${legacyCustomTarget(pathname) ?? SECTOR_KOREA}${search}${hash}`} replace />
 }
 
 function AdminRouteGuard() {
@@ -159,13 +166,17 @@ export default function App() {
           <Route path="/graph/kospi" element={<ResponsiveGraphPage />} />
           <Route path="/graph/kosdaq" element={<ResponsiveGraphPage />} />
           <Route path="/graph/korea" element={<ResponsiveGraphPage />} />
-          {/* 커스텀 관리의 주소는 /custom 아래에서 업종·종목 화면으로 나뉜다. */}
-          <Route path="/custom" element={<Navigate to="/custom/sector" replace />} />
-          <Route path="/custom/sector" element={<CustomPage />} />
-          <Route path="/custom/stock" element={<CustomPage />} />
+          {/* 섹터·스톡 화면의 주소. 예전 /custom 아래 주소는 모두 새 주소로 이동시킨다(뒤의 ?sheet=MINE 같은 값도 유지). */}
+          <Route path={SECTOR_KOREA} element={<CustomPage />} />
+          <Route path={STOCK_KOREA} element={<CustomPage />} />
+          <Route path="/custom" element={<LegacyCustomRedirect />} />
+          <Route path="/custom/sector" element={<LegacyCustomRedirect />} />
+          <Route path="/custom/stock" element={<LegacyCustomRedirect />} />
+          <Route path="/custom/sector/japan" element={<LegacyCustomRedirect />} />
+          <Route path="/custom/stock/japan" element={<LegacyCustomRedirect />} />
           <Route element={<SpecialRouteGuard />}>
-            <Route path="/custom/stock/japan" element={<JapanStockPage />} />
-            <Route path="/custom/sector/japan" element={<JapanSectorPage />} />
+            <Route path={STOCK_JAPAN} element={<JapanStockPage />} />
+            <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
             <Route path="/map/japan" element={<JapanMapPage />} />
             <Route path="/graph/japan" element={<JapanGraphPage />} />
             <Route path="/graph/usa" element={<UsaGraphPage />} />
