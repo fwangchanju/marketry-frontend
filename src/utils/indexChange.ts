@@ -29,3 +29,20 @@ export function indexRange(rangeStart: string | null, snapshotTime: string | nul
   if (liveSnapshotTime !== null && liveSnapshotTime.slice(0, 10) === endDate) return null
   return { startDate: endDate, endDate }
 }
+
+// 장중 지수의 한 시점 값. 서버가 5분마다 저장한 닛케이 등락률(전일 종가 대비 %)이다.
+export type IntradayIndexQuote = { snapshotTime: string; changeRate: number }
+
+// 시각(분 단위)이 같은 장중 지수의 등락률. 그 시각의 값이 없으면 null이다.
+export function intradayRateAt(quotes: readonly IntradayIndexQuote[] | undefined, time: string | null): number | null {
+  if (!quotes || time === null) return null
+  const found = quotes.find(quote => quote.snapshotTime.slice(0, 16) === time.slice(0, 16))
+  return found ? found.changeRate : null
+}
+
+// 그래프의 지수 막대 값. 지금 보기는 장중 값이 있으면 그것을, 없으면 종가 기준 값(dailyRate)을 쓴다.
+// "N분 전 대비"는 지금과 N분 전의 장중 값이 모두 있을 때만 그 차이를 쓴다. 한쪽이라도 없으면 막대를 만들지 않는다.
+export function graphIndexValue({ showDelta, nowRate, beforeRate, dailyRate }: { showDelta: boolean; nowRate: number | null; beforeRate: number | null; dailyRate: number | null }): number | null {
+  if (showDelta) return nowRate !== null && beforeRate !== null ? nowRate - beforeRate : null
+  return nowRate ?? dailyRate
+}
