@@ -34,6 +34,8 @@ import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/sc
 import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import { NO_TAXONOMY_CHANGE, USA_MAP_DRAFT_KEY_MAP, USA_MAP_FIXED, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
 
+// 툴바 배지와 이동 경로 맨 앞 이름은 같은 값을 쓴다(한국 지도는 MARKET_LABEL[market]). 나라 이름(USA)이 아니다.
+const MAP_LABEL = 'S&P 500'
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 const LEVEL_LABELS = ['대분류', '중분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
@@ -168,7 +170,7 @@ export default function UsaMapPage() {
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="MAP" label="S&P 500" />
+              <ToolbarModeText page="MAP" label={MAP_LABEL} />
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
@@ -176,7 +178,7 @@ export default function UsaMapPage() {
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
             {path.length > 0 && (
               <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
-                <button type="button" data-hint="전체로 돌아가기" onClick={() => handleGoToDepth(0)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>USA<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
+                <button type="button" data-hint="전체로 돌아가기" onClick={() => handleGoToDepth(0)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{MAP_LABEL}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
                 {path.map((name, index) => index === path.length - 1
                   ? <span key={name} aria-current="page" className="px-2 text-[var(--accent)]" style={{ color: USA_MAP_FIXED.strongIndustryColor }}>{name}</span>
                   : <button key={name} type="button" data-hint={`${LEVEL_LABELS[index]}로 돌아가기`} onClick={() => handleGoToDepth(index + 1)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{name}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>)}

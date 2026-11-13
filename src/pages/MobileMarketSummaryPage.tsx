@@ -17,6 +17,7 @@ import type { HeatmapItem } from '@/types/api'
 import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
+import { changeDirectionOf } from '@/utils/changeDirection'
 import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { calculateSectorLayoutWeights, MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
@@ -83,9 +84,9 @@ function toDirectStocksItem(stocks: HeatmapItem[], parentPath: string): MobileSe
     name: '나머지',
     marketValue,
     changeRate: stocks.reduce((sum, stock) => sum + stock.changeRate * stock.totalMarketValue, 0) / marketValue,
-    advancers: stocks.filter(stock => stock.changeRate > 0).length,
-    decliners: stocks.filter(stock => stock.changeRate < 0).length,
-    unchanged: stocks.filter(stock => stock.changeRate === 0).length,
+    advancers: stocks.filter(stock => changeDirectionOf(stock.changeRate) === 'up').length,
+    decliners: stocks.filter(stock => changeDirectionOf(stock.changeRate) === 'down').length,
+    unchanged: stocks.filter(stock => changeDirectionOf(stock.changeRate) === 'flat').length,
     node: null,
     stocks,
     isDirectStocks: true,

@@ -1,5 +1,6 @@
 import type { HeatmapSectorNode, HeatmapItem } from '@/types/api'
 import { isMarketValueExcluded } from './marketValueTier.ts'
+import { changeDirectionOf } from './changeDirection.ts'
 
 export interface SectorAverage {
   weightedAvg: number | null
@@ -57,8 +58,8 @@ export function summarizeSector(node: HeatmapSectorNode, excludedTierLabels: Set
   const average = computeSectorAverage(node, excludedTierLabels)
   if (average.weightedAvg === null) return null
   const items = collectItems(node).filter(item => !isMarketValueExcluded(item, excludedTierLabels))
-  const advancers = items.filter(item => item.changeRate > 0).length
-  const decliners = items.filter(item => item.changeRate < 0).length
+  const advancers = items.filter(item => changeDirectionOf(item.changeRate) === 'up').length
+  const decliners = items.filter(item => changeDirectionOf(item.changeRate) === 'down').length
   return {
     weightedAvg: average.weightedAvg,
     simpleAvg: average.simpleAvg,
