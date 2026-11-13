@@ -1,12 +1,21 @@
-import { useMemo, useRef, useState } from 'react'
+import { revealMobileCapture } from '@/utils/revealMobileCapture'
+import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
+import { useSettled } from '@/hooks/useSettled'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import client from '@/api/client'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Heatmap from '@/components/Heatmap'
 import NavBar from '@/components/NavBar'
-import NavBarPageActions from '@/components/NavBarPageActions'
+import AnimatedClockLabel from '@/components/AnimatedClockLabel'
+import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
+import UsaSessionChip from '@/components/UsaSessionChip'
+import { ClockIcon } from '@/components/icons/AppIcons'
+import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
@@ -59,7 +68,7 @@ function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
   }
 }
 
-// 미국 S&P 500 지도. 일본 지도와 같은 구조이고 하루 한 번 저장된 종가로 그린다. 세션 칩·시계·기간 선택·텔레그램 캡처는 없다.
+// 미국 S&P 500 지도. 일본 지도와 같은 구조이고 하루 한 번 저장된 종가로 그린다. 모바일 캡처(?capture=mobile·스크린샷 창의 모바일)는 일본 지도와 같다.
 export default function UsaMapPage() {
   const categories = useQuery({ queryKey: ['usa', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/usa/categories')).data })
   const classifications = useQuery({ queryKey: ['usa', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/usa/classifications')).data })
@@ -86,9 +95,13 @@ export default function UsaMapPage() {
     return pickTopSectorKeys(collectSectorsAtDepth(filteredRootNodes, preferences.topPickDepth), preferences.topPickCount, preferences.activeDepthMetric)
   }, [filteredRootNodes, preferences.topPickEnabled, preferences.topPickDepth, preferences.topPickCount, preferences.activeDepthMetric, topPickMaxSelectableDepth])
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
+  const [searchParams] = useSearchParams()
+  const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
+  const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
+  const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
@@ -110,6 +123,32 @@ export default function UsaMapPage() {
   const isError = categories.isError || classifications.isError || stocks.isError || quotes.isError || periodQuotes.isError
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
   const shownCount = filteredRootNodes.reduce((count, root) => count + flattenAllItems([root]).length, 0)
+  const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && shownCount > 0
+  const isMobileCaptureSettled = useSettled(canShowMobileCapture, snapshotTime ?? '', 1300)
+  useEffect(() => {
+    if (!isMobileCaptureSettled || isMobileCaptureReady) return
+    let rafId = 0
+    const revealWhenLaidOut = () => {
+      if (!document.querySelector('[data-map-mobile-capture] [data-heatmap-layout-ready="true"]')) {
+        rafId = requestAnimationFrame(revealWhenLaidOut)
+        return
+      }
+      revealMobileCapture(document.body, true)
+      setIsMobileCaptureReady(true)
+    }
+    rafId = requestAnimationFrame(revealWhenLaidOut)
+    return () => cancelAnimationFrame(rafId)
+  }, [isMobileCaptureSettled, isMobileCaptureReady])
+  useEffect(() => {
+    if (!isMobileCaptureMode || !isMobileCaptureReady) return
+    const capture = () => {
+      const root = screenshotRef.current
+      if (!root) throw new Error('캡처할 지도 영역이 없습니다.')
+      return screenshotElementToDataUrl(root, '[data-map-mobile-capture-frame]', 'element', revealMobileCapture)
+    }
+    window.marketryCaptureMap = capture
+    return () => { delete window.marketryCaptureMap }
+  }, [isMobileCaptureMode, isMobileCaptureReady])
   const topPickProps = {
     taxonomy: 'MARKETRY' as const,
     availableMaxDepth,
@@ -172,6 +211,12 @@ export default function UsaMapPage() {
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label={MAP_LABEL} />
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
+              {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveQuotes.data?.snapshotTime?.slice(0, 10)) && (
+                <>
+                <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || stocks.isFetching} helpText={usaRefreshHelp(snapshotTime)} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
+                <UsaSessionChip session={USA_SESSION} />
+                </>
+              )}
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>
@@ -221,6 +266,18 @@ export default function UsaMapPage() {
             )}
             <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
           </div>
+          {((isShareOpen && isMobileScreenshotSelected) || isMobileCaptureMode) && !isLoading && !isError && shownCount > 0 && (
+            <div aria-hidden="true" data-map-mobile-capture-frame data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined} data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined} style={{ opacity: 0, width: `${HOME_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }} className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background">
+              <div data-map-mobile-capture style={{ opacity: 0, width: '100%', height: '100%' }} className="flex flex-col bg-ui-background">
+                <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
+                <div aria-hidden="true" className="h-2 shrink-0" />
+                {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>{MAP_LABEL}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 ? { color: USA_MAP_FIXED.strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={USA_MAP_FIXED.boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={USA_MAP_FIXED.strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit="달러" captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel pageLabel="Map" draftKeyMap={USA_MAP_DRAFT_KEY_MAP} tabStorageName={USA_SETTINGS_TAB_STORAGE.map} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${treeStocks.length}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
@@ -247,7 +304,7 @@ export default function UsaMapPage() {
           </SettingsPanel>
         </div>
       </div>
-      {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} />}
+      {isShareOpen && <ScreenshotModal onClose={() => { setIsShareOpen(false); setIsMobileScreenshotSelected(false) }} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} captureReady={!isLoading} mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }} onMobileSelectionChange={setIsMobileScreenshotSelected} />}
     </div>
   )
 }
