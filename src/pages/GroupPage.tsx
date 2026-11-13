@@ -43,7 +43,7 @@ import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/sc
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { marketRoute } from '@/utils/marketRoute'
 import type { Market, HeatmapSectorNode } from '@/types/api'
-import RankColumns, { type RankColumnItem } from '@/components/RankColumns'
+import RankColumns, { type RankColumnItem, type RankIndexMarket } from '@/components/RankColumns'
 import { buildRankChart } from '@/utils/rankChart'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { getMarketIndexHistory } from '@/api/marketSummary'
@@ -122,7 +122,9 @@ export default function GroupPage() {
     navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
   }
   // 코스피·코스닥 지수 막대를 누르면 그 시장의 지도로 간다.
-  const handleSelectIndex = (indexMarket: 'KOSPI' | 'KOSDAQ') => navigate(marketRoute('/map', indexMarket))
+  const handleSelectIndex = (indexMarket: RankIndexMarket) => {
+    if (indexMarket === 'KOSPI' || indexMarket === 'KOSDAQ') navigate(marketRoute('/map', indexMarket))
+  }
   // 기간 등락률을 보는 중이면 "N분 전 대비"는 쓰지 않는다 — before를 받지 않고, 지금 값(data)이 곧 기간 등락률이다.
   const isRangeView = rangeStartTime !== undefined
   // 두 토글을 하나의 선택값으로 관리해 항상 정확히 한 그래프만 켜진다. 기간 보기에서는 현재 그래프를 강제로 표시한다.
