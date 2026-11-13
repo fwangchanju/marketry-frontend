@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { IconAd, IconBellRinging, IconDeviceDesktopAnalytics, IconMail, IconUsersGroup } from '@tabler/icons-react'
 
-export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'dashboard' | 'home' | 'member' | 'members' | 'experiment' | 'custom-edit' | 'document' | 'mail' | 'megaphone' | 'ad'
+export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'dashboard' | 'home' | 'member' | 'members' | 'experiment' | 'custom-edit' | 'stock-single' | 'document' | 'mail' | 'megaphone' | 'ad'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
@@ -27,6 +27,8 @@ const ICON_SHAPES: Record<Exclude<SettingsSectionIconName, 'dashboard' | 'megaph
       <path d="m16 8 3 3" />
     </>
   ),
+  // 상단 Stock 메뉴 아이콘 — Sector 메뉴(industry)의 계층도에서 작은 네모 하나만 남긴 모양이다. 네모는 industry의 작은 네모(6×6)보다 크게(10×10) 그린다(사용자 요청: "좀 더 커도 된다").
+  'stock-single': <rect x="7" y="7" width="10" height="10" rx="1.4" />,
   home: (
     <>
       <path d="m3 10 9-7 9 7" />
