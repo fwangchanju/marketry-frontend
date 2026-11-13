@@ -729,6 +729,7 @@ const AdminStockRow = memo(function AdminStockRow({
   nameColSpan,
   showSizeTier,
   showIndustry,
+  showTotalMarketValue,
   showStockCode,
   showMarket,
   showNxt,
@@ -756,6 +757,7 @@ const AdminStockRow = memo(function AdminStockRow({
   nameColSpan: number
   showSizeTier: boolean
   showIndustry: boolean
+  showTotalMarketValue: boolean
   showStockCode: boolean
   showMarket: boolean
   showNxt: boolean
@@ -853,9 +855,11 @@ const AdminStockRow = memo(function AdminStockRow({
           onEditingChange={editing => setCellEditing('alias', editing)}
         />
       )}
-      <td className={`${alignClass('right')} text-ui-muted ${readOnlyHoverClass}`}>
-        {item.totalMarketValue != null ? toJoEokDecimal(item.totalMarketValue / 100_000_000) : '-'}
-      </td>
+      {showTotalMarketValue && (
+        <td className={`${alignClass('right')} text-ui-muted ${readOnlyHoverClass}`}>
+          {item.totalMarketValue != null ? toJoEokDecimal(item.totalMarketValue / 100_000_000) : '-'}
+        </td>
+      )}
       {showSizeTier && <td className={`text-center text-ui-muted ${readOnlyHoverClass}`}>{item.marketValueTier || '-'}</td>}
       {showMarket && <td className={`text-center ${marketColorClass(item.market)} ${readOnlyHoverClass}`}>{MARKET_LABEL[item.market]}</td>}
       {showNxt && <td className={`text-center ${isNxt ? 'text-ui-muted' : 'text-ui-muted'} ${readOnlyHoverClass}`}>{isNxt ? 'O' : '-'}</td>}
@@ -1632,6 +1636,7 @@ export default function AdminStockTable({
   const nameColSpan = !isAdmin && isAliasColumnVisible ? 2 : 1
   const showSizeTier = columnWidths.sizeTier !== undefined
   const showIndustry = columnWidths.industry !== undefined
+  const showTotalMarketValue = columnWidths.totalMarketValue !== undefined
   const showStockCode = columnWidths.stockCode !== undefined
   const showMarket = columnWidths.market !== undefined
   const showNxt = columnWidths.nxt !== undefined
@@ -1921,6 +1926,7 @@ export default function AdminStockTable({
                       nameColSpan={nameColSpan}
                       showSizeTier={showSizeTier}
                       showIndustry={showIndustry}
+                      showTotalMarketValue={showTotalMarketValue}
                       showStockCode={showStockCode}
                       showMarket={showMarket}
                       showNxt={showNxt}

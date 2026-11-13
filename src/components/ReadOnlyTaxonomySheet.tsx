@@ -461,6 +461,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
   const nameColSpan = !showAlias && isAliasColumnVisible ? 2 : 1
   const showSizeTier = columnWidths.sizeTier !== undefined
   const showIndustry = columnWidths.industry !== undefined
+  const showTotalMarketValue = columnWidths.totalMarketValue !== undefined
   // 좁은 창에서 숨긴 열은 폭 표에 키가 없다 — 머리글·본문 칸·빈 줄의 칸 수를 거기에 맞춘다.
   const showStockCode = columnWidths.stockCode !== undefined
   const showMarket = columnWidths.market !== undefined
@@ -534,7 +535,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
               {showStockCode && header('stockCode', '종목코드')}
               {header('stockName', '종목명', undefined, nameColSpan)}
               {showAlias && isAliasColumnVisible && header('alias', '약칭')}
-              {header('totalMarketValue', '시가총액')}
+              {showTotalMarketValue && header('totalMarketValue', '시가총액')}
               {showSizeTier && header('sizeTier', '규모', filterButton('sizeTier', '규모', { optionOrder: tierOrder }))}
               {showMarket && header('market', '마켓', filterButton('market', '마켓', { optionOrder: ['코스피', '코스닥'] }))}
               {showNxt && header('nxt', 'NXT', filterButton('nxt', 'NXT', { optionOrder: ['O', '-'], labelOf: value => (value === 'O' ? 'NXT 거래' : 'NXT 미거래') }))}
@@ -568,7 +569,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
                   <td colSpan={nameColSpan} className={`${STOCK_BODY_CELL} truncate text-left !pl-2 ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>{row.stockName}</td>
                   {showAlias && isAliasColumnVisible && <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{row.alias ?? '-'}</td>}
                   {/* MARKETRY 종목 표와 같은 표기('1,613.6조')와 오른쪽 정렬이다. */}
-                  <td className={`${STOCK_BODY_CELL} text-right !pr-2 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>
+                  {showTotalMarketValue && <td className={`${STOCK_BODY_CELL} text-right !pr-2 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>}
                   {showSizeTier && <td className={`${STOCK_BODY_CELL} text-center`}>{row.sizeTier || '-'}</td>}
                   {showMarket && (
                     <td className={`${STOCK_BODY_CELL} text-center ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>

@@ -62,9 +62,11 @@ const KOREAN_COLUMN_ORDER: readonly StockColumnKey[] = ['stockCode', 'stockName'
 
 export type StockColumnWidths = Partial<Record<StockColumnKey, number>>
 
-// 창이 좁아지면 옆 스크롤이 생기기 직전에 아래 순서로 열을 하나씩 숨긴다(2026-11-13 사용자 지시). 종목명·시가총액과 대·중·소분류는 숨기지 않는다.
-// 앞의 세 열(폭 70px)은 어느 순서든 단계마다 70px씩 줄고, 일본 표는 열 이름이 아니라 규모·마켓·NXT 묶음의 크기를 따른다.
-export const STOCK_COLUMN_HIDE_ORDER: readonly StockColumnKey[] = ['stockCode', 'nxt', 'market', 'alias', 'industry', 'sizeTier']
+// 창이 좁아지면 옆 스크롤이 생기기 직전에 아래 순서로 열을 하나씩 숨긴다(2026-11-13 사용자 지시). 시가총액은 다른 열을 모두 숨기고도 좁을 때만 마지막으로 숨긴다(기본 정렬이 시가총액 큰 순이라 값만 안 보이고 순서는 그대로다). 종목명과 대·중·소분류는 숨기지 않는다.
+// 규모·마켓·NXT(폭 70px씩)는 일본 야후 섹터와 칸 경계를 맞추는 묶음이라, 일본 표는 열 이름이 아니라 묶음에 남은 칸 수를 따른다.
+// 묶음이 처음 줄면(NXT) 일본은 시가총액(₩)을 숨기고, 두 번째로 줄면(마켓) 야후 섹터가 70px로 줄며, 마지막(규모)에 숨는다.
+// 약칭·거래소 분류를 마켓보다 먼저 숨기는 것은 일본 야후 섹터가 140px로 읽히는 구간을 길게 두기 위해서다(2026-11-13).
+export const STOCK_COLUMN_HIDE_ORDER: readonly StockColumnKey[] = ['stockCode', 'nxt', 'alias', 'industry', 'market', 'sizeTier', 'totalMarketValue']
 
 // 숨기기 전에 견디는 여유 폭(px) — 칸 폭이 최소 폭에 닿은 뒤 이만큼까지는 표가 아주 조금(몇 px) 넘치는 것을 그대로 둔다.
 // 창 너비 1440(영역 1126px)에서 열이 숨지 않고 확정 폭 그대로 보이게 하는 값이다(2026-11-13).
@@ -130,12 +132,13 @@ export function stockColumnWidthsForJapan(korean: StockColumnWidths): StockColum
   const group = (korean.sizeTier ?? 0) + (korean.market ?? 0) + (korean.nxt ?? 0)
   const showKrw = korean.market !== undefined && korean.nxt !== undefined && korean.sizeTier !== undefined
   const widths: StockColumnWidths = {
-    totalMarketValue: korean.totalMarketValue,
     parentSector: korean.parentSector,
     midSector: korean.midSector,
     subSector: korean.subSector,
   }
   if (korean.stockCode !== undefined) widths.stockCode = korean.stockCode
+  // 국내가 시가총액을 숨기면(맨 마지막) 일본 시가총액(¥)도 같은 칸이라 함께 숨는다.
+  if (korean.totalMarketValue !== undefined) widths.totalMarketValue = korean.totalMarketValue
   // 국내가 약칭을 숨기면 일본은 종목명 (영어)을 숨기고 종목명 (한글)이 국내 종목명 칸의 자리와 폭을 그대로 가져간다(2026-11-13).
   if (korean.alias !== undefined) { widths.stockName = korean.stockName; widths.alias = korean.alias }
   else widths.alias = korean.stockName
