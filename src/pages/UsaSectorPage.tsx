@@ -24,7 +24,7 @@ import { NO_TAXONOMY_CHANGE, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSett
 
 type Category = { id: number; parentId: number | null; name: string }
 type Classification = { sector: string | null; industry: string | null; subIndustry: string | null }
-const MAX_DEPTH = 1
+const MAX_DEPTH = 2
 const categoriesKey = ['usa', 'categories'] as const
 const classificationsKey = ['usa', 'classifications'] as const
 const endpoint = '/admin/overseas-classification-categories/USA'
