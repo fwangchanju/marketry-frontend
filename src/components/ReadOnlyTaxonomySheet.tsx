@@ -110,14 +110,12 @@ interface Props {
   onRetry?: () => void
   // 어떤 분류를 읽기 전용으로 보여주는지 — krx는 거래소 분류, marketry는 올린 분류다.
   source: 'KRX' | 'MARKETRY'
-  // NXT 거래 가능 종목코드 — 지도 응답에는 이 정보가 없어서 커스텀 종목 목록(/custom/stock-sectors)에서 받아온다.
-  nxtStockCodes: ReadonlySet<string>
   // 지도 응답에는 마켓 정보가 없어 MARKETRY 표와 같은 커스텀 종목 목록에서 가져온다.
   stockMarkets: ReadonlyMap<string, Market>
   // 거래소 분류명은 종목 메타데이터에서 읽고, MARKETRY 대·중·소분류와 별도로 표시한다.
   stockIndustries: ReadonlyMap<string, string | null>
-  // nxtStockCodes를 아직 받아오는 중인지 — 받기 전에는 "종목이 없다"고 잘못 보이지 않게 스피너를 보여준다.
-  isNxtLoading: boolean
+  // 마켓·거래소 분류명을 아직 받아오는 중인지 — 받기 전에는 "종목이 없다"거나 값이 '-'로 잘못 보이지 않게 스피너를 보여준다.
+  isCatalogLoading: boolean
   // 검색창 옆에 두던 "27/27업종" 개수를 받아 갈 곳 — 페이지가 설정창 머리글에 그려 준다.
   onCountLabelChange?: (label: string | undefined) => void
   // 검색창을 그릴 윗줄의 자리(왼쪽 제목 박스 옆) — 없으면 검색창을 그리지 않는다.
@@ -143,7 +141,7 @@ function collectSectorRows(nodes: HeatmapResponse['items'], parentPath: string[]
 
 // KRX/NXT·MARKETRY 시트 — 업종 분류를 읽기만 하는 화면이다. 편집 기능(추가·이동·배정)은 없고, 지도의 해당 분류이 보여주는
 // 분류(/map?source=...)를 그대로 표로 보여준다. 시세가 있는 종목만 내려오므로 거래정지 종목 등은 빠질 수 있다.
-export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, onRetry, source, nxtStockCodes, stockMarkets, stockIndustries, isNxtLoading, onCountLabelChange, toolbarContainer }: Props) {
+export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, onRetry, source, stockMarkets, stockIndustries, isCatalogLoading, onCountLabelChange, toolbarContainer }: Props) {
   // 약칭 열은 MARKETRY 표와 관리자에게만 보인다.
   const isAdmin = isAdminSession(useSession().data)
   const sectors = useMemo<SectorRow[]>(() => {
@@ -163,9 +161,8 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
       </div>
     )
   }
-  // NXT 열(종목 화면)은 NXT 종목 목록이 와야 맞게 보이므로 그동안 로딩 원을 보여준다.
   // 지도·그룹 페이지처럼 화면 한가운데에 크게 보여준다.
-  if (isLoading || (mode === 'stock' && isNxtLoading)) {
+  if (isLoading || (mode === 'stock' && isCatalogLoading)) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
         <Spinner showElapsed />
@@ -175,7 +172,7 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
   // 종목이 하나도 없어도 표 틀(검색창·머리글)은 그대로 보여준다 — 시트마다 화면 모양이 달라 보이지 않게 한다.
   const emptyMessage = EMPTY_DATA_MESSAGE
   return mode === 'stock' ? (
-    <StockTable showHierarchy={source === 'MARKETRY'} showAlias={source === 'MARKETRY' || isAdmin} sectors={sectors} emptyMessage={emptyMessage} nxtStockCodes={nxtStockCodes} stockMarkets={stockMarkets} stockIndustries={stockIndustries} extra={null} onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
+    <StockTable showHierarchy={source === 'MARKETRY'} showAlias={source === 'MARKETRY' || isAdmin} sectors={sectors} emptyMessage={emptyMessage} stockMarkets={stockMarkets} stockIndustries={stockIndustries} extra={null} onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
   ) : (
     <CategoryTable sectors={sectors} source={source} emptyMessage={emptyMessage} extra={null} onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
   )
@@ -320,13 +317,13 @@ function CategoryTable({ sectors, source, emptyMessage, extra, onCountLabelChang
   )
 }
 
-type StockSortKey = 'stockCode' | 'stockName' | 'alias' | 'sectorName' | 'industryName' | 'parentSector' | 'midSector' | 'subSector' | 'totalMarketValue' | 'sizeTier' | 'market' | 'nxt'
+type StockSortKey = 'stockCode' | 'stockName' | 'alias' | 'sectorName' | 'industryName' | 'parentSector' | 'midSector' | 'subSector' | 'totalMarketValue' | 'sizeTier' | 'market'
 
 // 세 종목 표(MARKETRY·거래소·내 분류)가 같은 열을 보여준다. 거래소의 대/중/소분류는 아직 값이 없어 '-'이고, 월말 업종 재편 뒤에 채운다.
-const STOCK_COLUMN_KEYS: readonly StockColumnKey[] = ['stockCode', 'stockName', 'alias', 'totalMarketValue', 'sizeTier', 'market', 'nxt', 'industry', 'parentSector', 'midSector', 'subSector']
+const STOCK_COLUMN_KEYS: readonly StockColumnKey[] = ['stockCode', 'stockName', 'alias', 'totalMarketValue', 'sizeTier', 'market', 'industry', 'parentSector', 'midSector', 'subSector']
 const NO_EXCLUDED: ReadonlySet<string> = new Set()
 
-function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockCodes, stockMarkets, stockIndustries, extra, onCountLabelChange, toolbarContainer }: { showHierarchy: boolean; showAlias: boolean; sectors: SectorRow[]; emptyMessage: string; nxtStockCodes: ReadonlySet<string>; stockMarkets: ReadonlyMap<string, Market>; stockIndustries: ReadonlyMap<string, string | null>; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
+function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, stockMarkets, stockIndustries, extra, onCountLabelChange, toolbarContainer }: { showHierarchy: boolean; showAlias: boolean; sectors: SectorRow[]; emptyMessage: string; stockMarkets: ReadonlyMap<string, Market>; stockIndustries: ReadonlyMap<string, string | null>; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
   const [query, setQuery] = useState('')
   const { sortKey, direction, toggle } = useSort<StockSortKey>('totalMarketValue', 'desc')
   const activeSortKey = !showHierarchy && (sortKey === 'parentSector' || sortKey === 'midSector' || sortKey === 'subSector' || sortKey === 'industryName') ? 'sectorName' : sortKey
@@ -342,7 +339,6 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
         subSector: sector.sectorPath?.[2] ?? '',
         market: stockMarkets.get(stock.stockCode),
         sizeTier: stock.marketValueTier,
-        nxt: nxtStockCodes.has(stock.stockCode),
       })))
       .sort((a, b) => {
         const diff =
@@ -351,15 +347,13 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
             // 규모는 시가총액이 클수록 큰 구간이라 시가총액 순서와 같다.
             : activeSortKey === 'sizeTier'
               ? a.totalMarketValue - b.totalMarketValue
-              : activeSortKey === 'nxt'
-                ? Number(a.nxt) - Number(b.nxt)
-                : activeSortKey === 'market'
-                  ? compareKoreanText(a.market ? MARKET_LABEL[a.market] : '-', b.market ? MARKET_LABEL[b.market] : '-')
-                  : compareKoreanText(a[activeSortKey] ?? '', b[activeSortKey] ?? '')
+              : activeSortKey === 'market'
+                ? compareKoreanText(a.market ? MARKET_LABEL[a.market] : '-', b.market ? MARKET_LABEL[b.market] : '-')
+                : compareKoreanText(a[activeSortKey] ?? '', b[activeSortKey] ?? '')
         // 같은 값끼리(예: 같은 마켓)는 방향과 상관없이 시가총액이 큰 종목이 위에 온다.
         return diff === 0 ? b.totalMarketValue - a.totalMarketValue || compareKoreanText(a.stockCode, b.stockCode) : sign * diff
       })
-  }, [sectors, stockMarkets, stockIndustries, nxtStockCodes, activeSortKey, direction])
+  }, [sectors, stockMarkets, stockIndustries, activeSortKey, direction])
   // 읽기 전용 분류 필터도 내 기준 종목 표와 같은 순서를 쓴다. 시가총액 순은 현재 검색·필터와 무관하게 전체 종목의 합으로 계산한다.
   const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>(() => (localStorage.getItem('marketry:sector-filter-order') === 'cap' ? 'cap' : 'alpha'))
   const changeSectorFilterMode = useCallback((value: 'alpha' | 'cap') => {
@@ -400,7 +394,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
     }))) : rows),
     [rows, trimmed, showAlias],
   )
-  // 머리글 필터 — 규모·마켓·거래소 분류·대/중/소분류·NXT. 값이 없으면 '-'이다.
+  // 머리글 필터 — 규모·마켓·거래소 분류·대/중/소분류. 값이 없으면 '-'이다.
   const filterValueOf = useCallback(
     (row: (typeof rows)[number], key: StockFilterKey): string => {
       switch (key) {
@@ -410,7 +404,6 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
         case 'parentSector': return (showHierarchy && row.parentSector) || '-'
         case 'midSector': return (showHierarchy && row.midSector) || '-'
         case 'subSector': return (showHierarchy && row.subSector) || '-'
-        case 'nxt': return row.nxt ? 'O' : '-'
       }
     },
     [showHierarchy],
@@ -467,7 +460,6 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
   // 좁은 창에서 숨긴 열은 폭 표에 키가 없다 — 머리글·본문 칸·빈 줄의 칸 수를 거기에 맞춘다.
   const showStockCode = columnWidths.stockCode !== undefined
   const showMarket = columnWidths.market !== undefined
-  const showNxt = columnWidths.nxt !== undefined
   const tableColSpan = 1 + STOCK_COLUMN_KEYS.filter(key => columnWidths[key] !== undefined).length
   // 줄 누르기·Shift+클릭 범위·끌어서 연속 선택 — MARKETRY 종목 표와 같은 동작이다.
   const { rowProps, selectionHint } = useRowRangeSelection(
@@ -541,7 +533,6 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
               {showTotalMarketValue && header('totalMarketValue', '시가총액')}
               {showSizeTier && header('sizeTier', '규모', filterButton('sizeTier', '규모', { optionOrder: tierOrder }))}
               {showMarket && header('market', '마켓', filterButton('market', '마켓', { optionOrder: ['코스피', '코스닥'] }))}
-              {showNxt && header('nxt', 'NXT', filterButton('nxt', 'NXT', { optionOrder: ['O', '-'], labelOf: value => (value === 'O' ? 'NXT 거래' : 'NXT 미거래') }))}
               {showIndustry && header(showHierarchy ? 'industryName' : 'sectorName', '거래소 분류', filterButton('industry', '거래소 분류'))}
               {header('parentSector', '대분류', filterButton('parentSector', '대분류'))}
               {header('midSector', '중분류', filterButton('midSector', '중분류'))}
@@ -572,14 +563,13 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, nxtStockC
                   <td colSpan={nameColSpan} className={`${STOCK_BODY_CELL} truncate text-left !pl-2 ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>{row.stockName}</td>
                   {showAlias && isAliasColumnVisible && <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{row.alias ?? '-'}</td>}
                   {/* MARKETRY 종목 표와 같은 표기('1,613.6조')와 오른쪽 정렬이다. */}
-                  {showTotalMarketValue && <td className={`${STOCK_BODY_CELL} text-right !pr-2 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)}</td>}
+                  {showTotalMarketValue && <td className={`${STOCK_BODY_CELL} text-right !pr-3 text-ui-muted`}>{toJoEokDecimal(row.totalMarketValue / 100_000_000)} 원</td>}
                   {showSizeTier && <td className={`${STOCK_BODY_CELL} text-center`}>{row.sizeTier || '-'}</td>}
                   {showMarket && (
                     <td className={`${STOCK_BODY_CELL} text-center ${isKosdaq ? 'text-[var(--brand)]' : ''}`}>
                       {row.market ? MARKET_LABEL[row.market] : '-'}
                     </td>
                   )}
-                  {showNxt && <td className={`${STOCK_BODY_CELL} text-center ${!row.nxt ? 'text-ui-muted' : ''}`}>{row.nxt ? 'O' : '-'}</td>}
                   {/* 글자 시작 위치는 칸 왼쪽에서 8px로, 종목 표의 다른 글자 칸과 같다. */}
                   {showIndustry && <td className={`${STOCK_BODY_CELL} truncate text-left !pl-2`}>{showHierarchy ? row.industryName : row.sectorName}</td>}
                   {[row.parentSector, row.midSector, row.subSector].map((name, index) => (
