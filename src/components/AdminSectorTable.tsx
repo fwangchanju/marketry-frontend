@@ -32,7 +32,7 @@ interface Props {
   sectorStats?: SectorStats
   // 수정 권한이 없는 회원이 보는 화면이다. 끌기와 추가·이름 변경·삭제 아이콘을 숨긴다.
   readOnly?: boolean
-  // 분류 단계 수(열 수). 기본은 대·중·소분류 세 단계이고, 미국은 대·중분류 두 단계만 쓴다. 해외 분류(overseasActions)에서만 의미가 있다.
+  // 분류 단계 수(열 수). 기본은 대·중·소분류 세 단계다(일본·미국 모두 세 단계). 나라마다 단계가 달라지면 이 값으로 줄인다. 해외 분류(overseasActions)에서만 의미가 있다.
   levels?: 2 | 3
   // 해외 분류의 시가총액 화폐. 기본은 일본(엔)이고 미국은 달러다.
   currency?: Exclude<CurrencyUnit, '원'>
@@ -190,7 +190,7 @@ function DroppableSectorRow({
 }
 
 export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, overseasActions, levels = 3, currency = '엔', readOnly = false }: Props) {
-  // 일본 분류는 세 단계, 미국은 두 단계까지만 있다. 국내는 예전에 만든 네 번째 단계를 그대로 둔다.
+  // 일본·미국 분류는 세 단계까지만 있다. 국내는 예전에 만든 네 번째 단계를 그대로 둔다.
   const maxDepth = overseasActions ? levels - 1 : MAX_SECTOR_DEPTH
   // 하위 업종을 더 만들 수 있는 가장 깊은 부모 단계. 해외 분류는 마지막에서 한 단계 위까지, 국내는 중분류까지다.
   const addChildMaxParentDepth = overseasActions ? levels - 2 : ADD_CHILD_MAX_PARENT_DEPTH
