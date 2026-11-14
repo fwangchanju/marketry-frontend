@@ -82,8 +82,9 @@ export default function UsaMapPage() {
   const snapshotTimes = useUsaSnapshotTimes()
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const treeStocks = useMemo(() => (stocks.data ?? []).map(stock => ({ code: stock.symbol, name: stock.name })), [stocks.data])
-  // 박스 라벨은 긴 영문 회사 이름 대신 티커를 쓴다(핀비즈와 같다). 회사 이름은 종목 목록에 있고 화면에는 아직 쓰지 않는다.
-  const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, stock.symbol])), [stocks.data])
+  // 박스 라벨은 일본 지도처럼 한글 종목명을 쓴다. 한글 이름이 아직 없는 종목은 티커로 대신한다.
+  const koreanNames = useQuery({ queryKey: ['usa', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/usa/stock-names')).data })
+  const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, koreanNames.data?.[stock.symbol] ?? stock.symbol])), [stocks.data, koreanNames.data])
   const tree = useMemo(() => (categories.data && classifications.data && stocks.data && shownQuotes?.snapshotTime ? buildJapanTree(treeStocks, categories.data, classifications.data, names, shownQuotes.quotes, shownQuotes.snapshotTime) : []), [categories.data, classifications.data, stocks.data, shownQuotes, treeStocks, names])
   const { preferences, update } = useUsaMapPreferences()
   const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
@@ -98,7 +99,7 @@ export default function UsaMapPage() {
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
-  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
+  const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch(), koreanNames.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
@@ -119,8 +120,8 @@ export default function UsaMapPage() {
   }
   const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
-  const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading || periodQuotes.isLoading
-  const isError = categories.isError || classifications.isError || stocks.isError || quotes.isError || periodQuotes.isError
+  const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || koreanNames.isLoading || quotes.isLoading || periodQuotes.isLoading
+  const isError = categories.isError || classifications.isError || stocks.isError || koreanNames.isError || quotes.isError || periodQuotes.isError
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
   const shownCount = filteredRootNodes.reduce((count, root) => count + flattenAllItems([root]).length, 0)
   const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && shownCount > 0

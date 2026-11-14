@@ -2,6 +2,7 @@
 // 이름은 한 줄·두 줄 각각 들어가는 가장 큰 글자 크기를 구해, 두 줄이 더 크게 쓸 수 있을 때만 두 줄로 나눈다(균형 있게). 둘 다 안 들어가면 글자를 MIN_FONT(10px)까지 줄이고,
 // 그래도 안 되면 이름과 등락률 모두 그리지 않는다(등락률만 남기지 않는다). 설정에서 등락률만 고른 경우에만 등락률만 보여 주고, 폭에 안 들어가면 MIN_FONT까지 줄이다 안 되면 그리지 않는다.
 import { useSyncExternalStore } from 'react'
+import { USA_LABEL_SPLITS } from './usaLabelBreaks.ts'
 
 export const MIN_FONT = 10
 export const LABEL_LINE_HEIGHT = 1.25
@@ -110,7 +111,7 @@ const DESCRIPTOR_WORDS = [
 
 // 일본 종목명(일본어 이름을 한글로 읽어 쓴 사명) 전용 규칙 — 국내 종목에는 쓰지 않는다. 앞쪽 그룹·지역 이름 뒤와 끝쪽 업종 단어 앞에서 줄을 나눈다(미쓰비시/상사, 도쿄/일렉트론, 신에츠/화학).
 // 국내 목록과 섞지 않는 이유는 국내 종목의 줄 나눔이 달라지지 않게 하려는 것이다.
-export type LabelMarket = 'korea' | 'japan'
+export type LabelMarket = 'korea' | 'japan' | 'usa'
 const JAPAN_GROUP_PREFIXES = [
   '미쓰비시', '미쓰이', '스미토모', '도쿄', '동일본', '서일본', '일본', '도카이', '간사이', '주부', '후지', '닛산', '닛폰', '다이이치', '다이이찌', '다이와', '다이닛폰',
   '시즈오카', '후쿠오카', '요코하마', '도큐', '가와사키', '이세탄', '세키스이', '재팬', '도요타', '마루', '오사카', '신에츠', '요코가와', '야스카와',
@@ -247,8 +248,13 @@ function splitCandidates(chars: string[], market: LabelMarket = 'korea') {
     const fixed = JAPAN_FIXED_SPLITS[fullName]
     if (fixed !== undefined) return { all: Array.from({ length: chars.length - 1 }, (_, k) => k + 1), atSpaces: [], atMeaning: [fixed], atSuffix: [] }
   }
-  const prefixes = market === 'japan' ? JAPAN_GROUP_PREFIXES : GROUP_PREFIXES
-  const words = market === 'japan' ? JAPAN_DESCRIPTOR_WORDS : DESCRIPTOR_WORDS
+  // 미국 종목명은 한글 이름에 띄어쓰기가 없어서 뜻이 갈리는 자리를 usaLabelBreaks의 목록으로 정한다. 국내·일본 그룹명·업종 단어 목록은 쓰지 않는다.
+  if (market === 'usa') {
+    const fixed = USA_LABEL_SPLITS[chars.join('')]
+    if (fixed !== undefined && fixed < chars.length) return { all: Array.from({ length: chars.length - 1 }, (_, k) => k + 1), atSpaces: [], atMeaning: [fixed], atSuffix: [] }
+  }
+  const prefixes = market === 'japan' ? JAPAN_GROUP_PREFIXES : market === 'usa' ? [] : GROUP_PREFIXES
+  const words = market === 'japan' ? JAPAN_DESCRIPTOR_WORDS : market === 'usa' ? [] : DESCRIPTOR_WORDS
   const cluster = letterClusterBoundaries(chars)
   const clusterEnd = cluster ? cluster[cluster.length - 1] : 0
   // 영문·숫자·기호 덩어리 안과 한글 알파벳 이름 한 글자(에이치, 케이 등) 안에서는 나누지 않는다.
@@ -319,7 +325,7 @@ export function fitStockLabel({
   baseFont: number
   wantName: boolean
   wantRate: boolean
-  // 일본 종목은 일본 사명 전용 줄 나눔 규칙을 쓴다(기본은 국내).
+  // 일본 종목은 일본 사명 전용, 미국 종목은 미국 이름 목록(usaLabelBreaks)으로 줄을 나눈다(기본은 국내).
   market?: LabelMarket
 }): StockLabelFit {
   const innerHeight = height - 2
