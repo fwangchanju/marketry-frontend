@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { SECTOR_JAPAN, SECTOR_KOREA, STOCK_JAPAN, STOCK_KOREA, isCustomPagePath, legacyCustomTarget } from './customRoutes.ts'
+import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA, isCustomPagePath, legacyCustomTarget } from './customRoutes.ts'
 
 test('한국 옛 주소 세 개는 새 주소로 간다', () => {
   assert.equal(legacyCustomTarget('/custom'), SECTOR_KOREA)
@@ -27,4 +27,12 @@ test('옛 주소가 아니면 이동하지 않는다', () => {
 test('새 주소와 옛 주소는 모두 섹터·스톡 화면으로 본다', () => {
   for (const path of [SECTOR_KOREA, SECTOR_JAPAN, STOCK_KOREA, STOCK_JAPAN, '/custom', '/custom/sector', '/custom/stock/japan']) assert.equal(isCustomPagePath(path), true, path)
   for (const path of ['/map/korea', '/graph/japan', '/home', '/sectorx', '/admin/member']) assert.equal(isCustomPagePath(path), false, path)
+})
+
+test('미국 섹터·스톡 주소는 섹터·스톡 화면으로 센다', () => {
+  assert.equal(SECTOR_USA, '/sector/usa')
+  assert.equal(STOCK_USA, '/stock/usa')
+  assert.ok(isCustomPagePath(SECTOR_USA))
+  assert.ok(isCustomPagePath(STOCK_USA))
+  assert.equal(legacyCustomTarget(SECTOR_USA), null)
 })

@@ -4,7 +4,7 @@ import { FONT_NAV_TAB } from '@/components/FontStyle'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
-import { SECTOR_JAPAN, SECTOR_KOREA, STOCK_JAPAN, STOCK_KOREA } from '@/utils/customRoutes'
+import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA } from '@/utils/customRoutes'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
@@ -108,8 +108,9 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
   const canSeeJapan = !isSessionLoading && isSpecialSession(session)
-  const withJapan = (link: MenuLink, japanTo: string): MenuLink => canSeeJapan ? { ...link, options: [{ label: 'KOREA', to: link.to }, { label: 'JAPAN', to: japanTo, special: true }] } : link
-  const customLinks = [withJapan(SECTOR_LINK, SECTOR_JAPAN), withJapan(STOCK_LINK, STOCK_JAPAN)]
+  // usaTo는 미국 화면이 있는 메뉴에 준다.
+  const withJapan = (link: MenuLink, japanTo: string, usaTo?: string): MenuLink => canSeeJapan ? { ...link, options: [{ label: 'KOREA', to: link.to }, { label: 'JAPAN', to: japanTo, special: true }, ...(usaTo ? [{ label: 'USA', to: usaTo, special: true }] : [])] } : link
+  const customLinks = [withJapan(SECTOR_LINK, SECTOR_JAPAN, SECTOR_USA), withJapan(STOCK_LINK, STOCK_JAPAN, STOCK_USA)]
   // 해외 항목은 특별 회원과 관리자에게만 보인다.
   const overseasOptions = (label: string) => [{ label: 'JAPAN', to: `/${label.toLowerCase()}/japan`, special: true }, { label: 'USA', to: `/${label.toLowerCase()}/usa`, special: true }]
   const baseLinks = canSeeJapan ? BASE_LINKS.map(link => link.label === 'Map' || link.label === 'Graph' ? { ...link, options: [...(link.options ?? []), ...overseasOptions(link.label)] } : link) : BASE_LINKS
