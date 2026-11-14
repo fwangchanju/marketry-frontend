@@ -35,6 +35,7 @@ import { compareKoreanText } from '@/utils/koreanSort'
 import { buildSectorParentHints } from '@/utils/sectorFilterHints'
 import { isProtectedSectorName } from '@/utils/protectedSector'
 import stocks from '@/data/japanStocks.json'
+import { yahooSectorKo } from '@/utils/yahooSector'
 
 type ClassificationField = 'sector' | 'industry' | 'subIndustry'
 type SortKey = 'code' | 'name' | 'englishName' | 'marketCap' | 'marketCapKrw' | 'sector' | 'industry' | 'customSector' | 'customIndustry' | 'customSubIndustry'
@@ -88,7 +89,7 @@ export default function JapanStockPage() {
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const rows = useMemo(() => {
     const capByCode = new Map((quotesQuery.data?.quotes ?? []).map(quote => [quote.stockCode, quote.totalMarketValue / YEN_PER_EOK]))
-    return stocks.map(stock => ({ ...stock, marketCapEok: capByCode.get(stock.code) ?? 0, name: namesQuery.data?.[stock.code] ?? stock.name, customSector: classificationsQuery.data?.[stock.code]?.sector ?? '', customIndustry: classificationsQuery.data?.[stock.code]?.industry ?? '', customSubIndustry: classificationsQuery.data?.[stock.code]?.subIndustry ?? '' }))
+    return stocks.map(stock => ({ ...stock, sector: yahooSectorKo(stock.sector), marketCapEok: capByCode.get(stock.code) ?? 0, name: namesQuery.data?.[stock.code] ?? stock.name, customSector: classificationsQuery.data?.[stock.code]?.sector ?? '', customIndustry: classificationsQuery.data?.[stock.code]?.industry ?? '', customSubIndustry: classificationsQuery.data?.[stock.code]?.subIndustry ?? '' }))
   }, [namesQuery.data, classificationsQuery.data, quotesQuery.data])
   const filtered = useMemo(() => {
     const matcher = createStockMatcher(search, (stock: (typeof rows)[number]) => ({ code: stock.code, name: stock.englishName || '', alias: stock.name, labels: [stock.sector, stock.industry, stock.customSector, stock.customIndustry, stock.customSubIndustry] }))
