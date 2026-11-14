@@ -37,7 +37,7 @@
   {
     "code": "ADBE",
     "name": "",
-    "englishName": "Adobe Inc.",
+    "englishName": "Adobe",
     "sector": "Information Technology",
     "industry": "Application Software"
   },
@@ -51,7 +51,7 @@
   {
     "code": "AES",
     "name": "",
-    "englishName": "AES Corporation",
+    "englishName": "AES",
     "sector": "Utilities",
     "industry": "Independent Power Producers & Energy Traders"
   },
@@ -93,7 +93,7 @@
   {
     "code": "ALB",
     "name": "",
-    "englishName": "Albemarle Corporation",
+    "englishName": "Albemarle",
     "sector": "Materials",
     "industry": "Specialty Chemicals"
   },
@@ -135,7 +135,7 @@
   {
     "code": "GOOGL",
     "name": "",
-    "englishName": "Alphabet Inc. (Class A)",
+    "englishName": "Alphabet (Class A)",
     "sector": "Communication Services",
     "industry": "Interactive Media & Services"
   },
@@ -240,14 +240,14 @@
   {
     "code": "AON",
     "name": "",
-    "englishName": "Aon plc",
+    "englishName": "Aon",
     "sector": "Financials",
     "industry": "Insurance Brokers"
   },
   {
     "code": "APA",
     "name": "",
-    "englishName": "APA Corporation",
+    "englishName": "APA",
     "sector": "Energy",
     "industry": "Oil & Gas Exploration & Production"
   },
@@ -261,7 +261,7 @@
   {
     "code": "AAPL",
     "name": "",
-    "englishName": "Apple Inc.",
+    "englishName": "Apple",
     "sector": "Information Technology",
     "industry": "Technology Hardware, Storage & Peripherals"
   },
@@ -317,7 +317,7 @@
   {
     "code": "AJG",
     "name": "",
-    "englishName": "Arthur J. Gallagher & Co.",
+    "englishName": "Arthur J. Gallagher",
     "sector": "Financials",
     "industry": "Insurance Brokers"
   },
@@ -387,7 +387,7 @@
   {
     "code": "BALL",
     "name": "",
-    "englishName": "Ball Corporation",
+    "englishName": "Ball",
     "sector": "Materials",
     "industry": "Metal, Glass & Plastic Containers"
   },
@@ -450,14 +450,14 @@
   {
     "code": "BX",
     "name": "",
-    "englishName": "Blackstone Inc.",
+    "englishName": "Blackstone",
     "sector": "Financials",
     "industry": "Asset Management & Custody Banks"
   },
   {
     "code": "XYZ",
     "name": "",
-    "englishName": "Block, Inc.",
+    "englishName": "Block",
     "sector": "Financials",
     "industry": "Transaction & Payment Processing Services"
   },
@@ -541,7 +541,7 @@
   {
     "code": "BXP",
     "name": "",
-    "englishName": "BXP, Inc.",
+    "englishName": "BXP",
     "sector": "Real Estate",
     "industry": "Office REITs"
   },
@@ -583,7 +583,7 @@
   {
     "code": "CCL",
     "name": "",
-    "englishName": "Carnival Corporation",
+    "englishName": "Carnival",
     "sector": "Consumer Discretionary",
     "industry": "Hotels, Resorts & Cruise Lines"
   },
@@ -611,7 +611,7 @@
   {
     "code": "CAT",
     "name": "",
-    "englishName": "Caterpillar Inc.",
+    "englishName": "Caterpillar",
     "sector": "Industrials",
     "industry": "Construction Machinery & Heavy Transportation Equipment"
   },
@@ -632,7 +632,7 @@
   {
     "code": "CDW",
     "name": "",
-    "englishName": "CDW Corporation",
+    "englishName": "CDW",
     "sector": "Information Technology",
     "industry": "Technology Distributors"
   },
@@ -646,7 +646,7 @@
   {
     "code": "CNC",
     "name": "",
-    "englishName": "Centene Corporation",
+    "englishName": "Centene",
     "sector": "Health Care",
     "industry": "Managed Health Care"
   },
@@ -674,7 +674,7 @@
   {
     "code": "SCHW",
     "name": "",
-    "englishName": "Charles Schwab Corporation",
+    "englishName": "Charles Schwab",
     "sector": "Financials",
     "industry": "Investment Banking & Brokerage"
   },
@@ -688,7 +688,7 @@
   {
     "code": "CVX",
     "name": "",
-    "englishName": "Chevron Corporation",
+    "englishName": "Chevron",
     "sector": "Energy",
     "industry": "Integrated Oil & Gas"
   },
@@ -702,7 +702,7 @@
   {
     "code": "CB",
     "name": "",
-    "englishName": "Chubb Limited",
+    "englishName": "Chubb",
     "sector": "Financials",
     "industry": "Property & Casualty Insurance"
   },
@@ -786,7 +786,7 @@
   {
     "code": "KO",
     "name": "",
-    "englishName": "Coca-Cola Company (The)",
+    "englishName": "Coca-Cola",
     "sector": "Consumer Staples",
     "industry": "Soft Drinks & Non-alcoholic Beverages"
   },
@@ -800,7 +800,7 @@
   {
     "code": "COHR",
     "name": "",
-    "englishName": "Coherent Corp.",
+    "englishName": "Coherent",
     "sector": "Information Technology",
     "industry": "Electronic Components"
   },
@@ -863,7 +863,7 @@
   {
     "code": "COO",
     "name": "",
-    "englishName": "Cooper Companies (The)",
+    "englishName": "Cooper Companies",
     "sector": "Health Care",
     "industry": "Health Care Supplies"
   },
@@ -877,7 +877,7 @@
   {
     "code": "GLW",
     "name": "",
-    "englishName": "Corning Inc.",
+    "englishName": "Corning",
     "sector": "Information Technology",
     "industry": "Electronic Components"
   },
@@ -905,7 +905,7 @@
   {
     "code": "CRH",
     "name": "",
-    "englishName": "CRH plc",
+    "englishName": "CRH",
     "sector": "Materials",
     "industry": "Construction Materials"
   },
@@ -926,7 +926,7 @@
   {
     "code": "CSX",
     "name": "",
-    "englishName": "CSX Corporation",
+    "englishName": "CSX",
     "sector": "Industrials",
     "industry": "Rail Transportation"
   },
@@ -947,7 +947,7 @@
   {
     "code": "DHR",
     "name": "",
-    "englishName": "Danaher Corporation",
+    "englishName": "Danaher",
     "sector": "Health Care",
     "industry": "Life Sciences Tools & Services"
   },
@@ -982,7 +982,7 @@
   {
     "code": "DE",
     "name": "",
-    "englishName": "Deere & Company",
+    "englishName": "Deere",
     "sector": "Industrials",
     "industry": "Agricultural & Farm Machinery"
   },
@@ -1066,14 +1066,14 @@
   {
     "code": "DOV",
     "name": "",
-    "englishName": "Dover Corporation",
+    "englishName": "Dover",
     "sector": "Industrials",
     "industry": "Industrial Machinery & Supplies & Components"
   },
   {
     "code": "DOW",
     "name": "",
-    "englishName": "Dow Inc.",
+    "englishName": "Dow",
     "sector": "Materials",
     "industry": "Commodity Chemicals"
   },
@@ -1108,14 +1108,14 @@
   {
     "code": "ETN",
     "name": "",
-    "englishName": "Eaton Corporation",
+    "englishName": "Eaton",
     "sector": "Industrials",
     "industry": "Electrical Components & Equipment"
   },
   {
     "code": "EBAY",
     "name": "",
-    "englishName": "eBay Inc.",
+    "englishName": "eBay",
     "sector": "Consumer Discretionary",
     "industry": "Broadline Retail"
   },
@@ -1185,7 +1185,7 @@
   {
     "code": "EQT",
     "name": "",
-    "englishName": "EQT Corporation",
+    "englishName": "EQT",
     "sector": "Energy",
     "industry": "Oil & Gas Exploration & Production"
   },
@@ -1220,7 +1220,7 @@
   {
     "code": "EL",
     "name": "",
-    "englishName": "Estée Lauder Companies (The)",
+    "englishName": "Estée Lauder",
     "sector": "Consumer Staples",
     "industry": "Personal Care Products"
   },
@@ -1297,7 +1297,7 @@
   {
     "code": "FFIV",
     "name": "",
-    "englishName": "F5, Inc.",
+    "englishName": "F5",
     "sector": "Information Technology",
     "industry": "Communications Equipment"
   },
@@ -1388,14 +1388,14 @@
   {
     "code": "FLEX",
     "name": "",
-    "englishName": "Flex Ltd.",
+    "englishName": "Flex",
     "sector": "Information Technology",
     "industry": "Electronic Manufacturing Services"
   },
   {
     "code": "F",
     "name": "",
-    "englishName": "Ford Motor Company",
+    "englishName": "Ford Motor",
     "sector": "Consumer Discretionary",
     "industry": "Automobile Manufacturers"
   },
@@ -1416,7 +1416,7 @@
   {
     "code": "FOXA",
     "name": "",
-    "englishName": "Fox Corporation (Class A)",
+    "englishName": "Fox Corp (Class A)",
     "sector": "Communication Services",
     "industry": "Broadcasting"
   },
@@ -1507,7 +1507,7 @@
   {
     "code": "GPC",
     "name": "",
-    "englishName": "Genuine Parts Company",
+    "englishName": "Genuine Parts",
     "sector": "Consumer Discretionary",
     "industry": "Distributors"
   },
@@ -1556,7 +1556,7 @@
   {
     "code": "HIG",
     "name": "",
-    "englishName": "Hartford (The)",
+    "englishName": "Hartford",
     "sector": "Financials",
     "industry": "Property & Casualty Insurance"
   },
@@ -1591,7 +1591,7 @@
   {
     "code": "HSY",
     "name": "",
-    "englishName": "Hershey Company (The)",
+    "englishName": "Hershey",
     "sector": "Consumer Staples",
     "industry": "Packaged Foods & Meats"
   },
@@ -1612,7 +1612,7 @@
   {
     "code": "HD",
     "name": "",
-    "englishName": "Home Depot (The)",
+    "englishName": "Home Depot",
     "sector": "Consumer Discretionary",
     "industry": "Home Improvement Retail"
   },
@@ -1654,14 +1654,14 @@
   {
     "code": "HPQ",
     "name": "",
-    "englishName": "HP Inc.",
+    "englishName": "HP",
     "sector": "Information Technology",
     "industry": "Technology Hardware, Storage & Peripherals"
   },
   {
     "code": "HUBB",
     "name": "",
-    "englishName": "Hubbell Incorporated",
+    "englishName": "Hubbell",
     "sector": "Industrials",
     "industry": "Industrial Machinery & Supplies & Components"
   },
@@ -1696,7 +1696,7 @@
   {
     "code": "IEX",
     "name": "",
-    "englishName": "IDEX Corporation",
+    "englishName": "IDEX",
     "sector": "Industrials",
     "industry": "Industrial Machinery & Supplies & Components"
   },
@@ -1717,7 +1717,7 @@
   {
     "code": "ILMN",
     "name": "",
-    "englishName": "Illumina, Inc.",
+    "englishName": "Illumina",
     "sector": "Health Care",
     "industry": "Life Sciences Tools & Services"
   },
@@ -1738,7 +1738,7 @@
   {
     "code": "PODD",
     "name": "",
-    "englishName": "Insulet Corporation",
+    "englishName": "Insulet",
     "sector": "Health Care",
     "industry": "Health Care Equipment"
   },
@@ -1913,14 +1913,14 @@
   {
     "code": "KKR",
     "name": "",
-    "englishName": "KKR & Co.",
+    "englishName": "KKR",
     "sector": "Financials",
     "industry": "Asset Management & Custody Banks"
   },
   {
     "code": "KLAC",
     "name": "",
-    "englishName": "KLA Corporation",
+    "englishName": "KLA",
     "sector": "Information Technology",
     "industry": "Semiconductor Materials & Equipment"
   },
@@ -1990,14 +1990,14 @@
   {
     "code": "LLY",
     "name": "",
-    "englishName": "Lilly (Eli)",
+    "englishName": "Eli Lilly",
     "sector": "Health Care",
     "industry": "Pharmaceuticals"
   },
   {
     "code": "LIN",
     "name": "",
-    "englishName": "Linde plc",
+    "englishName": "Linde",
     "sector": "Materials",
     "industry": "Industrial Gases"
   },
@@ -2018,7 +2018,7 @@
   {
     "code": "L",
     "name": "",
-    "englishName": "Loews Corporation",
+    "englishName": "Loews",
     "sector": "Financials",
     "industry": "Multi-line Insurance"
   },
@@ -2109,7 +2109,7 @@
   {
     "code": "MKC",
     "name": "",
-    "englishName": "McCormick & Company",
+    "englishName": "McCormick",
     "sector": "Consumer Staples",
     "industry": "Packaged Foods & Meats"
   },
@@ -2137,7 +2137,7 @@
   {
     "code": "MRK",
     "name": "",
-    "englishName": "Merck & Co.",
+    "englishName": "Merck",
     "sector": "Health Care",
     "industry": "Pharmaceuticals"
   },
@@ -2228,7 +2228,7 @@
   {
     "code": "MCO",
     "name": "",
-    "englishName": "Moody's Corporation",
+    "englishName": "Moody's",
     "sector": "Financials",
     "industry": "Financial Exchanges & Data"
   },
@@ -2242,7 +2242,7 @@
   {
     "code": "MOS",
     "name": "",
-    "englishName": "Mosaic Company (The)",
+    "englishName": "Mosaic",
     "sector": "Materials",
     "industry": "Fertilizers & Agricultural Chemicals"
   },
@@ -2263,7 +2263,7 @@
   {
     "code": "NDAQ",
     "name": "",
-    "englishName": "Nasdaq, Inc.",
+    "englishName": "Nasdaq",
     "sector": "Financials",
     "industry": "Financial Exchanges & Data"
   },
@@ -2305,7 +2305,7 @@
   {
     "code": "NKE",
     "name": "",
-    "englishName": "Nike, Inc.",
+    "englishName": "Nike",
     "sector": "Consumer Discretionary",
     "industry": "Apparel, Accessories & Luxury Goods"
   },
@@ -2319,7 +2319,7 @@
   {
     "code": "NDSN",
     "name": "",
-    "englishName": "Nordson Corporation",
+    "englishName": "Nordson",
     "sector": "Industrials",
     "industry": "Industrial Machinery & Supplies & Components"
   },
@@ -2375,7 +2375,7 @@
   {
     "code": "NVR",
     "name": "",
-    "englishName": "NVR, Inc.",
+    "englishName": "NVR",
     "sector": "Consumer Discretionary",
     "industry": "Homebuilding"
   },
@@ -2403,7 +2403,7 @@
   {
     "code": "OKTA",
     "name": "",
-    "englishName": "Okta, Inc.",
+    "englishName": "Okta",
     "sector": "Information Technology",
     "industry": "Application Software"
   },
@@ -2438,7 +2438,7 @@
   {
     "code": "ORCL",
     "name": "",
-    "englishName": "Oracle Corporation",
+    "englishName": "Oracle",
     "sector": "Information Technology",
     "industry": "Application Software"
   },
@@ -2522,7 +2522,7 @@
   {
     "code": "PCG",
     "name": "",
-    "englishName": "PG&E Corporation",
+    "englishName": "PG&E",
     "sector": "Utilities",
     "industry": "Multi-Utilities"
   },
@@ -2564,7 +2564,7 @@
   {
     "code": "PPL",
     "name": "",
-    "englishName": "PPL Corporation",
+    "englishName": "PPL",
     "sector": "Utilities",
     "industry": "Electric Utilities"
   },
@@ -2585,7 +2585,7 @@
   {
     "code": "PGR",
     "name": "",
-    "englishName": "Progressive Corporation",
+    "englishName": "Progressive",
     "sector": "Financials",
     "industry": "Property & Casualty Insurance"
   },
@@ -2606,7 +2606,7 @@
   {
     "code": "PTC",
     "name": "",
-    "englishName": "PTC Inc.",
+    "englishName": "PTC",
     "sector": "Information Technology",
     "industry": "Application Software"
   },
@@ -2662,7 +2662,7 @@
   {
     "code": "RL",
     "name": "",
-    "englishName": "Ralph Lauren Corporation",
+    "englishName": "Ralph Lauren",
     "sector": "Consumer Discretionary",
     "industry": "Apparel, Accessories & Luxury Goods"
   },
@@ -2704,7 +2704,7 @@
   {
     "code": "RF",
     "name": "",
-    "englishName": "Regions Financial Corporation",
+    "englishName": "Regions Financial",
     "sector": "Financials",
     "industry": "Regional Banks"
   },
@@ -2746,7 +2746,7 @@
   {
     "code": "ROL",
     "name": "",
-    "englishName": "Rollins, Inc.",
+    "englishName": "Rollins",
     "sector": "Industrials",
     "industry": "Environmental & Facilities Services"
   },
@@ -2774,7 +2774,7 @@
   {
     "code": "RTX",
     "name": "",
-    "englishName": "RTX Corporation",
+    "englishName": "RTX",
     "sector": "Industrials",
     "industry": "Aerospace & Defense"
   },
@@ -2865,7 +2865,7 @@
   {
     "code": "SJM",
     "name": "",
-    "englishName": "J.M. Smucker Company (The)",
+    "englishName": "J.M. Smucker",
     "sector": "Consumer Staples",
     "industry": "Packaged Foods & Meats"
   },
@@ -2921,7 +2921,7 @@
   {
     "code": "STT",
     "name": "",
-    "englishName": "State Street Corporation",
+    "englishName": "State Street",
     "sector": "Financials",
     "industry": "Asset Management & Custody Banks"
   },
@@ -2942,7 +2942,7 @@
   {
     "code": "SYK",
     "name": "",
-    "englishName": "Stryker Corporation",
+    "englishName": "Stryker",
     "sector": "Health Care",
     "industry": "Health Care Equipment"
   },
@@ -2998,7 +2998,7 @@
   {
     "code": "TPR",
     "name": "",
-    "englishName": "Tapestry, Inc.",
+    "englishName": "Tapestry",
     "sector": "Consumer Discretionary",
     "industry": "Apparel, Accessories & Luxury Goods"
   },
@@ -3012,7 +3012,7 @@
   {
     "code": "TGT",
     "name": "",
-    "englishName": "Target Corporation",
+    "englishName": "Target",
     "sector": "Consumer Staples",
     "industry": "Consumer Staples Merchandise Retail"
   },
@@ -3040,7 +3040,7 @@
   {
     "code": "TSLA",
     "name": "",
-    "englishName": "Tesla, Inc.",
+    "englishName": "Tesla",
     "sector": "Consumer Discretionary",
     "industry": "Automobile Manufacturers"
   },
@@ -3054,7 +3054,7 @@
   {
     "code": "TPL",
     "name": "",
-    "englishName": "Texas Pacific Land Corporation",
+    "englishName": "Texas Pacific Land",
     "sector": "Energy",
     "industry": "Oil & Gas Exploration & Production"
   },
@@ -3075,7 +3075,7 @@
   {
     "code": "TJX",
     "name": "",
-    "englishName": "TJX Companies",
+    "englishName": "TJX",
     "sector": "Consumer Discretionary",
     "industry": "Apparel Retail"
   },
@@ -3110,14 +3110,14 @@
   {
     "code": "TRV",
     "name": "",
-    "englishName": "Travelers Companies (The)",
+    "englishName": "Travelers",
     "sector": "Financials",
     "industry": "Property & Casualty Insurance"
   },
   {
     "code": "TRMB",
     "name": "",
-    "englishName": "Trimble Inc.",
+    "englishName": "Trimble",
     "sector": "Information Technology",
     "industry": "Application Software"
   },
@@ -3166,7 +3166,7 @@
   {
     "code": "UDR",
     "name": "",
-    "englishName": "UDR, Inc.",
+    "englishName": "UDR",
     "sector": "Real Estate",
     "industry": "Multi-Family Residential REITs"
   },
@@ -3180,7 +3180,7 @@
   {
     "code": "UNP",
     "name": "",
-    "englishName": "Union Pacific Corporation",
+    "englishName": "Union Pacific",
     "sector": "Industrials",
     "industry": "Rail Transportation"
   },
@@ -3299,14 +3299,14 @@
   {
     "code": "V",
     "name": "",
-    "englishName": "Visa Inc.",
+    "englishName": "Visa",
     "sector": "Financials",
     "industry": "Transaction & Payment Processing Services"
   },
   {
     "code": "VST",
     "name": "",
-    "englishName": "Vistra Corp.",
+    "englishName": "Vistra",
     "sector": "Utilities",
     "industry": "Electric Utilities"
   },
@@ -3320,7 +3320,7 @@
   {
     "code": "VMC",
     "name": "",
-    "englishName": "Vulcan Materials Company",
+    "englishName": "Vulcan Materials",
     "sector": "Materials",
     "industry": "Construction Materials"
   },
@@ -3334,7 +3334,7 @@
   {
     "code": "WRB",
     "name": "",
-    "englishName": "W. R. Berkley Corporation",
+    "englishName": "W. R. Berkley",
     "sector": "Financials",
     "industry": "Property & Casualty Insurance"
   },
@@ -3362,7 +3362,7 @@
   {
     "code": "DIS",
     "name": "",
-    "englishName": "Walt Disney Company (The)",
+    "englishName": "Walt Disney",
     "sector": "Communication Services",
     "industry": "Movies & Entertainment"
   },
@@ -3376,7 +3376,7 @@
   {
     "code": "WAT",
     "name": "",
-    "englishName": "Waters Corporation",
+    "englishName": "Waters",
     "sector": "Health Care",
     "industry": "Life Sciences Tools & Services"
   },
@@ -3425,14 +3425,14 @@
   {
     "code": "WSM",
     "name": "",
-    "englishName": "Williams-Sonoma, Inc.",
+    "englishName": "Williams-Sonoma",
     "sector": "Consumer Discretionary",
     "industry": "Homefurnishing Retail"
   },
   {
     "code": "WMB",
     "name": "",
-    "englishName": "Williams Companies",
+    "englishName": "Williams",
     "sector": "Energy",
     "industry": "Oil & Gas Storage & Transportation"
   },
@@ -3446,7 +3446,7 @@
   {
     "code": "WDAY",
     "name": "",
-    "englishName": "Workday, Inc.",
+    "englishName": "Workday",
     "sector": "Information Technology",
     "industry": "Application Software"
   },
@@ -3467,7 +3467,7 @@
   {
     "code": "XYL",
     "name": "",
-    "englishName": "Xylem Inc.",
+    "englishName": "Xylem",
     "sector": "Industrials",
     "industry": "Industrial Machinery & Supplies & Components"
   },
