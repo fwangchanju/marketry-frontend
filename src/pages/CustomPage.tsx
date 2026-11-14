@@ -314,7 +314,8 @@ export default function CustomPage() {
               customTabLabel={mode === 'stock' ? '종목' : '섹터'}
               plainTabIcon={mode === 'stock' ? 'stock-single' : 'industry'}
               customTabIcon={mode === 'stock' ? 'stock-single' : 'industry'}
-              stockCountLabel={countLabel}
+              // 섹터 화면에는 "n/n업종" 개수를 보이지 않는다(2026-11-15 사용자 결정). 종목 화면만 "n/n종목"을 보인다.
+              stockCountLabel={mode === 'stock' ? countLabel : undefined}
               // 저장·초기화는 기능 검토 전 임시 숨김. 재요청 시 새 버튼을 만들지 말고 이 옵션을 true로 바꿔 기존 버튼을 복원한다.
               showPreferenceActions={false}
               isOpen={isSettingsOpen}
