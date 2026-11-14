@@ -58,8 +58,6 @@ interface Props {
   bulkContainer?: HTMLElement | null
   // 검색창 옆에 두던 "N/N종목" 개수를 받아 갈 곳 — 페이지가 설정창 머리글에 그려 준다.
   onCountLabelChange?: (label: string | undefined) => void
-  // NXT에서도 거래되는 종목 코드 — NXT 열에 O/-로 보여준다(공개 종목 정보라 모든 사용자가 같다).
-  nxtStockCodes?: ReadonlySet<string>
   // 업종 번호별 시가총액 합·종목 수 — 업종 선택 목록의 "시가총액 순" 보기에 쓴다.
   sectorStats?: SectorStats
   // 종목 목록을 처음 받는 중이거나 받지 못했을 때 표 자리에 다른 페이지와 같은 로딩·오류 원을 보여 준다.
@@ -71,7 +69,6 @@ interface Props {
 // 약칭 최대 글자 수 — 분류 이름(대·중·소분류)과 같다.
 const ALIAS_MAX_LENGTH = 12
 
-const NO_NXT_CODES: ReadonlySet<string> = new Set()
 const NO_EXCLUDED: ReadonlySet<string> = new Set()
 
 // 머리글 필터가 있는 열 — 열 이름(정렬 키)에 맞는 필터 이름이다. 종목코드·종목명·약칭·시가총액에는 필터가 없다.
@@ -82,7 +79,6 @@ const FILTER_KEY_BY_COLUMN: Partial<Record<SortKey, StockFilterKey>> = {
   parentSectorName: 'parentSector',
   midSectorName: 'midSector',
   subSectorName: 'subSector',
-  nxt: 'nxt',
 }
 
 type SortKey =
@@ -96,7 +92,6 @@ type SortKey =
   | 'parentSectorName'
   | 'midSectorName'
   | 'subSectorName'
-  | 'nxt'
 type SortDirection = 'asc' | 'desc'
 
 // 체크박스(20px)가 줄 높이(29px)에서 남기는 상하 여백(약 4.5px)과 비슷하게 좌우 여백도 5px씩 둔다(20 + 10 = 30px).
@@ -115,7 +110,6 @@ const COLUMNS: { key: SortKey; columnKey: StockColumnKey; header: string; align:
   { key: 'totalMarketValue', columnKey: 'totalMarketValue', header: '시가총액', align: 'right' },
   { key: 'sizeTier', columnKey: 'sizeTier', header: '규모', align: 'center' },
   { key: 'market', columnKey: 'market', header: '마켓', align: 'center' },
-  { key: 'nxt', columnKey: 'nxt', header: 'NXT', align: 'center' },
   { key: 'originCategoryName', columnKey: 'industry', header: '거래소 분류', align: 'left' },
   { key: 'parentSectorName', columnKey: 'parentSector', header: '대분류', align: 'right' },
   { key: 'midSectorName', columnKey: 'midSector', header: '중분류', align: 'right' },
@@ -151,9 +145,6 @@ function compareByKey(
   // 규모는 시가총액이 클수록 큰 구간이라 시가총액 순서와 같다.
   if (key === 'totalMarketValue' || key === 'sizeTier') {
     return (a.totalMarketValue ?? -Infinity) - (b.totalMarketValue ?? -Infinity)
-  }
-  if (key === 'nxt') {
-    return Number(displayByStockCode.get(a.stockCode)?.isNxt ?? false) - Number(displayByStockCode.get(b.stockCode)?.isNxt ?? false)
   }
   if (isDisplaySortKey(key)) {
     const av = displayByStockCode.get(a.stockCode)?.[key] ?? ''
@@ -257,10 +248,9 @@ interface ItemDisplayValues {
   parentSectorName: string
   midSectorName: string
   subSectorName: string
-  isNxt: boolean
 }
 
-function computeDisplayValues(item: StockSectorListItem, sectorOptionsById: Map<number, SectorOption>, nxtStockCodes: ReadonlySet<string>): ItemDisplayValues {
+function computeDisplayValues(item: StockSectorListItem, sectorOptionsById: Map<number, SectorOption>): ItemDisplayValues {
   const chain = resolveSectorChain(sectorOptionsById, item.sectorId)
   return {
     market: MARKET_LABEL[item.market],
@@ -268,7 +258,6 @@ function computeDisplayValues(item: StockSectorListItem, sectorOptionsById: Map<
     parentSectorName: chain.rootName,
     midSectorName: chain.midName ?? '-',
     subSectorName: chain.leafName ?? '-',
-    isNxt: nxtStockCodes.has(item.stockCode),
   }
 }
 
@@ -732,8 +721,6 @@ const AdminStockRow = memo(function AdminStockRow({
   showTotalMarketValue,
   showStockCode,
   showMarket,
-  showNxt,
-  isNxt,
   sectorOrderMode,
   onSectorOrderModeChange,
   sectorStats,
@@ -760,8 +747,6 @@ const AdminStockRow = memo(function AdminStockRow({
   showTotalMarketValue: boolean
   showStockCode: boolean
   showMarket: boolean
-  showNxt: boolean
-  isNxt: boolean
   // 섹터 선택 팝업의 보기 순서 — 가나다 순이거나 시가총액 합이 큰 순서(sectorStats).
   sectorOrderMode: 'alpha' | 'cap'
   onSectorOrderModeChange: (value: 'alpha' | 'cap') => void
@@ -856,13 +841,12 @@ const AdminStockRow = memo(function AdminStockRow({
         />
       )}
       {showTotalMarketValue && (
-        <td className={`${alignClass('right')} text-ui-muted ${readOnlyHoverClass}`}>
-          {item.totalMarketValue != null ? toJoEokDecimal(item.totalMarketValue / 100_000_000) : '-'}
+        <td className={`text-right pr-3 text-ui-muted ${readOnlyHoverClass}`}>
+          {item.totalMarketValue != null ? `${toJoEokDecimal(item.totalMarketValue / 100_000_000)} 원` : '-'}
         </td>
       )}
       {showSizeTier && <td className={`text-center text-ui-muted ${readOnlyHoverClass}`}>{item.marketValueTier || '-'}</td>}
       {showMarket && <td className={`text-center ${marketColorClass(item.market)} ${readOnlyHoverClass}`}>{MARKET_LABEL[item.market]}</td>}
-      {showNxt && <td className={`text-center ${isNxt ? 'text-ui-muted' : 'text-ui-muted'} ${readOnlyHoverClass}`}>{isNxt ? 'O' : '-'}</td>}
       {showIndustry && <td className={`truncate pl-2 text-left text-ui-muted ${readOnlyHoverClass}`}>{item.industryName ?? '-'}</td>}
       <AdminStockSectorCell
         value={chain.rootName}
@@ -922,7 +906,6 @@ export default function AdminStockTable({
   resetContainer,
   bulkContainer,
   onCountLabelChange,
-  nxtStockCodes = NO_NXT_CODES,
   sectorStats = EMPTY_SECTOR_STATS,
   isLoading = false,
   isError = false,
@@ -1059,8 +1042,8 @@ export default function AdminStockTable({
   }, [items])
   // 필터/정렬/컬럼 표시에 쓰는 대분류·중분류·소분류 문자열을 종목마다 한 번씩만 미리 계산해둔다.
   const displayByStockCode = useMemo(
-    () => new Map(items.map(item => [item.stockCode, computeDisplayValues(item, sectorOptionsById, nxtStockCodes)])),
-    [items, sectorOptionsById, nxtStockCodes],
+    () => new Map(items.map(item => [item.stockCode, computeDisplayValues(item, sectorOptionsById)])),
+    [items, sectorOptionsById],
   )
   // 대분류/중분류/소분류는 이제 각각 별도로 assign 요청을 보내는 독립된 액션이라, 셀마다 따로 강조한다.
   const [hoveredRow, setHoveredRow] = useState<{
@@ -1399,7 +1382,7 @@ export default function AdminStockTable({
     })))
   }, [items, trimmedSearch, isAdmin])
 
-  // 머리글 필터 — 규모·마켓·거래소 분류·대/중/소분류·NXT. 값이 없으면 '-'이다.
+  // 머리글 필터 — 규모·마켓·거래소 분류·대/중/소분류. 값이 없으면 '-'이다.
   const filterValueOf = useCallback(
     (item: StockSectorListItem, key: StockFilterKey): string => {
       const display = displayByStockCode.get(item.stockCode)
@@ -1410,7 +1393,6 @@ export default function AdminStockTable({
         case 'parentSector': return display?.parentSectorName || '-'
         case 'midSector': return display?.midSectorName || '-'
         case 'subSector': return display?.subSectorName || '-'
-        case 'nxt': return display?.isNxt ? 'O' : '-'
       }
     },
     [displayByStockCode],
@@ -1639,7 +1621,6 @@ export default function AdminStockTable({
   const showTotalMarketValue = columnWidths.totalMarketValue !== undefined
   const showStockCode = columnWidths.stockCode !== undefined
   const showMarket = columnWidths.market !== undefined
-  const showNxt = columnWidths.nxt !== undefined
   const tableColSpan = 1 + columnKeys.filter(key => columnWidths[key] !== undefined).length
   const rowVirtualizer = useVirtualizer({
     count: sorted.length,
@@ -1853,9 +1834,8 @@ export default function AdminStockTable({
                           onSelectNone={values => columnFilters.selectNone(filterKey, values)}
                           selectOnlyOnSearch={filterKey === 'industry' || filterKey === 'parentSector' || filterKey === 'midSector' || filterKey === 'subSector'}
                           hintOf={filterKey === 'midSector' || filterKey === 'subSector' ? value => sectorParentHints[filterKey].get(value) : undefined}
-                          optionOrder={filterKey === 'sizeTier' ? tierOrder : filterKey === 'market' ? ['코스피', '코스닥'] : filterKey === 'nxt' ? ['O', '-'] : filterKey === 'industry' ? industryFilterOrder : filterKey === 'parentSector' ? sectorFilterOrder[0] : filterKey === 'midSector' ? sectorFilterOrder[1] : filterKey === 'subSector' ? sectorFilterOrder[2] : undefined}
+                          optionOrder={filterKey === 'sizeTier' ? tierOrder : filterKey === 'market' ? ['코스피', '코스닥'] : filterKey === 'industry' ? industryFilterOrder : filterKey === 'parentSector' ? sectorFilterOrder[0] : filterKey === 'midSector' ? sectorFilterOrder[1] : filterKey === 'subSector' ? sectorFilterOrder[2] : undefined}
                           orderMode={filterKey === 'industry' || filterKey === 'parentSector' || filterKey === 'midSector' || filterKey === 'subSector' ? { value: sectorFilterMode, onChange: changeSectorFilterMode } : undefined}
-                          labelOf={filterKey === 'nxt' ? value => (value === 'O' ? 'NXT 거래' : 'NXT 미거래') : undefined}
                         />
                       ) : undefined
                     }
@@ -1930,8 +1910,6 @@ export default function AdminStockTable({
                       showTotalMarketValue={showTotalMarketValue}
                       showStockCode={showStockCode}
                       showMarket={showMarket}
-                      showNxt={showNxt}
-                      isNxt={nxtStockCodes.has(item.stockCode)}
                       item={item}
                       index={virtualRow.index}
                       isSelected={selectedStockCodes.has(item.stockCode)}
