@@ -66,7 +66,7 @@ export default function StockBox({
   const name = item.alias ?? item.stockName
   const rateText = toPctSignedGrouped(item.changeRate, decimalPlaces)
   const fit = useMemo(
-    () => fitStockLabel({ name, rateText, width, height, baseFont: fontSize, wantName, wantRate, market: currencyUnit === '엔' ? 'japan' : 'korea' }),
+    () => fitStockLabel({ name, rateText, width, height, baseFont: fontSize, wantName, wantRate, market: currencyUnit === '엔' ? 'japan' : currencyUnit === '달러' ? 'usa' : 'korea' }),
     // fontsVersion은 글꼴이 늦게 로드돼 글자 폭이 달라졌을 때 다시 계산하려는 값이다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [name, rateText, width, height, fontSize, wantName, wantRate, currencyUnit, fontsVersion],

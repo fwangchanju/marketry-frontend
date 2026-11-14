@@ -63,3 +63,19 @@ test('시장을 주지 않은 국내 종목은 일본 확정 자리의 영향을
   assert.deepEqual(lines('넥슨게임즈'), ['넥슨', '게임즈'])
   assert.notDeepEqual(lines('세븐일레븐'), ['세븐', '일레븐'])
 })
+
+test('미국 종목명은 usaLabelBreaks 목록의 자리에서 뜻 단위로 두 줄로 나눈다', () => {
+  const lines = name => fitStockLabel({ ...BOX, name, market: 'usa' }).nameLines
+  assert.deepEqual(lines('버크셔해서웨이'), ['버크셔', '해서웨이'])
+  assert.deepEqual(lines('아메리칸익스프레스'), ['아메리칸', '익스프레스'])
+  assert.deepEqual(lines('뱅크오브아메리카'), ['뱅크오브', '아메리카'])
+  assert.deepEqual(lines('존슨앤드존슨'), ['존슨앤드', '존슨'])
+})
+
+test('미국 종목은 국내·일본 그룹명 목록을 쓰지 않는다', () => {
+  // 국내 규칙에서는 '대한'이 그룹명이라 앞에서 끊기지만, 미국 이름에는 쓰지 않는다.
+  const usa = fitStockLabel({ ...BOX, name: '대한테스트', market: 'usa' }).nameLines
+  const korea = fitStockLabel({ ...BOX, name: '대한테스트', market: 'korea' }).nameLines
+  assert.deepEqual(korea, ['대한', '테스트'])
+  assert.notDeepEqual(usa, ['대한', '테스트'])
+})
