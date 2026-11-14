@@ -7,11 +7,11 @@ import { toCount } from '@/utils/format'
 // 설정창 위쪽의 "nn/nn종목" 개수 표시도 글자 대신 이 배지를 쓴다.
 export type Kind = '종목' | '업종'
 
-// onDark: 어두운 바탕(설정창)에서는 업종·종목 모두 분류 배지의 "분류" 칸과 같은 청록 채움에 흰 글자다. 팝업의 연한 바탕에서는 업종은 짙은 청록 채움, 종목은 회색 채움이고 둘 다 흰 글자다.
+// 색은 종류로만 정한다: 업종은 짙은 청록 채움, 종목은 회색 채움이고 둘 다 흰 글자다. 팝업과 설정창이 같고, 분류 모드(MARKETRY·거래소·내 기준)에 따라 바뀌지 않는다(2026-11-15 사용자 결정).
+// onDark는 설정창 상단 개수 표시용으로 글자와 배지를 한 줄에 맞추는 모양만 다르다.
 export default function KindBadge({ kind, onDark = false, className = '' }: { kind: Kind; onDark?: boolean; className?: string }) {
-  const shape = onDark
-    ? 'inline-flex items-center rounded bg-[var(--brand-surface)] px-1.5 py-[3px] font-semibold text-ui-white'
-    : `rounded px-1.5 py-[3px] font-semibold text-ui-white ${kind === '업종' ? 'bg-[var(--brand-surface)]' : 'bg-ui-control'}`
+  const color = kind === '업종' ? 'bg-[var(--brand-surface)]' : 'bg-ui-control'
+  const shape = `${onDark ? 'inline-flex items-center ' : ''}rounded px-1.5 py-[3px] font-semibold text-ui-white ${color}`
   return (
     <span className={`shrink-0 text-xs leading-none ${shape} ${className}`}>
       {kind}
