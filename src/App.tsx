@@ -9,7 +9,7 @@ import MobileNotice from './components/MobileNotice'
 import SearchMetadata from './components/SearchMetadata'
 import Spinner from './components/Spinner'
 import { marketRoute } from '@/utils/marketRoute'
-import { SECTOR_JAPAN, SECTOR_KOREA, STOCK_JAPAN, STOCK_KOREA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
+import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
 import { isAdminSession, isSpecialSession } from './utils/adminAccess'
@@ -23,6 +23,8 @@ const GroupPage = lazy(() => import('./pages/GroupPage'))
 const CustomPage = lazy(() => import('./pages/CustomPage'))
 const JapanStockPage = lazy(() => import('./pages/JapanStockPage'))
 const JapanSectorPage = lazy(() => import('./pages/JapanSectorPage'))
+const UsaSectorPage = lazy(() => import('./pages/UsaSectorPage'))
+const UsaStockPage = lazy(() => import('./pages/UsaStockPage'))
 const JapanMapPage = lazy(() => import('./pages/JapanMapPage'))
 const JapanGraphPage = lazy(() => import('./pages/JapanGraphPage'))
 const UsaGraphPage = lazy(() => import('./pages/UsaGraphPage'))
@@ -175,6 +177,8 @@ export default function App() {
           <Route element={<SpecialRouteGuard />}>
             <Route path={STOCK_JAPAN} element={<JapanStockPage />} />
             <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
+            <Route path={SECTOR_USA} element={<UsaSectorPage />} />
+            <Route path={STOCK_USA} element={<UsaStockPage />} />
             <Route path="/map/japan" element={<JapanMapPage />} />
             <Route path="/graph/japan" element={<JapanGraphPage />} />
             <Route path="/graph/usa" element={<UsaGraphPage />} />

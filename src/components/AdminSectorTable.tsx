@@ -19,6 +19,7 @@ import { STOCK_HEADER_ROW_PX } from '@/utils/stockTableColumns'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import ScrollArea from '@/components/ScrollArea'
 import { compareKoreanText } from '@/utils/koreanSort'
+import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 
 interface Props {
   sectors: SectorItem[]
@@ -31,6 +32,10 @@ interface Props {
   sectorStats?: SectorStats
   // 수정 권한이 없는 회원이 보는 화면이다. 끌기와 추가·이름 변경·삭제 아이콘을 숨긴다.
   readOnly?: boolean
+  // 분류 단계 수(열 수). 기본은 대·중·소분류 세 단계이고, 미국은 대·중분류 두 단계만 쓴다. 해외 분류(overseasActions)에서만 의미가 있다.
+  levels?: 2 | 3
+  // 해외 분류의 시가총액 화폐. 기본은 일본(엔)이고 미국은 달러다.
+  currency?: Exclude<CurrencyUnit, '원'>
   overseasActions?: {
     create: ReturnType<typeof useCreateSector>
     rename: ReturnType<typeof useRenameSector>
@@ -184,9 +189,11 @@ function DroppableSectorRow({
   )
 }
 
-export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, overseasActions, readOnly = false }: Props) {
-  // 일본 분류는 세 단계까지만 있다. 국내는 예전에 만든 네 번째 단계를 그대로 둔다.
-  const maxDepth = overseasActions ? MAX_SECTOR_DEPTH - 1 : MAX_SECTOR_DEPTH
+export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, overseasActions, levels = 3, currency = '엔', readOnly = false }: Props) {
+  // 일본 분류는 세 단계, 미국은 두 단계까지만 있다. 국내는 예전에 만든 네 번째 단계를 그대로 둔다.
+  const maxDepth = overseasActions ? levels - 1 : MAX_SECTOR_DEPTH
+  // 하위 업종을 더 만들 수 있는 가장 깊은 부모 단계. 해외 분류는 마지막에서 한 단계 위까지, 국내는 중분류까지다.
+  const addChildMaxParentDepth = overseasActions ? levels - 2 : ADD_CHILD_MAX_PARENT_DEPTH
   const [query, setQuery] = useState('')
   // 열 폭이 좁으면 시가총액 합·종목 수 칸을 숨긴다(SECTOR_COMPACT_BELOW_COLUMN_PX). 세 열이 같은 폭이라 표 전체 폭의 3분의 1로 잰다.
   const [isCompact, setIsCompact] = useState(false)
@@ -196,12 +203,12 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     sectorGridObserver.current?.disconnect()
     sectorGridObserver.current = null
     if (!element) return
-    const update = () => setIsCompact(element.clientWidth / 3 < SECTOR_COMPACT_BELOW_COLUMN_PX)
+    const update = () => setIsCompact(element.clientWidth / levels < SECTOR_COMPACT_BELOW_COLUMN_PX)
     const observer = new ResizeObserver(update)
     observer.observe(element)
     sectorGridObserver.current = observer
     update()
-  }, [])
+  }, [levels])
   const columnWidths = isCompact ? SECTOR_COMPACT_WIDTHS : SECTOR_COLUMN_WIDTHS
   const [sortByDepth, setSortByDepth] = useState<Record<number, SectorSort | undefined>>({})
   // 머리글 필터 목록의 보기 순서 — 가나다 순(기본) 또는 시가총액 합 순.
@@ -280,8 +287,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       !isDescendant(candidate, moved.id) &&
       candidate.id !== moved.parentId &&
       // 소분류(깊이 2) 이하에는 더 넣지 않는다 — 옮긴 뒤 가장 깊은 업종도 소분류(깊이 2)를 넘지 않아야 한다.
-      candidate.depth <= ADD_CHILD_MAX_PARENT_DEPTH &&
-      candidate.depth + 1 + subtreeHeight <= ADD_CHILD_MAX_PARENT_DEPTH + 1,
+      candidate.depth <= addChildMaxParentDepth &&
+      candidate.depth + 1 + subtreeHeight <= addChildMaxParentDepth + 1,
     )
   }
 
@@ -697,7 +704,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   {/* 선택한 항목은 하위 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 업종명을 덜 가리도록 업종 칸의 오른쪽 끝(시가총액 합 칸과의 세로선)에 바짝 붙이고 여백을 줄였다. 옆 칸 숫자를 덮지 않는다. 번호 칸을 끄는 중에는 숨긴다. */}
                   {!readOnly && selectedSectorId === sector.id && !isMoveDrag && (
                     <span className="ml-auto flex shrink-0 items-center gap-0.5 pl-1">
-                      {sector.depth <= ADD_CHILD_MAX_PARENT_DEPTH && !isProtectedSector(sector) && (
+                      {sector.depth <= addChildMaxParentDepth && !isProtectedSector(sector) && (
                         <button type="button" data-no-row-select data-hint="하위 업종 추가" aria-label={`${sector.name} 하위 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
                           <PlusIcon className="h-4 w-4" />
                         </button>
@@ -736,7 +743,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             </span>
           )}
         </td>
-        {!isCompact && <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toJoEokDecimal((stat?.marketValue ?? 0) / 100_000_000)}{overseasActions ? ' 엔' : ''}</td>}
+        {!isCompact && <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toJoEokDecimal((stat?.marketValue ?? 0) / 100_000_000)}{overseasActions ? currencySuffix(currency) : ''}</td>}
         {!isCompact && <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toCount(stat?.stockCount ?? 0)}</td>}
       </DroppableSectorRow>
     )
@@ -794,11 +801,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           />,
           toolbarContainer,
         )}
-        <div ref={sectorGridRef} className={"relative grid min-h-0 flex-1 grid-cols-3 overflow-hidden border border-ui-border select-none [&_input]:select-text"}>
-          {(['대분류', '중분류', '소분류'] as const).map((label, index) => (
+        <div ref={sectorGridRef} className={`relative grid min-h-0 flex-1 ${levels === 2 ? 'grid-cols-2' : 'grid-cols-3'} overflow-hidden border border-ui-border select-none [&_input]:select-text`}>
+          {(['대분류', '중분류', '소분류'] as const).slice(0, levels).map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">
               {(() => {
-                const headerClass = `flex shrink-0 flex-col bg-[var(--ui-panel)] text-sm font-bold shadow-[inset_0_-1px_0_var(--ui-border)] ${index < 2 ? 'border-r border-ui-white/20' : ''}`
+                const headerClass = `flex shrink-0 flex-col bg-[var(--ui-panel)] text-sm font-bold shadow-[inset_0_-1px_0_var(--ui-border)] ${index < levels - 1 ? 'border-r border-ui-white/20' : ''}`
                 const depth = index
                 const excluded = excludedByDepth[depth] ?? new Set<string>()
                 const { key: sortKey, direction: sortDirection } = sortByDepth[depth] ?? DEFAULT_SECTOR_SORT
@@ -831,7 +838,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 // 아랫줄 — MARKETRY·거래소 업종 표와 같은 업종 / 시가총액 합 / 종목 수 정렬 머리글.
                 const bottomRow = (
                   <div className="flex border-t border-ui-border text-ui-white" style={{ height: HEADER_HALF_PX }}>
-                    {([['name', '업종'], ['marketValue', overseasActions ? '시가총액 합 (¥)' : '시가총액 합'], ['stockCount', '종목 수']] as const).slice(0, columnWidths.length).map(([key, text], cell) => (
+                    {([['name', '업종'], ['marketValue', overseasActions ? `시가총액 합 (${currency === '달러' ? '$' : '¥'})` : '시가총액 합'], ['stockCount', '종목 수']] as const).slice(0, columnWidths.length).map(([key, text], cell) => (
                       <div key={key} className="flex items-center justify-center whitespace-nowrap" style={{ width: columnWidths[cell] }}>
                         <SortLabel label={text} active={sortKey === key && !(isSearching && depth > 0)} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
                       </div>
