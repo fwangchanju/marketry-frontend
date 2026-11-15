@@ -78,7 +78,7 @@
 | 페이지 | `MapPage` · `GroupPage` · `CustomPage` | Map · Graph · Custom (`GroupPage`의 화면 이름이 Graph, 주소는 `/graph`) |
 | 일본 페이지 | `JapanMapPage` · `JapanGraphPage` · `JapanSectorPage` · `JapanStockPage` | 주소는 `/map/japan`·`/graph/japan`·`/sector/japan`·`/stock/japan`. 특별 회원과 관리자만 보며 메뉴 항목은 보라색이다. 조회는 `/api/japan/**`, 수정은 관리자만 `/api/admin/**`로 한다 |
 | 상단 영역의 메뉴 줄 | `NavSubBar` | 메뉴 줄 |
-| 상단 영역 메뉴(Home·Map·Graph·Sector·Stock·Admin)는 페이지 이동만 한다. 누르면 뜨는 목록은 페이지 이름 아래의 하위 페이지(Admin 등)만 쓰고, 시장 목록은 두지 않는다(누른 채 고정, 다시 누르거나 밖을 누르면 닫힘) | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |
+| 상단 영역 메뉴(Home·Map·Graph·Sector·Stock·Admin)는 누르면 해당 페이지로 바로 이동한다. 하위 목록은 두지 않으며, 시장과 어드민 하위 화면은 좌상단 배지 목록에서 고른다 | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |
 | 툴바 맨 왼쪽의 현재 시장·화면 이름 배지 (서브 청록색 박스 + 윗변에 걸친 메인 청록색 페이지 이름 + 흰 제목 글자, 너비 105px, 글자는 윗변 페이지 이름 글자 시작점에 맞춰 왼쪽 정렬). 시장 배지는 왼쪽 글자 뒤가 아니라 오른쪽 끝에 12px 아래 꺽쇠를 두고, 누르면 아래에 시장 목록이 열린다. 목록은 한국 지도·그래프·섹터·종목에서 KOREA·KOSPI·KOSDAQ(섹터·종목은 KOREA)을 보이고, 특별 회원·관리자는 JAPAN·USA를 더 본다. 일본·미국 화면은 항상 해당 목록을 보인다. 어드민 배지는 MEMBER·STATS·MESSAGE·DEFAULT·BANNER 목록을 연다 | `ToolbarModeText`, `marketMenu.ts` | 제목 배지 |
 | 툴바의 날짜·시각·시장 시간대·제외 종목 회색 직사각형 | `ToolbarChip` | 칩 |
 | 시각 칩 오른쪽의 새로고침 아이콘 칸 | `PageRefreshButton`(`cell`) | 새로고침 칸 |
