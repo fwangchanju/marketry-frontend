@@ -21,7 +21,7 @@ export function renderSearchPage(template, path, { title, description, canonical
   html = replaceOnce(html, /<meta\s+property="og:url"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:url" content="${url}" />`)
   html = replaceOnce(html, /<meta\s+property="og:title"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:title" content="${safeTitle}" />`)
   html = replaceOnce(html, /<meta\s+property="og:description"\s+content="[^"]*"\s*\/?\s*>/g, `<meta property="og:description" content="${safeDescription}" />`)
-  if (path !== '/home') {
+  if (path !== '/summary') {
     const siteNameSchema = /<script\s+type="application\/ld\+json"\s+data-site-name>[\s\S]*?<\/script>\s*/g
     if ([...html.matchAll(siteNameSchema)].length !== 1) throw new Error('Expected one site name schema block for the homepage')
     html = html.replace(siteNameSchema, '')
@@ -33,13 +33,13 @@ async function generate() {
   const pages = JSON.parse(await readFile('src/utils/searchMetadata.json', 'utf8'))
   const template = await readFile('dist/index.html', 'utf8')
   for (const [path, page] of Object.entries(pages)) {
-    if (!/^\/(?:home|map|graph|info|(?:map|graph)\/(?:kospi|kosdaq|korea)|info\/guide)$/.test(path)) throw new Error(`Unexpected search page path: ${path}`)
+    if (!/^\/(?:summary|map|graph|info|(?:map|graph)\/(?:kospi|kosdaq|korea)|info\/guide)$/.test(path)) throw new Error(`Unexpected search page path: ${path}`)
     if (page.canonicalPath && !/^(?:\/(?:map|graph)\/korea|\/info\/guide)$/.test(page.canonicalPath)) throw new Error(`Unexpected canonical search page path: ${page.canonicalPath}`)
     const destination = resolve('dist', `.${path}.html`)
     await mkdir(dirname(destination), { recursive: true })
     await writeFile(destination, renderSearchPage(template, path, page))
   }
-  await writeFile('dist/index.html', renderSearchPage(template, '/home', pages['/home']))
+  await writeFile('dist/index.html', renderSearchPage(template, '/summary', pages['/summary']))
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) await generate()

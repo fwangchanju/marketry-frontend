@@ -28,7 +28,7 @@ interface MenuLink {
 
 // Map·Graph는 KOREA / KOSPI / KOSDAQ을 고르고, Sector·Stock은 KOREA를 바로 연다(특별 회원은 JAPAN도 고른다).
 const BASE_LINKS: MenuLink[] = [
-  { to: '/home', label: 'Home', icon: 'home' },
+  { to: '/summary', label: 'Home', icon: 'home' },
   { to: marketRoute('/map', 'ALL_STOCK'), label: 'Map', icon: 'composition' },
   { to: marketRoute('/graph', 'ALL_STOCK'), label: 'Graph', icon: 'bar-chart' },
 ]
@@ -107,7 +107,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
     : [SECTOR_LINK, STOCK_LINK]
   const baseLinks = BASE_LINKS.map(link => {
     if (!marketSegment) return link
-    if (link.label === 'Home') return overseasSegment ? { ...link, to: `/home/${overseasSegment}` } : link
+    if (link.label === 'Home') return overseasSegment ? { ...link, to: `/summary/${overseasSegment}` } : link
     if (link.label === 'Map') return { ...link, to: `/map/${marketSegment}` }
     if (link.label === 'Graph') return { ...link, to: `/graph/${marketSegment}` }
     return link

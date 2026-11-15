@@ -5,7 +5,7 @@ import MarketryLogo from '@/components/MarketryLogo'
 
 const destinations = [
   { label: '종목 지도', path: '/map/korea' },
-  { label: '업종 지도', path: '/home?map' },
+  { label: '업종 지도', path: '/summary?map' },
   { label: '그룹 등락률', path: '/graph/korea' },
   { label: '가이드', path: '/info/guide' },
 ]

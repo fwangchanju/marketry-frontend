@@ -103,7 +103,7 @@ function LegacyCustomRedirect() {
 function AdminRouteGuard() {
   const { data: session, isLoading } = useSession()
   if (isLoading) return null
-  return isAdminSession(session) ? <Outlet /> : <Navigate to="/home" replace />
+  return isAdminSession(session) ? <Outlet /> : <Navigate to="/summary" replace />
 }
 
 function SpecialRouteGuard() {
@@ -122,7 +122,7 @@ function SpecialRouteGuard() {
   if (isLoading) return null
   if (isSpecialSession(session)) return <Outlet />
   if (waitsForLocalLogin && !waitedOut) return null
-  return <Navigate to="/home" replace />
+  return <Navigate to="/summary" replace />
 }
 
 function ResponsiveHomePage() {
@@ -149,9 +149,14 @@ function isMobileOpenPath(pathname: string) {
   return pathname === '/info' || pathname.startsWith('/info/')
 }
 
+function RedirectKeepingQuery({ to }: { to: string }) {
+  const { search, hash } = useLocation()
+  return <Navigate to={{ pathname: to, search, hash }} replace />
+}
+
 function isMobileMarketPath(pathname: string) {
-  // 첫 화면(/)은 곧 /home으로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
-  return pathname === '/' || pathname === '/home' || pathname === '/map' || pathname.startsWith('/map/') || pathname === '/graph' || pathname.startsWith('/graph/')
+  // 첫 화면(/)은 곧 /summary로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
+  return pathname === '/' || pathname === '/home' || pathname === '/summary' || pathname === '/map' || pathname.startsWith('/map/') || pathname === '/graph' || pathname.startsWith('/graph/')
 }
 
 function MobileGate({ children }: { children: ReactNode }) {
@@ -174,8 +179,10 @@ export default function App() {
         {/* 페이지 코드를 불러오는 동안의 화면. 본문 로딩과 같은 모양을 화면 가운데에 둔다(옵션 없는 Spinner는 32px 링이라 왼쪽 위에 붙는다). */}
         <Suspense fallback={<div className="flex h-screen items-center justify-center bg-ui-background"><Spinner showElapsed /></div>}>
         <Routes>
-          <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/home" element={<ResponsiveHomePage />} />
+          <Route path="/" element={<Navigate to="/summary" replace />} />
+          <Route path="/summary" element={<ResponsiveHomePage />} />
+          {/* 옛 주소(/home) — 즐겨찾기·검색 결과·텔레그램 캡처(?capture=mobile)가 끊기지 않게 쿼리를 붙여 새 주소로 보낸다. */}
+          <Route path="/home" element={<RedirectKeepingQuery to="/summary" />} />
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
           <Route path="/map/kospi" element={<ResponsiveMapPage />} />
           <Route path="/map/kosdaq" element={<ResponsiveMapPage />} />
@@ -195,8 +202,10 @@ export default function App() {
             <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
             <Route path={SECTOR_USA} element={<UsaSectorPage />} />
             <Route path={STOCK_USA} element={<UsaStockPage />} />
-            <Route path="/home/japan" element={<OverseasHomePage market="JAPAN" />} />
-            <Route path="/home/usa" element={<OverseasHomePage market="USA" />} />
+            <Route path="/summary/japan" element={<OverseasHomePage market="JAPAN" />} />
+            <Route path="/home/japan" element={<RedirectKeepingQuery to="/summary/japan" />} />
+            <Route path="/summary/usa" element={<OverseasHomePage market="USA" />} />
+            <Route path="/home/usa" element={<RedirectKeepingQuery to="/summary/usa" />} />
             <Route path="/map/japan" element={<JapanMapPage />} />
             <Route path="/graph/japan" element={<JapanGraphPage />} />
             <Route path="/graph/usa" element={<UsaGraphPage />} />
@@ -212,16 +221,16 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
           {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 메시지, 배너로 나뉜다. */}
           <Route path="/admin" element={<AdminRouteGuard />}>
-            <Route index element={<Navigate to="/home" replace />} />
+            <Route index element={<Navigate to="/summary" replace />} />
             <Route path="member" element={<AdminPage />} />
             <Route path="stats" element={<AdminDashboardPage />} />
             <Route path="dashboard" element={<Navigate to="/admin/stats" replace />} />
             <Route path="message" element={<AdminMessagePage />} />
             <Route path="default" element={<AdminDefaultPage />} />
             <Route path="banner" element={<AdminBannerPage />} />
-            <Route path="*" element={<Navigate to="/home" replace />} />
+            <Route path="*" element={<Navigate to="/summary" replace />} />
           </Route>
-          <Route path="*" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to="/summary" replace />} />
         </Routes>
         </Suspense>
       </LoginGateProvider>

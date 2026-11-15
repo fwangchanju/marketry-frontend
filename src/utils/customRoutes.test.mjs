@@ -26,7 +26,7 @@ test('옛 주소가 아니면 이동하지 않는다', () => {
 
 test('새 주소와 옛 주소는 모두 섹터·스톡 화면으로 본다', () => {
   for (const path of [SECTOR_KOREA, SECTOR_JAPAN, STOCK_KOREA, STOCK_JAPAN, '/custom', '/custom/sector', '/custom/stock/japan']) assert.equal(isCustomPagePath(path), true, path)
-  for (const path of ['/map/korea', '/graph/japan', '/home', '/sectorx', '/admin/member']) assert.equal(isCustomPagePath(path), false, path)
+  for (const path of ['/map/korea', '/graph/japan', '/summary', '/sectorx', '/admin/member']) assert.equal(isCustomPagePath(path), false, path)
 })
 
 test('미국 섹터·스톡 주소는 섹터·스톡 화면으로 센다', () => {

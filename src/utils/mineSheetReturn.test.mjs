@@ -4,7 +4,7 @@ import { hasMineSheetRequest, mineSheetReturnPath, withoutSheetParam } from './m
 
 test('keeps the current address and adds the mine sheet to the login return path', () => {
   assert.equal(mineSheetReturnPath('/map/korea'), '/map/korea?sheet=MINE')
-  assert.equal(mineSheetReturnPath('/home', '?map&market=KOSPI', '#top'), '/home?map=&market=KOSPI&sheet=MINE#top')
+  assert.equal(mineSheetReturnPath('/summary', '?map&market=KOSPI', '#top'), '/summary?map=&market=KOSPI&sheet=MINE#top')
   assert.equal(mineSheetReturnPath('/custom/stock', '?sheet=KRX'), '/custom/stock?sheet=MINE')
 })
 
