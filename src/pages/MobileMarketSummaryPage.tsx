@@ -34,8 +34,7 @@ const MARKETS: { value: MarketQuery; label: string }[] = [
   { value: 'KOSPI', label: '코스피' },
   { value: 'KOSDAQ', label: '코스닥' },
 ]
-// 설정창은 첫 진입 때 닫고, MAP↔GRAPH를 오갈 때는 이 탭의 메모리에 상태를 이어간다.
-let settingsOpenMemory = false
+// 설정창 열림 상태는 이 브라우저에 저장한다(PC와 같은 키). 저장값이 없으면 모바일은 닫힌 상태로 시작한다.
 
 // 주식 지도에 그리는 종목 수(시가총액 상위) — 설정에서 고르지 않고 고정한다.
 const STOCK_MAP_COUNT = 30
@@ -273,11 +272,10 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   // 길게 눌러 연 종목 카드는 저절로 닫히지 않고(같은 종목을 다시 길게 누르면 닫힌다), 짧게 눌러 연 카드는 잠깐 보였다 사라진다.
   const [stockPinned, setStockPinned] = useState(false)
   const [focusedSectorKey, setFocusedSectorKey] = useState<string | null>(null)
-  const [settingsOpen, setSettingsOpenState] = useState(settingsOpenMemory)
-  const setSettingsOpen = (open: boolean) => {
-    settingsOpenMemory = open
-    setSettingsOpenState(open)
-  }
+  const [settingsOpen, setSettingsOpen] = useLocalPersistedState('settings-panel-open', false)
+  // 터치 핸들러 안에서 최신 열림 상태를 읽기 위한 ref.
+  const settingsOpenRef = useRef(settingsOpen)
+  settingsOpenRef.current = settingsOpen
   refreshActionRef.current = async () => {
     await Promise.all([refetchHeatmap(), ...(isGraph ? [refetchMarketSummary()] : [])])
   }
@@ -296,7 +294,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     const onTouchStart = (event: TouchEvent) => {
       const touch = event.touches[0]
       if (!touch) return
-      const inOpenSettings = settingsOpenMemory && settingsSectionRef.current?.contains(event.target as Node)
+      const inOpenSettings = settingsOpenRef.current && settingsSectionRef.current?.contains(event.target as Node)
       const scrollable = findScrollableAncestor(event.target)
       pullGestureRef.current = {
         startX: touch.clientX,
@@ -366,7 +364,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   // 열린 채로 새 페이지가 만들어지면 내용 높이를 알 수 있는 첫 그리기 직후에 한 번 더 그려서 높이를 맞춘다.
   const [, setHeightTick] = useState(0)
   const [settingsLayoutReady, setSettingsLayoutReady] = useState(false)
-  useLayoutEffect(() => { if (settingsOpenMemory) setHeightTick(tick => tick + 1) }, [])
+  useLayoutEffect(() => { if (settingsOpenRef.current) setHeightTick(tick => tick + 1) }, [])
   // 새 페이지의 첫 렌더에서는 설정 내용 ref가 아직 없어 높이가 0이다. 측정된 높이로 맞출 때
   // 열림 애니메이션이 재생되지 않도록 한 프레임 뒤에 사용자 조작용 전환을 켠다.
   useEffect(() => { setSettingsLayoutReady(true) }, [])

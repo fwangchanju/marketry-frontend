@@ -4,6 +4,9 @@ export type AppDialogRequest = {
   message: string
   mutedMessage?: string
   followupMessage?: string
+  // 두 줄의 글자색. 지정하지 않으면 둘째 줄은 회색, 셋째 줄은 검정이다.
+  mutedTone?: 'black' | 'gray'
+  followupTone?: 'black' | 'gray'
   title: string
   // 입력칸이 있는 창 — 확인하면 적은 글자(앞뒤 공백 제외)가 resolve의 둘째 값으로 간다.
   input?: { placeholder: string; maxLength: number }
@@ -42,8 +45,8 @@ export function appConfirm(message: string, options: { title: string; mutedMessa
   return new Promise(resolve => enqueue({ kind: 'confirm', message, mutedMessage: options.mutedMessage, followupMessage: options.followupMessage, title: options.title, resolve }))
 }
 
-export function appWarnConfirm(message: string, options: { title: string; mutedMessage?: string; followupMessage?: string }): Promise<boolean> {
-  return new Promise(resolve => enqueue({ kind: 'warning', message, mutedMessage: options.mutedMessage, followupMessage: options.followupMessage, title: options.title, resolve }))
+export function appWarnConfirm(message: string, options: { title: string; mutedMessage?: string; followupMessage?: string; mutedTone?: 'black' | 'gray'; followupTone?: 'black' | 'gray' }): Promise<boolean> {
+  return new Promise(resolve => enqueue({ kind: 'warning', message, mutedMessage: options.mutedMessage, followupMessage: options.followupMessage, mutedTone: options.mutedTone, followupTone: options.followupTone, title: options.title, resolve }))
 }
 
 // 확인 전에 한 줄 메모를 적을 수 있는 주의 창 — 비워 두어도 확인할 수 있다(value는 빈 글자).
