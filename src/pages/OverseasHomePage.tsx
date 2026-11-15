@@ -279,7 +279,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
           <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-        <SettingsPanel pageLabel="Home" tabStorageName={isJapan ? 'JapanHome' : 'UsaHome'} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownQuotes?.quotes.length ?? 0}/${isJapan ? japanStocks.length : (usaStocks.data?.length ?? 0)}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
+        <SettingsPanel pageLabel="Summary" tabStorageName={isJapan ? 'JapanHome' : 'UsaHome'} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownQuotes?.quotes.length ?? 0}/${isJapan ? japanStocks.length : (usaStocks.data?.length ?? 0)}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
           <SettingsPanelGroup section="colors">
             {/* 지도 화면과 같은 구성이다. 등락률 색상·상위 업종 강조 색은 고정값을 보여 주고 바꾸지 못한다. */}
             <SettingsColorSection

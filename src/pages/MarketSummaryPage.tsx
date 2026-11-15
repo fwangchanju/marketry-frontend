@@ -435,7 +435,8 @@ export default function MarketSummaryPage() {
         {/* 홈·그룹·맵이 함께 쓰는 종목 구성과 색상 설정. */}
         <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel
-            pageLabel="Home"
+            pageLabel="Summary"
+            tabStorageName="Home"
             {...settingsModalProps}
             isOpen={isSettingsOpen}
             onOpenChange={setIsSettingsOpen}
