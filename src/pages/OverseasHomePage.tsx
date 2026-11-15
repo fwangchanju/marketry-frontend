@@ -1,9 +1,13 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
+import NavBarPageActions from '@/components/NavBarPageActions'
+import ScreenshotModal from '@/components/ScreenshotModal'
+import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
+import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import ToolbarModeText from '@/components/ToolbarModeText'
@@ -103,15 +107,35 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
   const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: nameOf(stock.stockCode) }))
   const refetchAll = () => Promise.all([quotes.refetch(), categories.refetch(), classifications.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const holidayColor = resolveHeatmapColor(8, colorScale)
+
+  // 화면 캡처·전체화면 — 지도 화면과 같은 방식이다.
+  const screenshotRef = useRef<HTMLDivElement>(null)
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
+  const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+  const copy = async (previewSrc?: string | null) => {
+    if (!previewSrc && !screenshotRef.current) return
+    setCopyStatus('copying')
+    try {
+      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
+      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
+      setCopyStatus('copied')
+    } catch {
+      setCopyStatus('error')
+    } finally {
+      setTimeout(() => setCopyStatus('idle'), 2000)
+    }
+  }
+  const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   const hasData = tree.length > 0
 
   const session = snapshotTime ? (isJapan ? japanSessionAt(snapshotTime) : USA_SESSION) : null
   return (
     <div className="flex h-screen min-h-0 flex-col bg-ui-background">
       <NavBar />
-      <NavSubBar />
+      <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} />} />
       <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
-        <div className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
+        <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="HOME" label={label} showChevron menu={menu} />
@@ -173,6 +197,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
           <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
         </div>
       </div>
+      {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} captureReady={!isLoading} />}
     </div>
   )
 }
