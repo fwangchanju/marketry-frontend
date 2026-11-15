@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
-import { DROPDOWN_GAP_PX, DROPDOWN_ITEM_CLASS, DROPDOWN_PANEL_CLASS, DROPDOWN_ROW_PX } from '@/components/dropdownStyle'
+import { DROPDOWN_ITEM_CLASS, DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 export interface ToolbarModeMenuItem {
   label: string
   to: string
   active: boolean
+  // 아래 단계 항목(들여쓰기 + ▸)
+  indent?: boolean
+  // 특별 회원 전용 항목(보라 글자)
+  special?: boolean
 }
 
 // 툴바 맨 왼쪽에 지금 보는 화면을 페이지 제목처럼 보여 준다 — 서브 청록색 박스 안에 큰 제목(NIKKEI·K-STOCK·STATS 등)을 두고
@@ -45,16 +49,16 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
         {showChevron && <ChevronDownIcon className="ml-auto h-3 w-3 shrink-0" aria-hidden />}
       </div>
       {isMenu && isOpen && (
-        <div role="menu" className={`absolute left-0 z-50 flex w-[105px] flex-col py-1 ${DROPDOWN_PANEL_CLASS}`} style={{ top: `calc(100% + ${DROPDOWN_GAP_PX}px)`, rowGap: 0 }}>
+        <div role="menu" className={`absolute left-0 z-50 mt-1.5 flex w-max min-w-[105px] flex-col overflow-hidden py-1 text-sm font-normal tracking-normal ${DROPDOWN_PANEL_CLASS}`}>
           {menu.map(item => (
             <button
               key={item.to}
               type="button"
               role="menuitem"
               onClick={() => { setIsOpen(false); if (!item.active) navigate(item.to) }}
-              className={`${DROPDOWN_ITEM_CLASS} flex items-center text-left text-[13px] font-bold ${item.active ? 'text-[var(--accent)]' : 'text-ui-white'}`}
-              style={{ height: DROPDOWN_ROW_PX }}
+              className={`${DROPDOWN_ITEM_CLASS} flex w-full items-center gap-1 whitespace-nowrap py-1.5 text-left ${item.indent ? 'pl-6' : ''} ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}
             >
+              {item.indent && <span aria-hidden="true">▸</span>}
               {item.label}
             </button>
           ))}
