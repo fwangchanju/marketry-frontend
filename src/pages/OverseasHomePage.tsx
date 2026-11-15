@@ -150,9 +150,9 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
 
   const label = isJapan ? 'NIKKEI225' : 'S&P500'
   const menu = [
-    { label: 'K-STOCK', to: '/summary', active: false },
-    { label: 'NIKKEI225', to: '/summary/japan', active: isJapan, special: true },
-    { label: 'S&P500', to: '/summary/usa', active: !isJapan, special: true },
+    { label: 'KOREA', to: '/summary', active: false },
+    { label: 'JAPAN', to: '/summary/japan', active: isJapan, special: true },
+    { label: 'USA', to: '/summary/usa', active: !isJapan, special: true },
   ]
   const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || quotes.isLoading || periodQuotes.isLoading
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)

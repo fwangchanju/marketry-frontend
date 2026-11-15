@@ -111,17 +111,17 @@ function CaptureFrame({ title, className = '', children, isExchange, mineColor }
 }
 
 export default function MarketSummaryPage() {
-  // 시장 배지 드롭다운 — 홈의 시장(K-STOCK·NIKKEI225·S&P500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
+  // 시장 배지 드롭다운 — 홈의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI225·S&P500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
   const location = useLocation()
   const { data: homeSession } = useSession()
   const canSeeOverseasHome = isSpecialSession(homeSession)
   const homeMarket = location.pathname.startsWith('/summary/japan') ? 'JAPAN' : location.pathname.startsWith('/summary/usa') ? 'USA' : 'KOREA'
   const homeMarketLabel = homeMarket === 'JAPAN' ? 'NIKKEI225' : homeMarket === 'USA' ? 'S&P500' : 'K-STOCK'
   const homeMenu = [
-    { label: 'K-STOCK', to: '/summary', active: homeMarket === 'KOREA' },
-    { label: 'NIKKEI225', to: '/summary/japan', active: homeMarket === 'JAPAN', special: true },
-    { label: 'S&P500', to: '/summary/usa', active: homeMarket === 'USA', special: true },
-  ].filter(item => canSeeOverseasHome || item.label === 'K-STOCK')
+    { label: 'KOREA', to: '/summary', active: homeMarket === 'KOREA' },
+    { label: 'JAPAN', to: '/summary/japan', active: homeMarket === 'JAPAN', special: true },
+    { label: 'USA', to: '/summary/usa', active: homeMarket === 'USA', special: true },
+  ].filter(item => canSeeOverseasHome || item.label === 'KOREA')
   const navigate = useNavigate()
   // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
