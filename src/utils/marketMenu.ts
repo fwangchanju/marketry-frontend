@@ -4,7 +4,7 @@ import { marketRoute } from '@/utils/marketRoute'
 
 // 시장 배지를 누르면 열리는 목록. 한국 시장(KOREA·KOSPI·KOSDAQ)을 기본으로 하고,
 // 특별 회원·관리자(includeOverseas)에게만 일본·미국을 더한다. 상단 메뉴의 해외 항목과 같은 조건이다.
-export function marketMenu(basePath: '/map' | '/graph', current: MarketQuery | 'JAPAN' | 'USA', includeOverseas = false) {
+export function marketMenu(basePath: '/map' | '/graph' | '/summary', current: MarketQuery | 'JAPAN' | 'USA', includeOverseas = false) {
   // KOSPI·KOSDAQ은 KOREA 아래 단계라 들여쓰기로 보여 준다.
   const korea = MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute(basePath, option.market), active: option.market === current, indent: option.market !== 'ALL_STOCK' }))
   if (!includeOverseas) return korea

@@ -20,7 +20,10 @@ export function useRouteAwareMarket(
 
   // /map/korea/kospi처럼 코스피·코스닥은 korea 아래에 있으니 마지막 조각을 본다. 서머리(/summary/korea)는 아래 ?market=으로 정한다.
   const parts = pathname.split('/')
-  const routeMarket = parts[1] === 'summary' ? null : marketFromRouteSegment(parts[2] === 'korea' && parts[3] ? parts[3] : parts[2])
+  // 서머리는 /summary/korea(전체)에서 모바일 ?market=을 읽으니, 코스피·코스닥 조각(/summary/korea/kospi)이 있을 때만 경로로 정한다.
+  const routeMarket = parts[1] === 'summary'
+    ? marketFromRouteSegment(parts[3])
+    : marketFromRouteSegment(parts[2] === 'korea' && parts[3] ? parts[3] : parts[2])
   // 모바일 홈에서 전체/코스피/코스닥을 바꿀 때는 같은 /summary 화면에서 쿼리만 바꾼다.
   // 다른 화면에서는 기존처럼 경로가 저장값보다 우선한다.
   const requestedMarket = pathname === '/summary/korea' ? new URLSearchParams(search).get('market') : null
