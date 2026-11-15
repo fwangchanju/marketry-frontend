@@ -99,8 +99,17 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   // 관리자 계정에만 Admin 메뉴가 더 보인다 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
-  const customLinks = [SECTOR_LINK, STOCK_LINK]
-  const baseLinks = BASE_LINKS
+  // 지금 보는 시장이 일본·미국이면 페이지 이동 메뉴도 그 시장으로 간다(일본 지도 → 그래프는 /graph/japan).
+  const overseasSegment = /\/(japan|usa)(\/|$)/.exec(location.pathname)?.[1] ?? null
+  const customLinks = overseasSegment
+    ? [{ ...SECTOR_LINK, to: `/sector/${overseasSegment}` }, { ...STOCK_LINK, to: `/stock/${overseasSegment}` }]
+    : [SECTOR_LINK, STOCK_LINK]
+  const baseLinks = BASE_LINKS.map(link => {
+    if (!overseasSegment) return link
+    if (link.label === 'Map') return { ...link, to: `/map/${overseasSegment}` }
+    if (link.label === 'Graph') return { ...link, to: `/graph/${overseasSegment}` }
+    return link
+  })
   const links = isAdmin ? [...baseLinks, ...customLinks, ADMIN_LINK] : [...baseLinks, ...customLinks]
   const [openTo, setOpenTo] = useState<string | null>(null)
   // 목록은 누르면 열려 그대로 있고, 메뉴 밖을 누르면 닫는다. 메뉴 사이 빈 곳도 메뉴 밖이다.
