@@ -1260,13 +1260,18 @@ export function SettingsBeforeMinutesSection({
   enabled,
   onToggle,
   disabled = false,
+  lockedReason,
 }: {
   beforeMinutes: number
   onChange: (minutes: number) => void
   enabled: boolean
   onToggle: () => void
+  // 기간 등락률을 보는 동안처럼 잠깐 쓸 수 없을 때(클릭하면 안내가 뜬다).
   disabled?: boolean
+  // 이 시장에서는 아예 쓸 수 없을 때 — 등락률 색상의 고정 항목처럼 흐리게 두고 눌러지지 않게 하며, 마우스를 올리면 이유를 보여 준다.
+  lockedReason?: ReactNode
 }) {
+  const locked = lockedReason !== undefined
   // URL 파라미터로 옵션에 없는 값(예: 10)이 들어와도 슬라이더는 가장 가까운 칸을 가리킨다.
   const index = BEFORE_MINUTES_OPTIONS.reduce(
     (best, minutes, i) =>
@@ -1275,12 +1280,12 @@ export function SettingsBeforeMinutesSection({
   )
   return (
     <div className="settings-second-depth-metric settings-graph-item relative mt-6 text-sm">
-      {disabled && <BlockedClickHint className="inset-0">기간 등락률을 보는 동안에는<br />N분 전 대비를 사용할 수 없습니다.</BlockedClickHint>}
+      {(disabled || locked) && <BlockedClickHint className="inset-0" showOnHover={locked}>{lockedReason ?? <>기간 등락률을 보는 동안에는<br />N분 전 대비를 사용할 수 없습니다.</>}</BlockedClickHint>}
       <div className="flex max-w-full items-center justify-between text-left text-[15px] font-medium leading-[22px]">
-        <span className={`flex items-center gap-1 ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>
+        <span className={`flex items-center gap-1 ${enabled ? 'text-ui-white' : 'text-ui-muted'} ${locked ? 'opacity-35' : ''}`}>
           <span className="settings-plain-title">비교 시점<SettingChangeDot draftKeys={['groupPage.graphMode']} /></span>
         </span>
-        <ToggleSwitch checked={enabled} onChange={onToggle} label="비교 그래프" hideLabel disabled={disabled} />
+        <ToggleSwitch checked={enabled} onChange={onToggle} label="비교 그래프" hideLabel disabled={disabled || locked} />
       </div>
       <div className={`settings-before-minutes-control ${enabled ? '' : 'opacity-35'}`}>
         <SettingDescription>현재 등락률과 비교할 시점</SettingDescription>
@@ -1290,7 +1295,7 @@ export function SettingsBeforeMinutesSection({
             labels={BEFORE_MINUTES_OPTIONS.map(minutes => `${minutes}분`)}
             ariaLabel="비교 시점(분 전)"
             onChange={i => onChange(BEFORE_MINUTES_OPTIONS[i])}
-            disabled={disabled || !enabled}
+            disabled={disabled || locked || !enabled}
           />
         </div>
       </div>
