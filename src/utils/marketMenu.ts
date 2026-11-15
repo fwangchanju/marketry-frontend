@@ -32,7 +32,7 @@ export function customMenu(kind: 'sector' | 'stock', current: 'KOREA' | 'JAPAN' 
 export function adminMenu(current: 'MEMBER' | 'STATS' | 'MESSAGE' | 'DEFAULT' | 'BANNER') {
   const items: { label: 'MEMBER' | 'STATS' | 'MESSAGE' | 'DEFAULT' | 'BANNER'; to: string }[] = [
     { label: 'MEMBER', to: '/admin/member' },
-    { label: 'STATS', to: '/admin/dashboard' },
+    { label: 'STATS', to: '/admin/stats' },
     { label: 'MESSAGE', to: '/admin/message' },
     { label: 'DEFAULT', to: '/admin/default' },
     { label: 'BANNER', to: '/admin/banner' },
