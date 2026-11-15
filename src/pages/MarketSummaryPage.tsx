@@ -133,7 +133,7 @@ export default function MarketSummaryPage() {
   } = useGlobalSettings({ allowChangeRateMode: true })
   const isExchange = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'
   const mineColor = settingsModalProps.taxonomy === 'MINE' ? strongIndustryColor : undefined
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const [homeFrameOrder, setHomeFrameOrder] = useLocalPersistedState(HOME_FRAME_ORDER_KEY, DEFAULT_HOME_FRAME_ORDER)
   const frameSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

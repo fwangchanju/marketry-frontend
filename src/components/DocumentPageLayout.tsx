@@ -1,3 +1,4 @@
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { useRef, useState, type ReactNode } from 'react'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import type { SettingsSectionIconName } from '@/components/SettingsSectionIcon'
@@ -23,7 +24,7 @@ export default function DocumentPageLayout({ title, heading, children, panelIcon
   const isInfoTitle = INFO_MENU_ITEMS.some(item => item.label === title)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLElement>(null)

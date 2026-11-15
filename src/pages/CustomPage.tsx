@@ -1,3 +1,4 @@
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { customMenu } from '@/utils/marketMenu'
@@ -148,7 +149,7 @@ export default function CustomPage() {
   )
 
   const [isShareOpen, setIsShareOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
