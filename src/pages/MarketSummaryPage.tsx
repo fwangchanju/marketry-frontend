@@ -1,9 +1,11 @@
 import { useSettled } from '@/hooks/useSettled'
+import { useSession } from '@/hooks/useSession'
+import { isSpecialSession } from '@/utils/adminAccess'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
@@ -109,6 +111,17 @@ function CaptureFrame({ title, className = '', children, isExchange, mineColor }
 }
 
 export default function MarketSummaryPage() {
+  // 시장 배지 드롭다운 — 홈의 시장(K-STOCK·NIKKEI225·S&P500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
+  const location = useLocation()
+  const { data: homeSession } = useSession()
+  const canSeeOverseasHome = isSpecialSession(homeSession)
+  const homeMarket = location.pathname.startsWith('/home/japan') ? 'JAPAN' : location.pathname.startsWith('/home/usa') ? 'USA' : 'KOREA'
+  const homeMarketLabel = homeMarket === 'JAPAN' ? 'NIKKEI225' : homeMarket === 'USA' ? 'S&P500' : 'K-STOCK'
+  const homeMenu = [
+    { label: 'K-STOCK', to: '/home', active: homeMarket === 'KOREA' },
+    { label: 'NIKKEI225', to: '/home/japan', active: homeMarket === 'JAPAN', special: true },
+    { label: 'S&P500', to: '/home/usa', active: homeMarket === 'USA', special: true },
+  ].filter(item => canSeeOverseasHome || item.label === 'K-STOCK')
   const navigate = useNavigate()
   // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
@@ -262,7 +275,7 @@ export default function MarketSummaryPage() {
   const toolbarContent = (
     <>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="HOME" label="K-STOCK" />
+              <ToolbarModeText page="HOME" label={homeMarketLabel} showChevron menu={homeMenu} />
               {/* 지도·그룹 페이지와 같은 날짜·시각·시간대 — 홈도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
                   애프터 마켓 시간에는 등락률 기준(종가·합산·별도) 선택도 지도·그룹 페이지와 같이 보인다. 로딩·오류에서도 제자리에 둔다. */}
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>

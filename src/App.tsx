@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
+import OverseasHomePage from './pages/OverseasHomePage'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
 import MobileHomePage from './pages/MobileHomePage'
@@ -11,8 +12,9 @@ import Spinner from './components/Spinner'
 import { marketRoute } from '@/utils/marketRoute'
 import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
-import { useLocalDevLogin, useSession } from './hooks/useSession'
+import { useSession } from './hooks/useSession'
 import { isLocalAutoLoginEnabled } from './utils/localDevLogin'
+import { useLocalDevLogin } from './hooks/useSession'
 import { isAdminSession, isSpecialSession } from './utils/adminAccess'
 import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
 
@@ -193,6 +195,8 @@ export default function App() {
             <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
             <Route path={SECTOR_USA} element={<UsaSectorPage />} />
             <Route path={STOCK_USA} element={<UsaStockPage />} />
+            <Route path="/home/japan" element={<OverseasHomePage market="JAPAN" />} />
+            <Route path="/home/usa" element={<OverseasHomePage market="USA" />} />
             <Route path="/map/japan" element={<JapanMapPage />} />
             <Route path="/graph/japan" element={<JapanGraphPage />} />
             <Route path="/graph/usa" element={<UsaGraphPage />} />
