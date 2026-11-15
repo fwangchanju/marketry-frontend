@@ -1,6 +1,9 @@
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { usePageSetting } from '@/hooks/usePageSetting'
+import { profileSettingKey } from '@/utils/settingsSchema'
+import { settingDefaultsFor } from '@/utils/settingDefaults'
 import { customMenu } from '@/utils/marketMenu'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
@@ -39,6 +42,8 @@ type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 // 커스텀 섹터·종목 배정 관리 화면 — admin 역할이 아니라 로그인 여부로 접근을 가른다. 누구든 로그인하면 자신의 커스텀 섹터를
 // 관리할 수 있다. 비로그인도 MARKETRY·거래소 분류는 읽을 수 있고, 내 분류를 누르면 로그인 팝업이 뜬다.
 export default function CustomPage() {
+  // 내 기준 모드 강조 색(사용자 설정). 번호 배지와 모드 배지가 이 색을 따른다.
+  const [mineStrongColor] = usePageSetting(profileSettingKey('mine', 'heatmap.strongIndustryColor'), settingDefaultsFor(useIsLoggedIn(), 'mine').strongIndustryColor)
   const { pathname, search, hash } = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   // /sector/korea는 섹터 화면이고, /stock/korea는 종목 화면이다.
@@ -220,7 +225,7 @@ export default function CustomPage() {
   const isPageLoading = isSessionLoading || (isLoggedIn && isSectorsLoading)
 
   return (
-    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background" style={{ '--mine-accent': mineStrongColor } as CSSProperties}>
       <NavBar />
       <NavSubBar actions={actions} />
       {/* 좌측 사이드바(종목/섹터 전환 + 버전관리 저장) 삭제 — 종목/섹터 전환은 NavSubBar의
@@ -245,7 +250,7 @@ export default function CustomPage() {
               {/* 검색창(과 필터 초기화) — 종목·업종 표가 모두 이 노드로 포털링해서 그린다. */}
               <div ref={setToolbarContainer} className="ml-1 flex h-full min-h-0 min-w-0 flex-1 items-center" />
               <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}>
-                <TaxonomyBadge taxonomy={sheet} />
+                <TaxonomyBadge taxonomy={sheet} strongIndustryColor={mineStrongColor} />
               </div>
             </div>
             <EmptyMessageAreaContext.Provider value={emptyMessageArea}>
@@ -295,13 +300,16 @@ export default function CustomPage() {
                     onRetry={() => void refetchStockSectors()}
                   />
                 ) : (
-                  <AdminSectorTable
-                    sectors={sectors ?? []}
-                    settingsActionsTarget={sectorSettingsActionsTarget}
-                    toolbarContainer={toolbarContainer}
-                    onCountLabelChange={setCountLabel}
-                    sectorStats={sectorStats}
-                  />
+                  // 내 기준 업종 표의 번호 배지는 내 기준 모드 색을 쓴다(index.css의 data-sector-profile="mine").
+                  <div className="flex min-h-0 flex-1 flex-col" style={{ '--brand': mineStrongColor, '--brand-surface': `color-mix(in srgb, ${mineStrongColor} 60%, #0a0a0a)` } as CSSProperties}>
+                    <AdminSectorTable
+                      sectors={sectors ?? []}
+                      settingsActionsTarget={sectorSettingsActionsTarget}
+                      toolbarContainer={toolbarContainer}
+                      onCountLabelChange={setCountLabel}
+                      sectorStats={sectorStats}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -310,6 +318,7 @@ export default function CustomPage() {
           </div>
           <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel
+              strongIndustryColor={mineStrongColor}
               pageLabel={mode === 'stock' ? 'Stock' : 'Sector'}
               // 헤더 이름이 바뀌어도 고른 탭 기억(저장 이름표)은 예전 'Custom' 그대로 둔다.
               tabStorageName="Custom"

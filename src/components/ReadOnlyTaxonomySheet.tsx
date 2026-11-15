@@ -1,3 +1,6 @@
+import AdminSectorTable from '@/components/AdminSectorTable'
+import type { SectorItem } from '@/types/api'
+import type { SectorStats } from '@/utils/sectorOrder'
 import { buildSectorParentHints } from '@/utils/sectorFilterHints'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
@@ -7,7 +10,7 @@ import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, STOCK_ROW_PX, pinnedStoc
 import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
-import { KRX_PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorHint, placeProtectedSectorsLast } from '@/utils/protectedSector'
+import { KRX_PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_NAMES } from '@/utils/protectedSector'
 import { SortIcon } from '@/components/icons/AppIcons'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
@@ -21,19 +24,14 @@ import type { Market, HeatmapResponse } from '@/types/api'
 import { toCount, toJoEokDecimal } from '@/utils/format'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { STOCK_SEARCH_MAX_LENGTH, createStockMatcher } from '@/utils/stockSearch'
-import { collectItems } from '@/utils/sectorAverage'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession } from '@/utils/adminAccess'
 
 const MARKET_LABEL: Record<Market, string> = { KOSPI: '코스피', KOSDAQ: '코스닥' }
 
 // 이름 정렬 기준은 모든 표가 같다(숫자 < 한글 < 영어 < 특수문자).
-const compareName = compareKoreanText
 
 // 열 가운데에 놓되 숫자는 오른쪽 정렬 — 고정 폭 상자를 가운데에 두고 그 안에서 오른쪽 정렬하므로 자릿수가 달라도 끝이 맞는다.
-function CenteredRightNumber({ value }: { value: number }) {
-  return <span className="mx-auto block w-[6ch] text-right tabular-nums">{toCount(value)}</span>
-}
 
 // 이 시트 전용 색 — MARKETRY 표(커스텀 종목 표)의 강조색·노란 화살표를 가져다 쓰지 않는다. MARKETRY 색을 바꿔도
 // 이 시트가 따라 바뀌지 않도록 색은 전부 여기 모아 두었다. 시트 색을 바꿀 때도 여기만 고치면 된다.
@@ -48,8 +46,6 @@ const COLOR = {
 } as const
 
 // 열 사이 세로 구분선 — 마지막 열 오른쪽에는 긋지 않는다. 머리글은 밝은 선, 본문은 어두운 선이다.
-const TABLE_CLASS =
-  'custom-page-rows w-full border-separate border-spacing-0 [&_th:not(:last-child)]:border-r [&_th:not(:last-child)]:border-ui-white/20 [&_td:not(:last-child)]:border-r [&_td:not(:last-child)]:border-ui-border'
 
 export type SortDirection = 'asc' | 'desc'
 
@@ -80,17 +76,7 @@ export function SortLabel({ label, active, direction, onClick }: { label: string
   )
 }
 
-function SortableHeader({ label, active, direction, onClick }: { label: string; active: boolean; direction: SortDirection; onClick: () => void }) {
-  return (
-    <th className={HEADER_CELL}>
-      <SortLabel label={label} active={active} direction={direction} onClick={onClick} />
-    </th>
-  )
-}
 
-// 머리글 아래 선을 셀 안쪽에 그려 첫 행과 구분한다.
-const HEADER_CELL = `sticky top-0 z-10 ${COLOR.headerBg} px-3 py-1 text-center text-sm font-bold ${COLOR.headerText} shadow-[inset_0_-1px_0_var(--ui-border)]`
-const BODY_CELL = `border-b ${COLOR.rowDivider} px-3 py-1 text-sm`
 // 종목 표 한 행의 예상 높이(30px, index.css의 `.custom-page-table tbody tr`와 같다) — 실제 높이는 렌더 뒤에 다시 잰다.
 const STOCK_ROW_HEIGHT = STOCK_ROW_PX
 // align-middle: 머리글 글자(화살표 묶음의 가운데)가 왼쪽 체크박스와 같은 높이에 오게 한다.
@@ -146,11 +132,9 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
   const isAdmin = isAdminSession(useSession().data)
   const sectors = useMemo<SectorRow[]>(() => {
     if (!data) return []
-    // 업종 표는 최상위 업종별로 하위 종목까지 집계하고, 종목 표는 실제 배정 업종별로 펼친다.
-    const rows = mode === 'stock'
-      ? collectSectorRows(data.items)
-      : data.items.map(node => ({ sectorName: node.sectorName, stocks: collectItems(node) }))
-    return rows.filter(row => row.stocks.length > 0)
+    // 종목 표는 실제 배정 업종별로 펼치고 종목이 없는 업종은 뺀다. 업종 표는 대·중·소분류 계층을 모두 넘긴다(각 칸은 자기 종목만, 상위 합계는 표가 센다).
+    const rows = collectSectorRows(data.items)
+    return mode === 'stock' ? rows.filter(row => row.stocks.length > 0) : rows
   }, [data, mode])
 
   // 지도·그룹 페이지처럼 불러오지 못했을 때는 큰 원 안에 안내 글을 가운데에 보여준다(원 높이는 지도·그룹 페이지와 같게 위 16px, 아래 47.5px 여백).
@@ -228,92 +212,47 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
 }
 
 
-type CategorySortKey = 'name' | 'stockCount' | 'marketValue'
+// 업종 트리(대·중·소분류)를 내 기준 칸(`AdminSectorTable`)이 받는 형식으로 바꾼다. 번호는 경로 순서로 매기고,
+// 업종마다 하위 업종까지 포함한 시가총액 합·종목 수를 센다(MARKETRY·거래소 업종 표와 같은 계산).
+function buildReadOnlySectorTree(sectors: SectorRow[]): { items: SectorItem[]; stats: SectorStats } {
+  const idByPath = new Map<string, number>()
+  const items: SectorItem[] = []
+  const stats = new Map<number, { marketValue: number; stockCount: number }>()
+  for (const sector of sectors) {
+    const path = sector.sectorPath && sector.sectorPath.length > 0 ? sector.sectorPath : [sector.sectorName]
+    let parentId: number | null = null
+    for (let depth = 0; depth < path.length; depth++) {
+      const key = path.slice(0, depth + 1).join('>')
+      let id = idByPath.get(key)
+      if (id === undefined) {
+        id = idByPath.size + 1
+        idByPath.set(key, id)
+        items.push({ id, name: path[depth], parentId, depth })
+      }
+      parentId = id
+    }
+  }
+  // 자기 종목과 하위 업종 종목을 모두 각 상위 업종에 더한다.
+  for (const sector of sectors) {
+    const path = sector.sectorPath && sector.sectorPath.length > 0 ? sector.sectorPath : [sector.sectorName]
+    const marketValue = sector.stocks.reduce((sum, stock) => sum + stock.totalMarketValue, 0)
+    for (let depth = 0; depth < path.length; depth++) {
+      const id = idByPath.get(path.slice(0, depth + 1).join('>'))
+      if (id === undefined) continue
+      const current = stats.get(id) ?? { marketValue: 0, stockCount: 0 }
+      stats.set(id, { marketValue: current.marketValue + marketValue, stockCount: current.stockCount + sector.stocks.length })
+    }
+  }
+  return { items, stats }
+}
 
-function CategoryTable({ sectors, source, emptyMessage, extra, onCountLabelChange, toolbarContainer }: { sectors: SectorRow[]; source: 'KRX' | 'MARKETRY'; emptyMessage: string; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
-  // 노랗게 칠하고 맨 아래에 두는 업종 — MARKETRY는 보호 업종 셋, 거래소는 미분류와 거래 정지다(서버가 정지 종목을 묶어 준다).
-  const protectedNames = source === 'MARKETRY' ? PROTECTED_SECTOR_NAMES : KRX_PROTECTED_SECTOR_NAMES
-  const [query, setQuery] = useState('')
-  // 시가총액 합이 큰 업종부터 처음 보여준다.
-  const { sortKey, direction, toggle } = useSort<CategorySortKey>('marketValue', 'desc')
-  const rows = useMemo(() => {
-    const sign = direction === 'asc' ? 1 : -1
-    const sorted = sectors
-      .map(sector => ({
-        name: sector.sectorName,
-        stockCount: sector.stocks.length,
-        marketValue: sector.stocks.reduce((sum, stock) => sum + stock.totalMarketValue, 0),
-      }))
-      .sort((a, b) => {
-        const diff = sortKey === 'name' ? compareName(a.name, b.name) : a[sortKey] - b[sortKey]
-        return diff === 0 ? compareName(a.name, b.name) : sign * diff
-      })
-    // MARKETRY 표에서는 보호 업종(신규 상장·거래 정지·미분류)을 정렬 방향과 상관없이 항상 맨 아래에 둔다. 거래소 표는 그대로다.
-    return placeProtectedSectorsLast(sorted, row => row.name, protectedNames)
-  }, [sectors, sortKey, direction, protectedNames])
-  const trimmed = query.trim()
-  const visibleRows = useMemo(() => (trimmed ? rows.filter(row => row.name.includes(trimmed)) : rows), [rows, trimmed])
-  useReportCountLabel(`${toCount(visibleRows.length)}/${toCount(rows.length)}업종`, onCountLabelChange)
-  // 업종 줄 선택 — 종목 표와 같다(줄 누르기·Shift+클릭 범위·끌어서 연속 선택). 읽기 전용 시트라 고른 업종으로 할 수 있는 작업은 아직 없고, 표시만 한다.
-  const [selectedNames, setSelectedNames] = useState<ReadonlySet<string>>(new Set())
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const { rowProps, selectionHint } = useRowRangeSelection(
-    useMemo(() => visibleRows.map(row => row.name), [visibleRows]),
-    scrollContainerRef,
-    selectedNames,
-    setSelectedNames,
-  )
-  const header = (key: CategorySortKey, label: string) => (
-    <SortableHeader label={label} active={sortKey === key} direction={direction} onClick={() => toggle(key)} />
-  )
+// 대·중·소분류 업종 표는 내 기준 칸을 그대로 쓰고, 읽기 전용으로 켠다(끌기·추가·이름 변경·삭제 없음).
+function CategoryTable({ sectors, source, onCountLabelChange, toolbarContainer }: { sectors: SectorRow[]; source: 'KRX' | 'MARKETRY'; emptyMessage: string; extra: ReactNode; onCountLabelChange?: (label: string | undefined) => void; toolbarContainer?: HTMLElement | null }) {
+  const tree = useMemo(() => buildReadOnlySectorTree(sectors), [sectors])
+  // 거래소 모드는 번호 배지를 거래소 색으로 맞춘다(index.css의 data-sector-profile).
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col text-ui-white">
-      {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
-      {toolbarContainer && createPortal(
-        <SearchBar
-          inline
-          query={query}
-          onChange={setQuery}
-          placeholder="검색"
-          ariaLabel="업종 검색"
-          afterInput={extra}
-        />,
-        toolbarContainer,
-      )}
-      <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-y-auto border border-ui-border">
-        {/* 업종·업종 시가총액·종목 수 세 칸은 대·중·소분류 업종 표와 같은 비율(40:35:25)로 나눈다. */}
-        <table className={`${TABLE_CLASS} table-fixed select-none`}>
-          <colgroup><col style={{ width: '40%' }} /><col style={{ width: '35%' }} /><col style={{ width: '25%' }} /></colgroup>
-          <thead>
-            <tr style={{ height: STOCK_HEADER_ROW_PX }}>
-              {header('name', '업종')}
-              {header('marketValue', '시가총액 합')}
-              {header('stockCount', '종목 수')}
-            </tr>
-          </thead>
-          <tbody>
-            {visibleRows.map((row, index) => (
-              <tr
-                key={row.name}
-                {...rowProps(index)}
-                className={`cursor-pointer text-ui-muted ${selectedNames.has(row.name) ? '[&>td]:bg-[var(--brand)]/20 [&:hover>td]:bg-[var(--brand)]/35 [&>td]:border-ui-white/20!' : '[&:hover>td]:bg-[var(--brand)]/10 [&:hover>td]:border-ui-white/20!'}`}
-              >
-                {/* 업종명 시작 위치를 MARKETRY 업종 화면의 대분류 이름과 같게 한다 — 칸 왼쪽에서 8px(여백) + 번호 칸 32px + 10px = 50px. */}
-                <td className={`${BODY_CELL} relative truncate text-left !pl-[50px] ${protectedNames.includes(row.name) ? PROTECTED_SECTOR_TEXT_CLASS : ''}`}>
-                  {protectedNames.includes(row.name) ? <span data-hint={getProtectedSectorHint(row.name, source)}>{row.name}</span> : row.name}
-                </td>
-                {/* 종목 표와 같은 시가총액 표기('137조 2,762억' 대신 '137.3조')와 오른쪽 정렬이다. */}
-                {/* 업종명 왼쪽 여백과 같은 50px를 시가총액 오른쪽에 둔다. */}
-                <td className={`${BODY_CELL} text-right !pr-[50px] text-ui-muted`}>{toJoEokDecimal(row.marketValue / 100_000_000)}</td>
-                <td className={BODY_CELL}>
-                  <CenteredRightNumber value={row.stockCount} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {visibleRows.length === 0 && <EmptyMessage message={rows.length === 0 ? emptyMessage : EMPTY_SEARCH_MESSAGE} />}
-      </div>
+    <div data-sector-profile={source === 'KRX' ? 'exchange' : undefined} className="flex min-h-0 flex-1 flex-col">
+      <AdminSectorTable sectors={tree.items} sectorStats={tree.stats} readOnly onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
     </div>
   )
 }
