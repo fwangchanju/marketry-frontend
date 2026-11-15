@@ -1,0 +1,41 @@
+import type { ComponentType, ReactNode } from 'react'
+import type { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
+import type { OverseasMarket } from '@/utils/markets'
+import type { buildRankChart } from '@/utils/rankChart'
+
+// 해외 시장 그래프(OverseasGraphView)가 시장마다 다른 부분을 받는 모양. 시장별 훅(useJapanGraphSource·useUsaGraphSource)이 이 모양으로 돌려준다.
+// 막대 데이터를 어떻게 계산하는지(일본의 N분 전 대비·장중 지수, 미국의 종가 기준)와 설정창의 그래프 묶음은 시장별 훅이 만들고,
+// 화면 구성은 공통 화면이 한다. 새 시장(대만 등)은 같은 모양의 훅 하나를 만들면 된다.
+export interface OverseasGraphSource {
+  market: OverseasMarket
+  // 툴바 배지 글자(시장 목록표의 배지 글자).
+  label: string
+  chart: ReturnType<typeof buildRankChart>
+  // 그래프 위 제목("시총 가중 등락률"·"15분 전 대비")과 단위(%·%p), 분류 단계 이름, 고른 단계(1부터).
+  titleText: string
+  titleUnit: string
+  depthNames: readonly string[]
+  groupDepth: number
+  snapshotTime: string | null
+  liveSnapshotTime: string | null
+  selectedTime: string | null
+  rangeStart: string | null
+  select: (pick: string | null) => void
+  selectRange: (start: string, end: string) => void
+  rangeExcludedStocks: { stockCode: string; stockName: string }[]
+  isLoading: boolean
+  isError: boolean
+  isFetching: boolean
+  refetchAll: () => Promise<unknown>
+  DatePicker: ComponentType<{ snapshotTime: string | null; liveTime: string | null; rangeStart: string | null; holidayColor: string; onSelect: (pick: string | null) => void; onSelectRange: (start: string, end: string) => void }>
+  sessionChip: ReactNode
+  refreshHelp: string
+  fixed: { colorScale: (typeof JAPAN_MAP_FIXED)['colorScale']; strongIndustryColor: string }
+  draftKeyMap: Readonly<Record<string, string>>
+  tabStorageName: string
+  // 설정창의 "n/m종목"의 m과 n.
+  totalCount: number
+  shownCount: number
+  // 설정창 그래프 묶음의 내용(분류 단계·등락률 기준·비교 시점 등). 시장마다 항목이 다르다.
+  graphSettings: ReactNode
+}
