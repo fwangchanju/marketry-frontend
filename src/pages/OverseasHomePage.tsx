@@ -188,7 +188,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
   const toolbarContent = (
     <>
     <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-      <ToolbarModeText page="HOME" label={label} showChevron menu={menu} />
+      <ToolbarModeText page="SUMMARY" label={label} showChevron menu={menu} />
       <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
         {isJapan
           ? <JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={holidayColor} onSelect={select} onSelectRange={selectRange} />
