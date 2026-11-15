@@ -46,6 +46,13 @@ const ADMIN_LINK: MenuLink = {
   label: 'Admin',
   icon: 'member',
   admin: true,
+  // 마우스를 올리면 관리자 화면 목록이 열린다.
+  options: [
+    { label: 'MEMBER', to: '/admin/member' },
+    { label: 'DASHBOARD', to: '/admin/stats' },
+    { label: 'MESSAGE', to: '/admin/message' },
+    { label: 'BANNER', to: '/admin/banner' },
+  ],
 }
 
 // 메뉴 글자는 글자 앞 아이콘과 함께 쓰므로 글자 크기를 18px에서 15px로 줄였다.
@@ -115,15 +122,28 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const overseasSegment = overseasMarket?.routeSegment ?? null
   // 코스피·코스닥은 korea 아래에 있다(/map/korea/kospi).
   const mapSegment = marketSegment === 'kospi' || marketSegment === 'kosdaq' ? `korea/${marketSegment}` : marketSegment
+  // Sector·Stock은 마우스를 올리면 시장 목록(KOREA·JAPAN·USA)이 열린다.
+  const marketOptions = (prefix: string, korea: string, withKospi = false): MenuOption[] => [
+    { label: 'KOREA', to: korea },
+    ...(withKospi ? [
+      { label: 'KOSPI', to: `/${prefix}/korea/kospi` },
+      { label: 'KOSDAQ', to: `/${prefix}/korea/kosdaq` },
+    ] : []),
+    { label: 'JAPAN', to: `/${prefix}/japan` },
+    { label: 'USA', to: `/${prefix}/usa` },
+  ]
   const customLinks = overseasSegment
-    ? [{ ...SECTOR_LINK, to: `/sector/${overseasSegment}` }, { ...STOCK_LINK, to: `/stock/${overseasSegment}` }]
-    : [SECTOR_LINK, STOCK_LINK]
+    ? [{ ...SECTOR_LINK, to: `/sector/${overseasSegment}`, options: marketOptions('sector', SECTOR_KOREA) }, { ...STOCK_LINK, to: `/stock/${overseasSegment}`, options: marketOptions('stock', STOCK_KOREA) }]
+    : [{ ...SECTOR_LINK, options: marketOptions('sector', SECTOR_KOREA) }, { ...STOCK_LINK, options: marketOptions('stock', STOCK_KOREA) }]
+  // Home·Map·Graph도 마우스를 올리면 시장 목록(KOREA·JAPAN·USA)이 열린다.
   const baseLinks = BASE_LINKS.map(link => {
-    if (!marketSegment) return link
-    if (link.label === 'Home') return { ...link, to: `/summary/${mapSegment}` }
-    if (link.label === 'Map') return { ...link, to: `/map/${mapSegment}` }
-    if (link.label === 'Graph') return { ...link, to: `/graph/${mapSegment}` }
-    return link
+    const prefix = link.label === 'Home' ? 'summary' : link.label === 'Map' ? 'map' : link.label === 'Graph' ? 'graph' : null
+    const options = prefix ? marketOptions(prefix, `/${prefix}/korea`, true) : undefined
+    if (!marketSegment) return { ...link, options }
+    if (link.label === 'Home') return { ...link, to: `/summary/${mapSegment}`, options }
+    if (link.label === 'Map') return { ...link, to: `/map/${mapSegment}`, options }
+    if (link.label === 'Graph') return { ...link, to: `/graph/${mapSegment}`, options }
+    return { ...link, options }
   })
   const links = isAdmin ? [...baseLinks, ...customLinks, ADMIN_LINK] : [...baseLinks, ...customLinks]
   const [openTo, setOpenTo] = useState<string | null>(null)
@@ -147,7 +167,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   }
   // 세로 메뉴는 아이콘을 글자 위에 두고, 선택 칸에 청록 배경을 깐다.
   const linkClassName = (to: string) => vertical
-    ? `flex h-14 w-full flex-col items-center justify-center gap-1 rounded text-[13px] font-semibold ${isLinkActive(to) ? 'bg-[var(--brand-surface)] text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
+    ? `flex h-14 w-full flex-col items-center justify-center gap-1 rounded text-[13px] font-semibold ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
     : `${NAV_TAB_CLASS} ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
 
   // 목록에서 지금 보고 있는 항목인지 — Sector·Stock은 한국(/sector/korea, /stock/korea)과 일본(/sector/japan, /stock/japan) 화면이고, Map·Graph는 주소의 시장 이름이다.
@@ -160,7 +180,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
 
   return (
     <div className={vertical
-      ? 'fixed bottom-0 left-0 top-[90px] z-30 flex w-24 flex-col items-stretch bg-ui-surface px-2 pt-[4px] text-xs'
+      ? 'fixed bottom-0 left-0 top-[90px] z-30 flex w-20 flex-col items-stretch bg-ui-background px-2 pt-[4px] text-xs'
       : 'relative z-30 mb-[15px] flex h-[30px] after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs'}>
       {/* 이 줄의 하단선은 메인·설정 행의 세로 기준이다. 아이콘 28px과 같은 높이로 두고, 하단선에서 설정창까지는 페이지 쪽의 4px만 남긴다. */}
       <div data-nav-menus className={vertical ? 'flex h-full flex-col items-stretch gap-1' : 'flex h-7 items-center gap-3'}>
@@ -168,6 +188,8 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
           <div
             key={link.to}
             data-nav-menu-item
+            onMouseEnter={vertical && link.options ? () => setOpenTo(link.to) : undefined}
+            onMouseLeave={vertical && link.options ? () => setOpenTo(current => (current === link.to ? null : current)) : undefined}
             className={vertical ? `relative flex w-full items-center${link.admin ? ' mt-auto' : ''}` : 'relative flex h-7 items-center'}
           >
             <Link
@@ -175,7 +197,8 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
               className={link.admin ? `${vertical ? 'flex h-14 w-full flex-col items-center justify-center gap-1 rounded text-[13px] font-semibold' : NAV_TAB_CLASS} transition-colors hover:text-admin-only-hover ${isLinkActive(link.to) ? 'text-admin-only-hover' : 'text-admin-only'}` : linkClassName(link.to)}
               aria-expanded={link.options ? openTo === link.to : undefined}
               onClick={event => {
-                if (!link.options) {
+                // 왼쪽 세로 메뉴는 누르면 바로 이동하고, 목록은 마우스를 올렸을 때만 연다.
+                if (!link.options || vertical) {
                   setOpenTo(null)
                   return
                 }
@@ -191,7 +214,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
             </Link>
             {/* 메뉴 칸(28px)이 탭 글자(약 20px)보다 커서 칸 아래에 바로 붙여야 글자 기준으로 4px가 된다. */}
             {link.options && openTo === link.to && (
-              <div className={`absolute z-50 w-32 overflow-hidden ${DROPDOWN_PANEL_CLASS} ${vertical ? 'left-full top-0' : 'left-0 top-full'}`}>
+              <div className={`absolute z-50 w-32 overflow-hidden ${DROPDOWN_PANEL_CLASS} ${vertical ? (link.admin ? 'left-full bottom-0' : 'left-full top-0') : 'left-0 top-full'}`}>
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
