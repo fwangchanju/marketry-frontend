@@ -281,8 +281,9 @@ function CategoryTable({ sectors, source, emptyMessage, extra, onCountLabelChang
         toolbarContainer,
       )}
       <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-y-auto border border-ui-border">
-        {/* 업종·업종 시가총액·종목 수 세 칸을 같은 폭(삼등분)으로 나눈다 — MARKETRY 업종 화면의 대·중·소분류 칸과 같은 모양이다. */}
+        {/* 업종·업종 시가총액·종목 수 세 칸은 대·중·소분류 업종 표와 같은 비율(40:35:25)로 나눈다. */}
         <table className={`${TABLE_CLASS} table-fixed select-none`}>
+          <colgroup><col style={{ width: '40%' }} /><col style={{ width: '35%' }} /><col style={{ width: '25%' }} /></colgroup>
           <thead>
             <tr style={{ height: STOCK_HEADER_ROW_PX }}>
               {header('name', '업종')}
