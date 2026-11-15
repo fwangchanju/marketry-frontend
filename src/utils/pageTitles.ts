@@ -1,12 +1,12 @@
 // 브라우저 탭·검색 결과에 보이는 페이지 제목(2026-11-15 사용자 결정). 규칙은 `{시장} {화면} - MARKETRY`이다.
 // 시장 이름은 투자자가 검색에 쓰는 "주식"을 쓴다(한국주식·일본주식·미국주식). 지수 이름을 괄호로 덧붙이는 것은 하지 않기로 했다(사용자 결정).
-// 대표 주소(/summary/korea)는 사이트 이름 제목(MARKETRY - Design Your Market)을 그대로 둔다 — 구글이 사이트 이름을 읽을 때 참고해서다.
-// 대표 주소를 따로 소개하는 홈 화면은 나중에 만들면서 다시 정한다.
 const SITE_NAME = 'MARKETRY'
 
+// 요약 화면의 시장 이름(증시). 다른 화면은 MARKET_NAMES(주식)를 쓴다.
+const SUMMARY_MARKET_NAMES: Record<string, string> = { korea: '한국증시', kospi: '코스피', kosdaq: '코스닥', japan: '일본증시', usa: '미국증시' }
 const MARKET_NAMES: Record<string, string> = { korea: '한국주식', kospi: '코스피', kosdaq: '코스닥', japan: '일본주식', usa: '미국주식' }
 // 화면 이름 — 지도·그래프는 검색에 등록된 낱말("히트맵"·"등락률 그래프")을 그대로 쓴다. 설명문·가이드의 낱말과도 맞는다("업종 지도"로 정했다가 설명문과 어긋나 "히트맵"으로 되돌렸다).
-const SCREEN_NAMES: Record<string, string> = { summary: '요약', map: '히트맵', graph: '등락률 그래프', sector: '섹터', stock: '종목' }
+const SCREEN_NAMES: Record<string, string> = { map: '히트맵', graph: '등락률 그래프', sector: '섹터', stock: '종목' }
 const FIXED_TITLES: Record<string, string> = {
   '/info/guide': '히트맵 설정 방법',
   '/info/privacy': '개인정보처리방침',
@@ -24,10 +24,15 @@ const FIXED_TITLES: Record<string, string> = {
 // 주소의 페이지 제목. 대표 주소와 규칙에 없는 주소는 null(호출하는 쪽이 사이트 기본 제목을 쓴다).
 export function pageTitle(pathname: string): string | null {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
-  if (path === '/summary/korea') return null
   const fixed = FIXED_TITLES[path]
   if (fixed) return `${fixed} - ${SITE_NAME}`
   const [, screen, market, sub] = path.split('/')
+  if (screen === 'summary') {
+    // 요약 화면은 시장 이름을 '증시'로 쓴다(2026-11-16 사용자 결정). 대표 주소(/summary/korea)도 같은 규칙을 따른다.
+    const name = market === 'korea' && sub !== undefined ? SUMMARY_MARKET_NAMES[sub] : SUMMARY_MARKET_NAMES[market]
+    if (!name || (market !== 'korea' && sub !== undefined)) return null
+    return `${name} 요약 - ${SITE_NAME}`
+  }
   const screenName = SCREEN_NAMES[screen]
   if (!screenName || !MARKET_NAMES[market]) return null
   // 코스피·코스닥은 korea 아래에 있다(/map/korea/kospi). korea 아래 다른 조각은 규칙에 없다.
