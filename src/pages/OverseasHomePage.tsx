@@ -150,9 +150,9 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
 
   const label = isJapan ? 'NIKKEI225' : 'S&P500'
   const menu = [
-    { label: 'K-STOCK', to: '/home', active: false },
-    { label: 'NIKKEI225', to: '/home/japan', active: isJapan, special: true },
-    { label: 'S&P500', to: '/home/usa', active: !isJapan, special: true },
+    { label: 'KOREA', to: '/summary/korea', active: false },
+    { label: 'JAPAN', to: '/summary/japan', active: isJapan, special: true },
+    { label: 'USA', to: '/summary/usa', active: !isJapan, special: true },
   ]
   const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || quotes.isLoading || periodQuotes.isLoading
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
@@ -188,7 +188,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
   const toolbarContent = (
     <>
     <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-      <ToolbarModeText page="HOME" label={label} showChevron menu={menu} />
+      <ToolbarModeText page="SUMMARY" label={label} showChevron menu={menu} />
       <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
         {isJapan
           ? <JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={holidayColor} onSelect={select} onSelectRange={selectRange} />
@@ -279,7 +279,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
           <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-        <SettingsPanel pageLabel="Home" tabStorageName={isJapan ? 'JapanHome' : 'UsaHome'} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownQuotes?.quotes.length ?? 0}/${isJapan ? japanStocks.length : (usaStocks.data?.length ?? 0)}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
+        <SettingsPanel pageLabel="Summary" tabStorageName={isJapan ? 'JapanHome' : 'UsaHome'} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownQuotes?.quotes.length ?? 0}/${isJapan ? japanStocks.length : (usaStocks.data?.length ?? 0)}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
           <SettingsPanelGroup section="colors">
             {/* 지도 화면과 같은 구성이다. 등락률 색상·상위 업종 강조 색은 고정값을 보여 주고 바꾸지 못한다. */}
             <SettingsColorSection

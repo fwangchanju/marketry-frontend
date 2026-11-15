@@ -111,17 +111,17 @@ function CaptureFrame({ title, className = '', children, isExchange, mineColor }
 }
 
 export default function MarketSummaryPage() {
-  // 시장 배지 드롭다운 — 홈의 시장(K-STOCK·NIKKEI225·S&P500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
+  // 시장 배지 드롭다운 — 홈의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI225·S&P500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
   const location = useLocation()
   const { data: homeSession } = useSession()
   const canSeeOverseasHome = isSpecialSession(homeSession)
-  const homeMarket = location.pathname.startsWith('/home/japan') ? 'JAPAN' : location.pathname.startsWith('/home/usa') ? 'USA' : 'KOREA'
+  const homeMarket = location.pathname.startsWith('/summary/japan') ? 'JAPAN' : location.pathname.startsWith('/summary/usa') ? 'USA' : 'KOREA'
   const homeMarketLabel = homeMarket === 'JAPAN' ? 'NIKKEI225' : homeMarket === 'USA' ? 'S&P500' : 'K-STOCK'
   const homeMenu = [
-    { label: 'K-STOCK', to: '/home', active: homeMarket === 'KOREA' },
-    { label: 'NIKKEI225', to: '/home/japan', active: homeMarket === 'JAPAN', special: true },
-    { label: 'S&P500', to: '/home/usa', active: homeMarket === 'USA', special: true },
-  ].filter(item => canSeeOverseasHome || item.label === 'K-STOCK')
+    { label: 'KOREA', to: '/summary/korea', active: homeMarket === 'KOREA' },
+    { label: 'JAPAN', to: '/summary/japan', active: homeMarket === 'JAPAN', special: true },
+    { label: 'USA', to: '/summary/usa', active: homeMarket === 'USA', special: true },
+  ].filter(item => canSeeOverseasHome || item.label === 'KOREA')
   const navigate = useNavigate()
   // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
@@ -275,7 +275,7 @@ export default function MarketSummaryPage() {
   const toolbarContent = (
     <>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="HOME" label={homeMarketLabel} showChevron menu={homeMenu} />
+              <ToolbarModeText page="SUMMARY" label={homeMarketLabel} showChevron menu={homeMenu} />
               {/* 지도·그룹 페이지와 같은 날짜·시각·시간대 — 홈도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
                   애프터 마켓 시간에는 등락률 기준(종가·합산·별도) 선택도 지도·그룹 페이지와 같이 보인다. 로딩·오류에서도 제자리에 둔다. */}
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
@@ -346,7 +346,7 @@ export default function MarketSummaryPage() {
                 ),
               },
             ]
-  // 렌더러(텔레그램 발송)가 /home?capture=mobile 로 열면 지도 페이지 모바일 캡처와 같은 3:4 세로 판에 툴바와 시장 지도(왼쪽)·그룹 등락률(오른쪽)만 담아 찍는다.
+  // 렌더러(텔레그램 발송)가 /summary/korea?capture=mobile 로 열면 지도 페이지 모바일 캡처와 같은 3:4 세로 판에 툴바와 시장 지도(왼쪽)·그룹 등락률(오른쪽)만 담아 찍는다.
   // 화면과 고정 캡처판이 같은 순서를 쓴다 — homeFrames 자체는 건드리지 않는다.
   const orderedHomeFrames = [...homeFrames].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title))
   const [searchParams] = useSearchParams()
@@ -435,7 +435,8 @@ export default function MarketSummaryPage() {
         {/* 홈·그룹·맵이 함께 쓰는 종목 구성과 색상 설정. */}
         <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel
-            pageLabel="Home"
+            pageLabel="Summary"
+            tabStorageName="Home"
             {...settingsModalProps}
             isOpen={isSettingsOpen}
             onOpenChange={setIsSettingsOpen}

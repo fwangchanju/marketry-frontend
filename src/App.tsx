@@ -82,7 +82,7 @@ function PageNumberStyle() {
   return null
 }
 
-// 시장이 주소 조각으로 오기 전의 옛 주소(/map?market=KOSPI)를 지금 주소(/map/kospi)로 옮긴다.
+// 시장이 주소 조각으로 오기 전의 옛 주소(/map?market=KOSPI)를 지금 주소(/map/korea/kospi)로 옮긴다.
 // ?market=은 경로 조각보다 먼저 지워지므로 그대로 두면 값이 사라진다 — 시장 값을 경로로 바꾸고, 나머지 쿼리와 해시는 그대로 둔다.
 function LegacyMarketRedirect({ basePath }: { basePath: '/map' | '/graph' }) {
   const { search, hash } = useLocation()
@@ -103,7 +103,7 @@ function LegacyCustomRedirect() {
 function AdminRouteGuard() {
   const { data: session, isLoading } = useSession()
   if (isLoading) return null
-  return isAdminSession(session) ? <Outlet /> : <Navigate to="/home" replace />
+  return isAdminSession(session) ? <Outlet /> : <Navigate to="/summary" replace />
 }
 
 function SpecialRouteGuard() {
@@ -122,7 +122,7 @@ function SpecialRouteGuard() {
   if (isLoading) return null
   if (isSpecialSession(session)) return <Outlet />
   if (waitsForLocalLogin && !waitedOut) return null
-  return <Navigate to="/home" replace />
+  return <Navigate to="/summary" replace />
 }
 
 function ResponsiveHomePage() {
@@ -149,9 +149,14 @@ function isMobileOpenPath(pathname: string) {
   return pathname === '/info' || pathname.startsWith('/info/')
 }
 
+function RedirectKeepingQuery({ to }: { to: string }) {
+  const { search, hash } = useLocation()
+  return <Navigate to={{ pathname: to, search, hash }} replace />
+}
+
 function isMobileMarketPath(pathname: string) {
-  // 첫 화면(/)은 곧 /home으로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
-  return pathname === '/' || pathname === '/home' || pathname === '/map' || pathname.startsWith('/map/') || pathname === '/graph' || pathname.startsWith('/graph/')
+  // 첫 화면(/)은 곧 /summary로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
+  return pathname === '/' || pathname === '/home' || pathname === '/summary' || pathname === '/summary/korea' || pathname === '/map' || pathname.startsWith('/map/') || pathname === '/graph' || pathname.startsWith('/graph/')
 }
 
 function MobileGate({ children }: { children: ReactNode }) {
@@ -174,15 +179,23 @@ export default function App() {
         {/* 페이지 코드를 불러오는 동안의 화면. 본문 로딩과 같은 모양을 화면 가운데에 둔다(옵션 없는 Spinner는 32px 링이라 왼쪽 위에 붙는다). */}
         <Suspense fallback={<div className="flex h-screen items-center justify-center bg-ui-background"><Spinner showElapsed /></div>}>
         <Routes>
-          <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/home" element={<ResponsiveHomePage />} />
+          <Route path="/" element={<Navigate to="/summary" replace />} />
+          <Route path="/summary" element={<RedirectKeepingQuery to="/summary/korea" />} />
+          <Route path="/summary/korea" element={<ResponsiveHomePage />} />
+          {/* 옛 주소(/home) — 즐겨찾기·검색 결과·텔레그램 캡처(?capture=mobile)가 끊기지 않게 쿼리를 붙여 새 주소로 보낸다. */}
+          <Route path="/home" element={<RedirectKeepingQuery to="/summary/korea" />} />
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
-          <Route path="/map/kospi" element={<ResponsiveMapPage />} />
-          <Route path="/map/kosdaq" element={<ResponsiveMapPage />} />
+          <Route path="/map/korea/kospi" element={<ResponsiveMapPage />} />
+          <Route path="/map/korea/kosdaq" element={<ResponsiveMapPage />} />
+          {/* 코스피·코스닥을 korea 아래로 옮기기 전의 옛 주소 */}
+          <Route path="/map/kospi" element={<RedirectKeepingQuery to="/map/korea/kospi" />} />
+          <Route path="/map/kosdaq" element={<RedirectKeepingQuery to="/map/korea/kosdaq" />} />
           <Route path="/map/korea" element={<ResponsiveMapPage />} />
           <Route path="/graph" element={<LegacyMarketRedirect basePath="/graph" />} />
-          <Route path="/graph/kospi" element={<ResponsiveGraphPage />} />
-          <Route path="/graph/kosdaq" element={<ResponsiveGraphPage />} />
+          <Route path="/graph/korea/kospi" element={<ResponsiveGraphPage />} />
+          <Route path="/graph/korea/kosdaq" element={<ResponsiveGraphPage />} />
+          <Route path="/graph/kospi" element={<RedirectKeepingQuery to="/graph/korea/kospi" />} />
+          <Route path="/graph/kosdaq" element={<RedirectKeepingQuery to="/graph/korea/kosdaq" />} />
           <Route path="/graph/korea" element={<ResponsiveGraphPage />} />
           {/* 섹터·스톡 화면의 주소. 예전 /custom 아래 한국 주소는 새 주소로 이동시킨다(뒤의 ?sheet=MINE 같은 값도 유지). 일본은 비공개 화면이라 옛 주소가 없다. */}
           <Route path={SECTOR_KOREA} element={<CustomPage />} />
@@ -195,8 +208,10 @@ export default function App() {
             <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
             <Route path={SECTOR_USA} element={<UsaSectorPage />} />
             <Route path={STOCK_USA} element={<UsaStockPage />} />
-            <Route path="/home/japan" element={<OverseasHomePage market="JAPAN" />} />
-            <Route path="/home/usa" element={<OverseasHomePage market="USA" />} />
+            <Route path="/summary/japan" element={<OverseasHomePage market="JAPAN" />} />
+            <Route path="/home/japan" element={<RedirectKeepingQuery to="/summary/japan" />} />
+            <Route path="/summary/usa" element={<OverseasHomePage market="USA" />} />
+            <Route path="/home/usa" element={<RedirectKeepingQuery to="/summary/usa" />} />
             <Route path="/map/japan" element={<JapanMapPage />} />
             <Route path="/graph/japan" element={<JapanGraphPage />} />
             <Route path="/graph/usa" element={<UsaGraphPage />} />
@@ -212,16 +227,16 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
           {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 메시지, 배너로 나뉜다. */}
           <Route path="/admin" element={<AdminRouteGuard />}>
-            <Route index element={<Navigate to="/home" replace />} />
+            <Route index element={<Navigate to="/summary" replace />} />
             <Route path="member" element={<AdminPage />} />
             <Route path="stats" element={<AdminDashboardPage />} />
             <Route path="dashboard" element={<Navigate to="/admin/stats" replace />} />
             <Route path="message" element={<AdminMessagePage />} />
             <Route path="default" element={<AdminDefaultPage />} />
             <Route path="banner" element={<AdminBannerPage />} />
-            <Route path="*" element={<Navigate to="/home" replace />} />
+            <Route path="*" element={<Navigate to="/summary" replace />} />
           </Route>
-          <Route path="*" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to="/summary" replace />} />
         </Routes>
         </Suspense>
       </LoginGateProvider>

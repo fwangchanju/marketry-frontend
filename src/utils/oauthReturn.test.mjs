@@ -10,7 +10,7 @@ test('reads only the allowlisted login error and preserves the rest of the URL',
 })
 
 test('ignores unknown login error values and unrelated error parameters', () => {
-  assert.equal(parseOAuthReturnLocation('/home', '?error=oauth_failed&loginError=provider_detail', ''), null)
+  assert.equal(parseOAuthReturnLocation('/summary', '?error=oauth_failed&loginError=provider_detail', ''), null)
 })
 
 test('preserves the hash when no query parameters remain', () => {

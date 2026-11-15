@@ -1388,3 +1388,5 @@ Admin 설정창의 버튼 이름을 **업데이트에서 커밋으로 바꿨다*
 2026-11-15: 한국·일본·미국 섹터 페이지의 설정창 상단 `n/n업종` 개수 표시를 없앴다(사용자 결정). 메인 영역에 이미 적혀 있고 설정창 상단 표시는 대표성이 없다. 향후 섹터 페이지에 거래소·내 기준 모드를 만들어도 되살리지 않도록 기준을 `docs/ui-areas.md`에 적고 `sectorPageCountLabel.test.mjs`로 막았다. 종목 페이지의 `n/n종목`은 그대로다.
 
 2026-11-15: 설정창 상단 `n/n종목` 배지가 분류 모드(MARKETRY 청록, 거래소 하늘색, 내 기준 황갈색)를 따라 색이 바뀌던 것을 팝업과 같은 종류별 고정색으로 통일했다(사용자 결정). 종목은 회색, 업종은 짙은 청록이다. 모드 색은 `Mode` 버튼과 모드 배지가 보여 준다.
+
+2026-11-15: 홈 화면의 이름과 주소를 서머리(Summary)로 바꾸고 주소를 `/화면/시장` 한 가지 모양으로 통일했다(사용자 결정). 홈은 `/summary/korea`·`/summary/japan`·`/summary/usa`, 코스피·코스닥은 korea 아래인 `/map/korea/kospi`·`/map/korea/kosdaq`·`/graph/korea/kospi`·`/graph/korea/kosdaq`이다. 옛 주소(`/home`, `/home/japan`, `/home/usa`, `/summary`, `/map/kospi` 등)는 쿼리·해시를 붙여 새 주소로 이동시킨다(백엔드 텔레그램 캡처의 `/home?capture=mobile`이 이 이동으로 계속 동작한다). 상단 메뉴의 `Home` 글자와 배지는 그대로 두고, 배지 위 작은 글자와 설정창 헤더만 `SUMMARY`·`Summary`로 바꿨다. 서머리의 코스피·코스닥 화면(`/summary/korea/kospi` 등)은 나중에 만들 예정이라 주소 구조만 `marketRoute('/summary', …)`로 받을 수 있게 해 두었고 화면은 없다. 홈 시장 드롭다운 항목은 지도와 같은 KOREA·JAPAN·USA로 통일했다(배지는 K-STOCK·NIKKEI225·S&P500 그대로). 검색 등록 정보·사이트맵·대표 주소 태그를 새 주소로 바꿨으므로 구글·네이버 콘솔의 사이트맵 재제출이 필요하다.

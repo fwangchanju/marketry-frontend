@@ -19,7 +19,7 @@ test('검색 페이지마다 첫 HTML에 각 제목과 대표 주소가 들어�
 })
 
 test('제목과 설명의 HTML 특수문자를 안전하게 표현한다', () => {
-  const html = renderSearchPage(template, '/home', { title: 'A & B <C>', description: '"A & B"' })
+  const html = renderSearchPage(template, '/summary', { title: 'A & B <C>', description: '"A & B"' })
   assert.ok(html.includes('<title>A &amp; B &lt;C&gt;</title>'))
   assert.ok(html.includes('content="&quot;A &amp; B&quot;"'))
 })

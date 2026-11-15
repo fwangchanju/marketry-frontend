@@ -6,6 +6,6 @@ export function useLeaveToEntryPage() {
   const navigate = useNavigate()
   return useCallback(() => {
     if (window.history.state?.idx > 0) navigate(-1)
-    else navigate('/home', { replace: true })
+    else navigate('/summary/korea', { replace: true })
   }, [navigate])
 }
