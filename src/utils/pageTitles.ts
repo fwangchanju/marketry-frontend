@@ -14,11 +14,11 @@ const FIXED_TITLES: Record<string, string> = {
   '/info/source': '데이터 출처',
   '/info/contact': '문의',
   '/account/profile': '프로필',
-  '/admin/member': '관리자 회원',
-  '/admin/stats': '관리자 통계',
-  '/admin/message': '관리자 메시지',
-  '/admin/default': '관리자 기본값',
-  '/admin/banner': '관리자 배너',
+  '/admin/member': '회원관리',
+  '/admin/stats': '통계',
+  '/admin/message': '메시지',
+  '/admin/default': '설정 기본값',
+  '/admin/banner': '배너',
 }
 
 // 주소의 페이지 제목. 대표 주소와 규칙에 없는 주소는 null(호출하는 쪽이 사이트 기본 제목을 쓴다).

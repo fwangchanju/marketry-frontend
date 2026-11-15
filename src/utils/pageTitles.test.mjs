@@ -20,8 +20,9 @@ test('글·계정·관리자 화면은 고정 제목을 쓴다', () => {
   assert.equal(pageTitle('/info/guide'), '히트맵 설정 방법 - MARKETRY')
   assert.equal(pageTitle('/info/privacy'), '개인정보처리방침 - MARKETRY')
   assert.equal(pageTitle('/account/profile'), '프로필 - MARKETRY')
-  assert.equal(pageTitle('/admin/member'), '관리자 회원 - MARKETRY')
-  assert.equal(pageTitle('/admin/banner/'), '관리자 배너 - MARKETRY')
+  assert.equal(pageTitle('/admin/default'), '설정 기본값 - MARKETRY')
+  assert.equal(pageTitle('/admin/member'), '회원관리 - MARKETRY')
+  assert.equal(pageTitle('/admin/banner/'), '배너 - MARKETRY')
 })
 
 test('대표 주소와 규칙에 없는 주소는 null이다', () => {
