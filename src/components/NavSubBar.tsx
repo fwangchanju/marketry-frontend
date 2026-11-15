@@ -100,14 +100,15 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
   // 지금 보는 시장이 일본·미국이면 페이지 이동 메뉴도 그 시장으로 간다(일본 지도 → 그래프는 /graph/japan).
-  const overseasSegment = /\/(japan|usa)(\/|$)/.exec(location.pathname)?.[1] ?? null
+  const marketSegment = /\/(kospi|kosdaq|japan|usa)(\/|$)/.exec(location.pathname)?.[1] ?? null
+  const overseasSegment = marketSegment === 'japan' || marketSegment === 'usa' ? marketSegment : null
   const customLinks = overseasSegment
     ? [{ ...SECTOR_LINK, to: `/sector/${overseasSegment}` }, { ...STOCK_LINK, to: `/stock/${overseasSegment}` }]
     : [SECTOR_LINK, STOCK_LINK]
   const baseLinks = BASE_LINKS.map(link => {
-    if (!overseasSegment) return link
-    if (link.label === 'Map') return { ...link, to: `/map/${overseasSegment}` }
-    if (link.label === 'Graph') return { ...link, to: `/graph/${overseasSegment}` }
+    if (!marketSegment) return link
+    if (link.label === 'Map') return { ...link, to: `/map/${marketSegment}` }
+    if (link.label === 'Graph') return { ...link, to: `/graph/${marketSegment}` }
     return link
   })
   const links = isAdmin ? [...baseLinks, ...customLinks, ADMIN_LINK] : [...baseLinks, ...customLinks]
