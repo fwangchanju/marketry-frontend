@@ -1,4 +1,6 @@
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
+import RangeExcludedStocks from '@/components/RangeExcludedStocks'
+import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import { useSettled } from '@/hooks/useSettled'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -78,12 +80,13 @@ export default function JapanMapPage() {
   const categories = useQuery({ queryKey: ['japan', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/japan/categories')).data })
   const classifications = useQuery({ queryKey: ['japan', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/japan/classifications')).data })
   const names = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data })
-  const [selectedTime, setSelectedTime] = useState<string | null>(null)
-  const [rangeStart, setRangeStart] = useState<string | null>(null)
-  const quotes = useJapanQuotes(selectedTime)
   const snapshotTimes = useJapanSnapshotTimes()
+  const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('JAPAN', snapshotTimes.data)
+  const quotes = useJapanQuotes(selectedTime)
   const liveQuotes = useJapanQuotes()
   const periodQuotes = useJapanPeriodQuotes(rangeStart, selectedTime)
+  // 기준가가 없어 기간에서 뺀 종목 — 제외 종목 배지에 이름과 함께 보인다.
+  const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: names.data?.[stock.stockCode] ?? stock.stockCode }))
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const applyQuoteFilter = shouldFilterJapanQuotes(snapshotTime, new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }), rangeStart)
@@ -133,7 +136,7 @@ export default function JapanMapPage() {
   const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
   const filterState = japanFilterQueryState(applyQuoteFilter, snapshotTimes.isLoading || previousTradingDay.isLoading, snapshotTimes.isError, previousTime, previousQuotes.isLoading, previousQuotes.isError)
-  const isLoading = isLoadingDefaults || categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading || filterState.isLoading
+  const isLoading = isPeriodResolving || isLoadingDefaults || categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading || filterState.isLoading
   const isError = categories.isError || classifications.isError || names.isError || quotes.isError || periodQuotes.isError || filterState.isError
   // 국내 지도처럼 데이터가 없으면 지금 시각의 세션을 보여 준다.
   const session = japanSessionAt(snapshotTime ?? new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T'))
@@ -226,7 +229,12 @@ export default function JapanMapPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label={MAP_LABEL} />
-              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
+              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
+              {rangeStart !== null && (
+                <ToolbarChip bare tone="text-ui-muted">
+                  <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
+                </ToolbarChip>
+              )}
               {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveQuotes.data?.snapshotTime?.slice(0, 10)) && (
                 <>
                 <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching} helpText={JAPAN_REFRESH_HELP} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>

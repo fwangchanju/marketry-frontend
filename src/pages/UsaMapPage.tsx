@@ -1,4 +1,6 @@
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
+import RangeExcludedStocks from '@/components/RangeExcludedStocks'
+import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import { useSettled } from '@/hooks/useSettled'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -73,18 +75,19 @@ export default function UsaMapPage() {
   const categories = useQuery({ queryKey: ['usa', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/usa/categories')).data })
   const classifications = useQuery({ queryKey: ['usa', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/usa/classifications')).data })
   const stocks = useUsaStocks()
-  const [selectedTime, setSelectedTime] = useState<string | null>(null)
-  const [rangeStart, setRangeStart] = useState<string | null>(null)
+  const snapshotTimes = useUsaSnapshotTimes()
+  const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('USA', snapshotTimes.data)
   const quotes = useUsaQuotes(selectedTime)
   const periodQuotes = useUsaPeriodQuotes(rangeStart, selectedTime)
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const liveQuotes = useUsaQuotes()
-  const snapshotTimes = useUsaSnapshotTimes()
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const treeStocks = useMemo(() => (stocks.data ?? []).map(stock => ({ code: stock.symbol, name: stock.name })), [stocks.data])
   // 박스 라벨은 일본 지도처럼 한글 종목명을 쓴다. 한글 이름이 아직 없는 종목은 티커로 대신한다.
   const koreanNames = useQuery({ queryKey: ['usa', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/usa/stock-names')).data })
   const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, koreanNames.data?.[stock.symbol] ?? stock.symbol])), [stocks.data, koreanNames.data])
+  // 기준가가 없어 기간에서 뺀 종목 — 제외 종목 배지에 이름과 함께 보인다.
+  const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: names[stock.stockCode] ?? stock.stockCode }))
   const tree = useMemo(() => (categories.data && classifications.data && stocks.data && shownQuotes?.snapshotTime ? buildJapanTree(treeStocks, categories.data, classifications.data, names, shownQuotes.quotes, shownQuotes.snapshotTime) : []), [categories.data, classifications.data, stocks.data, shownQuotes, treeStocks, names])
   const { preferences, update } = useUsaMapPreferences()
   const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
@@ -120,7 +123,7 @@ export default function UsaMapPage() {
   }
   const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
-  const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || koreanNames.isLoading || quotes.isLoading || periodQuotes.isLoading
+  const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || stocks.isLoading || koreanNames.isLoading || quotes.isLoading || periodQuotes.isLoading
   const isError = categories.isError || classifications.isError || stocks.isError || koreanNames.isError || quotes.isError || periodQuotes.isError
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
   const shownCount = filteredRootNodes.reduce((count, root) => count + flattenAllItems([root]).length, 0)
@@ -211,7 +214,12 @@ export default function UsaMapPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label={MAP_LABEL} />
-              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
+              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
+              {rangeStart !== null && (
+                <ToolbarChip bare tone="text-ui-muted">
+                  <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
+                </ToolbarChip>
+              )}
               {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveQuotes.data?.snapshotTime?.slice(0, 10)) && (
                 <>
                 <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || stocks.isFetching} helpText={usaRefreshHelp(snapshotTime)} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>

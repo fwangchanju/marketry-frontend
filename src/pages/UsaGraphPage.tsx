@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
+import RangeExcludedStocks from '@/components/RangeExcludedStocks'
+import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import client from '@/api/client'
@@ -54,14 +56,17 @@ export default function UsaGraphPage() {
   const categories = useQuery({ queryKey: ['usa', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/usa/categories')).data })
   const classifications = useQuery({ queryKey: ['usa', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/usa/classifications')).data })
   const stocks = useUsaStocks()
-  const [selectedTime, setSelectedTime] = useState<string | null>(null)
-  const [rangeStart, setRangeStart] = useState<string | null>(null)
+  const snapshotTimes = useUsaSnapshotTimes()
+  const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('USA', snapshotTimes.data)
   const quotes = useUsaQuotes(selectedTime)
+  const koreanNames = useQuery({ queryKey: ['usa', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/usa/stock-names')).data })
   const periodQuotes = useUsaPeriodQuotes(rangeStart, selectedTime)
+  // 기준가가 없어 기간에서 뺀 종목 — 제외 종목 배지에 이름과 함께 보인다.
+  const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: koreanNames.data?.[stock.stockCode] ?? stock.stockCode }))
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const liveQuotes = useUsaQuotes()
-  const snapshotTimes = useUsaSnapshotTimes()
   const snapshotTime = quotes.data?.snapshotTime ?? null
+  const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
   const treeStocks = useMemo(() => (stocks.data ?? []).map(stock => ({ code: stock.symbol, name: stock.name })), [stocks.data])
   const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, stock.symbol])), [stocks.data])
   // 지수 막대는 하루 보기면 그 거래일의 종가 변동, 기간 보기면 시작일 전 거래일 종가부터 종료일 종가까지의 변동이다.
@@ -96,7 +101,7 @@ export default function UsaGraphPage() {
   const screenshotRef = useRef<HTMLDivElement>(null)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const isLoading = categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading || periodQuotes.isLoading || snapshotTimes.isLoading || indexCloses.isLoading
+  const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading || periodQuotes.isLoading || snapshotTimes.isLoading || indexCloses.isLoading
   const isError = categories.isError || classifications.isError || stocks.isError || quotes.isError || periodQuotes.isError
 
   const copy = async (previewSrc?: string | null) => {
@@ -122,7 +127,12 @@ export default function UsaGraphPage() {
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="GRAPH" label="S&P 500" />
-              <ToolbarChip bare><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={time => { setRangeStart(null); setSelectedTime(time) }} onSelectRange={(start, end) => { setRangeStart(start); setSelectedTime(end) }} /></ToolbarChip>
+              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
+              {rangeStart !== null && (
+                <ToolbarChip bare tone="text-ui-muted">
+                  <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
+                </ToolbarChip>
+              )}
               {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveQuotes.data?.snapshotTime?.slice(0, 10)) && (
                 <>
                 <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching || stocks.isFetching} helpText={usaRefreshHelp(snapshotTime)} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>

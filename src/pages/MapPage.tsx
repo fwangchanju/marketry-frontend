@@ -450,7 +450,7 @@ export default function MapPage() {
                     {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                   </SnapshotDatePicker>
                   </ToolbarChip>
-                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && rangeExcludedStocks.length > 0 && (
+                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && (
                       <ToolbarChip bare tone="text-ui-muted">
                         <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
                       </ToolbarChip>
