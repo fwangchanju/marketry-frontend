@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
@@ -91,10 +92,18 @@ interface Props {
   onReselectCurrent?: () => void
   // 공개 문서의 Google OAuth 동의 화면에서는 세션 API를 호출하지 않는다.
   staticMode?: boolean
+  // true면 메뉴를 가로 한 줄이 아니라 화면 왼쪽 세로 줄로 보여준다(지도 화면).
+  vertical?: boolean
 }
 
 // 탭 메뉴(왼쪽) + 페이지별 옵션 버튼(오른쪽)을 한 줄에 같이 보여주는 바.
-export default function NavSubBar({ actions, onReselectCurrent, staticMode = false }: Props) {
+export default function NavSubBar({ actions, onReselectCurrent, staticMode = false, vertical = true }: Props) {
+  // 오른쪽 버튼 묶음은 상단 영역(NavBar)의 자리에 그린다.
+  const [actionSlot, setActionSlot] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setActionSlot(document.getElementById('nav-actions-slot')))
+    return () => cancelAnimationFrame(frame)
+  }, [])
   const location = useLocation()
   const navigate = useNavigate()
   // 관리자 계정에만 Admin 메뉴가 더 보인다 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
@@ -136,8 +145,10 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
     if (to === '/admin/member') return location.pathname.startsWith('/admin')
     return location.pathname === to
   }
-  const linkClassName = (to: string) =>
-    `${NAV_TAB_CLASS} ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
+  // 세로 메뉴는 아이콘을 글자 위에 두고, 선택 칸에 청록 배경을 깐다.
+  const linkClassName = (to: string) => vertical
+    ? `flex h-14 w-full flex-col items-center justify-center gap-1 rounded text-[13px] font-semibold ${isLinkActive(to) ? 'bg-[var(--brand-surface)] text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
+    : `${NAV_TAB_CLASS} ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
 
   // 목록에서 지금 보고 있는 항목인지 — Sector·Stock은 한국(/sector/korea, /stock/korea)과 일본(/sector/japan, /stock/japan) 화면이고, Map·Graph는 주소의 시장 이름이다.
   const isCurrentOption = (option: MenuOption) => location.pathname === option.to
@@ -148,18 +159,20 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   }
 
   return (
-    <div className="relative z-30 mb-[15px] flex h-[30px] after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs">
+    <div className={vertical
+      ? 'fixed bottom-0 left-0 top-[90px] z-30 flex w-24 flex-col items-stretch bg-ui-surface px-2 pt-[4px] text-xs'
+      : 'relative z-30 mb-[15px] flex h-[30px] after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs'}>
       {/* 이 줄의 하단선은 메인·설정 행의 세로 기준이다. 아이콘 28px과 같은 높이로 두고, 하단선에서 설정창까지는 페이지 쪽의 4px만 남긴다. */}
-      <div data-nav-menus className="flex h-7 items-center gap-3">
+      <div data-nav-menus className={vertical ? 'flex h-full flex-col items-stretch gap-1' : 'flex h-7 items-center gap-3'}>
         {links.map(link => (
           <div
             key={link.to}
             data-nav-menu-item
-            className="relative flex h-7 items-center"
+            className={vertical ? `relative flex w-full items-center${link.admin ? ' mt-auto' : ''}` : 'relative flex h-7 items-center'}
           >
             <Link
               to={link.to}
-              className={link.admin ? `${NAV_TAB_CLASS} transition-colors hover:text-admin-only-hover ${isLinkActive(link.to) ? 'text-admin-only-hover' : 'text-admin-only'}` : linkClassName(link.to)}
+              className={link.admin ? `${vertical ? 'flex h-14 w-full flex-col items-center justify-center gap-1 rounded text-[13px] font-semibold' : NAV_TAB_CLASS} transition-colors hover:text-admin-only-hover ${isLinkActive(link.to) ? 'text-admin-only-hover' : 'text-admin-only'}` : linkClassName(link.to)}
               aria-expanded={link.options ? openTo === link.to : undefined}
               onClick={event => {
                 if (!link.options) {
@@ -178,7 +191,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
             </Link>
             {/* 메뉴 칸(28px)이 탭 글자(약 20px)보다 커서 칸 아래에 바로 붙여야 글자 기준으로 4px가 된다. */}
             {link.options && openTo === link.to && (
-              <div className={`absolute left-0 top-full z-50 w-32 overflow-hidden ${DROPDOWN_PANEL_CLASS}`}>
+              <div className={`absolute z-50 w-32 overflow-hidden ${DROPDOWN_PANEL_CLASS} ${vertical ? 'left-full top-0' : 'left-0 top-full'}`}>
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
@@ -211,7 +224,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
           </div>
         ))}
       </div>
-      {actions && <div className="flex items-center">{actions}</div>}
+      {actions && actionSlot && createPortal(actions, actionSlot)}
     </div>
   )
 }

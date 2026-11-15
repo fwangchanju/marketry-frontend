@@ -17,7 +17,7 @@ import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 // 로그인한 사용자는 우측 아바타에서 계정 메뉴를 연다.
 // 오류에는 UI 상태색을 쓰고 등락률 데이터색과 구분한다.
 // hideAccount가 true면 오른쪽의 로그인 버튼/프로필 아이콘을 숨기고 로고만 보여준다(비로그인이 프로필 페이지에 들어왔을 때).
-export default function NavBar({ hideAccount = false, staticMode = false, bannerSlot }: { hideAccount?: boolean; staticMode?: boolean; bannerSlot?: ReactNode | null }) {
+export default function NavBar({ hideAccount = false, staticMode = false, bannerSlot, centered = true, tall = true, actions }: { hideAccount?: boolean; staticMode?: boolean; bannerSlot?: ReactNode | null; centered?: boolean; tall?: boolean; actions?: ReactNode }) {
   const { data: session, isLoading } = useSession(!staticMode)
   const { pathname, search, hash } = useLocation()
   const { requireLogin } = useLoginGate()
@@ -81,15 +81,16 @@ export default function NavBar({ hideAccount = false, staticMode = false, banner
   // 로고·프로필은 이 60px 줄(위 4px 띄움)의 중심선(32px)에 두고, 28px 메뉴 줄이 바로 아래에서 이어진다.
   return (
     <>
-    <header className={`sticky top-0 flex h-[60px] items-center justify-between bg-ui-surface px-4 pt-[4px] ${isProfileMenuOpen ? 'z-40' : 'z-20'}`}>
+    <header className={`sticky top-0 flex ${tall ? 'h-[90px]' : 'h-[60px]'} ${centered ? 'relative items-start' : 'items-center'} justify-between bg-ui-surface px-4 ${centered ? 'pt-0' : 'pt-[4px]'} ${isProfileMenuOpen ? 'z-40' : 'z-20'}`}>
       <Link
         to="/"
         aria-label="홈으로 이동: 지도 전체 종목"
-        className="flex h-[60px] shrink-0 items-center"
+        className={`flex h-[60px] shrink-0 items-center ${centered ? 'mt-[15px]' : ''}`}
       >
         <MarketryLogo layout="horizontalClean" className="h-auto w-[min(13rem,calc(100vw-10rem))]" />
       </Link>
-      <div data-account-area className="flex items-center gap-3">
+      <div id="nav-actions-slot" className="absolute right-[12px] top-[61px] flex items-center gap-0">{actions}</div>
+      <div data-account-area className={centered ? 'absolute right-[16px] top-[13px] flex items-center gap-3' : 'flex items-center gap-3'}>
       {hideAccount ? null : (
       // 비로그인의 사람 모양 칸과 로그인한 프로필 사진 칸은 크기와 자리가 같아서, 로그인 상태가 바뀌어도 오른쪽 위 모양이 달라지지 않는다.
       <div className="flex items-center justify-end gap-3">

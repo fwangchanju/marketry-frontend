@@ -246,7 +246,7 @@ export default function AdminDefaultPage() {
     <NavBar />
     <NavSubBar actions={<NavBarPageActions onRefresh={() => void defaults.refetch()} isRefreshing={defaults.isFetching} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} showRefresh={false} onToggleSettings={() => setIsSettingsOpen(previous => !previous)} isSettingsOpen={isSettingsOpen} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} />} />
     <div className="flex min-h-0 flex-1">
-      <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+      <div className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
           {isLoading ? <p role="status" className="m-auto text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p> : !isAdmin ? <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p> : <>
             <Toolbar><ToolbarModeText page="ADMIN" label="DEFAULT" showChevron menu={adminMenu('DEFAULT')} /></Toolbar>

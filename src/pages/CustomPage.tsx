@@ -232,7 +232,7 @@ export default function CustomPage() {
           "커스텀" 탭 hover 목록으로 이동. 버전관리 저장 화면은 없앴다. */}
       <div className="flex min-h-0 flex-1">
         {/* 공유 스크린샷(screenshotRef)는 [세 번째 바+본문] 열만 찍는다 — 설정 사이드바는 스크린샷에 넣지 않는다. */}
-        <div ref={settingsRowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
+        <div ref={settingsRowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서 창을 좁혀도 사이드바(w-80)가 항상 같은
               폭을 유지하게 한다(지도/섹터/요약 페이지와 동일). */}
           <div
