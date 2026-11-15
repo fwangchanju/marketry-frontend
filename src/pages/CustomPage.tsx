@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { customMenu } from '@/utils/marketMenu'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
 import { mineSheetReturnPath } from '@/utils/mineSheetReturn'
@@ -27,7 +28,7 @@ import { useLoginGate } from '@/hooks/useLoginGate'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
-import { isAdminSession } from '@/utils/adminAccess'
+import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
 import { STOCK_KOREA } from '@/utils/customRoutes'
 import { buildSectorStats } from '@/utils/sectorOrder'
 
@@ -237,7 +238,7 @@ export default function CustomPage() {
           >
             <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 w-full shrink-0 items-center justify-between bg-ui-background/70 text-sm font-bold text-ui-white">
               <div className="flex h-full shrink-0 items-center gap-2">
-                <ToolbarModeText page={mode === 'stock' ? 'STOCK' : 'SECTOR'} label={MARKET_LABEL.ALL_STOCK} />
+                <ToolbarModeText page={mode === 'stock' ? 'STOCK' : 'SECTOR'} label={MARKET_LABEL.ALL_STOCK} showChevron menu={customMenu(mode === 'stock' ? 'stock' : 'sector', 'KOREA', isSpecialSession(session))} />
               </div>
               {/* 검색창(과 필터 초기화) — 종목·업종 표가 모두 이 노드로 포털링해서 그린다. */}
               <div ref={setToolbarContainer} className="ml-1 flex h-full min-h-0 min-w-0 flex-1 items-center" />

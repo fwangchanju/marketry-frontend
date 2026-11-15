@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { adminMenu } from '@/utils/marketMenu'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import sampleMapImage from '@/assets/telegram-map-sample.png'
@@ -251,7 +252,7 @@ export default function AdminMessagePage() {
             ) : (
               <>
                 <Toolbar>
-                  <ToolbarModeText page="ADMIN" label="MESSAGE" />
+                  <ToolbarModeText page="ADMIN" label="MESSAGE" showChevron menu={adminMenu('MESSAGE')} />
                 </Toolbar>
                 <PageMainFrame
                   className="p-0"
