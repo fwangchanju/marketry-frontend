@@ -81,7 +81,7 @@ export default function NavBar({ hideAccount = false, staticMode = false, banner
   // 로고·프로필은 이 60px 줄(위 4px 띄움)의 중심선(32px)에 두고, 28px 메뉴 줄이 바로 아래에서 이어진다.
   return (
     <>
-    <header className={`sticky top-0 flex ${tall ? 'h-[90px]' : 'h-[60px]'} ${centered ? 'relative items-start' : 'items-center'} justify-between bg-ui-background px-4 ${centered ? 'pt-0' : 'pt-[4px]'} ${isProfileMenuOpen ? 'z-40' : 'z-20'}`}>
+    <header className={`sticky top-0 flex ${tall ? 'h-[90px]' : 'h-[60px]'} ${centered ? 'relative items-start' : 'items-center'} justify-between bg-ui-surface px-4 ${centered ? 'pt-0' : 'pt-[4px]'} ${isProfileMenuOpen ? 'z-40' : 'z-20'}`}>
       <Link
         to="/"
         aria-label="홈으로 이동: 지도 전체 종목"
