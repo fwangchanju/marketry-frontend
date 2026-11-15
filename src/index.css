@@ -465,23 +465,6 @@ html, body, #root {
   transform: translateY(-0.25px);
 }
 
-/* 툴바 배지 안의 아이콘·글자는 모두 세로 가운데 — 칩마다 따로 맞추지 않는다.
-   아이콘은 블록으로 두어 글자 기준선 간격이 생기지 않게 하고, 칩 안의 묶음(span)도 가운데로 정렬한다. */
-.main-toolbar .toolbar-badge,
-.main-toolbar .toolbar-badge-control {
-  align-items: center;
-}
-.main-toolbar .toolbar-badge > span,
-.main-toolbar .toolbar-badge-control > span {
-  display: flex;
-  align-items: center;
-}
-.main-toolbar .toolbar-badge svg,
-.main-toolbar .toolbar-badge-control svg {
-  display: block;
-  flex-shrink: 0;
-}
-
 /* 분할 캡처에서는 긴 닉네임도 축소·말줄임 없이 실제 너비로 배치한다. */
 .home-capture-toolbar > div {
   flex: none;
