@@ -1397,3 +1397,5 @@ Admin 설정창의 버튼 이름을 **업데이트에서 커밋으로 바꿨다*
 2026-11-15(추가): 모바일 캡처용 툴바(`revealMobileCapture`)가 시장 배지를 100px로 고정하고 있어서 `NIKKEI 225`가 꺽쇠와 여유 없이 붙어 잘렸다. 화면과 같은 110px로 맞췄다. 배지 안 글자 칸(꺽쇠를 뺀 92px)에 들어가는 글자 폭은 `NIKKEI 225` 82px, `MESSAGE` 73px이고 `DASHBOARD`는 94px라 110px 배지에는 들어가지 않는다(지금 관리자 메뉴 이름은 STATS).
 
 2026-11-15: 프로필 화면의 주소를 `/profile`에서 `/account/profile`로 바꿨다(사용자 결정). 배지 위 글자 ACCOUNT가 앞 조각, 큰 글자 PROFILE이 뒤 조각이라는 주소 규칙(`/화면/항목`)에 맞춘 것이다. 옛 `/profile`과 `/account`는 `/account/profile`로 이동시킨다. 서버 API 주소 `/api/profile/**`와 로그인 뒤 돌아오는 주소 확인(백엔드 `safeReturnTo`는 허용 목록 없이 `/`로 시작하는 경로만 거른다)은 그대로다.
+
+2026-11-15: 옛 주소 이동은 구글·네이버에 등록돼 있던 주소에만 두기로 했다(사용자 결정, 회원이 없어 나머지 옛 주소는 살릴 이유가 없고 이동이 자꾸 늘어난다). 사이트맵에 있던 `/home`, `/map/kospi`, `/map/kosdaq`, `/graph/kospi`, `/graph/kosdaq`의 이동은 남기고(`/map/korea`·`/graph/korea`·`/info/guide`는 주소가 그대로), 새로 만들었던 `/summary`·`/home/japan`·`/home/usa`·`/profile`·`/account`의 이동은 없앴다. 없는 주소는 맨 끝 `*` 규칙으로 `/summary/korea`에 간다. 앞으로 주소를 바꿀 때도 같은 기준을 따른다.

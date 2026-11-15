@@ -156,7 +156,7 @@ function RedirectKeepingQuery({ to }: { to: string }) {
 
 function isMobileMarketPath(pathname: string) {
   // 첫 화면(/)은 곧 /summary로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
-  return pathname === '/' || pathname === '/home' || pathname === '/summary' || pathname === '/summary/korea' || pathname.startsWith('/summary/korea/') || pathname === '/map' || pathname.startsWith('/map/') || pathname === '/graph' || pathname.startsWith('/graph/')
+  return pathname === '/' || pathname === '/home' || pathname === '/summary/korea' || pathname.startsWith('/summary/korea/') || pathname === '/map' || pathname.startsWith('/map/') || pathname === '/graph' || pathname.startsWith('/graph/')
 }
 
 function MobileGate({ children }: { children: ReactNode }) {
@@ -180,11 +180,10 @@ export default function App() {
         <Suspense fallback={<div className="flex h-screen items-center justify-center bg-ui-background"><Spinner showElapsed /></div>}>
         <Routes>
           <Route path="/" element={<Navigate to="/summary/korea" replace />} />
-          <Route path="/summary" element={<RedirectKeepingQuery to="/summary/korea" />} />
           <Route path="/summary/korea" element={<ResponsiveHomePage />} />
           <Route path="/summary/korea/kospi" element={<ResponsiveHomePage />} />
           <Route path="/summary/korea/kosdaq" element={<ResponsiveHomePage />} />
-          {/* 옛 주소(/home) — 즐겨찾기·검색 결과·텔레그램 캡처(?capture=mobile)가 끊기지 않게 쿼리를 붙여 새 주소로 보낸다. */}
+          {/* 옛 주소 이동은 구글·네이버에 등록돼 있던 주소(/home, /map|graph/kospi|kosdaq)에만 둔다(사용자 결정 2026-11-15, 회원이 없어 그 밖의 옛 주소는 살릴 이유가 없다). 쿼리는 붙여서 보낸다(텔레그램 캡처 ?capture=mobile 등). */}
           <Route path="/home" element={<RedirectKeepingQuery to="/summary/korea" />} />
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
           <Route path="/map/korea/kospi" element={<ResponsiveMapPage />} />
@@ -211,9 +210,7 @@ export default function App() {
             <Route path={SECTOR_USA} element={<UsaSectorPage />} />
             <Route path={STOCK_USA} element={<UsaStockPage />} />
             <Route path="/summary/japan" element={<OverseasHomePage market="JAPAN" />} />
-            <Route path="/home/japan" element={<RedirectKeepingQuery to="/summary/japan" />} />
             <Route path="/summary/usa" element={<OverseasHomePage market="USA" />} />
-            <Route path="/home/usa" element={<RedirectKeepingQuery to="/summary/usa" />} />
             <Route path="/map/japan" element={<JapanMapPage />} />
             <Route path="/graph/japan" element={<JapanGraphPage />} />
             <Route path="/graph/usa" element={<UsaGraphPage />} />
@@ -227,9 +224,6 @@ export default function App() {
           <Route path="/info/contact" element={<ContactPage />} />
           <Route path="/info/guide" element={<GuidePage />} />
           <Route path="/account/profile" element={<ProfilePage />} />
-          {/* 프로필 화면의 옛 주소(/profile) — 배지 위 글자(ACCOUNT)·큰 글자(PROFILE)와 주소 규칙(/화면/항목)에 맞춰 옮겼다. */}
-          <Route path="/profile" element={<RedirectKeepingQuery to="/account/profile" />} />
-          <Route path="/account" element={<RedirectKeepingQuery to="/account/profile" />} />
           {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 메시지, 배너로 나뉜다. */}
           <Route path="/admin" element={<AdminRouteGuard />}>
             <Route index element={<Navigate to="/summary/korea" replace />} />
