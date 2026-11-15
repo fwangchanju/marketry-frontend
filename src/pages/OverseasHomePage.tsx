@@ -9,32 +9,36 @@ import RankBars from '@/components/RankBars'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import JapanSessionChip from '@/components/JapanSessionChip'
 import UsaSessionChip from '@/components/UsaSessionChip'
-import { CalendarIcon, ClockIcon } from '@/components/icons/AppIcons'
+import { ClockIcon } from '@/components/icons/AppIcons'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { japanSessionAt, type JapanSession } from '@/utils/japanMarketSession'
-import { USA_SESSION } from '@/utils/usaMarketSession'
+import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
 import Toolbar from '@/components/Toolbar'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
-import { resolveLegendSwatches } from '@/utils/heatmapColorScale'
-import { useJapanQuotes } from '@/hooks/useJapanQuotes'
-import { useUsaQuotes, useUsaStocks } from '@/hooks/useUsaQuotes'
+import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
+import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
+import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
+import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
+import JapanDatePicker from '@/components/JapanDatePicker'
+import UsaDatePicker from '@/components/UsaDatePicker'
+import ToolbarChip from '@/components/ToolbarChip'
+import ToolbarPinButton from '@/components/ToolbarPinButton'
+import RangeExcludedStocks from '@/components/RangeExcludedStocks'
+import { PageRefreshButton } from '@/components/NavBarPageActions'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { buildRankChart } from '@/utils/rankChart'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
-import { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
+import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP } from '@/utils/japanMapSettings'
 import { USA_MAP_FIXED } from '@/utils/usaMapSettings'
-import { toSnapshotDateLabel } from '@/utils/format'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector } from '@/utils/sectorAverage'
 import japanStocks from '@/data/japanStocks.json'
 
-// 날짜·시간 칩 — 한국 홈의 날짜 칩과 같은 글자(14px, 보통 굵기)·간격(4px)·여백(6px)이다.
-const HOME_CHIP_CLASS = 'toolbar-badge flex h-6 shrink-0 items-center gap-1 whitespace-nowrap leading-none bg-[var(--ui-panel)] px-1.5 text-[14px] font-medium tabular-nums tracking-normal text-ui-white'
-
 // 홈의 일본·미국 구성. 업종 지도와 그룹 등락률을 지도 화면과 같은 트리·계산으로 만든다(최신 시세 기준).
-// 날짜 달력과 설정 패널은 아직 없다.
+// 날짜 달력과 시계 새로고침은 지도 화면과 같은 부품을 쓴다. 설정 패널은 아직 없다.
 export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }) {
   const isJapan = market === 'JAPAN'
   const base = isJapan ? 'japan' : 'usa'
@@ -43,24 +47,37 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
   const japanNames = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data, enabled: isJapan })
   const usaNames = useQuery({ queryKey: ['usa', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/usa/stock-names')).data, enabled: !isJapan })
   const usaStocks = useUsaStocks()
-  const japanQuotes = useJapanQuotes(null, isJapan)
-  const usaQuotes = useUsaQuotes(null, !isJapan)
+  // 날짜·기간은 지도·그래프와 같은 저장소를 쓴다(다른 화면에서 고른 기간이 이어진다).
+  const japanTimes = useJapanSnapshotTimes(isJapan)
+  const usaTimes = useUsaSnapshotTimes(!isJapan)
+  const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod(market, (isJapan ? japanTimes : usaTimes).data)
+  const japanQuotes = useJapanQuotes(selectedTime, isJapan)
+  const usaQuotes = useUsaQuotes(selectedTime, !isJapan)
+  const japanLive = useJapanQuotes(null, isJapan)
+  const usaLive = useUsaQuotes(null, !isJapan)
+  const japanPeriod = useJapanPeriodQuotes(isJapan ? rangeStart : null, selectedTime)
+  const usaPeriod = useUsaPeriodQuotes(isJapan ? null : rangeStart, selectedTime)
   const quotes = isJapan ? japanQuotes : usaQuotes
+  const liveQuotes = isJapan ? japanLive : usaLive
+  const periodQuotes = isJapan ? japanPeriod : usaPeriod
+  // 기간이면 기간 등락률 시세를, 아니면 고른 날짜(없으면 최신)의 시세를 쓴다.
+  const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const colorScale = isJapan ? JAPAN_MAP_FIXED.colorScale : USA_MAP_FIXED.colorScale
   const strongIndustryColor = isJapan ? JAPAN_MAP_FIXED.strongIndustryColor : USA_MAP_FIXED.strongIndustryColor
 
-  const { tree, snapshotTime } = useMemo(() => {
-    const snap = quotes.data?.snapshotTime ?? null
-    if (!categories.data || !classifications.data || !quotes.data || !snap) return { tree: [], snapshotTime: null }
+  const snapshotTime = quotes.data?.snapshotTime ?? null
+  const tree = useMemo(() => {
+    const snap = shownQuotes?.snapshotTime ?? null
+    if (!categories.data || !classifications.data || !shownQuotes || !snap) return []
     if (isJapan) {
-      if (!japanNames.data) return { tree: [], snapshotTime: null }
-      return { tree: buildJapanTree(japanStocks, categories.data, classifications.data, japanNames.data, quotes.data.quotes, snap), snapshotTime: snap }
+      if (!japanNames.data) return []
+      return buildJapanTree(japanStocks, categories.data, classifications.data, japanNames.data, shownQuotes.quotes, snap)
     }
-    if (!usaStocks.data || !usaNames.data) return { tree: [], snapshotTime: null }
+    if (!usaStocks.data || !usaNames.data) return []
     const names = Object.fromEntries(usaStocks.data.map(stock => [stock.symbol, usaNames.data?.[stock.symbol] ?? stock.symbol]))
     const treeStocks = usaStocks.data.map(stock => ({ code: stock.symbol, name: stock.name }))
-    return { tree: buildJapanTree(treeStocks, categories.data, classifications.data, names, quotes.data.quotes, snap), snapshotTime: snap }
-  }, [categories.data, classifications.data, quotes.data, isJapan, japanNames.data, usaNames.data, usaStocks.data])
+    return buildJapanTree(treeStocks, categories.data, classifications.data, names, shownQuotes.quotes, snap)
+  }, [categories.data, classifications.data, shownQuotes, isJapan, japanNames.data, usaNames.data, usaStocks.data])
 
   // 업종 지도 항목과 그룹 등락률 막대 — 지도 화면과 같이 한 단계(대분류)만 쓴다.
   const overview = useMemo(() => {
@@ -80,10 +97,14 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
     { label: 'NIKKEI225', to: '/home/japan', active: isJapan, special: true },
     { label: 'S&P500', to: '/home/usa', active: !isJapan, special: true },
   ]
-  const isLoading = categories.isLoading || classifications.isLoading || quotes.isLoading
+  const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || quotes.isLoading || periodQuotes.isLoading
+  const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
+  const nameOf = (code: string) => (isJapan ? japanNames.data?.[code] : usaNames.data?.[code]) ?? code
+  const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: nameOf(stock.stockCode) }))
+  const refetchAll = () => Promise.all([quotes.refetch(), categories.refetch(), classifications.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
+  const holidayColor = resolveHeatmapColor(8, colorScale)
   const hasData = tree.length > 0
 
-  const snapshotClock = snapshotTime ? snapshotTime.slice(11, 16) : null
   const session = snapshotTime ? (isJapan ? japanSessionAt(snapshotTime) : USA_SESSION) : null
   return (
     <div className="flex h-screen min-h-0 flex-col bg-ui-background">
@@ -94,16 +115,31 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="HOME" label={label} showChevron menu={menu} />
-              <span className={HOME_CHIP_CLASS}>
-                <CalendarIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
-                {toSnapshotDateLabel(snapshotTime)}
-              </span>
-              {snapshotClock && (
-                <span className={HOME_CHIP_CLASS}>
-                  <AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} />
-                </span>
+              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
+                {isJapan
+                  ? <JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={holidayColor} onSelect={select} onSelectRange={selectRange} />
+                  : <UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={holidayColor} onSelect={select} onSelectRange={selectRange} />}
+              </ToolbarChip>
+              {isPastSnapshot && (
+                <ToolbarChip bare>
+                  <ToolbarPinButton pinned={isPastSnapshot} onUnpin={() => select(null)} />
+                </ToolbarChip>
               )}
-              {session && (isJapan ? <JapanSessionChip session={session as JapanSession} /> : <UsaSessionChip session={USA_SESSION} />)}
+              {rangeStart !== null && (
+                <ToolbarChip bare tone="text-ui-muted">
+                  <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
+                </ToolbarChip>
+              )}
+              {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveQuotes.data?.snapshotTime?.slice(0, 10)) && (
+                <>
+                  <ToolbarChip bare>
+                    <PageRefreshButton cell onRefresh={refetchAll} isRefreshing={quotes.isFetching || categories.isFetching || classifications.isFetching} helpText={isJapan ? JAPAN_REFRESH_HELP : usaRefreshHelp(snapshotTime)} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}>
+                      <AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} />
+                    </PageRefreshButton>
+                  </ToolbarChip>
+                  {session && (isJapan ? <JapanSessionChip session={session as JapanSession} /> : <UsaSessionChip session={USA_SESSION} />)}
+                </>
+              )}
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>
               <TaxonomyBadge taxonomy="MARKETRY" strongIndustryColor={strongIndustryColor} />
