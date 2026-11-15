@@ -3,7 +3,8 @@ import { useCustomPreferences } from './useCustomPreferences'
 import { useIsLoggedIn } from './useSession'
 import { isTelegramMapCapture, useTelegramCaptureSetting } from './useTelegramImageSetting'
 import { resolveTelegramPreference } from '@/utils/telegramImageSetting'
-import { clearDraft, readDraft, registerDraftKey, useDraftVersion, writeDraft } from '@/utils/settingsDraft'
+import { clearDraft, notifySettingsChanged, readDraft, registerDraftKey, useDraftVersion, writeDraft } from '@/utils/settingsDraft'
+import { clearBrowserSetting, isBrowserSavedSettingKey, readBrowserSetting, writeBrowserSetting } from '@/utils/browserProfileSettings'
 import { useDefaultPreferences } from './useDefaultPreferences'
 import { profileDefaultForSettingKey } from '@/utils/settingsSchema'
 
@@ -27,7 +28,10 @@ export function usePageSetting<T>(key: string, initialValue: T): [T, Dispatch<Se
   }, [key])
 
   const draft = readDraft(key)
-  const useServer = isLoggedIn && isLoaded
+  // 거래소·MARKETRY 키는 서버에 두지 않고 이 브라우저에 바로 저장한다(사용자 결정 2026-11-16). 내 기준은 서버 저장을 그대로 쓴다.
+  const browserSaved = isBrowserSavedSettingKey(key) && isLoggedIn
+  const browser = browserSaved ? readBrowserSetting(key) : { found: false, value: undefined }
+  const useServer = isLoggedIn && isLoaded && !browserSaved
   const hasServerValue = useServer && preferences !== undefined && Object.hasOwn(preferences, key)
   const configured = profileDefaultForSettingKey(defaults.data, key, initialValue)
   const savedValue = hasServerValue
@@ -39,11 +43,21 @@ export function usePageSetting<T>(key: string, initialValue: T): [T, Dispatch<Se
   const capturePreferences = capture.data?.values?.preferences
   const value = isCapture
     ? resolveTelegramPreference(true, capturePreferences, key, captureFallback)
-    : draft.found ? (draft.value as T) : savedValue
+    : browserSaved
+      ? (browser.found ? (browser.value as T) : configured.value)
+      : draft.found ? (draft.value as T) : savedValue
 
   const setValue = useCallback<Dispatch<SetStateAction<T>>>(
     next => {
       const nextValue = typeof next === 'function' ? (next as (prev: T) => T)(value) : next
+      if (browserSaved) {
+        // 기본값과 같으면 저장을 지워 두어, 나중에 관리자 기본값이 바뀌면 그대로 따라가게 한다.
+        if (JSON.stringify(nextValue) === JSON.stringify(configured.value)) clearBrowserSetting(key)
+        else writeBrowserSetting(key, nextValue)
+        clearDraft(key, false)
+        notifySettingsChanged()
+        return
+      }
       const currentDraft = readDraft(key)
       // 포인터 드래그는 시작할 때의 setter를 계속 쓴다. 시작값으로 돌아오면 그
       // setter의 value와 같더라도, 이미 만든 draft는 버려야 화면도 원래 값으로
@@ -55,7 +69,7 @@ export function usePageSetting<T>(key: string, initialValue: T): [T, Dispatch<Se
       if (currentDraft.found && Object.is(currentDraft.value, nextValue)) return
       writeDraft(key, nextValue)
     },
-    [value, key, savedValue],
+    [value, key, savedValue, browserSaved, configured.value],
   )
 
   return [value, setValue]

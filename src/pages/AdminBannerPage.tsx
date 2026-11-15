@@ -1,3 +1,4 @@
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { adminMenu } from '@/utils/marketMenu'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -305,7 +306,7 @@ export default function AdminBannerPage() {
   const { data: session, isLoading } = useSession()
   const isAdmin = isAdminSession(session)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')

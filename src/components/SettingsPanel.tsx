@@ -2619,7 +2619,9 @@ export default function SettingsPanel({
 
   // 바꾼 값은 임시값이라 저장을 눌러야 서버에 올라간다. 초기화는 임시값을 버리고 저장값으로 돌아간다. 비로그인은 저장할 곳이 없어 로그인 창을 띄운다.
   // 오른쪽으로 7px 당겨(-mr-[7px]) 되돌리기·저장 아이콘의 중심을 상단 F11·설정 아이콘 중심선에 맞춘다.
-  const preferenceActions = showPreferenceActions ? (
+  // 거래소·MARKETRY 모드는 값을 바꾸면 이 브라우저에 바로 저장되므로 저장·되돌리기 아이콘을 두지 않는다(사용자 결정 2026-11-16). 내 기준·일본·미국은 그대로 둔다.
+  const showSaveRevert = draftScope !== 'marketry' && draftScope !== 'exchange'
+  const preferenceActions = showPreferenceActions && showSaveRevert ? (
     <div className="-mr-[7px] ml-auto flex shrink-0 items-center gap-1">
       <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
           if (hasDrafts && await appConfirm('현재 분류의 기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(() => discardDrafts(draftScope))

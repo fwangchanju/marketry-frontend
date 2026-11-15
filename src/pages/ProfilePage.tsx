@@ -1,3 +1,4 @@
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { isAxiosError } from 'axios'
@@ -64,7 +65,7 @@ export default function ProfilePage() {
   const [nicknameFocused, setNicknameFocused] = useState(false)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
 

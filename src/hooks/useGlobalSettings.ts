@@ -1,5 +1,6 @@
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { compareKoreanText } from '@/utils/koreanSort'
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { usePersistedState } from './usePersistedState'
 import { useTaxonomySelection, type TaxonomySelection } from './useTaxonomySelection'
@@ -45,7 +46,8 @@ import {
 } from '@/utils/heatmapColorScale'
 import { colorScaleDraftSession } from '@/utils/colorScaleDraftSession'
 import { isTelegramMapCapture, useTelegramCaptureSetting } from '@/hooks/useTelegramImageSetting'
-import { updateDraftParticipant, unregisterDraftParticipant, readDraft, writeDraft } from '@/utils/settingsDraft'
+import { updateDraftParticipant, unregisterDraftParticipant, notifySettingsChanged } from '@/utils/settingsDraft'
+import { readBrowserSetting, writeBrowserSetting } from '@/utils/browserProfileSettings'
 import queryClient from '@/api/queryClient'
 import { customHeatmapKeys } from './queryKeys'
 import { clampBetweenNeighbors } from '@/utils/thresholdBar'
@@ -189,7 +191,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 설정 기본값은 utils/settingDefaults.ts에 모아 두었다(비로그인과 회원이 다르다). 사용자가 값을 바꾸면 저장값이 우선한다.
   const defaults = settingDefaultsFor(isLoggedIn)
   const { requireLogin } = useLoginGate()
-  const { data: preferenceValues, isLoaded: preferencesLoaded, setPreference } = useCustomPreferences()
+  const { isLoaded: preferencesLoaded } = useCustomPreferences()
   const defaultPreferences = useDefaultPreferences()
   // 트리 조회 마켓은 경로를 따른다 — /map, /sector 둘 다 경로 세그먼트가 곧 마켓이라 여기서 바로
   // 우선순위(쿼리 > 경로 > 저장값 > 기본값)를 적용하면, 이 훅을 그대로 쓰는 지도 페이지는 물론
@@ -318,15 +320,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [topPickCount, setTopPickCount] = usePageSetting(profileKey('heatmap.topPickCount'), profileDefaults.topPickCount)
   const [topPickEnabled, setTopPickEnabled] = usePageSetting(profileKey('heatmap.topPickEnabled'), topPickCount !== 0)
   const selectedTopPickCount = topPickCount || 2
-  // 설정 사이드바 열림 상태. 페이지 진입 시 기본으로 연다.
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
-  const previousPathnameRef = useRef(pathname)
-
-  useEffect(() => {
-    if (previousPathnameRef.current === pathname) return
-    previousPathnameRef.current = pathname
-    setIsSettingsOpen(true)
-  }, [pathname])
+  // 설정 사이드바 열림 상태. 이 브라우저에 저장해 페이지를 옮기거나 새로고침해도 마지막 상태를 유지한다.
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   // 새로 받아온 (market, source) 조합의 데이터가 처음 도착했을 때만 서버 isExcluded로 시드하고,
   // 그 뒤 60초 백그라운드 재조회가 로컬에서 방금 토글한 상태를 덮어쓰지 않게 한다(fire-and-forget 저장이라
   // 서버 반영 전에 재조회가 먼저 도착할 수 있음).
@@ -482,8 +477,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   )
   useEffect(() => {
     if (!isMarketry || !isLoggedIn || !preferencesLoaded || !data || !isHeatmapSuccess || options?.readOnlyTelegramSnapshot) return
+    // 거래소·MARKETRY 제외 업종은 이 브라우저에 저장한다(서버에 두지 않는다). 브라우저 값을 읽고 브라우저에 쓴다.
     const key = profileSettingKey('marketry', 'heatmap.excludedSectorKeys')
-    const saved = preferenceValues?.[key]
+    const stored = readBrowserSetting(key)
+    const saved = stored.found ? stored.value : undefined
     if (!Array.isArray(saved)) return
     const available = new Set<string>()
     const collect = (nodes: HeatmapSectorNode[]) => nodes.forEach(node => {
@@ -493,10 +490,9 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     collect(data.items)
     const pruned = saved.filter((value): value is string => typeof value === 'string' && available.has(value))
     if (pruned.length === saved.length) return
-    const draft = readDraft(key)
-    if (draft.found) writeDraft(key, pruned)
-    else setPreference(key, pruned)
-  }, [isMarketry, isLoggedIn, preferencesLoaded, data, isHeatmapSuccess, options?.readOnlyTelegramSnapshot, preferenceValues, setPreference])
+    writeBrowserSetting(key, pruned)
+    notifySettingsChanged()
+  }, [isMarketry, isLoggedIn, preferencesLoaded, data, isHeatmapSuccess, options?.readOnlyTelegramSnapshot])
   const excludedSectorNames = isMarketry ? marketryExcludedSectorNames : isCustom ? mineExcludedSectorNames : exchangeExcludedSectorNames
   const setExcludedSectorNames = isMarketry
     ? (next: Map<number, string> | ((previous: Map<number, string>) => Map<number, string>)) => {

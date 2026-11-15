@@ -1,3 +1,4 @@
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { adminMenu } from '@/utils/marketMenu'
 import { useQuery } from '@tanstack/react-query'
@@ -41,7 +42,7 @@ export default function AdminDashboardPage() {
   const isAdmin = isAdminSession(session)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide } = useSettingsPanelSide()
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const [period, setPeriod] = useState<Period>(14)

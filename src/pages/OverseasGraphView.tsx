@@ -1,3 +1,4 @@
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -43,7 +44,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   const navigate = useNavigate()
   const mapPath = overseasRoute('/map', market)
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveSnapshotTime !== null && snapshotTime !== liveSnapshotTime)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)

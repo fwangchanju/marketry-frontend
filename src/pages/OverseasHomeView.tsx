@@ -113,7 +113,7 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
 
   // 화면 캡처·전체화면 — 지도 화면과 같은 방식이다.
   const screenshotRef = useRef<HTMLDivElement>(null)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')

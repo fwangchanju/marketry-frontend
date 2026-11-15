@@ -1,3 +1,4 @@
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { customMenu } from '@/utils/marketMenu'
@@ -73,7 +74,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [sort, setSort] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({ key: 'marketCap', direction: 'desc' })
   const [excluded, setExcluded] = useState<Record<FilterKey, Set<string>>>({ sector: new Set(), customSector: new Set(), customIndustry: new Set(), customSubIndustry: new Set() })
-  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLElement>(null)

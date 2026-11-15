@@ -36,6 +36,11 @@ export function unregisterDraftParticipant(key: string) {
   if (wasDirty) notify()
 }
 
+// 브라우저에 바로 저장한 값(거래소·MARKETRY)이 바뀌었음을 같은 방식으로 화면에 알린다.
+export function notifySettingsChanged() {
+  notify()
+}
+
 function notify() {
   version += 1
   listeners.forEach(listener => listener())
