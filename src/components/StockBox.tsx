@@ -120,8 +120,9 @@ export default function StockBox({
         <>
           {fit.nameLines && (
             <span className="w-full px-1 text-center" style={{ fontSize: fit.nameSize, lineHeight: LABEL_LINE_HEIGHT }}>
-              {fit.nameLines.map(line => (
-                <span key={line} className="block whitespace-nowrap">{line}</span>
+              {fit.nameLines.map((line, lineIndex) => (
+                // 이름이 여러 줄로 나뉠 때 같은 글자의 줄이 둘일 수 있어(예: "토" "토") 순번까지 키에 넣는다.
+                <span key={`${lineIndex}:${line}`} className="block whitespace-nowrap">{line}</span>
               ))}
             </span>
           )}
