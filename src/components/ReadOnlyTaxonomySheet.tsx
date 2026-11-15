@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { createPortal } from 'react-dom'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
-import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, pinnedStockColumns, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
+import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, STOCK_ROW_PX, pinnedStockColumns, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
 import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
@@ -49,7 +49,7 @@ const COLOR = {
 
 // 열 사이 세로 구분선 — 마지막 열 오른쪽에는 긋지 않는다. 머리글은 밝은 선, 본문은 어두운 선이다.
 const TABLE_CLASS =
-  'w-full border-separate border-spacing-0 [&_th:not(:last-child)]:border-r [&_th:not(:last-child)]:border-ui-white/20 [&_td:not(:last-child)]:border-r [&_td:not(:last-child)]:border-ui-border'
+  'custom-page-rows w-full border-separate border-spacing-0 [&_th:not(:last-child)]:border-r [&_th:not(:last-child)]:border-ui-white/20 [&_td:not(:last-child)]:border-r [&_td:not(:last-child)]:border-ui-border'
 
 export type SortDirection = 'asc' | 'desc'
 
@@ -91,8 +91,8 @@ function SortableHeader({ label, active, direction, onClick }: { label: string; 
 // 머리글 아래 선을 셀 안쪽에 그려 첫 행과 구분한다.
 const HEADER_CELL = `sticky top-0 z-10 ${COLOR.headerBg} px-3 py-1 text-center text-sm font-bold ${COLOR.headerText} shadow-[inset_0_-1px_0_var(--ui-border)]`
 const BODY_CELL = `border-b ${COLOR.rowDivider} px-3 py-1 text-sm`
-// 종목 표 한 행의 예상 높이(글줄 20 + 위아래 여백 8 + 아래 선 1) — 실제 높이는 렌더 뒤에 다시 잰다.
-const STOCK_ROW_HEIGHT = 29
+// 종목 표 한 행의 예상 높이(30px, index.css의 `.custom-page-table tbody tr`와 같다) — 실제 높이는 렌더 뒤에 다시 잰다.
+const STOCK_ROW_HEIGHT = STOCK_ROW_PX
 // align-middle: 머리글 글자(화살표 묶음의 가운데)가 왼쪽 체크박스와 같은 높이에 오게 한다.
 const STOCK_HEADER_CELL = 'whitespace-nowrap bg-[var(--ui-panel)] text-center align-middle font-bold text-ui-white'
 const STOCK_BODY_CELL = 'text-sm'

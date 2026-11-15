@@ -23,7 +23,7 @@ import { SearchBar } from './ReadOnlyTaxonomySheet'
 import { SEARCH_MAX_LENGTH } from '@/utils/sectorSearch'
 import { STOCK_SEARCH_MAX_LENGTH, createStockMatcher } from '@/utils/stockSearch'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from './EmptyMessage'
-import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, pinnedStockColumns, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
+import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, STOCK_ROW_PX, pinnedStockColumns, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
 import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
 import { usePopupPosition, type PopupPosition } from '@/hooks/usePopupPosition'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
@@ -1625,7 +1625,7 @@ export default function AdminStockTable({
   const rowVirtualizer = useVirtualizer({
     count: sorted.length,
     getScrollElement: () => scrollContainerRef.current,
-    estimateSize: () => 29,
+    estimateSize: () => STOCK_ROW_PX,
     overscan: 15,
   })
   const virtualRows = rowVirtualizer.getVirtualItems()

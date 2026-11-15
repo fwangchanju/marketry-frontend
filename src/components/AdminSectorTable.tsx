@@ -48,7 +48,7 @@ interface Props {
 type SectorSortKey = 'name' | 'marketValue' | 'stockCount'
 type SectorSort = { key: SectorSortKey; direction: SortDirection }
 const DEFAULT_SECTOR_SORT: SectorSort = { key: 'marketValue', direction: 'desc' }
-// 표 머리글(58px)을 반으로 나눈 한 줄의 높이 — 윗줄은 분류 이름·필터, 아랫줄은 업종·시가총액 합·종목 수 정렬이다.
+// 표 머리글(60px)을 반으로 나눈 한 줄의 높이(30px) — 윗줄은 분류 이름·필터, 아랫줄은 업종·시가총액 합·종목 수 정렬이다.
 const HEADER_HALF_PX = STOCK_HEADER_ROW_PX / 2
 // 한 열 안의 세 칸(업종·시가총액 합·종목 수) 폭 비율 — 머리글 아랫줄과 본문이 같이 쓴다.
 const SECTOR_COLUMN_WIDTHS = ['50%', '25%', '25%'] as const

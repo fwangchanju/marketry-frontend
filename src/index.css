@@ -632,6 +632,11 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
 .nes-table th, .nes-table td {
   border-width: 0 1px 1px 0;
 }
+/* 표 본문 한 줄은 30px이다(머리글 줄 30px와 같다, 2026-11-15). 가상 스크롤 앞뒤 스페이서 <tr>는 인라인 height가 이긴다. */
+.nes-table.custom-page-table tbody tr,
+.custom-page-rows tbody tr {
+  height: 30px;
+}
 
 /* 텍스트는 그대로 두고 배경색만 깜빡이는 강조 효과 (animate-pulse는 opacity라 글자까지 흐려짐) */
 @keyframes row-blink {

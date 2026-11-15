@@ -9,7 +9,7 @@ export function SettingsPanelHeader({ children }: { children: ReactNode }) {
 
 export function SettingsPanelTabList({ ariaLabel, children }: { ariaLabel: string; children: ReactNode }) {
   return (
-    <nav role="tablist" aria-label={ariaLabel} className="flex h-[58px] shrink-0 items-stretch border-b border-ui-border bg-ui-panel px-1">
+    <nav role="tablist" aria-label={ariaLabel} className="flex h-[60px] shrink-0 items-stretch border-b border-ui-border bg-ui-panel px-1">
       {children}
     </nav>
   )

@@ -39,8 +39,10 @@ export const stockColumnFixedPx = (key: StockColumnKey): number | undefined => F
 export const stockTableMinWidthPx = (keys: readonly StockColumnKey[], widths?: Partial<Record<StockColumnKey, number>>): number =>
   STOCK_CHECKBOX_COLUMN_PX + keys.reduce((sum, key) => sum + (widths?.[key] ?? FIXED_COLUMN_PX[key] ?? FLEX_COLUMN_MIN_PX), 0)
 
-// 표 머리글 줄 높이(px) — 본문 한 줄(29px)의 두 배다. 글자 위아래 화살표와 글자 사이에 숨 쉴 간격을 둔다.
-export const STOCK_HEADER_ROW_PX = 58
+// 표 머리글 줄 높이(px) — 설정창 탭 줄(60px)과 선이 맞는다. 두 줄 머리글(일본·미국 섹터 표)은 30px씩 나눠 쓴다. 글자 위아래 화살표와 글자 사이에 숨 쉴 간격을 둔다.
+export const STOCK_HEADER_ROW_PX = 60
+// 표 본문 한 줄 높이(px) — 머리글 줄(30px)과 같다. 실제 높이는 index.css의 `.custom-page-table tbody tr`가 정하고, 가상 스크롤의 행 높이 추정값은 이 값을 쓴다.
+export const STOCK_ROW_PX = 30
 
 // 국내 종목 표의 칸 폭 계산 — 표가 들어가는 영역의 너비로 모든 칸의 폭(=왼쪽 경계 x 좌표)을 한 번에 정한다.
 // 고정 폭 열은 그대로 두고, 종목명(130)·약칭(120)과 나머지 4칸(거래소 분류·대·중·소분류, 130)이 남는 폭을 비율대로 나눈다.
