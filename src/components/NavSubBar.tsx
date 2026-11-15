@@ -49,7 +49,7 @@ const ADMIN_LINK: MenuLink = {
   // 마우스를 올리면 관리자 화면 목록이 열린다.
   options: [
     { label: 'MEMBER', to: '/admin/member' },
-    { label: 'DASHBOARD', to: '/admin/stats' },
+    { label: 'DASHBOARD', to: '/admin/dashboard' },
     { label: 'MESSAGE', to: '/admin/message' },
     { label: 'BANNER', to: '/admin/banner' },
   ],

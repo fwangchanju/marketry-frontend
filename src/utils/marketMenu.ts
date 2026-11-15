@@ -44,7 +44,7 @@ export function infoMenu(current: string) {
 export function adminMenu(current: 'MEMBER' | 'DASHBOARD' | 'MESSAGE' | 'DEFAULT' | 'BANNER') {
   const items: { label: 'MEMBER' | 'DASHBOARD' | 'MESSAGE' | 'DEFAULT' | 'BANNER'; to: string }[] = [
     { label: 'MEMBER', to: '/admin/member' },
-    { label: 'DASHBOARD', to: '/admin/stats' },
+    { label: 'DASHBOARD', to: '/admin/dashboard' },
     { label: 'MESSAGE', to: '/admin/message' },
     { label: 'DEFAULT', to: '/admin/default' },
     { label: 'BANNER', to: '/admin/banner' },
