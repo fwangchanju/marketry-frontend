@@ -2675,8 +2675,8 @@ export default function SettingsPanel({
       {/* 메인 툴바의 줄 높이(상하 여백 포함 39px)에 맞춘다. 제목과 헤더 조작부는 28px 안에서 세로 가운데 둔다. */}
       <SettingsPanelHeader>
         <div className="flex min-w-0 items-center gap-2">
-          <p className="font-roboto-latin flex h-7 min-w-[72.75px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
-            {/* 제목 칸 최소 폭은 가장 긴 제목(Custom)에 맞춘 값이라 Map·Graph에서도 옆의 종목/업종 배지가 같은 자리에 온다. */}
+          <p className="font-roboto-latin flex h-7 w-[88px] min-w-[88px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
+            {/* 제목 칸은 가장 긴 제목(Summary)에 맞춘 고정 폭(88px)이라 모든 페이지에서 옆의 종목/업종 배지가 같은 자리에 온다. */}
             {/* 아래 Mode 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
             <span aria-hidden="true" className={`mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm ${isAdminPage ? 'bg-admin-only' : 'bg-brand'}`} />
             {isAdminPage ? 'Admin' : pageLabel ?? '설정'}

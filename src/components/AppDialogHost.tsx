@@ -107,8 +107,8 @@ export default function AppDialogHost() {
         </h2>
         <p id="app-dialog-message" className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-ui-background">
           {dialog.message}
-          {dialog.mutedMessage && <><br /><span className="text-[var(--ui-control)]">{dialog.mutedMessage}</span></>}
-          {dialog.followupMessage && <><br />{dialog.followupMessage}</>}
+          {dialog.mutedMessage && <><br /><span className={dialog.mutedTone === 'black' ? '' : 'text-[var(--ui-control)]'}>{dialog.mutedMessage}</span></>}
+          {dialog.followupMessage && <><br /><span className={dialog.followupTone === 'gray' ? 'text-[var(--ui-control)]' : ''}>{dialog.followupMessage}</span></>}
         </p>
         {dialog.input && (
           <input

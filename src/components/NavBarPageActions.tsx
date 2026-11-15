@@ -134,8 +134,10 @@ export default function NavBarPageActions({
   const resetBrowserStorage = async () => {
     if (!await appWarnConfirm('브라우저에 저장된 값을 모두 초기화 하시겠습니까?', {
       title: '브라우저 저장값 초기화',
-      mutedMessage: '(예시: 설정창 위치, 설정 탭 선택, 캡처창 선택)',
-      followupMessage: '서버 저장값은 그대로 유지됩니다.',
+      mutedMessage: '설정창 위치, 설정 탭 선택, 캡처창 선택 등',
+      mutedTone: 'black',
+      followupMessage: '(서버 저장은 [내 기준] 모드만 가능합니다.)',
+      followupTone: 'gray',
     })) return
     try {
       // 키를 나열하지 않아 앞으로 localStorage/sessionStorage에 추가되는 기능도 함께 초기화한다.

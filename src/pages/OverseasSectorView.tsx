@@ -1,3 +1,4 @@
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { customMenu } from '@/utils/marketMenu'
@@ -74,7 +75,7 @@ export default function OverseasSectorView({ source }: { source: OverseasSectorS
   }
   const [toolbar, setToolbar] = useState<HTMLDivElement | null>(null)
   const [settingsActions, setSettingsActions] = useState<HTMLDivElement | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const [shareOpen, setShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLElement>(null)
