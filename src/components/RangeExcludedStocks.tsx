@@ -22,7 +22,7 @@ function MinusCircleIcon({ className }: { className?: string }) {
 // 기간 등락률을 볼 때 날짜 칩 옆에 따로 붙는 "⊖ 제외 종목" 칩 내용. 기간(시작일 ~ 종료일)은 날짜 칩 하나가 맡는다.
 // 시작일의 기준가(= 그 전 거래일 종가)와 종료일의 종가/현재가 설명은 상단이 길어지지 않게 종목 팝업에서 보여 주고,
 // 거래일 수는 달력 맨 위 가운데에 보인다. 빼기 원 아이콘(제외 종목 버튼)을 누르면 제외 종목 이름 목록이 그 버튼 왼쪽에 맞춰 팝업으로 뜬다.
-// 제외된 종목이 없으면 아무것도 그리지 않으므로, 칩은 이 안이 아니라 호출하는 쪽에서 종목이 있을 때만 만든다.
+// 기간을 보는 동안에는 제외 종목이 없어도 칩을 항상 보여 준다. 없으면 팝업에 "제외된 종목이 없습니다."라고 적는다.
 export default function RangeExcludedStocks({ excludedStocks }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
@@ -43,14 +43,13 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
     }
   }, [isOpen])
 
-  // 제외된 종목이 없으면(기간을 바꾼 경우) 열려 있던 팝업도 보이지 않는다.
+  const isPopupOpen = isOpen
   const hasExcluded = excludedStocks.length > 0
-  const isPopupOpen = isOpen && hasExcluded
 
   return (
     // 글자와 인라인 버튼이 한 줄에 섞이면 줄 높이가 늘어나 글자가 아래로 밀리므로, flex로 두어 서로 가운데 높이를 맞춘다.
     <span ref={rootRef} className="flex items-center gap-2">
-      {hasExcluded && (
+      {(
         // 팝업은 이 버튼을 기준으로 놓아서, 팝업의 왼쪽 끝이 버튼의 왼쪽 끝과 맞는다.
         <span className="relative flex items-center font-normal text-ui-muted">
           {/* 아이콘과 "제외 종목" 글자가 한 버튼이라 칩 어디를 눌러도 팝업이 열린다(개수는 팝업 제목에 있다). */}
@@ -73,6 +72,10 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
                 >
                   <p className="font-semibold">제외 종목 ({excludedStocks.length})</p>
                   <p className="mt-1 text-xs font-medium leading-relaxed text-ui-text">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>
+                  {!hasExcluded && (
+                    <p className="mt-2 border-t border-ui-border pt-2 text-xs font-medium text-ui-text">제외된 종목이 없습니다.</p>
+                  )}
+                  {hasExcluded && (
                   <div className="mt-2 border-t border-ui-border pt-2">
                     {/* 목록은 시가총액이 큰 10종목까지만 적는다. 10종목이 넘으면 제목에 "10 종목"이라고 밝힌다. */}
                     <p className="mb-1 text-xs font-medium text-ui-text">{excludedStocks.length > MAX_LISTED_STOCKS ? `시가총액 순 ${MAX_LISTED_STOCKS} 종목` : '시가총액 순'}</p>
@@ -86,6 +89,7 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
                       ))}
                     </ul>
                   </div>
+                  )}
                 </div>
               )}
         </span>

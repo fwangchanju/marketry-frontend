@@ -17,6 +17,7 @@ import { useIsLoggedIn, useSession } from './useSession'
 import { useLoginGate } from './useLoginGate'
 import { useHeatmap, usePriceAdjustments, useSnapshotDays, usePreviousTradingDay } from './useHeatmap'
 import { useSnapshotSelection } from './useSnapshotSelection'
+import { useSnapshotTimeOnOrBefore } from './useSnapshotDayLookup'
 import { useHeatmapColorScale } from './useHeatmapColorScale'
 import {
   useCreateCustomScaleThreshold as useCreateHeatmapScaleThreshold,
@@ -343,16 +344,17 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     setSelection({ market, snapshotTime: endSnapshotTime }, { market, snapshotTime: startSnapshotTime })
   }
   // 고른 시장이 아닌 시장을 보는 중이면 그 시장의 같은 날짜 시각을 목록에서 찾는다. 목록을 받기 전이거나 그 날짜가 없으면 고른 시각을 그대로 쓴다.
+  // 다른 시장(일본·미국)에서 고른 날짜는 이 시장의 같은 날짜, 없으면 이전 거래일 종가로 옮긴다. 목록을 받기 전에는 정해지지 않은 것으로 본다.
   const pinnedNeedsLookup = pinnedSelection !== null && pinnedSelection.market !== market
-  const { data: pinnedMonthDays } = useSnapshotDays(market, pinnedSelection?.snapshotTime.slice(0, 7) ?? '', { enabled: pinnedNeedsLookup, retry: 1 })
+  const pinnedLookedUp = useSnapshotTimeOnOrBefore(market, pinnedNeedsLookup ? pinnedSelection.snapshotTime.slice(0, 10) : null, pinnedNeedsLookup)
   const pinnedSnapshotTime = pinnedSelection === null
     ? undefined
-    : (pinnedNeedsLookup ? (pinnedMonthDays?.find(day => day.date === pinnedSelection.snapshotTime.slice(0, 10))?.snapshotTime ?? pinnedSelection.snapshotTime) : pinnedSelection.snapshotTime)
+    : (pinnedNeedsLookup ? pinnedLookedUp : pinnedSelection.snapshotTime)
   const rangeNeedsLookup = rangeSelection !== null && rangeSelection.market !== market
-  const { data: rangeMonthDays } = useSnapshotDays(market, rangeSelection?.snapshotTime.slice(0, 7) ?? '', { enabled: rangeNeedsLookup, retry: 1 })
+  const rangeLookedUp = useSnapshotTimeOnOrBefore(market, rangeNeedsLookup ? rangeSelection.snapshotTime.slice(0, 10) : null, rangeNeedsLookup)
   const rangeStartTime = rangeSelection === null || pinnedSnapshotTime === undefined
     ? undefined
-    : (rangeNeedsLookup ? (rangeMonthDays?.find(day => day.date === rangeSelection.snapshotTime.slice(0, 10))?.snapshotTime ?? rangeSelection.snapshotTime) : rangeSelection.snapshotTime)
+    : (rangeNeedsLookup ? rangeLookedUp : rangeSelection.snapshotTime)
   // NXT는 별도 거래소/설정 프로필이 아니라 특정 시간대에만 적용하는 종목 필터다.
   // NXT 종목만 보기는 실시간 지도에만 쓴다 — 그 시간대(15:40~16:00 등)에도 종가·지난 날짜·기간은 그날의 전종목을 보여 준다.
   // (종가는 오늘 정규장이 어떻게 끝났는지 보는 것이라 NXT 거래 종목만이 아니다.) 종목 수 분모도 받아 온 종목 수라 같이 전종목이 된다.

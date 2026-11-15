@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import { calculateJapanPeriod } from '@/utils/japanPeriod'
+import { calculatePeriodDetailed, type PeriodExcludedStock } from '@/utils/japanPeriod'
 
 export type UsaQuote = { stockCode: string; currentPrice: number; lastPrice: number; changeRate: number; totalMarketValue: number }
 export type UsaQuoteSnapshot = { snapshotTime: string | null; quotes: UsaQuote[] }
@@ -37,9 +37,9 @@ export function useUsaStocks() {
 export function useUsaPeriodQuotes(startTime: string | null, endTime: string | null) {
   const start = useUsaQuotes(startTime, startTime !== null)
   const end = useUsaQuotes(endTime, startTime !== null && endTime !== null)
-  const data = startTime !== null && end.data && start.data ? {
-    ...end.data,
-    quotes: calculateJapanPeriod(start.data.quotes, end.data.quotes),
-  } : undefined
-  return { data, isLoading: startTime !== null && (start.isLoading || end.isLoading), isError: startTime !== null && (start.isError || end.isError), refetch: () => Promise.all([start.refetch(), end.refetch()]) }
+  const detailed = startTime !== null && end.data && start.data ? calculatePeriodDetailed(start.data.quotes, end.data.quotes) : undefined
+  const data = detailed && end.data ? { ...end.data, quotes: detailed.quotes } : undefined
+  // 기준가가 없어 뺀 종목(신규 상장 등) — 기간 보기 배지에 쓴다.
+  const excluded: PeriodExcludedStock[] = detailed?.excluded ?? []
+  return { data, excluded, isLoading: startTime !== null && (start.isLoading || end.isLoading), isError: startTime !== null && (start.isError || end.isError), refetch: () => Promise.all([start.refetch(), end.refetch()]) }
 }

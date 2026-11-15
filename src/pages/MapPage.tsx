@@ -1,4 +1,5 @@
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
+import ToolbarPinButton from '@/components/ToolbarPinButton'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { useEffect, useRef, useState } from 'react'
@@ -450,7 +451,12 @@ export default function MapPage() {
                     {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                   </SnapshotDatePicker>
                   </ToolbarChip>
-                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && rangeExcludedStocks.length > 0 && (
+                  {isPastSnapshot && (
+                    <ToolbarChip bare>
+                      <ToolbarPinButton pinned={isPastSnapshot} onUnpin={() => onChangePinnedSnapshotTime(null)} />
+                    </ToolbarChip>
+                  )}
+                  {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && (
                       <ToolbarChip bare tone="text-ui-muted">
                         <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
                       </ToolbarChip>
