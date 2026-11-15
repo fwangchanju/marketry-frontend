@@ -361,7 +361,7 @@ export default function MarketSummaryPage() {
     .filter(frame => frame !== undefined)
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-ui-background">
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
       <NavBar />
       <NavSubBar
         actions={

@@ -250,7 +250,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
   }
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
   return (
-    <div className="flex h-screen min-h-0 flex-col bg-ui-background">
+    <div className="flex h-screen min-h-0 select-none flex-col bg-ui-background">
       <NavBar />
       <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
       <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
