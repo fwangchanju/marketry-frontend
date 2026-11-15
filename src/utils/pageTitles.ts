@@ -8,7 +8,7 @@ const MARKET_NAMES: Record<string, string> = { korea: '한국주식', kospi: '�
 // 화면 이름 — 지도·그래프는 검색에 등록된 낱말("히트맵"·"등락률 그래프")을 그대로 쓴다. 설명문·가이드의 낱말과도 맞는다("업종 지도"로 정했다가 설명문과 어긋나 "히트맵"으로 되돌렸다).
 const SCREEN_NAMES: Record<string, string> = { summary: '요약', map: '히트맵', graph: '등락률 그래프', sector: '섹터', stock: '종목' }
 const FIXED_TITLES: Record<string, string> = {
-  '/info/guide': '증시 히트맵 설정 방법',
+  '/info/guide': '히트맵 설정 방법',
   '/info/privacy': '개인정보처리방침',
   '/info/terms': '이용약관',
   '/info/source': '데이터 출처',

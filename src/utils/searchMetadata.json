@@ -38,12 +38,12 @@
     "canonicalPath": "/graph/korea"
   },
   "/info": {
-    "title": "증시 히트맵 설정 방법 - MARKETRY",
+    "title": "히트맵 설정 방법 - MARKETRY",
     "description": "나만의 히트맵을 만들어, 내 기준으로 시장을 보는 방법을 안내합니다.",
     "canonicalPath": "/info/guide"
   },
   "/info/guide": {
-    "title": "증시 히트맵 설정 방법 - MARKETRY",
+    "title": "히트맵 설정 방법 - MARKETRY",
     "description": "나만의 히트맵을 만들어, 내 기준으로 시장을 보는 방법을 안내합니다."
   }
 }

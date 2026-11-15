@@ -17,7 +17,7 @@ test('화면·시장 제목은 `{시장} {화면} - MARKETRY` 모양이다', () 
 })
 
 test('글·계정·관리자 화면은 고정 제목을 쓴다', () => {
-  assert.equal(pageTitle('/info/guide'), '증시 히트맵 설정 방법 - MARKETRY')
+  assert.equal(pageTitle('/info/guide'), '히트맵 설정 방법 - MARKETRY')
   assert.equal(pageTitle('/info/privacy'), '개인정보처리방침 - MARKETRY')
   assert.equal(pageTitle('/account/profile'), '프로필 - MARKETRY')
   assert.equal(pageTitle('/admin/member'), '관리자 회원 - MARKETRY')
