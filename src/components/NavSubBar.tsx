@@ -28,7 +28,7 @@ interface MenuLink {
 
 // Map·Graph는 KOREA / KOSPI / KOSDAQ을 고르고, Sector·Stock은 KOREA를 바로 연다(특별 회원은 JAPAN도 고른다).
 const BASE_LINKS: MenuLink[] = [
-  { to: '/summary', label: 'Home', icon: 'home' },
+  { to: '/summary/korea', label: 'Home', icon: 'home' },
   { to: marketRoute('/map', 'ALL_STOCK'), label: 'Map', icon: 'composition' },
   { to: marketRoute('/graph', 'ALL_STOCK'), label: 'Graph', icon: 'bar-chart' },
 ]
@@ -102,14 +102,16 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   // 지금 보는 시장이 일본·미국이면 페이지 이동 메뉴도 그 시장으로 간다(일본 지도 → 그래프는 /graph/japan).
   const marketSegment = /\/(kospi|kosdaq|japan|usa)(\/|$)/.exec(location.pathname)?.[1] ?? null
   const overseasSegment = marketSegment === 'japan' || marketSegment === 'usa' ? marketSegment : null
+  // 코스피·코스닥은 korea 아래에 있다(/map/korea/kospi).
+  const mapSegment = marketSegment === 'kospi' || marketSegment === 'kosdaq' ? `korea/${marketSegment}` : marketSegment
   const customLinks = overseasSegment
     ? [{ ...SECTOR_LINK, to: `/sector/${overseasSegment}` }, { ...STOCK_LINK, to: `/stock/${overseasSegment}` }]
     : [SECTOR_LINK, STOCK_LINK]
   const baseLinks = BASE_LINKS.map(link => {
     if (!marketSegment) return link
     if (link.label === 'Home') return overseasSegment ? { ...link, to: `/summary/${overseasSegment}` } : link
-    if (link.label === 'Map') return { ...link, to: `/map/${marketSegment}` }
-    if (link.label === 'Graph') return { ...link, to: `/graph/${marketSegment}` }
+    if (link.label === 'Map') return { ...link, to: `/map/${mapSegment}` }
+    if (link.label === 'Graph') return { ...link, to: `/graph/${mapSegment}` }
     return link
   })
   const links = isAdmin ? [...baseLinks, ...customLinks, ADMIN_LINK] : [...baseLinks, ...customLinks]

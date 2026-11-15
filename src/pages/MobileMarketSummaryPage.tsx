@@ -224,7 +224,7 @@ function SettingRow({ label, hint, children }: { label: string; hint?: string; c
   )
 }
 
-// stock = 마켓 전체 상위 30개 종목 지도(`/map/...`), sector = 업종 분류 지도(`/summary?map`), graph = 그룹 등락률(`/graph/...`).
+// stock = 마켓 전체 상위 30개 종목 지도(`/map/...`), sector = 업종 분류 지도(`/summary/korea?map`), graph = 그룹 등락률(`/graph/...`).
 export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'stock' | 'sector' | 'graph' }) {
   const isGraph = mode === 'graph'
   const isStockMode = mode === 'stock'
@@ -573,7 +573,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       }
       // 이 지도 화면 안에서의 이동만 다룬다 — 다른 페이지로 나가는 뒤로가기는 그대로 둔다.
       const path = window.location.pathname
-      const isMobileSectorRoute = path === '/summary' && new URLSearchParams(window.location.search).has('map')
+      const isMobileSectorRoute = path === '/summary/korea' && new URLSearchParams(window.location.search).has('map')
       if (!path.startsWith('/map/') && !path.startsWith('/graph/') && !isMobileSectorRoute) return
       const target: number = typeof e.state?.mobileMapDepth === 'number' ? e.state.mobileMapDepth : 0
       if (target < depth) {
@@ -629,7 +629,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   }
 
   // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 가이드 → 종목 지도로 이동한다(마켓은 유지).
-  const titleTo = isStockMode ? `/summary?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : `/info/guide?market=${market}`
+  const titleTo = isStockMode ? `/summary/korea?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : `/info/guide?market=${market}`
   const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '가이드로 이동'
   const modeForSwipe = (direction: 'next' | 'previous') => {
     const order = ['stock', 'sector', 'graph', 'guide'] as const
@@ -639,7 +639,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const routeForMode = (targetMode: 'stock' | 'sector' | 'graph' | 'guide') => targetMode === 'stock'
     ? marketRoute('/map', market)
     : targetMode === 'sector'
-      ? `/summary?map&market=${market}`
+      ? `/summary/korea?map&market=${market}`
       : targetMode === 'guide'
         ? `/info/guide?market=${market}`
         : marketRoute('/graph', market)

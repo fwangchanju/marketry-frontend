@@ -118,7 +118,7 @@ export default function MarketSummaryPage() {
   const homeMarket = location.pathname.startsWith('/summary/japan') ? 'JAPAN' : location.pathname.startsWith('/summary/usa') ? 'USA' : 'KOREA'
   const homeMarketLabel = homeMarket === 'JAPAN' ? 'NIKKEI225' : homeMarket === 'USA' ? 'S&P500' : 'K-STOCK'
   const homeMenu = [
-    { label: 'KOREA', to: '/summary', active: homeMarket === 'KOREA' },
+    { label: 'KOREA', to: '/summary/korea', active: homeMarket === 'KOREA' },
     { label: 'JAPAN', to: '/summary/japan', active: homeMarket === 'JAPAN', special: true },
     { label: 'USA', to: '/summary/usa', active: homeMarket === 'USA', special: true },
   ].filter(item => canSeeOverseasHome || item.label === 'KOREA')
@@ -346,7 +346,7 @@ export default function MarketSummaryPage() {
                 ),
               },
             ]
-  // 렌더러(텔레그램 발송)가 /summary?capture=mobile 로 열면 지도 페이지 모바일 캡처와 같은 3:4 세로 판에 툴바와 시장 지도(왼쪽)·그룹 등락률(오른쪽)만 담아 찍는다.
+  // 렌더러(텔레그램 발송)가 /summary/korea?capture=mobile 로 열면 지도 페이지 모바일 캡처와 같은 3:4 세로 판에 툴바와 시장 지도(왼쪽)·그룹 등락률(오른쪽)만 담아 찍는다.
   // 화면과 고정 캡처판이 같은 순서를 쓴다 — homeFrames 자체는 건드리지 않는다.
   const orderedHomeFrames = [...homeFrames].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title))
   const [searchParams] = useSearchParams()

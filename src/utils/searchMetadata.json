@@ -1,13 +1,13 @@
 {
-  "/summary": {
+  "/summary/korea": {
     "title": "MARKETRY - Design Your Market",
     "description": "국내 주식을 내 방식대로 살펴보세요. 히트맵의 박스 크기를 조절하고, 종목을 원하는 그룹으로 묶어 나만의 시장 지도와 등락률 그래프를 만들 수 있어요."
   },
-  "/map/kospi": {
+  "/map/korea/kospi": {
     "title": "코스피 히트맵",
     "description": "코스피의 움직임을 나만의 히트맵으로 살펴보세요. 새롭게 그룹을 지어 보고, 박스 크기도 조절하다 보면 시장이 더 선명하게 보일 거예요."
   },
-  "/map/kosdaq": {
+  "/map/korea/kosdaq": {
     "title": "코스닥 히트맵",
     "description": "코스닥의 움직임을 나만의 히트맵으로 살펴보세요. 새롭게 그룹을 지어 보고, 박스 크기도 조절하다 보면 시장이 더 선명하게 보일 거예요."
   },
@@ -20,11 +20,11 @@
     "description": "국내 주식의 움직임을 나만의 히트맵으로 살펴보세요. 새롭게 그룹을 지어 보고, 박스 크기도 조절하다 보면 시장이 더 선명하게 보일 거예요.",
     "canonicalPath": "/map/korea"
   },
-  "/graph/kospi": {
+  "/graph/korea/kospi": {
     "title": "코스피 등락률 그래프",
     "description": "코스피의 등락률을 나만의 그룹으로 비교해 보세요. 종목을 새롭게 묶고 분류 단계를 바꾸면서 시장의 흐름을 상세히 살펴볼 수 있어요."
   },
-  "/graph/kosdaq": {
+  "/graph/korea/kosdaq": {
     "title": "코스닥 등락률 그래프",
     "description": "코스닥의 등락률을 나만의 그룹으로 비교해 보세요. 종목을 새롭게 묶고 분류 단계를 바꾸면서 시장의 흐름을 상세히 살펴볼 수 있어요."
   },

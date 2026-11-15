@@ -150,7 +150,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
 
   const label = isJapan ? 'NIKKEI225' : 'S&P500'
   const menu = [
-    { label: 'KOREA', to: '/summary', active: false },
+    { label: 'KOREA', to: '/summary/korea', active: false },
     { label: 'JAPAN', to: '/summary/japan', active: isJapan, special: true },
     { label: 'USA', to: '/summary/usa', active: !isJapan, special: true },
   ]

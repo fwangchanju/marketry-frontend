@@ -206,7 +206,7 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       await logout.mutateAsync()
-      navigate('/summary', { replace: true })
+      navigate('/summary/korea', { replace: true })
     } catch {
       // 요청 실패는 아래 계정 카드에서 안내한다.
     }
@@ -218,7 +218,7 @@ export default function ProfilePage() {
     if (!confirmed) return
     try {
       await withdraw.mutateAsync()
-      navigate('/summary', { replace: true })
+      navigate('/summary/korea', { replace: true })
     } catch {
       // 요청 실패는 아래 계정 카드에서 안내한다.
     }
