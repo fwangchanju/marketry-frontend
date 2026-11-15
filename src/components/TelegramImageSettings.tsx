@@ -6,7 +6,8 @@ import { ACCENT_PALETTE } from '@/utils/accentPalette'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
 import { compareKoreanText } from '@/utils/koreanSort'
-import marketrySymbol from '@/assets/marketry-symbol.webp'
+// 텔레그램 설정의 MARKETRY 그림도 확정 심볼(투명 배경)을 쓴다(2026-11-16 사용자 결정, 정사각형이라 찌그러지지 않는다).
+import marketrySymbol from '@/assets/marketry-symbol-confirmed.png'
 import krxLogo from '@/assets/krx-logo.png'
 
 const DEPTHS = ['대분류', '중분류', '소분류']
