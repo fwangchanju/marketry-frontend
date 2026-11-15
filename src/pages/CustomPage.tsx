@@ -1,3 +1,4 @@
+import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { customMenu } from '@/utils/marketMenu'
 import { useLocation, useSearchParams } from 'react-router-dom'
@@ -28,7 +29,7 @@ import { useLoginGate } from '@/hooks/useLoginGate'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
-import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
+import { isAdminSession } from '@/utils/adminAccess'
 import { STOCK_KOREA } from '@/utils/customRoutes'
 import { buildSectorStats } from '@/utils/sectorOrder'
 
@@ -238,7 +239,7 @@ export default function CustomPage() {
           >
             <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 w-full shrink-0 items-center justify-between bg-ui-background/70 text-sm font-bold text-ui-white">
               <div className="flex h-full shrink-0 items-center gap-2">
-                <ToolbarModeText page={mode === 'stock' ? 'STOCK' : 'SECTOR'} label={MARKET_LABEL.ALL_STOCK} showChevron menu={customMenu(mode === 'stock' ? 'stock' : 'sector', 'KOREA', isSpecialSession(session))} />
+                <ToolbarModeText page={mode === 'stock' ? 'STOCK' : 'SECTOR'} label={MARKET_LABEL.ALL_STOCK} showChevron menu={customMenu(mode === 'stock' ? 'stock' : 'sector', 'KOREA', true)} />
               </div>
               {/* 검색창(과 필터 초기화) — 종목·업종 표가 모두 이 노드로 포털링해서 그린다. */}
               <div ref={setToolbarContainer} className="ml-1 flex h-full min-h-0 min-w-0 flex-1 items-center" />
@@ -254,12 +255,12 @@ export default function CustomPage() {
               >
                 {isPageLoading ? (
                   // 지도·그룹 페이지의 로딩 원과 같은 높이에 오도록 위 16px, 아래 47.5px(19.5px + 이 페이지에 없는 아래 줄 28px) 여백 안에서 가운데에 둔다.
-                  <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
+                  <div className={MAIN_LOADING_CLASS}>
                     <Spinner showElapsed />
                   </div>
                 ) : !isReadOnlySheet && isSectorsError ? (
                   // 내 분류의 분류(업종) 목록을 받지 못하면 표를 그리지 않고 오류 원을 보여 준다 — 비어 있다고 오해하거나 분류 선택지 없이 반쪽 표에서 고치지 않게 한다.
-                  <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
+                  <div className={MAIN_LOADING_CLASS}>
                     <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetchSectors()} />
                   </div>
                 ) : isReadOnlySheet ? (

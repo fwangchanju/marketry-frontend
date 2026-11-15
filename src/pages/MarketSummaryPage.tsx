@@ -1,6 +1,4 @@
 import { useSettled } from '@/hooks/useSettled'
-import { useSession } from '@/hooks/useSession'
-import { isSpecialSession } from '@/utils/adminAccess'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 import { CAPTURE_ID } from '@/utils/captureIds'
@@ -115,8 +113,7 @@ function CaptureFrame({ title, className = '', children, isExchange, mineColor }
 export default function MarketSummaryPage() {
   // 시장 배지 드롭다운 — 홈의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI 225·S&P 500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
   const location = useLocation()
-  const { data: homeSession } = useSession()
-  const canSeeOverseasHome = isSpecialSession(homeSession)
+  const canSeeOverseasHome = true
   const homeMarket: MarketQuery = location.pathname.startsWith('/summary/korea/kospi') ? 'KOSPI' : location.pathname.startsWith('/summary/korea/kosdaq') ? 'KOSDAQ' : 'ALL_STOCK'
   const homeMarketLabel = homeMarket === 'KOSPI' ? 'KOSPI' : homeMarket === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK'
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, 특별 회원·관리자에게만 JAPAN·USA).

@@ -1,3 +1,4 @@
+import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { customMenu } from '@/utils/marketMenu'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
@@ -220,7 +221,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
             <div className="min-w-0 flex-1" />
             <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </div>
-          <div ref={tableContainerRef} className={`min-h-0 flex-1 ${isLoading || isError ? 'flex items-center justify-center pt-4 pb-[47.5px]' : 'overflow-auto border border-ui-border'}`}>
+          <div ref={tableContainerRef} className={`min-h-0 flex-1 ${isLoading || isError ? MAIN_LOADING_CLASS : 'overflow-auto border border-ui-border'}`}>
             {isLoading ? <Spinner showElapsed /> : isError ? <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void namesQuery.refetch(); void classificationsQuery.refetch(); void categoryQuery.refetch(); void quotesQuery.refetch() }} /> : <table style={{ minWidth: stockColumnWidthsTotal(columnWidths) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
               <StockTableColGroup keys={COLUMN_WIDTH_KEYS} widths={columnWidths} />
               <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]"><tr style={{ height: STOCK_HEADER_ROW_PX }}><th className="bg-[var(--ui-panel)] px-0 text-center">{canEdit && <input type="checkbox" className="mx-auto my-0 block thin-check" checked={allVisibleSelected} onChange={toggleVisible} aria-label="표시된 종목 전체 선택" />}</th>{columns.filter(column => isColumnShown(column.key)).map(column => <th key={column.key} scope="col" className="whitespace-nowrap bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white"><StockSortHeader label={column.label} state={sort.key === column.key ? sort.direction : null} onSort={() => changeSort(column.key)} filter={column.filter ? filterButton(column.filter, column.label) : undefined} /></th>)}</tr></thead>

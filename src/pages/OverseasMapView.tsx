@@ -1,3 +1,4 @@
+import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
@@ -245,9 +246,9 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               </nav>
             )}
             {isLoading ? (
-              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]"><Spinner showElapsed /></div>
+              <div className={MAIN_LOADING_CLASS}><Spinner showElapsed /></div>
             ) : isError ? (
-              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
+              <div className={MAIN_LOADING_CLASS}><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
             ) : shownCount === 0 ? (
               <div className="relative flex-1"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="-top-1" /></div>
             ) : (

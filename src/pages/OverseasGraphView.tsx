@@ -1,3 +1,4 @@
+import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { marketMenu } from '@/utils/marketMenu'
@@ -92,11 +93,11 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
           </Toolbar>
           <div className="relative flex min-h-0 flex-1">
-            <div className="flex min-h-0 w-full flex-1 flex-col pt-4 pb-[19.5px]">
+            <div className={`flex min-h-0 w-full flex-1 flex-col ${isLoading || isError ? '' : 'pt-4 pb-[19.5px]'}`}>
               {isLoading ? (
-                <div className="flex flex-1 items-center justify-center"><Spinner showElapsed /></div>
+                <div className={MAIN_LOADING_CLASS}><Spinner showElapsed /></div>
               ) : isError ? (
-                <div className="flex flex-1 items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
+                <div className={MAIN_LOADING_CLASS}><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
               ) : chart.rankedItems.length === 0 ? (
                 <div className="relative flex-1"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
               ) : (

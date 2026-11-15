@@ -1,4 +1,4 @@
-import { isSpecialSession } from '@/utils/adminAccess'
+import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
@@ -42,7 +42,7 @@ import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
-import { useIsLoggedIn, useSession } from '@/hooks/useSession'
+import { useIsLoggedIn } from '@/hooks/useSession'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -210,7 +210,6 @@ export default function MapPage() {
     colorScale,
     handleExcludeSector,
   } = useGlobalSettings({ allowChangeRateMode: true })
-  const { data: session } = useSession()
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
@@ -428,7 +427,7 @@ export default function MapPage() {
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-                <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} showChevron menu={marketMenu('/map', market, isSpecialSession(session))} />
+                <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} showChevron menu={marketMenu('/map', market, true)} />
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·합산/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}
@@ -526,11 +525,11 @@ export default function MapPage() {
               )}
               {/* 로딩·오류 원은 그룹 페이지와 같은 높이에 오도록 위 16px·아래 19.5px 여백 안에서 가운데에 둔다. */}
               {isLoading ? (
-                <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
+                <div className={MAIN_LOADING_CLASS}>
                   <Spinner showElapsed />
                 </div>
               ) : isError ? (
-                <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
+                <div className={MAIN_LOADING_CLASS}>
                   <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} />
                 </div>
               ) : visibleItems.length === 0 ? (
