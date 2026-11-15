@@ -169,7 +169,7 @@ export default function BannerDatePicker({
           className="z-50 rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
           onClick={event => event.stopPropagation()}
         >
-          <div className="mb-2 flex justify-end border-b border-ui-border pb-2">
+          <div className="mb-2 flex justify-center border-b border-ui-border pb-2">
             <button
               type="button"
               onClick={selectToday}
@@ -183,11 +183,11 @@ export default function BannerDatePicker({
               <>
                 <div className="mb-1 flex items-center justify-between">
                   <span className="flex items-center">
-                    <button type="button" aria-label="이전 해" disabled={shownMonth.year <= MIN_YEAR} onClick={() => setShownMonth(month => moveMonth(month, -12))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted">
+                    <button type="button" aria-label="이전 해" disabled={shownMonth.year <= MIN_YEAR} onClick={() => setShownMonth(month => moveMonth(month, -12))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted">
                       <ChevronDownIcon className="h-4 w-4 rotate-90" />
                       <ChevronDownIcon className="-ml-2.5 h-4 w-4 rotate-90" />
                     </button>
-                    <button type="button" aria-label="이전 달" disabled={!canMovePrevious} onClick={() => setShownMonth(month => moveMonth(month, -1))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted">
+                    <button type="button" aria-label="이전 달" disabled={!canMovePrevious} onClick={() => setShownMonth(month => moveMonth(month, -1))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted">
                       <ChevronDownIcon className="h-4 w-4 rotate-90" />
                     </button>
                   </span>
@@ -196,10 +196,10 @@ export default function BannerDatePicker({
                     <button type="button" aria-label="월 선택" onClick={() => { setPickerYear(shownMonth.year); setView('month') }} className="border-0 bg-transparent p-0 font-roboto-latin font-semibold tabular-nums text-ui-white hover:text-brand">{shownMonth.monthIndex + 1}월</button>
                   </span>
                   <span className="flex items-center">
-                    <button type="button" aria-label="다음 달" disabled={!canMoveNext} onClick={() => setShownMonth(month => moveMonth(month, 1))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted">
+                    <button type="button" aria-label="다음 달" disabled={!canMoveNext} onClick={() => setShownMonth(month => moveMonth(month, 1))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted">
                       <ChevronDownIcon className="h-4 w-4 -rotate-90" />
                     </button>
-                    <button type="button" aria-label="다음 해" disabled={shownMonth.year >= MAX_YEAR} onClick={() => setShownMonth(month => moveMonth(month, 12))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted">
+                    <button type="button" aria-label="다음 해" disabled={shownMonth.year >= MAX_YEAR} onClick={() => setShownMonth(month => moveMonth(month, 12))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted">
                       <ChevronDownIcon className="h-4 w-4 -rotate-90" />
                       <ChevronDownIcon className="-ml-2.5 h-4 w-4 -rotate-90" />
                     </button>
@@ -224,10 +224,10 @@ export default function BannerDatePicker({
                             aria-pressed={isSelected}
                             aria-current={isToday ? 'date' : undefined}
                             onClick={() => selectDay(day)}
-                            className={`relative flex h-7 w-7 items-center justify-center rounded-full border border-transparent ${
+                            className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 ${isToday ? 'border-brand' : 'border-transparent'} ${
                               isSelected
-                                ? 'bg-brand font-semibold text-ui-surface'
-                                : isToday ? 'bg-brand-surface font-semibold text-ui-white hover:bg-brand hover:text-ui-surface' : `bg-transparent hover:bg-brand hover:text-ui-surface ${isHoliday ? holidayColor ? '' : 'text-ui-muted' : 'text-ui-white'}`
+                                ? 'bg-brand-surface font-semibold text-ui-white'
+                                : isToday ? 'bg-transparent font-semibold text-ui-white hover:bg-brand-surface' : `bg-transparent hover:bg-brand-surface hover:text-ui-white ${isHoliday ? holidayColor ? '' : 'text-ui-muted' : 'text-ui-white'}`
                             }`}
                             style={!isSelected && !isToday && isHoliday && holidayColor ? { color: holidayColor } : undefined}
                           >
@@ -243,13 +243,13 @@ export default function BannerDatePicker({
             {view === 'month' && (
               <>
                 <div className="mb-1 flex items-center justify-between">
-                  <button type="button" aria-label="이전 해" disabled={pickerYear <= MIN_YEAR} onClick={() => setPickerYear(year => year - 1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted"><ChevronDownIcon className="h-4 w-4 rotate-90" /></button>
+                  <button type="button" aria-label="이전 해" disabled={pickerYear <= MIN_YEAR} onClick={() => setPickerYear(year => year - 1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted"><ChevronDownIcon className="h-4 w-4 rotate-90" /></button>
                   <button type="button" aria-label="년 선택" onClick={openYearView} className="border-0 bg-transparent p-0 font-roboto-latin font-semibold tabular-nums text-ui-white hover:text-brand">{pickerYear}년</button>
-                  <button type="button" aria-label="다음 해" disabled={pickerYear >= MAX_YEAR} onClick={() => setPickerYear(year => year + 1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted"><ChevronDownIcon className="h-4 w-4 -rotate-90" /></button>
+                  <button type="button" aria-label="다음 해" disabled={pickerYear >= MAX_YEAR} onClick={() => setPickerYear(year => year + 1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted"><ChevronDownIcon className="h-4 w-4 -rotate-90" /></button>
                 </div>
                 <div role="group" aria-label="월 선택" className="grid min-h-[13.5rem] grid-cols-4 content-center gap-y-3 font-roboto-latin tabular-nums">
                   {Array.from({ length: 12 }, (_, monthIndex) => (
-                    <button key={monthIndex} type="button" aria-pressed={pickerYear === shownMonth.year && monthIndex === shownMonth.monthIndex} onClick={() => { setShownMonth({ year: pickerYear, monthIndex }); setView('day') }} className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${pickerYear === shownMonth.year && monthIndex === shownMonth.monthIndex ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : 'bg-transparent text-ui-white hover:bg-brand-surface'}`}>{monthIndex + 1}월</button>
+                    <button key={monthIndex} type="button" aria-pressed={pickerYear === shownMonth.year && monthIndex === shownMonth.monthIndex} onClick={() => { setShownMonth({ year: pickerYear, monthIndex }); setView('day') }} className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 ${pickerYear === Number(todayDate.slice(0, 4)) && monthIndex === Number(todayDate.slice(5, 7)) - 1 ? 'border-brand' : 'border-transparent'} ${pickerYear === shownMonth.year && monthIndex === shownMonth.monthIndex ? 'bg-transparent font-semibold text-ui-white hover:bg-brand-surface' : 'bg-transparent text-ui-white hover:bg-brand-surface'}`}>{monthIndex + 1}월</button>
                   ))}
                 </div>
               </>
@@ -257,13 +257,13 @@ export default function BannerDatePicker({
             {view === 'year' && (
               <>
                 <div className="mb-1 flex items-center justify-between">
-                  <button type="button" aria-label="이전 10년" disabled={decadeStart <= MIN_YEAR} onClick={() => setDecadeStart(start => start - 10)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted"><ChevronDownIcon className="h-4 w-4 rotate-90" /></button>
+                  <button type="button" aria-label="이전 10년" disabled={decadeStart <= MIN_YEAR} onClick={() => setDecadeStart(start => start - 10)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted"><ChevronDownIcon className="h-4 w-4 rotate-90" /></button>
                   <span className="font-roboto-latin font-semibold tabular-nums">{decadeStart} - {decadeStart + 9}</span>
-                  <button type="button" aria-label="다음 10년" disabled={decadeStart + 10 > MAX_YEAR} onClick={() => setDecadeStart(start => start + 10)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted"><ChevronDownIcon className="h-4 w-4 -rotate-90" /></button>
+                  <button type="button" aria-label="다음 10년" disabled={decadeStart + 10 > MAX_YEAR} onClick={() => setDecadeStart(start => start + 10)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted"><ChevronDownIcon className="h-4 w-4 -rotate-90" /></button>
                 </div>
                 <div role="group" aria-label="년 선택 목록" className="grid min-h-[13.5rem] grid-cols-4 content-center gap-y-3 font-roboto-latin tabular-nums">
                   {Array.from({ length: 12 }, (_, offset) => decadeStart - 1 + offset).map(year => (
-                    <button key={year} type="button" disabled={year < MIN_YEAR || year > MAX_YEAR} aria-pressed={year === shownMonth.year} onClick={() => { setPickerYear(year); setDecadeStart(Math.floor(year / 10) * 10); setView('month') }} className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${year === shownMonth.year ? 'bg-ui-control font-semibold text-ui-white hover:bg-brand-surface' : year < MIN_YEAR || year > MAX_YEAR ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-brand-surface'}`}>{year}</button>
+                    <button key={year} type="button" disabled={year < MIN_YEAR || year > MAX_YEAR} aria-pressed={year === shownMonth.year} onClick={() => { setPickerYear(year); setDecadeStart(Math.floor(year / 10) * 10); setView('month') }} className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 ${year === Number(todayDate.slice(0, 4)) ? 'border-brand' : 'border-transparent'} ${year === shownMonth.year ? 'bg-transparent font-semibold text-ui-white hover:bg-brand-surface' : year < MIN_YEAR || year > MAX_YEAR ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-brand-surface'}`}>{year}</button>
                   ))}
                 </div>
               </>

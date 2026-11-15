@@ -125,7 +125,7 @@ const addMonths = (month: ShownMonth, delta: number): ShownMonth => {
 }
 
 // 월 선택 화면의 한 칸 — 그 달의 종가 지도 목록을 받아서 비어 있으면(데이터가 없는 달) 누르지 못하게 한다. 받기 전이나 오류일 때는 막지 않는다.
-function MonthChoice({ market, month, isCurrent, isAllowed, onChoose }: { market: CalendarMarket; month: ShownMonth; isCurrent: boolean; isAllowed: boolean; onChoose: () => void }) {
+function MonthChoice({ market, month, isCurrent, isLive, isAllowed, onChoose }: { market: CalendarMarket; month: ShownMonth; isCurrent: boolean; isLive: boolean; isAllowed: boolean; onChoose: () => void }) {
   const { data: days } = useCalendarDays(market, toMonthKey(month), { retry: 1 })
   const isEmpty = days !== undefined && days.length === 0
   const disabled = !isAllowed || isEmpty
@@ -135,8 +135,8 @@ function MonthChoice({ market, month, isCurrent, isAllowed, onChoose }: { market
       disabled={disabled}
       aria-pressed={isCurrent}
       onClick={onChoose}
-      className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${
-        isCurrent ? 'bg-ui-control font-normal text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-brand-surface'
+      className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 ${isLive ? 'border-brand' : 'border-transparent'} ${
+        isCurrent ? 'bg-transparent font-normal text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-muted' : 'bg-transparent text-ui-white hover:bg-brand-surface'
       }`}
     >
       {month.monthIndex + 1}월
@@ -304,13 +304,13 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                     onClick={() => onPick(date, closingTimeByDate.get(date))}
                     onMouseEnter={() => { if (selectable !== false) onHoverDate?.(date) }}
                     onMouseLeave={() => onHoverDate?.(null)}
-                    className={`relative flex h-7 w-7 items-center justify-center rounded-full border border-transparent ${
+                    className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 ${isToday ? 'border-brand' : 'border-transparent'} ${
                       selected
-                        ? 'bg-brand font-semibold text-ui-surface'
+                        ? 'bg-brand-surface font-semibold text-ui-white'
                         : isToday
-                          ? `bg-brand-surface font-semibold text-ui-white ${selectable ? 'hover:bg-brand hover:text-ui-surface' : 'cursor-not-allowed'}`
+                          ? `bg-transparent font-semibold text-ui-white ${selectable ? 'hover:bg-brand-surface hover:text-ui-white' : 'cursor-not-allowed'}`
                         : selectable
-                          ? 'bg-transparent text-ui-white hover:bg-brand hover:text-ui-surface'
+                          ? 'bg-transparent text-ui-white hover:bg-brand-surface hover:text-ui-white'
                           : `cursor-not-allowed bg-transparent ${isHoliday && holidayColor ? '' : 'text-ui-muted'}`
                     }`}
                     style={!selected && !isToday && isHoliday && holidayColor ? { color: holidayColor } : undefined}
@@ -328,13 +328,25 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
       {view === 'month' && (
         <>
           <div className="mb-1 flex items-center justify-between">
-            <button type="button" aria-label="이전 해" disabled={pickerYear <= 2000} onClick={() => setPickerYear(year => year - 1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
-              <ChevronDownIcon className="h-4 w-4 rotate-90" />
-            </button>
+            <span className="flex items-center">
+              <button type="button" aria-label="이전 10년" disabled={pickerYear <= 2020} onClick={() => setPickerYear(year => Math.max(2020, year - 10))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+                <ChevronDownIcon className="h-4 w-4 rotate-90" />
+                <ChevronDownIcon className="-ml-2.5 h-4 w-4 rotate-90" />
+              </button>
+              <button type="button" aria-label="이전 해" disabled={pickerYear <= 2020} onClick={() => setPickerYear(year => Math.max(2020, year - 1))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+                <ChevronDownIcon className="h-4 w-4 rotate-90" />
+              </button>
+            </span>
             <button type="button" aria-label="년 선택" onClick={() => { setDecadeStart(Math.floor(pickerYear / 10) * 10); setView('year') }} className="border-0 bg-transparent p-0 font-roboto-latin font-normal tabular-nums text-ui-white hover:text-brand">{pickerYear}년</button>
-            <button type="button" aria-label="다음 해" disabled={liveYear !== null && pickerYear >= liveYear} onClick={() => setPickerYear(year => year + 1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
-              <ChevronDownIcon className="h-4 w-4 -rotate-90" />
-            </button>
+            <span className="flex items-center">
+              <button type="button" aria-label="다음 해" disabled={liveYear !== null && pickerYear >= liveYear} onClick={() => setPickerYear(year => year + 1)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+                <ChevronDownIcon className="h-4 w-4 -rotate-90" />
+              </button>
+              <button type="button" aria-label="다음 10년" disabled={liveYear !== null && pickerYear >= liveYear} onClick={() => setPickerYear(year => (liveYear !== null ? Math.min(liveYear, year + 10) : year + 10))} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+                <ChevronDownIcon className="h-4 w-4 -rotate-90" />
+                <ChevronDownIcon className="-ml-2.5 h-4 w-4 -rotate-90" />
+              </button>
+            </span>
           </div>
           <div className="grid min-h-[13.5rem] grid-cols-4 content-center gap-y-3 font-roboto-latin tabular-nums" role="group" aria-label="월 선택">
             {Array.from({ length: 12 }, (_, monthIndex) => {
@@ -345,6 +357,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                   market={market}
                   month={choice}
                   isCurrent={choice.year === month.year && choice.monthIndex === month.monthIndex}
+                  isLive={liveDate !== null && choice.year === Number(liveDate.slice(0, 4)) && choice.monthIndex === Number(liveDate.slice(5, 7)) - 1}
                   isAllowed={isMonthAllowed(choice)}
                   onChoose={() => { onSetMonth(choice); setView('day') }}
                 />
@@ -356,7 +369,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
       {view === 'year' && (
         <>
           <div className="mb-1 flex items-center justify-between">
-            <button type="button" aria-label="이전 10년" disabled={decadeStart <= 2000} onClick={() => setDecadeStart(start => start - 10)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+            <button type="button" aria-label="이전 10년" disabled={decadeStart <= 2020} onClick={() => setDecadeStart(start => start - 10)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-brand disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
               <ChevronDownIcon className="h-4 w-4 rotate-90" />
             </button>
             <span className="font-roboto-latin font-normal tabular-nums">{decadeStart} - {decadeStart + 9}</span>
@@ -376,8 +389,8 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                   disabled={disabled}
                   aria-pressed={year === month.year}
                   onClick={() => { setPickerYear(year); setView('month') }}
-                  className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-0 ${
-                    year === month.year ? 'bg-ui-control font-normal text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-surface' : isOutsideDecade ? 'bg-transparent text-ui-muted hover:bg-brand-surface' : 'bg-transparent text-ui-white hover:bg-brand-surface'
+                  className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 ${year === liveYear ? 'border-brand' : 'border-transparent'} ${
+                    year === month.year ? 'bg-transparent font-normal text-ui-white hover:bg-brand-surface' : disabled ? 'cursor-not-allowed bg-transparent text-ui-surface' : isOutsideDecade ? 'bg-transparent text-ui-muted hover:bg-brand-surface' : 'bg-transparent text-ui-white hover:bg-brand-surface'
                   }`}
                 >
                   {year}
