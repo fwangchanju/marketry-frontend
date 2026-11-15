@@ -27,10 +27,10 @@ export default function SearchMetadata() {
       // 검색에 등록된 주소가 아니어도 화면마다 탭 제목이 다르다(규칙은 pageTitles.ts). 규칙에 없는 주소는 사이트 기본 제목이다.
       const title = pageTitle(pathname) ?? 'MARKETRY - Design Your Market'
       document.title = title
-      document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', '코스피·코스닥 종목을 업종별 시장 지도와 그래프로 살펴보는 MARKETRY입니다.')
+      document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', '국내주식을 내 방식대로 살펴보세요. 나만의 히트맵과 등락률 그래프로 시장의 흐름을 한눈에 볼 수 있어요.')
       document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.removeAttribute('href')
       setMeta('og:title', title)
-      setMeta('og:description', '코스피·코스닥 종목을 업종별 시장 지도와 그래프로 살펴보는 MARKETRY입니다.')
+      setMeta('og:description', '국내주식을 내 방식대로 살펴보세요. 나만의 히트맵과 등락률 그래프로 시장의 흐름을 한눈에 볼 수 있어요.')
       setMeta('og:url', `${siteUrl}${pathname}`)
       return
     }
