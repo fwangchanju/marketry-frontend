@@ -10,6 +10,7 @@ import MobileNotice from './components/MobileNotice'
 import SearchMetadata from './components/SearchMetadata'
 import Spinner from './components/Spinner'
 import { marketRoute } from '@/utils/marketRoute'
+import { OVERSEAS_MARKETS, overseasRoute } from '@/utils/markets'
 import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
@@ -209,8 +210,8 @@ export default function App() {
             <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
             <Route path={SECTOR_USA} element={<UsaSectorPage />} />
             <Route path={STOCK_USA} element={<UsaStockPage />} />
-            <Route path="/summary/japan" element={<OverseasHomePage market="JAPAN" />} />
-            <Route path="/summary/usa" element={<OverseasHomePage market="USA" />} />
+            {/* 해외 시장의 서머리 — 시장 목록표(markets.ts)에서 만든다. 지도·그래프·섹터·주식은 시장별 화면이라 아래에 따로 둔다(2단계에서 공통 화면으로 합칠 예정). */}
+            {OVERSEAS_MARKETS.map(market => <Route key={market.id} path={overseasRoute('/summary', market.id)} element={<OverseasHomePage market={market.id} />} />)}
             <Route path="/map/japan" element={<JapanMapPage />} />
             <Route path="/graph/japan" element={<JapanGraphPage />} />
             <Route path="/graph/usa" element={<UsaGraphPage />} />

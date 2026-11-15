@@ -37,6 +37,7 @@ import { buildSectorParentHints } from '@/utils/sectorFilterHints'
 import { yahooSectorKo } from '@/utils/yahooSector'
 import { isProtectedSectorName } from '@/utils/protectedSector'
 import stocks from '@/data/usaStocks.json'
+import { overseasMarketInfo } from '@/utils/markets'
 
 type ClassificationField = 'sector' | 'industry' | 'subIndustry'
 type SortKey = 'code' | 'name' | 'englishName' | 'marketCap' | 'marketCapKrw' | 'sector' | 'customSector' | 'customIndustry' | 'customSubIndustry'
@@ -216,7 +217,7 @@ export default function UsaStockPage() {
       <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold">
-            <ToolbarModeText page="STOCK" label="S&P 500" showChevron menu={customMenu('stock', 'USA', true)} />
+            <ToolbarModeText page="STOCK" label={overseasMarketInfo('USA').badgeLabel} showChevron menu={customMenu('stock', 'USA', true)} />
             <SearchBar inline query={search} onChange={setSearch} placeholder="검색" ariaLabel="미국 종목 검색" maxLength={STOCK_SEARCH_MAX_LENGTH} />
             <div className="min-w-0 flex-1" />
             <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
