@@ -1399,3 +1399,5 @@ Admin 설정창의 버튼 이름을 **업데이트에서 커밋으로 바꿨다*
 2026-11-15: 프로필 화면의 주소를 `/profile`에서 `/account/profile`로 바꿨다(사용자 결정). 배지 위 글자 ACCOUNT가 앞 조각, 큰 글자 PROFILE이 뒤 조각이라는 주소 규칙(`/화면/항목`)에 맞춘 것이다. 옛 `/profile`과 `/account`는 `/account/profile`로 이동시킨다. 서버 API 주소 `/api/profile/**`와 로그인 뒤 돌아오는 주소 확인(백엔드 `safeReturnTo`는 허용 목록 없이 `/`로 시작하는 경로만 거른다)은 그대로다.
 
 2026-11-15: 옛 주소 이동은 구글·네이버에 등록돼 있던 주소에만 두기로 했다(사용자 결정, 회원이 없어 나머지 옛 주소는 살릴 이유가 없고 이동이 자꾸 늘어난다). 사이트맵에 있던 `/home`, `/map/kospi`, `/map/kosdaq`, `/graph/kospi`, `/graph/kosdaq`의 이동은 남기고(`/map/korea`·`/graph/korea`·`/info/guide`는 주소가 그대로), 새로 만들었던 `/summary`·`/home/japan`·`/home/usa`·`/profile`·`/account`의 이동은 없앴다. 없는 주소는 맨 끝 `*` 규칙으로 `/summary/korea`에 간다. 앞으로 주소를 바꿀 때도 같은 기준을 따른다.
+
+2026-11-15: 글 페이지(INFO) 배지에 아래 꺽쇠와 목록을 붙였다(사용자 요청). 목록은 화면 아래 줄 안내 링크와 같은 순서의 TERMS·PRIVACY·SOURCE·GUIDE·CONTACT이고 고르면 해당 `/info/...` 화면으로 간다(`infoMenu`). 계정 화면(ProfilePage의 ACCOUNT·PROFILE 배지)은 글 페이지가 아니라 별도 묶음이라 목록에 넣지 않았다.

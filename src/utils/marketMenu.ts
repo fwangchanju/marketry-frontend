@@ -28,6 +28,19 @@ export function customMenu(kind: 'sector' | 'stock', current: 'KOREA' | 'JAPAN' 
   ]
 }
 
+// 글 페이지(INFO)의 목록. 화면 아래 줄의 안내 링크(이용약관·개인정보처리방침·데이터·가이드·문의)와 같은 순서이고 글자는 각 화면의 배지 제목이다.
+export const INFO_MENU_ITEMS = [
+  { label: 'TERMS', to: '/info/terms' },
+  { label: 'PRIVACY', to: '/info/privacy' },
+  { label: 'SOURCE', to: '/info/source' },
+  { label: 'GUIDE', to: '/info/guide' },
+  { label: 'CONTACT', to: '/info/contact' },
+] as const
+
+export function infoMenu(current: string) {
+  return INFO_MENU_ITEMS.map(item => ({ ...item, active: item.label === current }))
+}
+
 // 어드민 화면의 목록. 상단 메뉴의 Admin 항목과 같은 다섯 개다.
 export function adminMenu(current: 'MEMBER' | 'STATS' | 'MESSAGE' | 'DEFAULT' | 'BANNER') {
   const items: { label: 'MEMBER' | 'STATS' | 'MESSAGE' | 'DEFAULT' | 'BANNER'; to: string }[] = [
