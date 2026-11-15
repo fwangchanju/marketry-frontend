@@ -50,6 +50,7 @@ import { USA_MAP_FIXED } from '@/utils/usaMapSettings'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector } from '@/utils/sectorAverage'
 import japanStocks from '@/data/japanStocks.json'
+import { overseasMarketInfo, type OverseasMarket } from '@/utils/markets'
 
 // 국내 홈과 같은 키를 쓴다 — 한 번 바꾼 좌우 순서가 세 홈에 똑같이 적용된다.
 const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
@@ -94,7 +95,7 @@ const SECTION_ORDER: SettingsPanelSectionId[] = ['colors']
 
 // 홈의 일본·미국 구성. 업종 지도와 그룹 등락률을 지도 화면과 같은 트리·계산으로 만든다(최신 시세 기준).
 // 날짜 달력·시계 새로고침·설정 패널은 지도 화면과 같은 부품을 쓴다. 설정 패널은 색상 탭만 있다(편집할 설정이 없고 지도 화면과 같은 고정값을 보여 준다).
-export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }) {
+export default function OverseasHomePage({ market }: { market: OverseasMarket }) {
   const isJapan = market === 'JAPAN'
   const navigate = useNavigate()
   // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(국내 홈과 같은 동작).
@@ -149,7 +150,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
     return { items, chart }
   }, [tree])
 
-  const label = isJapan ? 'NIKKEI 225' : 'S&P 500'
+  const label = overseasMarketInfo(market).badgeLabel
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 홈은 특별 회원·관리자만 열 수 있다.
   const menu = marketMenu('/summary', market, true)
   const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || quotes.isLoading || periodQuotes.isLoading

@@ -42,6 +42,7 @@ import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/sc
 import { NO_TAXONOMY_CHANGE, USA_MAP_FIXED, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
 import { USA_GRAPH_DRAFT_KEY_MAP } from '@/utils/usaGraphSettings'
 import type { HeatmapSectorNode } from '@/types/api'
+import { overseasMarketInfo } from '@/utils/markets'
 
 const DEPTH_NAMES = ['대분류', '중분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
@@ -49,7 +50,7 @@ const NO_EXCLUDED_TIERS = new Set<string>()
 const SECTION_ORDER: SettingsPanelSectionId[] = ['graph']
 const NO_TOGGLE = () => {}
 const INDEX_LOOKBACK_DAYS = 14
-const INDEX_LABEL = 'S&P 500'
+const INDEX_LABEL = overseasMarketInfo('USA').badgeLabel
 const { colorScale, strongIndustryColor } = USA_MAP_FIXED
 
 // 미국 S&P500 그래프. 일본 그래프와 같은 구조이고 하루 한 번 저장된 종가로 그린다. 기간 보기·"N분 전 대비"·시계·세션 칩은 없다.
@@ -128,7 +129,7 @@ export default function UsaGraphPage() {
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="GRAPH" label="S&P 500" showChevron menu={marketMenu('/graph', 'USA', true)} />
+              <ToolbarModeText page="GRAPH" label={overseasMarketInfo('USA').badgeLabel} showChevron menu={marketMenu('/graph', 'USA', true)} />
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
               {isPastSnapshot && (
                 <ToolbarChip bare>

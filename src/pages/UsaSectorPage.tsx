@@ -22,6 +22,7 @@ import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import type { SectorItem } from '@/types/api'
 import { NO_TAXONOMY_CHANGE, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
+import { overseasMarketInfo } from '@/utils/markets'
 
 type Category = { id: number; parentId: number | null; name: string }
 type Classification = { sector: string | null; industry: string | null; subIndustry: string | null }
@@ -90,7 +91,7 @@ export default function UsaSectorPage() {
     <NavBar /><NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setShareOpen(true)} isScreenshotOpen={shareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setSettingsOpen(open => !open)} isSettingsOpen={settingsOpen} />} />
     <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
       <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold"><ToolbarModeText page="SECTOR" label="S&P 500" showChevron menu={customMenu('sector', 'USA', true)} /><div ref={setToolbar} className="min-w-0 flex-1" /><div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div></div>
+        <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold"><ToolbarModeText page="SECTOR" label={overseasMarketInfo('USA').badgeLabel} showChevron menu={customMenu('sector', 'USA', true)} /><div ref={setToolbar} className="min-w-0 flex-1" /><div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div></div>
         {categories.isLoading || classifications.isLoading || quotes.isLoading || stocksQuery.isLoading ? <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]"><Spinner showElapsed /></div> : categories.isError || classifications.isError || quotes.isError || stocksQuery.isError ? <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void categories.refetch(); void classifications.refetch(); void quotes.refetch(); void stocksQuery.refetch() }} /></div> : <AdminSectorTable sectors={sectors} sectorStats={stats} toolbarContainer={toolbar} settingsActionsTarget={settingsActions} overseasActions={{ create, rename, reparent, remove }} levels={3} currency="달러" readOnly={!isAdminSession(session)} />}
         <DisclaimerFooter />
       </main>

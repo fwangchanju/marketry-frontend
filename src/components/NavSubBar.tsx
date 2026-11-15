@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
+import { OVERSEAS_SEGMENT_PATTERN, overseasMarketBySegment } from '@/utils/markets'
 import { marketRoute } from '@/utils/marketRoute'
 import { SECTOR_KOREA, STOCK_KOREA } from '@/utils/customRoutes'
 import { useSession } from '@/hooks/useSession'
@@ -100,8 +101,9 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
   // 지금 보는 시장이 일본·미국이면 페이지 이동 메뉴도 그 시장으로 간다(일본 지도 → 그래프는 /graph/japan).
-  const marketSegment = /\/(kospi|kosdaq|japan|usa)(\/|$)/.exec(location.pathname)?.[1] ?? null
-  const overseasSegment = marketSegment === 'japan' || marketSegment === 'usa' ? marketSegment : null
+  const marketSegment = new RegExp(`/(kospi|kosdaq|${OVERSEAS_SEGMENT_PATTERN})(/|$)`).exec(location.pathname)?.[1] ?? null
+  const overseasMarket = overseasMarketBySegment(marketSegment)
+  const overseasSegment = overseasMarket?.routeSegment ?? null
   // 코스피·코스닥은 korea 아래에 있다(/map/korea/kospi).
   const mapSegment = marketSegment === 'kospi' || marketSegment === 'kosdaq' ? `korea/${marketSegment}` : marketSegment
   const customLinks = overseasSegment
