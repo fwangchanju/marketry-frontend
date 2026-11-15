@@ -253,7 +253,7 @@ export default function ProfilePage() {
         }
       />
       <div className="flex min-h-0 flex-1">
-        <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
+        <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           <Toolbar>
             <ToolbarModeText page="ACCOUNT" label="PROFILE" />

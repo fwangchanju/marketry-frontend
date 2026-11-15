@@ -51,7 +51,7 @@ const DEFAULT_SECTOR_SORT: SectorSort = { key: 'marketValue', direction: 'desc' 
 // 표 머리글(60px)을 반으로 나눈 한 줄의 높이(30px) — 윗줄은 분류 이름·필터, 아랫줄은 업종·시가총액 합·종목 수 정렬이다.
 const HEADER_HALF_PX = STOCK_HEADER_ROW_PX / 2
 // 한 열 안의 세 칸(업종·시가총액 합·종목 수) 폭 비율 — 머리글 아랫줄과 본문이 같이 쓴다.
-const SECTOR_COLUMN_WIDTHS = ['50%', '25%', '25%'] as const
+const SECTOR_COLUMN_WIDTHS = ['40%', '35%', '25%'] as const
 // 한 열(대·중·소분류)의 폭이 이보다 좁으면 시가총액 합·종목 수 칸을 숨기고 업종 칸이 열 전체를 쓴다(2026-11-13 사용자 지시).
 // 두 칸이 보이면 업종명이 열 폭의 절반만 받아 말줄임표가 생기기 때문이다. 업종명 칸(절반)이 가장 긴 이름(실측 약 133px)보다 넉넉한 150px 이상이면 되는 폭이다.
 const SECTOR_COMPACT_BELOW_COLUMN_PX = 300
