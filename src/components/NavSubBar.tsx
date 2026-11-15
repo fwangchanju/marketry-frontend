@@ -180,7 +180,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
 
   return (
     <div className={vertical
-      ? 'fixed bottom-0 left-0 top-[90px] z-30 flex w-20 flex-col items-stretch bg-ui-panel px-2 pt-[43px] text-xs'
+      ? 'fixed bottom-0 left-0 top-[90px] z-30 flex w-20 flex-col items-stretch bg-ui-background px-2 pt-[43px] text-xs'
       : 'relative z-30 mb-[15px] flex h-[30px] after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs'}>
       {/* 이 줄의 하단선은 메인·설정 행의 세로 기준이다. 아이콘 28px과 같은 높이로 두고, 하단선에서 설정창까지는 페이지 쪽의 4px만 남긴다. */}
       <div data-nav-menus className={vertical ? 'flex h-full flex-col items-stretch gap-1' : 'flex h-7 items-center gap-3'}>
