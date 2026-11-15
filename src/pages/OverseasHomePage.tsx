@@ -8,6 +8,11 @@ import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import Toolbar from '@/components/Toolbar'
+import ChangeRateBar from '@/components/ChangeRateBar'
+import TaxonomyBadge from '@/components/TaxonomyBadge'
+import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
+import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
+import { resolveLegendSwatches } from '@/utils/heatmapColorScale'
 import { useJapanQuotes } from '@/hooks/useJapanQuotes'
 import { useUsaQuotes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import { buildRankChart } from '@/utils/rankChart'
@@ -33,6 +38,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
   const usaQuotes = useUsaQuotes(null, !isJapan)
   const quotes = isJapan ? japanQuotes : usaQuotes
   const colorScale = isJapan ? JAPAN_MAP_FIXED.colorScale : USA_MAP_FIXED.colorScale
+  const strongIndustryColor = isJapan ? JAPAN_MAP_FIXED.strongIndustryColor : USA_MAP_FIXED.strongIndustryColor
 
   const { tree, snapshotTime } = useMemo(() => {
     const snap = quotes.data?.snapshotTime ?? null
@@ -77,22 +83,36 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
           <ToolbarModeText page="HOME" label={label} showChevron menu={menu} />
           <span className="px-2 text-ui-white">{toSnapshotDateLabel(snapshotTime)}</span>
         </div>
+        <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>
+          <TaxonomyBadge taxonomy="MARKETRY" strongIndustryColor={strongIndustryColor} />
+        </div>
       </Toolbar>
-      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-[minmax(0,1fr)] gap-[4px] p-[4px]">
-        <section className="flex min-h-0 flex-col rounded-md border border-ui-border bg-ui-panel p-2">
-          <h2 className="mb-2 text-sm font-bold text-ui-white">업종 지도</h2>
-          <div className="relative flex min-h-0 flex-1 flex-col">
-            {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={() => {}} /> : <p className="text-ui-muted">{isLoading ? '불러오는 중' : '데이터가 없습니다.'}</p>}
-          </div>
-        </section>
-        <section className="flex min-h-0 flex-col rounded-md border border-ui-border bg-ui-panel p-2">
-          <h2 className="mb-2 text-sm font-bold text-ui-white">그룹 등락률 (%)</h2>
-          <div className="relative min-h-0 flex-1">
-            {hasData ? <RankBars chart={overview.chart} highlightColor={isJapan ? JAPAN_MAP_FIXED.strongIndustryColor : USA_MAP_FIXED.strongIndustryColor} colorScale={colorScale} decimalPlaces={1} /> : null}
-          </div>
-        </section>
+      <div className="flex min-h-0 flex-1">
+        {[
+          { title: '업종 지도', node: (
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={() => {}} /> : <p className="text-ui-muted">{isLoading ? '불러오는 중' : '데이터가 없습니다.'}</p>}
+            </div>
+          ) },
+          { title: '그룹 등락률 (%)', node: (
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              {hasData ? <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} decimalPlaces={1} /> : null}
+            </div>
+          ) },
+        ].map((frame, index) => (
+          <section key={frame.title} className="relative flex h-full min-w-[320px] flex-1 basis-0 flex-col bg-ui-background">
+            <div className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : 'pl-1 pr-0'}`}>
+              <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] py-[7px]">
+                <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
+                  <span className={FRAME_BADGE_CLASS}>{frame.title}</span>
+                </div>
+                <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{frame.node}</div>
+              </div>
+            </div>
+          </section>
+        ))}
       </div>
-      <DisclaimerFooter />
+      <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
     </div>
   )
 }
