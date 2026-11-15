@@ -107,6 +107,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
     : [SECTOR_LINK, STOCK_LINK]
   const baseLinks = BASE_LINKS.map(link => {
     if (!marketSegment) return link
+    if (link.label === 'Home') return overseasSegment ? { ...link, to: `/home/${overseasSegment}` } : link
     if (link.label === 'Map') return { ...link, to: `/map/${marketSegment}` }
     if (link.label === 'Graph') return { ...link, to: `/graph/${marketSegment}` }
     return link

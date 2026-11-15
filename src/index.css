@@ -465,6 +465,19 @@ html, body, #root {
   transform: translateY(-0.25px);
 }
 
+/* 툴바 배지·칩 안의 아이콘과 글자는 세로 가운데로 둔다. 배지 바깥 상자의 정렬과 높이는 건드리지 않고,
+   안쪽 칸이 자기 글자·아이콘만 가운데로 둔다(분류 배지의 모드 칸처럼 상자 높이를 채우는 칸은 그대로 채운다). */
+.main-toolbar .toolbar-badge > span,
+.main-toolbar .toolbar-badge-control > span {
+  display: flex;
+  align-items: center;
+}
+.main-toolbar .toolbar-badge svg,
+.main-toolbar .toolbar-badge-control svg {
+  display: block;
+  flex-shrink: 0;
+}
+
 /* 분할 캡처에서는 긴 닉네임도 축소·말줄임 없이 실제 너비로 배치한다. */
 .home-capture-toolbar > div {
   flex: none;
