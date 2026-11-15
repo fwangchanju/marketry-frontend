@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useQueries } from '@tanstack/react-query'
+import { getSnapshotDays } from '@/api/heatmap'
+import { heatmapKeys } from '@/hooks/queryKeys'
 import { CalendarIcon, ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
@@ -13,6 +16,9 @@ import type { MarketQuery } from '@/types/api'
 
 type CalendarMarket = MarketQuery | 'JAPAN' | 'USA'
 
+// 달력에서 고를 수 있는 가장 이른 달. 서버 데이터는 2019년 12월(거래일 2일)부터 있지만 2020년 1월부터만 쓴다.
+const CALENDAR_FIRST_MONTH = '2020-01'
+
 // 해외 시장(일본·미국)은 저장된 스냅샷 날짜 목록으로 달력을 채운다. 국내처럼 월별 조회나 휴장 일정 조회를 하지 않는다.
 const isOverseasMarket = (market: CalendarMarket) => market === 'JAPAN' || market === 'USA'
 
@@ -22,6 +28,38 @@ function useOverseasSnapshotTimes(market: CalendarMarket, enabled = true) {
   const usa = useUsaSnapshotTimes(market === 'USA' && enabled)
   return market === 'USA' ? usa : japan
 }
+
+// 연 단위 이동 목적지 — 1년 전 같은 달이 비어 있으면 그 앞 12개월 안에서 가장 이른 데이터 달로 간다(데이터는 시작일부터 이어진다고 본다).
+// 반환: undefined = 목록을 받는 중, null = 그 안에 데이터가 없음(이동 불가), 그 밖에는 yyyy-MM 달.
+function useYearStepTargetMonth(market: CalendarMarket, month: ShownMonth, enabled: boolean): string | null | undefined {
+  const windowMonths = Array.from({ length: 12 }, (_, i) => toMonthKey(addMonths(month, i - 12)))
+  const isBeforeFirst = (key: string) => key < CALENDAR_FIRST_MONTH
+  const korea = useQueries({
+    queries: windowMonths.map(key => ({
+      queryKey: heatmapKeys.snapshotDays(isOverseasMarket(market) ? 'KOSPI' : (market as MarketQuery), key),
+      queryFn: () => getSnapshotDays(isOverseasMarket(market) ? 'KOSPI' : (market as MarketQuery), key),
+      enabled: enabled && !isOverseasMarket(market),
+      retry: 1,
+    })),
+  })
+  const overseas = useOverseasSnapshotTimes(market, enabled && isOverseasMarket(market))
+  if (!enabled) return undefined
+  if (isOverseasMarket(market)) {
+    if (overseas.data === undefined) return undefined
+    const earliest = overseas.data.map(time => time.slice(0, 7)).filter(key => windowMonths.includes(key) && !isBeforeFirst(key)).sort()[0]
+    return earliest ?? null
+  }
+  // 앞에서부터 보며, 데이터가 있는 첫 달을 고른다. 그 전 달 목록을 아직 받는 중이면 기다린다.
+  for (let i = 0; i < korea.length; i++) {
+    const result = korea[i]
+    if (result.data === undefined) return undefined
+    if (result.data.length > 0 && !isBeforeFirst(windowMonths[i])) return windowMonths[i]
+  }
+  return null
+}
+
+// 두 달(yyyy-MM) 사이의 달 수 차이(to - from).
+const monthDiffOf = (from: string, to: string) => (Number(to.slice(0, 4)) * 12 + Number(to.slice(5, 7))) - (Number(from.slice(0, 4)) * 12 + Number(from.slice(5, 7)))
 
 function useCalendarDays(market: CalendarMarket, month: string, options?: { enabled?: boolean; retry?: number | false }) {
   const korea = useSnapshotDays(isOverseasMarket(market) ? 'KOSPI' : (market as MarketQuery), month, { ...options, enabled: !isOverseasMarket(market) && (options?.enabled ?? true) })
@@ -153,10 +191,10 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
   const previousMonthKey = toMonthKey(addMonths(month, -1))
   const { data: previousMonthDays, isSuccess: isPreviousMonthLoaded } = useCalendarDays(market, previousMonthKey, { retry: 1 })
   // 이전 달 목록을 받았는데 비어 있으면 그 달로는 넘어가지 않는다(받기 전이나 오류일 때는 막지 않는다).
-  const isPreviousMonthEmpty = isPreviousMonthLoaded && previousMonthDays?.length === 0
-  // 연 단위 이동도 같은 규칙이다 — 1년 전 같은 달 목록을 받았는데 비어 있으면 넘어가지 않는다.
-  const { data: previousYearDays, isSuccess: isPreviousYearLoaded } = useCalendarDays(market, toMonthKey(addMonths(month, -12)), { enabled: showPrevButton, retry: 1 })
-  const isPreviousYearEmpty = isPreviousYearLoaded && previousYearDays?.length === 0
+  const isPreviousMonthEmpty = previousMonthKey < CALENDAR_FIRST_MONTH || (isPreviousMonthLoaded && previousMonthDays?.length === 0)
+  // 연 단위 이동 — 1년 전 같은 달에 데이터가 없으면 그 앞 12개월 안에서 가장 이른 데이터 달로 간다. 그 안에 데이터가 없으면 이동하지 않는다.
+  const yearStepTarget = useYearStepTargetMonth(market, month, showPrevButton)
+  const isPreviousYearEmpty = yearStepTarget === null
   const firstDataDate = [...(previousMonthDays ?? []), ...(days ?? [])].map(day => day.date).sort()[0] ?? null
   const hasPreviousDay = (date: string) => firstDataDate !== null && date > firstDataDate
 
@@ -202,7 +240,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
           <div className="mb-1 flex items-center justify-between">
             {showPrevButton ? (
               <span className="flex items-center">
-                <button type="button" aria-label="이전 해" disabled={isPreviousYearEmpty} onClick={() => onMoveMonth(-12)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
+                <button type="button" aria-label="이전 해" disabled={isPreviousYearEmpty} onClick={() => onMoveMonth(yearStepTarget ? monthDiffOf(monthKey, yearStepTarget) : -12)} className="flex h-7 w-7 items-center justify-center border-0 bg-transparent text-ui-text hover:text-ui-white disabled:cursor-not-allowed disabled:text-ui-muted disabled:hover:text-ui-muted">
                   <ChevronDownIcon className="h-4 w-4 rotate-90" />
                   <ChevronDownIcon className="-ml-2.5 h-4 w-4 rotate-90" />
                 </button>
