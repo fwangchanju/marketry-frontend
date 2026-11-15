@@ -15,7 +15,7 @@ const FIXED_TITLES: Record<string, string> = {
   '/info/contact': '문의',
   '/account/profile': '프로필',
   '/admin/member': '회원관리',
-  '/admin/stats': '통계',
+  '/admin/stats': '방문자 통계',
   '/admin/message': '메시지',
   '/admin/default': '설정 기본값',
   '/admin/banner': '배너',
