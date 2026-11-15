@@ -4,7 +4,7 @@ import { marketRoute } from '@/utils/marketRoute'
 
 // 시장 배지를 누르면 열리는 목록. 한국 시장(KOREA·KOSPI·KOSDAQ)을 기본으로 하고,
 // 특별 회원·관리자(includeOverseas)에게만 일본·미국을 더한다. 상단 메뉴의 해외 항목과 같은 조건이다.
-export function marketMenu(basePath: '/map' | '/graph', current: MarketQuery | 'JAPAN' | 'USA', includeOverseas = false) {
+export function marketMenu(basePath: '/map' | '/graph' | '/summary', current: MarketQuery | 'JAPAN' | 'USA', includeOverseas = false) {
   // KOSPI·KOSDAQ은 KOREA 아래 단계라 들여쓰기로 보여 준다.
   const korea = MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute(basePath, option.market), active: option.market === current, indent: option.market !== 'ALL_STOCK' }))
   if (!includeOverseas) return korea
@@ -26,6 +26,19 @@ export function customMenu(kind: 'sector' | 'stock', current: 'KOREA' | 'JAPAN' 
     { label: 'JAPAN', to: `/${kind}/japan`, active: current === 'JAPAN', special: true },
     { label: 'USA', to: `/${kind}/usa`, active: current === 'USA', special: true },
   ]
+}
+
+// 글 페이지(INFO)의 목록. 화면 아래 줄의 안내 링크(이용약관·개인정보처리방침·데이터·가이드·문의)와 같은 순서이고 글자는 각 화면의 배지 제목이다.
+export const INFO_MENU_ITEMS = [
+  { label: 'TERMS', to: '/info/terms' },
+  { label: 'PRIVACY', to: '/info/privacy' },
+  { label: 'SOURCE', to: '/info/source' },
+  { label: 'GUIDE', to: '/info/guide' },
+  { label: 'CONTACT', to: '/info/contact' },
+] as const
+
+export function infoMenu(current: string) {
+  return INFO_MENU_ITEMS.map(item => ({ ...item, active: item.label === current }))
 }
 
 // 어드민 화면의 목록. 상단 메뉴의 Admin 항목과 같은 다섯 개다.

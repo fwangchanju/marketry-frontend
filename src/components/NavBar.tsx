@@ -140,10 +140,10 @@ export default function NavBar({ hideAccount = false, staticMode = false, banner
                 {/* 마켓 메뉴와 같은 상태색 규칙: 기본은 팝업 바탕, 호버는 옅은 회색, 현재 페이지는 청록 포인트다. */}
                 <div className="flex gap-[6px] px-3 pb-1 pt-2.5">
                   <Link
-                    to="/profile"
+                    to="/account/profile"
                     onClick={() => setIsProfileMenuOpen(false)}
-                    aria-current={pathname === '/profile' ? 'page' : undefined}
-                    className={`flex h-7 flex-1 items-center justify-center rounded-[5px] border text-[13px] font-medium text-ui-white transition-colors ${pathname === '/profile' ? 'border-transparent bg-[var(--brand-surface)]' : 'border-ui-border bg-transparent hover:bg-ui-white/10 focus:bg-ui-white/10'}`}
+                    aria-current={pathname === '/account/profile' ? 'page' : undefined}
+                    className={`flex h-7 flex-1 items-center justify-center rounded-[5px] border text-[13px] font-medium text-ui-white transition-colors ${pathname === '/account/profile' ? 'border-transparent bg-[var(--brand-surface)]' : 'border-ui-border bg-transparent hover:bg-ui-white/10 focus:bg-ui-white/10'}`}
                   >
                     프로필
                   </Link>

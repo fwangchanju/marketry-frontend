@@ -50,6 +50,8 @@ import { collectAtDepth } from '@/utils/sectorDepth'
 import { usePreviousTradingDay } from '@/hooks/useHeatmap'
 import { trendMonths } from '@/utils/trendDates'
 import { marketRoute } from '@/utils/marketRoute'
+import { marketMenu } from '@/utils/marketMenu'
+import type { MarketQuery } from '@/types/api'
 
 // 홈 시장 요약 배치
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
@@ -111,17 +113,14 @@ function CaptureFrame({ title, className = '', children, isExchange, mineColor }
 }
 
 export default function MarketSummaryPage() {
-  // 시장 배지 드롭다운 — 홈의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI225·S&P500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
+  // 시장 배지 드롭다운 — 홈의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI 225·S&P 500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
   const location = useLocation()
   const { data: homeSession } = useSession()
   const canSeeOverseasHome = isSpecialSession(homeSession)
-  const homeMarket = location.pathname.startsWith('/summary/japan') ? 'JAPAN' : location.pathname.startsWith('/summary/usa') ? 'USA' : 'KOREA'
-  const homeMarketLabel = homeMarket === 'JAPAN' ? 'NIKKEI225' : homeMarket === 'USA' ? 'S&P500' : 'K-STOCK'
-  const homeMenu = [
-    { label: 'KOREA', to: '/summary/korea', active: homeMarket === 'KOREA' },
-    { label: 'JAPAN', to: '/summary/japan', active: homeMarket === 'JAPAN', special: true },
-    { label: 'USA', to: '/summary/usa', active: homeMarket === 'USA', special: true },
-  ].filter(item => canSeeOverseasHome || item.label === 'KOREA')
+  const homeMarket: MarketQuery = location.pathname.startsWith('/summary/korea/kospi') ? 'KOSPI' : location.pathname.startsWith('/summary/korea/kosdaq') ? 'KOSDAQ' : 'ALL_STOCK'
+  const homeMarketLabel = homeMarket === 'KOSPI' ? 'KOSPI' : homeMarket === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK'
+  // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, 특별 회원·관리자에게만 JAPAN·USA).
+  const homeMenu = marketMenu('/summary', homeMarket, canSeeOverseasHome)
   const navigate = useNavigate()
   // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
@@ -226,20 +225,22 @@ export default function MarketSummaryPage() {
     }
     const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
     // 그룹 페이지처럼 코스피·코스닥 지수 등락률을 강조 색 참조 막대로 값 순서 자리에 끼운다.
-    for (const [market, label] of [['KOSPI', '코스피'], ['KOSDAQ', '코스닥']] as const) {
+    for (const [indexMarket, label] of [['KOSPI', '코스피'], ['KOSDAQ', '코스닥']] as const) {
+      // 코스피·코스닥 서머리에는 그 시장의 지수 막대만 넣는다(그래프 화면과 같다). 전체 서머리에는 둘 다 넣는다.
+      if (market !== 'ALL_STOCK' && market !== indexMarket) continue
       const historicalIndex = pinnedSnapshotTime !== undefined
-        ? (historicalIndexData ?? []).filter(candidate => candidate.market === market).sort((a, b) => a.date.localeCompare(b.date)).at(-1)
+        ? (historicalIndexData ?? []).filter(candidate => candidate.market === indexMarket).sort((a, b) => a.date.localeCompare(b.date)).at(-1)
         : undefined
       const changeRate = pinnedSnapshotTime !== undefined
         ? historicalIndex?.overview.changeRate
         : isLatestDailyView
-          ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === market)?.changeRate
+          ? marketSummary?.marketOverviews.items.find(candidate => candidate.market === indexMarket)?.changeRate
           : undefined
-      if (changeRate !== undefined) entries.push({ key: `market-index:${market}`, sectorName: label, value: changeRate, isReference: true })
+      if (changeRate !== undefined) entries.push({ key: `market-index:${indexMarket}`, sectorName: label, value: changeRate, isReference: true })
     }
     const chart = buildRankChart(entries)
     return { items, chart }
-  }, [rootNodes, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, historicalIndexData, pinnedSnapshotTime, isLatestDailyView])
+  }, [rootNodes, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, historicalIndexData, pinnedSnapshotTime, isLatestDailyView, market])
   // 설정창 위쪽 "nn/nn종목" — 그룹 페이지와 같은 기준이다. 분모는 지금 시장의 모든 종목, 분자는 제외한 업종(하위 업종까지)·시가총액 구간을 뺀 종목이다.
   const stockCountLabel = useMemo(() => {
     const nodes = rootNodes
@@ -360,7 +361,7 @@ export default function MarketSummaryPage() {
     .filter(frame => frame !== undefined)
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-ui-background">
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
       <NavBar />
       <NavSubBar
         actions={

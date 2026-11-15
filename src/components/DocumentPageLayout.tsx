@@ -14,10 +14,13 @@ import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
+import { INFO_MENU_ITEMS, infoMenu } from '@/utils/marketMenu'
 
 // 공개 문서도 다른 화면과 같은 헤더·계정·메뉴·툴바·하단 정보줄을 쓴다.
 export default function DocumentPageLayout({ title, heading, children, panelIcon = 'document', panelDescription = 'MARKETRY 서비스 안내 문서입니다.', mobileTitleTo, mobileTitleLabel, mobileTitleClick }: { title: string; heading: ReactNode; children: ReactNode; panelIcon?: SettingsSectionIconName; panelDescription?: string; mobileTitleTo?: string; mobileTitleLabel?: string; mobileTitleClick?: () => void }) {
   const isNarrow = useIsNarrowScreen()
+  // 가이드·약관 등 글 페이지는 배지에 꺽쇠를 두고 누르면 다른 글 페이지로 가는 목록을 연다.
+  const isInfoTitle = INFO_MENU_ITEMS.some(item => item.label === title)
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
@@ -63,7 +66,7 @@ export default function DocumentPageLayout({ title, heading, children, panelIcon
         <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           <Toolbar>
-            <ToolbarModeText page="INFO" label={title} />
+            <ToolbarModeText page="INFO" label={title} showChevron={isInfoTitle} menu={isInfoTitle ? infoMenu(title) : undefined} />
           </Toolbar>
           {/* 공통 바깥 프레임 안에서 InfoDocument의 제목·구획·정보 행 양식을 사용한다. */}
           <PageMainFrame

@@ -200,7 +200,7 @@ export default function ProfilePage() {
   const needsLogin = !isLoading && !isError && session?.authenticated === false
   useEffect(() => {
     if (!needsLogin) return
-    void requireLogin('/profile').then(dismissed => { if (dismissed) leaveToEntryPage() })
+    void requireLogin('/account/profile').then(dismissed => { if (dismissed) leaveToEntryPage() })
   }, [needsLogin, requireLogin, leaveToEntryPage])
 
   const handleLogout = async () => {

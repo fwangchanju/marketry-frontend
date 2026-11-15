@@ -4,6 +4,7 @@ import client from '@/api/client'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
+import { marketMenu } from '@/utils/marketMenu'
 import { useNavigate } from 'react-router-dom'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
@@ -148,12 +149,9 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
     return { items, chart }
   }, [tree])
 
-  const label = isJapan ? 'NIKKEI225' : 'S&P500'
-  const menu = [
-    { label: 'KOREA', to: '/summary/korea', active: false },
-    { label: 'JAPAN', to: '/summary/japan', active: isJapan, special: true },
-    { label: 'USA', to: '/summary/usa', active: !isJapan, special: true },
-  ]
+  const label = isJapan ? 'NIKKEI 225' : 'S&P 500'
+  // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 홈은 특별 회원·관리자만 열 수 있다.
+  const menu = marketMenu('/summary', market, true)
   const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || quotes.isLoading || periodQuotes.isLoading
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveQuotes.data?.snapshotTime != null && snapshotTime !== liveQuotes.data.snapshotTime)
   const nameOf = (code: string) => (isJapan ? japanNames.data?.[code] : usaNames.data?.[code]) ?? code
@@ -252,7 +250,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
   }
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
   return (
-    <div className="flex h-screen min-h-0 flex-col bg-ui-background">
+    <div className="flex h-screen min-h-0 select-none flex-col bg-ui-background">
       <NavBar />
       <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
       <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
