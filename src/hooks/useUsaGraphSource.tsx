@@ -4,7 +4,7 @@ import client from '@/api/client'
 import UsaDatePicker from '@/components/UsaDatePicker'
 import UsaSessionChip from '@/components/UsaSessionChip'
 import type { RankColumnItem } from '@/components/RankColumns'
-import { SettingsAverageModeSection, SettingsGroupDepthSection } from '@/components/SettingsPanel'
+import { SettingsAverageModeSection, SettingsBeforeMinutesSection, SettingsGroupDepthSection } from '@/components/SettingsPanel'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaGraphPreferences } from '@/hooks/useUsaGraphPreferences'
@@ -25,6 +25,8 @@ const NO_EXCLUDED_SECTORS = new Set<number>()
 const NO_EXCLUDED_TIERS = new Set<string>()
 const ignoreToggle = () => {}
 const INDEX_LOOKBACK_DAYS = 14
+// 잠긴 "비교 시점" 슬라이더가 가리키는 칸(일본 그래프의 기본값과 같다).
+const USA_BEFORE_MINUTES_PLACEHOLDER = 15
 
 // 미국 S&P500 그래프의 데이터·설정 — 공통 그래프 화면(OverseasGraphView)이 받는 모양으로 돌려준다.
 // 미국은 하루 한 번 저장된 종가로 그리므로 "N분 전 대비"(비교 시점)가 없고 평균 방식 설정은 고정이다.
@@ -102,6 +104,8 @@ export function useUsaGraphSource(): OverseasGraphSource {
       <>
         <SettingsGroupDepthSection depth={preferences.groupDepth} onChange={groupDepth => update({ groupDepth })} selectableDepth={2} />
         <SettingsAverageModeSection avgChangeRateUseSimple={preferences.avgChangeRateUseSimple} onChange={avgChangeRateUseSimple => update({ avgChangeRateUseSimple })} enabled onToggle={ignoreToggle} toggleDisabled toggleDisabledHint={<>종가만 저장되는 시장이라<br />N분 전 대비로 바꿀 수 없습니다.</>} />
+        {/* 일본 그래프와 같은 "비교 시점" 항목이지만, 미국은 하루 한 번 저장된 종가만 있어 쓸 수 없다 — 등락률 색상 고정 항목처럼 잠가 둔다. */}
+        <SettingsBeforeMinutesSection beforeMinutes={USA_BEFORE_MINUTES_PLACEHOLDER} onChange={ignoreToggle} enabled={false} onToggle={ignoreToggle} lockedReason={<>종가만 저장되는 시장이라<br />N분 전 대비를 사용할 수 없습니다.</>} />
       </>
     ),
   }
