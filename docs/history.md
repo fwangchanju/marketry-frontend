@@ -1436,3 +1436,5 @@ Admin 설정창의 버튼 이름을 **업데이트에서 커밋으로 바꿨다*
 
 2026-11-16: 파비콘과 홈 화면 아이콘을 확정 심볼(외곽선 심볼_투명 배경)에서 다시 만들었다(사용자 요청, 새로 그리지 않고 크기만 줄임). 파일명은 `MARKETRY-favicon-32.png`, `MARKETRY-favicon-64.png`, `MARKETRY-apple-touch-icon.png`로 바꿨다(사용자 요청). 구글 검색 아이콘은 64px 이상의 이 파일을 읽는다.
 
+
+2026-11-16: 옛 주소 이동을 구글에 등록돼 있던 주소만 남기고 정리했다. `/custom/sector`만 이동을 두고, `/custom`·`/custom/stock`과 `/admin/dashboard`의 이동은 지웠다(이제 이 주소들은 맨 끝 규칙으로 요약 화면에 간다). 기준은 옛 주소 이동 기록(`feedback-old-address-redirects-only-indexed`)과 같다. 일본 옛 주소는 그대로 두지 않는다.

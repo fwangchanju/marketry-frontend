@@ -199,12 +199,10 @@ export default function App() {
           <Route path="/graph/kospi" element={<RedirectKeepingQuery to="/graph/korea/kospi" />} />
           <Route path="/graph/kosdaq" element={<RedirectKeepingQuery to="/graph/korea/kosdaq" />} />
           <Route path="/graph/korea" element={<ResponsiveGraphPage />} />
-          {/* 섹터·스톡 화면의 주소. 예전 /custom 아래 한국 주소는 새 주소로 이동시킨다(뒤의 ?sheet=MINE 같은 값도 유지). 일본은 비공개 화면이라 옛 주소가 없다. */}
+          {/* 섹터·스톡 화면의 주소. 구글에 등록돼 있던 옛 주소 /custom/sector만 새 주소로 이동시킨다(뒤의 ?sheet=MINE 같은 값도 유지). 일본은 비공개 화면이라 옛 주소가 없다. */}
           <Route path={SECTOR_KOREA} element={<CustomPage />} />
           <Route path={STOCK_KOREA} element={<CustomPage />} />
-          <Route path="/custom" element={<LegacyCustomRedirect />} />
           <Route path="/custom/sector" element={<LegacyCustomRedirect />} />
-          <Route path="/custom/stock" element={<LegacyCustomRedirect />} />
           <Route element={<SpecialRouteGuard />}>
             <Route path={STOCK_JAPAN} element={<JapanStockPage />} />
             <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
@@ -230,7 +228,6 @@ export default function App() {
             <Route index element={<Navigate to="/summary/korea" replace />} />
             <Route path="member" element={<AdminPage />} />
             <Route path="stats" element={<AdminDashboardPage />} />
-            <Route path="dashboard" element={<Navigate to="/admin/stats" replace />} />
             <Route path="message" element={<AdminMessagePage />} />
             <Route path="default" element={<AdminDefaultPage />} />
             <Route path="banner" element={<AdminBannerPage />} />

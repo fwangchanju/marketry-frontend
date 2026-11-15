@@ -9,12 +9,10 @@ export const STOCK_JAPAN = overseasRoute('/stock', 'JAPAN')
 export const SECTOR_USA = overseasRoute('/sector', 'USA')
 export const STOCK_USA = overseasRoute('/stock', 'USA')
 
-// 옛 주소 → 새 주소. 즐겨찾기·가이드 링크·로그인 뒤 돌아오는 주소가 끊기지 않게 새 주소로 이동시킨다.
+// 옛 주소 → 새 주소. 구글에 등록돼 있던 주소(/custom/sector)에만 둔다(2026-11-16 정리, 그 밖의 옛 /custom 주소는 이동을 두지 않는다).
 // 일본 화면(/custom/sector/japan, /custom/stock/japan)은 특별 회원만 보던 비공개 화면이라 옛 주소 이동을 두지 않는다.
 const LEGACY_TARGETS: Readonly<Record<string, string>> = {
-  '/custom': SECTOR_KOREA,
   '/custom/sector': SECTOR_KOREA,
-  '/custom/stock': STOCK_KOREA,
 }
 
 export function legacyCustomTarget(pathname: string): string | null {
