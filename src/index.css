@@ -1484,3 +1484,5 @@ html[data-mobile-page-slide='next']::view-transition-new(root) {
     animation-duration: 1ms;
   }
 }
+
+.main-settings-row { margin-left: 80px; }

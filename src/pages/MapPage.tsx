@@ -395,10 +395,9 @@ export default function MapPage() {
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
-      <NavBar />
-      <NavSubBar
-        // 지금 보는 시장을 메뉴 목록에서 다시 고르면 처음 단계(드릴다운 맨 위)로 돌아간다.
-        onReselectCurrent={() => handleGoToDepth(0)}
+      <NavBar
+        centered
+        tall
         actions={
           <NavBarPageActions
             onRefresh={refetchHeatmap}
@@ -414,10 +413,18 @@ export default function MapPage() {
         }
       />
       <div className="flex min-h-0 flex-1">
+        {/* 메뉴 줄을 화면 왼쪽 세로 줄로 뺀다. 오른쪽 버튼 묶음은 위쪽 상단 영역에 둔다. */}
+        <NavSubBar
+          vertical
+          // 지금 보는 시장을 메뉴 목록에서 다시 고르면 처음 단계(드릴다운 맨 위)로 돌아간다.
+          onReselectCurrent={() => handleGoToDepth(0)}
+        />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1">
         {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
         <div
           ref={settingsRowRef}
-          className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 bg-ui-background"
+          className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 bg-ui-background"
         >
           {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
               min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
@@ -721,6 +728,8 @@ export default function MapPage() {
           onMobileSelectionChange={setIsMobileScreenshotSelected}
         />
       )}
+        </div>
+      </div>
     </div>
   )
 }
