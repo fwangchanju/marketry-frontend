@@ -21,8 +21,8 @@ test('preserves the hash when no query parameters remain', () => {
 })
 
 test('shows the email consent error and preserves the return location', () => {
-  assert.deepEqual(parseOAuthReturnLocation('/profile', '?loginError=email_required', ''), {
+  assert.deepEqual(parseOAuthReturnLocation('/account/profile', '?loginError=email_required', ''), {
     error: 'email_required',
-    returnTo: '/profile',
+    returnTo: '/account/profile',
   })
 })

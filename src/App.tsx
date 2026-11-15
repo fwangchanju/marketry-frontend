@@ -226,7 +226,10 @@ export default function App() {
           <Route path="/info/source" element={<SourcePage />} />
           <Route path="/info/contact" element={<ContactPage />} />
           <Route path="/info/guide" element={<GuidePage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/account/profile" element={<ProfilePage />} />
+          {/* 프로필 화면의 옛 주소(/profile) — 배지 위 글자(ACCOUNT)·큰 글자(PROFILE)와 주소 규칙(/화면/항목)에 맞춰 옮겼다. */}
+          <Route path="/profile" element={<RedirectKeepingQuery to="/account/profile" />} />
+          <Route path="/account" element={<RedirectKeepingQuery to="/account/profile" />} />
           {/* 관리자 페이지는 /admin 아래에서 회원 명단, 대시보드(차트 모음), 메시지, 배너로 나뉜다. */}
           <Route path="/admin" element={<AdminRouteGuard />}>
             <Route index element={<Navigate to="/summary/korea" replace />} />
