@@ -1,4 +1,5 @@
 import { useSettled } from '@/hooks/useSettled'
+import ToolbarPinButton from '@/components/ToolbarPinButton'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
@@ -281,6 +282,11 @@ export default function MarketSummaryPage() {
                   {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                 </SnapshotDatePicker>
               </ToolbarChip>
+              {isPastSnapshot && (
+                <ToolbarChip bare>
+                  <ToolbarPinButton pinned={isPastSnapshot} onUnpin={() => onChangePinnedSnapshotTime(null)} />
+                </ToolbarChip>
+              )}
               {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && (
                   <ToolbarChip bare tone="text-ui-muted">
                     <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />

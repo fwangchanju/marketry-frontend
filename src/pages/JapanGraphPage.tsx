@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import ToolbarPinButton from '@/components/ToolbarPinButton'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useQuery } from '@tanstack/react-query'
@@ -163,6 +164,11 @@ export default function JapanGraphPage() {
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="GRAPH" label="NIKKEI 225" />
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
+              {isPastSnapshot && (
+                <ToolbarChip bare>
+                  <ToolbarPinButton pinned={isPastSnapshot} onUnpin={() => select(null)} />
+                </ToolbarChip>
+              )}
               {rangeStart !== null && (
                 <ToolbarChip bare tone="text-ui-muted">
                   <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />

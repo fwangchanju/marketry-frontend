@@ -1,4 +1,5 @@
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
+import ToolbarPinButton from '@/components/ToolbarPinButton'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -360,6 +361,11 @@ export default function GroupPage() {
                     {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && <span>~ {toSnapshotDateLabel(pinnedSnapshotTime)}</span>}
                   </SnapshotDatePicker>
                   </ToolbarChip>
+                  {isPastSnapshot && (
+                    <ToolbarChip bare>
+                      <ToolbarPinButton pinned={isPastSnapshot} onUnpin={() => onChangePinnedSnapshotTime(null)} />
+                    </ToolbarChip>
+                  )}
                   {isPastSnapshot && rangeStartTime && pinnedSnapshotTime && (
                       <ToolbarChip bare tone="text-ui-muted">
                         <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />

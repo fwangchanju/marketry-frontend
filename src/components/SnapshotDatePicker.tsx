@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { getSnapshotDays } from '@/api/heatmap'
 import { heatmapKeys } from '@/hooks/queryKeys'
-import { CalendarIcon, ChevronDownIcon, ClockIcon } from '@/components/icons/AppIcons'
+import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
 import { useKoreanCalendarHolidays } from '@/hooks/useKoreanCalendarHolidays'
@@ -576,21 +576,6 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
 
   // 지난 날짜나 기간을 보는 중일 때만 보인다(하루·기간 모드 모두) — 고른 날짜·기간을 모두 풀고 실시간 지도로 바로 돌아간다(적용을 따로 누를 필요 없다).
   // 아래쪽 "초기화"(고른 날짜만 비움)와 헷갈리지 않게 되돌리기 화살표 대신 지도 위의 "실시간" 시계 아이콘과 글자를 쓴다.
-  const liveButton = isPast ? (
-    <button
-      type="button"
-      aria-label="초기화하고 실시간으로 돌아가기"
-      data-hint="실시간 화면으로 초기화"
-      onClick={() => {
-        onSelectSnapshotTime(null)
-        setIsOpen(false)
-      }}
-      className="flex h-6 shrink-0 items-center gap-1 rounded border-0 bg-ui-control px-2 text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
-    >
-      <ClockIcon strokeWidth={2.3} className="h-3.5 w-3.5" aria-hidden />
-      초기화
-    </button>
-  ) : null
   // 하루 모드는 날짜 칸을, 기간 모드는 종료일을 가장 최근 거래일로 채운다(휴장일에는 실제 오늘이 아니라 최근 거래일이라 "최근일"이다). "실시간" 버튼은 지난 날짜·기간을 풀고 바로 실시간으로 돌아간다.
   const todayButton = (
     <button
@@ -598,7 +583,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       onClick={pickToday}
       className="flex h-6 shrink-0 items-center justify-center rounded border-0 bg-ui-control px-2.5 text-center text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-ui-control-hover"
     >
-      최근일
+      최근
     </button>
   )
 
@@ -648,14 +633,14 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 </span>
               )}
             </span>
-            <span className="flex items-center gap-1.5">
-              {liveButton}
-              {todayButton}
-            </span>
           </div>
           {isRangeCalendar ? (
             <>
               <div className="relative flex gap-4">
+                {/* 두 달(하루·기간 공통) 머리글 사이 가운데에 최근 버튼을 둔다 — 년월 글자 사이의 빈 칸. */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-7 items-center justify-center">
+                  <div className="pointer-events-auto">{todayButton}</div>
+                </div>
                 {(isCalendarLoading || isCalendarError) && (
                   // 월 이름·요일 줄까지 덮고 가운데에 원 하나만 둔다. 어느 한 달이라도 못 받으면 오류 원 하나를 둔다.
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-ui-panel">
@@ -726,6 +711,10 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           ) : (
             <>
               <div className="relative flex gap-4">
+                {/* 두 달(하루·기간 공통) 머리글 사이 가운데에 최근 버튼을 둔다 — 년월 글자 사이의 빈 칸. */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-7 items-center justify-center">
+                  <div className="pointer-events-auto">{todayButton}</div>
+                </div>
                 {(isCalendarLoading || isCalendarError) && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-ui-panel">
                     {isCalendarLoading ? (
