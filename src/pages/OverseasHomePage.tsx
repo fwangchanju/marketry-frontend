@@ -7,7 +7,6 @@ import NavSubBar from '@/components/NavSubBar'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import ToolbarChip from '@/components/ToolbarChip'
 import JapanSessionChip from '@/components/JapanSessionChip'
 import UsaSessionChip from '@/components/UsaSessionChip'
 import { CalendarIcon, ClockIcon } from '@/components/icons/AppIcons'
@@ -29,6 +28,9 @@ import { toSnapshotDateLabel } from '@/utils/format'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector } from '@/utils/sectorAverage'
 import japanStocks from '@/data/japanStocks.json'
+
+// 날짜·시간 칩 — 한국 홈의 날짜 칩과 같은 글자(14px, 보통 굵기)·간격(4px)·여백(6px)이다.
+const HOME_CHIP_CLASS = 'toolbar-badge flex h-6 shrink-0 items-center gap-1 whitespace-nowrap bg-[var(--ui-panel)] px-1.5 text-[14px] font-normal tabular-nums tracking-normal text-ui-white'
 
 // 홈의 일본·미국 구성. 업종 지도와 그룹 등락률을 지도 화면과 같은 트리·계산으로 만든다(최신 시세 기준).
 // 날짜 달력과 설정 패널은 아직 없다.
@@ -91,15 +93,15 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="HOME" label={label} showChevron menu={menu} />
-              <ToolbarChip>
+              <span className={HOME_CHIP_CLASS}>
                 <CalendarIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
                 {toSnapshotDateLabel(snapshotTime)}
-              </ToolbarChip>
+              </span>
               {snapshotClock && (
-                <ToolbarChip>
+                <span className={HOME_CHIP_CLASS}>
                   <ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
                   {snapshotClock}
-                </ToolbarChip>
+                </span>
               )}
               {session && (isJapan ? <JapanSessionChip session={session as JapanSession} /> : <UsaSessionChip session={USA_SESSION} />)}
             </div>
