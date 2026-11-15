@@ -17,6 +17,7 @@ import ScreenshotModal from '@/components/ScreenshotModal'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
+import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import RankBars from '@/components/RankBars'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { ClockIcon } from '@/components/icons/AppIcons'
@@ -170,7 +171,7 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
   const homeFrames = [
               { title: '업종 지도', captureId: 'market-map', node: (
                 <div className="relative flex min-h-0 flex-1 flex-col">
-                  {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={handleSelectSector} /> : <p className="text-ui-muted">{isLoading ? '불러오는 중' : '데이터가 없습니다.'}</p>}
+                  {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={handleSelectSector} /> : isLoading ? <p className="text-ui-muted">불러오는 중</p> : <EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" />}
                 </div>
               ) },
               { title: '그룹 등락률 (%)', captureId: 'group-change-rate', node: (

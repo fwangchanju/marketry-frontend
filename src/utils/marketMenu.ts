@@ -12,7 +12,7 @@ export function marketMenu(basePath: '/map' | '/graph' | '/summary', current: Ma
   return [
     ...korea,
     // 특별 회원 전용 항목은 보라 글자로 구분한다.
-    ...OVERSEAS_MARKETS.map(market => ({ label: market.menuLabel, to: overseasRoute(basePath, market.id), active: current === market.id, special: true })),
+    ...OVERSEAS_MARKETS.map(market => ({ label: market.menuLabel, to: overseasRoute(basePath, market.id), active: current === market.id, special: false })),
   ]
 }
 
@@ -23,7 +23,7 @@ export function customMenu(kind: 'sector' | 'stock', current: 'KOREA' | Overseas
   if (!includeOverseas) return items
   return [
     ...items,
-    ...OVERSEAS_MARKETS.map(market => ({ label: market.menuLabel, to: overseasRoute(`/${kind}`, market.id), active: current === market.id, special: true })),
+    ...OVERSEAS_MARKETS.map(market => ({ label: market.menuLabel, to: overseasRoute(`/${kind}`, market.id), active: current === market.id, special: false })),
   ]
 }
 

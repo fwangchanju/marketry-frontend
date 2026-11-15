@@ -1,3 +1,4 @@
+import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
@@ -5,6 +6,9 @@ import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import { useSettled } from '@/hooks/useSettled'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { appAlert } from '@/utils/appDialogBus'
+import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
+import type { StockDrop } from '@/hooks/useStockDrag'
 import type { OverseasMapSource } from '@/hooks/overseasMapSource'
 import { NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
 import { useSearchParams } from 'react-router-dom'
@@ -17,7 +21,7 @@ import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import SettingsPanel, { SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsStockChangeSection, SettingsSectorChangeSection, SettingsStockMoveSection, SettingsStockPopupSection, SettingsTextThresholdSection, SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
 import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import Spinner from '@/components/Spinner'
@@ -48,7 +52,7 @@ const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 b
 const NO_EXCLUDED_SECTORS = new Set<number>()
 const NO_EXCLUDED_TIERS = new Set<string>()
 const NO_TOP_PICKS = new Set<string>()
-const NO_DIRECTION_FILTERS = { stockChangeFilter: 'all', sectorChangeFilter: 'all', sectorChangeDepth: 0, sectorUseSimpleAverage: false } as const
+const NO_STOCK_MOVES: StockMoves = {}
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 const FLAT_GROUP_NAME = '__flat__'
 const SECTION_ORDER: SettingsPanelSectionId[] = ['industry', 'stockDisplay', 'colors']
@@ -73,7 +77,16 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, tabStorageName, totalCount, countShown,
   } = source
   const { colorScale } = fixed
-  const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, NO_DIRECTION_FILTERS)
+  // 실험 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
+  const [stockChangeFilter, setStockChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
+  const [sectorChangeFilter, setSectorChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
+  const [sectorChangeDepth, setSectorChangeDepth] = useState(0)
+  const [stockPopupOnHover, setStockPopupOnHover] = useState(fixed.stockPopupOnHover)
+  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = useState(fixed.boxLabelMinAreaPercent)
+  const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
+  const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
+  const directionFilters = useMemo(() => ({ stockChangeFilter, sectorChangeFilter, sectorChangeDepth, sectorUseSimpleAverage: false }), [stockChangeFilter, sectorChangeFilter, sectorChangeDepth])
+  const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, directionFilters)
   const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
   // 상위 업종 강조 — 국내 지도와 같은 규칙으로 고른 단계의 업종 중 등락률이 높은 순서로 뽑는다. 필터가 적용된 전체 트리 기준이라 드릴다운해도 바뀌지 않는다.
   const topPickMaxSelectableDepth = preferences.maxDepth === null ? Math.max(defaultMaxDepth, availableMaxDepth) : preferences.maxDepth
@@ -96,12 +109,21 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const isFullyFlattened = !preferences.sectorLevelEnabled
   const visibleDepth = preferences.maxDepth === null ? null : Math.max(1, preferences.maxDepth - path.length)
   const limit = (nodes: FilteredHeatmapSectorNode[]) => (visibleDepth === null ? nodes : limitDepth(nodes, visibleDepth))
-  let groups: DisplayGroup[]
+  let baseGroups: DisplayGroup[]
   if (isFullyFlattened) {
     const items = flattenAllItems(currentNode ? [currentNode] : currentSiblings)
-    groups = [{ sectorId: -1, sectorName: FLAT_GROUP_NAME, totalMarketValue: items.reduce((sum, item) => sum + item.totalMarketValue, 0), weightedAvgChangeRate: null, simpleAvgChangeRate: null, items, children: [] }]
+    baseGroups = [{ sectorId: -1, sectorName: FLAT_GROUP_NAME, totalMarketValue: items.reduce((sum, item) => sum + item.totalMarketValue, 0), weightedAvgChangeRate: null, simpleAvgChangeRate: null, items, children: [] }]
   } else {
-    groups = currentNode ? [toDisplayGroup({ ...currentNode, children: limit(currentNode.children) })] : limit(currentSiblings).map(toDisplayGroup)
+    baseGroups = currentNode ? [toDisplayGroup({ ...currentNode, children: limit(currentNode.children) })] : limit(currentSiblings).map(toDisplayGroup)
+  }
+  const stockMoves = stockMoveEnabled && stockMoveState.scope === market ? stockMoveState.moves : NO_STOCK_MOVES
+  const groups = applyStockMoves(baseGroups, stockMoves)
+  const handleMoveStock = (drop: StockDrop) => {
+    setStockMoveState(previous => ({ scope: market, moves: { ...(previous.scope === market ? previous.moves : {}), [drop.stockCode]: drop.targetSectorId } }))
+  }
+  const handleChangeStockMoveEnabled = (enabled: boolean) => {
+    setStockMoveEnabled(enabled)
+    if (enabled) void appAlert('종목 이동 기능은 저장되지 않습니다.\n임시로 살펴보시고 커스텀 페이지를 이용바랍니다.', { title: '종목 이동' })
   }
   const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
@@ -224,15 +246,17 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               </nav>
             )}
             {isLoading ? (
-              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]"><Spinner showElapsed /></div>
+              <div className={MAIN_LOADING_CLASS}><Spinner showElapsed /></div>
             ) : isError ? (
-              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
+              <div className={MAIN_LOADING_CLASS}><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
             ) : shownCount === 0 ? (
               <div className="relative flex-1"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="-top-1" /></div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col">
                 <Heatmap
                   groups={groups}
+                  stockMoveEnabled={stockMoveEnabled}
+                  onMoveStock={handleMoveStock}
                   selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
                   depth={path.length}
                   onSelectSector={name => { enterSector(name) }}
@@ -246,9 +270,9 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                   tile={mapTileMethod()}
                   canExclude={false}
                   colorScale={colorScale}
-                  labelMinAreaPercent={fixed.boxLabelMinAreaPercent}
+                  labelMinAreaPercent={boxLabelMinAreaPercent}
                   stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'}
-                  stockPopupOnHover={fixed.stockPopupOnHover}
+                  stockPopupOnHover={stockPopupOnHover}
                   decimalPlaces={preferences.decimalPlaces}
                   topPickSectorKeys={topPickSectorKeys}
                   strongIndustryColor={fixed.strongIndustryColor}
@@ -267,14 +291,14 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                 <div aria-hidden="true" className="h-2 shrink-0" />
                 {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 ? { color: fixed.strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={fixed.boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={fixed.strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
+                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={fixed.strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
                 </div>
               </div>
             </div>
           )}
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
+          <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
             <SettingsPanelGroup section="industry"><SettingsSectorLevelSection {...sectorLevelProps} showStockDisplay={false} /></SettingsPanelGroup>
             <SettingsPanelGroup section="stockDisplay">
               <SettingsStockSizeSelector marketCapRatio={preferences.boxSizeMarketCapRatio} onChangeMarketCapRatio={value => update({ boxSizeMarketCapRatio: value })} />
@@ -294,6 +318,15 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               />
               <SettingsStrongIndustryColorSection color={fixed.strongIndustryColor} onChange={() => {}} fixed />
               <SettingsTopPickSection {...topPickProps} />
+            </SettingsPanelGroup>
+            <SettingsPanelGroup section="special">
+              <div className="settings-plain-content">
+                <SettingsStockChangeSection value={stockChangeFilter} onChange={setStockChangeFilter} />
+                <SettingsSectorChangeSection value={sectorChangeFilter} onChange={setSectorChangeFilter} depth={sectorChangeDepth} onChangeDepth={setSectorChangeDepth} maxSelectableDepth={availableMaxDepth} noDataLimited={false} />
+                <SettingsStockMoveSection enabled={stockMoveEnabled} onChange={handleChangeStockMoveEnabled} />
+                <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
+                <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
+              </div>
             </SettingsPanelGroup>
           </SettingsPanel>
         </div>
