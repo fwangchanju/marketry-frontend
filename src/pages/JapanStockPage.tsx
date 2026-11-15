@@ -216,7 +216,7 @@ export default function JapanStockPage() {
       <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold">
-            <ToolbarModeText page="STOCK" label="NIKKEI225" showChevron menu={customMenu('stock', 'JAPAN', true)} />
+            <ToolbarModeText page="STOCK" label="NIKKEI 225" showChevron menu={customMenu('stock', 'JAPAN', true)} />
             <SearchBar inline query={search} onChange={setSearch} placeholder="검색" ariaLabel="일본 종목 검색" maxLength={STOCK_SEARCH_MAX_LENGTH} />
             <div className="min-w-0 flex-1" />
             <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>

@@ -149,7 +149,7 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
     return { items, chart }
   }, [tree])
 
-  const label = isJapan ? 'NIKKEI225' : 'S&P500'
+  const label = isJapan ? 'NIKKEI 225' : 'S&P 500'
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 홈은 특별 회원·관리자만 열 수 있다.
   const menu = marketMenu('/summary', market, true)
   const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || quotes.isLoading || periodQuotes.isLoading
