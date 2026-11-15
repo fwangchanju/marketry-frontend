@@ -4,6 +4,7 @@ import client from '@/api/client'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
+import { useNavigate } from 'react-router-dom'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsColorSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
@@ -50,6 +51,9 @@ const SECTION_ORDER: SettingsPanelSectionId[] = ['colors']
 // 날짜 달력·시계 새로고침·설정 패널은 지도 화면과 같은 부품을 쓴다. 설정 패널은 색상 탭만 있다(편집할 설정이 없고 지도 화면과 같은 고정값을 보여 준다).
 export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }) {
   const isJapan = market === 'JAPAN'
+  const navigate = useNavigate()
+  // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(국내 홈과 같은 동작).
+  const handleSelectSector = (sectorName: string) => navigate(`/map/${isJapan ? 'japan' : 'usa'}?sector=${encodeURIComponent(sectorName)}`)
   const base = isJapan ? 'japan' : 'usa'
   const categories = useQuery({ queryKey: [base, 'categories'], queryFn: async () => (await client.get<JapanCategory[]>(`/${base}/categories`)).data })
   const classifications = useQuery({ queryKey: [base, 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>(`/${base}/classifications`)).data })
@@ -180,12 +184,12 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
             {[
               { title: '업종 지도', node: (
                 <div className="relative flex min-h-0 flex-1 flex-col">
-                  {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={() => {}} /> : <p className="text-ui-muted">{isLoading ? '불러오는 중' : '데이터가 없습니다.'}</p>}
+                  {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={handleSelectSector} /> : <p className="text-ui-muted">{isLoading ? '불러오는 중' : '데이터가 없습니다.'}</p>}
                 </div>
               ) },
               { title: '그룹 등락률 (%)', node: (
                 <div className="relative flex min-h-0 flex-1 flex-col">
-                  {hasData ? <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} decimalPlaces={1} /> : null}
+                  {hasData ? <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} decimalPlaces={1} onSelectSector={handleSelectSector} /> : null}
                 </div>
               ) },
             ].map((frame, index) => (
