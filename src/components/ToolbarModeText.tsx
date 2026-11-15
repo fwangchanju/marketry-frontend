@@ -49,7 +49,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
         {showChevron && <ChevronDownIcon className="ml-auto h-3 w-3 shrink-0" aria-hidden />}
       </div>
       {isMenu && isOpen && (
-        <div role="listbox" aria-label="시장 목록" className={`absolute left-0 z-50 mt-1.5 w-32 overflow-hidden text-sm font-normal tracking-normal ${DROPDOWN_PANEL_CLASS}`}>
+        <div role="listbox" aria-label="시장 목록" className={`absolute left-0 z-50 mt-1.5 w-[105px] overflow-hidden text-sm font-normal tracking-normal ${DROPDOWN_PANEL_CLASS}`}>
           {menu.map(item => (
             <button
               key={item.to}
@@ -57,7 +57,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
               role="option"
               aria-selected={item.active}
               onClick={() => { setIsOpen(false); if (!item.active) navigate(item.to) }}
-              className={`font-roboto-latin flex h-[30px] w-full items-center whitespace-nowrap rounded-none border-0 px-3 text-left text-sm font-medium transition-colors ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : `bg-transparent hover:bg-ui-white/10 ${item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}`}
+              className={`font-roboto-latin flex h-[30px] w-full items-center whitespace-nowrap rounded-none border-0 pl-[9px] pr-3 text-left text-sm font-medium transition-colors ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : `bg-transparent hover:bg-ui-white/10 ${item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}`}
             >
               {/* 하위 단계(KOSPI·KOSDAQ)는 윗줄 KOREA에 맞춘다: ▸는 KO 가운데, 글자는 R 시작 위치. 숨긴 KO로 폭을 잡아 글꼴이 달라도 맞는다. */}
               {item.indent && (
