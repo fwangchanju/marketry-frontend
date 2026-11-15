@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react'
 import OverseasHomePage from './pages/OverseasHomePage'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
@@ -14,9 +14,7 @@ import { OVERSEAS_MARKETS, overseasRoute } from '@/utils/markets'
 import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
-import { isLocalAutoLoginEnabled } from './utils/localDevLogin'
-import { useLocalDevLogin } from './hooks/useSession'
-import { isAdminSession, isSpecialSession } from './utils/adminAccess'
+import { isAdminSession } from './utils/adminAccess'
 import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
 
 // 화면별로 코드를 나눠 받는다. 모바일 홈·지도는 첫 화면이라 바로 번들에 두고,
@@ -107,25 +105,6 @@ function AdminRouteGuard() {
   return isAdminSession(session) ? <Outlet /> : <Navigate to="/summary/korea" replace />
 }
 
-function SpecialRouteGuard() {
-  const { data: session, isLoading } = useSession()
-  // 자동 로그인은 보통 NavBar가 실행하는데, 이 가드가 화면을 비우는 동안에는 NavBar가 없으므로 여기서도 실행한다(한 번만 시도).
-  useLocalDevLogin(true)
-  // 로컬 자동 로그인(개발용)은 세션 조회가 "비로그인"으로 끝난 뒤에야 로그인된다. 그 사이에 돌려보내지 않도록,
-  // 자동 로그인이 켜진 로컬에서는 최대 4초까지 기다린 뒤에도 특별 회원이 아니면 돌려보낸다.
-  const [waitedOut, setWaitedOut] = useState(false)
-  const waitsForLocalLogin = isLocalAutoLoginEnabled()
-  useEffect(() => {
-    if (!waitsForLocalLogin) return
-    const timer = window.setTimeout(() => setWaitedOut(true), 4000)
-    return () => window.clearTimeout(timer)
-  }, [waitsForLocalLogin])
-  if (isLoading) return null
-  if (isSpecialSession(session)) return <Outlet />
-  if (waitsForLocalLogin && !waitedOut) return null
-  return <Navigate to="/summary/korea" replace />
-}
-
 function ResponsiveHomePage() {
   const isNarrow = useIsNarrowScreen()
   const [searchParams] = useSearchParams()
@@ -203,7 +182,8 @@ export default function App() {
           <Route path={SECTOR_KOREA} element={<CustomPage />} />
           <Route path={STOCK_KOREA} element={<CustomPage />} />
           <Route path="/custom/sector" element={<LegacyCustomRedirect />} />
-          <Route element={<SpecialRouteGuard />}>
+          {/* 일본·미국 화면은 2026-11-16 공개로 바꿨다(사용자 결정). 로그인 여부와 무관하게 누구나 볼 수 있다. */}
+          <Route>
             <Route path={STOCK_JAPAN} element={<JapanStockPage />} />
             <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
             <Route path={SECTOR_USA} element={<UsaSectorPage />} />

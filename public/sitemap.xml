@@ -7,5 +7,9 @@
   <url><loc>https://marketry.co.kr/graph/korea/kospi</loc></url>
   <url><loc>https://marketry.co.kr/graph/korea/kosdaq</loc></url>
   <url><loc>https://marketry.co.kr/graph/korea</loc></url>
+  <url><loc>https://marketry.co.kr/map/japan</loc></url>
+  <url><loc>https://marketry.co.kr/graph/japan</loc></url>
+  <url><loc>https://marketry.co.kr/map/usa</loc></url>
+  <url><loc>https://marketry.co.kr/graph/usa</loc></url>
   <url><loc>https://marketry.co.kr/info/guide</loc></url>
 </urlset>
