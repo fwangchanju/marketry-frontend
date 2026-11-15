@@ -180,7 +180,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
 
   return (
     <div className={vertical
-      ? 'fixed bottom-0 left-0 top-[90px] z-30 flex w-[70px] flex-col items-stretch bg-ui-background px-2 pt-[4px] text-xs'
+      ? 'fixed bottom-0 left-0 top-[90px] z-30 flex w-[70px] flex-col items-stretch bg-ui-panel px-2 pt-[43px] text-xs'
       : 'relative z-30 mb-[15px] flex h-[30px] after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs'}>
       {/* 이 줄의 하단선은 메인·설정 행의 세로 기준이다. 아이콘 28px과 같은 높이로 두고, 하단선에서 설정창까지는 페이지 쪽의 4px만 남긴다. */}
       <div data-nav-menus className={vertical ? 'flex h-full flex-col items-stretch gap-1' : 'flex h-7 items-center gap-3'}>
@@ -213,8 +213,10 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
               {link.label}
             </Link>
             {/* 메뉴 칸(28px)이 탭 글자(약 20px)보다 커서 칸 아래에 바로 붙여야 글자 기준으로 4px가 된다. */}
+            {/* 세로 메뉴에서 아이콘 칸과 목록 사이의 빈 틈을 메우는 다리 — 여기를 지나도 목록이 닫히지 않는다. */}
+            {vertical && link.options && openTo === link.to && <div aria-hidden="true" className="absolute left-full top-0 h-full w-[12px]" />}
             {link.options && openTo === link.to && (
-              <div className={`absolute z-50 w-32 overflow-hidden ${DROPDOWN_PANEL_CLASS} ${vertical ? (link.admin ? 'left-full bottom-0' : 'left-full top-0') : 'left-0 top-full'}`}>
+              <div className={`absolute z-50 w-32 overflow-hidden ${DROPDOWN_PANEL_CLASS} ${vertical ? (link.admin ? "left-[calc(100%+12px)] bottom-0" : "left-[calc(100%+12px)] top-0") : 'left-0 top-full'}`}>
                 <div role="listbox" aria-label={`${link.label} 목록`}>
                   {link.options.map(option => {
                     const isCurrent = isCurrentOption(option)
