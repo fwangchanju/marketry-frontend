@@ -5,8 +5,6 @@ import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import { useSettled } from '@/hooks/useSettled'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSession } from '@/hooks/useSession'
-import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
 import { appAlert } from '@/utils/appDialogBus'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
@@ -78,8 +76,6 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, tabStorageName, totalCount, countShown,
   } = source
   const { colorScale } = fixed
-  const { data: session } = useSession()
-  const isSpecialMember = isAdminSession(session) || isSpecialSession(session)
   // 실험 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
   const [stockChangeFilter, setStockChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
   const [sectorChangeFilter, setSectorChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
@@ -301,7 +297,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           )}
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel sectionOrder={isSpecialMember ? [...SECTION_ORDER, 'special'] : SECTION_ORDER} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
+          <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
             <SettingsPanelGroup section="industry"><SettingsSectorLevelSection {...sectorLevelProps} showStockDisplay={false} /></SettingsPanelGroup>
             <SettingsPanelGroup section="stockDisplay">
               <SettingsStockSizeSelector marketCapRatio={preferences.boxSizeMarketCapRatio} onChangeMarketCapRatio={value => update({ boxSizeMarketCapRatio: value })} />
@@ -322,7 +318,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               <SettingsStrongIndustryColorSection color={fixed.strongIndustryColor} onChange={() => {}} fixed />
               <SettingsTopPickSection {...topPickProps} />
             </SettingsPanelGroup>
-            {isSpecialMember && <SettingsPanelGroup section="special">
+            <SettingsPanelGroup section="special">
               <div className="settings-plain-content">
                 <SettingsStockChangeSection value={stockChangeFilter} onChange={setStockChangeFilter} />
                 <SettingsSectorChangeSection value={sectorChangeFilter} onChange={setSectorChangeFilter} depth={sectorChangeDepth} onChangeDepth={setSectorChangeDepth} maxSelectableDepth={availableMaxDepth} noDataLimited={false} />
@@ -330,7 +326,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                 <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
                 <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
               </div>
-            </SettingsPanelGroup>}
+            </SettingsPanelGroup>
           </SettingsPanel>
         </div>
       </div>

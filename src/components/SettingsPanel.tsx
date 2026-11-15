@@ -29,7 +29,7 @@ import { profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
-import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
+import { isAdminSession } from '@/utils/adminAccess'
 
 export type SettingsPanelSectionId = 'custom' | 'composition' | 'industry' | 'stockDisplay' | 'colors' | 'adminOps' | 'adminManage' | 'adminBanner' | 'special' | 'graph'
 const ADMIN_ONLY_SECTIONS: ReadonlySet<string> = new Set(['adminOps', 'adminManage', 'adminBanner'])
@@ -2576,7 +2576,8 @@ export default function SettingsPanel({
   const session = useSession().data
   const isAdminSessionNow = isAdminSession(session)
   const isAdminPage = isAdminSessionNow && ['Banner', 'Dashboard', 'Member', 'Message'].includes(pageLabel ?? '')
-  const canSeeSpecialSections = isSpecialSession(session)
+  // 실험 탭은 2026-11-16부터 누구나 본다(사용자 결정). 색상은 그대로 보라색이다.
+  const canSeeSpecialSections = true
   const childNodes = Children.toArray(children)
   const sectionContent = new Map<SettingsPanelSectionId, ReactNode[]>()
   const addSectionContent = (section: SettingsPanelSectionId, content: ReactNode) => {

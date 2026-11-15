@@ -1,3 +1,4 @@
+import { isSpecialSession } from '@/utils/adminAccess'
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
@@ -60,7 +61,6 @@ import { useMapDrilldownHistory, useMapSectorEntry } from '@/hooks/useMapDrilldo
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { limitDepth, flattenAllItems, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import type { MarketQuery, HeatmapSectorNode, HeatmapItem } from '@/types/api'
-import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
 
 declare global {
   interface Window {
@@ -211,9 +211,7 @@ export default function MapPage() {
     handleExcludeSector,
   } = useGlobalSettings({ allowChangeRateMode: true })
   const { data: session } = useSession()
-  const isAdmin = isAdminSession(session)
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
-  const isSpecialMember = isAdmin || (session?.authenticated === true && session.special === true)
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
@@ -650,7 +648,7 @@ export default function MapPage() {
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
               pageLabel="Map"
-              sectionOrder={isSpecialMember ? SPECIAL_MAP_SETTINGS_SECTION_ORDER : MAP_SETTINGS_SECTION_ORDER}
+              sectionOrder={SPECIAL_MAP_SETTINGS_SECTION_ORDER}
               taxonomyAtBottom
               snapshotTime={data?.taxonomyUpdatedAt}
               stockCountLabel={`${toCount(visibleItems.length)}/${toCount(totalItemCount)}종목`}
@@ -677,7 +675,7 @@ export default function MapPage() {
                 )}
                 <SettingsTopPickSection {...settingsModalProps} />
               </SettingsPanelGroup>
-              {isSpecialMember && <SettingsPanelGroup section="special">
+              <SettingsPanelGroup section="special">
                 <div className="settings-plain-content">
                   <SettingsStockChangeSection
                     value={stockChangeFilter}
@@ -698,7 +696,7 @@ export default function MapPage() {
                   <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
                   <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
                 </div>
-              </SettingsPanelGroup>}
+              </SettingsPanelGroup>
             </SettingsPanel>
           </div>
         </div>
