@@ -481,8 +481,8 @@ html, body, #root {
 
 /* 화면 이름 배지는 모든 페이지에서 100px로 고정한다. 캡처 글꼴 폭에 따라 다음 날짜 배지가 밀리지 않게 한다. */
 .home-capture-toolbar .toolbar-mode-badge {
-  min-width: 100px;
-  max-width: 100px;
+  min-width: 105px;
+  max-width: 105px;
 }
 
 /* 스크린샷 선택 범위: 2px 선과 2px 간격으로 촘촘하게 표시한다. */

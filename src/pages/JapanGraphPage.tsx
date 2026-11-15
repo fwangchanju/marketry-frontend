@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
@@ -162,7 +163,7 @@ export default function JapanGraphPage() {
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="GRAPH" label="NIKKEI 225" />
+              <ToolbarModeText page="GRAPH" label="NIKKEI225" showChevron menu={marketMenu('/graph', 'JAPAN', true)} />
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
               {isPastSnapshot && (
                 <ToolbarChip bare>

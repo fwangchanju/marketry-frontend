@@ -1,4 +1,5 @@
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
+import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
@@ -47,7 +48,7 @@ import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import { NO_TAXONOMY_CHANGE, USA_MAP_DRAFT_KEY_MAP, USA_MAP_FIXED, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
 
 // 툴바 배지와 이동 경로 맨 앞 이름은 같은 값을 쓴다(한국 지도는 MARKET_LABEL[market]). 나라 이름(USA)이 아니다.
-const MAP_LABEL = 'S&P 500'
+const MAP_LABEL = 'S&P500'
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 const LEVEL_LABELS = ['대분류', '중분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
@@ -71,7 +72,7 @@ function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
   }
 }
 
-// 미국 S&P 500 지도. 일본 지도와 같은 구조이고 하루 한 번 저장된 종가로 그린다. 모바일 캡처(?capture=mobile·스크린샷 창의 모바일)는 일본 지도와 같다.
+// 미국 S&P500 지도. 일본 지도와 같은 구조이고 하루 한 번 저장된 종가로 그린다. 모바일 캡처(?capture=mobile·스크린샷 창의 모바일)는 일본 지도와 같다.
 export default function UsaMapPage() {
   const categories = useQuery({ queryKey: ['usa', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/usa/categories')).data })
   const classifications = useQuery({ queryKey: ['usa', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/usa/classifications')).data })
@@ -214,7 +215,7 @@ export default function UsaMapPage() {
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="MAP" label={MAP_LABEL} />
+              <ToolbarModeText page="MAP" label={MAP_LABEL} showChevron menu={marketMenu('/map', 'USA', true)} />
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><UsaDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
               {isPastSnapshot && (
                 <ToolbarChip bare>

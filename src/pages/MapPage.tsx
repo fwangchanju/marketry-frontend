@@ -1,4 +1,5 @@
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
+import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
@@ -59,7 +60,7 @@ import { useMapDrilldownHistory, useMapSectorEntry } from '@/hooks/useMapDrilldo
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { limitDepth, flattenAllItems, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import type { MarketQuery, HeatmapSectorNode, HeatmapItem } from '@/types/api'
-import { isAdminSession } from '@/utils/adminAccess'
+import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
 
 declare global {
   interface Window {
@@ -429,7 +430,7 @@ export default function MapPage() {
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-                <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} />
+                <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} showChevron menu={marketMenu('/map', market, isSpecialSession(session))} />
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·합산/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}

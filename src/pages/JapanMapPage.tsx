@@ -1,4 +1,5 @@
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
+import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
@@ -53,7 +54,7 @@ declare global {
 }
 
 // 툴바 배지와 이동 경로 맨 앞 이름은 같은 값을 쓴다(한국 지도는 MARKET_LABEL[market]). 나라 이름(JAPAN)이 아니다.
-const MAP_LABEL = 'NIKKEI 225'
+const MAP_LABEL = 'NIKKEI225'
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 const LEVEL_LABELS = ['대분류', '중분류', '소분류']
 const NO_EXCLUDED_SECTORS = new Set<number>()
@@ -229,7 +230,7 @@ export default function JapanMapPage() {
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="MAP" label={MAP_LABEL} />
+              <ToolbarModeText page="MAP" label={MAP_LABEL} showChevron menu={marketMenu('/map', 'JAPAN', true)} />
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><JapanDatePicker snapshotTime={snapshotTime} liveTime={liveQuotes.data?.snapshotTime ?? null} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
               {isPastSnapshot && (
                 <ToolbarChip bare>

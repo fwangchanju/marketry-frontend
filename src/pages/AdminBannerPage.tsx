@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { adminMenu } from '@/utils/marketMenu'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -710,7 +711,7 @@ export default function AdminBannerPage() {
             ) : (
               <>
                 <Toolbar>
-                  <ToolbarModeText page="ADMIN" label="BANNER" />
+                  <ToolbarModeText page="ADMIN" label="BANNER" showChevron menu={adminMenu('BANNER')} />
                 </Toolbar>
                 <PageMainFrame className="p-0" heading={(
                     <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl">

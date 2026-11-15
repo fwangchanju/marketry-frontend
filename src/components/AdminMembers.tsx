@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { adminMenu } from '@/utils/marketMenu'
 import { createPortal } from 'react-dom'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getAdminMembers, resetMembersNickname, setMembersSpecial } from '@/api/adminMembers'
@@ -190,13 +191,13 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
   return (
     <section aria-label="회원 정보" className="flex h-full min-h-0 w-full flex-col text-sm">
       <Toolbar>
-        <ToolbarModeText page="ADMIN" label="MEMBER" />
+        <ToolbarModeText page="ADMIN" label="MEMBER" showChevron menu={adminMenu('MEMBER')} />
         <div className="ml-1 flex min-w-0 flex-1 items-center">
           <SearchBar
             inline
             query={draft}
             onChange={changeSearch}
-            placeholder="이메일 · 닉네임"
+            placeholder="검색"
             ariaLabel="회원 검색"
             afterInput={excludedRoles.size > 0 || excludedIssuers.size > 0 ? (
               <button

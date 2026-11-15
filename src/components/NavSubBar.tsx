@@ -2,11 +2,10 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
-import { MARKET_OPTIONS } from '@/utils/marketOptions'
 import { marketRoute } from '@/utils/marketRoute'
-import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA } from '@/utils/customRoutes'
+import { SECTOR_KOREA, STOCK_KOREA } from '@/utils/customRoutes'
 import { useSession } from '@/hooks/useSession'
-import { isAdminSession, isSpecialSession } from '@/utils/adminAccess'
+import { isAdminSession } from '@/utils/adminAccess'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 interface MenuOption {
@@ -30,8 +29,8 @@ interface MenuLink {
 // Map·Graph는 KOREA / KOSPI / KOSDAQ을 고르고, Sector·Stock은 KOREA를 바로 연다(특별 회원은 JAPAN도 고른다).
 const BASE_LINKS: MenuLink[] = [
   { to: '/home', label: 'Home', icon: 'home' },
-  { to: marketRoute('/map', 'ALL_STOCK'), label: 'Map', icon: 'composition', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/map', option.market) })) },
-  { to: marketRoute('/graph', 'ALL_STOCK'), label: 'Graph', icon: 'bar-chart', options: MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute('/graph', option.market) })) },
+  { to: marketRoute('/map', 'ALL_STOCK'), label: 'Map', icon: 'composition' },
+  { to: marketRoute('/graph', 'ALL_STOCK'), label: 'Graph', icon: 'bar-chart' },
 ]
 // 비로그인에게도 열려 있다 — 마켓트리·거래소 시트는 읽고, 내 분류는 비어 있으며 수정하려 할 때 로그인 팝업이 뜬다.
 // 예전 Custom 메뉴를 Sector·Stock 두 메뉴로 나눴다. 주소는 /sector/korea·/stock/korea(일본은 /sector/japan·/stock/japan)다. 옛 /custom 주소는 새 주소로 이동한다.
@@ -45,13 +44,6 @@ const ADMIN_LINK: MenuLink = {
   label: 'Admin',
   icon: 'member',
   admin: true,
-  options: [
-    { label: 'MEMBER', to: '/admin/member' },
-    { label: 'DASHBOARD', to: '/admin/dashboard' },
-    { label: 'MESSAGE', to: '/admin/message' },
-    { label: 'DEFAULT', to: '/admin/default' },
-    { label: 'BANNER', to: '/admin/banner' },
-  ],
 }
 
 // 메뉴 글자는 글자 앞 아이콘과 함께 쓰므로 글자 크기를 18px에서 15px로 줄였다.
@@ -107,13 +99,18 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   // 관리자 계정에만 Admin 메뉴가 더 보인다 — 다른 메뉴와 같은 글자 모양이고 색만 관리자 전용 색이다.
   const { data: session, isLoading: isSessionLoading } = useSession(!staticMode)
   const isAdmin = !isSessionLoading && isAdminSession(session)
-  const canSeeJapan = !isSessionLoading && isSpecialSession(session)
-  // usaTo는 미국 화면이 있는 메뉴에 준다.
-  const withJapan = (link: MenuLink, japanTo: string, usaTo?: string): MenuLink => canSeeJapan ? { ...link, options: [{ label: 'KOREA', to: link.to }, { label: 'JAPAN', to: japanTo, special: true }, ...(usaTo ? [{ label: 'USA', to: usaTo, special: true }] : [])] } : link
-  const customLinks = [withJapan(SECTOR_LINK, SECTOR_JAPAN, SECTOR_USA), withJapan(STOCK_LINK, STOCK_JAPAN, STOCK_USA)]
-  // 해외 항목은 특별 회원과 관리자에게만 보인다.
-  const overseasOptions = (label: string) => [{ label: 'JAPAN', to: `/${label.toLowerCase()}/japan`, special: true }, { label: 'USA', to: `/${label.toLowerCase()}/usa`, special: true }]
-  const baseLinks = canSeeJapan ? BASE_LINKS.map(link => link.label === 'Map' || link.label === 'Graph' ? { ...link, options: [...(link.options ?? []), ...overseasOptions(link.label)] } : link) : BASE_LINKS
+  // 지금 보는 시장이 일본·미국이면 페이지 이동 메뉴도 그 시장으로 간다(일본 지도 → 그래프는 /graph/japan).
+  const marketSegment = /\/(kospi|kosdaq|japan|usa)(\/|$)/.exec(location.pathname)?.[1] ?? null
+  const overseasSegment = marketSegment === 'japan' || marketSegment === 'usa' ? marketSegment : null
+  const customLinks = overseasSegment
+    ? [{ ...SECTOR_LINK, to: `/sector/${overseasSegment}` }, { ...STOCK_LINK, to: `/stock/${overseasSegment}` }]
+    : [SECTOR_LINK, STOCK_LINK]
+  const baseLinks = BASE_LINKS.map(link => {
+    if (!marketSegment) return link
+    if (link.label === 'Map') return { ...link, to: `/map/${marketSegment}` }
+    if (link.label === 'Graph') return { ...link, to: `/graph/${marketSegment}` }
+    return link
+  })
   const links = isAdmin ? [...baseLinks, ...customLinks, ADMIN_LINK] : [...baseLinks, ...customLinks]
   const [openTo, setOpenTo] = useState<string | null>(null)
   // 목록은 누르면 열려 그대로 있고, 메뉴 밖을 누르면 닫는다. 메뉴 사이 빈 곳도 메뉴 밖이다.
