@@ -7,7 +7,8 @@ const template = readFileSync(new URL('../../index.html', import.meta.url), 'utf
 const pages = JSON.parse(readFileSync(new URL('./searchMetadata.json', import.meta.url), 'utf8'))
 
 test('검색 페이지마다 첫 HTML에 각 제목과 대표 주소가 들어간다', () => {
-  assert.equal(Object.keys(pages).length, 11)
+  // 11개(한국 등록 주소와 별칭) + 일본·미국 지도·그래프 4개(공개 여부를 정하기 전에 미리 만든 것, 사이트맵에는 없음).
+  assert.equal(Object.keys(pages).length, 15)
   for (const [path, page] of Object.entries(pages)) {
     const html = renderSearchPage(template, path, page)
     assert.ok(html.includes(`<title>${page.title}</title>`))
