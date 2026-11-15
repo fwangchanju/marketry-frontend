@@ -30,7 +30,7 @@ import { summarizeSector } from '@/utils/sectorAverage'
 import japanStocks from '@/data/japanStocks.json'
 
 // 날짜·시간 칩 — 한국 홈의 날짜 칩과 같은 글자(14px, 보통 굵기)·간격(4px)·여백(6px)이다.
-const HOME_CHIP_CLASS = 'toolbar-badge flex h-6 shrink-0 items-center gap-1 whitespace-nowrap bg-[var(--ui-panel)] px-1.5 text-[14px] font-normal tabular-nums tracking-normal text-ui-white'
+const HOME_CHIP_CLASS = 'toolbar-badge flex h-6 shrink-0 items-center gap-1 whitespace-nowrap bg-[var(--ui-panel)] px-1.5 text-[14px] font-medium tabular-nums tracking-normal text-ui-white'
 
 // 홈의 일본·미국 구성. 업종 지도와 그룹 등락률을 지도 화면과 같은 트리·계산으로 만든다(최신 시세 기준).
 // 날짜 달력과 설정 패널은 아직 없다.

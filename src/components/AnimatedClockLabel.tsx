@@ -35,6 +35,6 @@ export default function AnimatedClockLabel({ snapshotTime, icon }: { snapshotTim
     : `${pad(Math.floor(shown / 60))}:${pad(shown % 60)}`
   return <>
     {icon && <span className={`transition-colors duration-500 ${isFlashing ? 'text-[var(--brand)]' : ''}`}>{icon}</span>}
-    <span className={`tabular-nums transition-colors duration-500 ${isFlashing ? 'text-[var(--brand)]' : ''} ${shownTime ? '' : 'invisible'}`}>{label}</span>
+    <span className={`font-medium tabular-nums transition-colors duration-500 ${isFlashing ? 'text-[var(--brand)]' : ''} ${shownTime ? '' : 'invisible'}`}>{label}</span>
   </>
 }

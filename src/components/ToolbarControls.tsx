@@ -140,7 +140,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
           aria-expanded={isOpen}
           aria-haspopup="dialog"
           onClick={() => setIsOpen(open => !open)}
-          className={`toolbar-badge-control ${FONT_BAR_TIME} flex h-6 items-center border-0 px-1.5 font-semibold text-[var(--sub-purple)] outline-none transition-colors ${isOpen ? 'bg-[var(--ui-control)]' : 'bg-transparent hover:bg-[var(--ui-control)] focus-visible:bg-[var(--ui-control)]'}`}
+          className={`toolbar-badge-control ${FONT_BAR_TIME} flex h-6 items-center border-0 px-1.5 font-medium text-[var(--sub-purple)] outline-none transition-colors ${isOpen ? 'bg-[var(--ui-control)]' : 'bg-transparent hover:bg-[var(--ui-control)] focus-visible:bg-[var(--ui-control)]'}`}
         >
           {options.find(option => option.value === basis)?.label ?? '합산'}
         </button>
