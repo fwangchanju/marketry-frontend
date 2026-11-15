@@ -56,9 +56,15 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
               type="button"
               role="menuitem"
               onClick={() => { setIsOpen(false); if (!item.active) navigate(item.to) }}
-              className={`${DROPDOWN_ITEM_CLASS} flex w-full items-center gap-1 whitespace-nowrap py-1.5 text-left ${item.indent ? 'pl-6' : ''} ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}
+              className={`${DROPDOWN_ITEM_CLASS} flex w-full items-center whitespace-nowrap py-1.5 text-left ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}
             >
-              {item.indent && <span aria-hidden="true">▸</span>}
+              {/* 하위 단계(KOSPI·KOSDAQ)는 윗줄 KOREA에 맞춘다: ▸는 KO 가운데, 글자는 R 시작 위치. 숨긴 KO로 폭을 잡아 글꼴이 달라도 맞는다. */}
+              {item.indent && (
+                <span aria-hidden="true" className="relative inline-block">
+                  <span className="invisible">KO</span>
+                  <span className="absolute inset-0 text-center">▸</span>
+                </span>
+              )}
               {item.label}
             </button>
           ))}
