@@ -1,7 +1,7 @@
 {
   "/summary/korea": {
     "title": "MARKETRY - Design Your Market",
-    "description": "국내주식을 내 방식대로 살펴보세요. 히트맵의 박스 크기를 조절하고, 종목을 원하는 그룹으로 묶어 나만의 시장 지도와 등락률 그래프를 만들 수 있어요."
+    "description": "국내주식을 내 방식대로 살펴보세요. 히트맵의 박스 크기를 조절하고, 종목을 원하는 그룹으로 묶어 나만의 히트맵과 등락률 그래프를 만들 수 있어요."
   },
   "/map/korea/kospi": {
     "title": "코스피 히트맵 - MARKETRY",
@@ -39,11 +39,11 @@
   },
   "/info": {
     "title": "히트맵 설정 방법 - MARKETRY",
-    "description": "나만의 히트맵을 만들어, 내 기준으로 시장을 보는 방법을 안내합니다.",
+    "description": "나만의 히트맵을 만들어, 내 기준으로 시장을 보는 방법을 알려 드려요.",
     "canonicalPath": "/info/guide"
   },
   "/info/guide": {
     "title": "히트맵 설정 방법 - MARKETRY",
-    "description": "나만의 히트맵을 만들어, 내 기준으로 시장을 보는 방법을 안내합니다."
+    "description": "나만의 히트맵을 만들어, 내 기준으로 시장을 보는 방법을 알려 드려요."
   }
 }
