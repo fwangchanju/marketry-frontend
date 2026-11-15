@@ -5,6 +5,9 @@ import DisclaimerFooter from '@/components/DisclaimerFooter'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NavBarPageActions from '@/components/NavBarPageActions'
+import SettingsPanel, { SettingsColorSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
+import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
@@ -35,14 +38,16 @@ import { PageRefreshButton } from '@/components/NavBarPageActions'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { buildRankChart } from '@/utils/rankChart'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
-import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP } from '@/utils/japanMapSettings'
+import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP, NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
 import { USA_MAP_FIXED } from '@/utils/usaMapSettings'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector } from '@/utils/sectorAverage'
 import japanStocks from '@/data/japanStocks.json'
 
+const SECTION_ORDER: SettingsPanelSectionId[] = ['colors']
+
 // 홈의 일본·미국 구성. 업종 지도와 그룹 등락률을 지도 화면과 같은 트리·계산으로 만든다(최신 시세 기준).
-// 날짜 달력과 시계 새로고침은 지도 화면과 같은 부품을 쓴다. 설정 패널은 아직 없다.
+// 날짜 달력·시계 새로고침·설정 패널은 지도 화면과 같은 부품을 쓴다. 설정 패널은 색상 탭만 있다(편집할 설정이 없고 지도 화면과 같은 고정값을 보여 준다).
 export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }) {
   const isJapan = market === 'JAPAN'
   const base = isJapan ? 'japan' : 'usa'
@@ -110,6 +115,8 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
 
   // 화면 캡처·전체화면 — 지도 화면과 같은 방식이다.
   const screenshotRef = useRef<HTMLDivElement>(null)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
+  const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
@@ -133,8 +140,8 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
   return (
     <div className="flex h-screen min-h-0 flex-col bg-ui-background">
       <NavBar />
-      <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} />} />
-      <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
+      <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
+      <div ref={rowRef} className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
@@ -196,6 +203,22 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
           </div>
           <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
         </div>
+        <SettingsPanel pageLabel="Home" tabStorageName={isJapan ? 'JapanHome' : 'UsaHome'} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownQuotes?.quotes.length ?? 0}/${isJapan ? japanStocks.length : (usaStocks.data?.length ?? 0)}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
+          <SettingsPanelGroup section="colors">
+            {/* 지도 화면과 같은 구성이다. 등락률 색상·상위 업종 강조 색은 고정값을 보여 주고 바꾸지 못한다. */}
+            <SettingsColorSection
+              isCustom={false}
+              colorScaleDraft={colorScale}
+              colorCustomOn
+              onChangeColorCustomOn={() => {}}
+              onResetColorScale={() => {}}
+              isResettingColorScale={false}
+              colorEditorProps={buildFixedColorEditorProps()}
+              fixed
+            />
+            <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={() => {}} fixed />
+          </SettingsPanelGroup>
+        </SettingsPanel>
       </div>
       {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} captureReady={!isLoading} />}
     </div>
