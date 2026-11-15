@@ -2,7 +2,8 @@ import { useId } from 'react'
 import marketryLogo from '@/assets/marketry-logo.png'
 // 세로형·가로형(깨끗한)이 쓰는 건 그림 왼쪽 425×400(나무)뿐이라 그 부분만 잘라 둔 파일을 쓴다. 글자는 아래에서 따로 그린다.
 // 파일은 289×272(425×400과 같은 비율)로 줄여 두었고 아래 <image>의 425×400은 SVG 좌표라 그대로 늘려 그린다. 가장 크게 쓰는 곳(스피너·홈 로고)도 화면에서 약 120px 이하다.
-import marketrySymbol from '@/assets/marketry-symbol.webp'
+// 나무 그림은 확정 심볼(외곽선 심볼, 투명 배경, 2026-11-16 사용자 결정)을 쓴다. 정사각형 그림의 나무 영역(256px 기준 17~239, 25~233)을 기존 로고의 나무 자리(0~420, 0~400)에 맞추려고 486px로 키우고 x=-32, y=-47에 놓는다.
+import marketrySymbol from '@/assets/marketry-symbol-confirmed.png'
 import { MARKETRY_WORDMARK_PATH, MARKETRY_WORDMARK_WIDTH } from '@/components/marketryWordmarkPath'
 
 interface Props {
@@ -21,7 +22,7 @@ export default function MarketryLogo({ className, layout = 'horizontal' }: Props
     return (
       <svg aria-hidden="true" focusable="false" viewBox="0 0 1200 850" width={1200} height={850} className={`block ${className ?? ''}`}>
         <svg x={303} y={0} width={594} height={561.6} viewBox="0 0 425 400">
-          <image href={marketrySymbol} width={425} height={400} />
+          <image href={marketrySymbol} x={-32} y={-47} width={486} height={486} />
         </svg>
         <g transform={`translate(209.95 595) scale(${780.1 / MARKETRY_WORDMARK_WIDTH})`}>
           <path d={MARKETRY_WORDMARK_PATH} fill="var(--ui-white)" fillRule="evenodd" />
@@ -37,7 +38,7 @@ export default function MarketryLogo({ className, layout = 'horizontal' }: Props
     return (
       <svg aria-hidden="true" focusable="false" viewBox="0 0 2025 400" width={2025} height={400} className={`block ${className ?? ''}`}>
         <svg x={0} y={0} width={425} height={400} viewBox="0 0 425 400">
-          <image href={marketrySymbol} width={425} height={400} />
+          <image href={marketrySymbol} x={-32} y={-47} width={486} height={486} />
         </svg>
         <g transform={`translate(495 47.5) scale(${1117.5 / MARKETRY_WORDMARK_WIDTH})`}>
           <path d={MARKETRY_WORDMARK_PATH} fill="var(--ui-white)" fillRule="evenodd" />
