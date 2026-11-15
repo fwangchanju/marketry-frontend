@@ -2,10 +2,10 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA, isCustomPagePath, legacyCustomTarget } from './customRoutes.ts'
 
-test('한국 옛 주소 세 개는 새 주소로 간다', () => {
-  assert.equal(legacyCustomTarget('/custom'), SECTOR_KOREA)
+test('구글에 등록돼 있던 옛 주소(/custom/sector)만 새 주소로 간다', () => {
   assert.equal(legacyCustomTarget('/custom/sector'), SECTOR_KOREA)
-  assert.equal(legacyCustomTarget('/custom/stock'), STOCK_KOREA)
+  assert.equal(legacyCustomTarget('/custom'), null)
+  assert.equal(legacyCustomTarget('/custom/stock'), null)
 })
 
 test('일본 옛 주소는 비공개 화면이라 이동시키지 않는다', () => {
@@ -14,7 +14,6 @@ test('일본 옛 주소는 비공개 화면이라 이동시키지 않는다', ()
 })
 
 test('끝 슬래시가 붙은 옛 주소도 새 주소로 간다', () => {
-  assert.equal(legacyCustomTarget('/custom/stock/'), STOCK_KOREA)
   assert.equal(legacyCustomTarget('/custom/sector/'), SECTOR_KOREA)
 })
 
