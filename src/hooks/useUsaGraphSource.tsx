@@ -101,7 +101,7 @@ export function useUsaGraphSource(): OverseasGraphSource {
     graphSettings: (
       <>
         <SettingsGroupDepthSection depth={preferences.groupDepth} onChange={groupDepth => update({ groupDepth })} selectableDepth={2} />
-        <SettingsAverageModeSection avgChangeRateUseSimple={preferences.avgChangeRateUseSimple} onChange={avgChangeRateUseSimple => update({ avgChangeRateUseSimple })} enabled onToggle={ignoreToggle} toggleDisabled />
+        <SettingsAverageModeSection avgChangeRateUseSimple={preferences.avgChangeRateUseSimple} onChange={avgChangeRateUseSimple => update({ avgChangeRateUseSimple })} enabled onToggle={ignoreToggle} toggleDisabled toggleDisabledHint={<>종가만 저장되는 시장이라<br />N분 전 대비로 바꿀 수 없습니다.</>} />
       </>
     ),
   }

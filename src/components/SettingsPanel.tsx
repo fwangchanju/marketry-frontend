@@ -1191,12 +1191,15 @@ export function SettingsAverageModeSection({
   enabled,
   onToggle,
   toggleDisabled = false,
+  toggleDisabledHint = <>기간 등락률을 보는 동안에는<br />N분 전 대비로 바꿀 수 없습니다.</>,
 }: {
   avgChangeRateUseSimple: boolean
   onChange: (useSimple: boolean) => void
   enabled: boolean
   onToggle: () => void
   toggleDisabled?: boolean
+  // 토글을 누를 수 없는 이유(기본은 기간 등락률 보기 중). 시장마다 이유가 다르면 그 이유를 준다(미국은 종가만 저장돼서).
+  toggleDisabledHint?: ReactNode
 }) {
   const options: { value: boolean; label: string; icon: SettingsSectionIconName }[] = [
     { value: false, label: '시총 가중', icon: 'composition' },
@@ -1208,7 +1211,7 @@ export function SettingsAverageModeSection({
         <span className={`settings-plain-title ${enabled ? 'text-ui-white' : 'text-ui-muted'}`}>등락률 기준<SettingChangeDot draftKeys={['heatmap.avgChangeRateUseSimple']} /></span>
         <span className="relative inline-flex">
           <ToggleSwitch checked={enabled} onChange={onToggle} label="등락률 그래프" hideLabel disabled={toggleDisabled} />
-          {toggleDisabled && <BlockedClickHint className="-inset-1">기간 등락률을 보는 동안에는<br />N분 전 대비로 바꿀 수 없습니다.</BlockedClickHint>}
+          {toggleDisabled && <BlockedClickHint className="-inset-1">{toggleDisabledHint}</BlockedClickHint>}
         </span>
       </div>
       <div className={`settings-average-control ${enabled ? '' : 'opacity-35'}`}>
