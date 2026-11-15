@@ -197,7 +197,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
             inline
             query={draft}
             onChange={changeSearch}
-            placeholder="이메일 · 닉네임"
+            placeholder="검색"
             ariaLabel="회원 검색"
             afterInput={excludedRoles.size > 0 || excludedIssuers.size > 0 ? (
               <button
