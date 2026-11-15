@@ -7,6 +7,12 @@ import NavSubBar from '@/components/NavSubBar'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import ToolbarModeText from '@/components/ToolbarModeText'
+import ToolbarChip from '@/components/ToolbarChip'
+import JapanSessionChip from '@/components/JapanSessionChip'
+import UsaSessionChip from '@/components/UsaSessionChip'
+import { CalendarIcon, ClockIcon } from '@/components/icons/AppIcons'
+import { japanSessionAt, type JapanSession } from '@/utils/japanMarketSession'
+import { USA_SESSION } from '@/utils/usaMarketSession'
 import Toolbar from '@/components/Toolbar'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
@@ -74,45 +80,61 @@ export default function OverseasHomePage({ market }: { market: 'JAPAN' | 'USA' }
   const isLoading = categories.isLoading || classifications.isLoading || quotes.isLoading
   const hasData = tree.length > 0
 
+  const snapshotClock = snapshotTime ? snapshotTime.slice(11, 16) : null
+  const session = snapshotTime ? (isJapan ? japanSessionAt(snapshotTime) : USA_SESSION) : null
   return (
     <div className="flex h-screen min-h-0 flex-col bg-ui-background">
       <NavBar />
       <NavSubBar />
-      <Toolbar>
-        <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-          <ToolbarModeText page="HOME" label={label} showChevron menu={menu} />
-          <span className="px-2 text-ui-white">{toSnapshotDateLabel(snapshotTime)}</span>
-        </div>
-        <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>
-          <TaxonomyBadge taxonomy="MARKETRY" strongIndustryColor={strongIndustryColor} />
-        </div>
-      </Toolbar>
-      <div className="flex min-h-0 flex-1">
-        {[
-          { title: '업종 지도', node: (
-            <div className="relative flex min-h-0 flex-1 flex-col">
-              {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={() => {}} /> : <p className="text-ui-muted">{isLoading ? '불러오는 중' : '데이터가 없습니다.'}</p>}
+      <div className="main-settings-row relative z-10 -mt-[15px] flex min-h-0 min-w-0 flex-1 gap-[4px] overflow-hidden bg-ui-background">
+        <div className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
+          <Toolbar>
+            <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+              <ToolbarModeText page="HOME" label={label} showChevron menu={menu} />
+              <ToolbarChip>
+                <CalendarIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                {toSnapshotDateLabel(snapshotTime)}
+              </ToolbarChip>
+              {snapshotClock && (
+                <ToolbarChip>
+                  <ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
+                  {snapshotClock}
+                </ToolbarChip>
+              )}
+              {session && (isJapan ? <JapanSessionChip session={session as JapanSession} /> : <UsaSessionChip session={USA_SESSION} />)}
             </div>
-          ) },
-          { title: '그룹 등락률 (%)', node: (
-            <div className="relative flex min-h-0 flex-1 flex-col">
-              {hasData ? <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} decimalPlaces={1} /> : null}
+            <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>
+              <TaxonomyBadge taxonomy="MARKETRY" strongIndustryColor={strongIndustryColor} />
             </div>
-          ) },
-        ].map((frame, index) => (
-          <section key={frame.title} className="relative flex h-full min-w-[320px] flex-1 basis-0 flex-col bg-ui-background">
-            <div className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : 'pl-1 pr-0'}`}>
-              <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] py-[7px]">
-                <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
-                  <span className={FRAME_BADGE_CLASS}>{frame.title}</span>
+          </Toolbar>
+          <div className="flex min-h-0 flex-1">
+            {[
+              { title: '업종 지도', node: (
+                <div className="relative flex min-h-0 flex-1 flex-col">
+                  {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={() => {}} /> : <p className="text-ui-muted">{isLoading ? '불러오는 중' : '데이터가 없습니다.'}</p>}
                 </div>
-                <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{frame.node}</div>
-              </div>
-            </div>
-          </section>
-        ))}
+              ) },
+              { title: '그룹 등락률 (%)', node: (
+                <div className="relative flex min-h-0 flex-1 flex-col">
+                  {hasData ? <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} decimalPlaces={1} /> : null}
+                </div>
+              ) },
+            ].map((frame, index) => (
+              <section key={frame.title} className="relative flex h-full min-w-[320px] flex-1 basis-0 flex-col bg-ui-background">
+                <div className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : 'pl-1 pr-0'}`}>
+                  <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] py-[7px]">
+                    <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
+                      <span className={FRAME_BADGE_CLASS}>{frame.title}</span>
+                    </div>
+                    <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{frame.node}</div>
+                  </div>
+                </div>
+              </section>
+            ))}
+          </div>
+          <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
+        </div>
       </div>
-      <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
     </div>
   )
 }
