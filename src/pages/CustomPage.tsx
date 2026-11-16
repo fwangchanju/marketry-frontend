@@ -301,7 +301,7 @@ export default function CustomPage() {
                   />
                 ) : (
                   // 내 기준 업종 표의 번호 배지는 내 기준 모드 색을 쓴다(index.css의 data-sector-profile="mine").
-                  <div className="flex min-h-0 flex-1 flex-col" style={{ '--brand': mineStrongColor, '--brand-surface': `color-mix(in srgb, ${mineStrongColor} 60%, #0a0a0a)` } as CSSProperties}>
+                  <div className="flex min-h-0 flex-1 flex-col" style={{ '--brand': mineStrongColor, '--brand-surface': `color-mix(in srgb, ${mineStrongColor} 60%, #0a0a0a)`, '--brand-surface-hover': 'color-mix(in srgb, var(--brand-surface) 80%, var(--brand))' } as CSSProperties}>
                     <AdminSectorTable
                       sectors={sectors ?? []}
                       settingsActionsTarget={sectorSettingsActionsTarget}

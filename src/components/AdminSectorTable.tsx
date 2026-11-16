@@ -107,6 +107,7 @@ function SectorNameInput({ wrapperClassName = '', onChange, onFocus, onBlur, ...
 type Row =
   | { type: 'sector'; item: SectorItem; siblingIndex: number }
   | { type: 'add-child'; parentId: number; parentPath: string[]; depth: number }
+  | { type: 'add-top' }
 
 // 업종 화면 변경 내역 — 이동·이름 바꾸기를 되돌리고 다시 적용한다(추가·삭제는 아직 기록하지 않는다).
 type SectorHistoryAction =
@@ -221,6 +222,22 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   const [selectedMiddleId, setSelectedMiddleId] = useState<number | null>(null)
   const [selectedSectorId, setSelectedSectorId] = useState<number | null>(null)
   const [newName, setNewName] = useState('')
+  // 대분류 머리글의 + 를 누르면 대분류 맨 위에 이름 입력칸을 연다. 이름 없이 나가면 생성을 취소한다.
+  const [isAddingTop, setIsAddingTop] = useState(false)
+  // 대분류 입력칸 바깥을 누르면 생성을 취소한다(이름 입력 여부와 무관하게 입력을 버린다).
+  const topRowRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!isAddingTop) return
+    // pointerdown에서 닫으면 입력칸이 사라지며 행이 올라가 손을 뗀 click이 다른 자리에 떨어진다. 그래서 click에서 닫는다.
+    // 대분류 생성 버튼을 누른 click은 이 처리에서 뺀다(같은 click에서 바로 닫히지 않게).
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (topRowRef.current?.contains(target) || target.closest('[aria-label="대분류 업종 추가"]')) return
+      setNewName(''); setIsAddingTop(false)
+    }
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [isAddingTop])
   const [childNameByParent, setChildNameByParent] = useState<Record<number, string>>({})
   // 펼침과 무관하게 "지금 이 섹터 밑에 추가 입력줄을 보여줄지"만 따로 관리 — 한 번에 하나만 연다.
   const [addingChildFor, setAddingChildFor] = useState<number | null>(null)
@@ -369,6 +386,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       appAlert(`업종은 ${maxDepth + 1}단계까지만 만들 수 있습니다.`, { title: '추가 제한' })
       return
     }
+    // 하위 입력칸은 한 번에 하나만 연다. 대분류 입력칸은 닫는다.
+    setIsAddingTop(false)
     if (parent?.depth === 0) { setSelectedMajorId(id); setSelectedMiddleId(null) }
     if (parent?.depth === 1) setSelectedMiddleId(id)
     setAddingChildFor(prev => (prev === id ? null : id))
@@ -534,6 +553,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   }, [trimmedQuery, rootSectors, viewSectors, excludedByDepth, sortSiblings])
   const makeRows = (items: SectorItem[], parentId: number | null): Row[] => {
     const rows: Row[] = items.map((item, index) => ({ type: 'sector', item, siblingIndex: index + 1 }))
+    // 대분류 목록(rootSectors)에만 대분류 입력칸을 넣는다. 중·소분류는 상위가 없어도 parentId가 null이라 따로 막아야 한다.
+    if (items === rootSectors && isAddingTop) rows.unshift({ type: 'add-top' })
     if (parentId !== null && addingChildFor === parentId) {
       const parent = sectors.find(item => item.id === parentId)
       if (parent) rows.push({ type: 'add-child', parentId, parentPath: getSectorPath(parent).split(SECTOR_PATH_SEPARATOR), depth: parent.depth + 1 })
@@ -597,14 +618,37 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   }, [recentlyChangedSectorId, sectors, selectedMajorId, selectedMiddleId])
 
   const renderRow = (row: Row) => {
+    if (row.type === 'add-top') {
+      return (
+        <tr key="add-top">
+          <td colSpan={columnWidths.length} className="p-0 text-left" style={{ paddingLeft: '14px', height: '30px' }}>
+            <div ref={topRowRef} className="group/create flex h-full items-center gap-2 pl-7">
+              <SectorNameInput
+                wrapperClassName="inline-flex"
+                autoFocus
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { setIsAddingTop(false); handleCreate() }
+                  if (e.key === 'Escape') { setNewName(''); setIsAddingTop(false) }
+                }}
+                placeholder="대분류 추가"
+                aria-label="대분류 업종명"
+                className="h-[25px] w-40 rounded-md border-0 bg-[var(--ui-panel)] px-2 text-sm font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
+              />
+            </div>
+          </td>
+        </tr>
+      )
+    }
     if (row.type === 'add-child') {
       const parentId = row.parentId
       const chainLabel = `[${row.parentPath.join(SECTOR_PATH_SEPARATOR)}]`
       return (
         <tr key={`add-child-${parentId}`}>
-          <td colSpan={columnWidths.length} className="py-0.5 text-left" style={{ paddingLeft: '14px' }}>
-            {/* 입력 글자의 시작선을 생성 후 업종명과 맞춘다. input 내부 여백(8px)만큼 입력칸 자체는 왼쪽에서 시작한다. */}
-            <div className="group/create flex items-center gap-2 pl-7">
+          <td colSpan={columnWidths.length} className="p-0 text-left" style={{ paddingLeft: '14px', height: '30px' }}>
+            {/* 입력 글자의 시작선을 생성 후 업종명과 맞춘다. input 내부 여백(8px)만큼 입력칸 자체는 왼쪽에서 시작한다. 줄 높이는 기존 업종 줄과 같은 30px다. */}
+            <div className="group/create flex h-full items-center gap-2 pl-7">
               <SectorNameInput
                 wrapperClassName="inline-flex"
                 autoFocus
@@ -617,7 +661,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 placeholder={`${row.depth === 1 ? '중분류' : '소분류'} 추가`}
                 data-hint={`${chainLabel} 하위 업종 추가`}
                 aria-label={`${chainLabel} 하위 업종명`}
-                className="h-7 w-40 rounded-md border-0 bg-[var(--ui-panel)] px-2 text-sm font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
+                className="h-[25px] w-40 rounded-md border-0 bg-[var(--ui-panel)] px-2 text-sm font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-muted focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]"
               />
             </div>
           </td>
@@ -819,6 +863,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                         <span aria-hidden="true" className={`${ICON_BADGE_CLASS} absolute right-full top-1/2 -translate-y-1/2 ${DROP_BADGE_CLASS[headerDropState]}`}>
                           {headerDropState === 'blocked' ? <CloseIcon className="h-4 w-4" /> : <NestIntoIcon className="h-4 w-4" />}
                         </span>
+                      )}
+                      {!headerDropState && depth === 0 && (
+                        <button type="button" aria-label="대분류 업종 추가" data-hint="대분류 업종 추가" onClick={() => { setAddingChildFor(null); setSelectedSectorId(null); setIsAddingTop(true) }} className={`${ICON_BADGE_CLASS} absolute right-full top-1/2 -translate-y-1/2 rounded border border-ui-border bg-[var(--ui-control)] text-ui-text outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)]`}>
+                          <PlusIcon className="h-4 w-4" />
+                        </button>
                       )}
                       {`${label} (${toCount(sectorCounts[index])})`}
                     </span>
