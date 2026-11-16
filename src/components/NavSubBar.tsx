@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
@@ -100,6 +100,12 @@ interface Props {
 export default function NavSubBar({ actions, onReselectCurrent, staticMode = false, vertical = true }: Props) {
   // 오른쪽 버튼 묶음은 상단 영역(NavBar)의 자리에 그린다.
   const [actionSlot, setActionSlot] = useState<HTMLElement | null>(null)
+  // 설정창이 왼쪽에 있으면 메뉴를 오른쪽에 둔다. 저장된 값을 html에 달고, 위치는 index.css의 html[data-settings-left] 규칙이 정한다.
+  useLayoutEffect(() => {
+    let left = false
+    try { left = JSON.parse(localStorage.getItem('settings-panel-on-left') ?? 'false') === true } catch { left = false }
+    document.documentElement.dataset.settingsLeft = String(left)
+  }, [])
   useEffect(() => {
     const frame = requestAnimationFrame(() => setActionSlot(document.getElementById('nav-actions-slot')))
     return () => cancelAnimationFrame(frame)
@@ -161,7 +167,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
 
   return (
     <div className={vertical
-      ? 'fixed bottom-0 left-0 top-[90px] z-30 flex w-20 flex-col items-stretch bg-ui-panel px-2 pb-[24px] pt-[43px] text-xs'
+      ? 'settings-side-nav fixed bottom-0 left-0 top-[90px] z-30 flex w-20 flex-col items-stretch bg-ui-panel px-2 pb-[24px] pt-[43px] text-xs'
       : 'relative z-30 mb-[15px] flex h-[30px] after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs'}>
       {/* 이 줄의 하단선은 메인·설정 행의 세로 기준이다. 아이콘 28px과 같은 높이로 두고, 하단선에서 설정창까지는 페이지 쪽의 4px만 남긴다. */}
       <div data-nav-menus className={vertical ? 'flex h-full flex-col items-stretch gap-1' : 'flex h-7 items-center gap-3'}>

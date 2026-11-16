@@ -9,7 +9,8 @@ const GAP = 8
 const EDGE = 8
 
 // bounds는 설정창 안 요소일 때 그 설정창의 영역이다 — 설명이 설정창 바깥으로 나가지 않게 가로를 이 안에 둔다.
-type Hint = { text: string; rect: DOMRect; bounds: DOMRect | null }
+// above는 data-hint-above가 있는 요소에서 설명을 요소 위에 둔다(아래 공간이 있어도).
+type Hint = { text: string; rect: DOMRect; bounds: DOMRect | null; above: boolean }
 
 function findHintElement(x: number, y: number): HTMLElement | null {
   // 마우스 이벤트를 받지 않는 비활성 버튼에도 설명이 떠야 해서 좌표로 요소를 찾는다.
@@ -36,7 +37,7 @@ export default function HoverHintLayer() {
       current = element
       const text = element.dataset.hint
       if (!text) return
-      timer = window.setTimeout(() => setHint({ text, rect: element.getBoundingClientRect(), bounds: element.closest('[data-settings-panel]')?.getBoundingClientRect() ?? null }), delay)
+      timer = window.setTimeout(() => setHint({ text, rect: element.getBoundingClientRect(), bounds: element.closest('[data-settings-panel]')?.getBoundingClientRect() ?? null, above: element.hasAttribute('data-hint-above') }), delay)
     }
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -80,7 +81,7 @@ export default function HoverHintLayer() {
     const maxLeft = Math.min(bounds?.right ?? window.innerWidth, window.innerWidth) - width - EDGE
     const left = Math.max(Math.min(rect.left + rect.width / 2 - width / 2, maxLeft), minLeft)
     const below = rect.bottom + GAP
-    const top = below + height + EDGE > window.innerHeight ? Math.max(rect.top - GAP - height, EDGE) : below
+    const top = !hint.above && below + height + EDGE <= window.innerHeight ? below : Math.max(rect.top - GAP - height, EDGE)
     setPosition({ left, top })
   }, [hint])
 

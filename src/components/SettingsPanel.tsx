@@ -1310,10 +1310,13 @@ function SettingsTaxonomySelector({
   snapshotTime,
   onlyTaxonomy,
   ownDraftKeys,
+  actions,
 }: {
   taxonomy: TaxonomyKey
   onSelectTaxonomy: (taxonomy: TaxonomyKey) => void
   atBottom?: boolean
+  // Mode 제목 줄 오른쪽에 둘 저장·되돌리기 아이콘(하단 배치일 때만 넘긴다).
+  actions?: ReactNode
   snapshotTime?: string | null
   // 이 분류만 고를 수 있는 화면 — 나머지 칸은 보이되 눌리지 않고, 국내 설정의 저장 안 한 변경 표시를 쓰지 않으며, 업데이트 시각 줄은 자리만 잡고 숨긴다.
   onlyTaxonomy?: TaxonomyKey
@@ -1339,11 +1342,14 @@ function SettingsTaxonomySelector({
 
   return (
     <div data-settings-side-toggle-top-anchor={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
-      <p data-map-select-title className="font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
+      <div className="grid h-6 grid-cols-3 items-center gap-[6px]">
+        <p data-map-select-title className="col-span-2 font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
         {TAXONOMY_SELECT_TITLE}
-      </p>
+        </p>
+        <div className="col-span-1 flex justify-center"><div className="mr-[7px]">{actions}</div></div>
+      </div>
       <div data-settings-side-toggle-bottom-anchor role="radiogroup" aria-label={TAXONOMY_SELECT_TITLE} className="relative mt-2 grid grid-cols-3 gap-[6px]">
         <SlidingHighlight count={options.length} index={options.findIndex(option => isSelected(option.key))} className="rounded-[4px] bg-brand-surface" />
         {options.map(option => (
@@ -2623,7 +2629,7 @@ export default function SettingsPanel({
   const showSaveRevert = draftScope !== 'marketry' && draftScope !== 'exchange'
   const preferenceActions = showPreferenceActions && showSaveRevert ? (
     <div className="-mr-[7px] ml-auto flex shrink-0 items-center gap-1">
-      <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" disabled={isPreferenceFeedbackActive} onClick={async () => {
+      <button type="button" aria-label="초기화" data-hint="저장값으로 되돌리기" data-hint-above disabled={isPreferenceFeedbackActive} onClick={async () => {
           if (hasDrafts && await appConfirm('현재 분류의 기존 저장값으로 되돌리시겠습니까?', { title: '되돌리기' })) runPreferenceAction(() => discardDrafts(draftScope))
         }} className="group relative flex h-6 w-6 items-center justify-center border-0 bg-transparent p-0 text-ui-muted outline-none transition-colors hover:text-brand focus-visible:text-brand disabled:opacity-50">
         <HistoryIcon className="h-5 w-5" aria-hidden="true" />
@@ -2633,6 +2639,7 @@ export default function SettingsPanel({
         aria-label="저장"
         // 비로그인도 같은 툴팁이 뜨고, 누르면 로그인 창이 열린다.
         data-hint="변경값으로 저장하기"
+        data-hint-above
         disabled={isPreferenceFeedbackActive}
         onClick={async () => {
           if (!isLoggedIn) { requestLogin(); return }
@@ -2674,7 +2681,7 @@ export default function SettingsPanel({
     >
       {/* 메인 툴바의 줄 높이(상하 여백 포함 39px)에 맞춘다. 제목과 헤더 조작부는 28px 안에서 세로 가운데 둔다. */}
       <SettingsPanelHeader>
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <p className="font-roboto-latin flex h-7 w-[88px] min-w-[88px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
             {/* 제목 칸은 가장 긴 제목(Summary)에 맞춘 고정 폭(88px)이라 모든 페이지에서 옆의 종목/업종 배지가 같은 자리에 온다. */}
             {/* 아래 Mode 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
@@ -2682,12 +2689,12 @@ export default function SettingsPanel({
             {isAdminPage ? 'Admin' : pageLabel ?? '설정'}
           </p>
           {stockCountLabel && (
-            <span className="flex h-7 w-[7.5rem] shrink-0 items-center whitespace-nowrap text-sm leading-none text-ui-muted">
+            <span className="ml-auto mr-[23px] flex h-7 w-[7.5rem] shrink-0 items-center whitespace-nowrap text-sm leading-none text-ui-muted">
               <CountLabelWithBadge label={stockCountLabel} alignEnd />
             </span>
           )}
         </div>
-        {preferenceActions}
+        {!(taxonomyAtBottom && hasTaxonomySelector) && preferenceActions}
         {headerRight && <div className="-mr-[7px] ml-auto flex shrink-0 items-center">{headerRight}</div>}
       </SettingsPanelHeader>
       {menuSections.length > 0 && (
@@ -2775,7 +2782,7 @@ export default function SettingsPanel({
       </div>
       {taxonomyAtBottom && hasTaxonomySelector && (
         <>
-          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom snapshotTime={snapshotTime} onlyTaxonomy={onlyTaxonomy} ownDraftKeys={draftKeyMap ? Object.values(draftKeyMap) : undefined} />
+          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom actions={preferenceActions} snapshotTime={snapshotTime} onlyTaxonomy={onlyTaxonomy} ownDraftKeys={draftKeyMap ? Object.values(draftKeyMap) : undefined} />
         </>
       )}
     </div>

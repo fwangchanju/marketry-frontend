@@ -53,7 +53,7 @@ export default function SettingsPanelSideToggle({ isOnLeft, onToggleSide, panelN
     >
       <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
         <path
-          d={isOnLeft ? 'M6 3.5 10.5 8 6 12.5' : 'M10 3.5 5.5 8 10 12.5'}
+          d="M3 4.5H13M6 1.5 3 4.5 6 7.5M3 11.5H13M10 8.5 13 11.5 10 14.5"
           fill="none"
           stroke="currentColor"
           strokeWidth={1.5}

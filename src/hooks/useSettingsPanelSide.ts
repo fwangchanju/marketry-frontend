@@ -8,12 +8,18 @@ const SIDE_SLIDE_MS = 500
 export function useSettingsPanelSide() {
   const [isOnLeft, setIsOnLeft] = useLocalPersistedState('settings-panel-on-left', false)
   const rowRef = useRef<HTMLDivElement>(null)
+  // 좌측 메뉴 위치를 정하는 CSS가 읽도록 설정창 위치를 html에 단다.
+  useLayoutEffect(() => { document.documentElement.dataset.settingsLeft = String(isOnLeft) }, [isOnLeft])
   // 바꾸기 직전 줄 안 각 칸의 위치. 바꾼 뒤(layout) 새 위치와 비교해서 그 차이만큼 되돌려 놓고 0으로 미끄러뜨린다(FLIP).
   const beforeRects = useRef<Map<Element, DOMRect> | null>(null)
+  // 바꾸기 직전 좌측 메뉴의 가로 위치. 메뉴도 설정창과 같은 방식으로 미끄러뜨린다.
+  const navBeforeLeft = useRef<number | null>(null)
 
   const toggleSide = () => {
     const row = rowRef.current
     if (row) beforeRects.current = new Map(Array.from(row.children, child => [child, child.getBoundingClientRect()]))
+    const nav = document.querySelector<HTMLElement>('.settings-side-nav')
+    navBeforeLeft.current = nav ? nav.getBoundingClientRect().left : null
     setIsOnLeft(prev => !prev)
   }
 
@@ -35,6 +41,13 @@ export function useSettingsPanelSide() {
         { duration: SIDE_SLIDE_MS, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
       )
       animation.onfinish = animation.oncancel = () => { if (isSettings) child.style.zIndex = '' }
+    }
+    const navBefore = navBeforeLeft.current
+    navBeforeLeft.current = null
+    const nav = document.querySelector<HTMLElement>('.settings-side-nav')
+    if (navBefore !== null && nav) {
+      const distance = navBefore - nav.getBoundingClientRect().left
+      if (distance) nav.animate([{ transform: `translateX(${distance}px)` }, { transform: 'translateX(0)' }], { duration: SIDE_SLIDE_MS, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' })
     }
   }, [isOnLeft])
 
