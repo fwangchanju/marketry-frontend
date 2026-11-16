@@ -550,6 +550,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     return rows
   }
   const columnRows = [makeRows(rootSectors, null), makeRows(middleSectors, selectedMajorId), makeRows(smallSectors, selectedMiddleId)]
+  // 회원이 직접 만든 대분류가 하나도 없는지 — 미분류·신규 상장·거래 정지는 처음부터 주어지는 분류라 세지 않는다.
+  // 이 상태에서만 대분류 머리글의 + 버튼이 깜빡여 업종 추가 자리를 알려 준다(설정창의 '업종 추가' 입력칸을 없앤 뒤 그 자리를 이어받았다).
+  const hasOwnTopSector = sectors.some(item => item.parentId === null && !isProtectedSectorName(item.name))
 
   const rootIndexById = new Map<number, number>()
   rootSectors.forEach((c, i) => rootIndexById.set(c.id, i + 1))
@@ -852,12 +855,13 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                         const parentId = depth === 0 ? null : depth === 1 ? selectedMajorId : selectedMiddleId
                         const disabled = depth > 0 && parentId === null
                         return (
+                          // 업종이 하나도 없으면 대분류 + 로 시선을 끈다(설정창의 업종 추가 입력칸을 없앤 뒤 그 자리를 이어받는다).
                           <button type="button" aria-label={`${label} 업종 추가`} data-hint={`${label} 업종 추가`} disabled={disabled} onClick={() => {
                             setSelectedSectorId(null)
                             if (depth === 0) { setAddingChildFor(null); setIsAddingTop(true); return }
                             setIsAddingTop(false)
                             setAddingChildFor(parentId)
-                          }} className={`${ICON_BADGE_CLASS} absolute right-full top-1/2 -translate-y-1/2 rounded-sm border border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-40`}>
+                          }} className={`${ICON_BADGE_CLASS} absolute right-full top-1/2 -translate-y-1/2 rounded-sm border border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-40 ${!disabled && !hasOwnTopSector && !isAddingTop ? 'animate-input-attention' : ''}`}>
                             <PlusIcon className="h-4 w-4" />
                           </button>
                         )
@@ -917,25 +921,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
         })()}
       </DragOverlay>
     </DndContext>
+    {/* 업종 추가는 표 머리글의 대분류·중분류·소분류 + 버튼이 맡는다. 설정창에는 변경 내역만 둔다. */}
     {settingsActionsTarget && createPortal(
-      <>
-      <section aria-label="업종 추가" className="settings-item settings-custom-control">
-        <h2 className="settings-plain-title mb-3 text-[15px] font-medium leading-[22px] text-ui-white">업종 추가</h2>
-        <p className="settings-description m-0 mt-1 max-w-full text-xs/4 font-medium text-ui-muted">업종명을 입력한 뒤 엔터</p>
-        <div className="flex min-w-0 max-w-full settings-control-inset items-center gap-2">
-          <SectorNameInput
-            wrapperClassName="flex min-w-0 flex-1"
-            value={newName}
-            onChange={e => setNewName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleCreate()}
-            placeholder="업종을 추가해 주세요"
-            aria-label="최상위 업종명"
-            className={`h-[25px] min-w-0 flex-1 rounded-[5px] border border-transparent bg-[var(--ui-control)] px-2 text-[13px]/4 font-medium text-ui-white outline-none focus:placeholder:text-transparent placeholder:text-ui-text focus:border-[var(--brand)] ${sectors.length === 0 ? 'animate-input-attention' : ''}`}
-          />
-        </div>
-      </section>
-      {/* 변경 내역 — 종목 화면과 같은 부품이다. */}
-      <section aria-label="변경 내역" className="settings-item settings-custom-control relative before:absolute before:-top-3 before:left-0 before:right-0 before:border-t before:border-ui-white/10 before:content-['']">
+      <section aria-label="변경 내역" className="settings-item settings-custom-control">
         <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">변경 내역</h2>
         <ChangeHistoryControls
           undoStack={undoStack}
@@ -946,8 +934,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           onUndoItem={id => undoUntil(undoStack.findIndex(action => action.id === id))}
           onRedoItem={id => redoUntil(redoStack.findIndex(action => action.id === id))}
         />
-      </section>
-      </>,
+      </section>,
       settingsActionsTarget,
     )}
     </>
