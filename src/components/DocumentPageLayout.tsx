@@ -70,7 +70,7 @@ export default function DocumentPageLayout({ title, heading, children, panelIcon
             <ToolbarModeText page="INFO" label={title} showChevron={isInfoTitle} menu={isInfoTitle ? infoMenu(title) : undefined} />
           </Toolbar>
           {/* 공통 바깥 프레임 안에서 InfoDocument의 제목·구획·정보 행 양식을 사용한다. */}
-          <PageMainFrame
+          <PageMainFrame borderless
             className="p-0"
             heading={<div className="mx-auto w-full max-w-4xl">{heading}</div>}
           >
