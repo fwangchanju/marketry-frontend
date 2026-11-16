@@ -35,6 +35,7 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { appAlert } from '@/utils/appDialogBus'
 import { isAdminSession } from '@/utils/adminAccess'
 import { STOCK_KOREA } from '@/utils/customRoutes'
+import { isProtectedSectorName } from '@/utils/protectedSector'
 import { buildSectorStats } from '@/utils/sectorOrder'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
@@ -180,9 +181,10 @@ export default function CustomPage() {
   const copyLabel =
     copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
-  // 내 분류에 업종이 하나도 없는 처음 상태 — 업종 화면이면 업종 추가 입력칸을 강조하고, 시작 안내 팝업은 빈 상태 동안 한 번 띄운다.
-  const isEmptyMineData = !isReadOnlySheet && isLoggedIn && !isSectorsLoading && sectors?.length === 0
-  const isEmptyMine = isEmptyMineData && mode === 'sector'
+  // 내 분류에 회원이 직접 만든 대분류가 하나도 없는 처음 상태 — 미분류·신규 상장·거래 정지는 처음부터 주어지는 분류라 세지 않는다(그래서 예전의 "업종 0개" 조건은 늘 거짓이었다).
+  // 시작 안내 팝업은 이 상태 동안 한 번 띄우고, 업종을 추가하라는 시선은 섹터 표 대분류 머리글의 + 버튼이 받는다(2026-11-16 설정창 '업종 추가' 항목을 없앴다).
+  const hasOwnTopSector = (sectors ?? []).some(item => item.parentId === null && !isProtectedSectorName(item.name))
+  const isEmptyMineData = !isReadOnlySheet && isLoggedIn && !isSectorsLoading && Boolean(sectors) && !hasOwnTopSector
   // 내 분류가 비어 있는 동안 업종·종목 두 화면을 오가도 안내창은 한 번만 띄운다.
   const emptyGuideShownRef = useRef(false)
   useEffect(() => {
@@ -192,7 +194,7 @@ export default function CustomPage() {
     }
     if (emptyGuideShownRef.current) return
     emptyGuideShownRef.current = true
-    void appAlert('먼저 업종 페이지(Custom > Sector)에서 업종을 추가해 주세요. 그리고 종목 페이지(Custom > Stock)로 가서 종목을 분류해 보세요.', { title: '내 기준 시작하기' })
+    void appAlert('먼저 섹터 페이지에서 업종을 추가해 주세요. 그리고 종목 페이지로 가서 종목을 분류해 보세요.', { title: '내 기준 시작하기' })
   }, [isEmptyMineData])
 
   const actions = (
@@ -212,7 +214,6 @@ export default function CustomPage() {
       isScreenshotOpen={isShareOpen}
       onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
       isSettingsOpen={isSettingsOpen}
-      settingsAttention={isEmptyMine}
       isNativeFullscreen={isNativeFullscreen}
       onToggleFullscreen={handleToggleNativeFullscreen}
       showRefresh={false}
