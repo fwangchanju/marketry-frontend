@@ -207,7 +207,7 @@ export default function App() {
           <Route path="/admin" element={<AdminRouteGuard />}>
             <Route index element={<Navigate to="/summary/korea" replace />} />
             <Route path="member" element={<AdminPage />} />
-            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="stats" element={<AdminDashboardPage />} />
             <Route path="message" element={<AdminMessagePage />} />
             <Route path="default" element={<AdminDefaultPage />} />
             <Route path="banner" element={<AdminBannerPage />} />

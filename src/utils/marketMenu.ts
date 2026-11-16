@@ -7,7 +7,8 @@ import { OVERSEAS_MARKETS, overseasRoute, type OverseasMarket } from '@/utils/ma
 // 특별 회원·관리자(includeOverseas)에게만 일본·미국을 더한다. 상단 메뉴의 해외 항목과 같은 조건이다.
 export function marketMenu(basePath: '/map' | '/graph' | '/summary', current: MarketQuery | OverseasMarket, includeOverseas = false) {
   // KOSPI·KOSDAQ은 KOREA 아래 단계라 들여쓰기로 보여 준다.
-  const korea = MARKET_OPTIONS.map(option => ({ label: option.label, to: marketRoute(basePath, option.market), active: option.market === current, indent: option.market !== 'ALL_STOCK' }))
+  // 드롭다운에서는 KOSPI·KOSDAQ 항목을 숨긴다(목록 정의와 주소는 그대로 둔다).
+  const korea = MARKET_OPTIONS.filter(option => option.market === 'ALL_STOCK').map(option => ({ label: option.label, to: marketRoute(basePath, option.market), active: option.market === current, indent: false }))
   if (!includeOverseas) return korea
   return [
     ...korea,
@@ -41,10 +42,10 @@ export function infoMenu(current: string) {
 }
 
 // 어드민 화면의 목록. 상단 메뉴의 Admin 항목과 같은 다섯 개다.
-export function adminMenu(current: 'MEMBER' | 'DASHBOARD' | 'MESSAGE' | 'DEFAULT' | 'BANNER') {
-  const items: { label: 'MEMBER' | 'DASHBOARD' | 'MESSAGE' | 'DEFAULT' | 'BANNER'; to: string }[] = [
+export function adminMenu(current: 'MEMBER' | 'STATS' | 'MESSAGE' | 'DEFAULT' | 'BANNER') {
+  const items: { label: 'MEMBER' | 'STATS' | 'MESSAGE' | 'DEFAULT' | 'BANNER'; to: string }[] = [
     { label: 'MEMBER', to: '/admin/member' },
-    { label: 'DASHBOARD', to: '/admin/dashboard' },
+    { label: 'STATS', to: '/admin/stats' },
     { label: 'MESSAGE', to: '/admin/message' },
     { label: 'DEFAULT', to: '/admin/default' },
     { label: 'BANNER', to: '/admin/banner' },

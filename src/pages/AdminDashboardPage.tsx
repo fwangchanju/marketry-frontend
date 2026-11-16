@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
             ) : (
               <section aria-label="회원 대시보드" className="flex min-h-0 flex-1 w-full flex-col text-sm">
                 <Toolbar>
-                  <ToolbarModeText page="ADMIN" label="DASHBOARD" showChevron menu={adminMenu('DASHBOARD')} />
+                  <ToolbarModeText page="ADMIN" label="STATS" showChevron menu={adminMenu('STATS')} />
                 </Toolbar>
                 <div
                   ref={dashboardGridRef}
