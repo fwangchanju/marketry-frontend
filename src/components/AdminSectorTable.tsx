@@ -118,7 +118,7 @@ const SECTOR_HISTORY_LIMIT = 9
 const DRAG_CONTROL_CLASS = 'cursor-grab touch-none rounded-sm border-0 bg-brand-surface text-ui-white transition-colors hover:bg-brand-surface-hover focus-visible:bg-brand-surface-hover focus-visible:outline-none'
 
 // 번호 칸 — 업종은 끌어서 다른 업종 위에 놓으면 그 안으로 이동한다(업종 순서는 항상 가나다 순이라 바꾸지 못한다).
-const NUMBER_BADGE_CLASS = 'mr-[10px] inline-flex h-6 w-8 shrink-0 items-center justify-end p-0 pr-1 text-sm leading-none font-medium tabular-nums'
+const NUMBER_BADGE_CLASS = 'mr-[10px] inline-flex h-6 w-8 shrink-0 items-center justify-end p-0 pr-1 text-sm leading-none font-medium tabular-nums !border !border-[var(--ui-muted)]'
 // 번호 대신 아이콘이 들어갈 때의 배지 — 크기·색은 같고 아이콘만 가로·세로 가운데에 놓는다.
 const ICON_BADGE_CLASS = 'mr-[10px] inline-flex h-6 w-8 shrink-0 items-center justify-center p-0'
 
@@ -380,18 +380,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 되돌리기·다시 적용 목록이 바뀔 때마다 새 처리 함수로 다시 등록한다(handleUndo·handleRedo는 매 렌더 새 함수라 deps에 넣지 않는다)
   }, [undoStack, redoStack])
 
-  const toggleAddChild = (id: number) => {
-    const parent = sectors.find(c => c.id === id)
-    if (parent && parent.depth >= maxDepth) {
-      appAlert(`업종은 ${maxDepth + 1}단계까지만 만들 수 있습니다.`, { title: '추가 제한' })
-      return
-    }
-    // 하위 입력칸은 한 번에 하나만 연다. 대분류 입력칸은 닫는다.
-    setIsAddingTop(false)
-    if (parent?.depth === 0) { setSelectedMajorId(id); setSelectedMiddleId(null) }
-    if (parent?.depth === 1) setSelectedMiddleId(id)
-    setAddingChildFor(prev => (prev === id ? null : id))
-  }
 
   const triggerHighlight = (id: number) => {
     setHighlightedId(id)
@@ -695,7 +683,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     // 선택한 경로(대·중·소분류에서 고른 업종)의 줄은 종목 표의 선택된 줄과 같은 청록 배경으로 칠한다.
     const isOnSelectedPath = selectedSectorId === sector.id || selectedMajorId === sector.id || selectedMiddleId === sector.id
     // 끄는 동안 놓을 수 있는 줄은 번호 자리의 아이콘 배지로 구분하므로 줄마다 선을 긋지 않는다. 지금 커서가 올라간 한 줄만 줄 전체 높이(29px)로 청록으로 채운다(세 칸에 걸쳐 한 줄처럼 이어진다).
-    const rowBgClass = `${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20 group-hover:bg-[var(--brand)]/35' : 'group-hover:bg-[var(--brand)]/10'}`
+    const rowBgClass = `${isMoveDrag && moveOverId === sector.id ? 'bg-[var(--brand)]/50' : ''} ${isOnSelectedPath ? 'bg-[var(--brand)]/20' : recentlyChangedSectorId === sector.id ? 'bg-[var(--brand)]/20' : 'group-hover:bg-[var(--brand)]/10'}`
     const stat = sectorStats.get(sector.id)
     return (
       <DroppableSectorRow
@@ -748,11 +736,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   {/* 선택한 항목은 하위 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 업종명을 덜 가리도록 업종 칸의 오른쪽 끝(시가총액 합 칸과의 세로선)에 바짝 붙이고 여백을 줄였다. 옆 칸 숫자를 덮지 않는다. 번호 칸을 끄는 중에는 숨긴다. */}
                   {!readOnly && selectedSectorId === sector.id && !isMoveDrag && (
                     <span className="ml-auto flex shrink-0 items-center gap-0.5 pl-1">
-                      {sector.depth <= addChildMaxParentDepth && !isProtectedSector(sector) && (
-                        <button type="button" data-no-row-select data-hint="하위 업종 추가" aria-label={`${sector.name} 하위 업종 추가`} onClick={() => toggleAddChild(sector.id)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
-                          <PlusIcon className="h-4 w-4" />
-                        </button>
-                      )}
                       {!isProtectedSector(sector) && (
                         <button type="button" data-no-row-select data-hint="이름 변경" aria-label={`${sector.name} 이름 변경`} onClick={() => startRename(sector)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
                           <EditIcon className="h-4 w-4" />
@@ -864,11 +847,21 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                           {headerDropState === 'blocked' ? <CloseIcon className="h-4 w-4" /> : <NestIntoIcon className="h-4 w-4" />}
                         </span>
                       )}
-                      {!headerDropState && depth === 0 && (
-                        <button type="button" aria-label="대분류 업종 추가" data-hint="대분류 업종 추가" onClick={() => { setAddingChildFor(null); setSelectedSectorId(null); setIsAddingTop(true) }} className={`${ICON_BADGE_CLASS} absolute right-full top-1/2 -translate-y-1/2 rounded border border-ui-border bg-[var(--ui-control)] text-ui-text outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)]`}>
-                          <PlusIcon className="h-4 w-4" />
-                        </button>
-                      )}
+                      {!readOnly && !headerDropState && (() => {
+                        // 대분류는 최상위 입력칸, 중·소분류는 지금 선택된 상위 아래 입력칸을 연다. 상위가 없으면 비활성.
+                        const parentId = depth === 0 ? null : depth === 1 ? selectedMajorId : selectedMiddleId
+                        const disabled = depth > 0 && parentId === null
+                        return (
+                          <button type="button" aria-label={`${label} 업종 추가`} data-hint={`${label} 업종 추가`} disabled={disabled} onClick={() => {
+                            setSelectedSectorId(null)
+                            if (depth === 0) { setAddingChildFor(null); setIsAddingTop(true); return }
+                            setIsAddingTop(false)
+                            setAddingChildFor(parentId)
+                          }} className={`${ICON_BADGE_CLASS} absolute right-full top-1/2 -translate-y-1/2 rounded-sm border border-[var(--ui-muted)] bg-[var(--ui-control)] text-ui-white outline-none hover:text-[var(--brand)] focus-visible:text-[var(--brand)] disabled:opacity-40`}>
+                            <PlusIcon className="h-4 w-4" />
+                          </button>
+                        )
+                      })()}
                       {`${label} (${toCount(sectorCounts[index])})`}
                     </span>
                     <ColumnFilterButton
@@ -915,7 +908,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           return (
             <div
               style={{ width: draggedRow?.width, height: draggedRow?.height, marginLeft: draggedRow?.offsetX, marginTop: draggedRow?.offsetY, paddingLeft: '8px' }}
-              className="flex items-center bg-[var(--brand-surface)] py-0.5 text-sm text-ui-white shadow-xl"
+              className="flex items-center bg-[var(--brand)]/20 py-0.5 text-sm text-ui-white shadow-xl"
             >
               <span aria-hidden="true" className={`${NUMBER_BADGE_CLASS} ${DRAG_CONTROL_CLASS}`}>{number}</span>
               <span className="truncate">{draggedSector.name}</span>
