@@ -733,9 +733,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   >
                     {sector.name}
                   </button>
-                  {/* 선택한 항목은 하위 업종 추가·이름 변경·삭제 아이콘을 보여 준다. 업종명을 덜 가리도록 업종 칸의 오른쪽 끝(시가총액 합 칸과의 세로선)에 바짝 붙이고 여백을 줄였다. 옆 칸 숫자를 덮지 않는다. 번호 칸을 끄는 중에는 숨긴다. */}
+                  {/* 선택한 항목은 이름 변경·삭제 아이콘을 업종명 바로 우측에 붙여 보여 준다. 번호 칸을 끄는 중에는 숨긴다. */}
                   {!readOnly && selectedSectorId === sector.id && !isMoveDrag && (
-                    <span className="ml-auto flex shrink-0 items-center gap-0.5 pl-1">
+                    <span className="ml-1 flex shrink-0 items-center gap-0.5">
                       {!isProtectedSector(sector) && (
                         <button type="button" data-no-row-select data-hint="이름 변경" aria-label={`${sector.name} 이름 변경`} onClick={() => startRename(sector)} className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--brand)]">
                           <EditIcon className="h-4 w-4" />
