@@ -8,7 +8,6 @@ import AppDialogHost from './components/AppDialogHost'
 import HoverHintLayer from './components/HoverHintLayer'
 import MobileNotice from './components/MobileNotice'
 import SearchMetadata from './components/SearchMetadata'
-import Spinner from './components/Spinner'
 import { marketRoute } from '@/utils/marketRoute'
 import { OVERSEAS_MARKETS, overseasRoute } from '@/utils/markets'
 import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
@@ -156,8 +155,8 @@ export default function App() {
       <MobileGate>
       <LoginGateProvider>
         <PageNumberStyle />
-        {/* 페이지 코드를 불러오는 동안의 화면. 본문 로딩과 같은 모양을 화면 가운데에 둔다(옵션 없는 Spinner는 32px 링이라 왼쪽 위에 붙는다). */}
-        <Suspense fallback={<div className="flex h-screen items-center justify-center bg-ui-background"><Spinner showElapsed /></div>}>
+        {/* 페이지 코드를 불러오는 동안의 화면. 전체화면 로딩원은 띄우지 않고 배경만 유지한다. */}
+        <Suspense fallback={<div className="h-screen bg-ui-background" />}>
         <Routes>
           <Route path="/" element={<Navigate to="/summary/korea" replace />} />
           <Route path="/summary/korea" element={<ResponsiveHomePage />} />
