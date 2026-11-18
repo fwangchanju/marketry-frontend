@@ -1,3 +1,4 @@
+import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { useRef, useState } from 'react'
@@ -102,7 +103,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
               ) : chart.rankedItems.length === 0 ? (
                 <div className="relative flex-1"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
               ) : (
-                <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-auto pb-[19.5px]">
+                <ScrollArea overlay scrollLabel="그래프 본문" className="-mb-[19.5px] min-h-0 flex-1" contentClassName="flex min-h-full flex-col pb-[19.5px]">
                   <div className="mt-[25px] flex w-full shrink-0 items-center justify-center font-bold whitespace-nowrap" style={{ fontSize: 22, color: 'var(--ui-white)' }}>
                     <span className="inline-flex items-center leading-none font-bold">
                       <span>
@@ -119,7 +120,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
                   <div className="flex min-h-[260px] min-w-0 w-full flex-1 pl-[1%] pr-[2%]">
                     <RankColumns chart={chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={name => navigate(`${mapPath}?sector=${encodeURIComponent(name)}`)} onSelectIndex={() => navigate(mapPath)} applyAxisBreak />
                   </div>
-                </div>
+                </ScrollArea>
               )}
             </div>
           </div>

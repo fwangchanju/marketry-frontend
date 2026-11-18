@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { PointerEvent, ReactNode, RefObject } from 'react'
 
 type ScrollMetrics = { trackHeight: number; thumbHeight: number; thumbTop: number; trackWidth: number; thumbWidth: number; thumbLeft: number }
@@ -13,12 +13,15 @@ export default function ScrollArea({
   overlay = false,
   scrollLabel,
   viewportRef: externalViewportRef,
+  contentClassName,
 }: {
   children: ReactNode
   className?: string
   inert?: boolean
   overlay?: boolean
   scrollLabel?: string
+  // overlay일 때 내용 영역의 레이아웃 클래스. 기본은 최소 높이를 뷰포트에 맞춘다(그래프처럼 flex로 채우는 화면은 flex 클래스를 넘긴다).
+  contentClassName?: string
   // 바깥에서 스크롤 요소(viewport)를 직접 다룰 때 넘긴다(맨 위로 올리기·열 폭 계산 등).
   viewportRef?: RefObject<HTMLDivElement | null>
 }) {
@@ -33,6 +36,24 @@ export default function ScrollArea({
   const [metrics, setMetrics] = useState<ScrollMetrics>({ trackHeight: 0, thumbHeight: 0, thumbTop: 0, trackWidth: 0, thumbWidth: 0, thumbLeft: 0 })
   const [isScrollable, setIsScrollable] = useState(false)
   const [isHorizontallyScrollable, setIsHorizontallyScrollable] = useState(false)
+  // overlay: 스크롤·마우스 올림 때만 손잡이를 보이고, 조작이 멈추면 잠시 뒤 숨긴다(폭은 차지하지 않는다).
+  const [revealed, setRevealed] = useState(false)
+  const hideTimerRef = useRef<number | null>(null)
+  const hideLater = useCallback(() => {
+    if (hideTimerRef.current !== null) window.clearTimeout(hideTimerRef.current)
+    hideTimerRef.current = window.setTimeout(() => {
+      hideTimerRef.current = null
+      if (dragStartRef.current || horizontalDragStartRef.current) return
+      setRevealed(false)
+    }, 1000)
+  }, [])
+  const reveal = useCallback(() => {
+    setRevealed(true)
+    hideLater()
+  }, [hideLater])
+  useEffect(() => () => {
+    if (hideTimerRef.current !== null) window.clearTimeout(hideTimerRef.current)
+  }, [])
 
   const updateMetrics = useCallback(() => {
     const viewport = viewportRef.current
@@ -105,6 +126,7 @@ export default function ScrollArea({
 
   const clearDrag = (event: PointerEvent<HTMLDivElement>) => {
     if (dragStartRef.current?.pointerId === event.pointerId) dragStartRef.current = null
+    if (overlay) hideLater()
   }
 
   const handleTrackPointerDown = (event: PointerEvent<HTMLDivElement>) => {
@@ -145,22 +167,30 @@ export default function ScrollArea({
   }
 
   return (
-    <div className={`relative min-w-0 overflow-hidden ${className}`}>
+    <div
+      className={`relative min-w-0 overflow-hidden ${className}`}
+      onPointerEnter={overlay ? reveal : undefined}
+      onPointerMove={overlay ? reveal : undefined}
+      onPointerLeave={overlay ? hideLater : undefined}
+    >
       <div
         ref={setViewport}
         inert={inert}
         role={scrollLabel ? 'region' : undefined}
         aria-label={scrollLabel}
         tabIndex={scrollLabel ? 0 : undefined}
-        onScroll={updateMetrics}
+        onScroll={() => {
+          updateMetrics()
+          if (overlay) reveal()
+        }}
         className={`scroll-area-viewport h-full min-h-0 ${overlay ? 'overflow-auto' : `overflow-x-hidden pr-2 ${isScrollable ? 'overflow-y-scroll' : 'overflow-y-hidden'}`}`}
       >
-        <div ref={contentRef} className={overlay ? 'min-h-full' : 'flex min-h-full flex-col gap-1'}>{children}</div>
+        <div ref={contentRef} className={overlay ? (contentClassName ?? 'min-h-full') : 'flex min-h-full flex-col gap-1'}>{children}</div>
       </div>
       {isScrollable && <div
         aria-hidden="true"
         onPointerDown={handleTrackPointerDown}
-        className={`absolute top-0 right-0 z-10 w-[6px] cursor-pointer rounded-[3px] ${overlay ? 'bg-transparent' : 'bg-ui-white/10'}`}
+        className={`absolute top-0 right-0 z-10 w-[6px] cursor-pointer rounded-[3px] ${overlay ? `bg-transparent transition-opacity duration-300 ${revealed ? 'opacity-100' : 'pointer-events-none opacity-0'}` : 'bg-ui-white/10'}`}
         style={{ bottom: isHorizontallyScrollable ? 6 : 0 }}
       >
         <div

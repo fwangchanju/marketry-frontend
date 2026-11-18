@@ -1,3 +1,4 @@
+import ScrollArea from '@/components/ScrollArea'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
@@ -433,7 +434,7 @@ export default function GroupPage() {
                   <EmptyMessage message={EMPTY_FILTER_MESSAGE} topClass="top-0" />
                 </div>
               ) : (
-                <div className="-mb-[19.5px] flex min-h-0 flex-1 flex-col overflow-auto pb-[19.5px]">
+                <ScrollArea overlay scrollLabel="그래프 본문" className="-mb-[19.5px] min-h-0 flex-1" contentClassName="flex min-h-full flex-col pb-[19.5px]">
                   <div
                     className="mt-[25px] flex w-full shrink-0 items-center justify-center font-bold whitespace-nowrap"
                     style={{ fontSize: 22, color: 'var(--ui-white)' }}
@@ -462,7 +463,7 @@ export default function GroupPage() {
                       applyAxisBreak={!isRangeView}
                     />
                   </div>
-                </div>
+                </ScrollArea>
               )}
               </div>
             </div>
