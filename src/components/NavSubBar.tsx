@@ -134,8 +134,8 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
     if (link.label === 'Graph') return { ...link, to: `/graph/${mapSegment}` }
     return link
   })
-  // 좌측 세로 메뉴는 서머리와 세 번째 항목(그래프)의 자리를 맞바꾼다(Graph·Map·Summary). 상단 메뉴 순서는 그대로다.
-  const orderedBaseLinks = vertical ? [baseLinks[2], baseLinks[1], baseLinks[0]] : baseLinks
+  // 좌측 세로 메뉴는 서머리를 세 번째 자리로 옮긴다(Map·Graph·Summary). 상단 메뉴 순서는 그대로다.
+  const orderedBaseLinks = vertical ? [baseLinks[1], baseLinks[2], baseLinks[0]] : baseLinks
   const links = isAdmin ? [...orderedBaseLinks, ...customLinks, ADMIN_LINK] : [...orderedBaseLinks, ...customLinks]
   const [openTo, setOpenTo] = useState<string | null>(null)
   // 목록은 누르면 열려 그대로 있고, 메뉴 밖을 누르면 닫는다. 메뉴 사이 빈 곳도 메뉴 밖이다.
