@@ -143,8 +143,6 @@ export const handlers = [
   http.get('/api/map/scale', () => HttpResponse.json(data.heatmapColorScale)),
   http.post('/api/map/excluded-sectors/:sectorId', ok),
   http.delete('/api/map/excluded-sectors/:sectorId', ok),
-  http.delete('/api/map/excluded-sectors', ok),
-  http.delete('/api/map/reset', ok),
 
   // ── 커스텀(로그인 사용자 전용, /api/custom/*) ────────────────
   http.get('/api/custom/sectors', () => HttpResponse.json(data.customSectors)),
