@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useOverseasMiddle } from '@/hooks/useOverseasMiddle'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
 import { overseasSettingKey } from '@/utils/overseasSettingKey'
@@ -21,6 +22,8 @@ import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
 export function useUsaMapSource(): OverseasMapSource {
   // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
   const { sheet } = useOverseasSheet()
+  const [middle] = useOverseasMiddle('USA')
+  const isExternal = middle === 'EXTERNAL'
   const { categories, classifications } = useOverseasClassificationData('USA', sheet)
   const stocks = useUsaStocks()
   const snapshotTimes = useUsaSnapshotTimes()
@@ -33,7 +36,8 @@ export function useUsaMapSource(): OverseasMapSource {
   const treeStocks = useMemo(() => (stocks.data ?? []).map(stock => ({ code: stock.symbol, name: stock.name })), [stocks.data])
   // 박스 라벨은 일본 지도처럼 한글 종목명을 쓴다. 한글 이름이 아직 없는 종목은 티커로 대신한다.
   const koreanNames = useQuery({ queryKey: ['usa', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/usa/stock-names')).data })
-  const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, koreanNames.data?.[stock.symbol] ?? stock.symbol])), [stocks.data, koreanNames.data])
+  // GICS 모드에서는 박스 이름을 티커로 보인다(MARKETRY 모드는 한글 이름).
+  const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, isExternal ? stock.symbol : (koreanNames.data?.[stock.symbol] ?? stock.symbol)])), [stocks.data, koreanNames.data, isExternal])
   // 기준가가 없어 기간에서 뺀 종목 — 제외 종목 배지에 이름과 함께 보인다.
   const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: names[stock.stockCode] ?? stock.stockCode }))
   const tree = useMemo(() => (categories.data && classifications.data && stocks.data && shownQuotes?.snapshotTime ? buildJapanTree(treeStocks, categories.data, classifications.data, names, shownQuotes.quotes, shownQuotes.snapshotTime) : []), [categories.data, classifications.data, stocks.data, shownQuotes, treeStocks, names])

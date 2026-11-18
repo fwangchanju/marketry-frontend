@@ -1,6 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { overseasMiddleLabel } from '@/utils/overseasMiddle'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
-import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasMode } from '@/hooks/useOverseasSheet'
 import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
 import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
@@ -38,13 +39,13 @@ import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 const SECTION_ORDER: SettingsPanelSectionId[] = ['graph', 'composition', 'colors']
 
 export default function OverseasGraphView({ source }: { source: OverseasGraphSource }) {
-  const { sheet, canUseMine, selectSheet } = useOverseasSheet()
   // 시장마다 다른 부분(막대 데이터 계산·날짜 선택 칩·장 상태 칩·갱신 안내·설정창 그래프 묶음)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
     market, label, chart, titleText, titleUnit, depthNames, groupDepth, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange,
     rangeExcludedStocks, isLoading, isError, isFetching, refetchAll, DatePicker, sessionChip, refreshHelp, fixed, draftKeyMap, tabStorageName,
     totalCount, shownCount, graphSettings, tierRange, currencyUnit, sectorExclusion, exclusionTree,
   } = source
+  const { sheet, modeKey, alsoTaxonomies, selectMode } = useOverseasMode(market)
   const publishedAt = useOverseasPublishedAt(market, sheet)
   const { colorScale, strongIndustryColor } = fixed
   const navigate = useNavigate()
@@ -132,7 +133,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
           <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Graph" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
+          <SettingsPanel pageLabel="Graph" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={modeKey} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={alsoTaxonomies} middleLabel={overseasMiddleLabel(market)} onSelectTaxonomy={next => selectMode(next === 'KRX' ? 'EXTERNAL' : next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
             <SettingsPanelGroup section="graph">
               {graphSettings}
             </SettingsPanelGroup>

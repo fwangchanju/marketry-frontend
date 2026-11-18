@@ -1,6 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { overseasMiddleLabel } from '@/utils/overseasMiddle'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
-import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasMode } from '@/hooks/useOverseasSheet'
 import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
@@ -73,13 +74,13 @@ function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
 }
 
 export default function OverseasMapView({ source }: { source: OverseasMapSource }) {
-  const { sheet, canUseMine, selectSheet } = useOverseasSheet()
   // 시장마다 다른 부분(데이터를 받는 방법·날짜 선택·장 상태 칩·설정 값)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
     market, label, tree, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange, rangeExcludedStocks,
     isLoading, isError, isFetching, refetchAll, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit,
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, settingPrefix, tabStorageName, totalCount, countShown,
   } = source
+  const { sheet, modeKey, alsoTaxonomies, selectMode } = useOverseasMode(market)
   const publishedAt = useOverseasPublishedAt(market, sheet)
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
   const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
@@ -305,7 +306,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           )}
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
+          <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={modeKey} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={alsoTaxonomies} middleLabel={overseasMiddleLabel(market)} onSelectTaxonomy={next => selectMode(next === 'KRX' ? 'EXTERNAL' : next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
             <SettingsPanelGroup section="composition">
               {/* 한국 지도의 종목 구성 탭과 같은 자리. 일본·미국은 구간 이름 없이 금액 눈금만 쓴다. */}
               <SettingsMarketValueSection
