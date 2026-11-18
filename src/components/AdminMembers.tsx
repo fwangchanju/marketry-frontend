@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { adminMenu } from '@/utils/marketMenu'
 import { createPortal } from 'react-dom'
+import ScrollArea from '@/components/ScrollArea'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getAdminMembers, resetMembersNickname, setMembersSpecial } from '@/api/adminMembers'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
@@ -212,7 +213,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
         </div>
       </Toolbar>
       <div className="flex min-h-0 flex-1 flex-col border border-ui-border">
-      <div ref={scrollContainerRef} className="relative min-h-0 flex-1 overflow-auto" aria-busy={members.isFetching}>
+      <ScrollArea overlay viewportRef={scrollContainerRef} scrollLabel="회원 목록" className="min-h-0 flex-1">
         {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
         <table className="nes-table is-dark custom-page-table w-full min-w-[1150px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
           <colgroup><col style={{ width: CHECKBOX_COLUMN_WIDTH }} /><col style={{ width: 75 }} /><col style={{ width: 96 }} /><col /><col style={{ width: 140 }} /><col style={{ width: 90 }} /><col style={{ width: 180 }} /><col style={{ width: 180 }} /><col style={{ width: 90 }} /></colgroup>
@@ -302,7 +303,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
             <button type="button" className={retryButtonClass} disabled={members.isFetching} onClick={() => { void members.refetch() }}>다시 시도</button>
           </div>
         )}
-      </div>
+      </ScrollArea>
       {paginationContainer && createPortal(
         <div className="flex h-7 items-end gap-1.5 pb-[4px] text-[11px] leading-none text-ui-muted">
           <button type="button" className={controlClass} disabled={page === 0 || members.isFetching} onClick={() => { setPage(value => value - 1); clearSelection() }}>이전</button>
