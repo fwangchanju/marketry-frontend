@@ -126,7 +126,8 @@ export function isJapanMapCapture() {
 // 설정창이 고른 탭을 기억하는 이름. 국내 화면과 겹치지 않게 일본 화면마다 따로 둔다.
 export const JAPAN_REFRESH_HELP = '5분마다 갱신됩니다.\n시세는 약 20분 지연됩니다.'
 
-export const JAPAN_SETTINGS_TAB_STORAGE = { map: 'JapanMap', graph: 'JapanGraph', stock: 'JapanStock', sector: 'JapanSector' } as const
+// 지도 탭은 한국 지도(pageLabel 'Map')와 같은 이름을 써서 한·미·일 지도를 옮겨도 고른 탭이 유지된다.
+export const JAPAN_SETTINGS_TAB_STORAGE = { map: 'Map', graph: 'JapanGraph', stock: 'JapanStock', sector: 'JapanSector' } as const
 
 // 일본 화면의 Basis는 MARKETRY만 제공해서 다른 분류를 고를 수 없다. 공통 선택 영역에 넘기는 빈 동작이다.
 export const NO_TAXONOMY_CHANGE = () => {}
