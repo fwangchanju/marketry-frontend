@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
+import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import UsaDatePicker from '@/components/UsaDatePicker'
@@ -6,7 +9,7 @@ import UsaSessionChip from '@/components/UsaSessionChip'
 import type { OverseasHomeSource } from '@/hooks/overseasHomeSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
-import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
+import { buildJapanTree } from '@/utils/japanMap'
 import { overseasMarketInfo } from '@/utils/markets'
 import { USA_MAP_FIXED, USA_MAP_SETTING_PREFIX } from '@/utils/usaMapSettings'
 import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
@@ -14,8 +17,9 @@ import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
 // 미국 서머리의 데이터·설정 — 공통 서머리 화면(OverseasHomeView)이 받는 모양으로 돌려준다.
 // 미국은 하루 한 번 저장된 종가로 그리고, 지도 트리는 일본과 같은 부품(buildJapanTree)으로 만든다.
 export function useUsaHomeSource(): OverseasHomeSource {
-  const categories = useQuery({ queryKey: ['usa', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/usa/categories')).data })
-  const classifications = useQuery({ queryKey: ['usa', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/usa/classifications')).data })
+  // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
+  const { sheet } = useOverseasSheet()
+  const { categories, classifications } = useOverseasClassificationData('USA', sheet)
   const names = useQuery({ queryKey: ['usa', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/usa/stock-names')).data })
   const stocks = useUsaStocks()
   // 날짜·기간은 지도·그래프와 같은 저장소를 쓴다(다른 화면에서 고른 기간이 이어진다).
@@ -56,7 +60,7 @@ export function useUsaHomeSource(): OverseasHomeSource {
     refreshHelp: usaRefreshHelp(snapshotTime),
     fixed: USA_MAP_FIXED,
     tabStorageName: 'UsaHome',
-    settingPrefix: USA_MAP_SETTING_PREFIX,
+    settingPrefix: overseasSettingKey(USA_MAP_SETTING_PREFIX, sheet),
     currencyUnit: '달러',
     shownCount: shownQuotes?.quotes.length ?? 0,
     totalCount: stocks.data?.length ?? 0,

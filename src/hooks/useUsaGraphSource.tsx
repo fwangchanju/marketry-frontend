@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
+import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import { countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
@@ -15,7 +18,7 @@ import { useUsaIndexCloses } from '@/hooks/useUsaIndexCloses'
 import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import type { HeatmapSectorNode } from '@/types/api'
 import { indexChangeRate, shiftDate } from '@/utils/indexChange'
-import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
+import { buildJapanTree } from '@/utils/japanMap'
 import { overseasMarketInfo } from '@/utils/markets'
 import { buildRankChart } from '@/utils/rankChart'
 import { computeSectorAverage } from '@/utils/sectorAverage'
@@ -32,8 +35,9 @@ const USA_BEFORE_MINUTES_PLACEHOLDER = 15
 // 미국 S&P500 그래프의 데이터·설정 — 공통 그래프 화면(OverseasGraphView)이 받는 모양으로 돌려준다.
 // 미국은 하루 한 번 저장된 종가로 그리므로 "N분 전 대비"(비교 시점)가 없고 평균 방식 설정은 고정이다.
 export function useUsaGraphSource(): OverseasGraphSource {
-  const categories = useQuery({ queryKey: ['usa', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/usa/categories')).data })
-  const classifications = useQuery({ queryKey: ['usa', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/usa/classifications')).data })
+  // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
+  const { sheet } = useOverseasSheet()
+  const { categories, classifications } = useOverseasClassificationData('USA', sheet)
   const stocks = useUsaStocks()
   const snapshotTimes = useUsaSnapshotTimes()
   const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('USA', snapshotTimes.data)
@@ -54,8 +58,8 @@ export function useUsaGraphSource(): OverseasGraphSource {
   const indexCloses = useUsaIndexCloses(startDay ? shiftDate(startDay, -INDEX_LOOKBACK_DAYS) : null, day)
   const indexRate = day && startDay && indexCloses.data ? indexChangeRate(indexCloses.data, startDay, day) : null
   const { preferences, update } = useUsaGraphPreferences()
-  const tierRange = useOverseasTierRange(USA_MAP_SETTING_PREFIX, '달러')
-  const sectorExclusion = useOverseasSectorExclusion(USA_MAP_SETTING_PREFIX)
+  const tierRange = useOverseasTierRange(overseasSettingKey(USA_MAP_SETTING_PREFIX, sheet), '달러')
+  const sectorExclusion = useOverseasSectorExclusion(overseasSettingKey(USA_MAP_SETTING_PREFIX, sheet))
 
   // 필터 전 업종 트리 — 막대 계산과 제외 업종 목록, 설정창의 종목 수가 함께 쓴다.
   const tree = useMemo<HeatmapSectorNode[]>(
@@ -101,7 +105,7 @@ export function useUsaGraphSource(): OverseasGraphSource {
     sessionChip: <UsaSessionChip session={USA_SESSION} />,
     refreshHelp: usaRefreshHelp(snapshotTime),
     fixed: USA_MAP_FIXED,
-    draftKeyMap: USA_GRAPH_DRAFT_KEY_MAP,
+    draftKeyMap: sheet === 'MINE' ? USA_GRAPH_DRAFT_KEY_MAP : undefined,
     tabStorageName: USA_SETTINGS_TAB_STORAGE.graph,
     totalCount: stocks.data?.length ?? 0,
     shownCount,

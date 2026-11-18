@@ -1,4 +1,6 @@
 import { useMemo } from 'react'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { usePageSetting } from './usePageSetting'
 import { usePersistedState } from './usePersistedState'
 import { japanGraphSettingKey, type JapanGraphPreferences } from '@/utils/japanGraphSettings'
@@ -7,9 +9,11 @@ import { japanGraphSettingKey, type JapanGraphPreferences } from '@/utils/japanG
 // 항목마다 저장 이름이 따로라 설정창 항목 제목에 저장 안 한 변경 점이 항목별로 찍힌다.
 // 비교 시점의 분 수는 국내 그래프처럼 저장 대상이 아니라 이 브라우저에만 둔다.
 export function useJapanGraphPreferences() {
-  const [graphMode, setGraphMode] = usePageSetting<JapanGraphPreferences['graphMode']>(japanGraphSettingKey('graphMode'), 'current')
-  const [groupDepth, setGroupDepth] = usePageSetting(japanGraphSettingKey('groupDepth'), 1)
-  const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting(japanGraphSettingKey('avgChangeRateUseSimple'), false)
+  const { sheet } = useOverseasSheet()
+  const settingKey = (name: Parameters<typeof japanGraphSettingKey>[0]) => overseasSettingKey(japanGraphSettingKey(name), sheet)
+  const [graphMode, setGraphMode] = usePageSetting<JapanGraphPreferences['graphMode']>(settingKey('graphMode'), 'current')
+  const [groupDepth, setGroupDepth] = usePageSetting(settingKey('groupDepth'), 1)
+  const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting(settingKey('avgChangeRateUseSimple'), false)
   const [beforeMinutes, setBeforeMinutes] = usePersistedState('japan.graph.beforeMinutes', 15)
   const preferences = useMemo<JapanGraphPreferences>(
     () => ({ graphMode, groupDepth, avgChangeRateUseSimple, beforeMinutes }),

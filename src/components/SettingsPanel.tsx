@@ -1339,8 +1339,9 @@ function SettingsTaxonomySelector({
   ]
   const isExchange = taxonomy === 'KRX' || taxonomy === 'NXT'
   const isSelected = (key: TaxonomyKey) => (key === 'KRX' ? isExchange : taxonomy === key)
+  // 한 가지 분류만 쓰는 화면은 지금 고른 분류에 자기 설정의 저장 안 한 변경 표시를 단다(관리자가 내 기준을 고른 일본·미국 화면 포함).
   const hasDraft = (key: TaxonomyKey) => onlyTaxonomy
-    ? key === onlyTaxonomy && ownDirty
+    ? key === taxonomy && ownDirty
     : key === 'MARKETRY' ? marketryDirty : key === 'MINE' ? mineDirty : exchangeDirty
   const isLocked = (key: TaxonomyKey) => onlyTaxonomy !== undefined && key !== onlyTaxonomy && alsoTaxonomies?.includes(key) !== true
 

@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
+import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import UsaDatePicker from '@/components/UsaDatePicker'
@@ -8,7 +11,7 @@ import { flattenAllItems } from '@/hooks/useFilteredHeatmap'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaMapPreferences } from '@/hooks/useUsaMapPreferences'
 import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
-import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
+import { buildJapanTree } from '@/utils/japanMap'
 import { overseasMarketInfo } from '@/utils/markets'
 import { USA_MAP_DRAFT_KEY_MAP, USA_MAP_FIXED, USA_MAP_SETTING_PREFIX, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
 import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
@@ -16,8 +19,9 @@ import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
 // 미국 지도의 데이터·설정 — 공통 지도 화면(OverseasMapView)이 받는 모양으로 돌려준다.
 // 미국은 하루 한 번 저장된 종가로 그리고, 분류는 섹터·업종 두 단계다. 지도 트리는 일본과 같은 부품(buildJapanTree)으로 만든다.
 export function useUsaMapSource(): OverseasMapSource {
-  const categories = useQuery({ queryKey: ['usa', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/usa/categories')).data })
-  const classifications = useQuery({ queryKey: ['usa', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/usa/classifications')).data })
+  // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
+  const { sheet } = useOverseasSheet()
+  const { categories, classifications } = useOverseasClassificationData('USA', sheet)
   const stocks = useUsaStocks()
   const snapshotTimes = useUsaSnapshotTimes()
   const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('USA', snapshotTimes.data)
@@ -61,8 +65,8 @@ export function useUsaMapSource(): OverseasMapSource {
     levelLabels: ['대분류', '중분류'],
     defaultMaxDepth: 2,
     fixed: USA_MAP_FIXED,
-    draftKeyMap: USA_MAP_DRAFT_KEY_MAP,
-    settingPrefix: USA_MAP_SETTING_PREFIX,
+    draftKeyMap: sheet === 'MINE' ? USA_MAP_DRAFT_KEY_MAP : undefined,
+    settingPrefix: overseasSettingKey(USA_MAP_SETTING_PREFIX, sheet),
     tabStorageName: USA_SETTINGS_TAB_STORAGE.map,
     totalCount: treeStocks.length,
     // 미국은 필터를 거친 트리에 남은 종목 수를 센다.
