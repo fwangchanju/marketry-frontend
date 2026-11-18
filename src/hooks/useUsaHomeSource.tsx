@@ -8,7 +8,7 @@ import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { overseasMarketInfo } from '@/utils/markets'
-import { USA_MAP_FIXED } from '@/utils/usaMapSettings'
+import { USA_MAP_FIXED, USA_MAP_SETTING_PREFIX } from '@/utils/usaMapSettings'
 import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
 
 // 미국 서머리의 데이터·설정 — 공통 서머리 화면(OverseasHomeView)이 받는 모양으로 돌려준다.
@@ -56,6 +56,8 @@ export function useUsaHomeSource(): OverseasHomeSource {
     refreshHelp: usaRefreshHelp(snapshotTime),
     fixed: USA_MAP_FIXED,
     tabStorageName: 'UsaHome',
+    settingPrefix: USA_MAP_SETTING_PREFIX,
+    currencyUnit: '달러',
     shownCount: shownQuotes?.quotes.length ?? 0,
     totalCount: stocks.data?.length ?? 0,
   }

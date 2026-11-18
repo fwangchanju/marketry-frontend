@@ -51,6 +51,9 @@ export const JAPAN_MAP_DRAFT_KEY_MAP: Readonly<Record<string, string>> = {
   'heatmap.topPickEnabled': japanMapSettingKey('topPickEnabled'),
   'heatmap.topPickDepth': japanMapSettingKey('topPickDepth'),
   'heatmap.topPickCount': japanMapSettingKey('topPickCount'),
+  // 시가총액 범위는 관리자 기본값 묶음(JAPAN_MAP_DEFAULTS)에 넣지 않고 계정 설정으로만 저장한다(서버가 기본값 이름을 제한한다).
+  'heatmap.tierRangeMinValue': `${JAPAN_MAP_SETTING_PREFIX}tierRangeMinValue`,
+  'heatmap.tierRangeMaxValue': `${JAPAN_MAP_SETTING_PREFIX}tierRangeMaxValue`,
 }
 
 // 계정에 저장된 설정에서 일본 지도 항목만 골라 형식이 맞는 것만 돌려준다.

@@ -1,4 +1,5 @@
 import { SlidingHighlight } from '@/components/SlidingHighlight'
+import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 import { SUSPENDED_EXCLUDE_HINT, SUSPENDED_SECTOR_NAME } from '@/utils/protectedSector'
 import { toCount } from '@/utils/format'
 import { CountLabelWithBadge } from '@/components/KindBadge'
@@ -1907,6 +1908,7 @@ export function SettingsMarketValueSection({
   tierRangeMaxIndex,
   onChangeTierRange,
   showDivider = true,
+  currencyUnit = '원',
 }: {
   isCustom: boolean
   // 오름차순(소→초) 정렬된 시가총액 구간 정의 — GET /map/value-tiers 조회 결과(useMarketValueTiers).
@@ -1919,7 +1921,10 @@ export function SettingsMarketValueSection({
   // 위에 구분선(border-t)을 그릴지 — 스티키 커스텀모드 블록 바로 다음에 올 때(지도 페이지)는
   // false로 꺼서 이중 구분선을 피한다.
   showDivider?: boolean
+  // 금액 뒤에 붙는 화폐 단위 — 원은 붙이지 않고, 일본·미국은 "5,000억 엔"처럼 붙인다.
+  currencyUnit?: CurrencyUnit
 }) {
+  const toMoneyLabel = (value: number) => `${toWonLabel(value)}${currencySuffix(currencyUnit)}`
   // 저장 인덱스는 작은 금액부터, 화면과 도움말은 큰 금액부터 표시한다.
   const lastTierIndex = Math.max(tiers.length - 1, 0)
   const tierSteps = Math.max(lastTierIndex, 1)
@@ -1933,7 +1938,7 @@ export function SettingsMarketValueSection({
           .map((tier, index) => {
             const upper = namedTiers[index + 1]?.thresholdValue ?? null
             const lower = tier.thresholdValue
-            const range = lower === 0 ? `${toWonLabel(upper ?? 0)} 미만` : upper === null ? `${toWonLabel(lower)} 이상` : `${toWonLabel(upper)} 미만 ~ ${toWonLabel(lower)} 이상`
+            const range = lower === 0 ? `${toMoneyLabel(upper ?? 0)} 미만` : upper === null ? `${toMoneyLabel(lower)} 이상` : `${toMoneyLabel(upper)} 미만 ~ ${toMoneyLabel(lower)} 이상`
             return `${tier.label}: ${range}`
           })
           .reverse()
@@ -1942,9 +1947,9 @@ export function SettingsMarketValueSection({
   const selectedUpper = tiers[tierRangeMaxIndex + 1]?.thresholdValue
   const selectedRangeLabel = selectedLower === undefined ? ''
     : selectedLower === 0 && selectedUpper === undefined ? '전체 시가총액'
-    : selectedLower === 0 ? `${toWonLabel(selectedUpper!)} 미만`
-    : selectedUpper === undefined ? `${toWonLabel(selectedLower)} 이상`
-    : `${toWonLabel(selectedUpper)} 미만 ~ ${toWonLabel(selectedLower)} 이상`
+    : selectedLower === 0 ? `${toMoneyLabel(selectedUpper!)} 미만`
+    : selectedUpper === undefined ? `${toMoneyLabel(selectedLower)} 이상`
+    : `${toMoneyLabel(selectedUpper)} 미만 ~ ${toMoneyLabel(selectedLower)} 이상`
 
   return (
     <div className={`settings-market-value flex flex-col text-ui-white ${showDivider ? 'mt-6 pt-8' : 'pt-3'}`}>

@@ -1,4 +1,6 @@
 import type { ComponentType, ReactNode } from 'react'
+import type { OverseasTierRange } from '@/hooks/useOverseasTierRange'
+import type { CurrencyUnit } from '@/utils/currencyUnit'
 import type { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
 import type { OverseasMarket } from '@/utils/markets'
 import type { buildRankChart } from '@/utils/rankChart'
@@ -32,6 +34,9 @@ export interface OverseasGraphSource {
   refreshHelp: string
   fixed: { colorScale: (typeof JAPAN_MAP_FIXED)['colorScale']; strongIndustryColor: string }
   draftKeyMap: Readonly<Record<string, string>>
+  // 종목 구성 탭의 시가총액 범위 — 지도와 같은 저장 값을 쓰며, 막대 계산(chart)에도 이미 반영돼 있다.
+  tierRange: OverseasTierRange
+  currencyUnit: CurrencyUnit
   tabStorageName: string
   // 설정창의 "n/m종목"의 m과 n.
   totalCount: number

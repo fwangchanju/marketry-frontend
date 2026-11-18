@@ -16,7 +16,7 @@ import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageAct
 import NavSubBar from '@/components/NavSubBar'
 import RankColumns from '@/components/RankColumns'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import SettingsPanel, { SettingsPanelGroup, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsColorSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import Spinner from '@/components/Spinner'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import Toolbar from '@/components/Toolbar'
@@ -27,19 +27,20 @@ import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
+import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
 import { NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
 import { overseasRoute } from '@/utils/markets'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 
-const SECTION_ORDER: SettingsPanelSectionId[] = ['graph']
+const SECTION_ORDER: SettingsPanelSectionId[] = ['graph', 'composition', 'colors']
 
 export default function OverseasGraphView({ source }: { source: OverseasGraphSource }) {
   // 시장마다 다른 부분(막대 데이터 계산·날짜 선택 칩·장 상태 칩·갱신 안내·설정창 그래프 묶음)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
     market, label, chart, titleText, titleUnit, depthNames, groupDepth, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange,
     rangeExcludedStocks, isLoading, isError, isFetching, refetchAll, DatePicker, sessionChip, refreshHelp, fixed, draftKeyMap, tabStorageName,
-    totalCount, shownCount, graphSettings,
+    totalCount, shownCount, graphSettings, tierRange, currencyUnit,
   } = source
   const { colorScale, strongIndustryColor } = fixed
   const navigate = useNavigate()
@@ -130,6 +131,14 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
           <SettingsPanel pageLabel="Graph" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
             <SettingsPanelGroup section="graph">
               {graphSettings}
+            </SettingsPanelGroup>
+            <SettingsPanelGroup section="composition">
+              <SettingsMarketValueSection isCustom={false} tiers={tierRange.tiers} tierRangeMinIndex={tierRange.minIndex} tierRangeMaxIndex={tierRange.maxIndex} onChangeTierRange={tierRange.setRange} showDivider={false} currencyUnit={currencyUnit} />
+            </SettingsPanelGroup>
+            <SettingsPanelGroup section="colors">
+              {/* 요약·지도 화면과 같은 구성이다. 등락률 색상·강조 색상은 고정값을 보여 주고 바꾸지 못한다. */}
+              <SettingsColorSection isCustom={false} colorScaleDraft={colorScale} colorCustomOn onChangeColorCustomOn={() => {}} onResetColorScale={() => {}} isResettingColorScale={false} colorEditorProps={buildFixedColorEditorProps()} fixed />
+              <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={() => {}} fixed />
             </SettingsPanelGroup>
           </SettingsPanel>
         </div>

@@ -8,7 +8,7 @@ import type { OverseasHomeSource } from '@/hooks/overseasHomeSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
-import { JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP } from '@/utils/japanMapSettings'
+import { JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP } from '@/utils/japanMapSettings'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { overseasMarketInfo } from '@/utils/markets'
 
@@ -53,6 +53,8 @@ export function useJapanHomeSource(): OverseasHomeSource {
     refreshHelp: JAPAN_REFRESH_HELP,
     fixed: JAPAN_MAP_FIXED,
     tabStorageName: 'JapanHome',
+    settingPrefix: JAPAN_MAP_SETTING_PREFIX,
+    currencyUnit: '엔',
     shownCount: shownQuotes?.quotes.length ?? 0,
     totalCount: japanStocks.length,
   }
