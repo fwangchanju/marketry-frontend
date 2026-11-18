@@ -657,6 +657,18 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   .animate-input-attention:not(:focus) { animation: none; border-color: var(--brand) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 35%, transparent) !important; }
 }
 
+/* 변경이 있어 실행 취소를 할 수 있을 때 그 칸으로 시선을 끄는 효과 — 분류색(--mine-accent, 모드 강조색)의 얇은 테두리와 번지는 빛이 숨 쉬듯 켜졌다 꺼진다.
+   칸 크기는 그대로 두려고 테두리 대신 그림자 두 겹으로만 그린다. 칸 안을 누르거나 포커스가 가면 멈춘다. */
+@keyframes history-attention {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--mine-accent, var(--brand)) 40%, transparent), 0 0 0 0 color-mix(in srgb, var(--mine-accent, var(--brand)) 0%, transparent); }
+  50% { box-shadow: 0 0 0 1px var(--mine-accent, var(--brand)), 0 0 0 4px color-mix(in srgb, var(--mine-accent, var(--brand)) 35%, transparent); }
+}
+.animate-history-attention:not(:focus-within) { animation: history-attention 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  /* 움직임 줄이기 환경 — 움직이지 않는 대신 테두리와 빛 번짐을 켜 둔 채로 보여 준다. */
+  .animate-history-attention:not(:focus-within) { animation: none; box-shadow: 0 0 0 1px var(--mine-accent, var(--brand)), 0 0 0 4px color-mix(in srgb, var(--mine-accent, var(--brand)) 35%, transparent); }
+}
+
 /* 설정창이 닫힌 채 해야 할 일이 있을 때 설정 아이콘으로 시선을 끄는 효과는 2026-11-16에 없앴다 — 그 시선은 섹터 표 대분류 머리글의 + 버튼이 받는다(공통 입력칸 강조 효과 .animate-input-attention). */
 
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
@@ -1292,11 +1304,9 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23404040' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 10.5l3.6 3.6L15 6.2'/%3E%3C/svg%3E");
 }
 
-/* 일부만 선택된 상태(엑셀처럼): 브랜드 색 칸 안에 짙은 네모를 넣는다. 체크 표시보다 뒤에 두어 덮어쓴다. */
+/* 일부만 선택된 상태: 흰 바탕은 그대로 두고 가운데에 체크 표시와 같은 색(#404040) 네모만 둔다. */
 .thin-check:indeterminate {
-  border-color: var(--brand);
-  background-color: var(--brand);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect x='5' y='5' width='10' height='10' rx='1' fill='%23404040'/%3E%3C/svg%3E");
+  background: linear-gradient(#404040, #404040) center / 50% 50% no-repeat var(--ui-white);
 }
 
 @layer utilities {
