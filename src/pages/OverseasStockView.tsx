@@ -1,4 +1,5 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { overseasMiddleLabel } from '@/utils/overseasMiddle'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
@@ -289,7 +290,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
           <DisclaimerFooter />
         </main>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} middleLabel={market === 'JAPAN' ? '모닝스타' : 'GICS'} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={sheet === 'MINE' ? ['custom', 'adminOps'] : ['custom']}>
+          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} middleLabel={overseasMiddleLabel(market)} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={sheet === 'MINE' ? ['custom', 'adminOps'] : ['custom']}>
             <SettingsPanelGroup section="custom">
               {canEdit ? (
                 <>

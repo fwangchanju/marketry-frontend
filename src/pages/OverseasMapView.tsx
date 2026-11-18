@@ -1,4 +1,5 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { overseasMiddleLabel } from '@/utils/overseasMiddle'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
@@ -305,7 +306,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           )}
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} middleLabel={market === 'JAPAN' ? '모닝스타' : 'GICS'} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
+          <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} middleLabel={overseasMiddleLabel(market)} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
             <SettingsPanelGroup section="composition">
               {/* 한국 지도의 종목 구성 탭과 같은 자리. 일본·미국은 구간 이름 없이 금액 눈금만 쓴다. */}
               <SettingsMarketValueSection
