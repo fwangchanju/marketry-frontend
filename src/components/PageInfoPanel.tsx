@@ -1,3 +1,4 @@
+import ScrollArea from '@/components/ScrollArea'
 import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/SettingsSectionIcon'
 import SettingsPanelSideToggle from '@/components/SettingsPanelSideToggle'
 import { SETTINGS_PANEL_TAB_ICON_CLASS, SettingsPanelHeader, SettingsPanelTabList } from '@/components/SettingsPanelChrome'
@@ -38,9 +39,11 @@ export default function PageInfoPanel({ title, tabLabel, description, note, icon
             <span aria-hidden="true" className="absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 bg-brand" />
           </span>
         </SettingsPanelTabList>
-        <div id="page-info-panel" role="tabpanel" aria-labelledby="page-info-tab" className="min-h-0 flex-1 overflow-y-auto p-4 text-sm leading-relaxed text-ui-text">
-          <PageInfoPanelTextGroup lines={[description, ...(note ? [note] : [])]} />
-        </div>
+        <ScrollArea overlay scrollLabel="Info 내용" className="min-h-0 flex-1">
+          <div id="page-info-panel" role="tabpanel" aria-labelledby="page-info-tab" className="p-4 text-sm leading-relaxed text-ui-text">
+            <PageInfoPanelTextGroup lines={[description, ...(note ? [note] : [])]} />
+          </div>
+        </ScrollArea>
       </aside>
     </div>
   )

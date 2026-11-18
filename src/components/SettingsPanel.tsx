@@ -2742,9 +2742,11 @@ export default function SettingsPanel({
       <div aria-busy={isPreferenceFeedbackActive || undefined} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="contents" inert={isPreferenceFeedbackActive || undefined}>
       {plainContent && (
-        <div role={plainTabLabel ? 'tabpanel' : undefined} id={plainTabLabel ? 'settings-panel-plain' : undefined} aria-labelledby={plainTabLabel ? 'settings-tab-plain' : undefined} data-align-second-heading className="settings-section-list settings-plain-content settings-panel-tab-content min-h-0 flex-1 overflow-y-auto px-[22px] pt-3 pb-8 text-sm">
-          {plainContent}
-        </div>
+        <ScrollArea overlay scrollLabel="설정 내용" className="min-h-0 flex-1">
+          <div role={plainTabLabel ? 'tabpanel' : undefined} id={plainTabLabel ? 'settings-panel-plain' : undefined} aria-labelledby={plainTabLabel ? 'settings-tab-plain' : undefined} data-align-second-heading className="settings-section-list settings-plain-content settings-panel-tab-content px-[22px] pt-3 pb-8 text-sm">
+            {plainContent}
+          </div>
+        </ScrollArea>
       )}
       {!plainContent && availableSections.length === 0 && <div className="min-h-0 flex-1" />}
       <SettingsFeedbackContext.Provider value={runPreferenceAction}>
@@ -2752,22 +2754,24 @@ export default function SettingsPanel({
       <SettingsDraftDotsContext.Provider value={showPreferenceActions}>
       <SettingsDraftKeyMapContext.Provider value={draftKeyMap ?? null}>
       {selectedSection && (
-        <div
-          role="tabpanel"
-          id={`settings-panel-${selectedSection.id}`}
-          aria-labelledby={`settings-tab-${selectedSection.id}`}
-          data-align-second-heading={taxonomyAtBottom || undefined}
-          aria-busy={waitingForPreferences || undefined}
-          inert={waitingForPreferences || undefined}
-          className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content min-h-0 flex-1 px-[22px] text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' || selectedSection.id === 'adminBanner' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : SPECIAL_SECTIONS.has(selectedSection.id) ? 'settings-special-section' : ''} ${
-            isNonScrollingSection ? 'overflow-y-clip pb-2' : 'overflow-y-auto pb-8'
-          }`}
-        >
-          {!taxonomyAtBottom && selectedSection.id === taxonomySection && hasTaxonomySelector && (
-            <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} />
-          )}
-          {sectionContent.get(selectedSection.id)?.map((content, index) => <Fragment key={index}>{content}</Fragment>)}
-        </div>
+        <ScrollArea overlay scrollLabel="설정 내용" className="min-h-0 flex-1">
+          <div
+            role="tabpanel"
+            id={`settings-panel-${selectedSection.id}`}
+            aria-labelledby={`settings-tab-${selectedSection.id}`}
+            data-align-second-heading={taxonomyAtBottom || undefined}
+            aria-busy={waitingForPreferences || undefined}
+            inert={waitingForPreferences || undefined}
+            className={`${waitingForPreferences ? 'opacity-35 transition-opacity' : ''} settings-section-list settings-panel-tab-content px-[22px] text-sm ${selectedSection.id === 'graph' || selectedSection.id === 'custom' || selectedSection.id === 'adminOps' || selectedSection.id === 'adminManage' || selectedSection.id === 'adminBanner' ? 'settings-plain-content pt-3' : ''} ${ADMIN_ONLY_SECTIONS.has(selectedSection.id) ? 'settings-admin-section' : SPECIAL_SECTIONS.has(selectedSection.id) ? 'settings-special-section' : ''} ${
+              isNonScrollingSection ? 'pb-2' : 'pb-8'
+            }`}
+          >
+            {!taxonomyAtBottom && selectedSection.id === taxonomySection && hasTaxonomySelector && (
+              <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} />
+            )}
+            {sectionContent.get(selectedSection.id)?.map((content, index) => <Fragment key={index}>{content}</Fragment>)}
+          </div>
+        </ScrollArea>
       )}
       </SettingsDraftKeyMapContext.Provider>
       </SettingsDraftDotsContext.Provider>
