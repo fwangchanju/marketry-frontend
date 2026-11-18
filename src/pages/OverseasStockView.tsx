@@ -1,4 +1,5 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
 import OverseasPublishControls from '@/components/OverseasPublishControls'
@@ -47,6 +48,8 @@ type ClassificationField = 'sector' | 'industry' | 'subIndustry'
 type SortKey = 'code' | 'name' | 'englishName' | 'marketCap' | 'marketCapKrw' | 'sector' | 'customSector' | 'customIndustry' | 'customSubIndustry'
 type FilterKey = 'sector' | 'customSector' | 'customIndustry' | 'customSubIndustry'
 type Category = { id: number; parentId: number | null; name: string }
+// 변경 내역 한 건 — 한 번의 배정(종목 하나 또는 일괄)과 종목마다의 이전 분류 이름(대분류부터, 없으면 빈 배열).
+type HistoryAction = { id: string; entries: { code: string; before: string[] }[]; afterCategoryId: number; afterLabel: string }
 // 열 키 이름은 폭 자리만 뜻한다: industry=야후 분류(국내 거래소 분류 자리), totalMarketValueKrw=시가총액(₩)(국내 규모+마켓 자리), parentSector·midSector·subSector=대·중·소분류.
 // 국내: 종목코드 | 종목명 | 약칭 | 시가총액 | 규모 | 마켓 | NXT | 거래소 분류 | 대분류 | 중분류 | 소분류
 // 일본: 종목코드 | 종목명 (영어) | 종목명 (한글) | 시가총액(¥) | 시가총액(₩) | 야후 분류 | 대분류 | 중분류 | 소분류
@@ -61,7 +64,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
   const { routeSegment, badgeLabel } = overseasMarketInfo(market)
   const NAMES_QUERY_KEY = [routeSegment, 'names'] as const
   const { data: session } = useSession()
-  // 종목명(한글) 수정은 운영 값이라 모드와 상관없이 관리자만, 분류 수정은 내 기준 모드(초안)에서만 한다.
+  // MARKETRY 모드는 운영자가 제시하는 기준이라 모든 항목(종목명 한글·분류)이 수정 불가이고, 관리자는 내 기준 모드에서만 고친다.
   const isAdmin = isAdminSession(session)
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
   const canEdit = isAdmin && sheet === 'MINE'
@@ -176,15 +179,57 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
     if (field === 'industry') return categoryChoices.childrenOf(root?.id)
     return categoryChoices.childrenOf(findCategory(industry, root?.id)?.id)
   }
+  // 변경 내역(실행 취소·다시 실행) — 한국 종목 탭과 같은 부품(ChangeHistoryControls). 종목마다 "이전 분류"를 기록해 두고, 되돌릴 때는 그 분류의 업종으로 다시 배정한다.
+  const [undoStack, setUndoStack] = useState<HistoryAction[]>([])
+  const [redoStack, setRedoStack] = useState<HistoryAction[]>([])
+  const historyIdRef = useRef(0)
+  const categoryById = (id: number) => categoryQuery.data?.find(category => category.id === id)
+  const pathOfCategory = (id: number): string[] => {
+    const path: string[] = []
+    for (let current = categoryById(id); current; current = current.parentId === null ? undefined : categoryById(current.parentId)) path.unshift(current.name)
+    return path
+  }
+  // 분류 이름은 시장 안에서 하나뿐이라 가장 깊은 이름으로 업종을 찾는다. 분류가 없던 종목은 미분류로 돌린다.
+  const categoryIdOfPath = (path: string[]) => categoryQuery.data?.find(category => category.name === (path.at(-1) ?? '미분류'))?.id
+  const describeAction = (action: HistoryAction) => action.entries.length === 1
+    ? `${rows.find(row => row.code === action.entries[0].code)?.name ?? action.entries[0].code}\n[${action.entries[0].before.at(-1) ?? '-'}] → [${action.afterLabel}]`
+    : `${action.entries.length}개 종목\n→ [${action.afterLabel}]`
+  const applyAction = async (action: HistoryAction, direction: 'undo' | 'redo') => {
+    if (direction === 'redo') { await assignClassification.mutateAsync({ codes: action.entries.map(entry => entry.code), categoryId: action.afterCategoryId }); return }
+    const codesByCategory = new Map<number, string[]>()
+    for (const entry of action.entries) {
+      const categoryId = categoryIdOfPath(entry.before)
+      if (categoryId === undefined) continue
+      codesByCategory.set(categoryId, [...(codesByCategory.get(categoryId) ?? []), entry.code])
+    }
+    for (const [categoryId, codes] of codesByCategory) await assignClassification.mutateAsync({ codes, categoryId })
+  }
+  const runHistory = async (direction: 'undo' | 'redo', id?: string) => {
+    const from = direction === 'undo' ? undoStack : redoStack
+    const index = id === undefined ? from.length - 1 : from.findIndex(action => action.id === id)
+    if (index < 0) return
+    // 목록에서 항목을 고르면 맨 위(다음 차례)부터 그 항목까지 한 단계씩 순서대로 처리한다.
+    const applied = from.slice(index).reverse()
+    try {
+      for (const action of applied) await applyAction(action, direction)
+    } catch { void appAlert('변경을 되돌리지 못했습니다. 다시 시도해 주세요.', { title: '실행 취소 실패' }); return }
+    if (direction === 'undo') { setUndoStack(previous => previous.slice(0, index)); setRedoStack(previous => [...previous, ...applied]) }
+    else { setRedoStack(previous => previous.slice(0, index)); setUndoStack(previous => [...previous, ...applied]) }
+  }
   const assignCategory = async (codes: string[], categoryId: number, bulk = false) => {
+    const entries = codes.map(code => { const value = classificationsQuery.data?.[code]; return { code, before: [value?.sector, value?.industry, value?.subIndustry].filter((name): name is string => Boolean(name)) } })
     try {
       await assignClassification.mutateAsync({ codes, categoryId })
+      const afterLabel = pathOfCategory(categoryId).at(-1) ?? ''
+      setUndoStack(previous => [...previous.slice(-49), { id: String(historyIdRef.current++), entries, afterCategoryId: categoryId, afterLabel }])
+      setRedoStack([])
       if (bulk) {
-        const name = categoryQuery.data?.find(category => category.id === categoryId)?.name ?? ''
-        void appAlert(`[${name}]\n일괄 적용 완료되었습니다.`, { title: '일괄 변경 완료' })
+        void appAlert(`[${afterLabel}]\n일괄 적용 완료되었습니다.`, { title: '일괄 변경 완료' })
       }
     } catch { void appAlert('분류를 저장하지 못했습니다. 다시 시도해 주세요.', { title: bulk ? '일괄 변경 실패' : '분류 저장 실패' }) }
   }
+  // 모드나 시장이 바뀌면 변경 내역은 비운다(다른 모드의 값과 섞이지 않게).
+  useEffect(() => { setUndoStack([]); setRedoStack([]) }, [sheet, market])
   const classificationCell = (code: string, field: ClassificationField, value: string, sector: string, industry = '') => <AdminStockSectorCell value={value || '-'} options={categoryOptions(field, sector, industry)} onAssign={id => void assignCategory([code], id)} isHighlighted={false} rowHoverClass="hover:bg-[var(--brand)]/35" onHoverStart={() => {}} onHoverEnd={() => {}} onEditingChange={() => {}} contextLabel={field === 'industry' && sector ? `대분류: ${sector}` : field === 'subIndustry' && industry ? `중분류: ${industry}` : undefined} disabled={!canEdit || categoryQuery.isLoading || categoryQuery.isError || assignClassification.isPending || (field === 'industry' && !sector) || (field === 'subIndustry' && !industry)} disabledHint={field === 'subIndustry' ? '중분류를 먼저 지정해 주세요' : undefined} title={`${field === 'sector' ? '대분류' : field === 'industry' ? '중분류' : '소분류'} 개별 변경`} orderMode={{ value: orderMode, onChange: setOrderMode }} />
   const selectedSectors = new Set([...selected].map(code => rows.find(row => row.code === code)?.customSector || ''))
   const sharedSector = selectedSectors.size === 1 ? [...selectedSectors][0] : ''
@@ -220,7 +265,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
       <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 flex-1 overflow-hidden bg-ui-background">
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold">
-            <ToolbarModeText page="STOCK" label={badgeLabel} showChevron menu={customMenu('stock', market, true)} />
+            <ToolbarModeText page="STOCK" label={badgeLabel} showChevron menu={customMenu('stock', market, true, sheet === 'MINE')} />
             <SearchBar inline query={search} onChange={setSearch} placeholder="검색" ariaLabel={searchAriaLabel} maxLength={STOCK_SEARCH_MAX_LENGTH} />
             <div className="min-w-0 flex-1" />
             <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
@@ -233,7 +278,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
             <table style={{ minWidth: stockColumnWidthsTotal(columnWidths) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
               <StockTableColGroup keys={COLUMN_WIDTH_KEYS} widths={columnWidths} />
               <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]"><tr style={{ height: STOCK_HEADER_ROW_PX }}><th className="bg-[var(--ui-panel)] px-0 text-center">{canEdit && <input type="checkbox" className="mx-auto my-0 block thin-check" checked={allVisibleSelected} onChange={toggleVisible} aria-label="표시된 종목 전체 선택" />}</th>{columns.filter(column => isColumnShown(column.key)).map(column => <th key={column.key} scope="col" className="whitespace-nowrap bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white"><StockSortHeader label={column.label} state={sort.key === column.key ? sort.direction : null} onSort={() => changeSort(column.key)} filter={column.filter ? filterButton(column.filter, column.label) : undefined} /></th>)}</tr></thead>
-              <tbody>{filtered.map((stock, index) => <tr key={stock.code} {...(canEdit ? { ...rowProps(index), onMouseDown: (event: MouseEvent<HTMLTableRowElement>) => { if (!(event.target as HTMLElement).closest('[data-no-row-select]')) rowProps(index).onMouseDown(event) } } : {})} className={selected.has(stock.code) ? 'bg-[var(--brand)]/20' : 'hover:bg-[var(--brand)]/10'}><td className="px-0 text-center">{canEdit && <input type="checkbox" className="mx-auto my-0 block thin-check" checked={selected.has(stock.code)} onChange={() => {}} aria-label={`${stock.name} 선택`} />}</td>{isColumnShown('code') && <td className="text-center text-ui-muted">{stock.code}</td>}{isColumnShown('englishName') && <td className="truncate pl-2 text-ui-muted" data-hint={stock.englishName || undefined}>{stock.englishName || '—'}</td>}{isColumnShown('name') && <td onClick={event => event.stopPropagation()} onMouseDown={event => event.stopPropagation()} className={`truncate px-1 ${isAdmin && !namesQuery.isLoading && !namesQuery.isError ? 'cursor-pointer hover:bg-[var(--brand)]/35' : ''}`}>{!isAdmin ? <span className="px-1 text-ui-white">{stock.name}</span> : editingCode === stock.code ? <input autoFocus aria-label={`${stock.code} 종목명 (한글)`} value={draftName} maxLength={100} disabled={saveName.isPending} onChange={event => setDraftName(event.target.value)} onBlur={() => { if (!saveName.isPending) setEditingCode(null) }} onKeyDown={event => { if (event.nativeEvent.isComposing || event.keyCode === 229) return; if (event.key === 'Enter') void submitName(stock.code, stock.name); if (event.key === 'Escape') setEditingCode(null) }} className="nes-input is-dark block h-5 w-full rounded-md border-0 bg-[var(--ui-panel)] px-1 text-left text-sm text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]" /> : <button type="button" disabled={namesQuery.isLoading || namesQuery.isError} onClick={() => { setDraftName(stock.name); setEditingCode(stock.code) }} className="w-full truncate border-0 bg-transparent px-1 text-left text-ui-white disabled:opacity-50">{stock.name}</button>}</td>}{isColumnShown('marketCap') && <td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok)} {unit.suffix}</td>}{isColumnShown('marketCapKrw') && <td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok * unit.krwRate)} 원</td>}{isColumnShown('sector') && <td className="truncate pl-2 text-ui-muted" data-hint={stock.sector || undefined}>{stock.sector || '—'}</td>}{classificationCell(stock.code, 'sector', stock.customSector, stock.customSector)}{classificationCell(stock.code, 'industry', stock.customIndustry, stock.customSector)}{classificationCell(stock.code, 'subIndustry', stock.customSubIndustry, stock.customSector, stock.customIndustry)}</tr>)}</tbody>
+              <tbody>{filtered.map((stock, index) => <tr key={stock.code} {...(canEdit ? { ...rowProps(index), onMouseDown: (event: MouseEvent<HTMLTableRowElement>) => { if (!(event.target as HTMLElement).closest('[data-no-row-select]')) rowProps(index).onMouseDown(event) } } : {})} className={selected.has(stock.code) ? 'bg-[var(--brand)]/20' : 'hover:bg-[var(--brand)]/10'}><td className="px-0 text-center">{canEdit && <input type="checkbox" className="mx-auto my-0 block thin-check" checked={selected.has(stock.code)} onChange={() => {}} aria-label={`${stock.name} 선택`} />}</td>{isColumnShown('code') && <td className="text-center text-ui-muted">{stock.code}</td>}{isColumnShown('englishName') && <td className="truncate pl-2 text-ui-muted" data-hint={stock.englishName || undefined}>{stock.englishName || '—'}</td>}{isColumnShown('name') && <td onClick={event => event.stopPropagation()} onMouseDown={event => event.stopPropagation()} className={`truncate px-1 ${canEdit && !namesQuery.isLoading && !namesQuery.isError ? 'cursor-pointer hover:bg-[var(--brand)]/35' : ''}`}>{!canEdit ? <span className="px-1 text-ui-white">{stock.name}</span> : editingCode === stock.code ? <input autoFocus aria-label={`${stock.code} 종목명 (한글)`} value={draftName} maxLength={100} disabled={saveName.isPending} onChange={event => setDraftName(event.target.value)} onBlur={() => { if (!saveName.isPending) setEditingCode(null) }} onKeyDown={event => { if (event.nativeEvent.isComposing || event.keyCode === 229) return; if (event.key === 'Enter') void submitName(stock.code, stock.name); if (event.key === 'Escape') setEditingCode(null) }} className="nes-input is-dark block h-5 w-full rounded-md border-0 bg-[var(--ui-panel)] px-1 text-left text-sm text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]" /> : <button type="button" disabled={namesQuery.isLoading || namesQuery.isError} onClick={() => { setDraftName(stock.name); setEditingCode(stock.code) }} className="w-full truncate border-0 bg-transparent px-1 text-left text-ui-white disabled:opacity-50">{stock.name}</button>}</td>}{isColumnShown('marketCap') && <td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok)} {unit.suffix}</td>}{isColumnShown('marketCapKrw') && <td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok * unit.krwRate)} 원</td>}{isColumnShown('sector') && <td className="truncate pl-2 text-ui-muted" data-hint={stock.sector || undefined}>{stock.sector || '—'}</td>}{classificationCell(stock.code, 'sector', stock.customSector, stock.customSector)}{classificationCell(stock.code, 'industry', stock.customIndustry, stock.customSector)}{classificationCell(stock.code, 'subIndustry', stock.customSubIndustry, stock.customSector, stock.customIndustry)}</tr>)}</tbody>
             </table>
           </ScrollArea>
           )}
@@ -245,6 +290,11 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
           <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}>
             <SettingsPanelGroup section="custom">
               {canEdit ? (
+                <>
+                <div className="settings-item"><div className="settings-custom-control">
+                  <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">변경 내역</h2>
+                  <ChangeHistoryControls undoStack={undoStack} redoStack={redoStack} describe={describeAction} onUndo={() => void runHistory('undo')} onRedo={() => void runHistory('redo')} onUndoItem={id => void runHistory('undo', id)} onRedoItem={id => void runHistory('redo', id)} />
+                </div></div>
                 <div className="settings-item"><div className="settings-custom-control">
               <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일괄 변경</h2>
               <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">{selected.size ? `선택한 종목 ${selected.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택해 주세요'}</p>
@@ -253,6 +303,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
                 <BulkAssignButton count={selected.size} options={categoryOptions('industry', sharedSector)} onAssign={id => void assignCategory([...selected], id, true)} label="중분류" title="중분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={!sharedSector || categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} disabledHint={'선택한 종목의 대분류가 같아야 합니다.\n다르면 대분류를 먼저 일괄적용해 주세요'} />
                 <BulkAssignButton count={selected.size} options={categoryOptions('subIndustry', sharedSector, sharedIndustry)} onAssign={id => void assignCategory([...selected], id, true)} label="소분류" title="소분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={!sharedIndustry || categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} disabledHint={'선택한 종목의 중분류가 같아야 합니다.\n다르면 중분류를 먼저 일괄적용해 주세요'} />
               </div></div></div>
+                </>
               ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">{canUseMine ? '[내 기준] 모드만 쓰기 가능' : `계산: ${unit.rateNote}`}</span></span></div>}
             </SettingsPanelGroup>
             <SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control">

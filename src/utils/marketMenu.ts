@@ -19,12 +19,14 @@ export function marketMenu(basePath: '/map' | '/graph' | '/summary', current: Ma
 
 // 섹터·종목 화면의 목록. KOREA는 /sector/korea·/stock/korea이고, 일본·미국은 같은 종류의 주소를 쓴다.
 // 상단 메뉴와 같이 특별 회원·관리자에게만 일본·미국을 더한다(일본·미국 화면에서는 항상 보인다).
-export function customMenu(kind: 'sector' | 'stock', current: 'KOREA' | OverseasMarket, includeOverseas: boolean) {
-  const items = [{ label: 'KOREA', to: `/${kind}/korea`, active: current === 'KOREA', indent: false, special: false }]
+// 내 기준 모드(?sheet=MINE)에서 다른 시장으로 옮겨도 내 기준이 유지되도록, isMine이면 모든 항목 주소에 ?sheet=MINE을 붙인다.
+export function customMenu(kind: 'sector' | 'stock', current: 'KOREA' | OverseasMarket, includeOverseas: boolean, isMine = false) {
+  const withSheet = (path: string) => (isMine ? `${path}?sheet=MINE` : path)
+  const items = [{ label: 'KOREA', to: withSheet(`/${kind}/korea`), active: current === 'KOREA', indent: false, special: false }]
   if (!includeOverseas) return items
   return [
     ...items,
-    ...OVERSEAS_MARKETS.map(market => ({ label: market.menuLabel, to: overseasRoute(`/${kind}`, market.id), active: current === market.id, special: false })),
+    ...OVERSEAS_MARKETS.map(market => ({ label: market.menuLabel, to: withSheet(overseasRoute(`/${kind}`, market.id)), active: current === market.id, special: false })),
   ]
 }
 
