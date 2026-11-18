@@ -212,7 +212,7 @@ export default function AdminMembers({ userId, specialContainer, nicknameContain
           />
         </div>
       </Toolbar>
-      <div className="flex min-h-0 flex-1 flex-col border border-ui-border">
+      <div className="flex min-h-0 flex-1 flex-col border border-ui-border" aria-busy={members.isFetching}>
       <ScrollArea overlay viewportRef={scrollContainerRef} scrollLabel="회원 목록" className="min-h-0 flex-1">
         {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
         <table className="nes-table is-dark custom-page-table w-full min-w-[1150px] table-fixed text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">

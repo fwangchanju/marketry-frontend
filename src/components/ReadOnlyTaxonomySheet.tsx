@@ -1,3 +1,4 @@
+import MainAreaLoading from '@/components/MainAreaLoading'
 import AdminSectorTable from '@/components/AdminSectorTable'
 import type { SectorItem } from '@/types/api'
 import type { SectorStats } from '@/utils/sectorOrder'
@@ -138,20 +139,16 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
     return mode === 'stock' ? rows.filter(row => row.stocks.length > 0) : rows
   }, [data, mode])
 
-  // 지도·그룹 페이지처럼 불러오지 못했을 때는 큰 원 안에 안내 글을 가운데에 보여준다(원 높이는 지도·그룹 페이지와 같게 위 16px, 아래 47.5px 여백).
+  // 지도·그룹 페이지처럼 불러오지 못했을 때는 큰 원 안에 안내 글을 가운데에 보여준다(원은 모든 페이지 공통 자리 MainAreaLoading에 둔다).
   if (isError) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
-        <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} />
-      </div>
+      <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} /></MainAreaLoading>
     )
   }
   // 지도·그룹 페이지처럼 화면 한가운데에 크게 보여준다.
   if (isLoading || (mode === 'stock' && isCatalogLoading)) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
-        <Spinner showElapsed />
-      </div>
+      <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
     )
   }
   // 종목이 하나도 없어도 표 틀(검색창·머리글)은 그대로 보여준다 — 시트마다 화면 모양이 달라 보이지 않게 한다.

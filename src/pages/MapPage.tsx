@@ -1,4 +1,4 @@
-import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
+import MainAreaLoading from '@/components/MainAreaLoading'
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
@@ -530,15 +530,11 @@ export default function MapPage() {
                   })}
                 </nav>
               )}
-              {/* 로딩·오류 원은 그룹 페이지와 같은 높이에 오도록 위 16px·아래 19.5px 여백 안에서 가운데에 둔다. */}
+              {/* 로딩·오류 원은 모든 페이지 공통 자리(MainAreaLoading, 메인 영역 기준)에 둔다. */}
               {isLoading ? (
-                <div className={MAIN_LOADING_CLASS}>
-                  <Spinner showElapsed />
-                </div>
+                <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
               ) : isError ? (
-                <div className={MAIN_LOADING_CLASS}>
-                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} />
-                </div>
+                <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></MainAreaLoading>
               ) : visibleItems.length === 0 ? (
                 isMineEmpty ? (
                   <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>

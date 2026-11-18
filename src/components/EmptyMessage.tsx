@@ -2,6 +2,7 @@ import { useContext, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import Spinner from '@/components/Spinner'
+import MainAreaLoading from '@/components/MainAreaLoading'
 import { SECTOR_KOREA } from '@/utils/customRoutes'
 import { EmptyMessageAreaContext } from '@/utils/emptyMessageArea'
 
@@ -39,15 +40,15 @@ export default function EmptyMessage({ message, topClass = 'top-8', children }: 
   return <div className={`${MESSAGE_CLASS} ${topClass} flex-col`}>{body}</div>
 }
 
-// 내 분류가 비어 있을 때처럼 다음 행동을 안내하는 화면 — 로딩·오류 원과 같은 자리(위 16px·아래 19.5px 여백 안 가운데)에 같은 원·로고(움직이지 않음)를 두고,
+// 내 분류가 비어 있을 때처럼 다음 행동을 안내하는 화면 — 로딩·오류 원과 같은 자리(MainAreaLoading)에 같은 원·로고(움직이지 않음)를 두고,
 // children(배지)은 원 안 상태 칸에, 문구는 원 아래에 매단다. 문구는 원의 가운데 정렬에 영향을 주지 않는다.
-export function EmptyLogoMessage({ message, children, containerClassName = 'pt-4 pb-[19.5px]' }: { message: string; children?: ReactNode; containerClassName?: string }) {
+export function EmptyLogoMessage({ message, children }: { message: string; children?: ReactNode }) {
   return (
-    <div className={`flex flex-1 items-center justify-center ${containerClassName}`}>
+    <MainAreaLoading>
       <div className="relative">
         <Spinner still stillContent={children} />
         <div className="absolute left-1/2 top-full mt-4 -translate-x-1/2 whitespace-nowrap text-center text-base text-ui-text">{message}</div>
       </div>
-    </div>
+    </MainAreaLoading>
   )
 }
