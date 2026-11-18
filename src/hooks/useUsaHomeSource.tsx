@@ -59,7 +59,7 @@ export function useUsaHomeSource(): OverseasHomeSource {
     sessionChip: snapshotTime ? <UsaSessionChip session={USA_SESSION} /> : null,
     refreshHelp: usaRefreshHelp(snapshotTime),
     fixed: USA_MAP_FIXED,
-    tabStorageName: 'UsaHome',
+    tabStorageName: 'Home',
     settingPrefix: overseasSettingKey(USA_MAP_SETTING_PREFIX, sheet),
     currencyUnit: '달러',
     shownCount: shownQuotes?.quotes.length ?? 0,

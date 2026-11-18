@@ -56,7 +56,7 @@ export function useJapanHomeSource(): OverseasHomeSource {
     sessionChip: snapshotTime ? <JapanSessionChip session={japanSessionAt(snapshotTime)} /> : null,
     refreshHelp: JAPAN_REFRESH_HELP,
     fixed: JAPAN_MAP_FIXED,
-    tabStorageName: 'JapanHome',
+    tabStorageName: 'Home',
     settingPrefix: overseasSettingKey(JAPAN_MAP_SETTING_PREFIX, sheet),
     currencyUnit: '엔',
     shownCount: shownQuotes?.quotes.length ?? 0,
