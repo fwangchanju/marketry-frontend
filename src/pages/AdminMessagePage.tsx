@@ -255,7 +255,7 @@ export default function AdminMessagePage() {
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="MESSAGE" showChevron menu={adminMenu('MESSAGE')} />
                 </Toolbar>
-                <PageMainFrame
+                <PageMainFrame borderless
                   className="p-0"
                   heading={(
                     <div className="mx-auto w-full max-w-4xl">

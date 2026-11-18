@@ -714,7 +714,7 @@ export default function AdminBannerPage() {
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="BANNER" showChevron menu={adminMenu('BANNER')} />
                 </Toolbar>
-                <PageMainFrame className="p-0" heading={(
+                <PageMainFrame borderless className="p-0" heading={(
                     <article aria-label="배너 운영" className="mx-auto w-full max-w-4xl">
                     {showCampaignList ? (
                       <InfoPageHeading

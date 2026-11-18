@@ -258,7 +258,7 @@ export default function ProfilePage() {
           <Toolbar>
             <ToolbarModeText page="ACCOUNT" label="PROFILE" />
           </Toolbar>
-          <PageMainFrame
+          <PageMainFrame borderless
             className="p-0"
             heading={session?.authenticated && !isError ? (
               <div className="mx-auto w-full max-w-4xl">

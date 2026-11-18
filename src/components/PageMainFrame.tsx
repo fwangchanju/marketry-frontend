@@ -5,13 +5,13 @@ import type { ReactNode } from 'react'
 // heading: 제목·요약·구분선 블록. 기본은 본문과 함께 스크롤된다(2026-10-28 고정을 뺐다).
 // fixHeading: true면 예전처럼 heading을 본문 위에 고정하고 그 아래만 스크롤한다. 지금 쓰는 페이지는 없지만,
 // 일부 페이지에서 고정을 되살릴 수 있게 남겨 둔다(docs/history.md 2026-10-28 항목 참고).
-export default function PageMainFrame({ children, className = '', scrollable = true, heading, fixHeading = false }: { children: ReactNode; className?: string; scrollable?: boolean; heading?: ReactNode; fixHeading?: boolean }) {
+export default function PageMainFrame({ children, className = '', scrollable = true, heading, fixHeading = false, borderless = false }: { children: ReactNode; className?: string; scrollable?: boolean; heading?: ReactNode; fixHeading?: boolean; borderless?: boolean }) {
   const hasHeading = heading !== undefined
   return (
     // main-settings-row가 이미 좌우 4px 여백을 만든다. 여기서 다시 px-4를 주면 SOURCE
     // 외곽선이 본문 안쪽으로 16px 더 밀리므로, 테두리는 메인 영역 가장자리에서 바로 시작한다.
     <div className="min-h-0 flex-1">
-      <div data-page-main-frame className={`${hasHeading ? 'flex h-full min-h-0 flex-col overflow-hidden' : scrollable ? 'page-main-scroll h-full overflow-y-auto' : 'flex h-full min-h-0 flex-col overflow-hidden'} border border-ui-border bg-ui-background ${className}`}>
+      <div data-page-main-frame className={`${hasHeading ? 'flex h-full min-h-0 flex-col overflow-hidden' : scrollable ? 'page-main-scroll h-full overflow-y-auto' : 'flex h-full min-h-0 flex-col overflow-hidden'} border ${borderless ? 'border-transparent' : 'border-ui-border'} bg-ui-background ${className}`}>
         {hasHeading ? (
           fixHeading ? (
             <>
