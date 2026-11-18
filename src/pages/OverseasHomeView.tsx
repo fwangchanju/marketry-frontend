@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
+import { buildExcludedSectorRows, countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
-import type { HeatmapItem, HeatmapSectorNode } from '@/types/api'
-import { isMarketValueExcluded } from '@/utils/marketValueTier'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
@@ -13,7 +13,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import NavBarPageActions from '@/components/NavBarPageActions'
-import SettingsPanel, { SettingsColorSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import ScreenshotModal from '@/components/ScreenshotModal'
@@ -84,9 +84,6 @@ function CaptureFrame({ title, children }: { title: string; children: ReactNode 
 
 const SECTION_ORDER: SettingsPanelSectionId[] = ['composition', 'colors']
 
-// 업종 트리의 모든 종목을 한 줄로 모은다(설정창의 종목 수 계산용).
-const allItemsOf = (nodes: HeatmapSectorNode[]): HeatmapItem[] => nodes.flatMap(node => [...node.items, ...allItemsOf(node.children)])
-
 // 홈의 일본·미국 구성. 업종 지도와 그룹 등락률을 지도 화면과 같은 트리·계산으로 만든다(최신 시세 기준).
 // 날짜 달력·시계 새로고침·설정 패널은 지도 화면과 같은 부품을 쓴다. 설정 패널은 색상 탭만 있다(편집할 설정이 없고 지도 화면과 같은 고정값을 보여 준다).
 export default function OverseasHomeView({ source }: { source: OverseasHomeSource }) {
@@ -97,6 +94,7 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
   } = source
   // 시가총액 범위 — 지도·그래프와 같은 저장 값. 업종 요약과 막대, 설정창의 종목 수에 함께 반영한다.
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
+  const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
   const { colorScale, strongIndustryColor } = fixed
   const navigate = useNavigate()
   // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(국내 홈과 같은 동작).
@@ -105,15 +103,15 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
   // 업종 지도 항목과 그룹 등락률 막대 — 지도 화면과 같이 한 단계(대분류)만 쓴다.
   const overview = useMemo(() => {
     const items: OverviewMapItem[] = []
-    for (const { node, pathKey } of collectAtDepth(tree, 1, new Set<number>(), tierRange.excludedMarketValueTiers, true, '')) {
+    for (const { node, pathKey } of collectAtDepth(tree, 1, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, true, '')) {
       const summary = summarizeSector(node, tierRange.excludedMarketValueTiers)
       if (!summary) continue
       items.push({ key: pathKey, name: node.sectorName, marketValue: summary.marketValue, changeRate: summary.weightedAvg, simpleAvg: summary.simpleAvg, advancers: summary.advancers, decliners: summary.decliners, unchanged: summary.unchanged })
     }
     const chart = buildRankChart(items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false })))
     return { items, chart }
-  }, [tree, tierRange.excludedMarketValueTiers])
-  const shownCount = useMemo(() => allItemsOf(tree).filter(item => !isMarketValueExcluded(item, tierRange.excludedMarketValueTiers)).length, [tree, tierRange.excludedMarketValueTiers])
+  }, [tree, tierRange.excludedMarketValueTiers, sectorExclusion.excludedSectorIds])
+  const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
 
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 홈은 특별 회원·관리자만 열 수 있다.
   const menu = marketMenu('/summary', market, true)
@@ -238,6 +236,7 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
         <SettingsPanel pageLabel="Summary" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
           <SettingsPanelGroup section="composition">
             <SettingsMarketValueSection isCustom={false} tiers={tierRange.tiers} tierRangeMinIndex={tierRange.minIndex} tierRangeMaxIndex={tierRange.maxIndex} onChangeTierRange={tierRange.setRange} showDivider={false} currencyUnit={currencyUnit} />
+            <SettingsExcludeSection sectorFilterEnabled={sectorExclusion.enabled} onToggleSectorFilter={sectorExclusion.toggle} excludedSectors={buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers)} onRemoveExcludedSector={sectorExclusion.remove} />
           </SettingsPanelGroup>
           <SettingsPanelGroup section="colors">
             {/* 지도 화면과 같은 구성이다. 등락률 색상·상위 업종 강조 색은 고정값을 보여 주고 바꾸지 못한다. */}

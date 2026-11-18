@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
+import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
+import { countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
-import { isMarketValueExcluded } from '@/utils/marketValueTier'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import JapanDatePicker from '@/components/JapanDatePicker'
@@ -25,7 +26,6 @@ import { buildRankChart } from '@/utils/rankChart'
 import { computeSectorAverage } from '@/utils/sectorAverage'
 import { collectAtDepth } from '@/utils/sectorDepth'
 
-const NO_EXCLUDED_SECTORS = new Set<number>()
 // 휴장이 이어져도 시작일 앞 거래일의 종가가 들어오도록 시작일 앞 며칠을 더 받는다(황금연휴 등).
 const INDEX_LOOKBACK_DAYS = 14
 const NIKKEI_LABEL = '닛케이'
@@ -59,8 +59,7 @@ export function useJapanGraphSource(): OverseasGraphSource {
   const { preferences, update } = useJapanGraphPreferences()
   // 시가총액 범위는 지도와 같은 저장 값을 쓴다(국내도 같은 분류의 지도·그래프가 값을 공유한다).
   const tierRange = useOverseasTierRange(JAPAN_MAP_SETTING_PREFIX, '엔')
-  // 시가총액 범위를 거른 뒤 남은 종목 수 — 설정창의 "n/m종목"에 쓴다.
-  const shownCount = (shownQuotes?.quotes ?? []).filter(quote => !isMarketValueExcluded({ totalMarketValue: quote.totalMarketValue, marketValueTier: '' }, tierRange.excludedMarketValueTiers)).length
+  const sectorExclusion = useOverseasSectorExclusion(JAPAN_MAP_SETTING_PREFIX)
   const showDelta = rangeStart === null && preferences.graphMode === 'delta'
   const toggleGraph = () => update({ graphMode: showDelta ? 'current' : 'delta' })
   // N분 전 시세가 저장돼 있을 때만 비교한다. 없으면 비교 그래프는 데이터 없음으로 표시한다.
@@ -91,7 +90,7 @@ export function useJapanGraphSource(): OverseasGraphSource {
       const average = computeSectorAverage(node, tierRange.excludedMarketValueTiers)
       return preferences.avgChangeRateUseSimple ? average.simpleAvg : average.weightedAvg
     }
-    const entriesOf = (nodes: HeatmapSectorNode[]) => collectAtDepth(nodes, depth, NO_EXCLUDED_SECTORS, tierRange.excludedMarketValueTiers, depth < 3)
+    const entriesOf = (nodes: HeatmapSectorNode[]) => collectAtDepth(nodes, depth, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, depth < 3)
     const beforeByPath = new Map(entriesOf(beforeTime ? treeOf(beforeQuotes.data) : []).map(({ node, pathKey }) => [pathKey, node]))
     const entries: RankColumnItem[] = []
     for (const { node, pathKey } of entriesOf(treeOf(shownQuotes))) {
@@ -108,7 +107,11 @@ export function useJapanGraphSource(): OverseasGraphSource {
     if (indexValue !== null) entries.push({ key: 'market-index:NIKKEI225', sectorName: NIKKEI_LABEL, value: indexValue, isReference: true })
     return buildRankChart(entries)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- treeOf는 아래 값들로만 결과가 정해진다
-  }, [categories.data, classifications.data, names.data, shownQuotes, beforeQuotes.data, beforeTime, showDelta, preferences.groupDepth, preferences.avgChangeRateUseSimple, indexValue, tierRange.excludedMarketValueTiers])
+  }, [categories.data, classifications.data, names.data, shownQuotes, beforeQuotes.data, beforeTime, showDelta, preferences.groupDepth, preferences.avgChangeRateUseSimple, indexValue, tierRange.excludedMarketValueTiers, sectorExclusion.excludedSectorIds])
+
+  // 제외 업종 목록(이름·종목 수)을 만들 필터 전 트리와, 제외·시가총액 범위를 거친 뒤 남은 종목 수 — 설정창의 "n/m종목"에 쓴다.
+  const exclusionTree = useMemo(() => treeOf(shownQuotes), [categories.data, classifications.data, names.data, shownQuotes]) // eslint-disable-line react-hooks/exhaustive-deps -- treeOf는 이 값들로만 결과가 정해진다
+  const shownCount = useMemo(() => countVisibleItems(exclusionTree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [exclusionTree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
 
   const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), names.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading || snapshotTimes.isLoading || beforeQuotes.isLoading || indexCloses.isLoading || indexQuotesNow.isLoading || indexQuotesBefore.isLoading
@@ -142,6 +145,8 @@ export function useJapanGraphSource(): OverseasGraphSource {
     totalCount: stocks.length,
     shownCount,
     tierRange,
+    sectorExclusion,
+    exclusionTree,
     currencyUnit: '엔',
     graphSettings: (
       <>

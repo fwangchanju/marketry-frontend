@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
+import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
+import { countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
-import { isMarketValueExcluded } from '@/utils/marketValueTier'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import UsaDatePicker from '@/components/UsaDatePicker'
@@ -23,7 +24,6 @@ import { USA_GRAPH_DRAFT_KEY_MAP } from '@/utils/usaGraphSettings'
 import { USA_MAP_FIXED, USA_MAP_SETTING_PREFIX, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
 import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
 
-const NO_EXCLUDED_SECTORS = new Set<number>()
 const ignoreToggle = () => {}
 const INDEX_LOOKBACK_DAYS = 14
 // 잠긴 "비교 시점" 슬라이더가 가리키는 칸(일본 그래프의 기본값과 같다).
@@ -55,24 +55,25 @@ export function useUsaGraphSource(): OverseasGraphSource {
   const indexRate = day && startDay && indexCloses.data ? indexChangeRate(indexCloses.data, startDay, day) : null
   const { preferences, update } = useUsaGraphPreferences()
   const tierRange = useOverseasTierRange(USA_MAP_SETTING_PREFIX, '달러')
-  // 시가총액 범위를 거른 뒤 남은 종목 수 — 설정창의 "n/m종목"에 쓴다.
-  const shownCount = (shownQuotes?.quotes ?? []).filter(quote => !isMarketValueExcluded({ totalMarketValue: quote.totalMarketValue, marketValueTier: '' }, tierRange.excludedMarketValueTiers)).length
+  const sectorExclusion = useOverseasSectorExclusion(USA_MAP_SETTING_PREFIX)
 
+  // 필터 전 업종 트리 — 막대 계산과 제외 업종 목록, 설정창의 종목 수가 함께 쓴다.
+  const tree = useMemo<HeatmapSectorNode[]>(
+    () => (categories.data && classifications.data && stocks.data && shownQuotes?.snapshotTime ? buildJapanTree(treeStocks, categories.data, classifications.data, names, shownQuotes.quotes, shownQuotes.snapshotTime) : []),
+    [categories.data, classifications.data, stocks.data, shownQuotes, treeStocks, names],
+  )
+  const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
   const chart = useMemo(() => {
-    const tree: HeatmapSectorNode[] =
-      categories.data && classifications.data && stocks.data && shownQuotes?.snapshotTime
-        ? buildJapanTree(treeStocks, categories.data, classifications.data, names, shownQuotes.quotes, shownQuotes.snapshotTime)
-        : []
     const depth = preferences.groupDepth
     const entries: RankColumnItem[] = []
-    for (const { node, pathKey } of collectAtDepth(tree, depth, NO_EXCLUDED_SECTORS, tierRange.excludedMarketValueTiers, depth < 2)) {
+    for (const { node, pathKey } of collectAtDepth(tree, depth, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, depth < 2)) {
       const average = computeSectorAverage(node, tierRange.excludedMarketValueTiers)
       const value = preferences.avgChangeRateUseSimple ? average.simpleAvg : average.weightedAvg
       if (value !== null) entries.push({ key: pathKey, sectorName: node.sectorName, value })
     }
     if (indexRate !== null) entries.push({ key: 'market-index:SP500', sectorName: overseasMarketInfo('USA').badgeLabel, value: indexRate, isReference: true })
     return buildRankChart(entries)
-  }, [categories.data, classifications.data, stocks.data, shownQuotes, treeStocks, names, preferences.groupDepth, preferences.avgChangeRateUseSimple, indexRate, tierRange.excludedMarketValueTiers])
+  }, [tree, preferences.groupDepth, preferences.avgChangeRateUseSimple, indexRate, tierRange.excludedMarketValueTiers, sectorExclusion.excludedSectorIds])
 
   const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || stocks.isLoading || quotes.isLoading || periodQuotes.isLoading || snapshotTimes.isLoading || indexCloses.isLoading
@@ -105,6 +106,8 @@ export function useUsaGraphSource(): OverseasGraphSource {
     totalCount: stocks.data?.length ?? 0,
     shownCount,
     tierRange,
+    sectorExclusion,
+    exclusionTree: tree,
     currencyUnit: '달러',
     graphSettings: (
       <>

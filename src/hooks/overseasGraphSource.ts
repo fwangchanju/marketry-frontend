@@ -1,4 +1,6 @@
 import type { ComponentType, ReactNode } from 'react'
+import type { OverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
+import type { HeatmapSectorNode } from '@/types/api'
 import type { OverseasTierRange } from '@/hooks/useOverseasTierRange'
 import type { CurrencyUnit } from '@/utils/currencyUnit'
 import type { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
@@ -36,6 +38,9 @@ export interface OverseasGraphSource {
   draftKeyMap: Readonly<Record<string, string>>
   // 종목 구성 탭의 시가총액 범위 — 지도와 같은 저장 값을 쓰며, 막대 계산(chart)에도 이미 반영돼 있다.
   tierRange: OverseasTierRange
+  sectorExclusion: OverseasSectorExclusion
+  // 제외 업종 목록의 이름·종목 수를 만들 업종 트리(필터 적용 전).
+  exclusionTree: HeatmapSectorNode[]
   currencyUnit: CurrencyUnit
   tabStorageName: string
   // 설정창의 "n/m종목"의 m과 n.
