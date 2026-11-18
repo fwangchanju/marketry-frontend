@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from 'react'
+import type { CurrencyUnit } from '@/utils/currencyUnit'
 import type { HeatmapSectorNode } from '@/types/api'
 import type { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
 import type { OverseasMarket } from '@/utils/markets'
@@ -27,6 +28,9 @@ export interface OverseasHomeSource {
   // 설정 화면이 없는 고정 값(색상).
   fixed: { colorScale: (typeof JAPAN_MAP_FIXED)['colorScale']; strongIndustryColor: string }
   tabStorageName: string
+  // 종목 구성 탭의 시가총액 범위(지도·그래프와 같은 저장 값)와 금액 단위.
+  settingPrefix: string
+  currencyUnit: CurrencyUnit
   // 설정창의 "n/m종목"의 n과 m.
   shownCount: number
   totalCount: number

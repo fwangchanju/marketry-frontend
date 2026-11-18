@@ -24,3 +24,5 @@ export function useOverseasTierRange(settingPrefix: string, unit: CurrencyUnit) 
   }, [tiers, minIndex, maxIndex])
   return { tiers, minIndex, maxIndex, setRange, excludedMarketValueTiers }
 }
+
+export type OverseasTierRange = ReturnType<typeof useOverseasTierRange>
