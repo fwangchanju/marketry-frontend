@@ -27,6 +27,7 @@ import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, STOCK_ROW_PX, pinnedStoc
 import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
 import { usePopupPosition, type PopupPosition } from '@/hooks/usePopupPosition'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
+import ScrollArea from '@/components/ScrollArea'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
@@ -1798,7 +1799,7 @@ export default function AdminStockTable({
       ) : (
       <div className="relative min-h-0 flex-1 border border-ui-border">
         {isSelectionHintOpen && <SelectionHintBubble onClose={() => setIsSelectionHintOpen(false)} />}
-        <div ref={scrollContainerRef} className="relative h-full overflow-auto">
+        <ScrollArea overlay viewportRef={scrollContainerRef} scrollLabel="종목 목록" className="h-full">
           {/* 표 글자는 드래그해도 파랗게 선택되지 않게 한다(줄 드래그 선택과 겹치기 때문). 입력창 안의 글자는 그대로 선택할 수 있다. */}
           <table style={{ minWidth: stockColumnWidthsTotal(columnWidths) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [&_input]:select-text [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
           <StockTableColGroup keys={columnKeys} widths={columnWidths} />
@@ -1942,7 +1943,7 @@ export default function AdminStockTable({
           </table>
           {/* 보여줄 종목이 없으면 거래소·MARKETRY 표와 같은 안내 글을 가운데에 보여준다. */}
           {!isPending && sorted.length === 0 && <EmptyMessage message={items.length === 0 ? EMPTY_DATA_MESSAGE : EMPTY_SEARCH_MESSAGE} />}
-        </div>
+        </ScrollArea>
       </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
-import type { PointerEvent, ReactNode } from 'react'
+import type { PointerEvent, ReactNode, RefObject } from 'react'
 
 type ScrollMetrics = { trackHeight: number; thumbHeight: number; thumbTop: number; trackWidth: number; thumbWidth: number; thumbLeft: number }
 
@@ -12,14 +12,21 @@ export default function ScrollArea({
   inert = false,
   overlay = false,
   scrollLabel,
+  viewportRef: externalViewportRef,
 }: {
   children: ReactNode
   className?: string
   inert?: boolean
   overlay?: boolean
   scrollLabel?: string
+  // 바깥에서 스크롤 요소(viewport)를 직접 다룰 때 넘긴다(맨 위로 올리기·열 폭 계산 등).
+  viewportRef?: RefObject<HTMLDivElement | null>
 }) {
-  const viewportRef = useRef<HTMLDivElement>(null)
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+  const setViewport = useCallback((node: HTMLDivElement | null) => {
+    viewportRef.current = node
+    if (externalViewportRef) externalViewportRef.current = node
+  }, [externalViewportRef])
   const contentRef = useRef<HTMLDivElement>(null)
   const dragStartRef = useRef<DragStart | null>(null)
   const horizontalDragStartRef = useRef<HorizontalDragStart | null>(null)
@@ -140,7 +147,7 @@ export default function ScrollArea({
   return (
     <div className={`relative min-w-0 overflow-hidden ${className}`}>
       <div
-        ref={viewportRef}
+        ref={setViewport}
         inert={inert}
         role={scrollLabel ? 'region' : undefined}
         aria-label={scrollLabel}

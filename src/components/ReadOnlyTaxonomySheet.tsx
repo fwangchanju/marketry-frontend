@@ -8,6 +8,7 @@ import { useReportCountLabel } from '@/hooks/useReportCountLabel'
 import { useRowRangeSelection } from '@/hooks/useRowRangeSelection'
 import { STOCK_CHECKBOX_COLUMN_PX, STOCK_HEADER_ROW_PX, STOCK_ROW_PX, pinnedStockColumns, stockColumnWidthsTotal, type StockColumnKey } from '@/utils/stockTableColumns'
 import { useStockColumnWidths } from '@/hooks/useStockColumnWidths'
+import ScrollArea from '@/components/ScrollArea'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
 import { KRX_PROTECTED_SECTOR_NAMES, PROTECTED_SECTOR_NAMES } from '@/utils/protectedSector'
@@ -451,7 +452,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, stockMark
       )}
       <div className="relative min-h-0 flex-1 border border-ui-border">
       {selectionHint.isOpen && <SelectionHintBubble onClose={selectionHint.close} />}
-      <div ref={scrollContainerRef} className="relative h-full overflow-auto">
+      <ScrollArea overlay viewportRef={scrollContainerRef} scrollLabel="종목 목록" className="h-full">
         {/* 내 분류와 같은 표·테두리·스크롤 규칙을 쓴다. 마지막 열은 남는 폭을 받아 KRX의 NXT가 대·중·소분류 합계 폭과 일치한다. */}
         <table className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1" style={{ minWidth: stockColumnWidthsTotal(columnWidths) }}>
           <StockTableColGroup keys={STOCK_COLUMN_KEYS} widths={columnWidths} />
@@ -526,7 +527,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, stockMark
           </tbody>
         </table>
         {visibleRows.length === 0 && <EmptyMessage message={rows.length === 0 ? emptyMessage : EMPTY_SEARCH_MESSAGE} />}
-      </div>
+      </ScrollArea>
       </div>
     </div>
   )
