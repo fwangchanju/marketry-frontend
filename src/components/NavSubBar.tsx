@@ -156,7 +156,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   }
   // 세로 메뉴는 아이콘을 글자 위에 두고, 선택 칸에 청록 배경을 깐다.
   const linkClassName = (to: string) => vertical
-    ? `flex h-14 w-full flex-col items-center justify-center gap-1 rounded text-[13px] font-semibold ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
+    ? `flex h-14 w-full flex-col items-center justify-center gap-1 rounded text-[13px] font-semibold uppercase ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
     : `${NAV_TAB_CLASS} ${isLinkActive(to) ? 'text-[var(--accent)]' : 'text-ui-muted hover:text-ui-white'}`
 
   // 목록에서 지금 보고 있는 항목인지 — Sector·Stock은 한국(/sector/korea, /stock/korea)과 일본(/sector/japan, /stock/japan) 화면이고, Map·Graph는 주소의 시장 이름이다.
@@ -183,7 +183,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
           >
             <Link
               to={link.to}
-              className={link.admin ? `${vertical ? 'flex h-14 w-full flex-col items-center justify-center gap-1 rounded text-[13px] font-semibold' : NAV_TAB_CLASS} transition-colors hover:text-admin-only-hover ${isLinkActive(link.to) ? 'text-admin-only-hover' : 'text-admin-only'}` : linkClassName(link.to)}
+              className={link.admin ? `${vertical ? 'flex h-14 w-full flex-col items-center justify-center gap-1 rounded text-[13px] font-semibold uppercase' : NAV_TAB_CLASS} transition-colors hover:text-admin-only-hover ${isLinkActive(link.to) ? 'text-admin-only-hover' : 'text-admin-only'}` : linkClassName(link.to)}
               aria-expanded={link.options ? openTo === link.to : undefined}
               onClick={event => {
                 // 왼쪽 세로 메뉴는 누르면 바로 이동하고, 목록은 마우스를 올렸을 때만 연다.
