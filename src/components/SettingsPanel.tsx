@@ -1310,6 +1310,7 @@ function SettingsTaxonomySelector({
   atBottom = false,
   snapshotTime,
   onlyTaxonomy,
+  alsoTaxonomies,
   ownDraftKeys,
   actions,
 }: {
@@ -1321,6 +1322,8 @@ function SettingsTaxonomySelector({
   snapshotTime?: string | null
   // 이 분류만 고를 수 있는 화면 — 나머지 칸은 보이되 눌리지 않고, 국내 설정의 저장 안 한 변경 표시를 쓰지 않으며, 업데이트 시각 줄은 자리만 잡고 숨긴다.
   onlyTaxonomy?: TaxonomyKey
+  // onlyTaxonomy 화면에서 추가로 고를 수 있는 분류(일본·미국 종목·섹터의 내 기준처럼 관리자에게만 여는 모드).
+  alsoTaxonomies?: readonly TaxonomyKey[]
   // 이 분류만 고르는 화면(일본 지도 등)이 자기 설정의 저장 안 한 변경을 분류 칸에 표시할 때 쓰는 저장 이름.
   ownDraftKeys?: readonly string[]
 }) {
@@ -1339,7 +1342,7 @@ function SettingsTaxonomySelector({
   const hasDraft = (key: TaxonomyKey) => onlyTaxonomy
     ? key === onlyTaxonomy && ownDirty
     : key === 'MARKETRY' ? marketryDirty : key === 'MINE' ? mineDirty : exchangeDirty
-  const isLocked = (key: TaxonomyKey) => onlyTaxonomy !== undefined && key !== onlyTaxonomy
+  const isLocked = (key: TaxonomyKey) => onlyTaxonomy !== undefined && key !== onlyTaxonomy && alsoTaxonomies?.includes(key) !== true
 
   return (
     <div data-settings-side-toggle-top-anchor={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
@@ -2430,6 +2433,8 @@ interface Props {
   tabStorageName?: string
   // Mode에서 이 분류만 고를 수 있게 한다.
   onlyTaxonomy?: TaxonomyKey
+  // onlyTaxonomy 화면에서 추가로 고를 수 있는 분류(관리자에게만 여는 내 기준 등).
+  alsoTaxonomies?: readonly TaxonomyKey[]
   // 설정 저장·초기화 기능을 제공하는 페이지에서만 헤더 버튼을 표시한다.
   showPreferenceActions?: boolean
   // 한 탭 안에 순서대로 쌓는 본문 — 홈·그룹·커스텀용. 여러 탭 분류(children의
@@ -2492,6 +2497,7 @@ export default function SettingsPanel({
   pageLabel,
   tabStorageName,
   onlyTaxonomy,
+  alsoTaxonomies,
   showPreferenceActions = true,
   sectionOrder,
   sectionIconOverrides,
@@ -2791,7 +2797,7 @@ export default function SettingsPanel({
       </div>
       {taxonomyAtBottom && hasTaxonomySelector && (
         <>
-          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom actions={preferenceActions} snapshotTime={snapshotTime} onlyTaxonomy={onlyTaxonomy} ownDraftKeys={draftKeyMap ? Object.values(draftKeyMap) : undefined} />
+          <SettingsTaxonomySelector taxonomy={selectedTaxonomy} onSelectTaxonomy={handleSelectTaxonomy} atBottom actions={preferenceActions} snapshotTime={snapshotTime} onlyTaxonomy={onlyTaxonomy} alsoTaxonomies={alsoTaxonomies} ownDraftKeys={draftKeyMap ? Object.values(draftKeyMap) : undefined} />
         </>
       )}
     </div>
