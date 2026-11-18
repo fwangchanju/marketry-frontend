@@ -1,9 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
-import { useUsaGicsClassifications } from '@/hooks/useUsaGicsClassifications'
-import { overseasMiddleLabel } from '@/utils/overseasMiddle'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
-import { useOverseasMode } from '@/hooks/useOverseasSheet'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
 import OverseasPublishControls from '@/components/OverseasPublishControls'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
@@ -64,12 +62,12 @@ const COLUMN_WIDTH_KEYS: readonly StockColumnKey[] = ['stockCode', 'stockName', 
 export default function OverseasStockView({ source }: { source: OverseasStockSource }) {
   // 시장마다 다른 부분(종목 목록·시세·통화 단위와 환산·분류 열 이름·안내 문구)은 source로 받고, 분류 데이터 주소와 화면 구성은 모든 해외 시장이 같다.
   const { market, stocks, quotes: quotesQuery, unit, sectorColumnLabel, searchAriaLabel, tabStorageName } = source
-  const { sheet, canUseMine, modeKey, alsoTaxonomies, selectMode } = useOverseasMode(market)
   const { routeSegment, badgeLabel } = overseasMarketInfo(market)
   const NAMES_QUERY_KEY = [routeSegment, 'names'] as const
   const { data: session } = useSession()
   // MARKETRY 모드는 운영자가 제시하는 기준이라 모든 항목(종목명 한글·분류)이 수정 불가이고, 관리자는 내 기준 모드에서만 고친다.
   const isAdmin = isAdminSession(session)
+  const { sheet, canUseMine, selectSheet } = useOverseasSheet()
   const publishedAt = useOverseasPublishedAt(market, sheet)
   const canEdit = isAdmin && sheet === 'MINE'
   const queryClient = useQueryClient()
@@ -97,11 +95,10 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
   const isColumnShown = (key: SortKey) => columnWidths[WIDTH_KEY_BY_SORT_KEY[key]] !== undefined
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const gicsQuery = useUsaGicsClassifications(modeKey === 'KRX')
   const rows = useMemo(() => {
     const capByCode = new Map((quotesQuery.data?.quotes ?? []).map(quote => [quote.stockCode, quote.totalMarketValue / unit.perEok]))
-    return stocks.map(stock => ({ ...stock, sector: modeKey === 'KRX' ? (classificationsQuery.data?.[stock.code]?.sector ?? '') : yahooSectorKo(stock.sector), marketCapEok: capByCode.get(stock.code) ?? 0, name: namesQuery.data?.[stock.code] ?? stock.name, customSector: modeKey === 'KRX' ? (classificationsQuery.data?.[stock.code]?.industry ?? '') : (classificationsQuery.data?.[stock.code]?.sector ?? ''), customIndustry: modeKey === 'KRX' ? (gicsQuery.data?.[stock.code]?.industry ?? '') : (classificationsQuery.data?.[stock.code]?.industry ?? ''), customSubIndustry: modeKey === 'KRX' ? (gicsQuery.data?.[stock.code]?.subIndustry ?? '') : (classificationsQuery.data?.[stock.code]?.subIndustry ?? '') }))
-  }, [stocks, namesQuery.data, classificationsQuery.data, gicsQuery.data, quotesQuery.data, unit.perEok, modeKey])
+    return stocks.map(stock => ({ ...stock, sector: yahooSectorKo(stock.sector), marketCapEok: capByCode.get(stock.code) ?? 0, name: namesQuery.data?.[stock.code] ?? stock.name, customSector: classificationsQuery.data?.[stock.code]?.sector ?? '', customIndustry: classificationsQuery.data?.[stock.code]?.industry ?? '', customSubIndustry: classificationsQuery.data?.[stock.code]?.subIndustry ?? '' }))
+  }, [stocks, namesQuery.data, classificationsQuery.data, quotesQuery.data, unit.perEok])
   const filtered = useMemo(() => {
     const matcher = createStockMatcher(search, (stock: (typeof rows)[number]) => ({ code: stock.code, name: stock.englishName || '', alias: stock.name, labels: [stock.sector, stock.customSector, stock.customIndustry, stock.customSubIndustry] }))
     return rows.filter(stock => !excluded.sector.has(stock.sector || '-') && !excluded.customSector.has(stock.customSector || '-') && !excluded.customIndustry.has(stock.customIndustry || '-') && !excluded.customSubIndustry.has(stock.customSubIndustry || '-') && matcher(stock)).sort((a, b) => {
@@ -292,7 +289,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
           <DisclaimerFooter />
         </main>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={modeKey} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={alsoTaxonomies} middleLabel={overseasMiddleLabel(market)} onSelectTaxonomy={next => selectMode(next === 'KRX' ? 'EXTERNAL' : next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={sheet === 'MINE' ? ['custom', 'adminOps'] : ['custom']}>
+          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={sheet === 'MINE' ? ['custom', 'adminOps'] : ['custom']}>
             <SettingsPanelGroup section="custom">
               {canEdit ? (
                 <>
