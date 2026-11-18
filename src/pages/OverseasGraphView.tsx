@@ -45,7 +45,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     rangeExcludedStocks, isLoading, isError, isFetching, refetchAll, DatePicker, sessionChip, refreshHelp, fixed, draftKeyMap, tabStorageName,
     totalCount, shownCount, graphSettings, tierRange, currencyUnit, sectorExclusion, exclusionTree,
   } = source
-  const publishedAt = useOverseasPublishedAt(market)
+  const publishedAt = useOverseasPublishedAt(market, sheet)
   const { colorScale, strongIndustryColor } = fixed
   const navigate = useNavigate()
   const mapPath = overseasRoute('/map', market)

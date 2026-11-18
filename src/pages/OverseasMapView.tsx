@@ -80,7 +80,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     isLoading, isError, isFetching, refetchAll, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit,
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, settingPrefix, tabStorageName, totalCount, countShown,
   } = source
-  const publishedAt = useOverseasPublishedAt(market)
+  const publishedAt = useOverseasPublishedAt(market, sheet)
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
   const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
   const { colorScale } = fixed

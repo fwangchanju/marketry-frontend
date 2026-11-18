@@ -25,6 +25,10 @@ export function useOverseasClassificationData(market: OverseasMarket, sheet: Ove
     ? { data: draft.data?.classifications, isLoading: draft.isLoading, isError: draft.isError, isFetching: draft.isFetching, refetch: draft.refetch }
     : { data: publicClassifications.data, isLoading: publicClassifications.isLoading, isError: publicClassifications.isError, isFetching: publicClassifications.isFetching, refetch: publicClassifications.refetch }
   // 편집이 끝나면 현재 모드의 데이터를 다시 받는다.
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: isDraft ? draftKey : [routeSegment] })
+  // 내 기준을 고치면 설정창 맨 아래 시각도 다시 받는다.
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ['overseas-time', market] })
+    return queryClient.invalidateQueries({ queryKey: isDraft ? draftKey : [routeSegment] })
+  }
   return { categories, classifications, editBase: isDraft ? draftBase : null, invalidate }
 }
