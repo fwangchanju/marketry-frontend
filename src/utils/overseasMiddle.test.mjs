@@ -15,8 +15,13 @@ test('시장별 저장 키는 서로 다르다', () => {
 })
 
 test('데이터가 준비되지 않은 시장은 저장값이 EXTERNAL이어도 MARKETRY로 본다', () => {
-  assert.equal(OVERSEAS_MIDDLE.USA.externalReady, false)
-  assert.equal(readOverseasMiddle('USA', storage('EXTERNAL')), 'MARKETRY')
+  assert.equal(OVERSEAS_MIDDLE.JAPAN.externalReady, false)
+  assert.equal(readOverseasMiddle('JAPAN', storage('EXTERNAL')), 'MARKETRY')
+})
+
+test('미국 GICS는 준비된 시장이라 저장값 EXTERNAL을 그대로 쓴다', () => {
+  assert.equal(OVERSEAS_MIDDLE.USA.externalReady, true)
+  assert.equal(readOverseasMiddle('USA', storage('EXTERNAL')), 'EXTERNAL')
 })
 
 test('저장소를 못 읽으면 MARKETRY로 본다', () => {
