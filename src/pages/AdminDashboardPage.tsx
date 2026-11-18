@@ -1,3 +1,4 @@
+import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { adminMenu } from '@/utils/marketMenu'
@@ -163,10 +164,13 @@ export default function AdminDashboardPage() {
                 <Toolbar>
                   <ToolbarModeText page="ADMIN" label="STATS" showChevron menu={adminMenu('STATS')} />
                 </Toolbar>
-                <div
-                  ref={dashboardGridRef}
-                  className="grid min-h-0 flex-1 auto-rows-[280px] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3 overflow-auto"
-                  style={{ gridTemplateRows: `repeat(${dashboardRowSize.count}, ${dashboardRowSize.height}px)` }}
+                <ScrollArea
+                  overlay
+                  viewportRef={dashboardGridRef}
+                  scrollLabel="회원 대시보드"
+                  className="min-h-0 flex-1"
+                  contentClassName="grid auto-rows-[280px] grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-3"
+                  contentStyle={{ gridTemplateRows: `repeat(${dashboardRowSize.count}, ${dashboardRowSize.height}px)` }}
                 >
                   <ChartFrame title="총 방문자" headerContent={<StackedDailyLegend />}>
                     {visitors.isError || dailyAccess.isError ? (
@@ -313,7 +317,7 @@ export default function AdminDashboardPage() {
                       </div>
                     ) : <DashboardMetricLoading />}
                   </ChartFrame>
-                </div>
+                </ScrollArea>
               </section>
             )}
             <DisclaimerFooter />
