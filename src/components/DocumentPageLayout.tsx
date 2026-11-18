@@ -79,7 +79,7 @@ export default function DocumentPageLayout({ title, heading, children, panelIcon
           <DisclaimerFooter />
         </main>
         {isSettingsOpen && <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <PageInfoPanel title="Info" tabLabel={title} description={panelDescription} icon={panelIcon} isOnLeft={isOnLeft} onToggleSide={toggleSide} />
+          <PageInfoPanel title="Information" tabLabel={title} description={panelDescription} icon={panelIcon} isOnLeft={isOnLeft} onToggleSide={toggleSide} />
         </div>}
         </div>
       </div>

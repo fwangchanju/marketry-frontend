@@ -21,7 +21,7 @@ export default function PageInfoPanel({ title, tabLabel, description, note, icon
       {onToggleSide && <SettingsPanelSideToggle isOnLeft={isOnLeft} onToggleSide={onToggleSide} panelName="정보 패널" />}
       <aside className="flex w-[300px] shrink-0 flex-col overflow-hidden rounded-md border border-ui-border bg-ui-panel text-ui-white">
         <SettingsPanelHeader>
-          <p title={title} className="font-roboto-latin flex h-7 w-full min-w-0 items-center overflow-hidden whitespace-nowrap text-lg font-bold leading-none">
+          <p title={title} className="font-roboto-latin flex h-7 w-full min-w-0 items-center overflow-hidden whitespace-nowrap uppercase text-lg font-bold leading-none">
             <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
             <span className="truncate">{title}</span>
           </p>

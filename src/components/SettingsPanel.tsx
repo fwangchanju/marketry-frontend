@@ -1348,7 +1348,7 @@ function SettingsTaxonomySelector({
   return (
     <div data-settings-side-toggle-top-anchor={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
       <div className="grid h-6 grid-cols-3 items-center gap-[6px]">
-        <p data-map-select-title className="col-span-2 font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
+        <p data-map-select-title className="col-span-2 font-roboto-latin flex h-6 items-center whitespace-nowrap uppercase text-lg font-bold leading-none text-ui-white">
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
         {TAXONOMY_SELECT_TITLE}
@@ -2694,7 +2694,7 @@ export default function SettingsPanel({
       {/* 메인 툴바의 줄 높이(상하 여백 포함 39px)에 맞춘다. 제목과 헤더 조작부는 28px 안에서 세로 가운데 둔다. */}
       <SettingsPanelHeader>
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <p className="font-roboto-latin flex h-7 w-[88px] min-w-[88px] items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
+          <p className="font-roboto-latin flex h-7 w-[88px] min-w-[88px] items-center whitespace-nowrap uppercase text-lg font-bold leading-none text-ui-white">
             {/* 제목 칸은 가장 긴 제목(Summary)에 맞춘 고정 폭(88px)이라 모든 페이지에서 옆의 종목/업종 배지가 같은 자리에 온다. */}
             {/* 아래 Mode 제목 앞의 막대와 같은 모양·같은 자리(왼쪽 여백 16px)다. */}
             <span aria-hidden="true" className={`mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm ${isAdminPage ? 'bg-admin-only' : 'bg-brand'}`} />
