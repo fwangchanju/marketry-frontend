@@ -1,3 +1,4 @@
+import MainAreaLoading from '@/components/MainAreaLoading'
 import { buildSectorParentHints } from '@/utils/sectorFilterHints'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import { compareKoreanText } from '@/utils/koreanSort'
@@ -1793,9 +1794,7 @@ export default function AdminStockTable({
       )}
       {/* 종목 목록을 처음 받는 중이거나 받지 못했으면 표 대신 본문 한가운데에 원을 보여 준다(마켓트리·거래소 표와 같다). 정렬 중의 원은 아래 표 안에 그대로 있다. */}
       {isLoading || isError ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center pt-4 pb-[47.5px]">
-          {isLoading ? <Spinner showElapsed /> : <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} />}
-        </div>
+        <MainAreaLoading>{isLoading ? <Spinner showElapsed /> : <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} />}</MainAreaLoading>
       ) : (
       <div className="relative min-h-0 flex-1 border border-ui-border">
         {isSelectionHintOpen && <SelectionHintBubble onClose={() => setIsSelectionHintOpen(false)} />}

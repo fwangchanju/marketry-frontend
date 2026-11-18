@@ -1,5 +1,5 @@
+import MainAreaLoading from '@/components/MainAreaLoading'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
-import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { profileSettingKey } from '@/utils/settingsSchema'
@@ -261,15 +261,11 @@ export default function CustomPage() {
                 className={`flex min-h-0 min-w-0 flex-1 flex-col ${mode === 'sector' ? 'overflow-y-auto' : ''}`}
               >
                 {isPageLoading ? (
-                  // 지도·그룹 페이지의 로딩 원과 같은 높이에 오도록 위 16px, 아래 47.5px(19.5px + 이 페이지에 없는 아래 줄 28px) 여백 안에서 가운데에 둔다.
-                  <div className={MAIN_LOADING_CLASS}>
-                    <Spinner showElapsed />
-                  </div>
+                  // 로딩 원은 모든 페이지 공통 자리(MainAreaLoading, 메인 영역 기준)에 둔다.
+                  <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
                 ) : !isReadOnlySheet && isSectorsError ? (
                   // 내 분류의 분류(업종) 목록을 받지 못하면 표를 그리지 않고 오류 원을 보여 준다 — 비어 있다고 오해하거나 분류 선택지 없이 반쪽 표에서 고치지 않게 한다.
-                  <div className={MAIN_LOADING_CLASS}>
-                    <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetchSectors()} />
-                  </div>
+                  <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => void refetchSectors()} /></MainAreaLoading>
                 ) : isReadOnlySheet ? (
                   <ReadOnlyTaxonomySheet
                     mode={mode === 'stock' ? 'stock' : 'category'}

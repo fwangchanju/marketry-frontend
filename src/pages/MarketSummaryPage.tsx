@@ -1,3 +1,4 @@
+import MainAreaLoading from '@/components/MainAreaLoading'
 import { useSettled } from '@/hooks/useSettled'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
@@ -386,17 +387,13 @@ export default function MarketSummaryPage() {
           <Toolbar>
             {toolbarContent}
           </Toolbar>
-          {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다. 좌우 여백은 바깥 main-settings-row에서 관리한다. 로딩·오류 원은 지도·그룹·커스텀 페이지와 같은 위 16px·아래 19.5px 여백 안에서 영역 가운데에 하나만 두고 틀은 모두 감춘다. */}
+          {/* 본문 영역 — 툴바와 맨 아래 줄 사이 전체가 이 영역이다. 좌우 여백은 바깥 main-settings-row에서 관리한다. 로딩·오류 원은 모든 페이지 공통 자리(MainAreaLoading, 메인 영역 기준)에 하나만 두고 틀은 모두 감춘다. */}
           <div className="relative flex min-h-0 flex-1">
             <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && !isPastSnapshot && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(data?.snapshotTime)} nodes={rootNodes} />
             {isLoading ? (
-              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
-                <Spinner showElapsed />
-              </div>
+              <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
             ) : isError ? (
-              <div className="flex flex-1 items-center justify-center pt-4 pb-[19.5px]">
-                <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} />
-              </div>
+              <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></MainAreaLoading>
             ) : isMineEmpty ? (
               // 내 분류가 비어 있으면 지도·그룹 페이지와 같은 안내(원·로고·바로 가기)를 홈 전체에 보여 준다 — 원은 위 로딩 원과 같은 자리다.
               <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>

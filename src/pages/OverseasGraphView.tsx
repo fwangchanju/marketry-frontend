@@ -1,6 +1,6 @@
+import MainAreaLoading from '@/components/MainAreaLoading'
 import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
-import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { marketMenu } from '@/utils/marketMenu'
@@ -97,9 +97,9 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
           <div className="relative flex min-h-0 flex-1">
             <div className={`flex min-h-0 w-full flex-1 flex-col ${isLoading || isError ? '' : 'pt-4 pb-[19.5px]'}`}>
               {isLoading ? (
-                <div className={MAIN_LOADING_CLASS}><Spinner showElapsed /></div>
+                <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
               ) : isError ? (
-                <div className={MAIN_LOADING_CLASS}><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
+                <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></MainAreaLoading>
               ) : chart.rankedItems.length === 0 ? (
                 <div className="relative flex-1"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
               ) : (

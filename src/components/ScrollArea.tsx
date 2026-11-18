@@ -205,7 +205,7 @@ export default function ScrollArea({
       {isHorizontallyScrollable && <div
         aria-hidden="true"
         onPointerDown={handleHorizontalTrackPointerDown}
-        className="absolute bottom-0 left-0 z-10 h-[6px] cursor-pointer rounded-[3px] bg-transparent"
+        className={`absolute bottom-0 left-0 z-10 h-[6px] cursor-pointer rounded-[3px] bg-transparent ${overlay ? `transition-opacity duration-300 ${revealed ? 'opacity-100' : 'pointer-events-none opacity-0'}` : ''}`}
         style={{ right: isScrollable ? 6 : 0 }}
       >
         <div

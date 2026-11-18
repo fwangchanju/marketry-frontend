@@ -1,3 +1,4 @@
+import MainAreaLoading from '@/components/MainAreaLoading'
 import ScrollArea from '@/components/ScrollArea'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { marketMenu } from '@/utils/marketMenu'
@@ -403,13 +404,9 @@ export default function GroupPage() {
               <NxtOnlyNotice active={nxtOnly && nxtOnlyWindow !== null && !isPastSnapshot && !isRangeView} window={nxtOnlyWindow} ready={!isLoading && !isError && Boolean(displayNow?.snapshotTime)} nodes={displayNow?.items ?? []} />
               <div className="flex min-h-0 w-full flex-1 flex-col pt-4 pb-[19.5px]">
               {isLoading ? (
-                <div className="flex flex-1 items-center justify-center">
-                  <Spinner showElapsed />
-                </div>
+                <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
               ) : isError ? (
-                <div className="flex flex-1 items-center justify-center">
-                  <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} />
-                </div>
+                <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></MainAreaLoading>
               ) : data?.snapshotTime == null ? (
                 // now가 성공했지만 그 시각 데이터 자체가 없다 — 쌍 쿼리가 비활성이라(결정 4)
                 // displayNow도 계속 undefined이므로, 아래 !displayNow 분기보다 먼저 걸러야
@@ -420,12 +417,10 @@ export default function GroupPage() {
               ) : !displayNow ? (
                 // now는 성공했지만(비어 있지 않음) 쌍 쿼리가 아직 첫 결과를 내지 못한 순간 — 짝이 안
                 // 맞는 반쪽짜리 화면을 그리지 않고 기다린다(결정 4).
-                <div className="flex flex-1 items-center justify-center">
-                  <Spinner showElapsed />
-                </div>
+                <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
               ) : source === 'MINE' && displayNow.items.every(node => collectItems(node).length === 0) ? (
                 // 내 분류가 비어 있으면 코스피·코스닥 막대만 덩그러니 남으므로, 지도와 같은 안내(원·로고·바로 가기)를 보여 준다. 원은 위의 로딩 원과 같은 자리다.
-                <EmptyLogoMessage message={EMPTY_MINE_MESSAGE} containerClassName="">
+                <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
                   <CustomPageBadgeLink />
                 </EmptyLogoMessage>
               ) : activeChart.rankedItems.every(item => item.isReference) ? (
