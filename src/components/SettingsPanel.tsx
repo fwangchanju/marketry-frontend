@@ -1376,7 +1376,7 @@ function SettingsTaxonomySelector({
       </div>
       {/* 업데이트 시각이 없어도(올린 MARKETRY가 아직 없을 때 등) 줄은 그대로 둬서 다른 분류와 모양이 달라지지 않게 한다. 시각 글자만 같은 폭으로 자리를 잡고 숨긴다. */}
       {atBottom && (
-        <p aria-hidden={onlyTaxonomy ? true : undefined} className={`${onlyTaxonomy ? 'invisible ' : ''}${FONT_BAR_TIME_SHAPE} mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium text-ui-text`}>
+        <p aria-hidden={onlyTaxonomy && !snapshotTime ? true : undefined} className={`${onlyTaxonomy && !snapshotTime ? 'invisible ' : ''}${FONT_BAR_TIME_SHAPE} mt-2 flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium text-ui-text`}>
           <span className="flex items-center">
             업데이트
             <SettingHelpBubble

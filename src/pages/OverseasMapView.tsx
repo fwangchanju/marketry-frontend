@@ -1,4 +1,5 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
@@ -79,6 +80,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     isLoading, isError, isFetching, refetchAll, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit,
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, settingPrefix, tabStorageName, totalCount, countShown,
   } = source
+  const publishedAt = useOverseasPublishedAt(market)
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
   const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
   const { colorScale } = fixed
@@ -303,7 +305,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           )}
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
+          <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
             <SettingsPanelGroup section="composition">
               {/* 한국 지도의 종목 구성 탭과 같은 자리. 일본·미국은 구간 이름 없이 금액 눈금만 쓴다. */}
               <SettingsMarketValueSection
