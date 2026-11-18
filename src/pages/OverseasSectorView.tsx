@@ -1,10 +1,13 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasClassificationData, type OverseasCategory } from '@/hooks/useOverseasClassificationData'
+import OverseasPublishControls from '@/components/OverseasPublishControls'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { customMenu } from '@/utils/marketMenu'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import client from '@/api/client'
 import AdminSectorTable from '@/components/AdminSectorTable'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
@@ -23,26 +26,22 @@ import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import type { SectorItem } from '@/types/api'
-import { NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
 import { overseasMarketInfo } from '@/utils/markets'
 
-type Category = { id: number; parentId: number | null; name: string }
-type Classification = { sector: string | null; industry: string | null; subIndustry: string | null }
+type Category = OverseasCategory
 const MAX_DEPTH = 2
 
 export default function OverseasSectorView({ source }: { source: OverseasSectorSource }) {
   // 시장마다 다른 부분(종목 목록·시세·통화)은 source로 받고, 분류 데이터 주소와 화면 구성은 모든 해외 시장이 같다.
   const { market, stockCodes, stocksState, quotes, currency, tabStorageName } = source
-  const { routeSegment, badgeLabel } = overseasMarketInfo(market)
-  const categoriesKey = [routeSegment, 'categories'] as const
-  const classificationsKey = [routeSegment, 'classifications'] as const
-  const endpoint = `/admin/overseas-classification-categories/${market}`
-  const queryClient = useQueryClient()
+  const { badgeLabel } = overseasMarketInfo(market)
   const { data: session } = useSession()
+  // 분류 편집은 내 기준(초안)에서만 한다. MARKETRY 모드는 운영 분류를 읽기만 한다.
+  const { sheet, canUseMine, selectSheet } = useOverseasSheet()
+  const canEdit = isAdminSession(session) && sheet === 'MINE'
+  const { categories, classifications, editBase, invalidate } = useOverseasClassificationData(market, sheet)
+  const endpoint = `${editBase}/categories`
   const depthOf = (parentId: number | null): number => (parentId === null ? -1 : sectors.find(item => item.id === parentId)?.depth ?? 0)
-  const categories = useQuery({ queryKey: categoriesKey, queryFn: async () => (await client.get<Category[]>(`/${routeSegment}/categories`)).data })
-  const classifications = useQuery({ queryKey: classificationsKey, queryFn: async () => (await client.get<Record<string, Classification>>(`/${routeSegment}/classifications`)).data })
-  const invalidate = () => { void queryClient.invalidateQueries({ queryKey: categoriesKey }); void queryClient.invalidateQueries({ queryKey: classificationsKey }) }
   const create = useMutation({ meta: { failure: '분류를 추가하지 못했습니다.' }, mutationFn: async ({ name, parentId }: { name: string; parentId: number | null }): Promise<SectorItem> => { const item = (await client.post<Category>(endpoint, { name, parentId })).data; return { ...item, depth: depthOf(item.parentId) + 1 } }, onSuccess: invalidate })
   const rename = useMutation({ meta: { failure: '분류 이름을 바꾸지 못했습니다.' }, mutationFn: async ({ id, name }: { id: number; name: string }) => client.put(`${endpoint}/${id}`, { name }), onSuccess: invalidate })
   const reparent = useMutation({ meta: { failure: '분류를 옮기지 못했습니다.' }, mutationFn: async ({ id, parentId }: { id: number; parentId: number | null }) => client.put(`${endpoint}/${id}/parent`, { parentId }), onSuccess: invalidate })
@@ -93,11 +92,11 @@ export default function OverseasSectorView({ source }: { source: OverseasSectorS
     <NavBar /><NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setShareOpen(true)} isScreenshotOpen={shareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setSettingsOpen(open => !open)} isSettingsOpen={settingsOpen} />} />
     <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 flex-1 overflow-hidden bg-ui-background">
       <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold"><ToolbarModeText page="SECTOR" label={badgeLabel} showChevron menu={customMenu('sector', market, true)} /><div ref={setToolbar} className="min-w-0 flex-1" /><div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div></div>
-        {categories.isLoading || classifications.isLoading || quotes.isLoading || stocksState.isLoading ? <MainAreaLoading><Spinner showElapsed /></MainAreaLoading> : categories.isError || classifications.isError || quotes.isError || stocksState.isError ? <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void categories.refetch(); void classifications.refetch(); void quotes.refetch(); stocksState.refetch() }} /></MainAreaLoading> : <AdminSectorTable sectors={sectors} sectorStats={stats} toolbarContainer={toolbar} settingsActionsTarget={settingsActions} overseasActions={{ create, rename, reparent, remove }} levels={3} currency={currency} readOnly={!isAdminSession(session)} />}
+        <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold"><ToolbarModeText page="SECTOR" label={badgeLabel} showChevron menu={customMenu('sector', market, true)} /><div ref={setToolbar} className="min-w-0 flex-1" /><div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div></div>
+        {categories.isLoading || classifications.isLoading || quotes.isLoading || stocksState.isLoading ? <MainAreaLoading><Spinner showElapsed /></MainAreaLoading> : categories.isError || classifications.isError || quotes.isError || stocksState.isError ? <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void categories.refetch(); void classifications.refetch(); void quotes.refetch(); stocksState.refetch() }} /></MainAreaLoading> : <AdminSectorTable sectors={sectors} sectorStats={stats} toolbarContainer={toolbar} settingsActionsTarget={settingsActions} overseasActions={{ create, rename, reparent, remove }} levels={3} currency={currency} readOnly={!canEdit} />}
         <DisclaimerFooter />
       </main>
-      <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}><SettingsPanel pageLabel="Sector" customTabLabel="섹터" customTabIcon="industry" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} showPreferenceActions={false} isOpen={settingsOpen} onOpenChange={setSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}><SettingsPanelGroup section="custom"><div className="settings-empty-message">읽기 전용</div></SettingsPanelGroup><SettingsPanelGroup section="adminOps"><div ref={setSettingsActions} /></SettingsPanelGroup></SettingsPanel></div>
+      <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}><SettingsPanel pageLabel="Sector" customTabLabel="섹터" customTabIcon="industry" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={false} isOpen={settingsOpen} onOpenChange={setSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}><SettingsPanelGroup section="custom">{canEdit ? <div ref={setSettingsActions} /> : <div className="settings-empty-message"><span className="text-center">읽기 전용{canUseMine && <><br /><span className="text-ui-muted">[내 기준] 모드만 쓰기 가능</span></>}</span></div>}</SettingsPanelGroup><SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control"><h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2><p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">내 기준을 MARKETRY로 업데이트·롤백</p><div className="settings-button-area max-w-full settings-control-inset"><OverseasPublishControls market={market} /></div></div></div></SettingsPanelGroup></SettingsPanel></div>
     </div>
     {shareOpen && <ScreenshotModal onClose={() => setShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} />}
   </div>

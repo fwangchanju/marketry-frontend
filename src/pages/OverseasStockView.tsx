@@ -1,4 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
+import OverseasPublishControls from '@/components/OverseasPublishControls'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { customMenu } from '@/utils/marketMenu'
@@ -28,7 +31,6 @@ import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/sc
 import StockSortHeader from '@/components/StockSortHeader'
 import ColumnFilterButton from '@/components/ColumnFilterButton'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { NO_TAXONOMY_CHANGE } from '@/utils/japanMapSettings'
 import client from '@/api/client'
 import { appAlert } from '@/utils/appDialogBus'
 import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
@@ -44,7 +46,6 @@ import { overseasMarketInfo } from '@/utils/markets'
 type ClassificationField = 'sector' | 'industry' | 'subIndustry'
 type SortKey = 'code' | 'name' | 'englishName' | 'marketCap' | 'marketCapKrw' | 'sector' | 'customSector' | 'customIndustry' | 'customSubIndustry'
 type FilterKey = 'sector' | 'customSector' | 'customIndustry' | 'customSubIndustry'
-type Classification = { sector: string | null; industry: string | null; subIndustry: string | null }
 type Category = { id: number; parentId: number | null; name: string }
 // 열 키 이름은 폭 자리만 뜻한다: industry=야후 분류(국내 거래소 분류 자리), totalMarketValueKrw=시가총액(₩)(국내 규모+마켓 자리), parentSector·midSector·subSector=대·중·소분류.
 // 국내: 종목코드 | 종목명 | 약칭 | 시가총액 | 규모 | 마켓 | NXT | 거래소 분류 | 대분류 | 중분류 | 소분류
@@ -58,16 +59,17 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
   // 시장마다 다른 부분(종목 목록·시세·통화 단위와 환산·분류 열 이름·안내 문구)은 source로 받고, 분류 데이터 주소와 화면 구성은 모든 해외 시장이 같다.
   const { market, stocks, quotes: quotesQuery, unit, sectorColumnLabel, searchAriaLabel, tabStorageName } = source
   const { routeSegment, badgeLabel } = overseasMarketInfo(market)
-  const CLASSIFICATION_QUERY_KEY = [routeSegment, 'classifications'] as const
   const NAMES_QUERY_KEY = [routeSegment, 'names'] as const
   const { data: session } = useSession()
-  const canEdit = isAdminSession(session)
+  // 종목명(한글) 수정은 운영 값이라 모드와 상관없이 관리자만, 분류 수정은 내 기준 모드(초안)에서만 한다.
+  const isAdmin = isAdminSession(session)
+  const { sheet, canUseMine, selectSheet } = useOverseasSheet()
+  const canEdit = isAdmin && sheet === 'MINE'
   const queryClient = useQueryClient()
   const namesQuery = useQuery({ queryKey: NAMES_QUERY_KEY, queryFn: async () => (await client.get<Record<string, string>>(`/${routeSegment}/stock-names`)).data })
   const saveName = useMutation({ mutationFn: async ({ code, name }: { code: string; name: string }) => { await client.put(`/admin/${routeSegment}-stock-names/${code}`, { name }) }, onSuccess: () => queryClient.invalidateQueries({ queryKey: NAMES_QUERY_KEY }) })
-  const classificationsQuery = useQuery({ queryKey: CLASSIFICATION_QUERY_KEY, queryFn: async () => (await client.get<Record<string, Classification>>(`/${routeSegment}/classifications`)).data })
-  const categoryQuery = useQuery({ queryKey: [routeSegment, 'categories'], queryFn: async () => (await client.get<Category[]>(`/${routeSegment}/categories`)).data })
-  const assignClassification = useMutation({ mutationFn: async ({ codes, categoryId }: { codes: string[]; categoryId: number }) => { await client.put(`/admin/overseas-classification-categories/${market}/assign`, { stockCodes: codes, categoryId }) }, onSuccess: () => queryClient.invalidateQueries({ queryKey: CLASSIFICATION_QUERY_KEY }) })
+  const { categories: categoryQuery, classifications: classificationsQuery, editBase, invalidate: invalidateClassification } = useOverseasClassificationData(market, sheet)
+  const assignClassification = useMutation({ mutationFn: async ({ codes, categoryId }: { codes: string[]; categoryId: number }) => { await client.put(`${editBase}/assign`, { stockCodes: codes, categoryId }) }, onSuccess: invalidateClassification })
   const [orderMode, setOrderMode] = useState<'alpha' | 'cap'>('alpha')
   const [editingCode, setEditingCode] = useState<string | null>(null)
   const [draftName, setDraftName] = useState('')
@@ -221,7 +223,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
             <ToolbarModeText page="STOCK" label={badgeLabel} showChevron menu={customMenu('stock', market, true)} />
             <SearchBar inline query={search} onChange={setSearch} placeholder="검색" ariaLabel={searchAriaLabel} maxLength={STOCK_SEARCH_MAX_LENGTH} />
             <div className="min-w-0 flex-1" />
-            <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy="MARKETRY" /></div>
+            <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
           </div>
           {isLoading || isError ? (
             // 로딩·오류 원은 작업 전처럼 스크롤 영역 밖의 메인 영역 가운데에 둔다.
@@ -231,7 +233,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
             <table style={{ minWidth: stockColumnWidthsTotal(columnWidths) }} className="nes-table is-dark custom-page-table w-full table-fixed select-none text-sm [border-collapse:separate] [border-spacing:0] [&_td]:border-ui-border [&_td]:py-1 [&_th]:border-ui-white/20 [&_th]:border-b-0 [&_th]:py-1">
               <StockTableColGroup keys={COLUMN_WIDTH_KEYS} widths={columnWidths} />
               <thead className="sticky top-0 z-10 [&_th]:shadow-[inset_0_-1px_0_var(--ui-border)]"><tr style={{ height: STOCK_HEADER_ROW_PX }}><th className="bg-[var(--ui-panel)] px-0 text-center">{canEdit && <input type="checkbox" className="mx-auto my-0 block thin-check" checked={allVisibleSelected} onChange={toggleVisible} aria-label="표시된 종목 전체 선택" />}</th>{columns.filter(column => isColumnShown(column.key)).map(column => <th key={column.key} scope="col" className="whitespace-nowrap bg-[var(--ui-panel)] px-0 text-center font-bold text-ui-white"><StockSortHeader label={column.label} state={sort.key === column.key ? sort.direction : null} onSort={() => changeSort(column.key)} filter={column.filter ? filterButton(column.filter, column.label) : undefined} /></th>)}</tr></thead>
-              <tbody>{filtered.map((stock, index) => <tr key={stock.code} {...(canEdit ? { ...rowProps(index), onMouseDown: (event: MouseEvent<HTMLTableRowElement>) => { if (!(event.target as HTMLElement).closest('[data-no-row-select]')) rowProps(index).onMouseDown(event) } } : {})} className={selected.has(stock.code) ? 'bg-[var(--brand)]/20' : 'hover:bg-[var(--brand)]/10'}><td className="px-0 text-center">{canEdit && <input type="checkbox" className="mx-auto my-0 block thin-check" checked={selected.has(stock.code)} onChange={() => {}} aria-label={`${stock.name} 선택`} />}</td>{isColumnShown('code') && <td className="text-center text-ui-muted">{stock.code}</td>}{isColumnShown('englishName') && <td className="truncate pl-2 text-ui-muted" data-hint={stock.englishName || undefined}>{stock.englishName || '—'}</td>}{isColumnShown('name') && <td onClick={event => event.stopPropagation()} onMouseDown={event => event.stopPropagation()} className={`truncate px-1 ${canEdit && !namesQuery.isLoading && !namesQuery.isError ? 'cursor-pointer hover:bg-[var(--brand)]/35' : ''}`}>{!canEdit ? <span className="px-1 text-ui-white">{stock.name}</span> : editingCode === stock.code ? <input autoFocus aria-label={`${stock.code} 종목명 (한글)`} value={draftName} maxLength={100} disabled={saveName.isPending} onChange={event => setDraftName(event.target.value)} onBlur={() => { if (!saveName.isPending) setEditingCode(null) }} onKeyDown={event => { if (event.nativeEvent.isComposing || event.keyCode === 229) return; if (event.key === 'Enter') void submitName(stock.code, stock.name); if (event.key === 'Escape') setEditingCode(null) }} className="nes-input is-dark block h-5 w-full rounded-md border-0 bg-[var(--ui-panel)] px-1 text-left text-sm text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]" /> : <button type="button" disabled={namesQuery.isLoading || namesQuery.isError} onClick={() => { setDraftName(stock.name); setEditingCode(stock.code) }} className="w-full truncate border-0 bg-transparent px-1 text-left text-ui-white disabled:opacity-50">{stock.name}</button>}</td>}{isColumnShown('marketCap') && <td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok)} {unit.suffix}</td>}{isColumnShown('marketCapKrw') && <td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok * unit.krwRate)} 원</td>}{isColumnShown('sector') && <td className="truncate pl-2 text-ui-muted" data-hint={stock.sector || undefined}>{stock.sector || '—'}</td>}{classificationCell(stock.code, 'sector', stock.customSector, stock.customSector)}{classificationCell(stock.code, 'industry', stock.customIndustry, stock.customSector)}{classificationCell(stock.code, 'subIndustry', stock.customSubIndustry, stock.customSector, stock.customIndustry)}</tr>)}</tbody>
+              <tbody>{filtered.map((stock, index) => <tr key={stock.code} {...(canEdit ? { ...rowProps(index), onMouseDown: (event: MouseEvent<HTMLTableRowElement>) => { if (!(event.target as HTMLElement).closest('[data-no-row-select]')) rowProps(index).onMouseDown(event) } } : {})} className={selected.has(stock.code) ? 'bg-[var(--brand)]/20' : 'hover:bg-[var(--brand)]/10'}><td className="px-0 text-center">{canEdit && <input type="checkbox" className="mx-auto my-0 block thin-check" checked={selected.has(stock.code)} onChange={() => {}} aria-label={`${stock.name} 선택`} />}</td>{isColumnShown('code') && <td className="text-center text-ui-muted">{stock.code}</td>}{isColumnShown('englishName') && <td className="truncate pl-2 text-ui-muted" data-hint={stock.englishName || undefined}>{stock.englishName || '—'}</td>}{isColumnShown('name') && <td onClick={event => event.stopPropagation()} onMouseDown={event => event.stopPropagation()} className={`truncate px-1 ${isAdmin && !namesQuery.isLoading && !namesQuery.isError ? 'cursor-pointer hover:bg-[var(--brand)]/35' : ''}`}>{!isAdmin ? <span className="px-1 text-ui-white">{stock.name}</span> : editingCode === stock.code ? <input autoFocus aria-label={`${stock.code} 종목명 (한글)`} value={draftName} maxLength={100} disabled={saveName.isPending} onChange={event => setDraftName(event.target.value)} onBlur={() => { if (!saveName.isPending) setEditingCode(null) }} onKeyDown={event => { if (event.nativeEvent.isComposing || event.keyCode === 229) return; if (event.key === 'Enter') void submitName(stock.code, stock.name); if (event.key === 'Escape') setEditingCode(null) }} className="nes-input is-dark block h-5 w-full rounded-md border-0 bg-[var(--ui-panel)] px-1 text-left text-sm text-ui-white outline-none focus:ring-1 focus:ring-inset focus:ring-[var(--brand)]" /> : <button type="button" disabled={namesQuery.isLoading || namesQuery.isError} onClick={() => { setDraftName(stock.name); setEditingCode(stock.code) }} className="w-full truncate border-0 bg-transparent px-1 text-left text-ui-white disabled:opacity-50">{stock.name}</button>}</td>}{isColumnShown('marketCap') && <td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok)} {unit.suffix}</td>}{isColumnShown('marketCapKrw') && <td className="whitespace-nowrap pr-3 text-right text-ui-muted">{toJoEokDecimal(stock.marketCapEok * unit.krwRate)} 원</td>}{isColumnShown('sector') && <td className="truncate pl-2 text-ui-muted" data-hint={stock.sector || undefined}>{stock.sector || '—'}</td>}{classificationCell(stock.code, 'sector', stock.customSector, stock.customSector)}{classificationCell(stock.code, 'industry', stock.customIndustry, stock.customSector)}{classificationCell(stock.code, 'subIndustry', stock.customSubIndustry, stock.customSector, stock.customIndustry)}</tr>)}</tbody>
             </table>
           </ScrollArea>
           )}
@@ -240,16 +242,24 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
           <DisclaimerFooter />
         </main>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}>
-            <SettingsPanelGroup section="custom"><div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">계산: {unit.rateNote}</span></span></div></SettingsPanelGroup>
-            <SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control">
+          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}>
+            <SettingsPanelGroup section="custom">
+              {canEdit ? (
+                <div className="settings-item"><div className="settings-custom-control">
               <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">일괄 변경</h2>
               <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">{selected.size ? `선택한 종목 ${selected.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택해 주세요'}</p>
               <div className="grid max-w-full settings-control-inset grid-cols-3 gap-[6px]">
                 <BulkAssignButton count={selected.size} options={categoryOptions('sector')} onAssign={id => void assignCategory([...selected], id, true)} label="대분류" title="대분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} />
                 <BulkAssignButton count={selected.size} options={categoryOptions('industry', sharedSector)} onAssign={id => void assignCategory([...selected], id, true)} label="중분류" title="중분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={!sharedSector || categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} disabledHint={'선택한 종목의 대분류가 같아야 합니다.\n다르면 대분류를 먼저 일괄적용해 주세요'} />
                 <BulkAssignButton count={selected.size} options={categoryOptions('subIndustry', sharedSector, sharedIndustry)} onAssign={id => void assignCategory([...selected], id, true)} label="소분류" title="소분류 일괄 변경" orderMode={{ value: orderMode, onChange: setOrderMode }} disabled={!sharedIndustry || categoryQuery.isError || categoryQuery.isLoading || assignClassification.isPending} disabledHint={'선택한 종목의 중분류가 같아야 합니다.\n다르면 중분류를 먼저 일괄적용해 주세요'} />
-              </div></div></div></SettingsPanelGroup>
+              </div></div></div>
+              ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">{canUseMine ? '[내 기준] 모드만 쓰기 가능' : `계산: ${unit.rateNote}`}</span></span></div>}
+            </SettingsPanelGroup>
+            <SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control">
+              <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
+              <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">내 기준을 MARKETRY로 업데이트·롤백</p>
+              <div className="settings-button-area max-w-full settings-control-inset"><OverseasPublishControls market={market} /></div>
+            </div></div></SettingsPanelGroup>
           </SettingsPanel>
         </div>
       </div>
