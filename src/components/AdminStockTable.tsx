@@ -4,7 +4,7 @@ import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { EMPTY_SECTOR_STATS, sectorNamesByDepth, sortByMarketValue, type SectorStats } from '@/utils/sectorOrder'
 import { useReportCountLabel } from '@/hooks/useReportCountLabel'
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useQueryClient } from '@tanstack/react-query'
@@ -32,7 +32,7 @@ import ScrollArea from '@/components/ScrollArea'
 import StockTableColGroup from '@/components/StockTableColGroup'
 import StockSortHeader from '@/components/StockSortHeader'
 import SelectionHintBubble from '@/components/SelectionHintBubble'
-import ColumnFilterButton, { FunnelIcon, SectorOrderToggle } from '@/components/ColumnFilterButton'
+import ColumnFilterButton, { FunnelIcon, POPUP_WIDTH_PX, SectorOrderToggle } from '@/components/ColumnFilterButton'
 import { useStockColumnFilters, type StockFilterKey } from '@/hooks/useStockColumnFilters'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { customHeatmapKeys } from '@/hooks/queryKeys'
@@ -338,6 +338,7 @@ function SectorSearchPopup({
   contextLabel,
   title,
   orderMode,
+  currentSectorId,
 }: {
   popupRef: React.RefObject<HTMLDivElement | null>
   inputRef: React.RefObject<HTMLInputElement | null>
@@ -350,20 +351,15 @@ function SectorSearchPopup({
   // 일괄 변경 팝업 — 제목과 "가나다 순 / 시가총액 순" 선택(고른 순서는 호출한 쪽이 options 순서로 반영한다).
   title?: string
   orderMode?: { value: 'alpha' | 'cap'; onChange: (value: 'alpha' | 'cap') => void }
+  // 지금 이 칸에 지정된 업종 번호 — 그 줄에만 체크 표시를 붙인다(고르면 바로 적용되므로 여러 개 체크가 아니다).
+  currentSectorId?: number | null
 }) {
   // 방향키로 하이라이트가 화면 밖으로 나가면 스크롤이 안 따라가서 지금 뭐가 선택됐는지 안 보이는
   // 문제가 있었다 — 하이라이트된 항목의 DOM 노드를 등록해뒀다가, 바뀔 때마다 보이는 영역으로 스크롤한다.
   const optionRefs = useRef(new Map<number, HTMLButtonElement>())
-  const orderToggleRef = useRef<HTMLDivElement>(null)
-  const [bulkPopupWidth, setBulkPopupWidth] = useState<number>()
   useEffect(() => {
     optionRefs.current.get(search.highlightedIndex)?.scrollIntoView({ block: 'nearest' })
   }, [search.highlightedIndex])
-  useLayoutEffect(() => {
-    if (!orderMode || !orderToggleRef.current) return
-    // 검색 입력의 안쪽 너비를 두 정렬 버튼의 실제 합산 너비에 맞춘다.
-    setBulkPopupWidth(orderToggleRef.current.getBoundingClientRect().width + 2)
-  }, [orderMode])
 
   // 목록이 한 단계(같은 부모 아래)뿐이면 들여쓰기·"- " 표시 없이 이름만 보여준다.
   const isSingleLevel = search.matches.every(opt => opt.parentId === search.matches[0]?.parentId)
@@ -376,14 +372,17 @@ function SectorSearchPopup({
         top: position.top + (position.openUpward ? -DROPDOWN_GAP_PX : DROPDOWN_GAP_PX),
         left: position.left,
         transform: `translate(${position.alignRight ? '-100%' : '0'}, ${position.openUpward ? '-100%' : '0'})`,
-        ...(orderMode && bulkPopupWidth ? { width: bulkPopupWidth } : {}),
+        // 제목과 정렬 전환이 한 줄에 들어가도록 내용 폭에 맞추되, 최소는 헤더 필터 팝업 폭(208px)을 지킨다.
+        ...(orderMode ? { width: 'max-content', minWidth: POPUP_WIDTH_PX } : {}),
       }}
       className="z-50 w-[195px] overflow-hidden rounded-md border border-ui-border bg-[var(--ui-panel)] pt-2 text-sm font-normal text-ui-white shadow-xl"
       onClick={e => e.stopPropagation()}
     >
       {title && (
-        <div className="px-3 pb-2">
-          <span className="inline-block rounded bg-[var(--brand-surface)] px-1.5 py-[3px] text-[11px] font-semibold leading-none text-ui-white">{title}</span>
+        // 대·중·소분류 필터(ColumnFilterButton)와 같은 양식: 제목은 왼쪽, 가나다·시가총액 전환은 오른쪽.
+        <div className="flex items-center justify-between gap-2 px-3 pb-2 text-xs text-ui-muted">
+          <span className="shrink-0 rounded bg-[var(--brand-surface)] px-1.5 py-[3px] text-[11px] font-semibold leading-none text-ui-white">{title}</span>
+          {orderMode && <SectorOrderToggle label={title} value={orderMode.value} onChange={orderMode.onChange} compact />}
         </div>
       )}
       <div className="px-3 pb-2">
@@ -400,7 +399,6 @@ function SectorSearchPopup({
           className="h-7 w-full rounded border border-ui-border bg-ui-panel px-2 text-sm text-ui-white outline-none focus:placeholder:text-transparent focus:border-[var(--brand)]"
         />
       </div>
-      {title && orderMode && <div ref={orderToggleRef} className="w-fit"><SectorOrderToggle label={title} value={orderMode.value} onChange={orderMode.onChange} /></div>}
       {contextLabel && <p className="m-0 truncate px-3 pb-2 text-xs font-medium text-ui-muted">{contextLabel}</p>}
       <div className="sector-popup-options overflow-y-auto" style={{ maxHeight: FILTER_LIST_MAX_HEIGHT }}>
         {search.matches.length === 0 ? (
@@ -420,7 +418,10 @@ function SectorSearchPopup({
                 opt.parentId === null && isProtectedSectorName(opt.name) ? PROTECTED_SECTOR_TEXT_CLASS : 'text-ui-white'
               } ${index === search.highlightedIndex ? 'bg-ui-white/10' : 'bg-transparent'}`}
             >
-              {isSingleLevel ? opt.name : opt.label}
+              <span className="min-w-0 flex-1 truncate">{isSingleLevel ? opt.name : opt.label}</span>
+              {currentSectorId != null && opt.id === currentSectorId && (
+                <span aria-label="현재 지정됨" className="ml-2 shrink-0 text-[var(--brand)]">✓</span>
+              )}
             </button>
           ))
         )}
@@ -445,6 +446,7 @@ export function AdminStockSectorCell({
   disabledHint,
   title,
   orderMode,
+  currentSectorId,
 }: {
   value: string
   options: SectorOption[]
@@ -462,6 +464,7 @@ export function AdminStockSectorCell({
   // 팝업 제목과 "가나다 순 / 시가총액 순" 선택(일괄 변경 팝업과 같은 모양).
   title?: string
   orderMode?: { value: 'alpha' | 'cap'; onChange: (value: 'alpha' | 'cap') => void }
+  currentSectorId?: number | null
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const cellRef = useRef<HTMLTableCellElement>(null)
@@ -521,6 +524,7 @@ export function AdminStockSectorCell({
           contextLabel={contextLabel}
           title={title}
           orderMode={orderMode}
+          currentSectorId={currentSectorId}
         />
       )}
     </td>
@@ -537,6 +541,7 @@ export function BulkAssignButton({
   label,
   title,
   orderMode,
+  currentSectorId,
 }: {
   count: number
   options: SectorOption[]
@@ -549,6 +554,8 @@ export function BulkAssignButton({
   // 누르면 아무 일도 없고, 마우스를 올리면 안내 문구가 공통 말풍선(data-hint)으로 뜬다(AdminStockSectorCell의 disabled 셀과 동일한 패턴).
   disabled?: boolean
   disabledHint?: string
+  // 선택한 종목들이 모두 같은 업종일 때만 그 번호(그 줄에 체크 표시), 아니면 null.
+  currentSectorId?: number | null
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -607,6 +614,7 @@ export function BulkAssignButton({
           onEscape={() => setIsOpen(false)}
           title={title}
           orderMode={orderMode}
+          currentSectorId={currentSectorId}
         />,
         document.body,
       )}
@@ -852,6 +860,7 @@ const AdminStockRow = memo(function AdminStockRow({
       {showIndustry && <td className={`truncate pl-2 text-left text-ui-muted ${readOnlyHoverClass}`}>{item.industryName ?? '-'}</td>}
       <AdminStockSectorCell
         value={chain.rootName}
+        currentSectorId={chain.rootId}
         options={parentSectorOptions}
         onAssign={sectorId => onAssign(item.stockCode, sectorId)}
         isHighlighted={hoveredKind === 'parentSector'}
@@ -861,11 +870,13 @@ const AdminStockRow = memo(function AdminStockRow({
         onEditingChange={editing => setCellEditing('sector1', editing)}
         disabled={isSuspendedStock}
         disabledHint={SUSPENDED_STOCK_HINT}
-        title="대분류 개별 변경"
+        contextLabel="대분류 전체 목록"
+        title="개별 변경"
         orderMode={cellOrderMode}
       />
       <AdminStockSectorCell
         value={chain.midName ?? '-'}
+        currentSectorId={chain.midId}
         options={midSectorOptions}
         onAssign={sectorId => onAssign(item.stockCode, sectorId)}
         isHighlighted={hoveredKind === 'midSector'}
@@ -873,14 +884,15 @@ const AdminStockRow = memo(function AdminStockRow({
         onHoverStart={() => onMidSectorHoverStart(item.stockCode)}
         onHoverEnd={onHoverEnd}
         onEditingChange={editing => setCellEditing('sector2', editing)}
-        contextLabel={`대분류: ${chain.rootName}`}
+        contextLabel={`[${chain.rootName}] 하위 목록`}
         disabled={isSuspendedStock}
         disabledHint={SUSPENDED_STOCK_HINT}
-        title="중분류 개별 변경"
+        title="개별 변경"
         orderMode={cellOrderMode}
       />
       <AdminStockSectorCell
         value={chain.leafName ?? '-'}
+        currentSectorId={item.sectorId}
         options={subSectorOptions}
         onAssign={sectorId => onAssign(item.stockCode, sectorId)}
         isHighlighted={hoveredKind === 'subSector'}
@@ -888,10 +900,10 @@ const AdminStockRow = memo(function AdminStockRow({
         onHoverStart={() => onSubSectorHoverStart(item.stockCode)}
         onHoverEnd={onHoverEnd}
         onEditingChange={editing => setCellEditing('sector3', editing)}
-        contextLabel={chain.midName ? `중분류: ${chain.midName}` : undefined}
+        contextLabel={chain.midName ? `[${chain.midName}] 하위 목록` : undefined}
         disabled={chain.midId == null || isSuspendedStock}
         disabledHint={isSuspendedStock ? SUSPENDED_STOCK_HINT : '중분류를 먼저 지정해 주세요'}
-        title="소분류 개별 변경"
+        title="개별 변경"
         orderMode={cellOrderMode}
       />
     </tr>
@@ -1347,13 +1359,15 @@ export default function AdminStockTable({
   const selectedCommonChain = useMemo(() => {
     let rootId: number | null | undefined
     let midId: number | null | undefined
+    let leafId: number | null | undefined
     for (const item of items) {
       if (!selectedStockCodes.has(item.stockCode)) continue
       const chain = resolveSectorChain(sectorOptionsById, item.sectorId)
       rootId = rootId === undefined || rootId === chain.rootId ? chain.rootId : null
       midId = midId === undefined || midId === chain.midId ? chain.midId : null
+      leafId = leafId === undefined || leafId === item.sectorId ? item.sectorId : null
     }
-    return { rootId: rootId ?? null, midId: midId ?? null }
+    return { rootId: rootId ?? null, midId: midId ?? null, leafId: leafId ?? null }
   }, [items, selectedStockCodes, sectorOptionsById])
   const effectiveParentId = selectedCommonChain.rootId ?? bulkParentId
   const effectiveMidId = selectedCommonChain.midId ?? bulkMidId
@@ -1767,14 +1781,15 @@ export default function AdminStockTable({
             {selectedStockCodes.size > 0 ? `선택한 종목 ${selectedStockCodes.size}개의 분류를 한 번에 바꿉니다` : '표에서 종목을 먼저 선택해 주세요'}
           </p>
           <div className="grid max-w-full settings-control-inset grid-cols-3 gap-[6px]">
-            <BulkAssignButton count={selectedStockCodes.size} options={bulkParentOptions} onAssign={handleBulkAssignParent} label="대분류" title="대분류 일괄 변경" orderMode={bulkOrderMode} />
+            <BulkAssignButton count={selectedStockCodes.size} options={bulkParentOptions} onAssign={handleBulkAssignParent} label="대분류" title="일괄 변경" orderMode={bulkOrderMode} currentSectorId={selectedCommonChain.rootId} />
             <BulkAssignButton
               count={selectedStockCodes.size}
               options={bulkMidOptions}
               onAssign={handleBulkAssignMid}
               label="중분류"
-              title="중분류 일괄 변경"
+              title="일괄 변경"
               orderMode={bulkOrderMode}
+              currentSectorId={selectedCommonChain.midId}
               disabled={effectiveParentId == null}
               disabledHint={'선택한 종목의 대분류가 같아야 합니다.\n다르면 대분류를 먼저 일괄적용해 주세요'}
             />
@@ -1783,8 +1798,9 @@ export default function AdminStockTable({
               options={bulkSubOptions}
               onAssign={handleBulkAssignSub}
               label="소분류"
-              title="소분류 일괄 변경"
+              title="일괄 변경"
               orderMode={bulkOrderMode}
+              currentSectorId={selectedCommonChain.leafId}
               disabled={effectiveMidId == null}
               disabledHint={'선택한 종목의 중분류가 같아야 합니다.\n다르면 중분류를 먼저 일괄적용해 주세요'}
             />

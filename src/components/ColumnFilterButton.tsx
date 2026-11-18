@@ -9,7 +9,7 @@ import { PROTECTED_SECTOR_TEXT_CLASS, protectedSectorOrder } from '@/utils/prote
 const FILTER_ROW_PX = 28
 const FILTER_VISIBLE_ROWS = 10
 
-const POPUP_WIDTH_PX = 208
+export const POPUP_WIDTH_PX = 208
 const SEARCH_MIN_OPTIONS = 10
 
 export function FunnelIcon({ className }: { className?: string }) {
@@ -63,9 +63,6 @@ interface Props {
 }
 
 // "전체 선택 / 전체 해제" 배지 버튼 — 지금 상태와 맞는 쪽이 청록으로 눌러진 상태가 된다(설정창 선택 버튼과 같은 색: 미선택 회색, 선택 청록).
-const BULK_BUTTON_CLASS = 'h-6 flex-1 rounded border p-0 text-xs font-medium'
-const BULK_BUTTON_ON_CLASS = 'border-transparent bg-brand-surface text-ui-white'
-const BULK_BUTTON_OFF_CLASS = 'border-ui-border bg-transparent text-ui-text transition-colors hover:bg-ui-control-hover hover:text-ui-white'
 
 const NO_OPTIONS: readonly string[] = []
 const defaultLabelOf = (value: string) => (value === '-' ? '(없음)' : value)
@@ -104,11 +101,22 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
   }, [isOpen, orderMode?.value])
 
   // 목록 전체(검색으로 가려진 항목 포함)가 모두 체크됐는지, 하나도 체크되지 않았는지 — 둘 다 아니면(일부만 체크) 두 버튼 모두 회색이다.
-  const allSelected = sortedOptions.length > 0 && sortedOptions.every(option => !excluded.has(option))
-  const noneSelected = sortedOptions.length > 0 && sortedOptions.every(option => excluded.has(option))
 
   const trimmed = query.trim().toLowerCase()
   const shownOptions = trimmed ? sortedOptions.filter(value => labelOf(value).toLowerCase().includes(trimmed)) : sortedOptions
+  // "(모두 선택)"은 지금 목록에 보이는 항목 기준이다. 검색 중이면 보이는 항목만 바뀐다(엑셀과 같다).
+  const shownSelectedCount = shownOptions.filter(value => !excluded.has(value)).length
+  const toggleShown = () => {
+    if (shownSelectedCount === shownOptions.length) {
+      onSelectNone(shownOptions)
+      return
+    }
+    if (trimmed) {
+      shownOptions.forEach(value => { if (excluded.has(value)) toggleOption(value) })
+    } else {
+      onSelectAll()
+    }
+  }
 
   const toggleOption = (value: string) => {
     if (selectOnlyOnSearch && trimmed && sortedOptions.every(option => !excluded.has(option))) {
@@ -195,14 +203,21 @@ export default function ColumnFilterButton({ label, getOptions, optionOrder, lab
               />
             </div>
           )}
-          {/* 전체 선택·전체 해제 배지 — 검색창이 있을 만큼 항목이 많은 필터(10개 이상)에만 둔다. 항목이 적으면 하나씩 고르면 되어 두지 않는다. */}
-          {sortedOptions.length >= SEARCH_MIN_OPTIONS && (
-            <div className="flex gap-1 px-3 pb-2">
-              <button type="button" aria-pressed={allSelected} className={`${BULK_BUTTON_CLASS} ${allSelected ? BULK_BUTTON_ON_CLASS : BULK_BUTTON_OFF_CLASS}`} onClick={onSelectAll}>전체 선택</button>
-              <button type="button" aria-pressed={noneSelected} className={`${BULK_BUTTON_CLASS} ${noneSelected ? BULK_BUTTON_ON_CLASS : BULK_BUTTON_OFF_CLASS}`} onClick={() => onSelectNone(sortedOptions)}>전체 해제</button>
-            </div>
-          )}
-          <ul ref={optionsRef} className="column-filter-options m-0 list-none snap-y snap-mandatory overflow-y-scroll [overflow-anchor:none] p-0" style={{ maxHeight: dropdownListMaxHeight(FILTER_VISIBLE_ROWS, FILTER_ROW_PX) }}>
+          <ul ref={optionsRef} className="column-filter-options m-0 list-none snap-y snap-mandatory scroll-pt-7 overflow-y-scroll [overflow-anchor:none] p-0" style={{ maxHeight: dropdownListMaxHeight(FILTER_VISIBLE_ROWS, FILTER_ROW_PX) }}>
+            {sortedOptions.length >= SEARCH_MIN_OPTIONS && shownOptions.length > 0 && (
+              <li className="sticky top-0 z-10 bg-[var(--ui-panel)]">
+                <label className="flex h-7 cursor-pointer items-center gap-2 px-3 hover:bg-ui-white/10">
+                  <input
+                    type="checkbox"
+                    className="thin-check shrink-0"
+                    ref={el => { if (el) el.indeterminate = shownSelectedCount > 0 && shownSelectedCount < shownOptions.length }}
+                    checked={shownSelectedCount === shownOptions.length}
+                    onChange={toggleShown}
+                  />
+                  <span className="font-medium text-ui-white">(모두 선택)</span>
+                </label>
+              </li>
+            )}
             {shownOptions.length === 0 && <li className="px-3 py-1 text-ui-muted">검색 결과가 없습니다.</li>}
             {shownOptions.map(value => (
               <li key={value} className={DROPDOWN_SNAP_ITEM_CLASS}>

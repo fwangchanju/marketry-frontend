@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { IconAd, IconBellRinging, IconDeviceDesktopAnalytics, IconMail, IconUsersGroup } from '@tabler/icons-react'
 
-export type SettingsSectionIconName = 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'dashboard' | 'home' | 'member' | 'members' | 'experiment' | 'custom-edit' | 'stock-single' | 'document' | 'mail' | 'megaphone' | 'ad'
+export type SettingsSectionIconName = 'stock-menu' | 'composition' | 'equal-size' | 'industry' | 'stock-display' | 'colors' | 'bar-chart' | 'dashboard' | 'home' | 'member' | 'members' | 'experiment' | 'custom-edit' | 'stock-single' | 'document' | 'mail' | 'megaphone' | 'ad'
 
 interface SettingsSectionIconProps {
   icon: SettingsSectionIconName
@@ -29,11 +29,15 @@ const ICON_SHAPES: Record<Exclude<SettingsSectionIconName, 'dashboard' | 'megaph
   ),
   // 상단 Stock 메뉴 아이콘 — Sector 메뉴(industry)의 계층도에서 작은 네모 하나만 남긴 모양이다. 네모는 industry의 작은 네모(6×6)보다 크게(10×10) 그린다(사용자 요청: "좀 더 커도 된다").
   'stock-single': <rect x="7" y="7" width="10" height="10" rx="1.4" />,
+  // 상단 Stock 메뉴 아이콘 — 서머리 아이콘(클립보드)과 크기를 맞추려고 stock-single보다 크게 그린다. 설정창 탭은 계속 stock-single을 쓴다.
+  'stock-menu': <rect x="5" y="5" width="14" height="14" rx="2" />,
+  // 서머리 메뉴 아이콘 — 클립보드 모양(이중 테두리, 위쪽 클립, 줄 여섯 개). 글자 SUMMARY는 24px 아이콘에서 읽히지 않아 그리지 않는다.
   home: (
     <>
-      <path d="m3 10 9-7 9 7" />
-      <path d="M5 8.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5" />
-      <path d="M9 21v-8h6v8" />
+      <rect x="3" y="3.5" width="18" height="18.5" rx="1.5" />
+      <rect x="5.5" y="5.5" width="13" height="16" rx="1" />
+      <rect x="8.5" y="1.5" width="7" height="4" rx="1.5" />
+      <path d="M8 9h8M8 11h8M8 13h8M8 15h8M8 17h8M8 19h8" />
     </>
   ),
   'bar-chart': (
