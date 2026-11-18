@@ -22,7 +22,7 @@ import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import SettingsPanel, { SettingsStockChangeSection, SettingsSectorChangeSection, SettingsStockMoveSection, SettingsStockPopupSection, SettingsTextThresholdSection, SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsMarketValueSection, SettingsStockChangeSection, SettingsSectorChangeSection, SettingsStockMoveSection, SettingsStockPopupSection, SettingsTextThresholdSection, SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
 import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import Spinner from '@/components/Spinner'
@@ -32,6 +32,7 @@ import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import ToolbarChip from '@/components/ToolbarChip'
+import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
 import { collectSectorsAtDepth, flattenAllItems, useFilteredHeatmap, limitDepth, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
 import { useMapDrilldownHistory, useMapSectorEntry } from '@/hooks/useMapDrilldownHistory'
@@ -51,12 +52,11 @@ declare global {
 
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 const NO_EXCLUDED_SECTORS = new Set<number>()
-const NO_EXCLUDED_TIERS = new Set<string>()
 const NO_TOP_PICKS = new Set<string>()
 const NO_STOCK_MOVES: StockMoves = {}
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 const FLAT_GROUP_NAME = '__flat__'
-const SECTION_ORDER: SettingsPanelSectionId[] = ['industry', 'stockDisplay', 'colors']
+const SECTION_ORDER: SettingsPanelSectionId[] = ['composition', 'industry', 'stockDisplay', 'colors']
 
 function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
   return {
@@ -75,8 +75,9 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const {
     market, label, tree, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange, rangeExcludedStocks,
     isLoading, isError, isFetching, refetchAll, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit,
-    levelLabels, defaultMaxDepth, fixed, draftKeyMap, tabStorageName, totalCount, countShown,
+    levelLabels, defaultMaxDepth, fixed, draftKeyMap, settingPrefix, tabStorageName, totalCount, countShown,
   } = source
+  const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
   const { colorScale } = fixed
   // 실험 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
   const [stockChangeFilter, setStockChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
@@ -87,7 +88,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
   const directionFilters = useMemo(() => ({ stockChangeFilter, sectorChangeFilter, sectorChangeDepth, sectorUseSimpleAverage: false }), [stockChangeFilter, sectorChangeFilter, sectorChangeDepth])
-  const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, NO_EXCLUDED_TIERS, directionFilters)
+  const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, tierRange.excludedMarketValueTiers, directionFilters)
   const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
   // 상위 업종 강조 — 국내 지도와 같은 규칙으로 고른 단계의 업종 중 등락률이 높은 순서로 뽑는다. 필터가 적용된 전체 트리 기준이라 드릴다운해도 바뀌지 않는다.
   const topPickMaxSelectableDepth = preferences.maxDepth === null ? Math.max(defaultMaxDepth, availableMaxDepth) : preferences.maxDepth
@@ -300,6 +301,18 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
+            <SettingsPanelGroup section="composition">
+              {/* 한국 지도의 종목 구성 탭과 같은 자리. 일본·미국은 구간 이름 없이 금액 눈금만 쓴다. 업종 제외는 아직 없다. */}
+              <SettingsMarketValueSection
+                isCustom={false}
+                tiers={tierRange.tiers}
+                tierRangeMinIndex={tierRange.minIndex}
+                tierRangeMaxIndex={tierRange.maxIndex}
+                onChangeTierRange={tierRange.setRange}
+                showDivider={false}
+                currencyUnit={currencyUnit}
+              />
+            </SettingsPanelGroup>
             <SettingsPanelGroup section="industry"><SettingsSectorLevelSection {...sectorLevelProps} showStockDisplay={false} /></SettingsPanelGroup>
             <SettingsPanelGroup section="stockDisplay">
               <SettingsStockSizeSelector marketCapRatio={preferences.boxSizeMarketCapRatio} onChangeMarketCapRatio={value => update({ boxSizeMarketCapRatio: value })} />

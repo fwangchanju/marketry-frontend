@@ -36,6 +36,8 @@ export interface OverseasMapSource {
   // 설정 화면이 없는 고정 값(색상·박스 글자 기준 등).
   fixed: { boxLabelMinAreaPercent: number; stockPopupOnHover: boolean; strongIndustryColor: string; colorScale: (typeof JAPAN_MAP_FIXED)['colorScale'] }
   draftKeyMap: Readonly<Record<string, string>>
+  // 이 시장 지도 설정의 저장 이름 접두어('japan.map.'·'usa.map.') — 시가총액 범위처럼 기본값 묶음에 없는 설정의 저장 이름에 붙인다.
+  settingPrefix: string
   tabStorageName: string
   // 설정창의 "n/m종목"의 m과, 화면에 그린 종목 수 계산(시장마다 센 기준이 다르다).
   totalCount: number

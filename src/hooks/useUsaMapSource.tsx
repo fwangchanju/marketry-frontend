@@ -10,7 +10,7 @@ import { useUsaMapPreferences } from '@/hooks/useUsaMapPreferences'
 import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { overseasMarketInfo } from '@/utils/markets'
-import { USA_MAP_DRAFT_KEY_MAP, USA_MAP_FIXED, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
+import { USA_MAP_DRAFT_KEY_MAP, USA_MAP_FIXED, USA_MAP_SETTING_PREFIX, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
 import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
 
 // 미국 지도의 데이터·설정 — 공통 지도 화면(OverseasMapView)이 받는 모양으로 돌려준다.
@@ -62,6 +62,7 @@ export function useUsaMapSource(): OverseasMapSource {
     defaultMaxDepth: 2,
     fixed: USA_MAP_FIXED,
     draftKeyMap: USA_MAP_DRAFT_KEY_MAP,
+    settingPrefix: USA_MAP_SETTING_PREFIX,
     tabStorageName: USA_SETTINGS_TAB_STORAGE.map,
     totalCount: treeStocks.length,
     // 미국은 필터를 거친 트리에 남은 종목 수를 센다.

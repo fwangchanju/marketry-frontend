@@ -6,9 +6,10 @@ import JapanSessionChip from '@/components/JapanSessionChip'
 import stocks from '@/data/japanStocks.json'
 import type { OverseasMapSource } from '@/hooks/overseasMapSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
+import { flattenAllItems } from '@/hooks/useFilteredHeatmap'
 import { useJapanMapPreferences } from '@/hooks/useJapanMapPreferences'
 import { useJapanPeriodQuotes, useJapanPreviousTradingDay, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
-import { JAPAN_MAP_DRAFT_KEY_MAP, JAPAN_MAP_FIXED, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE } from '@/utils/japanMapSettings'
+import { JAPAN_MAP_DRAFT_KEY_MAP, JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE } from '@/utils/japanMapSettings'
 import { buildJapanTree, excludePreviousCloseQuotes, findJapanCloseSnapshotTime, japanFilterQueryState, shouldFilterJapanQuotes, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { overseasMarketInfo } from '@/utils/markets'
@@ -72,8 +73,10 @@ export function useJapanMapSource(): OverseasMapSource {
     defaultMaxDepth: 3,
     fixed: JAPAN_MAP_FIXED,
     draftKeyMap: JAPAN_MAP_DRAFT_KEY_MAP,
+    settingPrefix: JAPAN_MAP_SETTING_PREFIX,
     tabStorageName: JAPAN_SETTINGS_TAB_STORAGE.map,
     totalCount: stocks.length,
-    countShown: () => mapQuotes.length,
+    // 화면에 그려진 종목을 센다(미국과 같다) — 시가총액 범위처럼 종목을 거르는 설정이 개수에 반영된다.
+    countShown: filteredRootNodes => filteredRootNodes.reduce((count, root) => count + flattenAllItems([root]).length, 0),
   }
 }
