@@ -1,4 +1,5 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
 import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { useRef, useState } from 'react'
@@ -16,7 +17,7 @@ import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageAct
 import NavSubBar from '@/components/NavSubBar'
 import RankColumns from '@/components/RankColumns'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import SettingsPanel, { SettingsColorSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import Spinner from '@/components/Spinner'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import Toolbar from '@/components/Toolbar'
@@ -40,7 +41,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   const {
     market, label, chart, titleText, titleUnit, depthNames, groupDepth, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange,
     rangeExcludedStocks, isLoading, isError, isFetching, refetchAll, DatePicker, sessionChip, refreshHelp, fixed, draftKeyMap, tabStorageName,
-    totalCount, shownCount, graphSettings, tierRange, currencyUnit,
+    totalCount, shownCount, graphSettings, tierRange, currencyUnit, sectorExclusion, exclusionTree,
   } = source
   const { colorScale, strongIndustryColor } = fixed
   const navigate = useNavigate()
@@ -134,6 +135,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
             </SettingsPanelGroup>
             <SettingsPanelGroup section="composition">
               <SettingsMarketValueSection isCustom={false} tiers={tierRange.tiers} tierRangeMinIndex={tierRange.minIndex} tierRangeMaxIndex={tierRange.maxIndex} onChangeTierRange={tierRange.setRange} showDivider={false} currencyUnit={currencyUnit} />
+              <SettingsExcludeSection sectorFilterEnabled={sectorExclusion.enabled} onToggleSectorFilter={sectorExclusion.toggle} excludedSectors={buildExcludedSectorRows(exclusionTree, sectorExclusion.ids, tierRange.excludedMarketValueTiers)} onRemoveExcludedSector={sectorExclusion.remove} />
             </SettingsPanelGroup>
             <SettingsPanelGroup section="colors">
               {/* 요약·지도 화면과 같은 구성이다. 등락률 색상·강조 색상은 고정값을 보여 주고 바꾸지 못한다. */}

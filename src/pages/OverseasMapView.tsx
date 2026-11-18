@@ -1,4 +1,6 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
+import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { marketMenu } from '@/utils/marketMenu'
@@ -22,7 +24,7 @@ import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import SettingsPanel, { SettingsMarketValueSection, SettingsStockChangeSection, SettingsSectorChangeSection, SettingsStockMoveSection, SettingsStockPopupSection, SettingsTextThresholdSection, SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsExcludeSection, SettingsMarketValueSection, SettingsStockChangeSection, SettingsSectorChangeSection, SettingsStockMoveSection, SettingsStockPopupSection, SettingsTextThresholdSection, SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
 import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import Spinner from '@/components/Spinner'
@@ -51,7 +53,6 @@ declare global {
 }
 
 const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
-const NO_EXCLUDED_SECTORS = new Set<number>()
 const NO_TOP_PICKS = new Set<string>()
 const NO_STOCK_MOVES: StockMoves = {}
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
@@ -78,6 +79,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, settingPrefix, tabStorageName, totalCount, countShown,
   } = source
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
+  const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
   const { colorScale } = fixed
   // 실험 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
   const [stockChangeFilter, setStockChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
@@ -88,7 +90,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
   const directionFilters = useMemo(() => ({ stockChangeFilter, sectorChangeFilter, sectorChangeDepth, sectorUseSimpleAverage: false }), [stockChangeFilter, sectorChangeFilter, sectorChangeDepth])
-  const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, NO_EXCLUDED_SECTORS, tierRange.excludedMarketValueTiers, directionFilters)
+  const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, directionFilters)
   const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth } = useHeatmapDrilldown(filteredRootNodes)
   // 상위 업종 강조 — 국내 지도와 같은 규칙으로 고른 단계의 업종 중 등락률이 높은 순서로 뽑는다. 필터가 적용된 전체 트리 기준이라 드릴다운해도 바뀌지 않는다.
   const topPickMaxSelectableDepth = preferences.maxDepth === null ? Math.max(defaultMaxDepth, availableMaxDepth) : preferences.maxDepth
@@ -262,7 +264,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                   selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
                   depth={path.length}
                   onSelectSector={name => { enterSector(name) }}
-                  onExcludeSector={() => {}}
+                  onExcludeSector={sectorId => sectorExclusion.exclude(sectorId)}
                   heightClassName="min-h-0 flex-1"
                   marketValueDepthRange={metricRange('marketValue')}
                   weightedAvgDepthRange={metricRange('weightedAvgChangeRate')}
@@ -270,7 +272,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                   upDownCountDepthRange={metricRange('upDownCount')}
                   boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio}
                   tile={mapTileMethod()}
-                  canExclude={false}
+                  canExclude
                   colorScale={colorScale}
                   labelMinAreaPercent={boxLabelMinAreaPercent}
                   stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'}
@@ -302,7 +304,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy="MARKETRY" onlyTaxonomy="MARKETRY" onSelectTaxonomy={NO_TAXONOMY_CHANGE} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
             <SettingsPanelGroup section="composition">
-              {/* 한국 지도의 종목 구성 탭과 같은 자리. 일본·미국은 구간 이름 없이 금액 눈금만 쓴다. 업종 제외는 아직 없다. */}
+              {/* 한국 지도의 종목 구성 탭과 같은 자리. 일본·미국은 구간 이름 없이 금액 눈금만 쓴다. */}
               <SettingsMarketValueSection
                 isCustom={false}
                 tiers={tierRange.tiers}
@@ -311,6 +313,12 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                 onChangeTierRange={tierRange.setRange}
                 showDivider={false}
                 currencyUnit={currencyUnit}
+              />
+              <SettingsExcludeSection
+                sectorFilterEnabled={sectorExclusion.enabled}
+                onToggleSectorFilter={sectorExclusion.toggle}
+                excludedSectors={buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers)}
+                onRemoveExcludedSector={sectorExclusion.remove}
               />
             </SettingsPanelGroup>
             <SettingsPanelGroup section="industry"><SettingsSectorLevelSection {...sectorLevelProps} showStockDisplay={false} /></SettingsPanelGroup>

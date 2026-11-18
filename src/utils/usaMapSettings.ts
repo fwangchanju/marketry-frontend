@@ -54,6 +54,8 @@ export const USA_MAP_DRAFT_KEY_MAP: Readonly<Record<string, string>> = {
   // 시가총액 범위는 기본값 묶음(USA_MAP_DEFAULTS)에 넣지 않고 계정 설정으로만 저장한다.
   'heatmap.tierRangeMinValue': `${USA_MAP_SETTING_PREFIX}tierRangeMinValue`,
   'heatmap.tierRangeMaxValue': `${USA_MAP_SETTING_PREFIX}tierRangeMaxValue`,
+  'heatmap.sectorFilterEnabled': `${USA_MAP_SETTING_PREFIX}sectorFilterEnabled`,
+  'heatmap.excludedSectorKeys': `${USA_MAP_SETTING_PREFIX}excludedSectorIds`,
 }
 
 // 설정창이 고른 탭을 기억하는 이름. 국내·일본 화면과 겹치지 않게 미국 화면마다 따로 둔다.
