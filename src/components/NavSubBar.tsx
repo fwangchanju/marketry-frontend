@@ -38,7 +38,7 @@ const BASE_LINKS: MenuLink[] = [
 // 예전 Custom 메뉴를 Sector·Stock 두 메뉴로 나눴다. 주소는 /sector/korea·/stock/korea(일본은 /sector/japan·/stock/japan)다. 옛 /custom 주소는 새 주소로 이동한다.
 // 일반 회원은 누르면 바로 한국 화면으로 가고, 특별 회원은 KOREA / JAPAN 목록이 열린다.
 const SECTOR_LINK: MenuLink = { to: SECTOR_KOREA, label: 'Sector', icon: 'industry' }
-const STOCK_LINK: MenuLink = { to: STOCK_KOREA, label: 'Stock', icon: 'stock-single' }
+const STOCK_LINK: MenuLink = { to: STOCK_KOREA, label: 'Stock', icon: 'stock-menu' }
 
 // 관리자 계정에만 보이는 Admin 메뉴 — 누르면 회원 명단(/admin/member)으로 간다. 관리자 화면 목록은 각 화면 상단 배지의 꺾쇠에서 연다.
 const ADMIN_LINK: MenuLink = {
@@ -56,7 +56,7 @@ const NAV_TAB_CLASS = `${FONT_NAV_TAB.replace('text-lg', 'text-[15px]')} inline-
 // 아이콘 중심이 글자 대문자 높이의 중심보다 약 1.4px 낮아서 그만큼 올린다(-translate-y-[1.4px]). 선 굵기는 화면에서 모두 약 1.35px가 되도록 잘린 크기에 맞춰 정한다(굵기 × 잘린 변 ÷ 18).
 const NAV_ICON_PX = 24
 const NAV_ICON_STROKE_PX = 1.35
-type NavIconName = Extract<SettingsSectionIconName, 'home' | 'composition' | 'bar-chart' | 'custom-edit' | 'member' | 'industry' | 'stock-single'>
+type NavIconName = Extract<SettingsSectionIconName, 'stock-menu' | 'home' | 'composition' | 'bar-chart' | 'custom-edit' | 'member' | 'industry' | 'stock-single'>
 const NAV_ICON_EXTENT: Record<NavIconName, { cx: number; cy: number; size: number; px?: number }> = {
   home: { cx: 12, cy: 12, size: 18 },
   composition: { cx: 12, cy: 12, size: 16 },
@@ -67,6 +67,8 @@ const NAV_ICON_EXTENT: Record<NavIconName, { cx: number; cy: number; size: numbe
   // 네모(10칸)에 맞춰 자르고, 칸(px)도 같은 비율(18px ÷ 22칸)로 줄여 네모 크기는 그대로 두되 양옆 빈 여백만 없앤다.
   // 18px 칸에 그대로 넣으면 네모가 칸의 절반만 차서 글자와의 간격이 다른 아이콘보다 넓어 보인다.
   'stock-single': { cx: 12, cy: 12, size: 10, px: 9.8 },
+  // 사각형(14칸)이 화면에서 약 18px로 보이도록 보기 칸을 키운다(서머리 아이콘보다 작게).
+  'stock-menu': { cx: 12, cy: 12, size: 17 },
 }
 
 // 광고 배너(AdBannerSlot)가 메뉴에 걸릴 만큼 화면이 좁으면 배너 자리가 html에 data-nav-compact를 달아서 글자 앞 아이콘을 숨기고 메뉴 폭을 줄인다.
