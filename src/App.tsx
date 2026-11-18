@@ -133,9 +133,15 @@ function RedirectKeepingQuery({ to }: { to: string }) {
   return <Navigate to={{ pathname: to, search, hash }} replace />
 }
 
+// 폰용 지도·그래프 화면은 한국만 있다. 일본·미국 지도·그래프는 PC 화면뿐이라 폰에서는 안내만 보여 준다(2026-11-19).
+// 옛 주소(/map/kospi·/map/kosdaq 등)는 한국 주소로 옮겨 가므로 폰에서도 열어 둔다.
+function isMobileKoreaPath(pathname: string, base: '/map' | '/graph') {
+  return pathname === base || pathname === `${base}/korea` || pathname.startsWith(`${base}/korea/`) || pathname === `${base}/kospi` || pathname === `${base}/kosdaq`
+}
+
 function isMobileMarketPath(pathname: string) {
   // 첫 화면(/)은 곧 /summary로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
-  return pathname === '/' || pathname === '/home' || pathname === '/summary/korea' || pathname.startsWith('/summary/korea/') || pathname === '/map' || pathname.startsWith('/map/') || pathname === '/graph' || pathname.startsWith('/graph/')
+  return pathname === '/' || pathname === '/home' || pathname === '/summary/korea' || pathname.startsWith('/summary/korea/') || isMobileKoreaPath(pathname, '/map') || isMobileKoreaPath(pathname, '/graph')
 }
 
 function MobileGate({ children }: { children: ReactNode }) {
