@@ -339,8 +339,8 @@ export default function CustomPage() {
               <SettingsPanelGroup section="custom">
                 {!isReadOnlySheet ? (
                   <>
-                    {mode === 'stock' && <div ref={setStockBulkTarget} className="settings-item" />}
                     <div ref={mode === 'sector' ? setSectorSettingsActionsTarget : setStockHistoryTarget} className={mode === 'stock' ? 'settings-item' : undefined} />
+                    {mode === 'stock' && <div ref={setStockBulkTarget} className="settings-item" />}
                     {mode === 'stock' && <div ref={setStockExcelTarget} className="settings-item" />}
                     {mode === 'stock' && <div ref={setStockResetTarget} className="settings-item" />}
                   </>

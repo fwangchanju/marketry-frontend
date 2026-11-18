@@ -115,7 +115,7 @@ export default function ChangeHistoryControls<T extends { id: string }>({ undoSt
     const label = isUndo ? '실행 취소' : '다시 실행'
     return (
       <>
-        <div className={`flex min-h-[25px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px] leading-[1.3] font-medium bg-[var(--ui-control)] text-ui-white ${isEmpty ? 'opacity-35' : ''}`}>
+        <div className={`flex min-h-[25px] min-w-0 items-stretch overflow-hidden rounded-[5px] text-[13px] leading-[1.3] font-medium bg-[var(--ui-control)] text-ui-white ${isEmpty ? 'opacity-35' : ''} ${isUndo && isEmpty === false ? 'animate-history-attention' : ''}`}>
           <button
             type="button"
             onClick={() => {
