@@ -1,7 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData, type OverseasCategory } from '@/hooks/useOverseasClassificationData'
-import OverseasPublishControls from '@/components/OverseasPublishControls'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { customMenu } from '@/utils/marketMenu'
@@ -38,6 +38,7 @@ export default function OverseasSectorView({ source }: { source: OverseasSectorS
   const { data: session } = useSession()
   // 분류 편집은 내 기준(초안)에서만 한다. MARKETRY 모드는 운영 분류를 읽기만 한다.
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
+  const publishedAt = useOverseasPublishedAt(market)
   const canEdit = isAdminSession(session) && sheet === 'MINE'
   const { categories, classifications, editBase, invalidate } = useOverseasClassificationData(market, sheet)
   const endpoint = `${editBase}/categories`
@@ -96,7 +97,7 @@ export default function OverseasSectorView({ source }: { source: OverseasSectorS
         {categories.isLoading || classifications.isLoading || quotes.isLoading || stocksState.isLoading ? <MainAreaLoading><Spinner showElapsed /></MainAreaLoading> : categories.isError || classifications.isError || quotes.isError || stocksState.isError ? <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void categories.refetch(); void classifications.refetch(); void quotes.refetch(); stocksState.refetch() }} /></MainAreaLoading> : <AdminSectorTable sectors={sectors} sectorStats={stats} toolbarContainer={toolbar} settingsActionsTarget={settingsActions} overseasActions={{ create, rename, reparent, remove }} levels={3} currency={currency} readOnly={!canEdit} />}
         <DisclaimerFooter />
       </main>
-      <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}><SettingsPanel pageLabel="Sector" customTabLabel="섹터" customTabIcon="industry" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={false} isOpen={settingsOpen} onOpenChange={setSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}><SettingsPanelGroup section="custom">{canEdit ? <div ref={setSettingsActions} /> : <div className="settings-empty-message"><span className="text-center">읽기 전용{canUseMine && <><br /><span className="text-ui-muted">[내 기준] 모드만 쓰기 가능</span></>}</span></div>}</SettingsPanelGroup><SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control"><h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2><p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">내 기준을 MARKETRY로 업데이트·롤백</p><div className="settings-button-area max-w-full settings-control-inset"><OverseasPublishControls market={market} /></div></div></div></SettingsPanelGroup></SettingsPanel></div>
+      <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}><SettingsPanel pageLabel="Sector" customTabLabel="섹터" customTabIcon="industry" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={false} isOpen={settingsOpen} onOpenChange={setSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom']}><SettingsPanelGroup section="custom">{canEdit ? <div ref={setSettingsActions} /> : <div className="settings-empty-message"><span className="text-center">읽기 전용{canUseMine && <><br /><span className="text-ui-muted">[내 기준] 모드만 쓰기 가능</span></>}</span></div>}</SettingsPanelGroup></SettingsPanel></div>
     </div>
     {shareOpen && <ScreenshotModal onClose={() => setShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} />}
   </div>

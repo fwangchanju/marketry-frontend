@@ -1,4 +1,5 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
@@ -67,6 +68,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
   // MARKETRY 모드는 운영자가 제시하는 기준이라 모든 항목(종목명 한글·분류)이 수정 불가이고, 관리자는 내 기준 모드에서만 고친다.
   const isAdmin = isAdminSession(session)
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
+  const publishedAt = useOverseasPublishedAt(market)
   const canEdit = isAdmin && sheet === 'MINE'
   const queryClient = useQueryClient()
   const namesQuery = useQuery({ queryKey: NAMES_QUERY_KEY, queryFn: async () => (await client.get<Record<string, string>>(`/${routeSegment}/stock-names`)).data })
@@ -287,7 +289,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
           <DisclaimerFooter />
         </main>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom', 'adminOps']}>
+          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={sheet === 'MINE' ? ['custom', 'adminOps'] : ['custom']}>
             <SettingsPanelGroup section="custom">
               {canEdit ? (
                 <>
@@ -306,11 +308,11 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
                 </>
               ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">{canUseMine ? '[내 기준] 모드만 쓰기 가능' : `계산: ${unit.rateNote}`}</span></span></div>}
             </SettingsPanelGroup>
-            <SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control">
+            {sheet === 'MINE' && <SettingsPanelGroup section="adminOps"><div className="settings-item"><div className="settings-custom-control">
               <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
               <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">내 기준을 MARKETRY로 업데이트·롤백</p>
               <div className="settings-button-area max-w-full settings-control-inset"><OverseasPublishControls market={market} /></div>
-            </div></div></SettingsPanelGroup>
+            </div></div></SettingsPanelGroup>}
           </SettingsPanel>
         </div>
       </div>
