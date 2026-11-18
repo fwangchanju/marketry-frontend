@@ -1,4 +1,3 @@
-import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAIN_LOADING_CLASS } from '@/utils/mainAreaLoading'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
@@ -258,7 +257,9 @@ export default function CustomPage() {
             <EmptyMessageAreaContext.Provider value={emptyMessageArea}>
             {/* 바깥 main-settings-row에서 좌우 4px·설정창 사이 4px를 관리해 툴바와 본문 시작선을 맞춘다. */}
             <div className="flex min-h-0 flex-1">
-              <ScrollArea overlay scrollLabel={mode === 'stock' ? '종목 목록' : '업종 목록'} className="min-h-0 min-w-0 flex-1" contentClassName="flex min-h-full min-w-0 flex-col">
+              <div
+                className={`flex min-h-0 min-w-0 flex-1 flex-col ${mode === 'sector' ? 'overflow-y-auto' : ''}`}
+              >
                 {isPageLoading ? (
                   // 지도·그룹 페이지의 로딩 원과 같은 높이에 오도록 위 16px, 아래 47.5px(19.5px + 이 페이지에 없는 아래 줄 28px) 여백 안에서 가운데에 둔다.
                   <div className={MAIN_LOADING_CLASS}>
@@ -311,7 +312,7 @@ export default function CustomPage() {
                     />
                   </div>
                 )}
-              </ScrollArea>
+              </div>
             </div>
             </EmptyMessageAreaContext.Provider>
             <DisclaimerFooter />
