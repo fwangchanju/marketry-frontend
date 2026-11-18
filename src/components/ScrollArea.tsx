@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { PointerEvent, ReactNode, RefObject } from 'react'
+import type { CSSProperties, PointerEvent, ReactNode, RefObject } from 'react'
 
 type ScrollMetrics = { trackHeight: number; thumbHeight: number; thumbTop: number; trackWidth: number; thumbWidth: number; thumbLeft: number }
 
@@ -14,6 +14,7 @@ export default function ScrollArea({
   scrollLabel,
   viewportRef: externalViewportRef,
   contentClassName,
+  contentStyle,
 }: {
   children: ReactNode
   className?: string
@@ -22,6 +23,8 @@ export default function ScrollArea({
   scrollLabel?: string
   // overlay일 때 내용 영역의 레이아웃 클래스. 기본은 최소 높이를 뷰포트에 맞춘다(그래프처럼 flex로 채우는 화면은 flex 클래스를 넘긴다).
   contentClassName?: string
+  // overlay일 때 내용 영역의 인라인 스타일(계산한 격자 행 높이 등).
+  contentStyle?: CSSProperties
   // 바깥에서 스크롤 요소(viewport)를 직접 다룰 때 넘긴다(맨 위로 올리기·열 폭 계산 등).
   viewportRef?: RefObject<HTMLDivElement | null>
 }) {
@@ -185,7 +188,7 @@ export default function ScrollArea({
         }}
         className={`scroll-area-viewport h-full min-h-0 ${overlay ? 'overflow-auto' : `overflow-x-hidden pr-2 ${isScrollable ? 'overflow-y-scroll' : 'overflow-y-hidden'}`}`}
       >
-        <div ref={contentRef} className={overlay ? (contentClassName ?? 'min-h-full') : 'flex min-h-full flex-col gap-1'}>{children}</div>
+        <div ref={contentRef} className={overlay ? (contentClassName ?? 'min-h-full') : 'flex min-h-full flex-col gap-1'} style={overlay ? contentStyle : undefined}>{children}</div>
       </div>
       {isScrollable && <div
         aria-hidden="true"
