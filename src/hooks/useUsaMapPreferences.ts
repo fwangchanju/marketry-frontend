@@ -1,24 +1,28 @@
 import { usePageSetting } from './usePageSetting'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { USA_MAP_DEFAULTS, usaMapSettingKey, type UsaMapPreferences } from '@/utils/usaMapSettings'
 
 // 미국 지도의 표시 설정 — 코드 기본값 위에 사용자가 바꾼 값을 얹는다. 일본 지도와 달리 관리자 기본값은 아직 없다.
 // 바꾼 값은 임시값이고 설정창의 저장을 눌러야 계정에 저장된다(usePageSetting). 항목마다 저장 이름이 따로라 설정창 항목 제목에
 // 저장 안 한 변경 점이 항목별로 찍힌다.
 export function useUsaMapPreferences() {
+  const { sheet } = useOverseasSheet()
+  const settingKey = (name: Parameters<typeof usaMapSettingKey>[0]) => overseasSettingKey(usaMapSettingKey(name), sheet)
   const base = USA_MAP_DEFAULTS
-  const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting(usaMapSettingKey('sectorLevelEnabled'), base.sectorLevelEnabled)
-  const [maxDepth, setMaxDepth] = usePageSetting<number | null>(usaMapSettingKey('maxDepth'), base.maxDepth)
-  const [depthMetricEnabled, setDepthMetricEnabled] = usePageSetting(usaMapSettingKey('depthMetricEnabled'), base.depthMetricEnabled)
-  const [activeDepthMetric, setActiveDepthMetric] = usePageSetting(usaMapSettingKey('activeDepthMetric'), base.activeDepthMetric)
-  const [depthMetricMinIndex, setDepthMetricMinIndex] = usePageSetting(usaMapSettingKey('depthMetricMinIndex'), base.depthMetricMinIndex)
-  const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting(usaMapSettingKey('depthMetricMaxIndex'), base.depthMetricMaxIndex)
-  const [boxSizeMarketCapRatio, setBoxSizeMarketCapRatio] = usePageSetting(usaMapSettingKey('boxSizeMarketCapRatio'), base.boxSizeMarketCapRatio)
-  const [stockLabelEnabled, setStockLabelEnabled] = usePageSetting(usaMapSettingKey('stockLabelEnabled'), base.stockLabelEnabled)
-  const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting(usaMapSettingKey('stockLabelModeIndex'), base.stockLabelModeIndex)
-  const [decimalPlaces, setDecimalPlaces] = usePageSetting(usaMapSettingKey('decimalPlaces'), base.decimalPlaces)
-  const [topPickEnabled, setTopPickEnabled] = usePageSetting(usaMapSettingKey('topPickEnabled'), base.topPickEnabled)
-  const [topPickDepth, setTopPickDepth] = usePageSetting(usaMapSettingKey('topPickDepth'), base.topPickDepth)
-  const [topPickCount, setTopPickCount] = usePageSetting(usaMapSettingKey('topPickCount'), base.topPickCount)
+  const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting(settingKey('sectorLevelEnabled'), base.sectorLevelEnabled)
+  const [maxDepth, setMaxDepth] = usePageSetting<number | null>(settingKey('maxDepth'), base.maxDepth)
+  const [depthMetricEnabled, setDepthMetricEnabled] = usePageSetting(settingKey('depthMetricEnabled'), base.depthMetricEnabled)
+  const [activeDepthMetric, setActiveDepthMetric] = usePageSetting(settingKey('activeDepthMetric'), base.activeDepthMetric)
+  const [depthMetricMinIndex, setDepthMetricMinIndex] = usePageSetting(settingKey('depthMetricMinIndex'), base.depthMetricMinIndex)
+  const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting(settingKey('depthMetricMaxIndex'), base.depthMetricMaxIndex)
+  const [boxSizeMarketCapRatio, setBoxSizeMarketCapRatio] = usePageSetting(settingKey('boxSizeMarketCapRatio'), base.boxSizeMarketCapRatio)
+  const [stockLabelEnabled, setStockLabelEnabled] = usePageSetting(settingKey('stockLabelEnabled'), base.stockLabelEnabled)
+  const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting(settingKey('stockLabelModeIndex'), base.stockLabelModeIndex)
+  const [decimalPlaces, setDecimalPlaces] = usePageSetting(settingKey('decimalPlaces'), base.decimalPlaces)
+  const [topPickEnabled, setTopPickEnabled] = usePageSetting(settingKey('topPickEnabled'), base.topPickEnabled)
+  const [topPickDepth, setTopPickDepth] = usePageSetting(settingKey('topPickDepth'), base.topPickDepth)
+  const [topPickCount, setTopPickCount] = usePageSetting(settingKey('topPickCount'), base.topPickCount)
   const preferences: UsaMapPreferences = { ...base, sectorLevelEnabled, maxDepth, depthMetricEnabled, activeDepthMetric, depthMetricMinIndex, depthMetricMaxIndex, boxSizeMarketCapRatio, stockLabelEnabled, stockLabelModeIndex, decimalPlaces, topPickEnabled, topPickDepth, topPickCount }
   const update = (changes: Partial<UsaMapPreferences>) => {
     if ('sectorLevelEnabled' in changes) setSectorLevelEnabled(changes.sectorLevelEnabled!)

@@ -19,11 +19,11 @@ export function useOverseasClassificationData(market: OverseasMarket, sheet: Ove
   const publicCategories = useQuery({ queryKey: [routeSegment, 'categories'], enabled: !isDraft, queryFn: async () => (await client.get<OverseasCategory[]>(`/${routeSegment}/categories`)).data })
   const publicClassifications = useQuery({ queryKey: [routeSegment, 'classifications'], enabled: !isDraft, queryFn: async () => (await client.get<Record<string, OverseasClassification>>(`/${routeSegment}/classifications`)).data })
   const categories = isDraft
-    ? { data: draft.data?.categories, isLoading: draft.isLoading, isError: draft.isError, refetch: draft.refetch }
-    : { data: publicCategories.data, isLoading: publicCategories.isLoading, isError: publicCategories.isError, refetch: publicCategories.refetch }
+    ? { data: draft.data?.categories, isLoading: draft.isLoading, isError: draft.isError, isFetching: draft.isFetching, refetch: draft.refetch }
+    : { data: publicCategories.data, isLoading: publicCategories.isLoading, isError: publicCategories.isError, isFetching: publicCategories.isFetching, refetch: publicCategories.refetch }
   const classifications = isDraft
-    ? { data: draft.data?.classifications, isLoading: draft.isLoading, isError: draft.isError, refetch: draft.refetch }
-    : { data: publicClassifications.data, isLoading: publicClassifications.isLoading, isError: publicClassifications.isError, refetch: publicClassifications.refetch }
+    ? { data: draft.data?.classifications, isLoading: draft.isLoading, isError: draft.isError, isFetching: draft.isFetching, refetch: draft.refetch }
+    : { data: publicClassifications.data, isLoading: publicClassifications.isLoading, isError: publicClassifications.isError, isFetching: publicClassifications.isFetching, refetch: publicClassifications.refetch }
   // 편집이 끝나면 현재 모드의 데이터를 다시 받는다.
   const invalidate = () => queryClient.invalidateQueries({ queryKey: isDraft ? draftKey : [routeSegment] })
   return { categories, classifications, editBase: isDraft ? draftBase : null, invalidate }

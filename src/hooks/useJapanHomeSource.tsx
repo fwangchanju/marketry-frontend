@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
+import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import JapanDatePicker from '@/components/JapanDatePicker'
@@ -7,15 +10,16 @@ import japanStocks from '@/data/japanStocks.json'
 import type { OverseasHomeSource } from '@/hooks/overseasHomeSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
-import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
+import { buildJapanTree } from '@/utils/japanMap'
 import { JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP } from '@/utils/japanMapSettings'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { overseasMarketInfo } from '@/utils/markets'
 
 // 일본 서머리의 데이터·설정 — 공통 서머리 화면(OverseasHomeView)이 받는 모양으로 돌려준다.
 export function useJapanHomeSource(): OverseasHomeSource {
-  const categories = useQuery({ queryKey: ['japan', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/japan/categories')).data })
-  const classifications = useQuery({ queryKey: ['japan', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/japan/classifications')).data })
+  // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
+  const { sheet } = useOverseasSheet()
+  const { categories, classifications } = useOverseasClassificationData('JAPAN', sheet)
   const names = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data })
   // 날짜·기간은 지도·그래프와 같은 저장소를 쓴다(다른 화면에서 고른 기간이 이어진다).
   const times = useJapanSnapshotTimes()
@@ -53,7 +57,7 @@ export function useJapanHomeSource(): OverseasHomeSource {
     refreshHelp: JAPAN_REFRESH_HELP,
     fixed: JAPAN_MAP_FIXED,
     tabStorageName: 'JapanHome',
-    settingPrefix: JAPAN_MAP_SETTING_PREFIX,
+    settingPrefix: overseasSettingKey(JAPAN_MAP_SETTING_PREFIX, sheet),
     currencyUnit: '엔',
     shownCount: shownQuotes?.quotes.length ?? 0,
     totalCount: japanStocks.length,

@@ -35,7 +35,8 @@ export interface OverseasMapSource {
   defaultMaxDepth: number
   // 설정 화면이 없는 고정 값(색상·박스 글자 기준 등).
   fixed: { boxLabelMinAreaPercent: number; stockPopupOnHover: boolean; strongIndustryColor: string; colorScale: (typeof JAPAN_MAP_FIXED)['colorScale'] }
-  draftKeyMap: Readonly<Record<string, string>>
+  // 내 기준 모드에서만 준다 — MARKETRY 모드 설정은 브라우저에 바로 저장돼 저장 안 한 변경 점이 없다.
+  draftKeyMap?: Readonly<Record<string, string>>
   // 이 시장 지도 설정의 저장 이름 접두어('japan.map.'·'usa.map.') — 시가총액 범위처럼 기본값 묶음에 없는 설정의 저장 이름에 붙인다.
   settingPrefix: string
   tabStorageName: string

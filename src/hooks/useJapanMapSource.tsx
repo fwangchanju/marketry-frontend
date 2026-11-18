@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
+import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import JapanDatePicker from '@/components/JapanDatePicker'
@@ -10,15 +13,16 @@ import { flattenAllItems } from '@/hooks/useFilteredHeatmap'
 import { useJapanMapPreferences } from '@/hooks/useJapanMapPreferences'
 import { useJapanPeriodQuotes, useJapanPreviousTradingDay, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import { JAPAN_MAP_DRAFT_KEY_MAP, JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE } from '@/utils/japanMapSettings'
-import { buildJapanTree, excludePreviousCloseQuotes, findJapanCloseSnapshotTime, japanFilterQueryState, shouldFilterJapanQuotes, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
+import { buildJapanTree, excludePreviousCloseQuotes, findJapanCloseSnapshotTime, japanFilterQueryState, shouldFilterJapanQuotes } from '@/utils/japanMap'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { overseasMarketInfo } from '@/utils/markets'
 
 // 일본 지도의 데이터·설정 — 공통 지도 화면(OverseasMapView)이 받는 모양으로 돌려준다.
 // 일본은 5분마다 갱신되는 시세를 그리고, 장 중에는 전일 종가가 없는 종목을 지도에서 뺀다.
 export function useJapanMapSource(): OverseasMapSource {
-  const categories = useQuery({ queryKey: ['japan', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/japan/categories')).data })
-  const classifications = useQuery({ queryKey: ['japan', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/japan/classifications')).data })
+  // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
+  const { sheet } = useOverseasSheet()
+  const { categories, classifications } = useOverseasClassificationData('JAPAN', sheet)
   const names = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data })
   const snapshotTimes = useJapanSnapshotTimes()
   const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('JAPAN', snapshotTimes.data)
@@ -72,8 +76,8 @@ export function useJapanMapSource(): OverseasMapSource {
     levelLabels: ['대분류', '중분류', '소분류'],
     defaultMaxDepth: 3,
     fixed: JAPAN_MAP_FIXED,
-    draftKeyMap: JAPAN_MAP_DRAFT_KEY_MAP,
-    settingPrefix: JAPAN_MAP_SETTING_PREFIX,
+    draftKeyMap: sheet === 'MINE' ? JAPAN_MAP_DRAFT_KEY_MAP : undefined,
+    settingPrefix: overseasSettingKey(JAPAN_MAP_SETTING_PREFIX, sheet),
     tabStorageName: JAPAN_SETTINGS_TAB_STORAGE.map,
     totalCount: stocks.length,
     // 화면에 그려진 종목을 센다(미국과 같다) — 시가총액 범위처럼 종목을 거르는 설정이 개수에 반영된다.

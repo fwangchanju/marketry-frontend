@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
+import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import { countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
@@ -18,7 +21,7 @@ import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/h
 import type { HeatmapSectorNode } from '@/types/api'
 import { graphIndexValue, indexChangeRate, indexRange, intradayRateAt, shiftDate } from '@/utils/indexChange'
 import { JAPAN_GRAPH_DRAFT_KEY_MAP } from '@/utils/japanGraphSettings'
-import { buildJapanTree, type JapanCategory, type JapanClassification } from '@/utils/japanMap'
+import { buildJapanTree } from '@/utils/japanMap'
 import { JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE } from '@/utils/japanMapSettings'
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { overseasMarketInfo } from '@/utils/markets'
@@ -40,8 +43,9 @@ function minutesBefore(snapshotTime: string, minutes: number): string {
 // 일본 그래프의 데이터·설정 — 공통 그래프 화면(OverseasGraphView)이 받는 모양으로 돌려준다.
 // 일본은 5분마다 저장된 시세로 "N분 전 대비" 비교와 장중 지수(닛케이)를 쓴다.
 export function useJapanGraphSource(): OverseasGraphSource {
-  const categories = useQuery({ queryKey: ['japan', 'categories'], queryFn: async () => (await client.get<JapanCategory[]>('/japan/categories')).data })
-  const classifications = useQuery({ queryKey: ['japan', 'classifications'], queryFn: async () => (await client.get<Record<string, JapanClassification>>('/japan/classifications')).data })
+  // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
+  const { sheet } = useOverseasSheet()
+  const { categories, classifications } = useOverseasClassificationData('JAPAN', sheet)
   const names = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data })
   const snapshotTimes = useJapanSnapshotTimes()
   const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('JAPAN', snapshotTimes.data)
@@ -58,8 +62,8 @@ export function useJapanGraphSource(): OverseasGraphSource {
   const indexRate = indexSpan && indexCloses.data ? indexChangeRate(indexCloses.data, indexSpan.startDate, indexSpan.endDate) : null
   const { preferences, update } = useJapanGraphPreferences()
   // 시가총액 범위는 지도와 같은 저장 값을 쓴다(국내도 같은 분류의 지도·그래프가 값을 공유한다).
-  const tierRange = useOverseasTierRange(JAPAN_MAP_SETTING_PREFIX, '엔')
-  const sectorExclusion = useOverseasSectorExclusion(JAPAN_MAP_SETTING_PREFIX)
+  const tierRange = useOverseasTierRange(overseasSettingKey(JAPAN_MAP_SETTING_PREFIX, sheet), '엔')
+  const sectorExclusion = useOverseasSectorExclusion(overseasSettingKey(JAPAN_MAP_SETTING_PREFIX, sheet))
   const showDelta = rangeStart === null && preferences.graphMode === 'delta'
   const toggleGraph = () => update({ graphMode: showDelta ? 'current' : 'delta' })
   // N분 전 시세가 저장돼 있을 때만 비교한다. 없으면 비교 그래프는 데이터 없음으로 표시한다.
@@ -140,7 +144,7 @@ export function useJapanGraphSource(): OverseasGraphSource {
     sessionChip: <JapanSessionChip session={session} />,
     refreshHelp: JAPAN_REFRESH_HELP,
     fixed: JAPAN_MAP_FIXED,
-    draftKeyMap: JAPAN_GRAPH_DRAFT_KEY_MAP,
+    draftKeyMap: sheet === 'MINE' ? JAPAN_GRAPH_DRAFT_KEY_MAP : undefined,
     tabStorageName: JAPAN_SETTINGS_TAB_STORAGE.graph,
     totalCount: stocks.length,
     shownCount,
