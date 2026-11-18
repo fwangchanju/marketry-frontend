@@ -38,7 +38,7 @@ export default function OverseasSectorView({ source }: { source: OverseasSectorS
   const { data: session } = useSession()
   // 분류 편집은 내 기준(초안)에서만 한다. MARKETRY 모드는 운영 분류를 읽기만 한다.
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
-  const publishedAt = useOverseasPublishedAt(market)
+  const publishedAt = useOverseasPublishedAt(market, sheet)
   const canEdit = isAdminSession(session) && sheet === 'MINE'
   const { categories, classifications, editBase, invalidate } = useOverseasClassificationData(market, sheet)
   const endpoint = `${editBase}/categories`

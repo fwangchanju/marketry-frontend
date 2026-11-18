@@ -30,7 +30,7 @@ export default function OverseasPublishControls({ market }: { market: OverseasMa
       queryClient.invalidateQueries({ queryKey: [routeSegment, 'categories'] }),
       queryClient.invalidateQueries({ queryKey: [routeSegment, 'classifications'] }),
       queryClient.invalidateQueries({ queryKey: statusKey }),
-      queryClient.invalidateQueries({ queryKey: ['overseas-published-at', market] }),
+      queryClient.invalidateQueries({ queryKey: ['overseas-time', market] }),
     ])
   }
 

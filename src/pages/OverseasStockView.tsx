@@ -68,7 +68,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
   // MARKETRY 모드는 운영자가 제시하는 기준이라 모든 항목(종목명 한글·분류)이 수정 불가이고, 관리자는 내 기준 모드에서만 고친다.
   const isAdmin = isAdminSession(session)
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
-  const publishedAt = useOverseasPublishedAt(market)
+  const publishedAt = useOverseasPublishedAt(market, sheet)
   const canEdit = isAdmin && sheet === 'MINE'
   const queryClient = useQueryClient()
   const namesQuery = useQuery({ queryKey: NAMES_QUERY_KEY, queryFn: async () => (await client.get<Record<string, string>>(`/${routeSegment}/stock-names`)).data })
