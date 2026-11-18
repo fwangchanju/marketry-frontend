@@ -1,4 +1,5 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import { useUsaGicsClassifications } from '@/hooks/useUsaGicsClassifications'
 import { overseasMiddleLabel } from '@/utils/overseasMiddle'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import ChangeHistoryControls from '@/components/ChangeHistoryControls'
@@ -96,10 +97,11 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
   const isColumnShown = (key: SortKey) => columnWidths[WIDTH_KEY_BY_SORT_KEY[key]] !== undefined
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
+  const gicsQuery = useUsaGicsClassifications(modeKey === 'KRX')
   const rows = useMemo(() => {
     const capByCode = new Map((quotesQuery.data?.quotes ?? []).map(quote => [quote.stockCode, quote.totalMarketValue / unit.perEok]))
-    return stocks.map(stock => ({ ...stock, sector: yahooSectorKo(stock.sector), marketCapEok: capByCode.get(stock.code) ?? 0, name: namesQuery.data?.[stock.code] ?? stock.name, customSector: classificationsQuery.data?.[stock.code]?.sector ?? '', customIndustry: classificationsQuery.data?.[stock.code]?.industry ?? '', customSubIndustry: classificationsQuery.data?.[stock.code]?.subIndustry ?? '' }))
-  }, [stocks, namesQuery.data, classificationsQuery.data, quotesQuery.data, unit.perEok])
+    return stocks.map(stock => ({ ...stock, sector: modeKey === 'KRX' ? (classificationsQuery.data?.[stock.code]?.sector ?? '') : yahooSectorKo(stock.sector), marketCapEok: capByCode.get(stock.code) ?? 0, name: namesQuery.data?.[stock.code] ?? stock.name, customSector: modeKey === 'KRX' ? (classificationsQuery.data?.[stock.code]?.industry ?? '') : (classificationsQuery.data?.[stock.code]?.sector ?? ''), customIndustry: modeKey === 'KRX' ? (gicsQuery.data?.[stock.code]?.industry ?? '') : (classificationsQuery.data?.[stock.code]?.industry ?? ''), customSubIndustry: modeKey === 'KRX' ? (gicsQuery.data?.[stock.code]?.subIndustry ?? '') : (classificationsQuery.data?.[stock.code]?.subIndustry ?? '') }))
+  }, [stocks, namesQuery.data, classificationsQuery.data, gicsQuery.data, quotesQuery.data, unit.perEok, modeKey])
   const filtered = useMemo(() => {
     const matcher = createStockMatcher(search, (stock: (typeof rows)[number]) => ({ code: stock.code, name: stock.englishName || '', alias: stock.name, labels: [stock.sector, stock.customSector, stock.customIndustry, stock.customSubIndustry] }))
     return rows.filter(stock => !excluded.sector.has(stock.sector || '-') && !excluded.customSector.has(stock.customSector || '-') && !excluded.customIndustry.has(stock.customIndustry || '-') && !excluded.customSubIndustry.has(stock.customSubIndustry || '-') && matcher(stock)).sort((a, b) => {

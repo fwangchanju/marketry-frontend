@@ -3,18 +3,17 @@ import { test } from 'node:test'
 import { buildUsaGicsTree } from './usaGicsTree.ts'
 
 const gics = {
-  AAPL: { sector: 'Information Technology', industry: 'Tech Hardware', subIndustry: null },
-  MSFT: { sector: 'Information Technology', industry: 'Software', subIndustry: null },
-  JPM: { sector: 'Financials', industry: 'Banks', subIndustry: null },
-  XYZ: { sector: null, industry: null, subIndustry: null },
+  AAPL: { sector: 'Information Technology', industryGroup: 'Technology Hardware & Equipment', industry: 'Technology Hardware, Storage & Peripherals', subIndustry: 'Technology Hardware, Storage & Peripherals' },
+  MSFT: { sector: 'Information Technology', industryGroup: 'Software & Services', industry: 'Software', subIndustry: 'Application Software' },
+  JPM: { sector: 'Financials', industryGroup: 'Banks', industry: 'Banks', subIndustry: 'Diversified Banks' },
+  XYZ: { sector: null, industryGroup: null, industry: null, subIndustry: null },
 }
 
-test('섹터는 뿌리 분류, 산업은 섹터 아래 분류로 만든다', () => {
+test('1단계는 뿌리, 2단계는 그 아래 분류로 만든다(3·4단계는 없다)', () => {
   const { categories } = buildUsaGicsTree(gics)
-  const roots = categories.filter(c => c.parentId === null).map(c => c.name)
-  assert.deepEqual(roots, ['Financials', 'Information Technology'])
-  const software = categories.find(c => c.name === 'Software')
-  assert.equal(categories.find(c => c.id === software.parentId).name, 'Information Technology')
+  assert.deepEqual(categories.filter(c => c.parentId === null).map(c => c.name), ['Financials', 'Information Technology'])
+  assert.equal(categories.some(c => c.name === 'Application Software'), false)
+  assert.equal(categories.some(c => c.name === 'Software & Services'), true)
 })
 
 test('분류 id는 서로 겹치지 않는다', () => {
@@ -23,8 +22,8 @@ test('분류 id는 서로 겹치지 않는다', () => {
   assert.equal(new Set(ids).size, ids.length)
 })
 
-test('종목 분류는 섹터·산업을 그대로 옮기고, 값이 없는 종목도 빈 값으로 둔다', () => {
+test('종목 분류는 섹터와 산업그룹을 담고, 값이 없는 종목은 빈 값이다', () => {
   const { classifications } = buildUsaGicsTree(gics)
-  assert.deepEqual(classifications.AAPL, { sector: 'Information Technology', industry: 'Tech Hardware', subIndustry: null })
+  assert.deepEqual(classifications.MSFT, { sector: 'Information Technology', industry: 'Software & Services', subIndustry: null })
   assert.equal(classifications.XYZ.sector, null)
 })
