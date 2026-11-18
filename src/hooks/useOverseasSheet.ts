@@ -1,23 +1,31 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession } from '@/utils/adminAccess'
+import { useTaxonomySelection } from '@/hooks/useTaxonomySelection'
 
 export type OverseasSheet = 'MARKETRY' | 'MINE'
 
-// 일본·미국 종목·섹터 화면의 모드. 한국처럼 주소의 ?sheet=MINE이 "내 기준"이고, 내 기준은 관리자만 쓴다(일반 회원이 주소로 열어도 MARKETRY로 본다).
+// 일본·미국 화면의 모드(MARKETRY·내 기준). 한국 화면과 같은 브라우저 공통 선택을 쓰므로, 페이지와 시장을 옮겨도 고른 모드가 유지된다.
+// 주소의 ?sheet=MINE·MARKETRY는 그 모드로 고른 뒤 주소에서 지운다(한국 CustomPage와 같다).
+// 내 기준은 관리자만 쓴다. 일반 회원에게는 항상 MARKETRY로 보인다.
 export function useOverseasSheet() {
   const { data: session } = useSession()
   const [searchParams, setSearchParams] = useSearchParams()
+  const [selected, setSelected] = useTaxonomySelection()
   const canUseMine = isAdminSession(session)
-  const sheet: OverseasSheet = canUseMine && searchParams.get('sheet') === 'MINE' ? 'MINE' : 'MARKETRY'
-  const selectSheet = useCallback((next: OverseasSheet) => {
+  const explicit = searchParams.get('sheet')?.toUpperCase() ?? null
+  const urlChoice = explicit === 'MINE' || explicit === 'MARKETRY' ? explicit : null
+  useEffect(() => {
+    if (urlChoice === null) return
+    setSelected(urlChoice)
     setSearchParams(previous => {
       const params = new URLSearchParams(previous)
-      if (next === 'MINE') params.set('sheet', 'MINE')
-      else params.delete('sheet')
+      params.delete('sheet')
       return params
     }, { replace: true })
-  }, [setSearchParams])
+  }, [urlChoice, setSelected, setSearchParams])
+  const sheet: OverseasSheet = canUseMine && (urlChoice ?? selected) === 'MINE' ? 'MINE' : 'MARKETRY'
+  const selectSheet = useCallback((next: OverseasSheet) => setSelected(next), [setSelected])
   return { sheet, canUseMine, selectSheet }
 }

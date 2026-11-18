@@ -317,8 +317,6 @@ export default function CustomPage() {
             <SettingsPanel
               strongIndustryColor={mineStrongColor}
               pageLabel={mode === 'stock' ? 'Stock' : 'Sector'}
-              // 헤더 이름이 바뀌어도 고른 탭 기억(저장 이름표)은 예전 'Custom' 그대로 둔다.
-              tabStorageName="Custom"
               plainTabLabel={mode === 'stock' ? '종목' : '섹터'}
               customTabLabel={mode === 'stock' ? '종목' : '섹터'}
               plainTabIcon={mode === 'stock' ? 'stock-single' : 'industry'}
@@ -332,7 +330,7 @@ export default function CustomPage() {
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
               onRequestLogin={() => requireLogin(pathname)}
-              sectionOrder={isAdmin ? ['custom', 'adminOps'] : ['custom']}
+              sectionOrder={isAdmin && sheet === 'MINE' ? ['custom', 'adminOps'] : ['custom']}
               taxonomyAtBottom
               snapshotTime={taxonomyMap?.taxonomyUpdatedAt}
               taxonomy={sheet}
@@ -348,7 +346,7 @@ export default function CustomPage() {
                   </>
                 ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">[내 기준] 모드만 쓰기 가능</span></span></div>}
               </SettingsPanelGroup>
-              {isAdmin && <SettingsPanelGroup section="adminOps">
+              {isAdmin && sheet === 'MINE' && <SettingsPanelGroup section="adminOps">
                 <div className="settings-plain-content">
                   <div className="settings-ops-item h-[180px] text-sm">
                     <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
