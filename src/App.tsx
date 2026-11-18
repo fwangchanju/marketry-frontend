@@ -158,7 +158,7 @@ export default function App() {
         {/* 페이지 코드를 불러오는 동안의 화면. 전체화면 로딩원은 띄우지 않고 배경만 유지한다. */}
         <Suspense fallback={<div className="h-screen bg-ui-background" />}>
         <Routes>
-          <Route path="/" element={<Navigate to="/summary/korea" replace />} />
+          <Route path="/" element={<Navigate to="/map/korea" replace />} />
           <Route path="/summary/korea" element={<ResponsiveHomePage />} />
           <Route path="/summary/korea/kospi" element={<ResponsiveHomePage />} />
           <Route path="/summary/korea/kosdaq" element={<ResponsiveHomePage />} />
