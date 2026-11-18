@@ -1348,7 +1348,7 @@ function SettingsTaxonomySelector({
   return (
     <div data-settings-side-toggle-top-anchor={atBottom || undefined} style={atBottom ? { backgroundColor: TAXONOMY_BACKGROUND_COLOR } : undefined} className={`${atBottom ? 'shrink-0 border-t border-ui-border px-[22px] pt-3 pb-[calc(0.75rem_-_4px)]' : 'mb-6 pt-3 pb-6'} text-ui-white`}>
       <div className="grid h-6 grid-cols-3 items-center gap-[6px]">
-        <p data-map-select-title className="col-span-2 font-roboto-latin flex h-6 items-center whitespace-nowrap text-lg font-bold leading-none text-ui-white">
+        <p data-map-select-title className="col-span-2 font-roboto-latin flex h-6 items-center whitespace-nowrap uppercase text-lg font-bold leading-none text-ui-white">
         {/* 발표 자료의 제목 강조처럼 앞에 세로 막대를 하나 둔다. 색은 홈페이지 메인색(청록)이다. */}
         <span aria-hidden="true" className="mr-[6px] inline-block h-5 w-1 shrink-0 rounded-sm bg-brand" />
         {TAXONOMY_SELECT_TITLE}
