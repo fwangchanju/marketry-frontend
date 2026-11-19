@@ -7,7 +7,7 @@ import client from '@/api/client'
 import JapanDatePicker from '@/components/JapanDatePicker'
 import JapanSessionChip from '@/components/JapanSessionChip'
 import japanStocks from '@/data/japanStocks.json'
-import type { OverseasHomeSource } from '@/hooks/overseasHomeSource'
+import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import { buildJapanTree } from '@/utils/japanMap'
@@ -15,8 +15,8 @@ import { JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP } from '@
 import { japanSessionAt } from '@/utils/japanMarketSession'
 import { overseasMarketInfo } from '@/utils/markets'
 
-// 일본 서머리의 데이터·설정 — 공통 서머리 화면(OverseasHomeView)이 받는 모양으로 돌려준다.
-export function useJapanHomeSource(): OverseasHomeSource {
+// 일본 서머리의 데이터·설정 — 공통 서머리 화면(OverseasSummaryView)이 받는 모양으로 돌려준다.
+export function useJapanSummarySource(): OverseasSummarySource {
   // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
   const { sheet } = useOverseasSheet()
   const { categories, classifications } = useOverseasClassificationData('JAPAN', sheet)

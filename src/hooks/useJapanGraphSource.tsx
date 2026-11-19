@@ -10,7 +10,7 @@ import client from '@/api/client'
 import JapanDatePicker from '@/components/JapanDatePicker'
 import JapanSessionChip from '@/components/JapanSessionChip'
 import type { RankColumnItem } from '@/components/RankColumns'
-import { SettingsAverageModeSection, SettingsBeforeMinutesSection, SettingsGroupDepthSection } from '@/components/SettingsPanel'
+import { SettingsAverageModeSection, SettingsBeforeMinutesSection, SettingsGraphDepthSection } from '@/components/SettingsPanel'
 import stocks from '@/data/japanStocks.json'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
@@ -154,7 +154,7 @@ export function useJapanGraphSource(): OverseasGraphSource {
     currencyUnit: '엔',
     graphSettings: (
       <>
-        <SettingsGroupDepthSection depth={preferences.groupDepth} onChange={groupDepth => update({ groupDepth })} selectableDepth={3} />
+        <SettingsGraphDepthSection depth={preferences.groupDepth} onChange={groupDepth => update({ groupDepth })} selectableDepth={3} />
         <SettingsAverageModeSection avgChangeRateUseSimple={preferences.avgChangeRateUseSimple} onChange={avgChangeRateUseSimple => update({ avgChangeRateUseSimple })} enabled={!showDelta} onToggle={toggleGraph} />
         <SettingsBeforeMinutesSection beforeMinutes={preferences.beforeMinutes} onChange={beforeMinutes => update({ beforeMinutes })} enabled={showDelta} onToggle={toggleGraph} />
       </>

@@ -10,7 +10,7 @@ export interface MobileGraphItem {
   onSelect?: () => void
 }
 
-// PC 홈의 가로 순위 막대처럼 절댓값을 길이로, 부호는 숫자와 색으로 표시한다.
+// PC 서머리의 가로 순위 막대처럼 절댓값을 길이로, 부호는 숫자와 색으로 표시한다.
 export default function MobileGraphBars({ items, colorScale, highlightColor }: {
   items: MobileGraphItem[]
   colorScale: ColorScaleConfig

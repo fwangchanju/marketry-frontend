@@ -4,8 +4,8 @@ import { usePersistedState } from './usePersistedState'
 import { marketFromRouteSegment } from '@/utils/marketRoute'
 import type { MarketQuery } from '@/types/api'
 
-// 마켓 우선순위: 경로 세그먼트(/map|group/kospi 등) > 홈의 ?market= > 세션스토리지 저장값 > 기본값.
-// 홈에서만 마켓 쿼리를 쓴다. 지도·그래프 경로는 경로 세그먼트가 우선한다.
+// 마켓 우선순위: 경로 세그먼트(/map|graph/kospi 등) > 서머리의 ?market= > 세션스토리지 저장값 > 기본값.
+// 서머리에서만 마켓 쿼리를 쓴다. 지도·그래프 경로는 경로 세그먼트가 우선한다.
 //
 // usePersistedState(key, routeMarket ?? defaultMarket)처럼 우선순위를 initialValue 하나로 욱여넣으면
 // 안 된다 — sessionStorage에 저장값이 있으면 그 값이 initialValue를 이기므로(usePersistedState.ts:17-20)
@@ -24,7 +24,7 @@ export function useRouteAwareMarket(
   const routeMarket = parts[1] === 'summary'
     ? marketFromRouteSegment(parts[3])
     : marketFromRouteSegment(parts[2] === 'korea' && parts[3] ? parts[3] : parts[2])
-  // 모바일 홈에서 전체/코스피/코스닥을 바꿀 때는 같은 /summary 화면에서 쿼리만 바꾼다.
+  // 모바일 서머리에서 전체/코스피/코스닥을 바꿀 때는 같은 /summary 화면에서 쿼리만 바꾼다.
   // 다른 화면에서는 기존처럼 경로가 저장값보다 우선한다.
   const requestedMarket = pathname === '/summary/korea' ? new URLSearchParams(search).get('market') : null
   const queryMarket = requestedMarket === 'KOSPI' || requestedMarket === 'KOSDAQ' || requestedMarket === 'ALL_STOCK'

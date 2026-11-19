@@ -139,13 +139,13 @@ export default function ReadOnlyTaxonomySheet({ mode, data, isLoading, isError, 
     return mode === 'stock' ? rows.filter(row => row.stocks.length > 0) : rows
   }, [data, mode])
 
-  // 지도·그룹 페이지처럼 불러오지 못했을 때는 큰 원 안에 안내 글을 가운데에 보여준다(원은 모든 페이지 공통 자리 MainAreaLoading에 둔다).
+  // 지도·그래프 페이지처럼 불러오지 못했을 때는 큰 원 안에 안내 글을 가운데에 보여준다(원은 모든 페이지 공통 자리 MainAreaLoading에 둔다).
   if (isError) {
     return (
       <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={onRetry} /></MainAreaLoading>
     )
   }
-  // 지도·그룹 페이지처럼 화면 한가운데에 크게 보여준다.
+  // 지도·그래프 페이지처럼 화면 한가운데에 크게 보여준다.
   if (isLoading || (mode === 'stock' && isCatalogLoading)) {
     return (
       <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>

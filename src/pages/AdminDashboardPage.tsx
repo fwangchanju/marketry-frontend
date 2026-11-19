@@ -36,7 +36,7 @@ const VISITOR_SOURCE_LABELS = { NAVER: '네이버', GOOGLE: '구글', DIRECT: '�
 const DASHBOARD_PAGE_LABELS: Record<string, string> = { HOME: 'Home', MAP: 'Map', GRAPH: 'Graph', CUSTOM: 'Custom' }
 const FREQUENCY_BAR_CLASSES = ['bg-ui-muted', 'bg-[var(--brand)]/35', 'bg-[var(--brand)]/50', 'bg-[var(--brand)]/85', 'bg-[var(--brand)]']
 
-// 관리자 전용 대시보드 — 회원 명단(/admin/member)과 떨어뜨려 회원 이용 현황을 작은 차트 여러 개로 모아 본다(홈 화면의 틀처럼 한 칸에 차트 하나).
+// 관리자 전용 대시보드 — 회원 명단(/admin/member)과 떨어뜨려 회원 이용 현황을 작은 차트 여러 개로 모아 본다(서머리 화면의 틀처럼 한 칸에 차트 하나).
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다.
 export default function AdminDashboardPage() {
   const { data: session, isLoading } = useSession()

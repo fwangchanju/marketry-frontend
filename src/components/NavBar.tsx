@@ -12,7 +12,7 @@ import { displayEmail } from '@/utils/displayEmail'
 import ActiveBannerSlot from '@/components/ActiveBannerSlot'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
-// 모든 페이지에서 항상 똑같이 고정되는 최상단 바 — 홈 이동과 로그인 상태/프로필 메뉴를 담당한다.
+// 모든 페이지에서 항상 똑같이 고정되는 최상단 바 — 첫 화면 이동과 로그인 상태/프로필 메뉴를 담당한다.
 // 로그인 버튼은 NavSubBar 우측 "일괄변경"류 accent 버튼(nes-btn + var(--accent))과 같은 톤을 쓰고,
 // 로그인한 사용자는 우측 아바타에서 계정 메뉴를 연다.
 // 오류에는 UI 상태색을 쓰고 등락률 데이터색과 구분한다.

@@ -16,7 +16,7 @@ const SESSION_DOT_COLOR: Record<TradingSession, string> = {
   '마켓 종료': accentColor('연회색'),
 }
 
-// 지도·그룹 페이지가 같은 시간대 문구와 강조 색상을 사용한다.
+// 지도·그래프 페이지가 같은 시간대 문구와 강조 색상을 사용한다.
 // session을 주면 지금 시간대 대신 그 시간대를 보여준다(종가 지도를 보는 동안은 "마켓 종료").
 export function TradingSessionIndicator({ session: sessionOverride }: { session?: TradingSession }) {
   const currentSession = useTradingSession()

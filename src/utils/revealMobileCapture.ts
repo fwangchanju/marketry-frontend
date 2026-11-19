@@ -1,4 +1,4 @@
-// keepPageLabel: K-STOCK 배지 위의 페이지 라벨(MAP)을 남긴다(텔레그램 판·스크린샷 창 모두, 홈 판의 HOME과 같은 모양). false를 주면 숨긴다.
+// keepPageLabel: K-STOCK 배지 위의 페이지 라벨(MAP)을 남긴다(텔레그램 판·스크린샷 창 모두, 서머리 판의 SUMMARY과 같은 모양). false를 주면 숨긴다.
 export function revealMobileCapture(cloned: Node, keepPageLabel = true) {
   if (!(cloned instanceof Element)) return
   const mobileFrame = cloned.querySelector<HTMLElement>('[data-map-mobile-capture-frame]')
@@ -9,8 +9,8 @@ export function revealMobileCapture(cloned: Node, keepPageLabel = true) {
   const toolbarRight = cloned.querySelector<HTMLElement>('.main-toolbar > div:last-child')
   if (mobileCapture && toolbarLeft) {
     const toolbar = document.createElement('div')
-    toolbar.className = 'main-toolbar home-capture-toolbar relative mt-[3px] mb-0 flex h-7 w-full shrink-0 items-center overflow-hidden bg-ui-background/70 text-sm font-bold text-ui-white'
-    // 복제본에 새로 넣는 요소는 클래스 스타일이 적용되지 않으므로 홈 판 툴바와 같은 위치·정렬은 인라인으로 준다.
+    toolbar.className = 'main-toolbar summary-capture-toolbar relative mt-[3px] mb-0 flex h-7 w-full shrink-0 items-center overflow-hidden bg-ui-background/70 text-sm font-bold text-ui-white'
+    // 복제본에 새로 넣는 요소는 클래스 스타일이 적용되지 않으므로 서머리 판 툴바와 같은 위치·정렬은 인라인으로 준다.
     toolbar.style.marginTop = '3px'
     toolbar.style.height = '28px'
     toolbar.style.alignItems = 'center'
@@ -18,7 +18,7 @@ export function revealMobileCapture(cloned: Node, keepPageLabel = true) {
     leftContent.style.minWidth = '0'
     leftContent.style.overflow = 'hidden'
     // 화면·브라우저 캡처·DOM 이미지 복제에서 첫 배지 폭을 동일하게 유지한다.
-    // 복제 후 새 툴바에 끼운 노드는 .home-capture-toolbar 규칙이 이미지 렌더러에 적용되지 않을 수 있다.
+    // 복제 후 새 툴바에 끼운 노드는 .summary-capture-toolbar 규칙이 이미지 렌더러에 적용되지 않을 수 있다.
     const modeBadge = leftContent.querySelector<HTMLElement>('.toolbar-mode-badge')
     if (modeBadge) {
       // 화면의 시장 배지 폭(110px)과 같게 둔다. 100px이면 NIKKEI 225(글자 82px)가 꺽쇠와 여유 없이 붙어 캡처에서 잘린다.

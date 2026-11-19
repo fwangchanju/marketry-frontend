@@ -16,7 +16,7 @@ import { isAdminSession } from '@/utils/adminAccess'
 // 관리자 전용 페이지 — 모든 사용자가 보는 MARKETRY 맵을 바꾸는 작업을 일반 작업 화면(Custom)과 떨어뜨려 둔다.
 // 메인 영역은 회원 정보 조회. 운영 기능은 Custom, 미사용 설정은 Map의 관리자 전용 탭에 있다.
 // 화면에서 숨기는 것과 별개로 서버도 /api/admin/** 을 ADMIN만 허용한다. 관리자가 아니면 안내 문구만 보여 준다
-// (자동으로 홈으로 보내면 로그인이 끝나기 전에 잘못 쫓겨날 수 있다).
+// (자동으로 서머리로 보내면 로그인이 끝나기 전에 잘못 쫓겨날 수 있다).
 export default function AdminPage() {
   const { data: session, isLoading } = useSession()
   const isAdmin = isAdminSession(session)

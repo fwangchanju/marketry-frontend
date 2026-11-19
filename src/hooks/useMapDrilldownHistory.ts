@@ -159,7 +159,7 @@ export function useMapSectorEntry({
   const leaveToEntryPage = useLeaveToEntryPage()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // 그룹 페이지에서 업종을 눌러 온 주소(?sector=이름) — 데이터가 준비되면 그 업종을 누른 상태로 열고 주소에서 지운다.
+  // 그래프 페이지에서 업종을 눌러 온 주소(?sector=이름) — 데이터가 준비되면 그 업종을 누른 상태로 열고 주소에서 지운다.
   // 못 찾으면 안내한다. 개발 모드의 효과 두 번 실행에도 안내창이 한 번만 뜨게, 안내한 이름을 기억해 둔다.
   const sectorParam = searchParams.get('sector')
   const noticedSectorRef = useRef<string | null>(null)
@@ -169,7 +169,7 @@ export function useMapSectorEntry({
       return
     }
     if (filteredRootNodes.length === 0) return
-    // 그룹 페이지에서 들어온 칸은 단계별로 기록을 쌓지 않고 그 자체를 기준 칸으로 삼는다 — 뒤로가기를 한 번 누르면 바로 그룹으로 돌아간다.
+    // 그래프 페이지에서 들어온 칸은 단계별로 기록을 쌓지 않고 그 자체를 기준 칸으로 삼는다 — 뒤로가기를 한 번 누르면 바로 그래프로 돌아간다.
     // (지금보다 더 깊은 경로로 들어갈 때만 — 깊이가 같거나 얕으면 새 칸이 필요 없다.)
     const entered = enterSector(sectorParam)
     markEntryFromOtherPage(entered !== null && entered.length > pathLength)

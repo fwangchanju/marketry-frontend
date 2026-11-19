@@ -6,7 +6,7 @@
 | 영역 | 바탕색 | 화면 위치 | 코드 |
 |---|---|---|---|
 | **상단 영역** | `#1a1a1a` (어두운 중립 회색) | 맨 위. 로고 줄, Home · Map · Graph · Custom 메뉴 줄(글자 앞에 설정창과 같은 아이콘), 오른쪽 끝 버튼(스크린샷·전체 화면·설정) | `NavBar`, `NavSubBar` |
-| **메인 영역** | `#0a0a0a` (거의 검정) | 가운데. 페이지마다 다르다(Map은 히트맵, Graph는 막대 그래프, Custom은 표). 화면 스크린샷은 메인 영역만 찍는다. | `src/pages/MapPage.tsx`, `GroupPage.tsx`, `CustomPage.tsx` |
+| **메인 영역** | `#0a0a0a` (거의 검정) | 가운데. 페이지마다 다르다(Map은 히트맵, Graph는 막대 그래프, Custom은 표). 화면 스크린샷은 메인 영역만 찍는다. | `src/pages/MapPage.tsx`, `GraphPage.tsx`, `CustomPage.tsx` |
 | **사이드 영역** (설정창·정보 패널) | `#2a2a2a` (중립 회색) | 옆에 붙은 설정·정보 영역. 이동 버튼으로 왼쪽과 오른쪽을 바꿀 수 있고 접을 수도 있다. | `SettingsPanel`, `PageInfoPanel` |
 
 - 영역을 구분할 때는 바탕색을 기준으로 한다. 색이 같은 줄은 같은 영역이다.
@@ -76,7 +76,7 @@
 | 사각형으로 쪼갠 지도 그림 | `Heatmap` | 히트맵 |
 | MARKETRY / 거래소 / 내 기준 선택 | `Taxonomy` (`TaxonomyKey`, `useTaxonomySelection`, `SettingsTaxonomySelector`) | **Mode** (설정창 제목) |
 | 분류 값 | `MARKETRY` · `KRX` · `MINE` · `NXT` | MARKETRY · 거래소 · 내 기준 |
-| 페이지 | `MapPage` · `GroupPage` · `CustomPage` | Map · Graph · Custom (`GroupPage`의 화면 이름이 Graph, 주소는 `/graph`) |
+| 페이지 | `MapPage` · `GraphPage` · `CustomPage` | Map · Graph · Custom (그래프 화면의 주소는 `/graph`) |
 | 일본 페이지 | `JapanMapPage` · `JapanGraphPage` · `JapanSectorPage` · `JapanStockPage` | 주소는 `/map/japan`·`/graph/japan`·`/sector/japan`·`/stock/japan`. 특별 회원과 관리자만 보며 메뉴 항목은 보라색이다. 조회는 `/api/japan/**`, 수정은 관리자만 `/api/admin/**`로 한다 |
 | 상단 영역의 메뉴 줄 | `NavSubBar` | 메뉴 줄 |
 | 상단 영역 메뉴(Home·Map·Graph·Sector·Stock·Admin)는 누르면 해당 페이지로 바로 이동한다. 하위 목록은 두지 않으며, 시장과 어드민 하위 화면은 좌상단 배지 목록에서 고른다 | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |

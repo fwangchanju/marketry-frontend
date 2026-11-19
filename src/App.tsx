@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react'
-import OverseasHomePage from './pages/OverseasHomePage'
+import OverseasSummaryPage from './pages/OverseasSummaryPage'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
-import MobileHomePage from './pages/MobileHomePage'
+import MobileSummaryPage from './pages/MobileSummaryPage'
 import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
 import HoverHintLayer from './components/HoverHintLayer'
@@ -16,11 +16,11 @@ import { useSession } from './hooks/useSession'
 import { isAdminSession } from './utils/adminAccess'
 import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
 
-// 화면별로 코드를 나눠 받는다. 모바일 홈·지도는 첫 화면이라 바로 번들에 두고,
+// 화면별로 코드를 나눠 받는다. 모바일 서머리·지도는 첫 화면이라 바로 번들에 두고,
 // PC 전용·관리자·글 페이지는 해당 주소를 열 때만 내려받는다.
 const MarketSummaryPage = lazy(() => import('./pages/MarketSummaryPage'))
 const MapPage = lazy(() => import('./pages/MapPage'))
-const GroupPage = lazy(() => import('./pages/GroupPage'))
+const GraphPage = lazy(() => import('./pages/GraphPage'))
 const CustomPage = lazy(() => import('./pages/CustomPage'))
 const JapanStockPage = lazy(() => import('./pages/JapanStockPage'))
 const JapanSectorPage = lazy(() => import('./pages/JapanSectorPage'))
@@ -104,17 +104,17 @@ function AdminRouteGuard() {
   return isAdminSession(session) ? <Outlet /> : <Navigate to="/summary/korea" replace />
 }
 
-function ResponsiveHomePage() {
+function ResponsiveSummaryPage() {
   const isNarrow = useIsNarrowScreen()
   const [searchParams] = useSearchParams()
-  // 모바일의 업종 지도는 홈 주소에 ?map을 붙여 연다(PC 홈은 이 값을 읽지 않는다).
+  // 모바일의 업종 지도는 서머리 주소에 ?map을 붙여 연다(PC 서머리는 이 값을 읽지 않는다).
   if (isNarrow && searchParams.has('map')) return <MobileMarketSummaryPage mode="sector" />
-  return isNarrow ? <MobileHomePage /> : <MarketSummaryPage />
+  return isNarrow ? <MobileSummaryPage /> : <MarketSummaryPage />
 }
 
 function ResponsiveGraphPage() {
   const isNarrow = useIsNarrowScreen()
-  return isNarrow ? <MobileMarketSummaryPage mode="graph" /> : <GroupPage />
+  return isNarrow ? <MobileMarketSummaryPage mode="graph" /> : <GraphPage />
 }
 
 function ResponsiveMapPage() {
@@ -122,7 +122,7 @@ function ResponsiveMapPage() {
   return isNarrow ? <MobileMarketSummaryPage mode="stock" /> : <MapPage />
 }
 
-// 모바일(폭 768px 미만)에서는 홈·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
+// 모바일(폭 768px 미만)에서는 서머리·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
 // 글 페이지(/info 아래의 가이드·개인정보처리방침·데이터·약관·문의)는 모바일 틀(MobileDocumentShell)이 있어 모바일에서도 열린다.
 function isMobileOpenPath(pathname: string) {
   return pathname === '/info' || pathname.startsWith('/info/')
@@ -165,9 +165,9 @@ export default function App() {
         <Suspense fallback={<div className="h-screen bg-ui-background" />}>
         <Routes>
           <Route path="/" element={<Navigate to="/map/korea" replace />} />
-          <Route path="/summary/korea" element={<ResponsiveHomePage />} />
-          <Route path="/summary/korea/kospi" element={<ResponsiveHomePage />} />
-          <Route path="/summary/korea/kosdaq" element={<ResponsiveHomePage />} />
+          <Route path="/summary/korea" element={<ResponsiveSummaryPage />} />
+          <Route path="/summary/korea/kospi" element={<ResponsiveSummaryPage />} />
+          <Route path="/summary/korea/kosdaq" element={<ResponsiveSummaryPage />} />
           {/* 옛 주소 이동은 구글·네이버에 등록돼 있던 주소(/home, /map|graph/kospi|kosdaq)에만 둔다(사용자 결정 2026-11-15, 회원이 없어 그 밖의 옛 주소는 살릴 이유가 없다). 쿼리는 붙여서 보낸다(텔레그램 캡처 ?capture=mobile 등). */}
           <Route path="/home" element={<RedirectKeepingQuery to="/summary/korea" />} />
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
@@ -194,7 +194,7 @@ export default function App() {
             <Route path={SECTOR_USA} element={<UsaSectorPage />} />
             <Route path={STOCK_USA} element={<UsaStockPage />} />
             {/* 해외 시장의 서머리 — 시장 목록표(markets.ts)에서 만든다. 지도·그래프·섹터·주식은 시장별 화면이라 아래에 따로 둔다(2단계에서 공통 화면으로 합칠 예정). */}
-            {OVERSEAS_MARKETS.map(market => <Route key={market.id} path={overseasRoute('/summary', market.id)} element={<OverseasHomePage market={market.id} />} />)}
+            {OVERSEAS_MARKETS.map(market => <Route key={market.id} path={overseasRoute('/summary', market.id)} element={<OverseasSummaryPage market={market.id} />} />)}
             <Route path="/map/japan" element={<JapanMapPage />} />
             <Route path="/graph/japan" element={<JapanGraphPage />} />
             <Route path="/graph/usa" element={<UsaGraphPage />} />

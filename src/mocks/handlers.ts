@@ -88,7 +88,7 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 
-  // ── 대시보드(시장요약, 홈 화면이 지수 등락률만 쓴다) ────────────────────────────────
+  // ── 대시보드(시장요약, 서머리 화면이 지수 등락률만 쓴다) ────────────────────────────────
   http.get('/api/summary', () => HttpResponse.json({
     marketOverviews: snapshot(data.marketOverviews),
     marketOverviewTrends: data.marketOverviewTrends,

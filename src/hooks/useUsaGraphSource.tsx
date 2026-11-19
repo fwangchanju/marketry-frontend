@@ -10,7 +10,7 @@ import client from '@/api/client'
 import UsaDatePicker from '@/components/UsaDatePicker'
 import UsaSessionChip from '@/components/UsaSessionChip'
 import type { RankColumnItem } from '@/components/RankColumns'
-import { SettingsAverageModeSection, SettingsBeforeMinutesSection, SettingsGroupDepthSection } from '@/components/SettingsPanel'
+import { SettingsAverageModeSection, SettingsBeforeMinutesSection, SettingsGraphDepthSection } from '@/components/SettingsPanel'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaGraphPreferences } from '@/hooks/useUsaGraphPreferences'
@@ -115,7 +115,7 @@ export function useUsaGraphSource(): OverseasGraphSource {
     currencyUnit: '달러',
     graphSettings: (
       <>
-        <SettingsGroupDepthSection depth={preferences.groupDepth} onChange={groupDepth => update({ groupDepth })} selectableDepth={2} />
+        <SettingsGraphDepthSection depth={preferences.groupDepth} onChange={groupDepth => update({ groupDepth })} selectableDepth={2} />
         <SettingsAverageModeSection avgChangeRateUseSimple={preferences.avgChangeRateUseSimple} onChange={avgChangeRateUseSimple => update({ avgChangeRateUseSimple })} enabled onToggle={ignoreToggle} toggleDisabled toggleDisabledHint={<>종가만 저장되는 시장이라<br />N분 전 대비로 바꿀 수 없습니다.</>} />
         {/* 일본 그래프와 같은 "비교 시점" 항목이지만, 미국은 하루 한 번 저장된 종가만 있어 쓸 수 없다 — 등락률 색상 고정 항목처럼 잠가 둔다. */}
         <SettingsBeforeMinutesSection beforeMinutes={USA_BEFORE_MINUTES_PLACEHOLDER} onChange={ignoreToggle} enabled={false} onToggle={ignoreToggle} lockedReason={<>종가만 저장되는 시장이라<br />N분 전 대비를 사용할 수 없습니다.</>} />

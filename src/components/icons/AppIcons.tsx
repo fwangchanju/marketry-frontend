@@ -280,8 +280,8 @@ export function SmartphoneIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-// 홈 요약의 세 항목 중 하나를 고르는 캡처 아이콘 — 같은 크기의 칸 세 개가 붙어 있고 선택한 칸만 채운다.
-export function HomeFrameCaptureIcon({ selectedSlot, ...props }: SVGProps<SVGSVGElement> & { selectedSlot: 0 | 1 | 'all' }) {
+// 서머리의 세 항목 중 하나를 고르는 캡처 아이콘 — 같은 크기의 칸 세 개가 붙어 있고 선택한 칸만 채운다.
+export function SummaryFrameCaptureIcon({ selectedSlot, ...props }: SVGProps<SVGSVGElement> & { selectedSlot: 0 | 1 | 'all' }) {
   const filledSlots = selectedSlot === 'all' ? [0, 1] : [selectedSlot]
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={0.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>

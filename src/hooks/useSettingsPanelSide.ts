@@ -3,7 +3,7 @@ import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 
 const SIDE_SLIDE_MS = 500
 
-// 설정창을 화면 왼쪽에 붙일지 — 지도·그룹 페이지가 같은 값을 공유하는 이 브라우저만의 화면 취향이다(저장 키 하나).
+// 설정창을 화면 왼쪽에 붙일지 — 지도·그래프 페이지가 같은 값을 공유하는 이 브라우저만의 화면 취향이다(저장 키 하나).
 // 반환하는 rowRef를 설정창과 지도 줄이 함께 들어 있는 한 줄(flex)에 붙이면, 좌우를 바꿀 때 설정창과 지도가 서로 자리를 옮기며 미끄러진다.
 export function useSettingsPanelSide() {
   const [isOnLeft, setIsOnLeft] = useLocalPersistedState('settings-panel-on-left', false)

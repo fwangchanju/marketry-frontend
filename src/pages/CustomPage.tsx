@@ -64,7 +64,7 @@ export default function CustomPage() {
   const explicitSheet =
     sheetParam === 'KRX' || sheetParam === 'NXT' ? 'KRX' : sheetParam === 'MARKETRY' || sheetParam === 'MINE' ? sheetParam : sheetParam === 'MYMAP' ? 'MINE' : null
   const chosenSheet = explicitSheet ?? selectedTaxonomy
-  // 내 분류는 로그인이 필요하다 — 비로그인에게는 MARKETRY로 보이고, 브라우저에 저장한 선택 자체는 보존한다(지도·그룹 페이지와 같다).
+  // 내 분류는 로그인이 필요하다 — 비로그인에게는 MARKETRY로 보이고, 브라우저에 저장한 선택 자체는 보존한다(지도·그래프 페이지와 같다).
   const sheet = isGuestKnown && chosenSheet === 'MINE' ? 'MARKETRY' : chosenSheet
   const isReadOnlySheet = sheet !== 'MINE'
   const [sectorSettingsActionsTarget, setSectorSettingsActionsTarget] = useState<HTMLDivElement | null>(null)

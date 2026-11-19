@@ -8,7 +8,7 @@ interface Props {
   // 설정 창이 없는 화면(커스텀 종목·카테고리)은 둘 다 넘기지 않는다 — 그러면 설정 버튼도 그리지 않는다.
   onToggleSettings?: () => void
   isSettingsOpen?: boolean
-  // 스크린샷으로 찍을 화면이 없는 페이지(홈)는 둘 다 넘기지 않는다 — 그러면 스크린샷 버튼도 그리지 않는다.
+  // 스크린샷으로 찍을 화면이 없는 페이지(정보 글 페이지 등)는 둘 다 넘기지 않는다 — 그러면 스크린샷 버튼도 그리지 않는다.
   onOpenShare?: () => void
   isScreenshotOpen?: boolean
   isNativeFullscreen: boolean

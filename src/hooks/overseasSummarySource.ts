@@ -4,9 +4,9 @@ import type { HeatmapSectorNode } from '@/types/api'
 import type { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
 import type { OverseasMarket } from '@/utils/markets'
 
-// 해외 시장 서머리(OverseasHomeView)가 시장마다 다른 부분을 받는 모양. 시장별 훅(useJapanHomeSource·useUsaHomeSource)이 이 모양으로 돌려준다.
+// 해외 시장 서머리(OverseasSummaryView)가 시장마다 다른 부분을 받는 모양. 시장별 훅(useJapanSummarySource·useUsaSummarySource)이 이 모양으로 돌려준다.
 // 새 시장(대만 등)은 같은 모양의 훅 하나를 만들면 된다 — 화면 구성은 공통 화면이 한다.
-export interface OverseasHomeSource {
+export interface OverseasSummarySource {
   market: OverseasMarket
   // 툴바 배지 글자(시장 목록표의 배지 글자).
   label: string
