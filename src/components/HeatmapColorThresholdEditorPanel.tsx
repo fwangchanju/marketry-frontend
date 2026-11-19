@@ -1,20 +1,16 @@
 import { useRef } from 'react'
-import { SlidingHighlight } from '@/components/SlidingHighlight'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { BAR_MAX_PERCENT, BAR_MIN_PERCENT, BAR_TICKS, percentToPosition, positionToPercent } from '@/utils/thresholdBar'
 
 // 색은 고르는 것이 아니라 정해져 있다 — 하락은 파랑, 보합(0%)은 회색, 상승은 빨강이고 구간 순서대로 명도가 올라간다(heatmapColorScale.fixedRankColor).
-// 0%(보합)는 고칠 값이 없어 선택 버튼과 막대의 0% 표식을 두지 않는다(2026-11-19 사용자 결정). 편집하는 쪽은 상승·하락 둘뿐이다.
-const CHIP_LABEL = { down: '하락', up: '상승' } as const
-
-type BarSide = 'up' | 'down'
+// 0%(보합)는 고칠 값이 없어 선택 버튼과 막대의 0% 표식을 두지 않는다. 상승/하락 선택 버튼도 두지 않는다 — 하락 값은 상승 값의 거울이라 어느 쪽을 골라도 고치는 값이 같다(2026-11-19 사용자 결정).
+// 막대 하나를 위아래 절반으로 나눠 위는 상승색, 아래는 하락색 그라데이션을 보여 준다.
 
 interface ThresholdBarProps {
   // 상승·하락 구간의 경계와 색(작은 값부터, 하락은 절댓값) — 막대의 손잡이 하나가 구간 하나다. 하락 값은 상승 값의 거울이다.
   positive: { percent: number; color: string }[]
   negative: { percent: number; color: string }[]
-  // 편집 중인 칸이 상승/하락 중 어디인지와 몇 번째 구간인지.
-  side: BarSide
+  // 편집 중인 손잡이(구간)의 순서.
   selectedRank: number | null
   zeroColor: string
   onChangeRankPercent: (rank: number, percent: number) => void
@@ -24,24 +20,25 @@ interface ThresholdBarProps {
 // 등락률 막대 — 0~30%를 제곱근 눈금으로 그리고 손잡이를 끌어 구간 경계를 정한다(손잡이는 이웃을 넘지 못하고 정수로 움직인다).
 // 하락 구간은 같은 값의 거울로 자동 적용된다.
 // 선택하지 않은 손잡이를 누르면 그 구간을 고르고, 선택한 손잡이는 끌거나 ←→ 키로 1씩 옮긴다.
-function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onChangeRankPercent, onSelectRank }: ThresholdBarProps) {
+function ThresholdBar({ positive, negative, selectedRank, zeroColor, onChangeRankPercent, onSelectRank }: ThresholdBarProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   // 끌고 있는 손잡이의 순서 — 선택하지 않은 손잡이를 눌러도 같은 클릭에서 바로 끌 수 있도록, 고른 칸이 아니라 누른 손잡이를 따라 움직인다.
   const draggingRankRef = useRef<number | null>(null)
-  // 막대 색은 고른 쪽(상승/하락)의 구간 색을 이어서 보여 준다.
-  const colored = side === 'down' ? negative : positive
-  // 막대 색은 지도 박스 색과 같은 계산(resolveHeatmapColor)을 0~30%에서 촘촘히 찍어 그린다.
-  const signed = side === 'down' ? -1 : 1
-  const barConfig = {
-    thresholds: [
-      { thresholdPercent: 0, color: zeroColor, colorLabel: null },
-      ...colored.map((item, rank) => ({ thresholdPercent: signed * (positive[rank]?.percent ?? item.percent), color: item.color, colorLabel: null })),
-    ],
+  // 막대 색은 지도 박스 색과 같은 계산(resolveHeatmapColor)을 0~30%에서 촘촘히 찍어 그린다. 위 절반은 상승색, 아래 절반은 하락색이다.
+  const gradientOf = (colored: { percent: number; color: string }[], signed: 1 | -1) => {
+    const barConfig = {
+      thresholds: [
+        { thresholdPercent: 0, color: zeroColor, colorLabel: null },
+        ...colored.map((item, rank) => ({ thresholdPercent: signed * (positive[rank]?.percent ?? item.percent), color: item.color, colorLabel: null })),
+      ],
+    }
+    const stops = Array.from({ length: 61 }, (_, step) => step / 2).map(percent => `${resolveHeatmapColor(signed * percent, barConfig)} ${(percentToPosition(percent) * 100).toFixed(2)}%`)
+    return `linear-gradient(90deg, ${stops.join(', ')})`
   }
-  const gradientStops = Array.from({ length: 61 }, (_, step) => step / 2).map(percent => `${resolveHeatmapColor(signed * percent, barConfig)} ${(percentToPosition(percent) * 100).toFixed(2)}%`)
-  const gradient = `linear-gradient(90deg, ${gradientStops.join(', ')})`
-  // 하락 부호는 하이픈(-)이 아니라 수학 빼기 기호(−)로 쓴다 — 하이픈은 +보다 좁아서 상승·하락 배지의 폭이 달라졌다(+12% 38.7px, -12% 36.5px, −12% 38.7px).
-  const sign = side === 'down' ? '\u2212' : '+'
+  const upGradient = gradientOf(positive, 1)
+  const downGradient = gradientOf(negative, -1)
+  // 선택값 배지는 상승 값(+)으로 보여 준다. 하락은 같은 값의 거울이다.
+  const sign = '+'
 
   const percentAt = (clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect()
@@ -59,7 +56,7 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
     if (handle) {
       // 손잡이를 누르면 그 구간을 고르고, 같은 클릭에서 바로 끌 수 있다. 누른 자리에서는 움직이지 않고 끌기 시작할 때부터 따라간다.
       const rank = Number(handle.dataset.rank)
-      if (rank !== selectedRank) onSelectRank(rank, side)
+      if (rank !== selectedRank) onSelectRank(rank, 'up')
       draggingRankRef.current = rank
       event.currentTarget.setPointerCapture(event.pointerId)
       return
@@ -100,7 +97,10 @@ function ThresholdBar({ positive, negative, side, selectedRank, zeroColor, onCha
         onPointerCancel={handlePointerEnd}
       >
         <div ref={trackRef} className="settings-slider-control relative h-full">
-          <div className="absolute inset-x-0 top-[12px] h-4 border border-ui-white/20" style={{ background: gradient }} />
+          <div className="absolute inset-x-0 top-[12px] flex h-4 flex-col border border-ui-white/20">
+            <div className="min-h-0 flex-1" style={{ background: upGradient }} />
+            <div className="min-h-0 flex-1" style={{ background: downGradient }} />
+          </div>
           <div>
             {positive.map((item, rank) => {
               const selected = rank === selectedRank
@@ -152,7 +152,6 @@ export interface ColorThresholdEditorProps {
   bar: {
     positive: { percent: number; color: string }[]
     negative: { percent: number; color: string }[]
-    side: 'up' | 'down'
     selectedRank: number | null
     zeroColor: string
   }
@@ -160,8 +159,8 @@ export interface ColorThresholdEditorProps {
   onSelectRank: (rank: number, side: 'up' | 'down') => void
 }
 
-// 범례 아래에서 편집하는 등락률 구간 패널. 상승/하락 버튼은 지도 범례와 같은 순서·색이고(색은 정해져 있어 고르지 않는다),
-// 어느 쪽 구간을 편집할지 정한다. 막대 값은 지도에 즉시 반영되고 상단 저장·되돌리기를 따른다.
+// 범례 아래에서 편집하는 등락률 구간 패널. 막대의 손잡이로 구간 경계를 정한다(색은 정해져 있어 고르지 않는다).
+// 막대 값은 지도에 즉시 반영되고 상단 저장·되돌리기를 따른다.
 export default function HeatmapColorThresholdEditorPanel({
   bar,
   onChangeRankPercent,
@@ -170,35 +169,10 @@ export default function HeatmapColorThresholdEditorPanel({
   return (
     <div className="mt-2 flex flex-col gap-4 text-sm text-ui-white">
       <div>
-        {/* 상승 / 하락 — 업종 단계(대분류·중분류·소분류)처럼 글자만 있는 선택이고, 고른 것은 흰색, 안 고른 것은 회색이다. 색은 아래 막대가 보여 준다. */}
-        <div role="radiogroup" aria-label="편집할 구간" className="settings-slider-control flex flex-row items-center justify-center gap-1.5 whitespace-nowrap text-[13px]/4">
-          <div className="relative mx-auto flex w-fit items-center gap-1.5">
-            <SlidingHighlight count={2} index={bar.side === 'up' ? 0 : 1} className="rounded-[3px] bg-brand-surface" />
-            {(['up', 'down'] as const).map(key => {
-              const selected = bar.side === key
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => {
-                    if (selected) return
-                    onSelectRank(bar.selectedRank ?? 0, key)
-                  }}
-                  className={`relative z-10 box-border rounded-[3px] border border-transparent bg-transparent px-[7px] py-0 text-[13px] font-light leading-[18px] text-ui-white ${selected ? '' : 'hover:bg-ui-control-hover'}`}
-                >
-                  {CHIP_LABEL[key]}
-                </button>
-              )
-            })}
-          </div>
-        </div>
         <div className="mt-[6px]">
           <ThresholdBar
             positive={bar.positive}
             negative={bar.negative}
-            side={bar.side}
             selectedRank={bar.selectedRank}
             zeroColor={bar.zeroColor}
             onChangeRankPercent={onChangeRankPercent}
