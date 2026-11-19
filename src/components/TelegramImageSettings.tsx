@@ -1,3 +1,4 @@
+import MarketFlagIcon from '@/components/MarketFlagIcon'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { InfoSection } from '@/components/InfoDocument'
@@ -160,7 +161,9 @@ export default function TelegramImageSettings({
     <div className="mx-auto w-full max-w-[674px] overflow-hidden border border-ui-border bg-ui-panel p-4 text-sm">
       <div className="space-y-3">
         <section aria-label={profileLabel} className="rounded-md border border-ui-border bg-ui-background/50 px-3 py-2">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-ui-white"><img src={profileLabel === '거래소' ? krxLogo : marketrySymbol} alt="" aria-hidden="true" className="h-10 w-10 shrink-0 object-contain" style={profileLabel === '거래소' ? { clipPath: 'circle(44.7% at 53% 50.4%)' } : undefined} />{profileLabel}</h3>
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-ui-white">{profileLabel === '일본' || profileLabel === '미국'
+            ? <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center"><MarketFlagIcon flag={profileLabel === '일본' ? 'JP' : 'US'} /></span>
+            : <img src={profileLabel === '거래소' ? krxLogo : marketrySymbol} alt="" aria-hidden="true" className="h-10 w-10 shrink-0 object-contain" style={profileLabel === '거래소' ? { clipPath: 'circle(44.7% at 53% 50.4%)' } : undefined} />}{profileLabel}</h3>
         </section>
         {[0, 2, 5, 8].map((start, groupIndex) => {
           const end = [2, 5, 8, names.length][groupIndex]
