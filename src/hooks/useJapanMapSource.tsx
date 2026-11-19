@@ -73,6 +73,7 @@ export function useJapanMapSource(): OverseasMapSource {
     sessionChip: <JapanSessionChip session={session} />,
     refreshHelp: JAPAN_REFRESH_HELP,
     currencyUnit: '엔',
+    chart: { market: 'japan' },
     levelLabels: ['대분류', '중분류', '소분류'],
     defaultMaxDepth: 3,
     fixed: JAPAN_MAP_FIXED,

@@ -15,6 +15,8 @@ interface Props {
   depth: number
   onSelectSector: (sectorName: string) => void
   onExcludeSector: (sectorId: number, sectorName: string) => void
+  // 있으면 종목 우클릭 팝업에 차트 아이콘이 나온다. 없는 화면(일본·미국 등 아직 연결 전)은 아이콘이 없다.
+  onOpenStockChart?: (stock: { code: string; name: string }) => void
   heightClassName?: string
   // 셋 다 null = 전부 꺼짐. [min, max]면 그 뎁스 범위(현재 화면 기준 상대 뎁스)에서만 표시.
   marketValueDepthRange: [number, number] | null
@@ -103,6 +105,7 @@ export default function Heatmap({
   depth,
   onSelectSector,
   onExcludeSector,
+  onOpenStockChart,
   heightClassName = 'h-[70vh]',
   marketValueDepthRange,
   weightedAvgDepthRange,
@@ -429,7 +432,7 @@ export default function Heatmap({
           />
         ))}
       </div>
-      <Popup popup={popup} onExcludeSector={onExcludeSector} onClose={() => setPopup(null)} />
+      <Popup popup={popup} onExcludeSector={onExcludeSector} onOpenChart={onOpenStockChart} onClose={() => setPopup(null)} />
     </div>
   )
 }

@@ -22,6 +22,10 @@ import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Heatmap from '@/components/Heatmap'
+import StockChartView from '@/components/StockChartView'
+import { useStockChart } from '@/hooks/useStockChart'
+import { findStockSectorPath } from '@/utils/stockSectorPath'
+import { CHART_TIMEZONE, toTradingViewSymbol } from '@/utils/tradingViewSymbol'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -77,7 +81,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   // 시장마다 다른 부분(데이터를 받는 방법·날짜 선택·장 상태 칩·설정 값)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
     market, label, tree, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange, rangeExcludedStocks,
-    isLoading, isError, isFetching, refetchAll, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit,
+    isLoading, isError, isFetching, refetchAll, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit, chart,
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, settingPrefix, tabStorageName, totalCount, countShown,
   } = source
   const publishedAt = useOverseasPublishedAt(market, sheet)
@@ -103,6 +107,8 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     return pickTopSectorKeys(collectSectorsAtDepth(filteredRootNodes, preferences.topPickDepth), preferences.topPickCount, preferences.activeDepthMetric)
   }, [filteredRootNodes, preferences.topPickEnabled, preferences.topPickDepth, preferences.topPickCount, preferences.activeDepthMetric, topPickMaxSelectableDepth])
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
+  // 종목 우클릭 팝업의 차트 아이콘을 누르면 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
+  const { chartStock, openChart, closeChart } = useStockChart()
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
@@ -245,6 +251,10 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
           </Toolbar>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+            {chartStock !== null && chart ? (
+              <StockChartView marketLabel={label} sectors={chartStock.sectorPath} levelLabels={levelLabels} stockName={chartStock.name} symbol={toTradingViewSymbol(chart.market, chartStock.code)} timezone={CHART_TIMEZONE[chart.market]} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })} />
+            ) : (
+            <>
             {path.length > 0 && (
               <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
                 <button type="button" data-hint="전체로 돌아가기" onClick={() => handleGoToDepth(0)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
@@ -287,8 +297,11 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                   zoomOutRequestDepth={zoomOutRequestDepth}
                   onZoomOutComplete={depth => { goToDepth(depth); setZoomOutRequestDepth(null) }}
                   currencyUnit={currencyUnit}
+                  onOpenStockChart={chart ? (stock => openChart({ ...stock, sectorPath: findStockSectorPath(filteredRootNodes, stock.code) ?? [] })) : undefined}
                 />
               </div>
+            )}
+            </>
             )}
             <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
           </div>
