@@ -7,8 +7,8 @@ import type { MarketQuery } from '@/types/api'
 // 마켓 우선순위: 경로 세그먼트(/map|graph/kospi 등) > 서머리의 ?market= > 세션스토리지 저장값 > 기본값.
 // 서머리에서만 마켓 쿼리를 쓴다. 지도·그래프 경로는 경로 세그먼트가 우선한다.
 //
-// usePersistedState(key, routeMarket ?? defaultMarket)처럼 우선순위를 initialValue 하나로 욱여넣으면
-// 안 된다 — sessionStorage에 저장값이 있으면 그 값이 initialValue를 이기므로(usePersistedState.ts:17-20)
+// useState(key, routeMarket ?? defaultMarket)처럼 우선순위를 initialValue 하나로 욱여넣으면
+// 안 된다 — 저장값이 있으면 그 값이 initialValue를 이기므로
 // 브라우저에서는 저장값이 경로를 눌러버린다. 그래서 저장 상태(storedMarket)와 이번 렌더가 실제로 쓰는
 // 값(market)을 분리하고, 우선순위 계산 자체는 저장값을 거치지 않고 매 렌더 순수하게 다시 한다.
 export function useRouteAwareMarket(
