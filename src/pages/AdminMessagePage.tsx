@@ -127,9 +127,22 @@ export default function AdminMessagePage() {
       void appAlert('국내증시 지도를 텔레그램에 보냈습니다.', { title: '국내 발송 완료' })
     },
     onError: error => {
-      const message = isAxiosError(error) && error.response?.status === 409
-        ? '발송할 국내 공통 스냅샷이 없어 보내지 않았습니다.'
-        : '캡처 또는 텔레그램 전송에 실패했습니다. 다시 시도해 주세요.'
+      const response = isAxiosError(error) ? error.response : undefined
+      const body = response?.data as
+        | { errorCode?: string; properties?: { errorCode?: string } }
+        | string
+        | undefined
+      const errorCode = typeof body === 'object' && body !== null ? body.errorCode ?? body.properties?.errorCode : undefined
+      const messages: Record<string, string> = {
+        KOREA_NO_COMMON_SNAPSHOT: '발송할 국내 공통 스냅샷이 없어 보내지 않았습니다.',
+        KOREA_MAP_CAPTURE_FAILED: '국내 지도 캡처에 실패했습니다.',
+        KOREA_TELEGRAM_SEND_FAILED: '텔레그램 전송에 실패했습니다.',
+      }
+      const message =
+        messages[errorCode ?? ''] ??
+        (response
+          ? `국내 지도 발송에 실패했습니다. (HTTP ${response.status}) 다시 시도해 주세요.`
+          : '서버 응답을 확인하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.')
       void appAlert(message, { title: '국내 발송 실패' })
     },
   })
