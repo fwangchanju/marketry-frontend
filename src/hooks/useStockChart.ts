@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+// 종목 차트를 여는 방식 — 우클릭(팝업의 차트 아이콘), 클릭, 더블 클릭. 설정창 실험 탭의 "종목 차트"에서 고른다.
+export type StockChartTrigger = 'rightClick' | 'click' | 'doubleClick'
+
 export interface ChartStock {
   code: string
   name: string

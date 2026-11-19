@@ -1,3 +1,4 @@
+import type { StockChartTrigger } from '@/hooks/useStockChart'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useHeatmapLayout, type DisplayGroup, type LaidOutSector } from '@/hooks/useHeatmapLayout'
 import SectorBox from './SectorBox'
@@ -17,6 +18,8 @@ interface Props {
   onExcludeSector: (sectorId: number, sectorName: string) => void
   // 있으면 종목 우클릭 팝업에 차트 아이콘이 나온다. 없는 화면(일본·미국 등 아직 연결 전)은 아이콘이 없다.
   onOpenStockChart?: (stock: { code: string; name: string }) => void
+  // 차트를 여는 방식(설정창 실험 탭의 "종목 차트"). 우클릭은 팝업의 아이콘으로, 클릭·더블 클릭은 종목 박스에서 바로 연다. 종목 이동이 켜져 있으면 끌어 놓기와 겹쳐서 클릭·더블 클릭으로는 열지 않는다.
+  stockChartTrigger?: StockChartTrigger
   heightClassName?: string
   // 셋 다 null = 전부 꺼짐. [min, max]면 그 뎁스 범위(현재 화면 기준 상대 뎁스)에서만 표시.
   marketValueDepthRange: [number, number] | null
@@ -106,6 +109,7 @@ export default function Heatmap({
   onSelectSector,
   onExcludeSector,
   onOpenStockChart,
+  stockChartTrigger = 'rightClick',
   heightClassName = 'h-[70vh]',
   marketValueDepthRange,
   weightedAvgDepthRange,
@@ -342,6 +346,14 @@ export default function Heatmap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomOutRequestDepth])
 
+  // 종목 박스를 누르거나 더블클릭해서 차트를 연다 — 설정한 방식과 같은 동작일 때만.
+  const openStockChartFromBox = (target: EventTarget, action: StockChartTrigger) => {
+    if (stockChartTrigger !== action || !onOpenStockChart || stockMoveEnabled) return
+    const box = (target as HTMLElement).closest<HTMLElement>('[data-stock-code]')
+    if (!box?.dataset.stockCode) return
+    onOpenStockChart({ code: box.dataset.stockCode, name: box.dataset.stockName ?? box.dataset.stockCode })
+  }
+
   return (
     // d3 반올림 오차로 우측 하단 박스가 컨테이너를 아주 살짝 넘칠 수 있는데, overflow가 열려있으면 그게
     // 페이지 스크롤바를 만들고, 스크롤바가 생기면 컨테이너 너비가 줄어서 ResizeObserver가 다시 계산 →
@@ -361,6 +373,8 @@ export default function Heatmap({
         if (suppressSectorHoverBorder && !ghost) setSuppressSectorHoverBorder(false)
       }}
       onPointerLeave={() => setSuppressSectorHoverBorder(false)}
+      onClick={e => openStockChartFromBox(e.target, 'click')}
+      onDoubleClick={e => openStockChartFromBox(e.target, 'doubleClick')}
     >
       {ghost && (
         <div
@@ -432,7 +446,7 @@ export default function Heatmap({
           />
         ))}
       </div>
-      <Popup popup={popup} onExcludeSector={onExcludeSector} onOpenChart={onOpenStockChart} onClose={() => setPopup(null)} />
+      <Popup popup={popup} onExcludeSector={onExcludeSector} onOpenChart={stockChartTrigger === 'rightClick' ? onOpenStockChart : undefined} onClose={() => setPopup(null)} />
     </div>
   )
 }
