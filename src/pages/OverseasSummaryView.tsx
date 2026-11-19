@@ -13,7 +13,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
-import { HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
+import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
@@ -42,14 +42,14 @@ import { buildRankChart } from '@/utils/rankChart'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector } from '@/utils/sectorAverage'
 import { overseasRoute } from '@/utils/markets'
-import type { OverseasHomeSource } from '@/hooks/overseasHomeSource'
+import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 
-// 국내 홈과 같은 키를 쓴다 — 한 번 바꾼 좌우 순서가 세 홈에 똑같이 적용된다.
-const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
-const DEFAULT_HOME_FRAME_ORDER = ['업종 지도', '그룹 등락률 (%)']
+// 국내 서머리와 같은 키를 쓴다 — 한 번 바꾼 좌우 순서가 세 서머리에 똑같이 적용된다.
+const SUMMARY_FRAME_ORDER_KEY = 'marketry-home-frame-order'
+const DEFAULT_SUMMARY_FRAME_ORDER = ['업종 지도', '그룹 등락률 (%)']
 
-// 홈의 틀 — 제목 배지를 끌어서 순서를 바꾼다(국내 홈의 SortableHomeFrame과 같은 모양).
-function SortableHomeFrame({ title, captureId, index, children, captureUntil }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string }) {
+// 서머리의 틀 — 제목 배지를 끌어서 순서를 바꾼다(국내 서머리의 SortableHomeFrame과 같은 모양).
+function SortableSummaryFrame({ title, captureId, index, children, captureUntil }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
   return (
     <section
@@ -85,9 +85,9 @@ function CaptureFrame({ title, children }: { title: string; children: ReactNode 
 
 const SECTION_ORDER: SettingsPanelSectionId[] = ['composition', 'colors']
 
-// 홈의 일본·미국 구성. 업종 지도와 그룹 등락률을 지도 화면과 같은 트리·계산으로 만든다(최신 시세 기준).
+// 서머리의 일본·미국 구성. 업종 지도와 그룹 등락률을 지도 화면과 같은 트리·계산으로 만든다(최신 시세 기준).
 // 날짜 달력·시계 새로고침·설정 패널은 지도 화면과 같은 부품을 쓴다. 설정 패널은 색상 탭만 있다(편집할 설정이 없고 지도 화면과 같은 고정값을 보여 준다).
-export default function OverseasHomeView({ source }: { source: OverseasHomeSource }) {
+export default function OverseasSummaryView({ source }: { source: OverseasSummarySource }) {
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
   // 시장마다 다른 부분(데이터 받기·날짜 선택 칩·장 상태 칩·갱신 안내·고정 색상·종목 수)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
@@ -100,7 +100,7 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
   const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
   const { colorScale, strongIndustryColor } = fixed
   const navigate = useNavigate()
-  // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(국내 홈과 같은 동작).
+  // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(국내 서머리와 같은 동작).
   const handleSelectSector = (sectorName: string) => navigate(`${overseasRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
 
   // 업종 지도 항목과 그룹 등락률 막대 — 지도 화면과 같이 한 단계(대분류)만 쓴다.
@@ -116,7 +116,7 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
   }, [tree, tierRange.excludedMarketValueTiers, sectorExclusion.excludedSectorIds])
   const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
 
-  // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 홈은 특별 회원·관리자만 열 수 있다.
+  // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 서머리는 특별 회원·관리자만 열 수 있다.
   const menu = marketMenu('/summary', market, true)
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveSnapshotTime !== null && snapshotTime !== liveSnapshotTime)
   const holidayColor = resolveHeatmapColor(8, colorScale)
@@ -177,8 +177,8 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
     </div>
     </>
   )
-  // 홈의 두 틀(제목·캡처 이름·본문) — 화면과 틀별 캡처판이 같은 본문을 쓴다.
-  const homeFrames = [
+  // 서머리의 두 틀(제목·캡처 이름·본문) — 화면과 틀별 캡처판이 같은 본문을 쓴다.
+  const summaryFrames = [
               { title: '업종 지도', captureId: 'market-map', node: (
                 <div className="relative flex min-h-0 flex-1 flex-col">
                   {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={handleSelectSector} /> : isLoading ? <p className="text-ui-muted">불러오는 중</p> : <EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" />}
@@ -194,18 +194,18 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
-  const [homeFrameOrder, setHomeFrameOrder] = useLocalPersistedState(HOME_FRAME_ORDER_KEY, DEFAULT_HOME_FRAME_ORDER)
-  const savedHomeFrameOrder = homeFrameOrder.map(title => (title === '시장 지도' || title === '요약 지도' ? '업종 지도' : title))
-  const safeHomeFrameOrder = [
-    ...savedHomeFrameOrder.filter((title, index) => DEFAULT_HOME_FRAME_ORDER.includes(title) && savedHomeFrameOrder.indexOf(title) === index),
-    ...DEFAULT_HOME_FRAME_ORDER.filter(title => !savedHomeFrameOrder.includes(title)),
+  const [summaryFrameOrder, setSummaryFrameOrder] = useLocalPersistedState(SUMMARY_FRAME_ORDER_KEY, DEFAULT_SUMMARY_FRAME_ORDER)
+  const savedSummaryFrameOrder = summaryFrameOrder.map(title => (title === '시장 지도' || title === '요약 지도' ? '업종 지도' : title))
+  const safeSummaryFrameOrder = [
+    ...savedSummaryFrameOrder.filter((title, index) => DEFAULT_SUMMARY_FRAME_ORDER.includes(title) && savedSummaryFrameOrder.indexOf(title) === index),
+    ...DEFAULT_SUMMARY_FRAME_ORDER.filter(title => !savedSummaryFrameOrder.includes(title)),
   ]
-  const orderedHomeFrames = [...homeFrames].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title))
+  const orderedSummaryFrames = [...summaryFrames].sort((a, b) => safeSummaryFrameOrder.indexOf(a.title) - safeSummaryFrameOrder.indexOf(b.title))
   const handleFrameDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return
-    const from = safeHomeFrameOrder.indexOf(String(active.id))
-    const to = safeHomeFrameOrder.indexOf(String(over.id))
-    if (from >= 0 && to >= 0) setHomeFrameOrder(arrayMove(safeHomeFrameOrder, from, to))
+    const from = safeSummaryFrameOrder.indexOf(String(active.id))
+    const to = safeSummaryFrameOrder.indexOf(String(over.id))
+    if (from >= 0 && to >= 0) setSummaryFrameOrder(arrayMove(safeSummaryFrameOrder, from, to))
   }
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
   return (
@@ -221,12 +221,12 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
             {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서, 캡처 중에는 스크롤을 풀어 둔다. */}
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isShareOpen ? 'overflow-visible' : 'overflow-x-auto'}`}>
               <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
-                <SortableContext items={safeHomeFrameOrder} strategy={horizontalListSortingStrategy}>
+                <SortableContext items={safeSummaryFrameOrder} strategy={horizontalListSortingStrategy}>
                   <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
-                    {orderedHomeFrames.map((frame, frameIndex) => (
-                      <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined}>
+                    {orderedSummaryFrames.map((frame, frameIndex) => (
+                      <SortableSummaryFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined}>
                         {frame.node}
-                      </SortableHomeFrame>
+                      </SortableSummaryFrame>
                     ))}
                   </div>
                 </SortableContext>
@@ -262,14 +262,14 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
         <div
           ref={fixedCaptureRef}
           aria-hidden="true"
-          data-home-fixed-capture
+          data-summary-fixed-capture
           className="fixed flex flex-col bg-ui-background"
-          style={{ left: 0, top: 0, width: HOME_CAPTURE_FRAME_WIDTH * homeFrames.length, height: HOME_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
+          style={{ left: 0, top: 0, width: SUMMARY_CAPTURE_FRAME_WIDTH * summaryFrames.length, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
         >
           <div className="flex min-h-0 flex-1 bg-ui-background">
-            {orderedHomeFrames.map(frame => (
-              <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: HOME_CAPTURE_FRAME_WIDTH }}>
-                <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
+            {orderedSummaryFrames.map(frame => (
+              <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: SUMMARY_CAPTURE_FRAME_WIDTH }}>
+                <Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>
                 <CaptureFrame title={frame.title}>{frame.node}</CaptureFrame>
               </div>
             ))}
@@ -277,8 +277,8 @@ export default function OverseasHomeView({ source }: { source: OverseasHomeSourc
         </div>
       )}
       {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} captureReady={!isLoading}
-          fixedHomeCaptureRef={fixedCaptureRef}
-          frameCaptureOptions={safeHomeFrameOrder.map((title, selectedSlot) => {
+          fixedSummaryCaptureRef={fixedCaptureRef}
+          frameCaptureOptions={safeSummaryFrameOrder.map((title, selectedSlot) => {
             const captureId = title === '업종 지도' ? 'market-map' : 'group-change-rate'
             return { id: captureId, label: ['좌측', '우측'][selectedSlot], selector: `[data-capture-frame="${captureId}"]`, selectedSlot: selectedSlot as 0 | 1, mode: 'content' as const }
           })}

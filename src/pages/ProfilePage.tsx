@@ -213,7 +213,7 @@ export default function ProfilePage() {
     }
   }
 
-  // 회원 탈퇴 — 확인을 한 번 더 받고, 서버가 데이터를 지우면 홈으로 보낸다. 관리자는 버튼 자체를 보이지 않는다.
+  // 회원 탈퇴 — 확인을 한 번 더 받고, 서버가 데이터를 지우면 서머리로 보낸다. 관리자는 버튼 자체를 보이지 않는다.
   const handleWithdraw = async () => {
     const confirmed = await appWarnConfirm('탈퇴하면 이메일, 닉네임, 프로필 사진, 내 기준과 설정이 모두 즉시 지워지며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?', { title: '회원 탈퇴' })
     if (!confirmed) return

@@ -53,9 +53,9 @@ export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector
   return dataUrl
 }
 
-// 텔레그램 홈 모바일 판과 같은 크기(픽셀).
-export const HOME_CAPTURE_FRAME_WIDTH = 810
-export const HOME_CAPTURE_FRAME_HEIGHT = 1080
+// 텔레그램 서머리 모바일 판과 같은 크기(픽셀).
+export const SUMMARY_CAPTURE_FRAME_WIDTH = 810
+export const SUMMARY_CAPTURE_FRAME_HEIGHT = 1080
 // 5:8 비율(810×1296). 모바일 캡처와 텔레그램이 같은 프레임·배율을 사용한다.
 export const MAP_MOBILE_CAPTURE_FRAME_HEIGHT = 1296
 // 상단 정보(왼쪽 툴바와 오른쪽 배지)가 고정 폭에 다 들어가지 않을 때 — 사용자에게 안내 문구를 그대로 보여 준다.
@@ -65,19 +65,19 @@ export class CaptureWidthError extends Error {
   }
 }
 
-// 텔레그램 홈 모바일 판과 같은 크기(픽셀)로 저장한다. 별도 리샘플링을 거치면 배지 글자 위치가 달라진다.
+// 텔레그램 서머리 모바일 판과 같은 크기(픽셀)로 저장한다. 별도 리샘플링을 거치면 배지 글자 위치가 달라진다.
 // 툴바는 각 틀 안에 원래 글자 크기로 배치해 전체 상단줄을 축소하지 않는다.
-export async function screenshotFixedHomeFrameToDataUrl(root: HTMLElement, selector: string): Promise<string> {
+export async function screenshotFixedSummaryFrameToDataUrl(root: HTMLElement, selector: string): Promise<string> {
   await waitForCaptureLayout(root)
   const frame = root.querySelector(selector)?.closest<HTMLElement>('[data-capture-fixed-frame]')
   if (!frame) throw new Error('Fixed home capture frame is unavailable')
-  const toolbar = frame.querySelector<HTMLElement>('.home-capture-toolbar')
+  const toolbar = frame.querySelector<HTMLElement>('.summary-capture-toolbar')
   const left = toolbar?.firstElementChild as HTMLElement | null
   const right = toolbar?.lastElementChild as HTMLElement | null
   if (!toolbar || !left || !right || left.scrollWidth + right.scrollWidth + 12 > toolbar.clientWidth) {
     throw new CaptureWidthError()
   }
-  if (frame.offsetWidth !== HOME_CAPTURE_FRAME_WIDTH || frame.offsetHeight !== HOME_CAPTURE_FRAME_HEIGHT) throw new Error('Fixed home capture size is invalid')
+  if (frame.offsetWidth !== SUMMARY_CAPTURE_FRAME_WIDTH || frame.offsetHeight !== SUMMARY_CAPTURE_FRAME_HEIGHT) throw new Error('Fixed home capture size is invalid')
   const options = { ...shareScreenshotOptions(frame), scale: 1 }
   const fontCss = await fontCssFor(frame)
   const captureOptions = fontCss ? { ...options, font: { cssText: fontCss } } : options

@@ -15,7 +15,7 @@ import ToolbarModeText from '@/components/ToolbarModeText'
 import SettingsPanel, {
   SettingsPanelGroup, SettingsMarketValueSection, SettingsExcludeSection, SettingsColorSection, SettingsStrongIndustryColorSection,
   SettingsAverageModeSection,
-  SettingsGroupDepthSection,
+  SettingsGraphDepthSection,
   SettingsBeforeMinutesSection,
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
@@ -55,7 +55,7 @@ import { trendMonths } from '@/utils/trendDates'
 import { usePreviousTradingDay } from '@/hooks/useHeatmap'
 
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
-type GroupGraphMode = 'current' | 'delta'
+type GraphViewMode = 'current' | 'delta'
 
 // 지수 등락률 참조 막대에 붙는 한글 라벨 — ALL STOCK은 두 지수를 각각 표시한다.
 const MARKET_INDEX_LABEL_KO: Record<Market, string> = { KOSPI: '코스피', KOSDAQ: '코스닥' }
@@ -67,9 +67,9 @@ function sectorKey(sectorName: string): string {
 
 // 막대가 이 개수(지수 제외)까지는 전부 보여 주고, 넘으면 상위·하위 각 EDGE_COUNT개만 남기고 가운데를 "외 N개" 칸 하나로 줄인다.
 // 27은 거래소 대분류(27개)가 줄지 않는 값이다.
-const GROUP_DEPTH_NAMES = ['대분류', '중분류', '소분류']
+const GRAPH_DEPTH_NAMES = ['대분류', '중분류', '소분류']
 
-export default function GroupPage() {
+export default function GraphPage() {
   const navigate = useNavigate()
   const [beforeMinutes, setBeforeMinutes] = usePersistedState('sectorChangeRate.beforeMinutes', 15)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -110,7 +110,7 @@ export default function GroupPage() {
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
-  const [graphMode, setGraphMode] = usePageSetting<GroupGraphMode>(profileSettingKey(settingsProfile, 'groupPage.graphMode'), 'current')
+  const [graphMode, setGraphMode] = usePageSetting<GraphViewMode>(profileSettingKey(settingsProfile, 'groupPage.graphMode'), 'current')
   // 막대 하나가 가리키는 업종 분류 깊이(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 고를 수 있다.
   const [groupDepth, setGroupDepth] = usePageSetting<number>(profileSettingKey(settingsProfile, 'groupPage.depth'), 1)
   const selectableDepth = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT' ? 1 : 3
@@ -440,7 +440,7 @@ export default function GroupPage() {
                         <span className="font-light">({showDeltaGraph ? '%p' : '%'})</span>
                       </span>
                       {/* 지금 보는 업종 분류 단계는 제목 옆 배지로 따로 보여 준다(분류 배지의 "분류" 칸과 같은 짙은 청록). */}
-                      <span className="ml-2.5 rounded bg-[var(--brand-surface)] px-2 py-1 text-sm leading-none font-semibold text-ui-white">{GROUP_DEPTH_NAMES[effectiveDepth - 1]}</span>
+                      <span className="ml-2.5 rounded bg-[var(--brand-surface)] px-2 py-1 text-sm leading-none font-semibold text-ui-white">{GRAPH_DEPTH_NAMES[effectiveDepth - 1]}</span>
                     </span>
                   </div>
                   {/* 숫자가 왜곡될 수 있음을 알리는 주의 문구 — 제목보다 덜 눈에 띄게 "-" 표시와 함께 작게 둔다(설정창 설명과 같은 모양). */}
@@ -486,7 +486,7 @@ export default function GroupPage() {
                 <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} fixed={settingsModalProps.taxonomy !== 'MINE'} />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="graph">
-                <SettingsGroupDepthSection depth={groupDepth} onChange={setGroupDepth} selectableDepth={selectableDepth} />
+                <SettingsGraphDepthSection depth={groupDepth} onChange={setGroupDepth} selectableDepth={selectableDepth} />
                 <SettingsAverageModeSection
                   avgChangeRateUseSimple={avgChangeRateUseSimple}
                   onChange={onChangeAvgChangeRateUseSimple}

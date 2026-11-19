@@ -181,7 +181,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const isTelegramCapture = isTelegramMapCapture()
   const telegramCaptureSetting = useTelegramCaptureSetting()
   const needsTree = options?.needsTree ?? true
-  // 등락률 기준(누적/시간외) 선택은 지도 페이지만 쓴다. 그룹 페이지는 now·before 쌍을 따로 받아 누적 기준으로 그리므로
+  // 등락률 기준(누적/시간외) 선택은 지도 페이지만 쓴다. 그래프 페이지는 now·before 쌍을 따로 받아 누적 기준으로 그리므로
   // 같은 값을 실으면 화면이 섞인다.
   const allowChangeRateMode = options?.allowChangeRateMode ?? false
   const { pathname, search, hash } = useLocation()

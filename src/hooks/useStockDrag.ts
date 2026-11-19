@@ -1,8 +1,8 @@
 import { useEffect, useRef, type RefObject } from 'react'
 
-// 홈 화면 항목 끌기(PointerSensor)와 같은 시작 거리다.
+// 서머리 화면 항목 끌기(PointerSensor)와 같은 시작 거리다.
 const DRAG_START_DISTANCE = 5
-// 홈 화면 항목 끌기와 같은 효과 — 끄는 동안 끌리는 항목이 반투명(70%)으로 맨 위에 떠서 포인터를 따라 움직인다.
+// 서머리 화면 항목 끌기와 같은 효과 — 끄는 동안 끌리는 항목이 반투명(70%)으로 맨 위에 떠서 포인터를 따라 움직인다.
 const DRAG_OPACITY = '0.7'
 
 export interface StockDrop {
@@ -13,7 +13,7 @@ export interface StockDrop {
 }
 
 // 실험 탭의 "종목 이동" — 종목 박스(data-stock-code)를 눌러 끌어서 다른 업종 박스(data-sector-id)에 놓으면 onDrop을 부른다.
-// 이동 결과를 어디에 두는지는 부르는 쪽이 정한다(이 훅은 저장하지 않는다). 끄는 동안에는 홈 화면 항목 끌기처럼 종목 박스 모양의 복제본이 반투명으로 포인터를 따라 움직이고
+// 이동 결과를 어디에 두는지는 부르는 쪽이 정한다(이 훅은 저장하지 않는다). 끄는 동안에는 서머리 화면 항목 끌기처럼 종목 박스 모양의 복제본이 반투명으로 포인터를 따라 움직이고
 // (원래 박스는 제자리에 둔다), 놓을 업종에 테두리를 쳐서 보여 준다. 켜져 있는 동안 종목 박스에서는 잡는 손 커서가 보인다(index.css의 stock-move-enabled).
 export function useStockDrag(containerRef: RefObject<HTMLElement | null>, enabled: boolean, onDrop: (drop: StockDrop) => void) {
   const onDropRef = useRef(onDrop)

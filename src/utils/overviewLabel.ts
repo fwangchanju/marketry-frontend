@@ -1,5 +1,5 @@
-// 홈 시장 지도(OverviewMap) 박스 안 글자 — 말줄임표나 잘린 글자를 만들지 않는다.
-// 업종명은 한 줄이 박스 폭에 맞지 않을 때만 두 줄로 나눈다. `/`는 아랫줄 맨 앞, 공백은 가운데에 가까운 곳에 두고, 업종 용어 `소비재`는 앞 단어와 분리한다. 단어 경계가 없어서 칸에 안 들어가는 이름은, 글자가 사라지는 것보다 낫도록 호출하는 쪽이 `splitInsideWord`를 켜면 이름 가운데에서 두 줄로 나눈다(홈 업종 지도와 폰 지도가 켠다).
+// 서머리 업종 지도(OverviewMap) 박스 안 글자 — 말줄임표나 잘린 글자를 만들지 않는다.
+// 업종명은 한 줄이 박스 폭에 맞지 않을 때만 두 줄로 나눈다. `/`는 아랫줄 맨 앞, 공백은 가운데에 가까운 곳에 두고, 업종 용어 `소비재`는 앞 단어와 분리한다. 단어 경계가 없어서 칸에 안 들어가는 이름은, 글자가 사라지는 것보다 낫도록 호출하는 쪽이 `splitInsideWord`를 켜면 이름 가운데에서 두 줄로 나눈다(서머리 업종 지도와 폰 지도가 켠다).
 // 두 줄로도 안 들어가거나 높이가 모자라면 이름과 등락률을 모두 그리지 않는다. 이름과 등락률 중 하나만 들어가야 하면 이름이 먼저다.
 // 등락률은 이름의 90% 크기(최소 12px)이고 폭에 안 들어가면 그리지 않는다. 글자 폭은 canvas로 재서(글꼴이 늦게 로드되면 다시) 판단한다.
 export const MIN_NAME_SIZE = 12
@@ -91,7 +91,7 @@ const HIDDEN: OverviewLabel = { lines: [], nameSize: MIN_NAME_SIZE, rateSize: nu
 // 화면별 옵션 — 종목명처럼 공백이 없는 이름도 두 줄로 나눠야 하는 화면(폰 주식 지도)은 이름 중간에서 나누게 한다.
 export interface OverviewLabelOptions {
   splitInsideWord?: boolean
-  // PC 홈 업종 지도처럼 박스가 큰 화면은 글자를 더 키운다(최대 34px).
+  // PC 서머리 업종 지도처럼 박스가 큰 화면은 글자를 더 키운다(최대 34px).
   large?: boolean
 }
 
@@ -112,7 +112,7 @@ export function layoutOverviewLabel(name: string, rateText: string, width: numbe
     if (nameHeight > innerHeight) return null
     const rate = rateSizeFor(size)
     const withRate = rate !== null && nameHeight + rate * LINE_HEIGHT <= innerHeight
-    // PC 홈은 이름만 보일 때 작은 글씨로 등락률까지 들어가는지 먼저 확인한다.
+    // PC 서머리는 이름만 보일 때 작은 글씨로 등락률까지 들어가는지 먼저 확인한다.
     if (options.large && !withRate) {
       for (let smaller = size - 1; smaller >= MIN_NAME_SIZE; smaller -= 1) {
         const smallerRate = rateSizeFor(smaller)

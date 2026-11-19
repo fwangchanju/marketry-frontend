@@ -39,7 +39,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
-import { HOME_CAPTURE_FRAME_HEIGHT, HOME_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
+import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { buildRankChart } from '@/utils/rankChart'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
@@ -52,7 +52,7 @@ import { marketRoute } from '@/utils/marketRoute'
 import { marketMenu } from '@/utils/marketMenu'
 import type { MarketQuery } from '@/types/api'
 
-// 홈 시장 요약 배치
+// 서머리 배치
 type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type HistoricalIndexPoint = {
   date: string
@@ -72,10 +72,10 @@ function earliestTrendDate(endDate: string): string {
 }
 const EXCHANGE_BADGE_CLASS = FRAME_BADGE_CLASS.replace('bg-[var(--brand-surface)]', 'bg-[var(--exchange-surface)]')
 
-const HOME_FRAME_ORDER_KEY = 'marketry-home-frame-order'
-const DEFAULT_HOME_FRAME_ORDER = ['업종 지도', '그룹 등락률 (%)']
+const SUMMARY_FRAME_ORDER_KEY = 'marketry-home-frame-order'
+const DEFAULT_SUMMARY_FRAME_ORDER = ['업종 지도', '그룹 등락률 (%)']
 
-function SortableHomeFrame({ title, captureId, index, children, captureUntil, isExchange, mineColor }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; isExchange: boolean; mineColor?: string }) {
+function SortableSummaryFrame({ title, captureId, index, children, captureUntil, isExchange, mineColor }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; isExchange: boolean; mineColor?: string }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
   const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" style={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} className={`${isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title}</span>
   return (
@@ -112,15 +112,15 @@ function CaptureFrame({ title, className = '', children, isExchange, mineColor }
 }
 
 export default function MarketSummaryPage() {
-  // 시장 배지 드롭다운 — 홈의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI 225·S&P 500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
+  // 시장 배지 드롭다운 — 서머리의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI 225·S&P 500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
   const location = useLocation()
-  const canSeeOverseasHome = true
-  const homeMarket: MarketQuery = location.pathname.startsWith('/summary/korea/kospi') ? 'KOSPI' : location.pathname.startsWith('/summary/korea/kosdaq') ? 'KOSDAQ' : 'ALL_STOCK'
-  const homeMarketLabel = homeMarket === 'KOSPI' ? 'KOSPI' : homeMarket === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK'
+  const canSeeOverseasSummary = true
+  const summaryMarket: MarketQuery = location.pathname.startsWith('/summary/korea/kospi') ? 'KOSPI' : location.pathname.startsWith('/summary/korea/kosdaq') ? 'KOSDAQ' : 'ALL_STOCK'
+  const summaryMarketLabel = summaryMarket === 'KOSPI' ? 'KOSPI' : summaryMarket === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK'
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, 특별 회원·관리자에게만 JAPAN·USA).
-  const homeMenu = marketMenu('/summary', homeMarket, canSeeOverseasHome)
+  const summaryMenu = marketMenu('/summary', summaryMarket, canSeeOverseasSummary)
   const navigate = useNavigate()
-  // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그룹 페이지와 같은 것을 쓴다.
+  // 틀마다 스크린샷 버튼이 있다 — 누른 틀 하나만(버튼은 빼고) 스크린샷으로 찍으며, 공유창은 지도·그래프 페이지와 같은 것을 쓴다.
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const allFramesRef = useRef<HTMLDivElement>(null)
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
@@ -135,27 +135,27 @@ export default function MarketSummaryPage() {
   const isExchange = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'
   const mineColor = settingsModalProps.taxonomy === 'MINE' ? strongIndustryColor : undefined
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
-  const [homeFrameOrder, setHomeFrameOrder] = useLocalPersistedState(HOME_FRAME_ORDER_KEY, DEFAULT_HOME_FRAME_ORDER)
+  const [summaryFrameOrder, setSummaryFrameOrder] = useLocalPersistedState(SUMMARY_FRAME_ORDER_KEY, DEFAULT_SUMMARY_FRAME_ORDER)
   const frameSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
   // 예전 이름('시장 지도'·'요약 지도')으로 저장된 순서도 새 이름('업종 지도')의 같은 자리로 읽는다.
-  const savedHomeFrameOrder = homeFrameOrder.map(title => (title === '시장 지도' || title === '요약 지도' ? '업종 지도' : title))
-  const safeHomeFrameOrder = [
-    ...savedHomeFrameOrder.filter((title, index) => DEFAULT_HOME_FRAME_ORDER.includes(title) && savedHomeFrameOrder.indexOf(title) === index),
-    ...DEFAULT_HOME_FRAME_ORDER.filter(title => !savedHomeFrameOrder.includes(title)),
+  const savedSummaryFrameOrder = summaryFrameOrder.map(title => (title === '시장 지도' || title === '요약 지도' ? '업종 지도' : title))
+  const safeSummaryFrameOrder = [
+    ...savedSummaryFrameOrder.filter((title, index) => DEFAULT_SUMMARY_FRAME_ORDER.includes(title) && savedSummaryFrameOrder.indexOf(title) === index),
+    ...DEFAULT_SUMMARY_FRAME_ORDER.filter(title => !savedSummaryFrameOrder.includes(title)),
   ]
   const handleFrameDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return
-    const from = safeHomeFrameOrder.indexOf(String(active.id))
-    const to = safeHomeFrameOrder.indexOf(String(over.id))
-    if (from >= 0 && to >= 0) setHomeFrameOrder(arrayMove(safeHomeFrameOrder, from, to))
+    const from = safeSummaryFrameOrder.indexOf(String(active.id))
+    const to = safeSummaryFrameOrder.indexOf(String(over.id))
+    if (from >= 0 && to >= 0) setSummaryFrameOrder(arrayMove(safeSummaryFrameOrder, from, to))
   }
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
 
-  // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대 표시는 숨긴다(실시간 정보라서) — 지도·그룹 페이지와 같다.
+  // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대 표시는 숨긴다(실시간 정보라서) — 지도·그래프 페이지와 같다.
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
   // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
@@ -198,7 +198,7 @@ export default function MarketSummaryPage() {
   })
   // 실시간 요약 지수는 최신 일간 보기에서만 쓴다. 과거 날짜·기간 보기에는 조회한 해당 날짜/기간의 지수 추이를 쓴다.
   const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
-  // 홈은 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
+  // 서머리는 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
   const effectiveDepth = 1
   const handleSelectSector = (sectorName: string) => {
     navigate(`${marketRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
@@ -222,7 +222,7 @@ export default function MarketSummaryPage() {
       })
     }
     const entries = items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false }))
-    // 그룹 페이지처럼 코스피·코스닥 지수 등락률을 강조 색 참조 막대로 값 순서 자리에 끼운다.
+    // 그래프 페이지처럼 코스피·코스닥 지수 등락률을 강조 색 참조 막대로 값 순서 자리에 끼운다.
     for (const [indexMarket, label] of [['KOSPI', '코스피'], ['KOSDAQ', '코스닥']] as const) {
       // 코스피·코스닥 서머리에는 그 시장의 지수 막대만 넣는다(그래프 화면과 같다). 전체 서머리에는 둘 다 넣는다.
       if (market !== 'ALL_STOCK' && market !== indexMarket) continue
@@ -239,7 +239,7 @@ export default function MarketSummaryPage() {
     const chart = buildRankChart(entries)
     return { items, chart }
   }, [rootNodes, excludedSectorIds, excludedMarketValueTiers, effectiveDepth, marketSummary, historicalIndexData, pinnedSnapshotTime, isLatestDailyView, market])
-  // 설정창 위쪽 "nn/nn종목" — 그룹 페이지와 같은 기준이다. 분모는 지금 시장의 모든 종목, 분자는 제외한 업종(하위 업종까지)·시가총액 구간을 뺀 종목이다.
+  // 설정창 위쪽 "nn/nn종목" — 그래프 페이지와 같은 기준이다. 분모는 지금 시장의 모든 종목, 분자는 제외한 업종(하위 업종까지)·시가총액 구간을 뺀 종목이다.
   const stockCountLabel = useMemo(() => {
     const nodes = rootNodes
     // 분모에는 정지로 지도에서 뺀 종목도 더해 전체 종목 수와 맞춘다.
@@ -274,8 +274,8 @@ export default function MarketSummaryPage() {
   const toolbarContent = (
     <>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="SUMMARY" label={homeMarketLabel} showChevron menu={homeMenu} />
-              {/* 지도·그룹 페이지와 같은 날짜·시각·시간대 — 홈도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
+              <ToolbarModeText page="SUMMARY" label={summaryMarketLabel} showChevron menu={summaryMenu} />
+              {/* 지도·그래프 페이지와 같은 날짜·시각·시간대 — 서머리도 이 날짜(달력으로 고른 날)를 따라가므로 지금 어느 날짜를 보는지 여기서 보이고 바꿀 수 있어야 한다.
                   애프터 마켓 시간에는 등락률 기준(종가·합산·별도) 선택도 지도·그룹 페이지와 같이 보인다. 로딩·오류에서도 제자리에 둔다. */}
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
                 <SnapshotDatePicker
@@ -328,8 +328,8 @@ export default function MarketSummaryPage() {
             </div>
     </>
   )
-  // 홈의 두 틀(제목·캡처 이름·본문) — 화면과 3:4 캡처용 판이 같은 본문을 쓴다.
-  const homeFrames = [
+  // 서머리의 두 틀(제목·캡처 이름·본문) — 화면과 3:4 캡처용 판이 같은 본문을 쓴다.
+  const summaryFrames = [
               {
                 title: '업종 지도',
                 captureId: 'market-map',
@@ -346,8 +346,8 @@ export default function MarketSummaryPage() {
               },
             ]
   // 렌더러(텔레그램 발송)가 /summary/korea?capture=mobile 로 열면 지도 페이지 모바일 캡처와 같은 3:4 세로 판에 툴바와 시장 지도(왼쪽)·그룹 등락률(오른쪽)만 담아 찍는다.
-  // 화면과 고정 캡처판이 같은 순서를 쓴다 — homeFrames 자체는 건드리지 않는다.
-  const orderedHomeFrames = [...homeFrames].sort((a, b) => safeHomeFrameOrder.indexOf(a.title) - safeHomeFrameOrder.indexOf(b.title))
+  // 화면과 고정 캡처판이 같은 순서를 쓴다 — summaryFrames 자체는 건드리지 않는다.
+  const orderedSummaryFrames = [...summaryFrames].sort((a, b) => safeSummaryFrameOrder.indexOf(a.title) - safeSummaryFrameOrder.indexOf(b.title))
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const isMineEmpty = settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0)
@@ -355,7 +355,7 @@ export default function MarketSummaryPage() {
   const isMobileCaptureLoaded = !isLoading && !isError && Boolean(data?.snapshotTime) && marketSummary !== undefined
   const isMobileCaptureReady = useSettled(isMobileCaptureLoaded, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
   const mobileCaptureFrames = ['market-map', 'group-change-rate']
-    .map(captureId => homeFrames.find(frame => frame.captureId === captureId))
+    .map(captureId => summaryFrames.find(frame => frame.captureId === captureId))
     .filter(frame => frame !== undefined)
 
   return (
@@ -383,7 +383,7 @@ export default function MarketSummaryPage() {
       <div ref={settingsRowRef} className="main-settings-row relative z-10 flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
         {/* 스크린샷 대상 — 지도·그룹·커스텀 페이지와 같이 메인 영역 전체(툴바부터 맨 아래 줄까지)다. */}
         <div ref={allFramesRef} data-main-area className="mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
-          {/* 툴바 — 지도·그룹 페이지와 같은 틀. 왼쪽에 제목 배지, 오른쪽 끝에 분류 배지를 둔다. 로딩 중에도 제자리에 둔다. */}
+          {/* 툴바 — 지도·그래프 페이지와 같은 틀. 왼쪽에 제목 배지, 오른쪽 끝에 분류 배지를 둔다. 로딩 중에도 제자리에 둔다. */}
           <Toolbar>
             {toolbarContent}
           </Toolbar>
@@ -395,7 +395,7 @@ export default function MarketSummaryPage() {
             ) : isError ? (
               <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></MainAreaLoading>
             ) : isMineEmpty ? (
-              // 내 분류가 비어 있으면 지도·그룹 페이지와 같은 안내(원·로고·바로 가기)를 홈 전체에 보여 준다 — 원은 위 로딩 원과 같은 자리다.
+              // 내 분류가 비어 있으면 지도·그래프 페이지와 같은 안내(원·로고·바로 가기)를 서머리 전체에 보여 준다 — 원은 위 로딩 원과 같은 자리다.
               <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
                 <CustomPageBadgeLink />
               </EmptyLogoMessage>
@@ -410,12 +410,12 @@ export default function MarketSummaryPage() {
             {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서(지도 아래 약 15px), 캡처 중에는 스크롤을 풀어 둔다. */}
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
             <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
-            <SortableContext items={safeHomeFrameOrder} strategy={horizontalListSortingStrategy}>
+            <SortableContext items={safeSummaryFrameOrder} strategy={horizontalListSortingStrategy}>
             <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
-            {orderedHomeFrames.map((frame, frameIndex) => (
-              <SortableHomeFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} isExchange={isExchange} mineColor={mineColor}>
+            {orderedSummaryFrames.map((frame, frameIndex) => (
+              <SortableSummaryFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} isExchange={isExchange} mineColor={mineColor}>
                 {frame.body}
-              </SortableHomeFrame>
+              </SortableSummaryFrame>
             ))}
             </div>
             </SortableContext>
@@ -424,10 +424,10 @@ export default function MarketSummaryPage() {
             </div>
             )}
           </div>
-          {/* 아래 줄 — 지도·그룹 페이지와 같은 높이(28px)로 왼쪽에 면책조항, 오른쪽 끝에 등락률 색상 범례를 둔다. 로딩 중에도 제자리에 둔다. */}
+          {/* 아래 줄 — 지도·그래프 페이지와 같은 높이(28px)로 왼쪽에 면책조항, 오른쪽 끝에 등락률 색상 범례를 둔다. 로딩 중에도 제자리에 둔다. */}
           <DisclaimerFooter captureFullWidthAlign rightContent={<ChangeRateBar swatches={settingsModalProps.legendSwatches} />} />
         </div>
-        {/* 홈·그룹·맵이 함께 쓰는 종목 구성과 색상 설정. */}
+        {/* 서머리·그래프·맵이 함께 쓰는 종목 구성과 색상 설정. */}
         <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel
             pageLabel="Summary"
@@ -459,7 +459,7 @@ export default function MarketSummaryPage() {
           style={{ width: 'calc(100dvh * 3 / 4)', height: '100dvh', padding: '4px', boxSizing: 'border-box' }}
           className="fixed left-0 top-0 z-[200] flex flex-col bg-ui-background text-ui-white"
         >
-          <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
+          <Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>
           <div className="flex min-h-0 flex-1 gap-1">
             {isMobileCaptureLoaded && isMineEmpty ? (
               <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
@@ -477,14 +477,14 @@ export default function MarketSummaryPage() {
         <div
           ref={fixedCaptureRef}
           aria-hidden="true"
-          data-home-fixed-capture
+          data-summary-fixed-capture
           className="fixed flex flex-col bg-ui-background"
-          style={{ left: 0, top: 0, width: HOME_CAPTURE_FRAME_WIDTH * homeFrames.length, height: HOME_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
+          style={{ left: 0, top: 0, width: SUMMARY_CAPTURE_FRAME_WIDTH * summaryFrames.length, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
         >
           <div className="flex min-h-0 flex-1 bg-ui-background">
-            {orderedHomeFrames.map(frame => (
-              <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: HOME_CAPTURE_FRAME_WIDTH }}>
-                <Toolbar className="home-capture-toolbar">{toolbarContent}</Toolbar>
+            {orderedSummaryFrames.map(frame => (
+              <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: SUMMARY_CAPTURE_FRAME_WIDTH }}>
+                <Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>
                 <CaptureFrame title={frame.title} className="min-h-0 flex-1" isExchange={isExchange} mineColor={mineColor}>
                   {isMineEmpty ? (
                     <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
@@ -510,8 +510,8 @@ export default function MarketSummaryPage() {
               <CustomPageBadgeLink />
             </EmptyLogoMessage>
           ) : undefined}
-          fixedHomeCaptureRef={fixedCaptureRef}
-          frameCaptureOptions={safeHomeFrameOrder.map((title, selectedSlot) => {
+          fixedSummaryCaptureRef={fixedCaptureRef}
+          frameCaptureOptions={safeSummaryFrameOrder.map((title, selectedSlot) => {
             const captureId = title === '업종 지도' ? 'market-map' : 'group-change-rate'
             return {
               id: captureId,

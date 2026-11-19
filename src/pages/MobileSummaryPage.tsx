@@ -10,7 +10,7 @@ const destinations = [
   { label: '가이드', path: '/info/guide' },
 ]
 
-export default function MobileHomePage() {
+export default function MobileSummaryPage() {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-ui-background text-ui-white">
       <MobileTopBar title="" />

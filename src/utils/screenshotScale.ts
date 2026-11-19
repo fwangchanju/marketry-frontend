@@ -8,7 +8,7 @@ function scaleForLongSide(longSide: number): number {
   return Math.min(4, Math.max(0.5, SHARE_IMAGE_LONG_SIDE / longSide))
 }
 
-// 홈 전체 캡처는 화면 밖으로 넘친 세 항목의 너비까지 포함한다.
+// 서머리 전체 캡처는 화면 밖으로 넘친 세 항목의 너비까지 포함한다.
 // 스크롤 내용이 아닌 툴바·바깥 여백은 현재 크기를 그대로 더한다.
 export function fullScreenshotSize(el: HTMLElement): { width: number; height: number } {
   const content = el.querySelector<HTMLElement>('[data-capture-full-width]')
@@ -23,7 +23,7 @@ export function shareScreenshotScale(el: HTMLElement): number {
 }
 
 // 찍을 영역을 "맨 왼쪽 위부터 selector에 맞는 요소의 오른쪽 끝까지, 높이는 그대로"로 줄인다. 맞는 요소가 없으면 null이다.
-// 홈에서 현재 맨 오른쪽 틀을 빼고 찍을 때 쓴다 — 틀 배치는 그대로 두고 오른쪽을 잘라서 찍는다.
+// 서머리에서 현재 맨 오른쪽 틀을 빼고 찍을 때 쓴다 — 틀 배치는 그대로 두고 오른쪽을 잘라서 찍는다.
 export function captureRegionRect(el: HTMLElement, selector: string, mode: 'through-right-edge' | 'element' | 'content' = 'through-right-edge'): { x: number; y: number; width: number; height: number } | null {
   const edges = Array.from(el.querySelectorAll(selector))
   if (edges.length === 0) return null
@@ -74,7 +74,7 @@ function mobileCaptureFilter(root: HTMLElement) {
     && !(node instanceof Element && node.parentElement === root && node !== frame && node !== toolbar)
 }
 
-// 찍을 영역 자체에 불투명한 배경색이 있으면 그 색을 찍기 바탕으로 쓴다. 바탕색 옵션이 영역의 배경색을 덮어써서, 홈처럼 영역이 검정인데
+// 찍을 영역 자체에 불투명한 배경색이 있으면 그 색을 찍기 바탕으로 쓴다. 바탕색 옵션이 영역의 배경색을 덮어써서, 서머리처럼 영역이 검정인데
 // 바탕색이 다르면 배경이 없는 줄(아래 줄)만 다른 색으로 찍히기 때문이다. 배경이 없으면 기본 바탕색(#000000)을 쓴다.
 // 캡처 라이브러리에는 CSS 변수 대신 실제 픽셀 색을 전달한다.
 const DEFAULT_CAPTURE_BACKGROUND = '#000000'

@@ -84,7 +84,7 @@ function filterNodes(
 }
 
 // 등락 방향 필터 없이 업종 제외·시가총액 구간 제외만 지도와 같은 규칙(하위 업종 제외 포함)으로 걸러낸 트리.
-// 그룹 페이지가 지도 설정창과 같은 기준으로 종목 수를 세는 데 쓴다.
+// 그래프 페이지가 지도 설정창과 같은 기준으로 종목 수를 세는 데 쓴다.
 export function filterTreeByExclusions(
   nodes: HeatmapSectorNode[],
   excludedSectorIds: Set<number>,

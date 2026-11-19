@@ -1,8 +1,8 @@
 import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { CaptureWidthError, HOME_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl, screenshotFixedHomeFrameToDataUrl } from '@/utils/screenshotToPreview'
+import { CaptureWidthError, SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl, screenshotFixedSummaryFrameToDataUrl } from '@/utils/screenshotToPreview'
 import { captureRegionRect, fullScreenshotSize } from '@/utils/screenshotScale'
-import { CheckIcon, CopyIcon, HomeFrameCaptureIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
+import { CheckIcon, CopyIcon, SummaryFrameCaptureIcon, MonitorIcon, SmartphoneIcon } from '@/components/icons/AppIcons'
 import Spinner from '@/components/Spinner'
 
 // 팝업 미리보기 높이 상한(px) — 큰 창에서 팝업이 지나치게 커지지 않게 한다.
@@ -17,15 +17,15 @@ interface Props {
   screenshotTarget: HTMLElement | null
   captureReady?: boolean
   emptyPreview?: ReactNode
-  fixedHomeCaptureRef?: { current: HTMLElement | null }
+  fixedSummaryCaptureRef?: { current: HTMLElement | null }
   // 지도에서 전체 화면(모니터)과 지도 영역(모바일)을 고르는 버튼을 표시한다.
   mobileRegionOption?: { label: string; selector: string; mode?: 'through-right-edge' | 'element' | 'content'; onCloneNode?: (cloned: Node) => void; monitorHorizontalPadding?: number }
   onMobileSelectionChange?: (selected: boolean) => void
-  // 홈의 각 요약 항목을 따로 캡처하는 버튼들.
+  // 서머리의 각 요약 항목을 따로 캡처하는 버튼들.
   frameCaptureOptions?: Array<{ id: string; label: string; selector: string; selectedSlot: 0 | 1; mode?: 'element' | 'content' }>
 }
 
-// 마지막으로 고른 캡처 범위를 이 브라우저에만 남긴다(서버에는 보내지 않는다). 페이지 종류마다 고를 수 있는 버튼이 달라서(지도: 모바일, 홈: 항목별) 종류별로 따로 둔다.
+// 마지막으로 고른 캡처 범위를 이 브라우저에만 남긴다(서버에는 보내지 않는다). 페이지 종류마다 고를 수 있는 버튼이 달라서(지도: 모바일, 서머리: 항목별) 종류별로 따로 둔다.
 // 저장된 값이 지금 페이지에 없는 버튼이면 기본(전체 화면)으로 연다. 접근이 막힌 환경에서는 저장 없이 기본값으로 동작한다.
 function captureChoiceKey(hasMobile: boolean, hasFrames: boolean) {
   return `marketry-screenshot-capture:${hasMobile ? 'mobile' : hasFrames ? 'frames' : 'full'}`
@@ -58,7 +58,7 @@ export default function ScreenshotModal({
   screenshotTarget,
   captureReady = true,
   emptyPreview,
-  fixedHomeCaptureRef,
+  fixedSummaryCaptureRef,
   mobileRegionOption,
   onMobileSelectionChange,
   frameCaptureOptions,
@@ -99,7 +99,7 @@ export default function ScreenshotModal({
     if (hasEmptyPreview) return 948 / 964
     if (selectedFrame) return elementRatio(screenshotTarget, undefined, undefined, fullPreviewPadding)
     if (selectedCapture === 'mobile' && regionSelector && !screenshotTarget?.querySelector(regionSelector)) {
-      return HOME_CAPTURE_FRAME_WIDTH / (MAP_MOBILE_CAPTURE_FRAME_HEIGHT + 4)
+      return SUMMARY_CAPTURE_FRAME_WIDTH / (MAP_MOBILE_CAPTURE_FRAME_HEIGHT + 4)
     }
     return elementRatio(screenshotTarget, regionSelector, regionMode, horizontalPadding)
   })
@@ -173,10 +173,10 @@ export default function ScreenshotModal({
             if (cancelled || finished) return
             setContextPreviewSrc(context)
           }
-          const fixedHome = fixedHomeCaptureRef?.current
-          if (showContextPreview && fixedHomeCaptureRef && !fixedHome) throw new Error('Fixed home capture is unavailable')
-          const dataUrl = showContextPreview && regionSelector && fixedHome
-            ? await screenshotFixedHomeFrameToDataUrl(fixedHome, regionSelector)
+          const fixedSummary = fixedSummaryCaptureRef?.current
+          if (showContextPreview && fixedSummaryCaptureRef && !fixedSummary) throw new Error('Fixed home capture is unavailable')
+          const dataUrl = showContextPreview && regionSelector && fixedSummary
+            ? await screenshotFixedSummaryFrameToDataUrl(fixedSummary, regionSelector)
             : await screenshotElementToDataUrl(screenshotTarget, regionSelector, regionMode, onCloneNode, horizontalPadding)
           if (!cancelled && !finished) {
             finished = true
@@ -201,7 +201,7 @@ export default function ScreenshotModal({
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(rafId)
     }
-  }, [captureReady, hasEmptyPreview, screenshotTarget, fixedHomeCaptureRef, selectedCapture, regionSelector, regionMode, onCloneNode, horizontalPadding, fullPreviewPadding, showContextPreview, captureAttempt])
+  }, [captureReady, hasEmptyPreview, screenshotTarget, fixedSummaryCaptureRef, selectedCapture, regionSelector, regionMode, onCloneNode, horizontalPadding, fullPreviewPadding, showContextPreview, captureAttempt])
 
   const retryCapture = () => {
     setPreviewSrc(null)
@@ -306,7 +306,7 @@ export default function ScreenshotModal({
               <>
                 <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <defs>
-                    <mask id="home-capture-selection-mask">
+                    <mask id="summary-capture-selection-mask">
                       <rect width="100" height="100" fill="white" />
                       {headerSelections.map((region, index) => (
                         <rect key={index} x={region.left * 100} y={region.top * 100} width={region.width * 100} height={region.height * 100} fill="black" />
@@ -314,7 +314,7 @@ export default function ScreenshotModal({
                       <rect x={highlightRegion.left * 100} y={highlightRegion.top * 100} width={highlightRegion.width * 100} height={highlightRegion.height * 100} fill="black" />
                     </mask>
                   </defs>
-                  <rect width="100" height="100" fill="rgba(0,0,0,0.85)" mask="url(#home-capture-selection-mask)" />
+                  <rect width="100" height="100" fill="rgba(0,0,0,0.85)" mask="url(#summary-capture-selection-mask)" />
                 </svg>
                 {headerSelections.map((region, index) => (
                   <div key={index} aria-hidden="true" className="capture-selection-outline pointer-events-none absolute" style={{ left: `${region.left * 100}%`, top: `${region.top * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%` }} />
@@ -347,7 +347,7 @@ export default function ScreenshotModal({
                 onClick={() => selectCapture(null)}
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-0 p-1 transition-colors ${selectedCapture === null ? 'bg-brand-surface text-ui-white hover:bg-brand-surface-hover' : 'bg-ui-control text-ui-white hover:bg-ui-control-hover'}`}
               >
-                <HomeFrameCaptureIcon selectedSlot="all" className="h-7 w-7 text-ui-white" />
+                <SummaryFrameCaptureIcon selectedSlot="all" className="h-7 w-7 text-ui-white" />
               </button>
             )}
             {mobileRegionOption && (
@@ -373,7 +373,7 @@ export default function ScreenshotModal({
                   onClick={() => selectCapture(`frame:${option.id}`)}
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-0 p-1 transition-colors ${active ? 'bg-brand-surface text-ui-white hover:bg-brand-surface-hover' : 'bg-ui-control text-ui-white hover:bg-ui-control-hover'}`}
                 >
-                  <HomeFrameCaptureIcon selectedSlot={option.selectedSlot} className="h-7 w-7 text-ui-white" />
+                  <SummaryFrameCaptureIcon selectedSlot={option.selectedSlot} className="h-7 w-7 text-ui-white" />
                 </button>
               )
             })}

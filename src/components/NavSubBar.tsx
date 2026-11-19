@@ -30,7 +30,7 @@ interface MenuLink {
 
 // Map·Graph는 KOREA / KOSPI / KOSDAQ을 고르고, Sector·Stock은 KOREA를 바로 연다(특별 회원은 JAPAN도 고른다).
 const BASE_LINKS: MenuLink[] = [
-  { to: '/summary/korea', label: 'Home', icon: 'home' },
+  { to: '/summary/korea', label: 'Summary', icon: 'home' },
   { to: marketRoute('/map', 'ALL_STOCK'), label: 'Map', icon: 'composition' },
   { to: marketRoute('/graph', 'ALL_STOCK'), label: 'Graph', icon: 'bar-chart' },
 ]
@@ -129,7 +129,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
     : [SECTOR_LINK, STOCK_LINK]
   const baseLinks = BASE_LINKS.map(link => {
     if (!marketSegment) return link
-    if (link.label === 'Home') return { ...link, to: `/summary/${mapSegment}` }
+    if (link.label === 'Summary') return { ...link, to: `/summary/${mapSegment}` }
     if (link.label === 'Map') return { ...link, to: `/map/${mapSegment}` }
     if (link.label === 'Graph') return { ...link, to: `/graph/${mapSegment}` }
     return link
@@ -201,7 +201,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
               }}
             >
               <NavIcon icon={link.icon} />
-              {link.label === 'Home' ? 'Summary' : link.label}
+              {link.label}
             </Link>
             {/* 메뉴 칸(28px)이 탭 글자(약 20px)보다 커서 칸 아래에 바로 붙여야 글자 기준으로 4px가 된다. */}
             {/* 세로 메뉴에서 아이콘 칸과 목록 사이의 빈 틈을 메우는 다리 — 여기를 지나도 목록이 닫히지 않는다. */}

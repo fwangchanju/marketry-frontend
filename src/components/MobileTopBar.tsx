@@ -7,7 +7,7 @@ import { useLoginGate } from '@/hooks/useLoginGate'
 import { useLocalDevLogin, useLogout, useSession, useSessionKeepAlive } from '@/hooks/useSession'
 import { useMobileTheme } from '@/utils/mobileTheme'
 
-// 홈·지도·글 페이지가 공유하는 모바일 상단 줄.
+// 서머리·지도·글 페이지가 공유하는 모바일 상단 줄.
 export default function MobileTopBar({ title, titleTo, titleLabel, onTitleClick, showDivider = true, className = '' }: { title: string; titleTo?: string; titleLabel?: string; onTitleClick?: () => void; showDivider?: boolean; className?: string }) {
   const { pathname, search, hash } = useLocation()
   const { requireLogin } = useLoginGate()

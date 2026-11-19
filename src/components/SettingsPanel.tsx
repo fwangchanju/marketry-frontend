@@ -361,7 +361,7 @@ const TOP_PICK_COUNT_OPTIONS: { key: '1' | '2' | '3'; label: string }[] = [
 ]
 
 // 그룹 탭에는 이 중 하나만 표시한다.
-const GROUP_TAB_METRIC_OPTIONS: { key: DepthMetric; label: string }[] = [
+const GRAPH_TAB_METRIC_OPTIONS: { key: DepthMetric; label: string }[] = [
   { key: 'weightedAvgChangeRate', label: '시총 가중 등락률' },
   { key: 'simpleAvgChangeRate', label: '동일 가중 등락률' },
   { key: 'upDownCount', label: '상승/하락 종목 수' },
@@ -1153,9 +1153,9 @@ function SingleValueSlider({
 // 새 섹션 컴포넌트를 하나 추가해서 끼워 넣기만 하면 되고, 여기 다른 섹션이나 SettingsPanel 껍데기
 // 자체는 안 건드려도 된다.
 
-// 그룹 페이지 "업종 분류 단계" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다. 맵 설정의 업종 분류 깊이와 같은 계단 모양이지만 켬/끔 스위치가 없고, 고른 단계 하나만 켜진다.
+// 그래프 페이지 "업종 분류 단계" — 막대 하나가 대분류인지 중분류인지 소분류인지 고른다. 맵 설정의 업종 분류 깊이와 같은 계단 모양이지만 켬/끔 스위치가 없고, 고른 단계 하나만 켜진다.
 // 분류 자체에 하위 단계가 없으면(거래소 분류 KRX·NXT) 대분류만 고를 수 있다. 저장된 값은 건드리지 않고 화면에서만 막는다.
-export function SettingsGroupDepthSection({
+export function SettingsGraphDepthSection({
   depth,
   onChange,
   selectableDepth,
@@ -1252,7 +1252,7 @@ export function SettingsAverageModeSection({
   )
 }
 
-// 그룹 페이지 "N분 전 대비"의 비교 시점 — 15/30/60/120분 중 하나를 슬라이더로 고른다.
+// 그래프 페이지 "N분 전 대비"의 비교 시점 — 15/30/60/120분 중 하나를 슬라이더로 고른다.
 const BEFORE_MINUTES_OPTIONS = [15, 30, 60, 120]
 
 export function SettingsBeforeMinutesSection({
@@ -1588,7 +1588,7 @@ export function SettingsSectorLevelSection({
               </div>
               <SettingDescription dimmed={!depthMetricEnabled}>업종명 옆에 표시할 값</SettingDescription>
               <SettingsDropdown
-                options={GROUP_TAB_METRIC_OPTIONS}
+                options={GRAPH_TAB_METRIC_OPTIONS}
                 value={activeDepthMetric}
                 onChange={onChangeActiveDepthMetric}
                 ariaLabel="업종 지표"
@@ -1648,7 +1648,7 @@ export function SettingsSectorLevelSection({
                 maxIndex={depthMetricSliderMaxIndex}
                 labels={depthMetricLabels}
                 maxSelectableIndex={depthMetricMaxSelectableIndex}
-                valueLabel={GROUP_TAB_METRIC_OPTIONS.find(option => option.key === activeDepthMetric)?.label}
+                valueLabel={GRAPH_TAB_METRIC_OPTIONS.find(option => option.key === activeDepthMetric)?.label}
                 blockedHint={selectableDepth < depthLabelCount
                   ? '[거래소] 모드는\n대분류만 제공합니다.'
                   : `**${settingNumber('depthLevel')}) 업종 분류 깊이**에서\n더 깊은 업종 단계를 선택하면\n활성화됩니다.`}
@@ -2444,7 +2444,7 @@ interface Props {
   withoutMiddle?: boolean
   // 설정 저장·초기화 기능을 제공하는 페이지에서만 헤더 버튼을 표시한다.
   showPreferenceActions?: boolean
-  // 한 탭 안에 순서대로 쌓는 본문 — 홈·그룹·커스텀용. 여러 탭 분류(children의
+  // 한 탭 안에 순서대로 쌓는 본문 — 서머리·그래프·커스텀용. 여러 탭 분류(children의
   // SettingsPanelGroup)와 같이 쓰지 않는다. plainTabLabel을 주면 단일 탭 메뉴 줄을 표시한다.
   plainContent?: ReactNode
   // 탭 하나로 구성된 페이지도 맵·어드민과 같은 메뉴 줄을 쓴다.

@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import UsaDatePicker from '@/components/UsaDatePicker'
 import UsaSessionChip from '@/components/UsaSessionChip'
-import type { OverseasHomeSource } from '@/hooks/overseasHomeSource'
+import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import { buildJapanTree } from '@/utils/japanMap'
@@ -14,9 +14,9 @@ import { overseasMarketInfo } from '@/utils/markets'
 import { USA_MAP_FIXED, USA_MAP_SETTING_PREFIX } from '@/utils/usaMapSettings'
 import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
 
-// 미국 서머리의 데이터·설정 — 공통 서머리 화면(OverseasHomeView)이 받는 모양으로 돌려준다.
+// 미국 서머리의 데이터·설정 — 공통 서머리 화면(OverseasSummaryView)이 받는 모양으로 돌려준다.
 // 미국은 하루 한 번 저장된 종가로 그리고, 지도 트리는 일본과 같은 부품(buildJapanTree)으로 만든다.
-export function useUsaHomeSource(): OverseasHomeSource {
+export function useUsaSummarySource(): OverseasSummarySource {
   // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
   const { sheet } = useOverseasSheet()
   const { categories, classifications } = useOverseasClassificationData('USA', sheet)

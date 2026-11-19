@@ -1901,7 +1901,7 @@ export default function AdminStockTable({
             {isPending ? (
               <tr>
                 <td colSpan={tableColSpan} className="p-8">
-                  {/* 정렬을 바꾸는 동안의 로딩 원 — 지도·그룹 페이지처럼 크게 가운데에 보여준다. */}
+                  {/* 정렬을 바꾸는 동안의 로딩 원 — 지도·그래프 페이지처럼 크게 가운데에 보여준다. */}
                   <div className="flex h-[min(32rem,60vh)] items-center justify-center">
                     <Spinner showElapsed />
                   </div>

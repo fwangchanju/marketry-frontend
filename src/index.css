@@ -479,13 +479,13 @@ html, body, #root {
 }
 
 /* 분할 캡처에서는 긴 닉네임도 축소·말줄임 없이 실제 너비로 배치한다. */
-.home-capture-toolbar > div {
+.summary-capture-toolbar > div {
   flex: none;
 }
 
-.home-capture-toolbar .toolbar-badge,
-.home-capture-toolbar .toolbar-badge > span,
-.home-capture-toolbar .toolbar-badge .truncate {
+.summary-capture-toolbar .toolbar-badge,
+.summary-capture-toolbar .toolbar-badge > span,
+.summary-capture-toolbar .toolbar-badge .truncate {
   min-width: max-content;
   max-width: none;
   overflow: visible;
@@ -493,7 +493,7 @@ html, body, #root {
 }
 
 /* 화면 이름 배지는 모든 페이지에서 110px로 고정한다. 캡처 글꼴 폭에 따라 다음 날짜 배지가 밀리지 않게 한다. */
-.home-capture-toolbar .toolbar-mode-badge {
+.summary-capture-toolbar .toolbar-mode-badge {
   min-width: 110px;
   max-width: 110px;
 }
@@ -1013,7 +1013,7 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   margin-top: 0;
 }
 
-/* 홈·그룹의 버튼과 슬라이더도 설명 하단~구분선 사이를 정렬 기준으로 쓴다. */
+/* 서머리·그래프의 버튼과 슬라이더도 설명 하단~구분선 사이를 정렬 기준으로 쓴다. */
 .settings-panel-tab-content .settings-graph-item {
   padding-bottom: 12px;
 }
@@ -1162,7 +1162,7 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   border-top: 1px solid color-mix(in srgb, var(--ui-white) 10%, transparent);
 }
 
-/* 그룹 페이지처럼 탭 없이 항목만 쌓는 설정 본문 — 첫 항목을 뺀 각 항목 위에 구분선을 둔다. */
+/* 그래프 페이지처럼 탭 없이 항목만 쌓는 설정 본문 — 첫 항목을 뺀 각 항목 위에 구분선을 둔다. */
 .settings-plain-content > * + * {
   position: relative;
 }
@@ -1208,12 +1208,6 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   color: var(--sub-purple);
   font-weight: 500;
   line-height: 22px;
-}
-[data-settings-panel][data-page-label="Home"] .settings-plain-content .settings-plain-title::before {
-  counter-increment: none;
-  content: "· ";
-  display: inline;
-  width: auto;
 }
 
 /* 단일 값 슬라이더 — 사파리는 기본 슬라이더에 accent-color를 적용하지 않아 채워진 부분 없이 회색 윤곽만 보인다.
@@ -1335,7 +1329,7 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
     box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--ui-white) 35%, transparent);
   }
 
-  /* 홈 시장 지도(OverviewMap) 박스 — 지도 페이지의 종목 박스와 같은 마우스 올림 모양(흰 막 35% + 밝은 안쪽 테두리 2px)이다.
+  /* 서머리 업종 지도(OverviewMap) 박스 — 지도 페이지의 종목 박스와 같은 마우스 올림 모양(흰 막 35% + 밝은 안쪽 테두리 2px)이다.
      박스 크기·글자 자리가 흔들리지 않도록 테두리는 border가 아니라 box-shadow로 그린다. 우클릭 팝업이 떠 있는 동안(.is-pinned)에도 같은 모양을 유지한다. */
   .overview-map-box {
     transition: box-shadow 0.1s ease-out;
@@ -1462,7 +1456,7 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   color: var(--ui-white);
 }
 
-/* 실험 탭 "종목 이동"이 켜져 있는 동안 종목 박스에 잡는 손 커서를 보여 준다(홈 화면 항목 끌기와 같다). */
+/* 실험 탭 "종목 이동"이 켜져 있는 동안 종목 박스에 잡는 손 커서를 보여 준다(서머리 화면 항목 끌기와 같다). */
 .stock-move-enabled .heatmap-stock {
   cursor: grab;
 }
