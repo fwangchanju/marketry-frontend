@@ -167,9 +167,9 @@ export default function HeatmapColorThresholdEditorPanel({
   onSelectRank,
 }: ColorThresholdEditorProps) {
   return (
-    <div className="mt-2 flex flex-col gap-4 text-sm text-ui-white">
+    <div className="flex flex-col gap-4 text-sm text-ui-white">
       <div>
-        <div className="mt-[6px]">
+        <div>
           <ThresholdBar
             positive={bar.positive}
             negative={bar.negative}
