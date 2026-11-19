@@ -26,7 +26,7 @@ import { useIsLoggedIn, useSession } from '@/hooks/useSession'
 import { useLoginGate } from '@/hooks/useLoginGate'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
 import { commitDrafts, discardDrafts, draftScopeOfKeyMap, useHasDraftForKeys, useHasDrafts, type DraftScope } from '@/utils/settingsDraft'
-import { profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
+import { MINE_COLOR_SETTING_KEYS, profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
 import Spinner from '@/components/Spinner'
 import { REFRESH_FEEDBACK_MIN_DURATION_MS } from '@/utils/uiFeedback'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
@@ -173,7 +173,7 @@ function useSettingDraftDot(
   const dotsEnabled = given ? given.dotsEnabled : contextDotsEnabled
   const keyMap = given ? given.keyMap : contextKeyMap
   const keys = keyMap
-    ? draftKeys.map(key => keyMap[key] ?? key)
+    ? draftKeys.map(key => keyMap[key] ?? MINE_COLOR_SETTING_KEYS[key] ?? key)
     : profile === null ? draftKeys : draftKeys.flatMap(key => [key, profileSettingKey(profile, key)])
   const hasDraft = useHasDraftForKeys(keys, keyMap ? undefined : profile ?? undefined)
   return dotsEnabled && hasDraft

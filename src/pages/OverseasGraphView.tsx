@@ -1,6 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
 import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
 import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
@@ -29,8 +30,7 @@ import { ClockIcon } from '@/components/icons/AppIcons'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
-import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
-import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
+import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { overseasRoute } from '@/utils/markets'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
@@ -46,7 +46,8 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     totalCount, shownCount, graphSettings, tierRange, currencyUnit, sectorExclusion, exclusionTree,
   } = source
   const publishedAt = useOverseasPublishedAt(market, sheet)
-  const { colorScale, strongIndustryColor } = fixed
+  const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: market === 'JAPAN' ? 'japan' : 'usa' })
+  const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   const navigate = useNavigate()
   const mapPath = overseasRoute('/map', market)
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveSnapshotTime !== null && snapshotTime !== liveSnapshotTime)
@@ -129,7 +130,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
               )}
             </div>
           </div>
-          <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
+          <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel pageLabel="Graph" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
@@ -141,9 +142,9 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
               <SettingsExcludeSection sectorFilterEnabled={sectorExclusion.enabled} onToggleSectorFilter={sectorExclusion.toggle} excludedSectors={buildExcludedSectorRows(exclusionTree, sectorExclusion.ids, tierRange.excludedMarketValueTiers)} onRemoveExcludedSector={sectorExclusion.remove} />
             </SettingsPanelGroup>
             <SettingsPanelGroup section="colors">
-              {/* 요약·지도 화면과 같은 구성이다. 등락률 색상·강조 색상은 고정값을 보여 주고 바꾸지 못한다. */}
-              <SettingsColorSection isCustom={false} colorScaleDraft={colorScale} colorCustomOn onChangeColorCustomOn={() => {}} onResetColorScale={() => {}} isResettingColorScale={false} colorEditorProps={buildFixedColorEditorProps()} fixed />
-              <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={() => {}} fixed />
+              {/* 요약·지도 화면과 같은 구성이다. 등락률 색상·강조 색상은 내 기준 모드에서만 고칠 수 있고(한국 내 기준과 같은 값을 공유), MARKETRY 모드에서는 잠근다. */}
+              <SettingsColorSection {...colorSettings.colorSectionProps} />
+              <SettingsStrongIndustryColorSection {...colorSettings.strongSectionProps} />
             </SettingsPanelGroup>
           </SettingsPanel>
         </div>

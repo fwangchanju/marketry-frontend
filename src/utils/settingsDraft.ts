@@ -1,8 +1,9 @@
 import { useSyncExternalStore } from 'react'
-import type { SettingsProfile } from './settingsSchema'
+import { MINE_COLOR_SETTING_KEYS, type SettingsProfile } from './settingsSchema.ts'
 
 // 일본·미국 화면(지도·그래프)의 임시값은 국내 분류 세 칸과 따로, 서로도 따로 센다 — 'japan.' 또는 'usa.'로 시작하는 저장 이름이 각자의 범위에 속한다.
-export type DraftScope = SettingsProfile | 'common' | 'japan' | 'usa'
+// 'mineColor'는 내 기준의 등락률 색상 켜기·강조 색상처럼 한국·일본·미국이 같이 쓰는 값이다. 한국 내 기준('mine')과 일본·미국 내 기준 범위에서 모두 보인다.
+export type DraftScope = SettingsProfile | 'common' | 'japan' | 'usa' | 'mineColor'
 
 // "임시로 써보기" 값 저장소. 설정창에서 바꾼 값은 서버에 바로 올리지 않고 이 화면의 메모리에만 둔다(새로고침하면 사라진다) —
 // 저장 버튼을 눌러야 서버로 올라가고(commitDrafts), 초기화 버튼이나 브라우저 종료·새로고침이면 저장값으로 돌아온다(discardDrafts).
@@ -69,7 +70,10 @@ export function writeDraft(key: string, value: unknown) {
   notify()
 }
 
+const MINE_COLOR_KEYS = new Set(Object.values(MINE_COLOR_SETTING_KEYS))
+
 function scopeForKey(key: string): DraftScope {
+  if (MINE_COLOR_KEYS.has(key)) return 'mineColor'
   if (key.startsWith('japan.')) return 'japan'
   if (key.startsWith('usa.')) return 'usa'
   const match = key.match(/^heatmap\.profile\.(exchange|marketry|mine)\./)
@@ -77,6 +81,7 @@ function scopeForKey(key: string): DraftScope {
 }
 
 function inScope(itemScope: DraftScope, scope?: DraftScope): boolean {
+  if (itemScope === 'mineColor') return scope === undefined || scope === 'mine' || scope === 'japan' || scope === 'usa'
   return scope === undefined || itemScope === 'common' || itemScope === scope
 }
 
