@@ -37,8 +37,8 @@ function ThresholdBar({ positive, negative, selectedRank, zeroColor, onChangeRan
   }
   const upGradient = gradientOf(positive, 1)
   const downGradient = gradientOf(negative, -1)
-  // 선택값 배지는 상승 값(+)으로 보여 준다. 하락은 같은 값의 거울이다.
-  const sign = '+'
+  // 선택값 배지는 ±로 보여 준다 — 상승 값과 그 거울인 하락 값이 같이 바뀐다.
+  const sign = '\u00b1'
 
   const percentAt = (clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect()
