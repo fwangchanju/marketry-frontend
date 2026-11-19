@@ -294,10 +294,10 @@ export function useColorScaleSettings({
     const selectedIndex = colorEditIndices[0]
     const selectedThreshold = colorScaleDraft?.thresholds[selectedIndex]
     // 선택된 칸이 없거나 0% 칸이면 상승 쪽으로 보여 준다(0% 칸은 고칠 값이 없어 선택하지 않는다).
-    if (!colorScaleDraft || !selectedThreshold || selectedThreshold.thresholdPercent === 0) return { side: 'up' as const, rank: null }
+    if (!colorScaleDraft || !selectedThreshold || selectedThreshold.thresholdPercent === 0) return { rank: null }
     const up = selectedThreshold.thresholdPercent > 0
     const rank = (up ? barPositiveRows : barNegativeRows).findIndex(row => row.index === selectedIndex)
-    return { side: up ? ('up' as const) : ('down' as const), rank: rank < 0 ? null : rank }
+    return { rank: rank < 0 ? null : rank }
   })()
   // 저장값(snapshot)과 지금 draft의 구간·색이 하나라도 다르면 "미저장 변경"이 있는 것이다(여러 손잡이·상승/하락을 고친 경우 포함).
   const thresholdSignature = (thresholds: ColorScaleThreshold[] | undefined) =>
@@ -324,7 +324,6 @@ export function useColorScaleSettings({
           bar: {
             positive: barPositiveRows.map(row => ({ percent: row.threshold.thresholdPercent, color: row.threshold.color })),
             negative: barNegativeRows.map(row => ({ percent: -row.threshold.thresholdPercent, color: row.threshold.color })),
-            side: selectedBar.side,
             selectedRank: selectedBar.rank,
             zeroColor: colorScaleDraft?.thresholds.find(threshold => threshold.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR,
           },

@@ -17,7 +17,6 @@ export function buildFixedColorEditorProps() {
     bar: {
       positive: fixedPositiveRows.map(row => ({ percent: row.threshold.thresholdPercent, color: row.threshold.color })),
       negative: fixedNegativeRows.map(row => ({ percent: -row.threshold.thresholdPercent, color: row.threshold.color })),
-      side: 'up' as const,
       selectedRank: fixedPositiveRows.length - 1,
       zeroColor: fixedColorScale.find(threshold => threshold.thresholdPercent === 0)?.color ?? DEFAULT_ZERO_COLOR,
     },
