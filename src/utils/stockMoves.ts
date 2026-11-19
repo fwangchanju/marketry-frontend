@@ -1,7 +1,7 @@
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 import type { HeatmapItem } from '@/types/api'
 
-// 실험 탭의 "종목 이동" — 종목 코드 → 도착 업종(sectorId). 화면에서만 쓰는 값이라 서버와 브라우저 어디에도 저장하지 않는다.
+// 공통 설정 탭의 "종목 이동" — 종목 코드 → 도착 업종(sectorId). 화면에서만 쓰는 값이라 서버와 브라우저 어디에도 저장하지 않는다.
 export type StockMoves = Record<string, number>
 
 function collectAllItems(group: DisplayGroup): HeatmapItem[] {
