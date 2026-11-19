@@ -264,15 +264,15 @@ export default function AdminDefaultPage() {
           {isLoading ? <p role="status" className="m-auto text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p> : !isAdmin ? <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p> : <>
             <Toolbar><ToolbarModeText page="ADMIN" label="DEFAULT" showChevron menu={adminMenu('DEFAULT')} /></Toolbar>
             <PageMainFrame borderless className="p-0" heading={<div className="mx-auto w-full max-w-4xl"><InfoPageHeading flushBottom title="기본값" summary="MARKETRY, 거래소, 일본·미국 지도 기본 설정을 각각 저장합니다." /></div>}>
-              {defaults.isError ? <p role="alert" className="m-0 text-sm text-ui-text">기본값을 불러오지 못했습니다.</p> : <article aria-label="기본값" className="mx-auto grid min-h-full w-full max-w-4xl grid-cols-1 items-start gap-x-3 gap-y-5 lg:grid-cols-2">
+              {defaults.isError ? <p role="alert" className="m-0 text-sm text-ui-text">기본값을 불러오지 못했습니다.</p> : <article aria-label="기본값" className="mx-auto grid min-h-full w-full max-w-4xl grid-cols-1 items-start gap-x-3 gap-y-5 xl:grid-cols-2">
                 <h2 className="col-span-2 m-0 flex items-center gap-2 text-lg font-bold text-ui-white"><span aria-hidden="true" className="inline-flex h-6 min-w-6 items-center justify-center bg-brand-surface px-1.5 text-xs font-bold text-brand">1</span>국내 지도</h2>
                 <TelegramImageSettings number="1" title="" profileLabel="MARKETRY" saved={savedView(defaults.data?.marketry, snapshots.marketry, 'marketry', tiers, marketryNames)} current={snapshots.marketry?.values ?? null} loadState={loadStates.marketry} isSaved={savedSnapshots.marketry !== null && savedSnapshots.marketry === JSON.stringify(snapshots.marketry)} onLoad={() => handleLoad('marketry')} onSave={() => void handleSave('marketry')} />
-                <div className="hidden lg:block">
+                <div className="hidden xl:block">
                   <TelegramImageSettings number="2" title="" profileLabel="거래소" saved={savedView(defaults.data?.exchange, snapshots.exchange, 'exchange', tiers, marketryNames)} current={snapshots.exchange?.values ?? null} loadState={loadStates.exchange} isSaved={savedSnapshots.exchange !== null && savedSnapshots.exchange === JSON.stringify(snapshots.exchange)} onLoad={() => handleLoad('exchange')} onSave={() => void handleSave('exchange')} />
                 </div>
                 <h2 className="col-span-2 m-0 flex items-center gap-2 text-lg font-bold text-ui-white"><span aria-hidden="true" className="inline-flex h-6 min-w-6 items-center justify-center bg-brand-surface px-1.5 text-xs font-bold text-brand">2</span>해외 지도</h2>
                 <TelegramImageSettings number="3" title="" profileLabel="일본" saved={japanMapDisplayValues(japanManaged)} current={japanSnapshot ? japanMapDisplayValues(japanSnapshot) : null} loadState={japanSnapshot ? 'ready' : 'idle'} isSaved={savedSnapshots.japan !== null && savedSnapshots.japan === JSON.stringify(japanSnapshot)} onLoad={handleLoadJapan} onSave={() => void handleSaveJapan()} />
-                <div className="hidden lg:block">
+                <div className="hidden xl:block">
                   <TelegramImageSettings number="4" title="" profileLabel="미국" saved={japanMapDisplayValues(usaManaged)} current={usaSnapshot ? japanMapDisplayValues(usaSnapshot) : null} loadState={usaSnapshot ? 'ready' : 'idle'} isSaved={savedSnapshots.usa !== null && savedSnapshots.usa === JSON.stringify(usaSnapshot)} onLoad={handleLoadUsa} onSave={() => void handleSaveUsa()} />
                 </div>
               </article>}
