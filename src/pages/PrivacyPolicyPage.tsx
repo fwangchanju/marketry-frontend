@@ -38,7 +38,7 @@ export default function PrivacyPolicyPage() {
           <div className={INFO_FACTS}>
             <InfoFact label="로그인 정보">구글·네이버·카카오 계정 식별자와 발급자, 제공자가 전달한 경우 이메일 주소</InfoFact>
             <InfoFact label="프로필">이용자가 등록한 닉네임과 프로필 사진</InfoFact>
-            <InfoFact label="저장 데이터">화면 설정, 내 기준과 내 분류, 저장해 둔 스냅샷</InfoFact>
+            <InfoFact label="저장 데이터">로그인한 사용자의 화면 설정(이 브라우저에 저장된 설정 포함), 내 기준과 내 분류, 저장해 둔 스냅샷</InfoFact>
             <InfoFact label="접속 기록">마지막 접속 시각과 접속한 날짜</InfoFact>
             <InfoFact label="운영 지표">화면별 표시 시간, 오류 횟수, 모바일 지도 캡처 시간. 날짜·화면·측정 종류별 합계만 저장하며 계정 식별자, IP 주소, 오류 내용은 측정 기록에 넣지 않습니다.</InfoFact>
           </div>
@@ -56,7 +56,8 @@ export default function PrivacyPolicyPage() {
           <ul className={INFO_LIST}>
             <li>로그인 유지용 쿠키(mm_access, mm_refresh)는 HttpOnly·Secure로 설정되어 스크립트가 읽을 수 없습니다. 접근용은 약 15분, 갱신용은 14일 뒤 만료되며 로그아웃하면 지워집니다.</li>
             <li>로그인 과정에서 요청 위조를 막고 로그인 후 돌아갈 화면을 기억하기 위해 임시 쿠키를 추가로 사용합니다. 10분 뒤 만료되거나 로그인이 끝나면 지워집니다.</li>
-            <li>비회원이 바꾼 화면 설정은 이 브라우저 탭(sessionStorage)에만 남고 앱을 다시 열면 지워집니다. 업종 표시 순서 같은 일부 화면 구성은 이 브라우저(localStorage)에 저장됩니다.</li>
+            <li>비회원은 화면 설정을 저장하지 않습니다. 바꾼 값은 그 화면에서만 쓰이고 새로고침하면 기본값으로 돌아갑니다.</li>
+            <li>로그인한 사용자의 화면 설정(설정창 위치와 열림 상태, 시장·분류 선택, 스크린샷 범위, 모바일 주간·야간, 업종 표시 순서, 종목 정보·종목 차트 방식)은 이 브라우저(localStorage)에 저장되어 로그인 상태가 유지되는 동안 남습니다. 내 기준 설정은 서버에 저장합니다.</li>
             <li>광고·행태 분석 쿠키나 추적 도구는 사용하지 않습니다. 운영 지표는 로그인 계정이나 접속 IP와 연결하지 않고 쿠키 없이 집계합니다.</li>
           </ul>
         </InfoSection>
@@ -99,6 +100,7 @@ export default function PrivacyPolicyPage() {
 
         <InfoSection title="개정 이력">
           <ul className={INFO_LIST}>
+            <li>2026-11-19: 화면 설정 저장 안내 정정(비회원은 저장하지 않음, 로그인 사용자만 이 브라우저에 저장)</li>
             <li>2026-11-04: 1년 미접속 계정 삭제 안내 삭제</li>
             <li>2026-10-25: 소셜 로그인·임시 인증 쿠키·공지/광고 배너·방문자 가명 집계·운영 지표 안내 반영</li>
             <li>2026-10-22: 비회원 방문자 집계, 접속 기록, Cloudflare 백업, 탈퇴·미접속 계정 삭제, 보관 기간, 저장 정보 안내 반영</li>

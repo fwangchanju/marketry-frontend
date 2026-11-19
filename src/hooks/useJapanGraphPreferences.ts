@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { usePageSetting } from './usePageSetting'
-import { usePersistedState } from './usePersistedState'
+import { useTransientSetting } from './useTransientSetting'
 import { japanGraphSettingKey, type JapanGraphPreferences } from '@/utils/japanGraphSettings'
 
 // 일본 그래프의 표시 설정 — 국내 그래프(섹터 페이지)와 같이 바꾼 값은 임시값이고 설정창의 저장을 눌러야 계정에 저장된다(usePageSetting).
@@ -14,7 +14,7 @@ export function useJapanGraphPreferences() {
   const [graphMode, setGraphMode] = usePageSetting<JapanGraphPreferences['graphMode']>(settingKey('graphMode'), 'current')
   const [groupDepth, setGroupDepth] = usePageSetting(settingKey('groupDepth'), 1)
   const [avgChangeRateUseSimple, setAvgChangeRateUseSimple] = usePageSetting(settingKey('avgChangeRateUseSimple'), false)
-  const [beforeMinutes, setBeforeMinutes] = usePersistedState('japan.graph.beforeMinutes', 15)
+  const [beforeMinutes, setBeforeMinutes] = useTransientSetting('japan.graph.beforeMinutes', 15)
   const preferences = useMemo<JapanGraphPreferences>(
     () => ({ graphMode, groupDepth, avgChangeRateUseSimple, beforeMinutes }),
     [graphMode, groupDepth, avgChangeRateUseSimple, beforeMinutes],

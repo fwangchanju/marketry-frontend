@@ -33,7 +33,7 @@ import ToolbarChip from '@/components/ToolbarChip'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useSectorHeatmapPair } from '@/hooks/useSectorHeatmapPair'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
-import { usePersistedState } from '@/hooks/usePersistedState'
+import { useTransientSetting } from '@/hooks/useTransientSetting'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { profileSettingKey } from '@/utils/settingsSchema'
@@ -71,7 +71,7 @@ const GRAPH_DEPTH_NAMES = ['대분류', '중분류', '소분류']
 
 export default function GraphPage() {
   const navigate = useNavigate()
-  const [beforeMinutes, setBeforeMinutes] = usePersistedState('sectorChangeRate.beforeMinutes', 15)
+  const [beforeMinutes, setBeforeMinutes] = useTransientSetting('sectorChangeRate.beforeMinutes', 15)
   const [searchParams, setSearchParams] = useSearchParams()
 
   const {
