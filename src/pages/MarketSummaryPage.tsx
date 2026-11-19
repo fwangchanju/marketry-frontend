@@ -1,10 +1,8 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
-import { useSettled } from '@/hooks/useSettled'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
-import { CAPTURE_ID } from '@/utils/captureIds'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
@@ -345,18 +343,9 @@ export default function MarketSummaryPage() {
                 ),
               },
             ]
-  // 렌더러(텔레그램 발송)가 /summary/korea?capture=mobile 로 열면 지도 페이지 모바일 캡처와 같은 3:4 세로 판에 툴바와 시장 지도(왼쪽)·그룹 등락률(오른쪽)만 담아 찍는다.
   // 화면과 고정 캡처판이 같은 순서를 쓴다 — summaryFrames 자체는 건드리지 않는다.
   const orderedSummaryFrames = [...summaryFrames].sort((a, b) => safeSummaryFrameOrder.indexOf(a.title) - safeSummaryFrameOrder.indexOf(b.title))
-  const [searchParams] = useSearchParams()
-  const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const isMineEmpty = settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0)
-  // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 준비됐다고 하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
-  const isMobileCaptureLoaded = !isLoading && !isError && Boolean(data?.snapshotTime) && marketSummary !== undefined
-  const isMobileCaptureReady = useSettled(isMobileCaptureLoaded, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
-  const mobileCaptureFrames = ['market-map', 'group-change-rate']
-    .map(captureId => summaryFrames.find(frame => frame.captureId === captureId))
-    .filter(frame => frame !== undefined)
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
@@ -452,27 +441,6 @@ export default function MarketSummaryPage() {
           </SettingsPanel>
         </div>
       </div>
-      {isMobileCaptureMode && (
-        <div
-          data-captureid={CAPTURE_ID.SUMMARY}
-          data-capture-ready={isMobileCaptureReady}
-          style={{ width: 'calc(100dvh * 3 / 4)', height: '100dvh', padding: '4px', boxSizing: 'border-box' }}
-          className="fixed left-0 top-0 z-[200] flex flex-col bg-ui-background text-ui-white"
-        >
-          <Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>
-          <div className="flex min-h-0 flex-1 gap-1">
-            {isMobileCaptureLoaded && isMineEmpty ? (
-              <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
-                <CustomPageBadgeLink />
-              </EmptyLogoMessage>
-            ) : mobileCaptureFrames.map(frame => (
-              <CaptureFrame key={frame.captureId} title={frame.title} className="min-w-0 flex-1" isExchange={isExchange} mineColor={mineColor}>
-                {frame.body as ReactNode}
-              </CaptureFrame>
-            ))}
-          </div>
-        </div>
-      )}
       {screenshotTarget && (
         <div
           ref={fixedCaptureRef}
