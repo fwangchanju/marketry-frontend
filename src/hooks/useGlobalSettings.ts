@@ -63,6 +63,10 @@ function resolveDepthMetric(stored: StoredDepthMetric): DepthMetric {
 // 히트맵 종목 박스에 이름/등락률 중 뭘 보여줄지 — 슬라이더 인덱스로 저장(0~3). off는 둘 다 안 보여준다.
 export type StockLabelMode = 'off' | 'nameOnly' | 'rateOnly' | 'both'
 const STOCK_LABEL_MODES: StockLabelMode[] = ['off', 'nameOnly', 'rateOnly', 'both']
+// 내 기준 제외 목록의 기본값. 예방 조치: 매 렌더 새 Map을 넘기면 useTransientSetting 스냅샷이 계속 바뀌어 무한 렌더가 될 수 있다.
+// 실제로 무한 렌더가 재현된 것은 거래소 모드 제외 목록(아래 주석)이고, 이 내 기준 항목은 재현되지 않았다.
+// 지우지 말 것: 이 상수는 같은 패턴의 무한 렌더를 막는 예방 장치다. 빈 Map을 다시 인라인으로 넘기지 말 것.
+const EMPTY_MINE_EXCLUSIONS = new Map<number, string>()
 
 // sectorId -> "상위 - 하위" 형태의 전체 경로. "이 섹터가 제외 목록에 있는지"만 관리하고,
 // 실제로 화면에서 걸러낼지는 별도의 sectorFilterEnabled 마스터 스위치가 결정한다.
@@ -276,7 +280,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     isTierRangeReady: isMarketValueTierRangeReady,
   } = useMarketValueTierRange(true, settingsProfile)
   const [mineExcludedSectorNames, setMineExcludedSectorNames] = useTransientSetting<Map<number, string>>(
-    'heatmap.excludedSectorNames.mine', new Map(),
+    'heatmap.excludedSectorNames.mine', EMPTY_MINE_EXCLUSIONS,
   )
   // 섹터 제외를 목록별로 켜고 끄는 게 아니라, 제외 적용 자체를 통째로 켜고 끄는 마스터 스위치.
   const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting(profileKey('heatmap.sectorFilterEnabled'), profileDefaults.sectorFilterEnabled)
@@ -434,7 +438,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     [isLoggedIn, isMarketry, rawRootNodes],
   )
   const defaultExchangeNames = defaultPreferences.data?.exchange?.excludedSectorNames
-  // useTransientSetting은 저장값이 없을 때 이 초기값을 그대로 스냅샷으로 쓰므로, 매 렌더 새 Map이면 무한 렌더가 된다(거래소 모드 섹터 클릭 오류). 입력이 바뀔 때만 새로 만든다.
+  // 실제 오류 원인(거래소 모드 섹터 클릭 시 무한 렌더): useTransientSetting은 저장값이 없을 때 이 초기값을 그대로 스냅샷으로 쓴다.
+  // 매 렌더 새 Map이면 스냅샷이 계속 바뀌어 "Maximum update depth exceeded"가 난다. 입력이 바뀔 때만 새로 만든다.
   const initialExchangeExclusions = useMemo(() => {
     const defaultExchangeSelection = new Set(Array.isArray(defaultExchangeNames) ? defaultExchangeNames.filter((item): item is string => typeof item === 'string') : [])
     return excludedNamesForPaths(rootNodes, [...defaultExchangeSelection])
@@ -444,8 +449,12 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     initialExchangeExclusions,
   )
 
+  // 예방 조치: 기본값 배열도 트리가 바뀔 때만 새로 만든다. 매 렌더 새 배열이면 useTransientSetting 스냅샷이 계속 바뀌어 무한 렌더가 될 수 있다(비로그인 MARKETRY 제외).
+  // 이 경로는 재현되지 않았고, 실제 재현된 무한 렌더는 거래소 모드(아래 주석)였다.
+  // 지우지 말 것: 예방 장치다. useMemo를 빼고 매 렌더 새 배열을 다시 넘기지 말 것.
+  const seededMarketryExcludedKeys = useMemo(() => seedExcludedSectorKeys(rootNodes), [rootNodes])
   const [savedMarketryExcludedKeys, setSavedMarketryExcludedKeys] = usePageSetting<string[]>(
-    profileSettingKey('marketry', 'heatmap.excludedSectorKeys'), seedExcludedSectorKeys(rootNodes),
+    profileSettingKey('marketry', 'heatmap.excludedSectorKeys'), seededMarketryExcludedKeys,
   )
   const [guestMarketryExcludedKeys, setGuestMarketryExcludedKeys] = useTransientSetting<string[]>(
     'heatmap.excludedSectorKeys.marketry.guest', savedMarketryExcludedKeys,
