@@ -43,7 +43,8 @@ import { pickTopSectorKeys } from '@/utils/topPickSectors'
 
 const NO_RANGE_ADJUSTMENTS: Readonly<Record<string, number>> = {}
 
-const EXCLUDED_SECTOR_SEED_KEY = 'heatmap.excludedSeedKey'
+// 내 기준 제외 목록을 서버 값으로 채운 상태를 화면 메모리에만 기억한다. 새로고침하면 다시 채운다.
+let lastSeededExclusionKey: string | null = null
 
 export type DepthMetric = 'weightedAvgChangeRate' | 'simpleAvgChangeRate' | 'upDownCount' | 'marketValue'
 type StoredDepthMetric = DepthMetric | 'avgChangeRate' | [number, number] | null
@@ -142,7 +143,7 @@ function collectCoveredExcludedIds(nodes: HeatmapSectorNode[], excluded: Map<num
 // 간접적으로 필요한 페이지는 false를 넘겨서 사이드바를 열기 전까지 조회 자체를 미룬다 — 그래도 설정을
 // 열면 그 순간부터는 조회하므로(그리고 지도/섹터를 먼저 봤다면 react-query 캐시로 즉시 뜨므로) 설정
 // 내용 자체는 어느 페이지에서 열든 동일하게 보인다.
-// 제외 업종 목록을 서버 기본값으로 마지막에 채운 분류 — 이 탭의 sessionStorage에 둔다.
+// 제외 업종 목록을 서버 기본값으로 마지막에 채운 분류 — 화면 메모리에만 둔다.
 
 function withPriceLabels(nodes: HeatmapSectorNode[], labels: { base: string; end: string }): HeatmapSectorNode[] {
   return nodes.map(node => ({
@@ -487,10 +488,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     if (!isCustom) return
     const seedKey = `mine:${session?.userId ?? 'anonymous'}`
     try {
-      if (sessionStorage.getItem(EXCLUDED_SECTOR_SEED_KEY) === seedKey) return
-      sessionStorage.setItem(EXCLUDED_SECTOR_SEED_KEY, seedKey)
+      if (lastSeededExclusionKey === seedKey) return
+      lastSeededExclusionKey = seedKey
     } catch {
-      // 저장소를 못 쓰면 다음 트리 응답 때 서버 값으로 다시 시드한다.
+      // 기억하지 못해도 다음 트리 응답 때 서버 값으로 다시 채운다.
     }
     setMineExcludedSectorNames(seedExcludedSectorNames(data.items, []))
   }, [data, isCustom, session?.userId, setMineExcludedSectorNames, options?.readOnlyTelegramSnapshot])
