@@ -500,7 +500,7 @@ export default function MapPage() {
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               <NxtOnlyNotice active={nxtOnly && pinnedSnapshotTime === undefined && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError} nodes={rootNodes} />
               {chartStock !== null ? (
-                <StockChartView marketLabel={MARKET_LABEL[market]} sectors={chartStock.sectorPath} levelLabels={SECTOR_LEVEL_LABEL} stockName={chartStock.name} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })}><StockCandleChart stockCode={chartStock.code} market="korea" upColor={resolveHeatmapColor(5, colorScale)} downColor={resolveHeatmapColor(-5, colorScale)} /></StockChartView>
+                <StockChartView marketLabel={MARKET_LABEL[market]} sectors={chartStock.sectorPath} levelLabels={SECTOR_LEVEL_LABEL} stockName={chartStock.name} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })}><StockCandleChart stockCode={chartStock.code} market="korea" upColor={resolveHeatmapColor(15, colorScale)} downColor={resolveHeatmapColor(-15, colorScale)} /></StockChartView>
               ) : (
               <>
               {path.length > 0 && (

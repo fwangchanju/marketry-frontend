@@ -17,11 +17,13 @@ interface Props {
 
 // 받아 오는 기간(일) — 서버가 허용하는 최대치(10년)라 보관된 일봉을 전부 받는다. 처음에는 최근 VISIBLE_BARS개만 보이고, 왼쪽으로 끌면 이전 기록이 나온다.
 const CANDLE_DAYS = 3650
-const VISIBLE_BARS = 250
+const VISIBLE_BARS = 120
 // 격자선은 봉보다 눈에 띄지 않게 옅게 깐다.
 const GRID_ALPHA = 0.35
 // 거래량 막대는 차트 아래쪽 20%만 쓴다.
-const VOLUME_TOP_MARGIN = 0.8
+const VOLUME_TOP_MARGIN = 0.85
+// 거래량 막대는 봉보다 눈에 띄지 않게 반투명으로 깐다.
+const VOLUME_ALPHA = 0.45
 
 // 차트 라이브러리는 color-mix() 같은 최신 색 표기를 읽지 못해서, 어떤 색이든 canvas로 한 칸 칠해 rgb 값으로 바꿔 넘긴다.
 function toRgb(color: string, fallback: string): string {
@@ -32,6 +34,10 @@ function toRgb(color: string, fallback: string): string {
   context.fillRect(0, 0, 1, 1)
   const [red, green, blue, alpha] = context.getImageData(0, 0, 1, 1).data
   return alpha === 0 ? fallback : `rgb(${red}, ${green}, ${blue})`
+}
+
+function withAlpha(rgb: string, alpha: number): string {
+  return rgb.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`)
 }
 
 // 지도 자리에 그리는 종목 일봉 차트 — TradingView Lightweight Charts(오픈소스)에 우리 일봉 데이터를 넣어 그린다.
@@ -49,8 +55,8 @@ export default function StockCandleChart({ stockCode, market, upColor, downColor
     if (!container || !data || data.length === 0) return
     const styles = getComputedStyle(document.documentElement)
     const background = toRgb(styles.getPropertyValue('--ui-background').trim(), 'rgb(10, 10, 10)')
-    const textColor = toRgb(styles.getPropertyValue('--ui-text').trim(), 'rgb(201, 201, 201)')
-    const gridColor = toRgb(styles.getPropertyValue('--ui-control').trim(), 'rgb(42, 42, 42)').replace('rgb(', 'rgba(').replace(')', `, ${GRID_ALPHA})`)
+    const textColor = toRgb(styles.getPropertyValue('--ui-white').trim() || styles.getPropertyValue('--ui-text').trim(), 'rgb(235, 235, 235)')
+    const gridColor = withAlpha(toRgb(styles.getPropertyValue('--ui-control').trim(), 'rgb(42, 42, 42)'), GRID_ALPHA)
     const up = toRgb(upColor, 'rgb(220, 60, 60)')
     const down = toRgb(downColor, 'rgb(60, 110, 220)')
     const chart = createChart(container, {
@@ -68,7 +74,7 @@ export default function StockCandleChart({ stockCode, market, upColor, downColor
     // 거래량은 같은 차트의 아래쪽에 봉과 같은 색으로 깐다.
     const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' }, priceScaleId: '' })
     volume.priceScale().applyOptions({ scaleMargins: { top: VOLUME_TOP_MARGIN, bottom: 0 } })
-    volume.setData(data.map(({ date, open, close, volume: amount }) => ({ time: date, value: amount, color: close >= open ? up : down })))
+    volume.setData(data.map(({ date, open, close, volume: amount }) => ({ time: date, value: amount, color: withAlpha(close >= open ? up : down, VOLUME_ALPHA) })))
     if (data.length > VISIBLE_BARS) chart.timeScale().setVisibleLogicalRange({ from: data.length - VISIBLE_BARS, to: data.length })
     else chart.timeScale().fitContent()
     return () => chart.remove()

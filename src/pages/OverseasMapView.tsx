@@ -254,7 +254,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           </Toolbar>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
             {chartStock !== null && chart ? (
-              <StockChartView marketLabel={label} sectors={chartStock.sectorPath} levelLabels={levelLabels} stockName={chartStock.name} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })}>{chart.market === 'japan' ? <StockCandleChart stockCode={chartStock.code} market="japan" upColor={resolveHeatmapColor(5, colorScale)} downColor={resolveHeatmapColor(-5, colorScale)} /> : <StockChartPanel symbol={toUsaTradingViewSymbol(chartStock.code)} timezone={USA_CHART_TIMEZONE} />}</StockChartView>
+              <StockChartView marketLabel={label} sectors={chartStock.sectorPath} levelLabels={levelLabels} stockName={chartStock.name} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })}>{chart.market === 'japan' ? <StockCandleChart stockCode={chartStock.code} market="japan" upColor={resolveHeatmapColor(15, colorScale)} downColor={resolveHeatmapColor(-15, colorScale)} /> : <StockChartPanel symbol={toUsaTradingViewSymbol(chartStock.code)} timezone={USA_CHART_TIMEZONE} />}</StockChartView>
             ) : (
             <>
             {path.length > 0 && (
