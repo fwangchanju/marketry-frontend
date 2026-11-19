@@ -446,8 +446,10 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     initialExchangeExclusions,
   )
 
+  // 기본값 배열도 트리가 바뀔 때만 새로 만든다 — 매 렌더 새 배열이면 useTransientSetting 스냅샷이 계속 바뀐다(비로그인 MARKETRY 제외).
+  const seededMarketryExcludedKeys = useMemo(() => seedExcludedSectorKeys(rootNodes), [rootNodes])
   const [savedMarketryExcludedKeys, setSavedMarketryExcludedKeys] = usePageSetting<string[]>(
-    profileSettingKey('marketry', 'heatmap.excludedSectorKeys'), seedExcludedSectorKeys(rootNodes),
+    profileSettingKey('marketry', 'heatmap.excludedSectorKeys'), seededMarketryExcludedKeys,
   )
   const [guestMarketryExcludedKeys, setGuestMarketryExcludedKeys] = useTransientSetting<string[]>(
     'heatmap.excludedSectorKeys.marketry.guest', savedMarketryExcludedKeys,
