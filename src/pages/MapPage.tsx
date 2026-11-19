@@ -38,10 +38,10 @@ import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
+import StockCandleChart from '@/components/StockCandleChart'
 import StockChartView from '@/components/StockChartView'
 import { useStockChart } from '@/hooks/useStockChart'
 import { findStockSectorPath } from '@/utils/stockSectorPath'
-import { CHART_TIMEZONE, toTradingViewSymbol } from '@/utils/tradingViewSymbol'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
@@ -500,7 +500,7 @@ export default function MapPage() {
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               <NxtOnlyNotice active={nxtOnly && pinnedSnapshotTime === undefined && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError} nodes={rootNodes} />
               {chartStock !== null ? (
-                <StockChartView marketLabel={MARKET_LABEL[market]} sectors={chartStock.sectorPath} levelLabels={SECTOR_LEVEL_LABEL} stockName={chartStock.name} symbol={toTradingViewSymbol('korea', chartStock.code)} timezone={CHART_TIMEZONE.korea} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })} />
+                <StockChartView marketLabel={MARKET_LABEL[market]} sectors={chartStock.sectorPath} levelLabels={SECTOR_LEVEL_LABEL} stockName={chartStock.name} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })}><StockCandleChart stockCode={chartStock.code} market="korea" upColor={resolveHeatmapColor(5, colorScale)} downColor={resolveHeatmapColor(-5, colorScale)} /></StockChartView>
               ) : (
               <>
               {path.length > 0 && (

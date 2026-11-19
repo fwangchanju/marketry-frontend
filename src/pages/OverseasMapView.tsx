@@ -22,10 +22,12 @@ import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Heatmap from '@/components/Heatmap'
+import StockCandleChart from '@/components/StockCandleChart'
+import StockChartPanel from '@/components/StockChartPanel'
 import StockChartView from '@/components/StockChartView'
 import { useStockChart } from '@/hooks/useStockChart'
 import { findStockSectorPath } from '@/utils/stockSectorPath'
-import { CHART_TIMEZONE, toTradingViewSymbol } from '@/utils/tradingViewSymbol'
+import { USA_CHART_TIMEZONE, toUsaTradingViewSymbol } from '@/utils/tradingViewSymbol'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -252,7 +254,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           </Toolbar>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
             {chartStock !== null && chart ? (
-              <StockChartView marketLabel={label} sectors={chartStock.sectorPath} levelLabels={levelLabels} stockName={chartStock.name} symbol={toTradingViewSymbol(chart.market, chartStock.code)} timezone={CHART_TIMEZONE[chart.market]} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })} />
+              <StockChartView marketLabel={label} sectors={chartStock.sectorPath} levelLabels={levelLabels} stockName={chartStock.name} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })}>{chart.market === 'japan' ? <StockCandleChart stockCode={chartStock.code} market="japan" upColor={resolveHeatmapColor(5, colorScale)} downColor={resolveHeatmapColor(-5, colorScale)} /> : <StockChartPanel symbol={toUsaTradingViewSymbol(chartStock.code)} timezone={USA_CHART_TIMEZONE} />}</StockChartView>
             ) : (
             <>
             {path.length > 0 && (
