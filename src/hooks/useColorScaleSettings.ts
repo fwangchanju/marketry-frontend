@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { usePageSetting } from './usePageSetting'
-import { usePersistedState } from './usePersistedState'
+import { useTransientSetting } from './useTransientSetting'
 import { useIsLoggedIn, useSession } from './useSession'
 import { useHeatmapColorScale } from './useHeatmapColorScale'
 import {
@@ -75,7 +75,7 @@ export function useColorScaleSettings({
   const colorEditSnapshotRef = colorSession.snapshotRef
   const selectedColorPercentRef = colorSession.selectedPercentRef
   const { data: colorScaleServerData } = useHeatmapColorScale()
-  const [localColorScale] = usePersistedState<ColorScaleConfig | null>('heatmap.localColorScale', null)
+  const [localColorScale] = useTransientSetting<ColorScaleConfig | null>('heatmap.localColorScale', null)
   useEffect(() => {
     if (isSessionLoading || !colorScaleServerData) return
     const initial = !isLoggedIn && localColorScale ? localColorScale : colorScaleServerData

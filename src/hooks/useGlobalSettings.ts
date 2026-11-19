@@ -3,7 +3,6 @@ import { useStockPopupOnHover } from '@/hooks/useStockChart'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { usePersistedState } from './usePersistedState'
 import { useTaxonomySelection, type TaxonomySelection } from './useTaxonomySelection'
 import { hasMineSheetRequest, mineSheetReturnPath, withoutSheetParam } from '@/utils/mineSheetReturn'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
@@ -202,7 +201,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 표시 시간대가 아니거나 시간외 스냅샷이 아직 없으면 저장한 선택과 무관하게 누적으로 보인다.
   const [afterHoursStart, setAfterHoursStart] = useState<string | null>(null)
   const isAfterHoursControlsVisible = useAfterHoursControlsVisible(afterHoursStart)
-  const [storedChangeRateChoice, setStoredChangeRateChoice] = usePersistedState<ChangeRateChoice>('heatmap.changeRateMode', 'daily')
+  const [storedChangeRateChoice, setStoredChangeRateChoice] = useTransientSetting<ChangeRateChoice>('heatmap.changeRateMode', 'daily')
   // 렌더러(텔레그램 발송)가 ?capture=mobile&basis=close|afterHours 로 열면 저장된 선택과 표시 시간대에 상관없이 그 기준으로 그린다(15:30~15:40은 종가, 15:40 이후는 별도).
   // 렌더러는 저장된 선택이 없는 새 브라우저라 주소로 정해 주지 않으면 늘 누적으로 보인다.
   const captureBasis = useMemo<ChangeRateChoice | null>(() => {
@@ -275,9 +274,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     excludedMarketValueTiers,
     isTierRangeReady: isMarketValueTierRangeReady,
   } = useMarketValueTierRange(true, settingsProfile)
-  const [mineExcludedSectorNames, setMineExcludedSectorNames] = usePersistedState<Map<number, string>>(
+  const [mineExcludedSectorNames, setMineExcludedSectorNames] = useTransientSetting<Map<number, string>>(
     'heatmap.excludedSectorNames.mine', new Map(),
-    { serialize: map => [...map.entries()], deserialize: raw => new Map(raw as [number, string][]) },
   )
   // 섹터 제외를 목록별로 켜고 끄는 게 아니라, 제외 적용 자체를 통째로 켜고 끄는 마스터 스위치.
   const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting(profileKey('heatmap.sectorFilterEnabled'), profileDefaults.sectorFilterEnabled)
@@ -437,17 +435,16 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const defaultExchangeNames = defaultPreferences.data?.exchange?.excludedSectorNames
   const defaultExchangeSelection = new Set(Array.isArray(defaultExchangeNames) ? defaultExchangeNames.filter((item): item is string => typeof item === 'string') : [])
   const initialExchangeExclusions = excludedNamesForPaths(rootNodes, [...defaultExchangeSelection])
-  const [exchangeExcludedSectorNames, setExchangeExcludedSectorNames] = usePersistedState<Map<number, string>>(
+  const [exchangeExcludedSectorNames, setExchangeExcludedSectorNames] = useTransientSetting<Map<number, string>>(
     'heatmap.excludedSectorNames.exchange',
     initialExchangeExclusions,
-    { liveDefault: true, serialize: map => [...map.entries()], deserialize: raw => new Map(raw as [number, string][]) },
   )
 
   const [savedMarketryExcludedKeys, setSavedMarketryExcludedKeys] = usePageSetting<string[]>(
     profileSettingKey('marketry', 'heatmap.excludedSectorKeys'), seedExcludedSectorKeys(rootNodes),
   )
-  const [guestMarketryExcludedKeys, setGuestMarketryExcludedKeys] = usePersistedState<string[]>(
-    'heatmap.excludedSectorKeys.marketry.guest', savedMarketryExcludedKeys, { liveDefault: true },
+  const [guestMarketryExcludedKeys, setGuestMarketryExcludedKeys] = useTransientSetting<string[]>(
+    'heatmap.excludedSectorKeys.marketry.guest', savedMarketryExcludedKeys,
   )
   const marketryExcludedSectorNames = useMemo(
     () => excludedNamesForStableKeys(rootNodes, isLoggedIn ? savedMarketryExcludedKeys : guestMarketryExcludedKeys),
