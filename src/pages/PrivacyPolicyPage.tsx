@@ -4,7 +4,7 @@ import DocumentPageLayout from '@/components/DocumentPageLayout'
 import { INFO_FACTS, INFO_LIST, InfoCallout, InfoFact, InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 
 const CONTACT_EMAIL = 'marketry2026@gmail.com'
-const EFFECTIVE_DATE = '2026-11-04'
+const EFFECTIVE_DATE = '2026-11-20'
 
 export default function PrivacyPolicyPage() {
   return (
