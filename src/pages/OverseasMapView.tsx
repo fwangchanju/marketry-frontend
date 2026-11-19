@@ -58,7 +58,7 @@ const NO_TOP_PICKS = new Set<string>()
 const NO_STOCK_MOVES: StockMoves = {}
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 const FLAT_GROUP_NAME = '__flat__'
-const SECTION_ORDER: SettingsPanelSectionId[] = ['composition', 'industry', 'stockDisplay', 'colors']
+const SECTION_ORDER: SettingsPanelSectionId[] = ['stockDisplay', 'composition', 'industry', 'colors']
 
 function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
   return {
