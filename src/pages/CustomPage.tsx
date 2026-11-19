@@ -330,7 +330,8 @@ export default function CustomPage() {
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
               onRequestLogin={() => requireLogin(pathname)}
-              sectionOrder={isAdmin && sheet === 'MINE' ? ['custom', 'adminOps'] : ['custom']}
+              // MARKETRY 분류 업데이트·롤백(관리자 탭)은 종목 화면에만 둔다 — 한국·일본·미국 섹터 화면에는 없다(2026-11-19 사용자 결정).
+              sectionOrder={isAdmin && sheet === 'MINE' && mode === 'stock' ? ['custom', 'adminOps'] : ['custom']}
               taxonomyAtBottom
               snapshotTime={taxonomyMap?.taxonomyUpdatedAt}
               taxonomy={sheet}
@@ -346,7 +347,7 @@ export default function CustomPage() {
                   </>
                 ) : <div className="settings-empty-message"><span className="text-center">읽기 전용<br /><span className="text-ui-muted">[내 기준] 모드만 쓰기 가능</span></span></div>}
               </SettingsPanelGroup>
-              {isAdmin && sheet === 'MINE' && <SettingsPanelGroup section="adminOps">
+              {isAdmin && sheet === 'MINE' && mode === 'stock' && <SettingsPanelGroup section="adminOps">
                 <div className="settings-plain-content">
                   <div className="settings-ops-item h-[180px] text-sm">
                     <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">MARKETRY 분류</h2>
