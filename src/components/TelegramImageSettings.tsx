@@ -1,3 +1,4 @@
+import MarketFlagIcon from '@/components/MarketFlagIcon'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { InfoSection } from '@/components/InfoDocument'
@@ -84,6 +85,8 @@ function SettingValue({ value, index, profileLabel }: { value: TelegramImageValu
   if (!value) return <>-</>
   const items = labels(value, profileLabel)
   if (index === 1) return <Exclusions value={value} />
+  if (index === 8 && (profileLabel === 'MARKETRY' || profileLabel === '일본' || profileLabel === '미국')) return <>청록 (고정)</>
+  if (index === 8 && profileLabel === '거래소') return <>하늘 (고정)</>
   if (index === 8) return <ColorValue color={items[index]} />
   return <>{items[index]}</>
 }
@@ -160,7 +163,9 @@ export default function TelegramImageSettings({
     <div className="mx-auto w-full max-w-[674px] overflow-hidden border border-ui-border bg-ui-panel p-4 text-sm">
       <div className="space-y-3">
         <section aria-label={profileLabel} className="rounded-md border border-ui-border bg-ui-background/50 px-3 py-2">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-ui-white"><img src={profileLabel === '거래소' ? krxLogo : marketrySymbol} alt="" aria-hidden="true" className="h-10 w-10 shrink-0 object-contain" style={profileLabel === '거래소' ? { clipPath: 'circle(44.7% at 53% 50.4%)' } : undefined} />{profileLabel}</h3>
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-ui-white">{profileLabel === '일본' || profileLabel === '미국'
+            ? <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center"><MarketFlagIcon flag={profileLabel === '일본' ? 'JP' : 'US'} /></span>
+            : <img src={profileLabel === '거래소' ? krxLogo : marketrySymbol} alt="" aria-hidden="true" className="h-10 w-10 shrink-0 object-contain" style={profileLabel === '거래소' ? { clipPath: 'circle(44.7% at 53% 50.4%)' } : undefined} />}{profileLabel}</h3>
         </section>
         {[0, 2, 5, 8].map((start, groupIndex) => {
           const end = [2, 5, 8, names.length][groupIndex]
@@ -177,8 +182,8 @@ export default function TelegramImageSettings({
                   <span className="min-w-0"><SettingValue value={saved} index={index} profileLabel={profileLabel} /></span>
                   {index === 1 && hasMoreExclusions(saved) && <button type="button" aria-haspopup="dialog" aria-label="설정값 제외 업종 목록 열기" aria-expanded={exclusionsOpen && exclusionsColumn === 'saved'} onClick={() => toggleExclusions('saved')} className="inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-ui-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"><ChevronDownIcon aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${exclusionsOpen && exclusionsColumn === 'saved' ? 'rotate-180' : ''}`} /></button>}
                 </span>
-                <span ref={index === 1 && hasMoreExclusions(current) ? currentExclusionsTriggerRef : undefined} className={`${VALUE_CLASS} flex items-center justify-between gap-1 ${isDifferent ? 'text-brand' : 'text-ui-white'}`}>
-                  <span className="min-w-0">{isDifferent && <span className="sr-only">설정값과 다름: </span>}<SettingValue value={current} index={index} profileLabel={profileLabel} /></span>
+                <span ref={index === 1 && hasMoreExclusions(current) ? currentExclusionsTriggerRef : undefined} className={`${VALUE_CLASS} flex items-center justify-between gap-1 ${isDifferent ? '!border-brand !bg-[var(--brand-surface)] text-ui-white' : 'text-ui-white'}`}>
+                  <span className="min-w-0">{isDifferent && <span className="sr-only">설정값과 다름: </span>}{index === 8 && (profileLabel === 'MARKETRY' || profileLabel === '거래소' || profileLabel === '일본' || profileLabel === '미국') ? '-' : <SettingValue value={current} index={index} profileLabel={profileLabel} />}</span>
                   {index === 1 && hasMoreExclusions(current) && <button type="button" aria-haspopup="dialog" aria-label="현재값 제외 업종 목록 열기" aria-expanded={exclusionsOpen && exclusionsColumn === 'current'} onClick={() => toggleExclusions('current')} className="inline-flex h-4 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-ui-muted hover:text-ui-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"><ChevronDownIcon aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${exclusionsOpen && exclusionsColumn === 'current' ? 'rotate-180' : ''}`} /></button>}
                 </span>
               </div>
