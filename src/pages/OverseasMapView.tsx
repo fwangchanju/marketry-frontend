@@ -23,7 +23,7 @@ import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Heatmap from '@/components/Heatmap'
 import MapStockChart from '@/components/MapStockChart'
 import { MapChangeFilterSections, MapExperimentSections } from '@/components/MapSettingsSections'
-import { useMapStockChart } from '@/hooks/useStockChart'
+import { useMapStockChart, useStockPopupOnHover } from '@/hooks/useStockChart'
 import { useTransientSetting } from '@/hooks/useTransientSetting'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
@@ -88,13 +88,13 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: market === 'JAPAN' ? 'japan' : 'usa' })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
-  // 실험 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
-  // 시장(일본·미국)과 모드(MARKETRY·내 기준)마다 따로 기억한다. 한국 지도와 같은 방식이다. 종목 정보·종목 차트는 아래에서 모드와 상관없이 시장마다 하나로 쓰고, 로그인한 사용자만 이 브라우저에 저장한다.
+  // 공통 설정 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
+  // 시장(일본·미국)과 모드(MARKETRY·내 기준)마다 따로 기억한다. 한국 지도와 같은 방식이다. 종목 정보·종목 차트는 모드·시장과 상관없이 하나로 쓰고, 로그인한 사용자만 이 브라우저에 저장한다.
   const experimentKey = (name: string) => `overseas.experiment.${market}.${sheet}.${name}`
   const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<'all' | 'rising' | 'falling'>(experimentKey('stockChangeFilter'), 'all')
   const [sectorChangeFilter, setSectorChangeFilter] = useTransientSetting<'all' | 'rising' | 'falling'>(experimentKey('sectorChangeFilter'), 'all')
   const [sectorChangeDepth, setSectorChangeDepth] = useTransientSetting(experimentKey('sectorChangeDepth'), 0)
-  const [stockPopupOnHover, setStockPopupOnHover] = useLocalPersistedState(`marketry:stock-popup-on-hover:${market}`, fixed.stockPopupOnHover)
+  const [stockPopupOnHover, setStockPopupOnHover] = useStockPopupOnHover(fixed.stockPopupOnHover)
   // 텍스트 표시 기준은 설정창에서 바꾸지 않고 기본값으로 고정한다.
   const boxLabelMinAreaPercent = fixed.boxLabelMinAreaPercent
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
@@ -110,7 +110,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   }, [filteredRootNodes, preferences.topPickEnabled, preferences.topPickDepth, preferences.topPickCount, preferences.activeDepthMetric, topPickMaxSelectableDepth])
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
   // 종목 박스의 차트 아이콘·클릭·더블 클릭으로 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
-  const { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ storageMarket: market, stockPopupOnHover, sectorNodes: filteredRootNodes })
+  const { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ stockPopupOnHover, sectorNodes: filteredRootNodes })
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)

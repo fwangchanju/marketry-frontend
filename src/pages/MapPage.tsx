@@ -214,9 +214,9 @@ export default function MapPage() {
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
   // 종목 박스의 차트 아이콘·클릭·더블 클릭으로 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
-  const { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ storageMarket: 'korea', stockPopupOnHover, sectorNodes: filteredRootNodes })
+  const { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ stockPopupOnHover, sectorNodes: filteredRootNodes })
   const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
-  // 실험 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
+  // 공통 설정 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
   // 텔레그램 렌더러가 이 함수를 호출해 화면 캡처와 같은 글꼴·여백·배율로 저장한다.
@@ -255,7 +255,7 @@ export default function MapPage() {
     : displayNode
       ? [toDisplayGroup(displayNode)]
       : displaySiblings.map(toDisplayGroup)
-  // 실험 탭의 종목 이동 — 끌어서 옮긴 종목을 화면에서만 도착 업종으로 옮겨 그린다. 메모리에만 두고(서버·브라우저에 저장하지 않는다),
+  // 공통 설정 탭의 종목 이동 — 끌어서 옮긴 종목을 화면에서만 도착 업종으로 옮겨 그린다. 메모리에만 두고(서버·브라우저에 저장하지 않는다),
   // 켜기를 끄거나 시장·분류를 바꾸면 쓰지 않으며 다른 페이지로 가면 상태째 사라진다.
   const stockMoveScope = `${market}|${settingsModalProps.taxonomy}`
   const stockMoves = stockMoveEnabled && stockMoveState.scope === stockMoveScope ? stockMoveState.moves : NO_STOCK_MOVES

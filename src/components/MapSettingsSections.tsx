@@ -41,7 +41,7 @@ export function MapChangeFilterSections({
   )
 }
 
-// 실험 탭 — 종목 정보, 종목 차트, 종목 이동. 종목 이동을 켜면 저장되지 않는다고 알려 준다.
+// 공통 설정 탭 — 종목 정보, 종목 차트, 종목 이동. 종목 이동을 켜면 저장되지 않는다고 알려 준다.
 export function MapExperimentSections({
   stockPopupOnHover,
   onChangeStockPopupOnHover,

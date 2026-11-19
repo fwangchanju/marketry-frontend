@@ -246,8 +246,8 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   // 커스텀 페이지의 MARKETRY 분류 업데이트·롤백 탭. 화면 이름은 어드민 페이지의 탭과 같은 "관리자"지만 서로 다른 페이지에 있어 한 설정창에 같이 뜨지 않는다.
   { id: 'adminOps', label: '관리자', icon: 'member' },
   { id: 'adminManage', label: '관리자', icon: 'member' },
-  // 실험 탭 — 안 쓰는 기능·시험 중인 기능을 모아 두는 탭이다. 보이는 것도 쓰는 것도 특별 회원과 운영자뿐이다.
-  { id: 'special', label: '실험', icon: 'experiment' },
+  // 공통 설정 탭 — 안 쓰는 기능·시험 중인 기능을 모아 두는 탭이다. 보이는 것도 쓰는 것도 특별 회원과 운영자뿐이다.
+  { id: 'special', label: '공통 설정', icon: 'experiment' },
   { id: 'custom', label: '커스텀', icon: 'custom-edit' },
   // 배너 관리 전용 탭 — 기존 탭 번호를 바꾸지 않도록 뒤에 둔다.
   { id: 'adminBanner', label: '배너', icon: 'ad' },
@@ -1811,7 +1811,7 @@ export function SettingsSectorLevelSection({
 }
 
 // 지도 페이지 관리자 전용 미사용 탭의 종목 정보 설정. 기존 설정 키와 지도 동작은 유지한다.
-// 실험 탭의 "종목 이동" — 지도에서 종목 박스를 끌어 다른 업종에 놓으면 화면에서만 옮겨 그린다(서버·브라우저에 저장하지 않고, 다른 페이지로 가거나 새로고침하면 원래대로).
+// 공통 설정 탭의 "종목 이동" — 지도에서 종목 박스를 끌어 다른 업종에 놓으면 화면에서만 옮겨 그린다(서버·브라우저에 저장하지 않고, 다른 페이지로 가거나 새로고침하면 원래대로).
 export function SettingsStockMoveSection({
   enabled,
   onChange,
@@ -2042,7 +2042,7 @@ const DIRECTION_OPTIONS: { value: StockChangeFilter; label: string }[] = [
   { value: 'falling', label: '하락' },
 ]
 
-// 지도 페이지 실험 탭(특별 회원 전용)의 "업종 등락 방향" — 항목 높이 180px, 제목 번호는 settings-plain-content가 매긴다.
+// 지도 페이지 공통 설정 탭(특별 회원 전용)의 "업종 등락 방향" — 항목 높이 180px, 제목 번호는 settings-plain-content가 매긴다.
 // 값은 저장하지 않고 이 탭의 메모리에만 둔다(useTransientSetting).
 export function SettingsSectorChangeSection({
   value,
@@ -2107,7 +2107,7 @@ export function SettingsSectorChangeSection({
   )
 }
 
-// 실험 탭(특별 회원 전용)의 "종목 등락 방향" — 업종 등락 방향·종목 정보와 같은 운영자 항목 모양이다(높이 180px, 버튼 영역 가운데).
+// 공통 설정 탭(특별 회원 전용)의 "종목 등락 방향" — 업종 등락 방향·종목 정보와 같은 운영자 항목 모양이다(높이 180px, 버튼 영역 가운데).
 export function SettingsStockChangeSection({
   value,
   onChange,
@@ -2647,7 +2647,7 @@ export default function SettingsPanel({
   const session = useSession().data
   const isAdminSessionNow = isAdminSession(session)
   const isAdminPage = isAdminSessionNow && ['Banner', 'Dashboard', 'Member', 'Message'].includes(pageLabel ?? '')
-  // 실험 탭은 2026-11-16부터 누구나 본다(사용자 결정). 색상은 그대로 보라색이다.
+  // 공통 설정 탭은 2026-11-16부터 누구나 본다(사용자 결정). 색상은 그대로 보라색이다.
   const canSeeSpecialSections = true
   const childNodes = Children.toArray(children)
   const sectionContent = new Map<SettingsPanelSectionId, ReactNode[]>()

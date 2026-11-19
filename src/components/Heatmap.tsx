@@ -18,7 +18,7 @@ interface Props {
   onExcludeSector: (sectorId: number, sectorName: string) => void
   // 있으면 종목 우클릭 팝업에 차트 아이콘이 나온다. 없는 화면(일본·미국 등 아직 연결 전)은 아이콘이 없다.
   onOpenStockChart?: (stock: { code: string; name: string }) => void
-  // 차트를 여는 방식(설정창 실험 탭의 "종목 차트"). 우클릭은 팝업의 아이콘으로, 클릭·더블 클릭은 종목 박스에서 바로 연다. 종목 이동이 켜져 있으면 끌어 놓기와 겹쳐서 클릭·더블 클릭으로는 열지 않는다.
+  // 차트를 여는 방식(설정창 공통 설정 탭의 "종목 차트"). 우클릭은 팝업의 아이콘으로, 클릭·더블 클릭은 종목 박스에서 바로 연다. 종목 이동이 켜져 있으면 끌어 놓기와 겹쳐서 클릭·더블 클릭으로는 열지 않는다.
   stockChartTrigger?: StockChartTrigger
   heightClassName?: string
   // 셋 다 null = 전부 꺼짐. [min, max]면 그 뎁스 범위(현재 화면 기준 상대 뎁스)에서만 표시.
@@ -50,7 +50,7 @@ interface Props {
   // 0이 아닌 뎁스가 오면 그 뎁스로 진입할 때 썼던 위치로 줄어드는 애니메이션을 재생한다.
   zoomOutRequestDepth: number | null
   onZoomOutComplete: (depth: number) => void
-  // 실험 탭의 종목 이동 — 켜져 있으면 종목 박스를 끌어 다른 업종에 놓을 수 있고, 놓으면 onMoveStock을 부른다(저장은 부르는 쪽 몫이다).
+  // 공통 설정 탭의 종목 이동 — 켜져 있으면 종목 박스를 끌어 다른 업종에 놓을 수 있고, 놓으면 onMoveStock을 부른다(저장은 부르는 쪽 몫이다).
   stockMoveEnabled?: boolean
   onMoveStock?: (drop: StockDrop) => void
   // 금액 단위 — 일본 지도는 엔으로 표시한다.

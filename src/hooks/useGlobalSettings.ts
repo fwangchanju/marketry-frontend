@@ -1,4 +1,5 @@
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
+import { useStockPopupOnHover } from '@/hooks/useStockChart'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -247,7 +248,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [depthMetricMaxIndex, setDepthMetricMaxIndex] = usePageSetting(profileKey('heatmap.depthMetricMaxIndex'), profileDefaults.depthMetricMaxIndex)
   // avgChangeRateUseSimple은 섹터 랭킹에 사용한다. 강세 업종은 업종 탭 표시 지표를 따른다.
   // 종목 박스가 전체 히트맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다(섹터 헤더와는 무관).
-  // 실험 탭의 3-3 텍스트 표시 기준은 저장하지 않는다(새로고침하면 기본값).
+  // 공통 설정 탭의 3-3 텍스트 표시 기준은 저장하지 않는다(새로고침하면 기본값).
   // 텍스트 표시 기준(박스 안 글자를 보여 주는 최소 넓이 비중)은 설정창에서 바꾸지 않고 기본값으로 고정한다.
   const boxLabelMinAreaPercent = profileDefaults.boxLabelMinAreaPercent
   // 종목 박스에 이름만/등락률만/둘 다/끄기 중 뭘 보여줄지 — 기본은 둘 다(기존 동작 유지, 배열 앞에
@@ -262,7 +263,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [decimalPlacesIndex, setDecimalPlacesIndex] = usePageSetting(profileKey('heatmap.decimalPlacesIndex'), profileDefaults.decimalPlacesIndex)
   // 종목 박스 설명 팝업을 여는 방식 — false=우클릭(기존 동작), true=커서를 박스 위로 옮길 때. 섹터(대/중/소분류)
   // 팝업은 이 설정과 무관하게 항상 우클릭이다.
-  const [stockPopupOnHover, setStockPopupOnHover] = useLocalPersistedState('marketry:stock-popup-on-hover:korea', profileDefaults.stockPopupOnHover)
+  const [stockPopupOnHover, setStockPopupOnHover] = useStockPopupOnHover(profileDefaults.stockPopupOnHover)
   const decimalPlaces = decimalPlacesIndex
   // 시가총액 구간 범위는 같은 분류의 지도와 섹터 랭킹이 공유한다.
   const {
@@ -281,7 +282,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // 섹터 제외를 목록별로 켜고 끄는 게 아니라, 제외 적용 자체를 통째로 켜고 끄는 마스터 스위치.
   const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting(profileKey('heatmap.sectorFilterEnabled'), profileDefaults.sectorFilterEnabled)
   const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<StockChangeFilter>(profileKey('heatmap.stockChangeFilter'), profileDefaults.stockChangeFilter)
-  // 실험 탭의 업종 등락 방향·깊이는 저장하지 않는다(새로고침하면 기본값).
+  // 공통 설정 탭의 업종 등락 방향·깊이는 저장하지 않는다(새로고침하면 기본값).
   const [storedSectorChangeFilter, setSectorChangeFilter] = useTransientSetting<SectorChangeFilter>(profileKey('heatmap.sectorChangeFilter'), profileDefaults.sectorChangeFilter)
   const sectorChangeFilter: SectorChangeFilter = storedSectorChangeFilter === 'rising' || storedSectorChangeFilter === 'falling' ? storedSectorChangeFilter : 'all'
   const [storedSectorChangeDepth, setSectorChangeDepth] = useTransientSetting(profileKey('heatmap.sectorChangeDepth'), profileDefaults.sectorChangeDepth)
