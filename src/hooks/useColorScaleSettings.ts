@@ -175,17 +175,12 @@ export function useColorScaleSettings({
     if (selectedIndex === target.index) selectedColorPercentRef.current = percent
     else if (selectedIndex === mirrorIndex) selectedColorPercentRef.current = -percent
   }
-  // 등락률 막대의 손잡이나 0% 표식을 눌러 선택만 바꾼다. 미저장 변경은 유지한다.
+  // 등락률 막대의 손잡이를 눌러 선택만 바꾼다. 미저장 변경은 유지한다.
   // side는 상승/하락 중 어느 쪽 구간의 색을 편집할지 정한다. 막대의 값은 상승 기준이고 하락은 같은 값의 거울이다.
   const handleSelectColorRank = (rank: number, side: 'up' | 'down') => {
     if (!colorScaleDraft) return
     const row = sortedSignRows(colorScaleDraft.thresholds, side === 'up')[rank]
     if (row) handleSelectColorSwatch(row.threshold.thresholdPercent, row.threshold.color)
-  }
-  const handleSelectColorZero = () => {
-    if (!colorScaleDraft) return
-    const zero = colorScaleDraft.thresholds.find(threshold => threshold.thresholdPercent === 0)
-    handleSelectColorSwatch(0, zero?.color ?? DEFAULT_ZERO_COLOR)
   }
   const handleSaveColorScale = async () => {
     if (!colorScaleDraft) {
@@ -298,8 +293,8 @@ export function useColorScaleSettings({
   const selectedBar = (() => {
     const selectedIndex = colorEditIndices[0]
     const selectedThreshold = colorScaleDraft?.thresholds[selectedIndex]
-    if (!colorScaleDraft || !selectedThreshold) return { side: 'zero' as const, rank: null }
-    if (selectedThreshold.thresholdPercent === 0) return { side: 'zero' as const, rank: null }
+    // 선택된 칸이 없거나 0% 칸이면 상승 쪽으로 보여 준다(0% 칸은 고칠 값이 없어 선택하지 않는다).
+    if (!colorScaleDraft || !selectedThreshold || selectedThreshold.thresholdPercent === 0) return { side: 'up' as const, rank: null }
     const up = selectedThreshold.thresholdPercent > 0
     const rank = (up ? barPositiveRows : barNegativeRows).findIndex(row => row.index === selectedIndex)
     return { side: up ? ('up' as const) : ('down' as const), rank: rank < 0 ? null : rank }
@@ -335,7 +330,6 @@ export function useColorScaleSettings({
           },
           onChangeRankPercent: handleChangeColorEditRankPercent,
           onSelectRank: handleSelectColorRank,
-          onSelectZero: handleSelectColorZero,
         }
       : null
 

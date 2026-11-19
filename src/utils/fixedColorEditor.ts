@@ -23,6 +23,5 @@ export function buildFixedColorEditorProps() {
     },
     onChangeRankPercent: () => {},
     onSelectRank: () => {},
-    onSelectZero: () => {},
   }
 }
