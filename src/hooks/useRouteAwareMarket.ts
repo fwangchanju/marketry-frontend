@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { usePersistedState } from './usePersistedState'
+import { useTransientSetting } from './useTransientSetting'
 import { marketFromRouteSegment } from '@/utils/marketRoute'
 import type { MarketQuery } from '@/types/api'
 
@@ -16,7 +16,7 @@ export function useRouteAwareMarket(
   defaultMarket: MarketQuery,
 ): [MarketQuery, (market: MarketQuery) => void] {
   const { pathname, search } = useLocation()
-  const [storedMarket, setStoredMarket] = usePersistedState<MarketQuery>(storageKey, defaultMarket)
+  const [storedMarket, setStoredMarket] = useTransientSetting<MarketQuery>(storageKey, defaultMarket)
 
   // /map/korea/kospi처럼 코스피·코스닥은 korea 아래에 있으니 마지막 조각을 본다. 서머리(/summary/korea)는 아래 ?market=으로 정한다.
   const parts = pathname.split('/')
