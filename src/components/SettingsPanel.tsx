@@ -220,9 +220,10 @@ function SettingTitle({ className = '', draftKeys, children }: { className?: str
 }
 
 const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: SettingsSectionIconName }[] = [
+  // 종목 박스가 맨 앞이다(2026-11-19 사용자 결정). 탭 번호는 이 순서에서 만들어지므로 순서를 바꾸면 안내 말풍선의 번호도 따라간다.
+  { id: 'stockDisplay', label: '종목 박스', icon: 'stock-display' },
   { id: 'composition', label: '종목 구성', icon: 'composition' },
   { id: 'industry', label: '업종 분류', icon: 'industry' },
-  { id: 'stockDisplay', label: '종목 박스', icon: 'stock-display' },
   { id: 'colors', label: '색상', icon: 'colors' },
   { id: 'graph', label: '그래프', icon: 'bar-chart' },
   // 관리자 전용 탭 — 번호 참조가 있는 기존 설정은 순서를 유지한다.
@@ -236,7 +237,7 @@ const SETTINGS_SECTIONS: { id: SettingsPanelSectionId; label: string; icon: Sett
   { id: 'adminBanner', label: '배너', icon: 'ad' },
 ]
 
-// 탭 제목에는 숫자를 표시하지 않지만 안내 말풍선에는 설정 위치("탭 번호-항목 번호", 예: 2-1)를 표기한다.
+// 탭 제목에는 숫자를 표시하지 않지만 안내 말풍선에는 설정 위치("탭 번호-항목 번호", 예: 3-1)를 표기한다.
 // 탭 번호는 SETTINGS_SECTIONS 순서에서, 항목 번호는 SETTING_ITEM_POSITIONS의 탭 안 순서에서 만들어서
 // 탭 순서나 항목 순서를 바꾸면 말풍선의 번호가 함께 바뀐다.
 const SETTINGS_SECTION_NUMBERS = Object.fromEntries(
@@ -680,7 +681,7 @@ function DepthStairRange({
   disabled?: boolean
   maxSelectableIndex: number
   blockedHint: string
-  // 켜진 칸마다 배지 옆에 보이는 값(2-2) 업종 지표에서 고른 이름).
+  // 켜진 칸마다 배지 옆에 보이는 값(3-2) 업종 지표에서 고른 이름).
   valueLabel?: string
 }) {
   const last = labels.length - 1
@@ -783,7 +784,7 @@ function DepthStairRange({
   )
 }
 
-// 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 깊이(2-1)보다 깊거나 분류에 없는 단계는 비활성이고,
+// 업종 단계(대/중/소분류) 텍스트 선택 — 업종 분류 깊이(3-1)보다 깊거나 분류에 없는 단계는 비활성이고,
 // 올리거나 누르면 이유를 커서 옆 말풍선으로 알려준다.
 // 양쪽 끝에 핸들이 있으면 전체 구간 다 보여주고, 핸들을 안쪽으로 옮기면 그 구간(포함) 밖은 제외된다.
 // 두 핸들은 서로를 지나칠 수 없다(겹치는 건 허용 — 그러면 그 한 칸만 표시).
@@ -1699,7 +1700,7 @@ export function SettingsSectorLevelSection({
               <SettingDescription>박스 안에 표시할 내용</SettingDescription>
             </div>
             <div className={`settings-control-inset max-w-full ${stockLabelEnabled ? '' : 'opacity-35'}`}>
-              {/* 2-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
+              {/* 3-2) 업종 지표처럼 업종 머리글(가짜 줄) 아래 종목 상자 안에 버튼이 놓인 모양 — 누를 수 없는 그림이다. */}
               <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                 <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
               </div>
@@ -1749,7 +1750,7 @@ export function SettingsSectorLevelSection({
                 <SettingTitle draftKeys={['heatmap.decimalPlacesIndex']}>등락률 소수점</SettingTitle>
               </span>
               <SettingDescription>종목 등락률의 소수점 자릿수</SettingDescription>
-              {/* 3-2)와 같은 가짜 종목 상자 — 세 칸이 0·1·2자리 눈금이고, 슬라이더 손잡이가 각 칸 가운데에 멈춘다. */}
+              {/* 1-2)와 같은 가짜 종목 상자 — 세 칸이 0·1·2자리 눈금이고, 슬라이더 손잡이가 각 칸 가운데에 멈춘다. */}
               <div className="settings-control-inset max-w-full">
                 <div aria-hidden="true" className="pointer-events-none flex h-[25px] items-center rounded-t-[4px] bg-ui-control pl-[2.5px]">
                   <span className="whitespace-nowrap rounded-[4px] bg-ui-panel px-1.5 text-[12px] font-bold leading-[20px] text-ui-white">업종명</span>
