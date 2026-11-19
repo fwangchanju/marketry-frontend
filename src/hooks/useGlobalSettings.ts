@@ -63,6 +63,8 @@ function resolveDepthMetric(stored: StoredDepthMetric): DepthMetric {
 // 히트맵 종목 박스에 이름/등락률 중 뭘 보여줄지 — 슬라이더 인덱스로 저장(0~3). off는 둘 다 안 보여준다.
 export type StockLabelMode = 'off' | 'nameOnly' | 'rateOnly' | 'both'
 const STOCK_LABEL_MODES: StockLabelMode[] = ['off', 'nameOnly', 'rateOnly', 'both']
+// 내 기준 제외 목록의 기본값. 매 렌더 새 Map을 넘기면 useTransientSetting 스냅샷이 계속 바뀌어 무한 렌더가 된다.
+const EMPTY_MINE_EXCLUSIONS = new Map<number, string>()
 
 // sectorId -> "상위 - 하위" 형태의 전체 경로. "이 섹터가 제외 목록에 있는지"만 관리하고,
 // 실제로 화면에서 걸러낼지는 별도의 sectorFilterEnabled 마스터 스위치가 결정한다.
@@ -276,7 +278,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     isTierRangeReady: isMarketValueTierRangeReady,
   } = useMarketValueTierRange(true, settingsProfile)
   const [mineExcludedSectorNames, setMineExcludedSectorNames] = useTransientSetting<Map<number, string>>(
-    'heatmap.excludedSectorNames.mine', new Map(),
+    'heatmap.excludedSectorNames.mine', EMPTY_MINE_EXCLUSIONS,
   )
   // 섹터 제외를 목록별로 켜고 끄는 게 아니라, 제외 적용 자체를 통째로 켜고 끄는 마스터 스위치.
   const [sectorFilterEnabled, setSectorFilterEnabled] = usePageSetting(profileKey('heatmap.sectorFilterEnabled'), profileDefaults.sectorFilterEnabled)
