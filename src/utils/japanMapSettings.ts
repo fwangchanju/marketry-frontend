@@ -59,9 +59,9 @@ export const JAPAN_MAP_DRAFT_KEY_MAP: Readonly<Record<string, string>> = {
 }
 
 // 계정에 저장된 설정에서 일본 지도 항목만 골라 형식이 맞는 것만 돌려준다.
-export function japanMapSavedValues(account: Record<string, unknown> | undefined): Partial<JapanMapPreferences> {
+export function japanMapSavedValues(account: Record<string, unknown> | undefined, prefix: string = JAPAN_MAP_SETTING_PREFIX): Partial<JapanMapPreferences> {
   const picked: Record<string, unknown> = {}
-  for (const name of Object.keys(JAPAN_MAP_DEFAULTS)) picked[name] = account?.[`${JAPAN_MAP_SETTING_PREFIX}${name}`]
+  for (const name of Object.keys(JAPAN_MAP_DEFAULTS)) picked[name] = account?.[`${prefix}${name}`]
   return pickJapanMapPreferenceValues(picked)
 }
 
@@ -81,8 +81,8 @@ export function pickJapanMapPreferenceValues(source: unknown): Partial<JapanMapP
 }
 
 // 관리자가 정한 일본 지도 기본값(서버의 관리 기본값 japan)을 코드 기본값 위에 얹는다. 형식이 맞지 않는 값은 쓰지 않는다.
-export function japanMapManagedDefaults(profiles: Record<string, unknown> | undefined): JapanMapPreferences {
-  return { ...JAPAN_MAP_DEFAULTS, ...pickJapanMapPreferenceValues(profiles?.japan) }
+export function japanMapManagedDefaults(profiles: Record<string, unknown> | undefined, profileKey: 'japan' | 'usa' = 'japan'): JapanMapPreferences {
+  return { ...JAPAN_MAP_DEFAULTS, ...pickJapanMapPreferenceValues(profiles?.[profileKey]) }
 }
 
 // 기본값 화면(관리자)이 보여 주는 모양 — 국내 MARKETRY·거래소와 같은 줄을 쓰도록 같은 이름('heatmap.*')으로 옮긴다.
