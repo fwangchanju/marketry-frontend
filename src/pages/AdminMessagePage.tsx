@@ -10,6 +10,7 @@ import {
   saveTelegramSendSetting,
   sendTelegramReportOnce,
   sendJapanTelegramReportOnce,
+  sendUsaTelegramReportOnce,
   type TelegramSendSetting,
   type TelegramSendSettingInput,
 } from '@/api/adminTelegram'
@@ -175,6 +176,34 @@ export default function AdminMessagePage() {
     },
   })
 
+  const sendUsaOnce = useMutation({
+    mutationFn: sendUsaTelegramReportOnce,
+    meta: { skipGlobalError: true },
+    onSuccess: () => {
+      void appAlert('미국 지도를 텔레그램에 보냈습니다.', { title: '미국 발송 완료' })
+    },
+    onError: error => {
+      const response = isAxiosError(error) ? error.response : undefined
+      const body = response?.data as
+        | { errorCode?: string; properties?: { errorCode?: string } }
+        | string
+        | undefined
+      const errorCode = typeof body === 'object' && body !== null ? body.errorCode ?? body.properties?.errorCode : undefined
+      const messages: Record<string, string> = {
+        NO_USA_QUOTES: '발송할 미국 시세가 없습니다.',
+        USA_QUOTE_LOOKUP_FAILED: '미국 시세 조회에 실패했습니다.',
+        USA_MAP_CAPTURE_FAILED: '미국 지도 캡처에 실패했습니다.',
+        USA_TELEGRAM_SEND_FAILED: '텔레그램 전송에 실패했습니다.',
+      }
+      const message =
+        messages[errorCode ?? ''] ??
+        (response
+          ? `미국 지도 발송에 실패했습니다. (HTTP ${response.status}) 다시 시도해 주세요.`
+          : '서버 응답을 확인하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.')
+      void appAlert(message, { title: '미국 발송 실패' })
+    },
+  })
+
   const handleCopy = async (previewSrc?: string | null) => {
     if (!previewSrc && !screenshotRef.current) return
     setCopyStatus('copying')
@@ -207,7 +236,7 @@ export default function AdminMessagePage() {
     if (await appConfirm('지금 변경사항을 저장하시겠습니까?', { title: '저장하기' })) save.mutate(draft)
   }
   const handleSendKoreaOnce = async () => {
-    if (sendKoreaOnce.isPending || sendJapanOnce.isPending) return
+    if (sendKoreaOnce.isPending || sendJapanOnce.isPending || sendUsaOnce.isPending) return
     if (await appWarnConfirm('가장 최근 국내증시 지도를 1회 전송합니다.', {
       title: '국내 발송 테스트 1회',
       mutedMessage: '(정기발송은 그대로 진행됩니다.)',
@@ -216,12 +245,21 @@ export default function AdminMessagePage() {
     }
   }
   const handleSendJapanOnce = async () => {
-    if (sendKoreaOnce.isPending || sendJapanOnce.isPending) return
+    if (sendKoreaOnce.isPending || sendJapanOnce.isPending || sendUsaOnce.isPending) return
     if (await appWarnConfirm('가장 최근 일본증시 지도를 1회 전송합니다.', {
       title: '일본 발송 테스트 1회',
       mutedMessage: '(정기발송은 그대로 진행됩니다.)',
     })) {
       sendJapanOnce.mutate()
+    }
+  }
+  const handleSendUsaOnce = async () => {
+    if (sendKoreaOnce.isPending || sendJapanOnce.isPending || sendUsaOnce.isPending) return
+    if (await appWarnConfirm('가장 최근 미국증시 지도를 1회 전송합니다.', {
+      title: '미국 발송 테스트 1회',
+      mutedMessage: '(정기발송은 그대로 진행됩니다.)',
+    })) {
+      sendUsaOnce.mutate()
     }
   }
   const headerActions = (
@@ -275,7 +313,7 @@ export default function AdminMessagePage() {
                       <InfoPageHeading
                         flushBottom
                         title="텔레그램"
-                        summary="국내·일본 증시 지도를 각각 텔레그램 메시지로 받아봅니다. 정기 발송 여부와 시각은 설정창에서 조정합니다."
+                        summary="한국·일본·미국 증시 지도를 각각 텔레그램 메시지로 받아봅니다. 정기 발송 여부와 시각은 설정창에서 조정합니다."
                       />
                     </div>
                   )}
@@ -353,25 +391,34 @@ export default function AdminMessagePage() {
                         <div className="settings-ops-item h-[180px] text-sm">
                           <div className="settings-custom-control">
                             <h2 className="settings-plain-title m-0 text-[15px] font-medium leading-[22px] text-ui-white">발송 테스트</h2>
-                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">국내·일본 지도를 따로 전송</p>
-                            <div className="mt-auto mb-auto grid max-w-full grid-cols-2 gap-[6px] settings-control-inset">
+                            <p className="settings-description m-0 mt-1 max-w-full text-xs font-medium text-ui-muted">한국·일본·미국 지도를 따로 전송</p>
+                            <div className="mt-auto mb-auto grid max-w-full grid-cols-3 gap-[6px] settings-control-inset">
                               <button
                                 type="button"
-                                disabled={sendKoreaOnce.isPending || sendJapanOnce.isPending}
+                                disabled={sendKoreaOnce.isPending || sendJapanOnce.isPending || sendUsaOnce.isPending}
                                 aria-busy={sendKoreaOnce.isPending}
                                 onClick={() => void handleSendKoreaOnce()}
                                 className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-brand-surface text-[13px] leading-[1.3] font-medium text-ui-white focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
                               >
-                                {sendKoreaOnce.isPending ? <Spinner className="h-4 w-4" /> : '국내 증시'}
+                                {sendKoreaOnce.isPending ? <Spinner className="h-4 w-4" /> : '한국'}
                               </button>
                               <button
                                 type="button"
-                                disabled={sendKoreaOnce.isPending || sendJapanOnce.isPending}
+                                disabled={sendKoreaOnce.isPending || sendJapanOnce.isPending || sendUsaOnce.isPending}
                                 aria-busy={sendJapanOnce.isPending}
                                 onClick={() => void handleSendJapanOnce()}
                                 className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-brand-surface text-[13px] leading-[1.3] font-medium text-ui-white focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
                               >
-                                {sendJapanOnce.isPending ? <Spinner className="h-4 w-4" /> : '일본 증시'}
+                                {sendJapanOnce.isPending ? <Spinner className="h-4 w-4" /> : '일본'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={sendKoreaOnce.isPending || sendJapanOnce.isPending || sendUsaOnce.isPending}
+                                aria-busy={sendUsaOnce.isPending}
+                                onClick={() => void handleSendUsaOnce()}
+                                className="flex h-[25px] items-center justify-center settings-chip-hover rounded-[4px] border-0 bg-brand-surface text-[13px] leading-[1.3] font-medium text-ui-white focus-visible:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35"
+                              >
+                                {sendUsaOnce.isPending ? <Spinner className="h-4 w-4" /> : '미국'}
                               </button>
                             </div>
                           </div>
