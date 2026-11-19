@@ -26,6 +26,7 @@ import StockCandleChart from '@/components/StockCandleChart'
 import StockChartPanel from '@/components/StockChartPanel'
 import StockChartView from '@/components/StockChartView'
 import { useStockChart, type StockChartTrigger } from '@/hooks/useStockChart'
+import { useTransientSetting } from '@/hooks/useTransientSetting'
 import { findStockSectorPath } from '@/utils/stockSectorPath'
 import { USA_CHART_TIMEZONE, toUsaTradingViewSymbol } from '@/utils/tradingViewSymbol'
 import NavBar from '@/components/NavBar'
@@ -92,11 +93,13 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: market === 'JAPAN' ? 'japan' : 'usa' })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   // 실험 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
-  const [stockChangeFilter, setStockChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
-  const [sectorChangeFilter, setSectorChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
-  const [sectorChangeDepth, setSectorChangeDepth] = useState(0)
-  const [stockPopupOnHover, setStockPopupOnHover] = useState(fixed.stockPopupOnHover)
-  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = useState(fixed.boxLabelMinAreaPercent)
+  // 시장(일본·미국)과 모드(MARKETRY·내 기준)마다 따로 기억한다. 한국 지도의 실험 탭과 같은 방식이다.
+  const experimentKey = (name: string) => `overseas.experiment.${market}.${sheet}.${name}`
+  const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<'all' | 'rising' | 'falling'>(experimentKey('stockChangeFilter'), 'all')
+  const [sectorChangeFilter, setSectorChangeFilter] = useTransientSetting<'all' | 'rising' | 'falling'>(experimentKey('sectorChangeFilter'), 'all')
+  const [sectorChangeDepth, setSectorChangeDepth] = useTransientSetting(experimentKey('sectorChangeDepth'), 0)
+  const [stockPopupOnHover, setStockPopupOnHover] = useTransientSetting(experimentKey('stockPopupOnHover'), fixed.stockPopupOnHover)
+  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = useTransientSetting(experimentKey('boxLabelMinAreaPercent'), fixed.boxLabelMinAreaPercent)
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
   const directionFilters = useMemo(() => ({ stockChangeFilter, sectorChangeFilter, sectorChangeDepth, sectorUseSimpleAverage: false }), [stockChangeFilter, sectorChangeFilter, sectorChangeDepth])
@@ -111,8 +114,8 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
   // 종목 우클릭 팝업의 차트 아이콘을 누르면 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
   const { chartStock, openChart, closeChart } = useStockChart()
-  // 실험 탭의 "종목 차트" — 차트를 여는 방식(우클릭·클릭·더블 클릭). 다른 실험 탭 값처럼 저장하지 않는다.
-  const [chosenStockChartTrigger, setStockChartTrigger] = useState<StockChartTrigger>('rightClick')
+  // 실험 탭의 "종목 차트" — 차트를 여는 방식(우클릭·원 클릭·더블 클릭). 다른 실험 탭 값처럼 저장하지 않고 모드마다 따로 기억한다.
+  const [chosenStockChartTrigger, setStockChartTrigger] = useTransientSetting<StockChartTrigger>(experimentKey('stockChartTrigger'), 'rightClick')
   // 종목 정보가 마우스 올리기이면 우클릭 팝업이 없어서, 우클릭을 골라 둔 상태여도 원 클릭으로 연다.
   const stockChartTrigger: StockChartTrigger = stockPopupOnHover && chosenStockChartTrigger === 'rightClick' ? 'click' : chosenStockChartTrigger
   const [searchParams] = useSearchParams()
