@@ -263,7 +263,7 @@ export default function AdminDefaultPage() {
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background text-ui-white">
           {isLoading ? <p role="status" className="m-auto text-base text-ui-text">관리자 권한을 확인하는 중입니다.</p> : !isAdmin ? <p className="m-auto text-center text-base text-ui-text">관리자 전용 페이지입니다.</p> : <>
             <Toolbar><ToolbarModeText page="ADMIN" label="DEFAULT" showChevron menu={adminMenu('DEFAULT')} /></Toolbar>
-            <PageMainFrame borderless className="p-0" heading={<div className="mx-auto w-full max-w-4xl"><InfoPageHeading flushBottom title="기본값" summary="MARKETRY, 거래소, 일본·미국 지도 기본 설정을 각각 저장합니다." /></div>}>
+            <PageMainFrame borderless className="p-0" heading={<div className="mx-auto w-full max-w-4xl"><InfoPageHeading flushBottom title="기본값" summary="관리자가 [내 기준] 모드 설정을 불러오기로 가져와 확인한 뒤 저장하면, 그 분류의 서버 기본값이 바뀝니다. 거래소는 서버가 아니라 코드에서 바꿉니다." /></div>}>
               {defaults.isError ? <p role="alert" className="m-0 text-sm text-ui-text">기본값을 불러오지 못했습니다.</p> : <article aria-label="기본값" className="mx-auto min-h-full w-full max-w-4xl space-y-5">
                 <div className="[&>section]:border-b-0">
                   <TelegramImageSettings number="1" title="국내 지도" profileLabel="MARKETRY" saved={savedView(defaults.data?.marketry, snapshots.marketry, 'marketry', tiers, marketryNames)} current={snapshots.marketry?.values ?? null} loadState={loadStates.marketry} isSaved={savedSnapshots.marketry !== null && savedSnapshots.marketry === JSON.stringify(snapshots.marketry)} onLoad={() => handleLoad('marketry')} onSave={() => void handleSave('marketry')} />
