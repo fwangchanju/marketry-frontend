@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { getSettingsStorageGateVersion, readSettingStorage, subscribeSettingsStorageGate } from '@/utils/settingsStorageGate'
 import { createPortal } from 'react-dom'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FONT_NAV_TAB } from '@/components/FontStyle'
@@ -105,11 +106,13 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   // 오른쪽 버튼 묶음은 상단 영역(NavBar)의 자리에 그린다.
   const [actionSlot, setActionSlot] = useState<HTMLElement | null>(null)
   // 설정창이 왼쪽에 있으면 메뉴를 오른쪽에 둔다. 저장된 값을 html에 달고, 위치는 index.css의 html[data-settings-left] 규칙이 정한다.
+  // 로그인한 사용자의 저장값만 읽는다(비로그인은 항상 오른쪽). 로그인 여부가 확인되면 다시 읽는다.
+  const gateVersion = useSyncExternalStore(subscribeSettingsStorageGate, getSettingsStorageGateVersion, () => 0)
   useLayoutEffect(() => {
     let left = false
-    try { left = JSON.parse(localStorage.getItem('settings-panel-on-left') ?? 'false') === true } catch { left = false }
+    try { left = JSON.parse(readSettingStorage('settings-panel-on-left') ?? 'false') === true } catch { left = false }
     document.documentElement.dataset.settingsLeft = String(left)
-  }, [])
+  }, [gateVersion])
   useEffect(() => {
     const frame = requestAnimationFrame(() => setActionSlot(document.getElementById('nav-actions-slot')))
     return () => cancelAnimationFrame(frame)

@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CandlestickSeries, ColorType, HistogramSeries, createChart } from 'lightweight-charts'
-import { getJapanStockDailyCandles, getStockDailyCandles } from '@/api/stockChart'
+import { getJapanStockDailyCandles, getStockDailyCandles, getUsaStockDailyCandles } from '@/api/stockChart'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import MainAreaLoading from '@/components/MainAreaLoading'
 import Spinner from '@/components/Spinner'
 
 interface Props {
   stockCode: string
-  // 어느 시장의 일봉인지 — 한국은 키움 일봉, 일본은 야후 일봉을 읽는다.
-  market: 'korea' | 'japan'
+  // 어느 시장의 일봉인지 — 한국은 키움 일봉, 일본·미국은 야후 일봉을 읽는다.
+  market: 'korea' | 'japan' | 'usa'
   // 오른 날·내린 날의 봉 색 — 지도 박스와 같은 등락률 색상 설정에서 가져온다.
   upColor: string
   downColor: string
@@ -24,6 +24,8 @@ const GRID_ALPHA = 0.35
 const VOLUME_TOP_MARGIN = 0.85
 // 거래량 막대는 봉보다 눈에 띄지 않게 반투명으로 깐다.
 const VOLUME_ALPHA = 0.45
+
+const DAILY_CANDLE_LOADERS = { korea: getStockDailyCandles, japan: getJapanStockDailyCandles, usa: getUsaStockDailyCandles }
 
 // 차트 라이브러리는 color-mix() 같은 최신 색 표기를 읽지 못해서, 어떤 색이든 canvas로 한 칸 칠해 rgb 값으로 바꿔 넘긴다.
 function toRgb(color: string, fallback: string): string {
@@ -45,7 +47,7 @@ export default function StockCandleChart({ stockCode, market, upColor, downColor
   const containerRef = useRef<HTMLDivElement>(null)
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['stock-daily-candles', market, stockCode, CANDLE_DAYS],
-    queryFn: ({ signal }) => (market === 'japan' ? getJapanStockDailyCandles : getStockDailyCandles)(stockCode, CANDLE_DAYS, signal),
+    queryFn: ({ signal }) => DAILY_CANDLE_LOADERS[market](stockCode, CANDLE_DAYS, signal),
     staleTime: 60_000,
   })
   const hasCandles = (data?.length ?? 0) > 0

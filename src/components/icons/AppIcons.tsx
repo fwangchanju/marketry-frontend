@@ -242,6 +242,16 @@ export function TrashIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+// 원에 사선을 넣은 표시 — 저장되지 않는 설정 항목의 제목 옆에 붙인다. Lucide ban 모양이다.
+export function NotSavedIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="m4.9 4.9 14.2 14.2" />
+    </svg>
+  )
+}
+
 // 업종을 끌어 다른 업종 "하위로" 넣을 수 있는 자리 표시 — 오른쪽 위에서 휘어 왼쪽 아래로 내려가는 화살표다. Lucide corner-left-down 모양이다.
 export function NestIntoIcon(props: SVGProps<SVGSVGElement>) {
   return (

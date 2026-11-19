@@ -1,3 +1,4 @@
+import { readSettingStorage, writeSettingStorage } from '@/utils/settingsStorageGate'
 import MainAreaLoading from '@/components/MainAreaLoading'
 import AdminSectorTable from '@/components/AdminSectorTable'
 import type { SectorItem } from '@/types/api'
@@ -293,9 +294,9 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, stockMark
       })
   }, [sectors, stockMarkets, stockIndustries, activeSortKey, direction])
   // 읽기 전용 분류 필터도 내 기준 종목 표와 같은 순서를 쓴다. 시가총액 순은 현재 검색·필터와 무관하게 전체 종목의 합으로 계산한다.
-  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>(() => (localStorage.getItem('marketry:sector-filter-order') === 'cap' ? 'cap' : 'alpha'))
+  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>(() => (readSettingStorage('marketry:sector-filter-order') === 'cap' ? 'cap' : 'alpha'))
   const changeSectorFilterMode = useCallback((value: 'alpha' | 'cap') => {
-    localStorage.setItem('marketry:sector-filter-order', value)
+    writeSettingStorage('marketry:sector-filter-order', value)
     setSectorFilterMode(value)
   }, [])
   const classificationFilterOrder = useMemo(() => {

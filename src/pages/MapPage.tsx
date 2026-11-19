@@ -23,7 +23,6 @@ import SettingsPanel, {
   SettingsTopPickSection,
   SettingsStockSizeSelector,
   SettingsSectorChangeSection,
-  SettingsTextThresholdSection,
   SettingsStockMoveSection,
   SettingsStockPopupSection,
   SettingsStockChartSection,
@@ -42,8 +41,7 @@ import Spinner from '@/components/Spinner'
 import StockCandleChart from '@/components/StockCandleChart'
 import StockChartView from '@/components/StockChartView'
 import { useStockChart, type StockChartTrigger } from '@/hooks/useStockChart'
-import { useTransientSetting } from '@/hooks/useTransientSetting'
-import { profileSettingKey } from '@/utils/settingsSchema'
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { findStockSectorPath } from '@/utils/stockSectorPath'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
@@ -209,14 +207,12 @@ export default function MapPage() {
     onChangeAvgChangeRateUseSimple,
     onChangeSectorFilterEnabled,
     boxLabelMinAreaPercent,
-    setBoxLabelMinAreaPercent,
     stockLabelMode,
     stockPopupOnHover,
     setStockPopupOnHover,
     decimalPlaces,
     colorScale,
     handleExcludeSector,
-    settingsProfile,
   } = useGlobalSettings({ allowChangeRateMode: true })
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
@@ -227,8 +223,8 @@ export default function MapPage() {
   const [isShareOpen, setIsShareOpen] = useState(false)
   // 종목 박스를 우클릭해 뜨는 팝업의 차트 아이콘을 누르면 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
   const { chartStock, openChart, closeChart } = useStockChart()
-  // 실험 탭의 "종목 차트" — 차트를 여는 방식(우클릭·원 클릭·더블 클릭). 다른 실험 탭 값처럼 저장하지 않고 모드(MARKETRY·거래소·내 기준)마다 따로 기억한다.
-  const [chosenStockChartTrigger, setStockChartTrigger] = useTransientSetting<StockChartTrigger>(profileSettingKey(settingsProfile, 'heatmap.stockChartTrigger'), 'rightClick')
+  // 실험 탭의 "종목 차트" — 차트를 여는 방식(우클릭·원 클릭·더블 클릭). 로그인한 사용자만 이 브라우저에 저장하고(비로그인은 저장하지 않는다), 모드(MARKETRY·거래소·내 기준)와 상관없이 하나로 쓴다.
+  const [chosenStockChartTrigger, setStockChartTrigger] = useLocalPersistedState<StockChartTrigger>('marketry:stock-chart-trigger:korea', 'rightClick')
   // 종목 정보가 마우스 올리기이면 우클릭 팝업이 없어서, 우클릭을 골라 둔 상태여도 원 클릭으로 연다.
   const stockChartTrigger: StockChartTrigger = stockPopupOnHover && chosenStockChartTrigger === 'rightClick' ? 'click' : chosenStockChartTrigger
   const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
@@ -684,6 +680,24 @@ export default function MapPage() {
               <SettingsPanelGroup section="composition">
                 <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
                 <SettingsExcludeSection {...settingsModalProps} />
+                {/* 종목·업종 등락 방향 — 실험 탭에서 옮겨 왔다. 값은 저장하지 않고 모드마다 이 탭의 메모리에만 둔다. */}
+                <div className="settings-section-plain-items">
+                <SettingsStockChangeSection
+                  value={stockChangeFilter}
+                  onChange={value => {
+                    onChangeStockChangeFilter(value)
+                    reset()
+                  }}
+                />
+                <SettingsSectorChangeSection
+                  value={sectorChangeFilter}
+                  onChange={setSectorChangeFilter}
+                  depth={sectorChangeDepth}
+                  onChangeDepth={setSectorChangeDepth}
+                  maxSelectableDepth={sectorChangeMaxDepth}
+                  noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
+                />
+                </div>
               </SettingsPanelGroup>
               <SettingsPanelGroup section="industry">
                 <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
@@ -701,25 +715,9 @@ export default function MapPage() {
               </SettingsPanelGroup>
               <SettingsPanelGroup section="special">
                 <div className="settings-plain-content">
-                  <SettingsStockChangeSection
-                    value={stockChangeFilter}
-                    onChange={value => {
-                      onChangeStockChangeFilter(value)
-                      reset()
-                    }}
-                  />
-                  <SettingsSectorChangeSection
-                    value={sectorChangeFilter}
-                    onChange={setSectorChangeFilter}
-                    depth={sectorChangeDepth}
-                    onChangeDepth={setSectorChangeDepth}
-                    maxSelectableDepth={sectorChangeMaxDepth}
-                    noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
-                  />
                   <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
                   <SettingsStockChartSection trigger={stockChartTrigger} onChangeTrigger={setStockChartTrigger} rightClickDisabled={stockPopupOnHover} />
                   <SettingsStockMoveSection enabled={stockMoveEnabled} onChange={handleChangeStockMoveEnabled} />
-                  <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
                 </div>
               </SettingsPanelGroup>
             </SettingsPanel>

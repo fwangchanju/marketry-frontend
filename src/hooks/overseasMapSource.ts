@@ -30,8 +30,8 @@ export interface OverseasMapSource {
   sessionChip: ReactNode
   refreshHelp: string
   currencyUnit: CurrencyUnit
-  // 있으면 종목 우클릭 팝업에 차트 아이콘이 나오고, 누르면 지도 자리에 TradingView 차트를 띄운다(미국·일본). 없으면 아이콘이 없다.
-  chart?: { market: 'korea' | 'usa' | 'japan' }
+  // 있으면 종목 차트를 열 수 있고, 지도 자리에 우리 일봉 차트를 띄운다(미국·일본). 없으면 아이콘이 없다.
+  chart?: { market: 'usa' | 'japan' }
   // 분류 단계 이름(이동 경로의 "대분류로 돌아가기" 등)과 상위 업종 강조 기본 단계 수.
   levelLabels: string[]
   defaultMaxDepth: number

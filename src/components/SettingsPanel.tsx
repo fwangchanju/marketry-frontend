@@ -1,3 +1,4 @@
+import { readSettingStorage, writeSettingStorage } from '@/utils/settingsStorageGate'
 import type { StockChartTrigger } from '@/hooks/useStockChart'
 import { SlidingHighlight } from '@/components/SlidingHighlight'
 import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
@@ -17,7 +18,7 @@ import SettingsSectionIcon, { type SettingsSectionIconName } from '@/components/
 import SettingsPanelSideToggle from '@/components/SettingsPanelSideToggle'
 import { SETTINGS_PANEL_TAB_ICON_CLASS, SettingsPanelHeader, SettingsPanelTabList } from '@/components/SettingsPanelChrome'
 import SettingsDropdown from '@/components/SettingsDropdown'
-import { HistoryIcon, RefreshIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
+import { HistoryIcon, RefreshIcon, ReturnArrowIcon, NotSavedIcon } from '@/components/icons/AppIcons'
 import type { MarketValueTierItem } from '@/types/api'
 import { FONT_BAR_TIME_SHAPE } from '@/components/FontStyle'
 import { ACCENT_PALETTE } from '@/utils/accentPalette'
@@ -63,6 +64,20 @@ const TAXONOMY_BACKGROUND_COLOR = 'var(--ui-panel)'
 
 // 말풍선 폭은 가장 긴 줄에 맞춘다(w-max whitespace-pre) — 줄바꿈은 문구마다 \n(문자열) 또는 <br />(JSX)로 직접 정한다. 줄 하나가 설정창(18rem)
 // 안에 들어와야 하니 한 줄을 23글자 안쪽으로 쓴다.
+// 저장되지 않는 설정 항목의 제목 옆에 붙이는 표시(원에 사선). 올리면 저장되지 않는다고 알려 준다.
+function SettingNotSavedMark() {
+  return (
+    <span
+      role="img"
+      aria-label="저장되지 않는 항목"
+      data-hint="저장되지 않습니다. 새로고침하면 처음으로 돌아갑니다"
+      className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center align-middle text-ui-muted"
+    >
+      <NotSavedIcon aria-hidden="true" strokeWidth={1.8} className="h-3.5 w-3.5" />
+    </span>
+  )
+}
+
 function SettingHelpBubble({ label, description }: { label: string; description: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -1287,6 +1302,7 @@ export function SettingsBeforeMinutesSection({
       <div className="flex max-w-full items-center justify-between text-left text-[15px] font-medium leading-[22px]">
         <span className={`flex items-center gap-1 ${enabled ? 'text-ui-white' : 'text-ui-muted'} ${locked ? 'opacity-35' : ''}`}>
           <span className="settings-plain-title">비교 시점<SettingChangeDot draftKeys={['groupPage.graphMode']} /></span>
+          <SettingNotSavedMark />
         </span>
         <ToggleSwitch checked={enabled} onChange={onToggle} label="비교 그래프" hideLabel disabled={disabled || locked} />
       </div>
@@ -1807,6 +1823,7 @@ export function SettingsStockMoveSection({
     <div className="settings-plain-button-item h-[180px] text-sm text-ui-white">
       <span className="flex max-w-full items-center text-left text-[15px] text-ui-white">
         <span className="settings-plain-title">종목 이동</span>
+        <SettingNotSavedMark />
         <SettingHelpBubble label="종목 이동" description={"종목을 끌어 다른 업종에 놓으면\n화면에서만 옮겨 보입니다.\n저장되지 않으며 다른 페이지로\n가면 원래대로 돌아갑니다."} />
       </span>
       <SettingDescription>종목을 끌어 다른 업종으로 이동</SettingDescription>
@@ -1937,33 +1954,6 @@ function toWonLabel(won: number): string {
   return `${(won / 1e8).toLocaleString('ko-KR')}억`
 }
 
-// 지도 페이지 실험 탭(특별 회원 전용)의 "텍스트 표시 기준" — 값은 저장하지 않고 이 탭의 메모리에만 둔다(useTransientSetting).
-export function SettingsTextThresholdSection({ value, onChange }: { value: number; onChange: (value: number) => void }) {
-  return (
-    <div className="settings-text-threshold-item h-[180px] text-sm">
-      <div className="flex max-w-full items-center justify-between">
-        <span className="flex items-center text-left text-[15px] text-ui-white">
-          <span className="settings-plain-title">텍스트 표시 기준</span>
-          <SettingHelpBubble label="텍스트 표시 기준" description={"기준 퍼센트는 지도 전체 면적 대비\n종목 박스 면적입니다."} />
-        </span>
-      </div>
-      <SettingDescription>작은 박스의 글자를 숨기는 기준</SettingDescription>
-      <div className="settings-slider-control">
-        <div className="mb-2 flex justify-center">
-          <span aria-live="polite" aria-atomic="true" className="rounded-[4px] border border-ui-border bg-ui-control px-1.5 py-0.5 text-[13px]/4 text-ui-white">
-            {value.toFixed(3)}%
-          </span>
-        </div>
-        <SingleRangeInput min={0.01} max={0.3} step={0.001} value={value} smooth={false} ariaLabel="텍스트 표시 기준" ariaValueText={`${value.toFixed(3)}%`} onChange={onChange} />
-        <div className="relative mt-1 h-4 text-[13px]/4 text-ui-muted">
-          <span className="absolute left-2 -translate-x-1/2 whitespace-nowrap">많이</span>
-          <span className="absolute right-2 translate-x-1/2 whitespace-nowrap">적게</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export function SettingsMarketValueSection({
   tiers,
   tierRangeMinIndex,
@@ -2074,6 +2064,7 @@ export function SettingsSectorChangeSection({
     <div className="settings-second-sector-change settings-admin-item h-[180px] text-sm text-ui-white">
       <p className="flex items-center text-[15px]">
         <span className="settings-plain-title">업종 등락 방향</span>
+        <SettingNotSavedMark />
       </p>
       <SettingDescription>상승·하락 업종만 표시</SettingDescription>
       <div className="settings-button-area flex flex-col justify-center">
@@ -2128,6 +2119,7 @@ export function SettingsStockChangeSection({
     <div className="settings-third-stock-change settings-admin-item h-[180px] text-sm text-ui-white">
       <p className="flex items-center text-[15px]">
         <span className="settings-plain-title">종목 등락 방향</span>
+        <SettingNotSavedMark />
       </p>
       <SettingDescription>상승·하락 종목만 표시</SettingDescription>
       <div className="settings-button-area flex flex-col justify-center">
@@ -2631,7 +2623,7 @@ export default function SettingsPanel({
   const tabStorageKey = `marketry:settings-panel-tab:${tabStorageName ?? pageLabel ?? 'Settings'}`
   const [activeSection, setActiveSection] = useState<SettingsPanelSectionId>(() => {
     try {
-      return (localStorage.getItem(tabStorageKey) as SettingsPanelSectionId | null) ?? sectionOrder?.[0] ?? 'composition'
+      return (readSettingStorage(tabStorageKey) as SettingsPanelSectionId | null) ?? sectionOrder?.[0] ?? 'composition'
     } catch {
       return sectionOrder?.[0] ?? 'composition'
     }
@@ -2787,7 +2779,7 @@ export default function SettingsPanel({
                   if (section.id === 'plain') return
                   setActiveSection(section.id)
                   onSectionChange?.(section.id)
-                  try { localStorage.setItem(tabStorageKey, section.id) } catch { /* 저장소 접근이 막혀도 탭 전환은 유지한다. */ }
+                  writeSettingStorage(tabStorageKey, section.id)
                 }}
                 className={`group relative box-border flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-[5px] text-[12px] leading-tight transition-[color,opacity] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] ${
                     ADMIN_ONLY_SECTIONS.has(section.id) ? selected ? 'text-admin-only' : 'text-admin-only/50 hover:text-admin-only' : SPECIAL_SECTIONS.has(section.id) ? selected ? 'text-[var(--sub-purple)]' : 'text-[var(--sub-purple)] opacity-50 hover:opacity-100 focus-visible:opacity-100' : selected ? 'text-brand' : 'text-ui-muted hover:text-ui-white'
