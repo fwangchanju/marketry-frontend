@@ -31,6 +31,7 @@ import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
+import { flagOfOverseasMarket } from '@/utils/marketFlag'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
@@ -222,7 +223,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="MAP" label={label} showChevron menu={marketMenu('/map', market, true)} />
+              <ToolbarModeText page="MAP" label={label} showChevron menu={marketMenu('/map', market, true)} flag={flagOfOverseasMarket(market)} />
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><DatePicker snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
               {isPastSnapshot && (
                 <ToolbarChip bare>

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPoi
 import { useNavigate } from 'react-router-dom'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
+import MarketFlagIcon from '@/components/MarketFlagIcon'
+import type { MarketFlag } from '@/utils/marketFlag'
 
 export interface ToolbarModeMenuItem {
   label: string
@@ -16,7 +18,7 @@ export interface ToolbarModeMenuItem {
 // 툴바 맨 왼쪽에 지금 보는 화면을 페이지 제목처럼 보여 준다 — 서브 청록색 박스 안에 큰 제목(NIKKEI·K-STOCK·STATS 등)을 둔다.
 // 박스 너비는 110px로 고정해서 어느 페이지든 같다(2026-11-15 105px에서 5px 키움).
 // 제목 글자는 박스 전체가 아니라 꺽쇠 자리를 뺀 왼쪽 칸의 가운데에 둔다. showChevron을 주면(시장·글 페이지를 고르는 배지) 오른쪽 끝에 아래 꺽쇠를 고정하고, 주지 않아도(PROFILE) 같은 자리를 비워 글자 위치가 모든 배지에서 같다. menu를 주면 배지에 마우스를 올리면 그 아래에 시장 목록이 열리고, 마우스가 배지·목록 밖으로 나가면 잠시 뒤 닫힌다(2026-11-18, 클릭으로 열던 방식을 바꿨다). 마우스가 없는 터치 화면은 누르면 열고, 키보드는 Enter·Space로 열고 Esc로 닫는다.
-export default function ToolbarModeText({ page, label, showChevron = false, menu }: { page: string; label: string; showChevron?: boolean; menu?: ToolbarModeMenuItem[] }) {
+export default function ToolbarModeText({ page, label, showChevron = false, menu, flag, flagClassName }: { page: string; label: string; showChevron?: boolean; menu?: ToolbarModeMenuItem[]; flag?: MarketFlag; flagClassName?: string }) {
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -66,6 +68,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
 
   const isMenu = menu !== undefined && menu.length > 0
   return (
+    <>
     <div
       ref={rootRef}
       className="font-roboto-latin relative shrink-0"
@@ -114,5 +117,8 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
         </div>
       )}
     </div>
+    {/* 국기는 시장 배지 바로 오른쪽에 둔다. 마우스 올림 영역(목록 열기)에는 넣지 않는다. 배지와의 간격은 부모 줄의 gap(4px)이고, gap이 더 큰 줄은 flagClassName으로 4px에 맞춘다. */}
+    {flag && <MarketFlagIcon flag={flag} className={flagClassName} />}
+    </>
   )
 }
