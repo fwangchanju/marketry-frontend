@@ -14,7 +14,6 @@ import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import { flagOfOverseasMarket } from '@/utils/marketFlag'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import { useSession } from '@/hooks/useSession'
@@ -268,7 +267,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
       <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 flex-1 overflow-hidden bg-ui-background">
         <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold">
-            <ToolbarModeText page="STOCK" label={badgeLabel} showChevron menu={customMenu('stock', market, true, sheet === 'MINE')} flag={flagOfOverseasMarket(market)} />
+            <ToolbarModeText page="STOCK" label={badgeLabel} showChevron menu={customMenu('stock', market, true, sheet === 'MINE')} />
             <SearchBar inline query={search} onChange={setSearch} placeholder="검색" ariaLabel={searchAriaLabel} maxLength={STOCK_SEARCH_MAX_LENGTH} />
             <div className="min-w-0 flex-1" />
             <div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>

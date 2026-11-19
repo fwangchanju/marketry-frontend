@@ -34,7 +34,6 @@ import Heatmap from '@/components/Heatmap'
 import { isInDepthRange } from '@/utils/sectorDepth'
 import { ChangeRateModeToggle } from '@/components/ToolbarControls'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import { KOREA_FLAG } from '@/utils/marketFlag'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
@@ -435,7 +434,7 @@ export default function MapPage() {
                 창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-                <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} showChevron menu={marketMenu('/map', market, true)} flag={KOREA_FLAG} />
+                <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} showChevron menu={marketMenu('/map', market, true)} />
                 {/* 로딩·오류·빈 화면에서도 시계·시간대·합산/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
                 <>
                   {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}

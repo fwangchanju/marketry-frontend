@@ -9,6 +9,8 @@ import { SECTOR_KOREA, STOCK_KOREA } from '@/utils/customRoutes'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession } from '@/utils/adminAccess'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
+import MarketFlagIcon from '@/components/MarketFlagIcon'
+import { flagForPath } from '@/utils/marketFlag'
 
 interface MenuOption {
   label: string
@@ -137,6 +139,7 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
   // 좌측 세로 메뉴는 서머리를 세 번째 자리로 옮긴다(Map·Graph·Summary). 상단 메뉴 순서는 그대로다.
   const orderedBaseLinks = vertical ? [baseLinks[1], baseLinks[2], baseLinks[0]] : baseLinks
   const links = isAdmin ? [...orderedBaseLinks, ...customLinks, ADMIN_LINK] : [...orderedBaseLinks, ...customLinks]
+  const currentFlag = flagForPath(location.pathname)
   const [openTo, setOpenTo] = useState<string | null>(null)
   // 목록은 누르면 열려 그대로 있고, 메뉴 밖을 누르면 닫는다. 메뉴 사이 빈 곳도 메뉴 밖이다.
   useEffect(() => {
@@ -173,6 +176,12 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
     <div className={vertical
       ? 'settings-side-nav fixed bottom-0 left-0 top-[90px] z-30 flex w-20 flex-col items-stretch bg-ui-panel px-2 pb-[24px] pt-[43px] text-xs'
       : 'relative z-30 mb-[15px] flex h-[30px] after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs'}>
+      {/* 지금 보는 시장의 국기: 맨 위 빈 자리(첫 메뉴 위 43px)의 가로 가운데에 둔다. 윗선은 메인 툴바 시장 배지의 윗선과 같다. 시장 화면에서만 보인다. */}
+      {vertical && currentFlag && (
+        <div data-nav-market-flag className="pointer-events-none absolute left-1/2 top-[8.75px] -translate-x-1/2">
+          <MarketFlagIcon flag={currentFlag} />
+        </div>
+      )}
       {/* 이 줄의 하단선은 메인·설정 행의 세로 기준이다. 아이콘 28px과 같은 높이로 두고, 하단선에서 설정창까지는 페이지 쪽의 4px만 남긴다. */}
       <div data-nav-menus className={vertical ? 'flex h-full flex-col items-stretch gap-1' : 'flex h-7 items-center gap-3'}>
         {links.map(link => (

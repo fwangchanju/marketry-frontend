@@ -25,7 +25,6 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import Toolbar from '@/components/Toolbar'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import { flagOfOverseasMarket } from '@/utils/marketFlag'
 import { ClockIcon } from '@/components/icons/AppIcons'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -79,7 +78,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="GRAPH" label={label} showChevron menu={marketMenu('/graph', market, true)} flag={flagOfOverseasMarket(market)} />
+              <ToolbarModeText page="GRAPH" label={label} showChevron menu={marketMenu('/graph', market, true)} />
               <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><DatePicker snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
               {isPastSnapshot && (
                 <ToolbarChip bare>

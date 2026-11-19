@@ -25,7 +25,6 @@ import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import RankBars from '@/components/RankBars'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import { flagOfOverseasMarket } from '@/utils/marketFlag'
 import { ClockIcon } from '@/components/icons/AppIcons'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import Toolbar from '@/components/Toolbar'
@@ -148,7 +147,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const toolbarContent = (
     <>
     <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-      <ToolbarModeText page="SUMMARY" label={label} showChevron menu={menu} flag={flagOfOverseasMarket(market)} />
+      <ToolbarModeText page="SUMMARY" label={label} showChevron menu={menu} />
       <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
         <DatePicker snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={holidayColor} onSelect={select} onSelectRange={selectRange} />
       </ToolbarChip>
