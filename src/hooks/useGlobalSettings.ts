@@ -248,7 +248,8 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   // avgChangeRateUseSimple은 섹터 랭킹에 사용한다. 강세 업종은 업종 탭 표시 지표를 따른다.
   // 종목 박스가 전체 히트맵 넓이에서 이 비중(%) 미만이면 종목명/등락률을 표시하지 않는다(섹터 헤더와는 무관).
   // 실험 탭의 3-3 텍스트 표시 기준은 저장하지 않는다(새로고침하면 기본값).
-  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = useTransientSetting(profileKey('heatmap.boxLabelMinAreaPercent'), profileDefaults.boxLabelMinAreaPercent)
+  // 텍스트 표시 기준(박스 안 글자를 보여 주는 최소 넓이 비중)은 설정창에서 바꾸지 않고 기본값으로 고정한다.
+  const boxLabelMinAreaPercent = profileDefaults.boxLabelMinAreaPercent
   // 종목 박스에 이름만/등락률만/둘 다/끄기 중 뭘 보여줄지 — 기본은 둘 다(기존 동작 유지, 배열 앞에
   // "끄기"가 추가되면서 both의 인덱스가 2에서 3으로 밀림).
   const [stockLabelModeIndex, setStockLabelModeIndex] = usePageSetting(profileKey('heatmap.stockLabelModeIndex'), profileDefaults.stockLabelModeIndex)
@@ -261,7 +262,7 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
   const [decimalPlacesIndex, setDecimalPlacesIndex] = usePageSetting(profileKey('heatmap.decimalPlacesIndex'), profileDefaults.decimalPlacesIndex)
   // 종목 박스 설명 팝업을 여는 방식 — false=우클릭(기존 동작), true=커서를 박스 위로 옮길 때. 섹터(대/중/소분류)
   // 팝업은 이 설정과 무관하게 항상 우클릭이다.
-  const [stockPopupOnHover, setStockPopupOnHover] = useTransientSetting(profileKey('heatmap.stockPopupOnHover'), profileDefaults.stockPopupOnHover)
+  const [stockPopupOnHover, setStockPopupOnHover] = useLocalPersistedState('marketry:stock-popup-on-hover:korea', profileDefaults.stockPopupOnHover)
   const decimalPlaces = decimalPlacesIndex
   // 시가총액 구간 범위는 같은 분류의 지도와 섹터 랭킹이 공유한다.
   const {
@@ -784,7 +785,6 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     onChangeAvgChangeRateUseSimple: setAvgChangeRateUseSimple,
     excludedMarketValueTiers,
     boxLabelMinAreaPercent,
-    setBoxLabelMinAreaPercent,
     stockLabelMode,
     decimalPlaces,
     stockPopupOnHover,

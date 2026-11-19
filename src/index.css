@@ -730,6 +730,16 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
   content: "(" counter(color-editor-step) ") ";
 }
 
+/* 번호가 있는 탭(종목 구성 등) 안에 놓인 plain 항목(.settings-plain-title)은 그 탭의 번호(settings-section)를 이어서 매긴다. */
+.settings-section-plain-items .settings-plain-title::before {
+  counter-increment: settings-section;
+  content: counter(settings-section) ") ";
+  display: inline-block;
+  width: 19px;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+}
+
 /* 탭 제목 아래의 중제목은 화면에 보이는 순서대로 1), 2)로 매긴다. */
 .settings-panel-tab-content .settings-section-num::before {
   counter-increment: settings-section;

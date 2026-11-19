@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { HeatmapSectorNode } from '@/types/api'
+import { findStockSectorPath } from '@/utils/stockSectorPath'
+import { useLocalPersistedState } from './useLocalPersistedState'
 
 // 종목 차트를 여는 방식 — 우클릭(팝업의 차트 아이콘), 클릭, 더블 클릭. 설정창 실험 탭의 "종목 차트"에서 고른다.
 export type StockChartTrigger = 'rightClick' | 'click' | 'doubleClick'
@@ -52,4 +55,25 @@ export function useStockChart() {
   }, [])
 
   return { chartStock, openChart, closeChart }
+}
+
+// 지도 페이지(한국·일본·미국)가 같이 쓰는 차트 상태 — 열고 닫는 상태, 여는 방식(우클릭·원 클릭·더블 클릭), 종목이 속한 분류 찾기.
+// 여는 방식은 로그인한 사용자만 이 브라우저에 저장하고(비로그인은 저장하지 않는다), 모드와 상관없이 시장마다 하나로 쓴다.
+export function useMapStockChart({
+  storageMarket,
+  stockPopupOnHover,
+  sectorNodes,
+}: {
+  // 저장 이름에 쓰는 시장 이름(예: 'korea', 'JAPAN').
+  storageMarket: string
+  stockPopupOnHover: boolean
+  // 종목이 속한 분류를 찾을 트리.
+  sectorNodes: readonly HeatmapSectorNode[]
+}) {
+  const { chartStock, openChart, closeChart } = useStockChart()
+  const [chosenTrigger, setStockChartTrigger] = useLocalPersistedState<StockChartTrigger>(`marketry:stock-chart-trigger:${storageMarket}`, 'rightClick')
+  // 종목 정보가 마우스 올리기이면 우클릭 팝업이 없어서, 우클릭을 골라 둔 상태여도 원 클릭으로 연다.
+  const stockChartTrigger: StockChartTrigger = stockPopupOnHover && chosenTrigger === 'rightClick' ? 'click' : chosenTrigger
+  const openStockChart = (stock: { code: string; name: string }) => openChart({ ...stock, sectorPath: findStockSectorPath(sectorNodes, stock.code) ?? [] })
+  return { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart }
 }

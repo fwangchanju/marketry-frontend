@@ -15,18 +15,12 @@ import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import SettingsPanel, {
   SettingsPanelGroup,
   SettingsMarketValueSection,
-  SettingsStockChangeSection,
   SettingsSectorLevelSection,
   SettingsExcludeSection,
   SettingsColorSection,
   SettingsStrongIndustryColorSection,
   SettingsTopPickSection,
   SettingsStockSizeSelector,
-  SettingsSectorChangeSection,
-  SettingsTextThresholdSection,
-  SettingsStockMoveSection,
-  SettingsStockPopupSection,
-  SettingsStockChartSection,
   type SettingsPanelSectionId,
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
@@ -39,12 +33,9 @@ import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
-import StockCandleChart from '@/components/StockCandleChart'
-import StockChartView from '@/components/StockChartView'
-import { useStockChart, type StockChartTrigger } from '@/hooks/useStockChart'
-import { useTransientSetting } from '@/hooks/useTransientSetting'
-import { profileSettingKey } from '@/utils/settingsSchema'
-import { findStockSectorPath } from '@/utils/stockSectorPath'
+import MapStockChart from '@/components/MapStockChart'
+import { MapChangeFilterSections, MapExperimentSections } from '@/components/MapSettingsSections'
+import { useMapStockChart } from '@/hooks/useStockChart'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
@@ -63,7 +54,6 @@ import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
 import ToolbarChip from '@/components/ToolbarChip'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
-import { appAlert } from '@/utils/appDialogBus'
 import { useMapDrilldownHistory, useMapSectorEntry } from '@/hooks/useMapDrilldownHistory'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { limitDepth, flattenAllItems, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
@@ -209,14 +199,12 @@ export default function MapPage() {
     onChangeAvgChangeRateUseSimple,
     onChangeSectorFilterEnabled,
     boxLabelMinAreaPercent,
-    setBoxLabelMinAreaPercent,
     stockLabelMode,
     stockPopupOnHover,
     setStockPopupOnHover,
     decimalPlaces,
     colorScale,
     handleExcludeSector,
-    settingsProfile,
   } = useGlobalSettings({ allowChangeRateMode: true })
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
@@ -225,12 +213,8 @@ export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
-  // 종목 박스를 우클릭해 뜨는 팝업의 차트 아이콘을 누르면 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
-  const { chartStock, openChart, closeChart } = useStockChart()
-  // 실험 탭의 "종목 차트" — 차트를 여는 방식(우클릭·원 클릭·더블 클릭). 다른 실험 탭 값처럼 저장하지 않고 모드(MARKETRY·거래소·내 기준)마다 따로 기억한다.
-  const [chosenStockChartTrigger, setStockChartTrigger] = useTransientSetting<StockChartTrigger>(profileSettingKey(settingsProfile, 'heatmap.stockChartTrigger'), 'rightClick')
-  // 종목 정보가 마우스 올리기이면 우클릭 팝업이 없어서, 우클릭을 골라 둔 상태여도 원 클릭으로 연다.
-  const stockChartTrigger: StockChartTrigger = stockPopupOnHover && chosenStockChartTrigger === 'rightClick' ? 'click' : chosenStockChartTrigger
+  // 종목 박스의 차트 아이콘·클릭·더블 클릭으로 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
+  const { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ storageMarket: 'korea', stockPopupOnHover, sectorNodes: filteredRootNodes })
   const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
   // 실험 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
@@ -368,13 +352,6 @@ export default function MapPage() {
     }))
   }
 
-  const handleChangeStockMoveEnabled = (enabled: boolean) => {
-    setStockMoveEnabled(enabled)
-    if (enabled) {
-      void appAlert('종목 이동 기능은 저장되지 않습니다.\n임시로 살펴보시고 커스텀 페이지를 이용바랍니다.', { title: '종목 이동' })
-    }
-  }
-
   const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
   // 렌더러용 모바일 판 — 데이터가 오고 히트맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
@@ -508,7 +485,7 @@ export default function MapPage() {
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               <NxtOnlyNotice active={nxtOnly && pinnedSnapshotTime === undefined && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError} nodes={rootNodes} />
               {chartStock !== null ? (
-                <StockChartView marketLabel={MARKET_LABEL[market]} sectors={chartStock.sectorPath} levelLabels={SECTOR_LEVEL_LABEL} stockName={chartStock.name} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })}><StockCandleChart stockCode={chartStock.code} market="korea" upColor={resolveHeatmapColor(15, colorScale)} downColor={resolveHeatmapColor(-15, colorScale)} /></StockChartView>
+                <MapStockChart chartStock={chartStock} marketLabel={MARKET_LABEL[market]} levelLabels={SECTOR_LEVEL_LABEL} market="korea" colorScale={colorScale} closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
               ) : (
               <>
               {path.length > 0 && (
@@ -576,7 +553,7 @@ export default function MapPage() {
                     onSelectSector={enterSector}
                     onExcludeSector={handleExcludeSector}
                     stockChartTrigger={stockChartTrigger}
-                    onOpenStockChart={stock => openChart({ ...stock, sectorPath: findStockSectorPath(filteredRootNodes, stock.code) ?? [] })}
+                    onOpenStockChart={openStockChart}
                     heightClassName="min-h-0 flex-1"
                     marketValueDepthRange={marketValueDepthRange}
                     weightedAvgDepthRange={weightedAvgDepthRange}
@@ -684,6 +661,19 @@ export default function MapPage() {
               <SettingsPanelGroup section="composition">
                 <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
                 <SettingsExcludeSection {...settingsModalProps} />
+                <MapChangeFilterSections
+                  stockChangeFilter={stockChangeFilter}
+                  onChangeStockChangeFilter={value => {
+                    onChangeStockChangeFilter(value)
+                    reset()
+                  }}
+                  sectorChangeFilter={sectorChangeFilter}
+                  onChangeSectorChangeFilter={setSectorChangeFilter}
+                  sectorChangeDepth={sectorChangeDepth}
+                  onChangeSectorChangeDepth={setSectorChangeDepth}
+                  maxSelectableDepth={sectorChangeMaxDepth}
+                  noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
+                />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="industry">
                 <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
@@ -700,27 +690,14 @@ export default function MapPage() {
                 <SettingsTopPickSection {...settingsModalProps} />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="special">
-                <div className="settings-plain-content">
-                  <SettingsStockChangeSection
-                    value={stockChangeFilter}
-                    onChange={value => {
-                      onChangeStockChangeFilter(value)
-                      reset()
-                    }}
-                  />
-                  <SettingsSectorChangeSection
-                    value={sectorChangeFilter}
-                    onChange={setSectorChangeFilter}
-                    depth={sectorChangeDepth}
-                    onChangeDepth={setSectorChangeDepth}
-                    maxSelectableDepth={sectorChangeMaxDepth}
-                    noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
-                  />
-                  <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
-                  <SettingsStockChartSection trigger={stockChartTrigger} onChangeTrigger={setStockChartTrigger} rightClickDisabled={stockPopupOnHover} />
-                  <SettingsStockMoveSection enabled={stockMoveEnabled} onChange={handleChangeStockMoveEnabled} />
-                  <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
-                </div>
+                <MapExperimentSections
+                  stockPopupOnHover={stockPopupOnHover}
+                  onChangeStockPopupOnHover={setStockPopupOnHover}
+                  stockChartTrigger={stockChartTrigger}
+                  onChangeStockChartTrigger={setStockChartTrigger}
+                  stockMoveEnabled={stockMoveEnabled}
+                  onChangeStockMoveEnabled={setStockMoveEnabled}
+                />
               </SettingsPanelGroup>
             </SettingsPanel>
           </div>

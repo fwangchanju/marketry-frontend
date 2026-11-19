@@ -1,3 +1,4 @@
+import { readSettingStorage, writeSettingStorage } from '@/utils/settingsStorageGate'
 import MainAreaLoading from '@/components/MainAreaLoading'
 import { buildSectorParentHints } from '@/utils/sectorFilterHints'
 import { HINT_BUBBLE_CLASS } from '@/components/hintBubbleStyle'
@@ -1038,9 +1039,9 @@ export default function AdminStockTable({
     return [chain.rootName, chain.midName, chain.leafName].filter((name): name is string => name !== null)
   })), [sectorOptions, sectorOptionsById])
   // 거래소 분류와 대·중·소분류 필터는 "가나다 순"과 "시가총액 순" 중 고른 대로 보여준다(기본 가나다 순, 브라우저에 저장).
-  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>(() => (localStorage.getItem('marketry:sector-filter-order') === 'cap' ? 'cap' : 'alpha'))
+  const [sectorFilterMode, setSectorFilterMode] = useState<'alpha' | 'cap'>(() => (readSettingStorage('marketry:sector-filter-order') === 'cap' ? 'cap' : 'alpha'))
   const changeSectorFilterMode = useCallback((value: 'alpha' | 'cap') => {
-    localStorage.setItem('marketry:sector-filter-order', value)
+    writeSettingStorage('marketry:sector-filter-order', value)
     setSectorFilterMode(value)
   }, [])
   const sectorFilterOrder = useMemo(() => sectorNamesByDepth(sectors, sectorStats), [sectors, sectorStats])

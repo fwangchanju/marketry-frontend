@@ -1,3 +1,4 @@
+import { readSettingStorage, writeSettingStorage } from '@/utils/settingsStorageGate'
 import { BUTTON_ACCENT_CLASS, BUTTON_BASE_CLASS } from '@/components/buttonStyles'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { CaptureWidthError, SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl, screenshotFixedSummaryFrameToDataUrl } from '@/utils/screenshotToPreview'
@@ -33,7 +34,7 @@ function captureChoiceKey(hasMobile: boolean, hasFrames: boolean) {
 
 function readSavedCapture(key: string, hasMobile: boolean, frameIds: string[]): string | null {
   try {
-    const saved = JSON.parse(localStorage.getItem(key) ?? 'null') as unknown
+    const saved = JSON.parse(readSettingStorage(key) ?? 'null') as unknown
     if (saved === 'mobile' && hasMobile) return 'mobile'
     if (typeof saved === 'string' && frameIds.some(id => saved === `frame:${id}`)) return saved
   } catch {
@@ -43,11 +44,7 @@ function readSavedCapture(key: string, hasMobile: boolean, frameIds: string[]): 
 }
 
 function saveCapture(key: string, value: string | null) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    // 저장이 막혀도 캡처는 그대로 된다.
-  }
+  writeSettingStorage(key, JSON.stringify(value))
 }
 
 export default function ScreenshotModal({

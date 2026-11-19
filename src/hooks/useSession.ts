@@ -7,6 +7,7 @@ import { getLastRefreshAt, markSessionAnonymous, refreshSessionOnce } from '@/ap
 import { authKeys } from './queryKeys'
 import { STATIC_REFERENCE_CACHE } from './cacheConfig'
 import { cancelPendingPreferenceSave } from './useCustomPreferences'
+import { setSettingsStorageGate } from '@/utils/settingsStorageGate'
 import { isLocalAutoLoginEnabled, isLocalGuestMode, setLocalGuestMode, setTestMemberActive } from '@/utils/localDevLogin'
 import type { AuthSessionResponse } from '@/types/api'
 
@@ -48,17 +49,24 @@ function reconcileCustomModeStorage(session: AuthSessionResponse) {
 // 공개 문서 화면은 Google OAuth 동의 화면에서도 열려야 하므로, 공통 상단바 모양은 쓰되
 // 세션 API를 호출하지 않는 선택지를 둔다.
 export function useSession(enabled = true) {
-  return useQuery({
+  const query = useQuery({
     queryKey: authKeys.session(),
     queryFn: async () => {
       const session = await getSession()
       reconcileCustomModeStorage(session)
+      setSettingsStorageGate(session.authenticated)
       return session
     },
     ...STATIC_REFERENCE_CACHE,
     enabled,
     retry: false,
   })
+  // 로그인 여부가 바뀌면(자동 로그인·로그아웃·세션 만료 포함) 설정 저장소 관문에도 알린다.
+  const authenticated = query.data?.authenticated
+  useEffect(() => {
+    if (authenticated !== undefined) setSettingsStorageGate(authenticated)
+  }, [authenticated])
+  return query
 }
 
 export function useIsLoggedIn(): boolean {
@@ -161,6 +169,7 @@ function clearSessionData(queryClient: QueryClient) {
   // 세션 쿼리는 지우지 않고 그 자리에서 익명으로 바꾼다 — clear()로 지우면 세션을 구독하던 화면(지도 설정 등)이
   // 새 쿼리를 따라가지 못해서 로그아웃 뒤에도 이전 사용자의 설정이 그대로 보였다. 바꾼 뒤에 나머지를 비운다.
   queryClient.setQueryData(authKeys.session(), ANONYMOUS_SESSION)
+  setSettingsStorageGate(false)
   queryClient.removeQueries({ predicate: query => query.queryKey[0] !== authKeys.all[0] })
   clearCustomModeStorage()
   try {

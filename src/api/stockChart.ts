@@ -22,3 +22,9 @@ export const getJapanStockDailyCandles = (stockCode: string, days: number, signa
   client
     .get(`/stocks/japan/${encodeURIComponent(stockCode)}/daily-candles`, { params: { days }, signal })
     .then(r => z.array(StockDailyCandleSchema).parse(r.data))
+
+// 미국 종목 일봉 — 야후에서 받아 저장한 값이다.
+export const getUsaStockDailyCandles = (stockCode: string, days: number, signal?: AbortSignal) =>
+  client
+    .get(`/stocks/usa/${encodeURIComponent(stockCode)}/daily-candles`, { params: { days }, signal })
+    .then(r => z.array(StockDailyCandleSchema).parse(r.data))
