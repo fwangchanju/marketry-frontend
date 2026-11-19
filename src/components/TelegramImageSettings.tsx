@@ -158,7 +158,7 @@ export default function TelegramImageSettings({
   }
 
   return <InfoSection number={number} title={title}>
-    <div className="mx-auto w-full overflow-hidden border border-ui-border bg-ui-panel p-3 text-sm">
+    <div className="mx-auto w-full max-w-[674px] overflow-hidden border border-ui-border bg-ui-panel p-4 text-sm">
       <div className="space-y-3">
         <section aria-label={profileLabel} className="rounded-md border border-ui-border bg-ui-background/50 px-3 py-2">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-ui-white">{profileLabel === '일본' || profileLabel === '미국'
@@ -170,11 +170,11 @@ export default function TelegramImageSettings({
           const tab = TABS[start]
           return <section key={tab.label} aria-label={tab.label} className="rounded-md border border-ui-border bg-ui-background/50 p-3">
             <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-ui-white"><SettingsSectionIcon icon={tab.icon} className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />{tab.label}<span className="h-px flex-1 bg-ui-border" /></h3>
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-x-1 text-center text-xs font-semibold text-ui-muted"><span>항목</span><span>설정값</span><span>현재값</span></div>
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-x-2 text-center text-xs font-semibold text-ui-muted"><span>항목</span><span>설정값</span><span>현재값</span></div>
             {names.slice(start, end).map((name, offset) => {
               const index = start + offset
               const isDifferent = hasDifferentValue(saved, current, index, profileLabel)
-              return <div key={name} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-1 border-t border-ui-border/50 py-1.5">
+              return <div key={name} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-2 border-t border-ui-border/50 py-2">
                 <span className={LABEL_CLASS}>{name}</span>
                 <span ref={index === 1 && hasMoreExclusions(saved) ? savedExclusionsTriggerRef : undefined} className={`${VALUE_CLASS} flex items-center justify-between gap-1 text-ui-white`}>
                   <span className="min-w-0"><SettingValue value={saved} index={index} profileLabel={profileLabel} /></span>
