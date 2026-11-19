@@ -9,6 +9,8 @@ interface Props {
   // 분류 이름의 단계 이름(대분류·중분류 …) — 돌아가기 안내에 쓴다.
   levelLabels: readonly string[]
   stockName: string
+  // 내 기준 모드일 때 강조색(없으면 기본 강조 색).
+  accentColor?: string
   // 차트 본체(우리 일봉 차트).
   children: ReactNode
   // 차트를 닫고 지도로 돌아간다.
@@ -22,7 +24,7 @@ const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 b
 
 // 지도를 그리는 영역 자리에 띄우는 종목 차트 — 위쪽 경로 줄(시장 › 대분류 › 중분류 … 를 지도 경로 줄 모양 그대로 + 맨 끝에 종목명)과 종목 일봉 차트.
 // 이름을 누르면 차트를 닫고 그 분류의 지도로 이동하고, Esc나 뒤로가기는 지금 보던 지도로 돌아간다.
-export default function StockChartView({ marketLabel, sectors, levelLabels, stockName, children, onClose, onGoToSector }: Props) {
+export default function StockChartView({ marketLabel, sectors, levelLabels, stockName, accentColor, children, onClose, onGoToSector }: Props) {
   // 차트만 전체화면으로 본다(경로 줄·툴바 없이). 화면 전체 전체화면(오른쪽 위 아이콘)과는 별개다.
   const chartRef = useRef<HTMLDivElement>(null)
   const [isChartFullscreen, setIsChartFullscreen] = useState(false)
@@ -54,7 +56,7 @@ export default function StockChartView({ marketLabel, sectors, levelLabels, stoc
             <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
           </button>
         ))}
-        <span aria-current="page" className="px-2 text-[var(--accent)]">{stockName}</span>
+        <span aria-current="page" className="px-2 text-[var(--accent)]" style={accentColor ? { color: accentColor } : undefined}>{stockName}</span>
         <button type="button" aria-label="차트 전체 화면" data-hint="차트 전체 화면" onClick={toggleChartFullscreen} className="ml-auto flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--accent)]">
           <MaximizeIcon strokeWidth={1.6} className="h-5 w-5" />
         </button>

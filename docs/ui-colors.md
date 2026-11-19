@@ -125,3 +125,17 @@ MARKETRY 강조 색상은 청록 `#12B8A6`, 거래소는 하늘 `#55C8F2`으로 
 - 사용하지 않던 `--stock-up`, `--stock-down`, `--negative`와 `.positive`·`.negative` 선언은 제거했다. 지도의 실제 등락률 팔레트와는 무관하다.
 
 실제 화면에는 혼합·투명도·데이터색이 더해진다. 따라서 기본 원색 12개는 렌더링된 모든 픽셀의 색이 12개라는 뜻이 아니다.
+
+## 강조 색 연동 목록 (모드별 색을 한곳에서 관리)
+
+거래소 색은 `--exchange-accent`(하늘)·`--exchange-surface`(진파랑) 두 값만 바꾸면 따라간다. 내 기준 강조색은 설정창의 "강조 색상" 값을 따른다. 아래는 색 값을 직접 넘기는 곳이다.
+
+| 자리 | 파일 | 연동 값 | 상태 |
+|---|---|---|---|
+| 지도 설정창 강조 색 | `pages/MapPage.tsx` `<SettingsPanel strongIndustryColor>` | 강조 색 | 연동 |
+| 차트 종목명 | `components/StockChartView.tsx`, `MapStockChart.tsx`, `MapPage.tsx` `accentColor` | 내 기준 강조 색 / 거래소 `--exchange-accent` | 연동 |
+| 분류 배지 | `components/TaxonomyBadge.tsx` | 내 기준 강조 색 + 60% 혼합 | 연동 |
+| 설정 기본값 | `utils/settingDefaults.ts` `profileAccent` | 거래소 `#55c8f2` | 미연동 |
+| 텔레그램 색 이름표 | `components/TelegramImageSettings.tsx` `fixedLabels` | 거래소 `#55c8f2` | 미연동 |
+
+미연동 두 곳은 거래소 색을 바꿀 때 함께 고친다.

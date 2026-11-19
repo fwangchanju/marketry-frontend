@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import sampleMapImage from '@/assets/telegram-map-sample.png'
 import sampleJapanMapImage from '@/assets/telegram-japan-map-sample.png'
+import sampleUsaMapImage from '@/assets/telegram-usa-map-sample.png'
 import {
   getTelegramSendSetting,
   saveTelegramSendSetting,
@@ -38,16 +39,17 @@ import { isAdminSession } from '@/utils/adminAccess'
 
 const SEND_OPTIONS = [{ value: true, label: '켜기' }, { value: false, label: '끄기' }] as const
 const SAMPLE_TIME = '15:40'
-const KOREA_SAMPLE_CAPTION = '#코스피 #코스닥\nAI 인프라 +7.8%\n배터리 +6.9%'
-const JAPAN_SAMPLE_CAPTION = '#니케이225 (20분 지연)\n기술 +4.4%\n커뮤니케이션 +3.0%'
-const SAMPLE_HASHTAG_PATTERN = /(#코스피|#코스닥|#니케이225)/g
+const KOREA_SAMPLE_CAPTION = '#코스피 #코스닥\n반도체 소·부·장 +6.5%\n경기 소비재 +4.8%'
+const JAPAN_SAMPLE_CAPTION = '#니케이225 (20분 지연)\n소프트웨어 +2.3%\n경기 소비재 +1.7%'
+const USA_SAMPLE_CAPTION = '#SNP500\n하이퍼 스케일러 +1.2%\n경기 소비재 +0.6%'
+const SAMPLE_HASHTAG_PATTERN = /(#코스피|#코스닥|#니케이225|#SNP500)/g
 
 function renderSampleCaption(caption: string) {
   const lines = caption.split('\n')
   return lines.map((line, lineIndex) => (
     <span key={lineIndex}>
       {line.split(SAMPLE_HASHTAG_PATTERN).map((part, partIndex) => (
-        /^#(?:코스피|코스닥|니케이225)$/.test(part)
+        /^#(?:코스피|코스닥|니케이225|SNP500)$/.test(part)
           ? <span key={partIndex} className="text-[var(--sub-yellow)]">{part}</span>
           : part
       ))}
@@ -323,7 +325,7 @@ export default function AdminMessagePage() {
                       {setting.isError ? (
                         <p role="alert" className="m-0 text-sm text-ui-text">불러오지 못했습니다.</p>
                       ) : saved ? (
-                        <div className="grid grid-cols-1 items-start justify-items-center gap-4 lg:grid-cols-2">
+                        <div className="grid grid-cols-1 items-start justify-items-center gap-4 lg:grid-cols-3">
                           {[{
                             key: 'korea',
                             title: 'MARKETRY',
@@ -338,6 +340,13 @@ export default function AdminMessagePage() {
                             alt: '텔레그램 일본증시 지도 발송 예시',
                             caption: JAPAN_SAMPLE_CAPTION,
                             pending: sendJapanOnce.isPending,
+                          }, {
+                            key: 'usa',
+                            title: 'MARKETRY',
+                            image: sampleUsaMapImage,
+                            alt: '텔레그램 미국증시 지도 발송 예시',
+                            caption: USA_SAMPLE_CAPTION,
+                            pending: sendUsaOnce.isPending,
                           }].map(sample => (
                             <div key={sample.key} className="mx-auto w-full rounded-2xl rounded-bl-md bg-ui-control p-1 [container-type:inline-size]" style={{ maxWidth: SAMPLE_CARD_MAX_WIDTH }}>
                               <p className={`m-0 px-3 pb-1 pt-1.5 ${SAMPLE_TEXT} font-medium text-[var(--sub-yellow)]`}>{sample.title}</p>

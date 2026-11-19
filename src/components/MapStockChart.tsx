@@ -16,6 +16,7 @@ export default function MapStockChart({
   closeChart,
   onGoToRoot,
   onEnterSector,
+  accentColor,
 }: {
   chartStock: ChartStock
   marketLabel: string
@@ -27,6 +28,7 @@ export default function MapStockChart({
   // 전체 지도로 이동 / 분류 이름의 지도로 이동 — 페이지마다 줌아웃·분류 진입 방식이 달라 받는다.
   onGoToRoot: () => void
   onEnterSector: (sectorName: string) => void
+  accentColor?: string
 }) {
   return (
     <StockChartView
@@ -34,6 +36,7 @@ export default function MapStockChart({
       sectors={chartStock.sectorPath}
       levelLabels={levelLabels}
       stockName={chartStock.name}
+      accentColor={accentColor}
       onClose={() => closeChart()}
       onGoToSector={name => closeChart(name === null ? onGoToRoot : () => { onEnterSector(name) })}
     >

@@ -1,3 +1,5 @@
+// 거래소 강조 색의 기본값. index.css의 --exchange-accent와 같은 값이어야 한다(같이 바꾼다).
+export const EXCHANGE_ACCENT_HEX = '#55c8f2'
 // 지도 설정의 기본값 — 사용자가 값을 바꾸기 전(저장값이 없을 때)에 보이는 값을 한 곳에 모았다.
 // 기본값을 바꾸려면 이 파일만 고치면 된다. 사용자가 값을 바꿔서 저장값이 생기면 그 값이 항상 기본값보다 우선한다
 // (로그인 사용자는 서버 설정, 비로그인은 이 탭의 sessionStorage — usePageSetting 참고).
@@ -81,6 +83,6 @@ export const GUEST_DEFAULTS: SettingDefaults = { ...MEMBER_DEFAULTS }
 
 export function settingDefaultsFor(isLoggedIn: boolean, profile?: 'marketry' | 'exchange' | 'mine'): SettingDefaults {
   const defaults = isLoggedIn ? MEMBER_DEFAULTS : GUEST_DEFAULTS
-  const profileAccent = { marketry: '#12b8a6', exchange: '#55c8f2', mine: '#fff59d' } as const
+  const profileAccent = { marketry: '#12b8a6', exchange: EXCHANGE_ACCENT_HEX, mine: '#fff59d' } as const
   return profile ? { ...defaults, strongIndustryColor: profileAccent[profile] } : defaults
 }
