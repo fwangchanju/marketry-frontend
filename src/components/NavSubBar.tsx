@@ -174,9 +174,9 @@ export default function NavSubBar({ actions, onReselectCurrent, staticMode = fal
 
   return (
     <div className={vertical
-      ? 'settings-side-nav fixed bottom-0 left-0 top-[90px] z-30 flex w-20 flex-col items-stretch bg-ui-panel px-2 pb-[24px] pt-[43px] text-xs'
+      ? 'settings-side-nav fixed bottom-0 left-0 top-[90px] z-30 flex w-20 flex-col items-stretch bg-ui-panel px-2 pb-[24px] pt-[55px] text-xs'
       : 'relative z-30 mb-[15px] flex h-[30px] after:absolute after:inset-x-0 after:top-full after:h-[0.5px] after:bg-ui-surface shrink-0 items-center justify-between gap-3 bg-ui-surface px-3 text-xs'}>
-      {/* 지금 보는 시장의 국기: 맨 위 빈 자리(첫 메뉴 위 43px)의 가로 가운데에 둔다. 윗선은 메인 툴바 시장 배지의 윗선과 같다. 시장 화면에서만 보인다. */}
+      {/* 지금 보는 시장의 국기: 맨 위 빈 자리(첫 메뉴 위 55px)의 가로 가운데에 둔다. 윗선은 메인 툴바 시장 배지의 윗선과 같다. 시장 화면에서만 보인다. */}
       {vertical && currentFlag && (
         <div data-nav-market-flag className="pointer-events-none absolute left-1/2 top-[8.75px] -translate-x-1/2">
           <MarketFlagIcon flag={currentFlag} />
