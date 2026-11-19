@@ -21,11 +21,11 @@ export function InfoPageHeading({ title, summary, effectiveDate, actions, flushB
 export function InfoSection({ number, title, children }: { number?: string; title: string; children: ReactNode }) {
   return (
     <section className="border-b border-ui-border pb-5 last:border-b-0">
-      <h2 className="flex items-center gap-2 text-lg font-bold text-ui-white">
+      {title && <h2 className="flex items-center gap-2 text-lg font-bold text-ui-white">
         {number && <span aria-hidden="true" className="inline-flex h-6 min-w-6 items-center justify-center bg-brand-surface px-1.5 text-xs font-bold text-brand">{number}</span>}
         {!number && <span className="h-4 w-1 shrink-0 rounded-sm bg-brand" />}
         {title}
-      </h2>
+      </h2>}
       <div className="mt-3 space-y-3 text-sm leading-relaxed text-ui-text">{children}</div>
     </section>
   )
