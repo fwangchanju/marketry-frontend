@@ -9,6 +9,8 @@ export interface PopupContent {
   // 숫자 줄 아래에 괄호와 회색(NXT 안내의 두 번째 줄과 같은 양식)으로 붙이는 보충 설명.
   note?: string
   excludeSector?: { id: number; name: string }
+  // 종목 팝업이 가리키는 종목 — Popup에 onOpenChart가 있을 때만 제목 줄 오른쪽에 차트 아이콘을 둔다(업종의 휴지통 자리와 같은 방식).
+  chartStock?: { code: string; name: string }
   // 우클릭한 섹터/종목 박스를 식별하는 키('sector-<id>' | 'stock-<code>') — 팝업이 떠 있는 동안
   // 해당 박스에만 초록 하이라이트를 붙이는 데 쓴다(Heatmap.highlightedKey).
   targetKey: string
@@ -37,17 +39,18 @@ export interface PopupState extends PopupContent {
 interface Props {
   popup: PopupState | null
   onExcludeSector: (sectorId: number, sectorName: string) => void
+  onOpenChart?: (stock: { code: string; name: string }) => void
   onClose: () => void
 }
 
-export default function Popup({ popup, onExcludeSector, onClose }: Props) {
+export default function Popup({ popup, onExcludeSector, onOpenChart, onClose }: Props) {
   // popup이 null이면 PopupBody를 트리에서 아예 뺀다 — 이래야 popup이 바뀔 때마다(닫혔다 다시 열릴
   // 때마다) PopupBody가 실제로 언마운트·재마운트되어 confirming/위치 계산 state가 매번 새로 시작한다.
   // Popup 자신은 부모가 항상 렌더하는 컴포넌트라 여기 직접 훅을 두면 그 state가 다음 팝업까지
   // 이어져버린다.
   if (!popup) return null
   return createPortal(
-    <PopupBody popup={popup} onExcludeSector={onExcludeSector} onClose={onClose} />,
+    <PopupBody popup={popup} onExcludeSector={onExcludeSector} onOpenChart={onOpenChart} onClose={onClose} />,
     document.body,
   )
 }
@@ -88,10 +91,11 @@ function placeNearPointer(el: HTMLElement, point: { x: number; y: number }, boun
 interface PopupBodyProps {
   popup: PopupState
   onExcludeSector: (sectorId: number, sectorName: string) => void
+  onOpenChart?: (stock: { code: string; name: string }) => void
   onClose: () => void
 }
 
-function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
+function PopupBody({ popup, onExcludeSector, onOpenChart, onClose }: PopupBodyProps) {
   const elRef = useRef<HTMLDivElement>(null)
   const minLeft = Math.max(POPUP_MARGIN, popup.mapBounds.left + POPUP_MARGIN)
   const maxRight = Math.min(window.innerWidth - POPUP_MARGIN, popup.mapBounds.right - POPUP_MARGIN)
@@ -166,6 +170,7 @@ function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
   }, [pointer, minLeft, maxRight, minTop, maxBottom])
 
   const excludeSector = popup.excludeSector
+  const chartStock = onOpenChart && !popup.tooltip ? popup.chartStock : undefined
   const isSectorPopup = popup.targetKey.startsWith('sector:')
 
   return (
@@ -196,6 +201,22 @@ function PopupBody({ popup, onExcludeSector, onClose }: PopupBodyProps) {
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
                 <path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v7m4-7v7" />
+              </svg>
+            </button>
+          )}
+          {chartStock && (
+            <button
+              type="button"
+              aria-label={`${chartStock.name} 차트`}
+              data-hint="종목 차트"
+              className="flex h-6 w-6 items-center justify-center rounded-md border-0 bg-ui-selection p-0 text-ui-surface outline-none transition-colors hover:bg-ui-control-hover"
+              onClick={() => {
+                onClose()
+                onOpenChart?.(chartStock)
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+                <path d="M7 4v3m0 8v3M7 7h0m-2 0h4v8H5zM17 4v5m0 7v4M15 9h4v7h-4z" />
               </svg>
             </button>
           )}

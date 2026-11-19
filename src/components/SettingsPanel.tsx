@@ -1,3 +1,4 @@
+import type { StockChartTrigger } from '@/hooks/useStockChart'
 import { SlidingHighlight } from '@/components/SlidingHighlight'
 import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 import { SUSPENDED_EXCLUDE_HINT, SUSPENDED_SECTOR_NAME } from '@/utils/protectedSector'
@@ -1868,6 +1869,58 @@ export function SettingsStockPopupSection({
               aria-checked={selected}
               onClick={() => onChangeStockPopupOnHover(option.onHover)}
               className="settings-choice-hover relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms]"
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const STOCK_CHART_TRIGGER_OPTIONS: { label: string; value: StockChartTrigger }[] = [
+  { label: '우클릭', value: 'rightClick' },
+  { label: '원 클릭', value: 'click' },
+  { label: '더블 클릭', value: 'doubleClick' },
+]
+
+export function SettingsStockChartSection({
+  trigger,
+  onChangeTrigger,
+  rightClickDisabled,
+}: {
+  trigger: StockChartTrigger
+  onChangeTrigger: (trigger: StockChartTrigger) => void
+  // 종목 정보가 마우스 올리기이면 우클릭 팝업이 없어서 우클릭으로는 차트를 열 수 없다.
+  rightClickDisabled: boolean
+}) {
+  return (
+    <div className="settings-plain-button-item h-[180px] text-sm text-ui-white">
+      <span className="flex max-w-full items-center text-left text-[15px] text-ui-white">
+        <span className="settings-plain-title">종목 차트</span>
+        <SettingHelpBubble label="종목 차트" description={"우클릭은 팝업의 차트 아이콘을 눌러 엽니다.\n원 클릭·더블 클릭은 종목 박스에서\n바로 엽니다. 종목 이동이 켜져 있으면\n원 클릭·더블 클릭으로 열리지 않습니다.\n종목 정보가 마우스 올리기이면\n우클릭은 고를 수 없습니다."} />
+      </span>
+      <SettingDescription>종목 차트를 여는 방식</SettingDescription>
+      <div
+        role="radiogroup"
+        aria-label="종목 차트 여는 방식"
+        className="relative mt-[18px] grid max-w-full settings-control-inset grid-cols-3 gap-[6px]"
+      >
+        <SlidingHighlight count={3} index={STOCK_CHART_TRIGGER_OPTIONS.findIndex(option => option.value === trigger)} className="rounded-[4px] bg-brand-surface" />
+        {STOCK_CHART_TRIGGER_OPTIONS.map(option => {
+          const selected = trigger === option.value
+          const disabled = rightClickDisabled && option.value === 'rightClick'
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              disabled={disabled}
+              data-hint={disabled ? '종목 정보가 마우스 올리기일 때는 고를 수 없습니다' : undefined}
+              onClick={() => onChangeTrigger(option.value)}
+              className="settings-choice-hover relative z-10 min-h-[25px] rounded-[4px] border-0 bg-transparent px-1 py-1 text-[13px]/4 font-medium text-ui-white transition-colors duration-[500ms] disabled:cursor-not-allowed disabled:opacity-35"
             >
               {option.label}
             </button>

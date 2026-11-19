@@ -62,6 +62,7 @@ export function useUsaMapSource(): OverseasMapSource {
     sessionChip: <UsaSessionChip session={USA_SESSION} />,
     refreshHelp: usaRefreshHelp(snapshotTime),
     currencyUnit: '달러',
+    chart: { market: 'usa' },
     levelLabels: ['대분류', '중분류'],
     defaultMaxDepth: 2,
     fixed: USA_MAP_FIXED,

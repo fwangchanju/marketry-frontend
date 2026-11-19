@@ -26,6 +26,7 @@ import SettingsPanel, {
   SettingsTextThresholdSection,
   SettingsStockMoveSection,
   SettingsStockPopupSection,
+  SettingsStockChartSection,
   type SettingsPanelSectionId,
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
@@ -38,6 +39,12 @@ import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
+import StockCandleChart from '@/components/StockCandleChart'
+import StockChartView from '@/components/StockChartView'
+import { useStockChart, type StockChartTrigger } from '@/hooks/useStockChart'
+import { useTransientSetting } from '@/hooks/useTransientSetting'
+import { profileSettingKey } from '@/utils/settingsSchema'
+import { findStockSectorPath } from '@/utils/stockSectorPath'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
@@ -209,6 +216,7 @@ export default function MapPage() {
     decimalPlaces,
     colorScale,
     handleExcludeSector,
+    settingsProfile,
   } = useGlobalSettings({ allowChangeRateMode: true })
   // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
@@ -217,6 +225,12 @@ export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
+  // 종목 박스를 우클릭해 뜨는 팝업의 차트 아이콘을 누르면 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
+  const { chartStock, openChart, closeChart } = useStockChart()
+  // 실험 탭의 "종목 차트" — 차트를 여는 방식(우클릭·원 클릭·더블 클릭). 다른 실험 탭 값처럼 저장하지 않고 모드(MARKETRY·거래소·내 기준)마다 따로 기억한다.
+  const [chosenStockChartTrigger, setStockChartTrigger] = useTransientSetting<StockChartTrigger>(profileSettingKey(settingsProfile, 'heatmap.stockChartTrigger'), 'rightClick')
+  // 종목 정보가 마우스 올리기이면 우클릭 팝업이 없어서, 우클릭을 골라 둔 상태여도 원 클릭으로 연다.
+  const stockChartTrigger: StockChartTrigger = stockPopupOnHover && chosenStockChartTrigger === 'rightClick' ? 'click' : chosenStockChartTrigger
   const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
   // 실험 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
@@ -493,6 +507,10 @@ export default function MapPage() {
             <div className="flex min-h-0 flex-1">
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               <NxtOnlyNotice active={nxtOnly && pinnedSnapshotTime === undefined && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError} nodes={rootNodes} />
+              {chartStock !== null ? (
+                <StockChartView marketLabel={MARKET_LABEL[market]} sectors={chartStock.sectorPath} levelLabels={SECTOR_LEVEL_LABEL} stockName={chartStock.name} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })}><StockCandleChart stockCode={chartStock.code} market="korea" upColor={resolveHeatmapColor(15, colorScale)} downColor={resolveHeatmapColor(-15, colorScale)} /></StockChartView>
+              ) : (
+              <>
               {path.length > 0 && (
                 // 이름마다 "그 단계로만" 이동하는 링크다 — 줄 전체를 눌러 전체로 가던 동작은 없앴다. 지금 보고 있는
                 // 마지막 이름은 링크가 아니라 현재 위치 표시(흰색)다.
@@ -557,6 +575,8 @@ export default function MapPage() {
                     depth={path.length}
                     onSelectSector={enterSector}
                     onExcludeSector={handleExcludeSector}
+                    stockChartTrigger={stockChartTrigger}
+                    onOpenStockChart={stock => openChart({ ...stock, sectorPath: findStockSectorPath(filteredRootNodes, stock.code) ?? [] })}
                     heightClassName="min-h-0 flex-1"
                     marketValueDepthRange={marketValueDepthRange}
                     weightedAvgDepthRange={weightedAvgDepthRange}
@@ -579,6 +599,8 @@ export default function MapPage() {
                     onZoomOutComplete={handleZoomOutComplete}
                   />
                 </div>
+              )}
+              </>
               )}
               {/* 등락률 색상 범례 — 지도 우하단에 오른쪽 끝에 붙여 둔다. 이 줄만큼 지도 아래쪽이 올라온다. 로딩·오류·빈 화면에서도 면책 문구와 함께 맨 아래에 그대로 둔다. */}
               <DisclaimerFooter rightContent={<ChangeRateBar swatches={settingsModalProps.legendSwatches} />} />
@@ -694,8 +716,9 @@ export default function MapPage() {
                     maxSelectableDepth={sectorChangeMaxDepth}
                     noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
                   />
-                  <SettingsStockMoveSection enabled={stockMoveEnabled} onChange={handleChangeStockMoveEnabled} />
                   <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
+                  <SettingsStockChartSection trigger={stockChartTrigger} onChangeTrigger={setStockChartTrigger} rightClickDisabled={stockPopupOnHover} />
+                  <SettingsStockMoveSection enabled={stockMoveEnabled} onChange={handleChangeStockMoveEnabled} />
                   <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
                 </div>
               </SettingsPanelGroup>

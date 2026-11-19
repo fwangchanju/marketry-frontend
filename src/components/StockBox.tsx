@@ -86,6 +86,7 @@ export default function StockBox({
         `${item.rangeLabels?.base ?? '전일종가'}: ${toVolume(item.lastPrice)}${currencyUnit}`,
         `시가총액: ${toJoEok(item.totalMarketValue / 100_000_000)}${currencySuffix(currencyUnit)}`,
       ],
+      chartStock: { code: item.stockCode, name: item.stockName },
       targetKey: stockKey,
       tooltip,
       pointer,

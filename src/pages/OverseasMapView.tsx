@@ -22,11 +22,18 @@ import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Heatmap from '@/components/Heatmap'
+import StockCandleChart from '@/components/StockCandleChart'
+import StockChartPanel from '@/components/StockChartPanel'
+import StockChartView from '@/components/StockChartView'
+import { useStockChart, type StockChartTrigger } from '@/hooks/useStockChart'
+import { useTransientSetting } from '@/hooks/useTransientSetting'
+import { findStockSectorPath } from '@/utils/stockSectorPath'
+import { USA_CHART_TIMEZONE, toUsaTradingViewSymbol } from '@/utils/tradingViewSymbol'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import SettingsPanel, { SettingsExcludeSection, SettingsMarketValueSection, SettingsStockChangeSection, SettingsSectorChangeSection, SettingsStockMoveSection, SettingsStockPopupSection, SettingsTextThresholdSection, SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import SettingsPanel, { SettingsExcludeSection, SettingsMarketValueSection, SettingsStockChangeSection, SettingsSectorChangeSection, SettingsStockMoveSection, SettingsStockPopupSection, SettingsStockChartSection, SettingsTextThresholdSection, SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
@@ -77,7 +84,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   // 시장마다 다른 부분(데이터를 받는 방법·날짜 선택·장 상태 칩·설정 값)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
     market, label, tree, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange, rangeExcludedStocks,
-    isLoading, isError, isFetching, refetchAll, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit,
+    isLoading, isError, isFetching, refetchAll, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit, chart,
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, settingPrefix, tabStorageName, totalCount, countShown,
   } = source
   const publishedAt = useOverseasPublishedAt(market, sheet)
@@ -86,11 +93,13 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: market === 'JAPAN' ? 'japan' : 'usa' })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   // 실험 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
-  const [stockChangeFilter, setStockChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
-  const [sectorChangeFilter, setSectorChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
-  const [sectorChangeDepth, setSectorChangeDepth] = useState(0)
-  const [stockPopupOnHover, setStockPopupOnHover] = useState(fixed.stockPopupOnHover)
-  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = useState(fixed.boxLabelMinAreaPercent)
+  // 시장(일본·미국)과 모드(MARKETRY·내 기준)마다 따로 기억한다. 한국 지도의 실험 탭과 같은 방식이다.
+  const experimentKey = (name: string) => `overseas.experiment.${market}.${sheet}.${name}`
+  const [stockChangeFilter, setStockChangeFilter] = useTransientSetting<'all' | 'rising' | 'falling'>(experimentKey('stockChangeFilter'), 'all')
+  const [sectorChangeFilter, setSectorChangeFilter] = useTransientSetting<'all' | 'rising' | 'falling'>(experimentKey('sectorChangeFilter'), 'all')
+  const [sectorChangeDepth, setSectorChangeDepth] = useTransientSetting(experimentKey('sectorChangeDepth'), 0)
+  const [stockPopupOnHover, setStockPopupOnHover] = useTransientSetting(experimentKey('stockPopupOnHover'), fixed.stockPopupOnHover)
+  const [boxLabelMinAreaPercent, setBoxLabelMinAreaPercent] = useTransientSetting(experimentKey('boxLabelMinAreaPercent'), fixed.boxLabelMinAreaPercent)
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
   const directionFilters = useMemo(() => ({ stockChangeFilter, sectorChangeFilter, sectorChangeDepth, sectorUseSimpleAverage: false }), [stockChangeFilter, sectorChangeFilter, sectorChangeDepth])
@@ -103,6 +112,12 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     return pickTopSectorKeys(collectSectorsAtDepth(filteredRootNodes, preferences.topPickDepth), preferences.topPickCount, preferences.activeDepthMetric)
   }, [filteredRootNodes, preferences.topPickEnabled, preferences.topPickDepth, preferences.topPickCount, preferences.activeDepthMetric, topPickMaxSelectableDepth])
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
+  // 종목 우클릭 팝업의 차트 아이콘을 누르면 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
+  const { chartStock, openChart, closeChart } = useStockChart()
+  // 실험 탭의 "종목 차트" — 차트를 여는 방식(우클릭·원 클릭·더블 클릭). 다른 실험 탭 값처럼 저장하지 않고 모드마다 따로 기억한다.
+  const [chosenStockChartTrigger, setStockChartTrigger] = useTransientSetting<StockChartTrigger>(experimentKey('stockChartTrigger'), 'rightClick')
+  // 종목 정보가 마우스 올리기이면 우클릭 팝업이 없어서, 우클릭을 골라 둔 상태여도 원 클릭으로 연다.
+  const stockChartTrigger: StockChartTrigger = stockPopupOnHover && chosenStockChartTrigger === 'rightClick' ? 'click' : chosenStockChartTrigger
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
@@ -245,6 +260,10 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
           </Toolbar>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+            {chartStock !== null && chart ? (
+              <StockChartView marketLabel={label} sectors={chartStock.sectorPath} levelLabels={levelLabels} stockName={chartStock.name} onClose={() => closeChart()} onGoToSector={name => closeChart(name === null ? () => handleGoToDepth(0) : () => { enterSector(name) })}>{chart.market === 'japan' ? <StockCandleChart stockCode={chartStock.code} market="japan" upColor={resolveHeatmapColor(15, colorScale)} downColor={resolveHeatmapColor(-15, colorScale)} /> : <StockChartPanel symbol={toUsaTradingViewSymbol(chartStock.code)} timezone={USA_CHART_TIMEZONE} />}</StockChartView>
+            ) : (
+            <>
             {path.length > 0 && (
               <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
                 <button type="button" data-hint="전체로 돌아가기" onClick={() => handleGoToDepth(0)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
@@ -287,8 +306,12 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                   zoomOutRequestDepth={zoomOutRequestDepth}
                   onZoomOutComplete={depth => { goToDepth(depth); setZoomOutRequestDepth(null) }}
                   currencyUnit={currencyUnit}
+                  stockChartTrigger={stockChartTrigger}
+                  onOpenStockChart={chart ? (stock => openChart({ ...stock, sectorPath: findStockSectorPath(filteredRootNodes, stock.code) ?? [] })) : undefined}
                 />
               </div>
+            )}
+            </>
             )}
             <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
           </div>
@@ -340,8 +363,9 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               <div className="settings-plain-content">
                 <SettingsStockChangeSection value={stockChangeFilter} onChange={setStockChangeFilter} />
                 <SettingsSectorChangeSection value={sectorChangeFilter} onChange={setSectorChangeFilter} depth={sectorChangeDepth} onChangeDepth={setSectorChangeDepth} maxSelectableDepth={availableMaxDepth} noDataLimited={false} />
-                <SettingsStockMoveSection enabled={stockMoveEnabled} onChange={handleChangeStockMoveEnabled} />
                 <SettingsStockPopupSection stockPopupOnHover={stockPopupOnHover} onChangeStockPopupOnHover={setStockPopupOnHover} />
+                <SettingsStockChartSection trigger={stockChartTrigger} onChangeTrigger={setStockChartTrigger} rightClickDisabled={stockPopupOnHover} />
+                <SettingsStockMoveSection enabled={stockMoveEnabled} onChange={handleChangeStockMoveEnabled} />
                 <SettingsTextThresholdSection value={boxLabelMinAreaPercent} onChange={setBoxLabelMinAreaPercent} />
               </div>
             </SettingsPanelGroup>
