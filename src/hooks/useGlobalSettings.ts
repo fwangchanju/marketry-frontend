@@ -434,8 +434,11 @@ export function useGlobalSettings(options?: { needsTree?: boolean; allowChangeRa
     [isLoggedIn, isMarketry, rawRootNodes],
   )
   const defaultExchangeNames = defaultPreferences.data?.exchange?.excludedSectorNames
-  const defaultExchangeSelection = new Set(Array.isArray(defaultExchangeNames) ? defaultExchangeNames.filter((item): item is string => typeof item === 'string') : [])
-  const initialExchangeExclusions = excludedNamesForPaths(rootNodes, [...defaultExchangeSelection])
+  // useTransientSetting은 저장값이 없을 때 이 초기값을 그대로 스냅샷으로 쓰므로, 매 렌더 새 Map이면 무한 렌더가 된다(거래소 모드 섹터 클릭 오류). 입력이 바뀔 때만 새로 만든다.
+  const initialExchangeExclusions = useMemo(() => {
+    const defaultExchangeSelection = new Set(Array.isArray(defaultExchangeNames) ? defaultExchangeNames.filter((item): item is string => typeof item === 'string') : [])
+    return excludedNamesForPaths(rootNodes, [...defaultExchangeSelection])
+  }, [rootNodes, defaultExchangeNames])
   const [exchangeExcludedSectorNames, setExchangeExcludedSectorNames] = useTransientSetting<Map<number, string>>(
     'heatmap.excludedSectorNames.exchange',
     initialExchangeExclusions,
