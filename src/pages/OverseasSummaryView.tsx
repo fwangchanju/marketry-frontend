@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
 import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import { buildExcludedSectorRows, countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
@@ -16,7 +17,6 @@ import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
-import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -32,7 +32,7 @@ import ChangeRateBar from '@/components/ChangeRateBar'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
-import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
+import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import RangeExcludedStocks from '@/components/RangeExcludedStocks'
@@ -98,7 +98,8 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   // 시가총액 범위 — 지도·그래프와 같은 저장 값. 업종 요약과 막대, 설정창의 종목 수에 함께 반영한다.
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
   const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
-  const { colorScale, strongIndustryColor } = fixed
+  const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: 'mine' })
+  const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   const navigate = useNavigate()
   // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(국내 서머리와 같은 동작).
   const handleSelectSector = (sectorName: string) => navigate(`${overseasRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
@@ -233,7 +234,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
               </DndContext>
             </div>
           </div>
-          <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
+          <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
         <SettingsPanel pageLabel="Summary" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
@@ -242,18 +243,9 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
             <SettingsExcludeSection sectorFilterEnabled={sectorExclusion.enabled} onToggleSectorFilter={sectorExclusion.toggle} excludedSectors={buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers)} onRemoveExcludedSector={sectorExclusion.remove} />
           </SettingsPanelGroup>
           <SettingsPanelGroup section="colors">
-            {/* 지도 화면과 같은 구성이다. 등락률 색상·상위 업종 강조 색은 고정값을 보여 주고 바꾸지 못한다. */}
-            <SettingsColorSection
-              isCustom={false}
-              colorScaleDraft={colorScale}
-              colorCustomOn
-              onChangeColorCustomOn={() => {}}
-              onResetColorScale={() => {}}
-              isResettingColorScale={false}
-              colorEditorProps={buildFixedColorEditorProps()}
-              fixed
-            />
-            <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={() => {}} fixed />
+            {/* 지도 화면과 같은 구성이다. 등락률 색상·강조 색상은 내 기준 모드에서만 고칠 수 있고(한국 내 기준과 같은 값을 공유), MARKETRY 모드에서는 잠근다. */}
+            <SettingsColorSection {...colorSettings.colorSectionProps} />
+            <SettingsStrongIndustryColorSection {...colorSettings.strongSectionProps} />
           </SettingsPanelGroup>
         </SettingsPanel>
         </div>

@@ -1,6 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
 import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
@@ -26,7 +27,6 @@ import NavBarPageActions, { PageRefreshButton } from '@/components/NavBarPageAct
 import NavSubBar from '@/components/NavSubBar'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsExcludeSection, SettingsMarketValueSection, SettingsStockChangeSection, SettingsSectorChangeSection, SettingsStockMoveSection, SettingsStockPopupSection, SettingsTextThresholdSection, SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
-import { buildFixedColorEditorProps } from '@/utils/fixedColorEditor'
 import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import Spinner from '@/components/Spinner'
 import Toolbar from '@/components/Toolbar'
@@ -42,7 +42,7 @@ import { useMapDrilldownHistory, useMapSectorEntry } from '@/hooks/useMapDrilldo
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
-import { resolveHeatmapColor, resolveLegendSwatches } from '@/utils/heatmapColorScale'
+import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
@@ -83,7 +83,8 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const publishedAt = useOverseasPublishedAt(market, sheet)
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
   const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
-  const { colorScale } = fixed
+  const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: market === 'JAPAN' ? 'japan' : 'usa' })
+  const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   // 실험 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
   const [stockChangeFilter, setStockChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
   const [sectorChangeFilter, setSectorChangeFilter] = useState<'all' | 'rising' | 'falling'>('all')
@@ -248,7 +249,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
                 <button type="button" data-hint="전체로 돌아가기" onClick={() => handleGoToDepth(0)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
                 {path.map((name, index) => index === path.length - 1
-                  ? <span key={name} aria-current="page" className="px-2 text-[var(--accent)]" style={{ color: fixed.strongIndustryColor }}>{name}</span>
+                  ? <span key={name} aria-current="page" className="px-2 text-[var(--accent)]" style={{ color: strongIndustryColor }}>{name}</span>
                   : <button key={name} type="button" data-hint={`${levelLabels[index]}로 돌아가기`} onClick={() => handleGoToDepth(index + 1)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{name}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>)}
               </nav>
             )}
@@ -282,23 +283,23 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                   stockPopupOnHover={stockPopupOnHover}
                   decimalPlaces={preferences.decimalPlaces}
                   topPickSectorKeys={topPickSectorKeys}
-                  strongIndustryColor={fixed.strongIndustryColor}
+                  strongIndustryColor={strongIndustryColor}
                   zoomOutRequestDepth={zoomOutRequestDepth}
                   onZoomOutComplete={depth => { goToDepth(depth); setZoomOutRequestDepth(null) }}
                   currencyUnit={currencyUnit}
                 />
               </div>
             )}
-            <DisclaimerFooter rightContent={<ChangeRateBar swatches={resolveLegendSwatches(colorScale)} />} />
+            <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
           </div>
           {((isShareOpen && isMobileScreenshotSelected) || isMobileCaptureMode) && !isLoading && !isError && shownCount > 0 && (
             <div aria-hidden="true" data-map-mobile-capture-frame data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined} data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined} style={{ opacity: 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }} className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background">
               <div data-map-mobile-capture style={{ opacity: 0, width: '100%', height: '100%' }} className="flex flex-col bg-ui-background">
                 <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
                 <div aria-hidden="true" className="h-2 shrink-0" />
-                {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 ? { color: fixed.strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
+                {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={fixed.strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
+                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
                 </div>
               </div>
             </div>
@@ -330,18 +331,9 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               <SettingsSectorLevelSection {...sectorLevelProps} showTaxonomy={false} showDecimalPlaces />
             </SettingsPanelGroup>
             <SettingsPanelGroup section="colors">
-              {/* 국내 MARKETRY 모드와 같은 구성이다. 등락률 색상·강조 색상은 잠가 두고(나중에 일본에도 내 기준 모드를 만들 자리) 상위 업종 강조만 쓴다. */}
-              <SettingsColorSection
-                isCustom={false}
-                colorScaleDraft={fixed.colorScale}
-                colorCustomOn
-                onChangeColorCustomOn={() => {}}
-                onResetColorScale={() => {}}
-                isResettingColorScale={false}
-                colorEditorProps={buildFixedColorEditorProps()}
-                fixed
-              />
-              <SettingsStrongIndustryColorSection color={fixed.strongIndustryColor} onChange={() => {}} fixed />
+              {/* 한국과 같은 구성이다. 등락률 색상·강조 색상은 내 기준 모드에서만 고칠 수 있고(한국 내 기준과 같은 값을 공유), MARKETRY 모드에서는 잠근다. */}
+              <SettingsColorSection {...colorSettings.colorSectionProps} />
+              <SettingsStrongIndustryColorSection {...colorSettings.strongSectionProps} />
               <SettingsTopPickSection {...topPickProps} />
             </SettingsPanelGroup>
             <SettingsPanelGroup section="special">

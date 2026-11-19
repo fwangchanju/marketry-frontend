@@ -20,6 +20,12 @@ export function profileSettingKey(profile: SettingsProfile, key: string): string
   return `heatmap.profile.${profile}.${suffix}`
 }
 
+// 내 기준의 등락률 색상 켜기·강조 색상은 한국·일본·미국이 같은 값을 쓴다(2026-11-19). 설정창 항목이 적어 둔 이름 → 실제 저장 이름.
+export const MINE_COLOR_SETTING_KEYS: Readonly<Record<string, string>> = {
+  'heatmap.colorCustomOn': profileSettingKey('mine', 'heatmap.colorCustomOn'),
+  'heatmap.strongIndustryColor': profileSettingKey('mine', 'heatmap.strongIndustryColor'),
+}
+
 export function profileFromSettingKey(key: string): { profile: 'exchange' | 'marketry'; key: string } | null {
   const match = /^heatmap\.profile\.(exchange|marketry)\.(.+)$/.exec(key)
   return match ? { profile: match[1] as 'exchange' | 'marketry', key: match[2] } : null

@@ -4,6 +4,7 @@ import {
   clearDraft, commitDrafts, discardDrafts, hasDraftForKeys, readDraft, registerDraftKey,
   unregisterDraftParticipant, updateDraftParticipant, writeDraft,
 } from './settingsDraft.ts'
+import { MINE_COLOR_SETTING_KEYS } from './settingsSchema.ts'
 
 const colorKey = 'test.colorScale'
 const settingKey = 'test.preference'
@@ -177,4 +178,20 @@ test('일본 화면의 임시값은 국내 분류 범위에 섞이지 않고 일
   assert.equal(readDraft(japanKey).found, true)
   await commitDrafts(async entries => { saved.push(...entries) }, 'japan')
   assert.deepEqual(saved, [[japanKey, 2]])
+})
+
+test('내 기준 색상 값은 한국 내 기준·일본·미국 범위에서 함께 저장되고 MARKETRY·거래소 범위에서는 저장되지 않는다', async () => {
+  const key = MINE_COLOR_SETTING_KEYS['heatmap.strongIndustryColor']
+  for (const [scope, expected] of [['mine', true], ['japan', true], ['usa', true], ['marketry', false], ['exchange', false]]) {
+    writeDraft(key, '#123456')
+    const saved = []
+    await commitDrafts(async entries => { saved.push(...entries.map(([name]) => name)) }, scope)
+    assert.equal(saved.includes(key), expected, `${scope} 범위`)
+    clearDraft(key)
+  }
+})
+
+test('내 기준 색상 켜기·강조 색상의 설정창 변경 점 이름은 한국 내 기준의 저장 이름과 같다', () => {
+  assert.equal(MINE_COLOR_SETTING_KEYS['heatmap.colorCustomOn'], 'heatmap.profile.mine.colorCustomOn')
+  assert.equal(MINE_COLOR_SETTING_KEYS['heatmap.strongIndustryColor'], 'heatmap.profile.mine.strongIndustryColor')
 })
