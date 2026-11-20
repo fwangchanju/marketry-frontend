@@ -30,6 +30,9 @@ const MOVING_AVERAGES = [
   { days: 60, color: '#c084fc' },
   { days: 120, color: '#e5e7eb' },
 ] as const
+// 장중 임시 봉의 몸통 — 같은 빨강·파랑을 옅게 칠해 확정된 봉과 구분한다(테두리·심지는 진한 색 그대로).
+const PROVISIONAL_UP_BODY = 'rgba(240, 68, 82, 0.35)'
+const PROVISIONAL_DOWN_BODY = 'rgba(49, 130, 246, 0.35)'
 const VOLUME_COLOR = 'rgba(140, 146, 155, 0.45)'
 const GRID_COLOR = '#1c1c1c'
 const LINE_COLOR = '#2a2a2a'
@@ -40,6 +43,13 @@ const VOLUME_PANE_HEIGHT = 110
 const TIME_AXIS_HEIGHT = 28
 // 마지막 봉과 오른쪽 가격축 사이에 비워 둘 봉 칸 수.
 const RIGHT_OFFSET_BARS = 5
+// 가격축 왼쪽 끝에서 축 숫자가 시작하는 거리(라이브러리 기본 눈금 길이+여백) — 직접 그리는 가격 배지 글자를 축 숫자 줄에 맞춘다.
+const PRICE_TEXT_INSET = 9
+// 직접 그리는 배지의 글자 좌우 여백과 높이.
+const BADGE_PADDING_X = 6
+const BADGE_HEIGHT = 22
+
+type PriceBadge = { top: number; text: string; color: string }
 const INTERVALS: { value: Interval; label: string }[] = [
   { value: 'day', label: '일봉' },
   { value: 'week', label: '주봉' },
@@ -82,6 +92,7 @@ function groupCandles(candles: StockDailyCandle[], interval: Interval): StockDai
       last.low = Math.min(last.low, candle.low)
       last.close = candle.close
       last.volume += candle.volume
+      if (candle.provisional) last.provisional = true
     }
   }
   return grouped
@@ -130,6 +141,10 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   const [interval, setInterval] = useState<Interval>('day')
   // 마우스를 올린 봉의 순서. 없으면 가장 최근 봉 값을 보인다.
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  // 날짜 배지 자리 — 커서의 가로 위치와 차트 크기.
+  const [hoverAt, setHoverAt] = useState<{ x: number; width: number; height: number } | null>(null)
+  // 오른쪽 가격축 위에 직접 그리는 배지 — 커서 가격(위·아래 칸)과 현재가. top은 차트 영역 위에서부터의 거리, left는 축 글자 시작 자리.
+  const [priceBadges, setPriceBadges] = useState<{ textLeft: number; cursor: PriceBadge | null; last: PriceBadge | null }>({ textLeft: 0, cursor: null, last: null })
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['stock-daily-candles', market, stockCode, CANDLE_DAYS],
     queryFn: ({ signal }) => DAILY_CANDLE_LOADERS[market](stockCode, CANDLE_DAYS, signal),
@@ -145,6 +160,8 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       layout: {
         background: { type: ColorType.Solid, color: 'rgba(0, 0, 0, 0)' },
         textColor: AXIS_TEXT_COLOR,
+        // 축·날짜 배지 글자를 사이트 글꼴로 그린다. 기본 글꼴(윈도우에서는 Trebuchet 등)은 한글 요일이 섞이면 글자가 배지 아래로 처진다.
+        fontFamily: getComputedStyle(document.body).fontFamily,
         panes: { separatorColor: LINE_COLOR },
         // 라이브러리 기본 로고는 끄고, 아래에서 같은 출처 링크를 둥근 배지로 직접 그린다(출처 표시는 유지한다).
         attributionLogo: false,
@@ -155,34 +172,81 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       crosshair: {
         mode: 0,
         // 커서 십자선은 현재가 선과 같은 점선으로 그린다(기본 큰 점선은 너무 눈에 띈다, 2026-11-20 사용자 결정).
-        vertLine: { color: CROSSHAIR_COLOR, style: LineStyle.Dashed, labelBackgroundColor: '#3a3a3a' },
-        horzLine: { color: CROSSHAIR_COLOR, style: LineStyle.Dashed, labelBackgroundColor: '#3a3a3a' },
+        // 아래 날짜 배지는 라이브러리 것 대신 직접 그린다(글자와 배지 가운데를 정확히 맞추려고, 2026-11-20 사용자 요청).
+        vertLine: { color: CROSSHAIR_COLOR, style: LineStyle.Dashed, labelVisible: false },
+        // 오른쪽 가격 배지(커서 가격·현재가)도 직접 그린다 — 라이브러리 배지는 글자 왼쪽 여백이 더 넓다(2026-11-20 사용자 요청).
+        horzLine: { color: CROSSHAIR_COLOR, style: LineStyle.Dashed, labelVisible: false },
       },
       // 커서 아래 날짜 표시는 정보 줄과 같은 모양(2026-10-20 (화))으로 쓴다.
-      localization: { locale: 'ko-KR', priceFormatter: (price: number) => axisPriceText(market, price), timeFormatter: (time: Time) => dateWithWeekday(timeToDate(time)) },
+      // 가격 표시는 시리즈마다 따로 정한다(전체에 걸면 거래량 칸까지 소수점이 붙는다).
+      localization: { locale: 'ko-KR', timeFormatter: (time: Time) => dateWithWeekday(timeToDate(time)) },
     })
+    const priceFormat = { type: 'custom' as const, minMove: market === 'usa' ? 0.01 : 1, formatter: (price: number) => axisPriceText(market, price) }
     const candles = chart.addSeries(CandlestickSeries, {
-      upColor: UP_COLOR, downColor: DOWN_COLOR, borderVisible: false, wickUpColor: UP_COLOR, wickDownColor: DOWN_COLOR,
+      priceFormat,
+      lastValueVisible: false,
+      upColor: UP_COLOR, downColor: DOWN_COLOR, borderUpColor: UP_COLOR, borderDownColor: DOWN_COLOR, wickUpColor: UP_COLOR, wickDownColor: DOWN_COLOR,
     })
-    candles.setData(bars.map(({ date, open, high, low, close }) => ({ time: date as Time, open, high, low, close })))
+    // 장중 임시 봉(오늘, 5분 시세로 만든 값)은 몸통을 옅게 칠해 확정된 봉과 구분한다(2026-11-20 사용자 결정).
+    candles.setData(bars.map(({ date, open, high, low, close, provisional }) => ({
+      time: date as Time, open, high, low, close, ...(provisional ? { color: close >= open ? PROVISIONAL_UP_BODY : PROVISIONAL_DOWN_BODY } : {}),
+    })))
     for (const average of MOVING_AVERAGES) {
-      const line = chart.addSeries(LineSeries, { color: average.color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false })
+      const line = chart.addSeries(LineSeries, { priceFormat, color: average.color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false })
       line.setData(movingAverage(bars, average.days))
     }
     // 거래량은 봉과 겹치지 않게 아래 칸(두 번째 판)에 회색 막대로 그린다.
-    const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' }, color: VOLUME_COLOR, priceLineVisible: false, lastValueVisible: false }, 1)
-    volume.setData(bars.map(({ date, volume: amount }) => ({ time: date as Time, value: amount })))
+    const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'custom', minMove: 1, formatter: (amount: number) => Math.round(amount).toLocaleString('ko-KR') }, color: VOLUME_COLOR, priceLineVisible: false, lastValueVisible: false }, 1)
+    // 임시 봉은 거래량이 없어서 막대를 비워 둔다(주봉·월봉은 확정된 날의 거래량 합을 그대로 보인다).
+    volume.setData(bars.map(({ date, volume: amount, provisional }) => (provisional && amount === 0 ? { time: date as Time } : { time: date as Time, value: amount })))
     chart.panes()[1]?.setHeight(VOLUME_PANE_HEIGHT)
     const visible = VISIBLE_BARS[interval]
     if (visible !== null && bars.length > visible) chart.timeScale().setVisibleLogicalRange({ from: bars.length - visible, to: bars.length + RIGHT_OFFSET_BARS })
     else chart.timeScale().fitContent()
     const indexByDate = new Map(bars.map((bar, index) => [bar.date, index]))
+    const volumeFormat = (amount: number) => Math.round(amount).toLocaleString('ko-KR')
+    const lastBar = bars[bars.length - 1]
+    let cursorBadge: PriceBadge | null = null
+    // 현재가 배지 자리는 화면을 끌거나 크기가 바뀌면 달라지므로 그때마다 다시 잰다.
+    const placeBadges = () => {
+      const lastY = candles.priceToCoordinate(lastBar.close)
+      setPriceBadges({
+        textLeft: container.clientWidth - chart.priceScale('right').width() + PRICE_TEXT_INSET,
+        cursor: cursorBadge,
+        last: lastY === null ? null : { top: lastY, text: axisPriceText(market, lastBar.close), color: lastBar.close >= lastBar.open ? UP_COLOR : DOWN_COLOR },
+      })
+    }
+    let frame = 0
+    const schedulePlace = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(placeBadges)
+    }
+    chart.timeScale().subscribeVisibleLogicalRangeChange(schedulePlace)
+    const resizeObserver = new ResizeObserver(schedulePlace)
+    resizeObserver.observe(container)
+    schedulePlace()
     chart.subscribeCrosshairMove(param => {
+      // 커서 가격 배지 — 위 칸이면 가격, 아래 칸이면 거래량. 아래 칸 좌표는 위 칸 높이와 칸 사이 선(1px)만큼 내려서 그린다.
+      cursorBadge = null
+      if (param.point && param.paneIndex !== undefined) {
+        const isVolume = param.paneIndex === 1
+        const value = (isVolume ? volume : candles).coordinateToPrice(param.point.y)
+        if (value !== null) {
+          const top = isVolume ? chart.paneSize(0).height + 1 + param.point.y : param.point.y
+          cursorBadge = { top, text: isVolume ? volumeFormat(value) : axisPriceText(market, value), color: '#3a3a3a' }
+        }
+      }
+      placeBadges()
       const index = typeof param.time === 'string' ? indexByDate.get(param.time) : undefined
       setHoverIndex(index === undefined || !param.point ? null : index)
+      setHoverAt(index === undefined || !param.point ? null : { x: param.point.x, width: container.clientWidth, height: container.clientHeight })
     })
     return () => {
+      cancelAnimationFrame(frame)
+      resizeObserver.disconnect()
       setHoverIndex(null)
+      setHoverAt(null)
+      setPriceBadges({ textLeft: 0, cursor: null, last: null })
       chart.remove()
     }
   }, [bars, interval, market])
@@ -200,7 +264,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   const shownRate = shownBar ? changeRate(shownBar, bars[shownIndex - 1]) : null
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col" data-capture-ignore>
+    <div className="flex min-h-0 flex-1 flex-col tabular-nums" data-capture-ignore>
       {/* 차트를 넓게 보도록 종목명·현재가·등락률과 버튼을 한 줄에 모은다(2026-11-20 사용자 결정). */}
       {/* 첫 줄: 종목명·현재가·등락률, 둘째 줄: 일봉·주봉·월봉과 그 오른쪽에 이동평균선 표시(2026-11-20 사용자 결정). */}
       <div className="flex shrink-0 flex-col gap-1.5 px-3 pb-2 pt-1.5 text-xs">
@@ -238,7 +302,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
         {/* 셋째 줄: 마우스를 올린 날(없으면 가장 최근 날)의 값. 차트를 가리지 않게 상자 대신 줄로 보인다(2026-11-20 사용자 결정). */}
         {shownBar && (
           <div className="flex h-4 items-center gap-3 overflow-hidden whitespace-nowrap">
-            <span className="font-semibold text-ui-white">{dateWithWeekday(shownBar.date)}</span>
+            <span className="font-semibold text-ui-white">{dateWithWeekday(shownBar.date)}{shownBar.provisional && <span className="ml-1 font-normal text-ui-muted">장중 임시</span>}</span>
             {[
               ['시가', priceText(market, shownBar.open)],
               ['고가', priceText(market, shownBar.high)],
@@ -248,12 +312,34 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             ))}
             <span><span className="mr-1 text-ui-muted">종가</span><span className={changeClass(shownRate)}>{priceText(market, shownBar.close)}</span></span>
             {shownRate !== null && <span className={changeClass(shownRate)}>{shownRate > 0 ? '+' : ''}{shownRate.toFixed(2)}%</span>}
-            <span><span className="mr-1 text-ui-muted">거래량</span><span className="text-ui-text">{shownBar.volume.toLocaleString('ko-KR')}</span></span>
+            <span><span className="mr-1 text-ui-muted">거래량</span><span className="text-ui-text">{shownBar.provisional && shownBar.volume === 0 ? '-' : shownBar.volume.toLocaleString('ko-KR')}</span></span>
           </div>
         )}
       </div>
       <div className="relative min-h-0 flex-1 border-t border-[#2a2a2a]">
         <div ref={containerRef} className="absolute inset-0" />
+        {[priceBadges.last, priceBadges.cursor].map((badge, order) => badge && (
+          <div
+            key={order === 0 ? 'last' : 'cursor'}
+            aria-hidden="true"
+            className="pointer-events-none absolute z-10 flex items-center whitespace-nowrap text-xs leading-none text-ui-white"
+            style={{ left: priceBadges.textLeft - BADGE_PADDING_X, top: badge.top - BADGE_HEIGHT / 2, height: BADGE_HEIGHT, paddingLeft: BADGE_PADDING_X, paddingRight: BADGE_PADDING_X, backgroundColor: badge.color }}
+          >
+            {badge.text}
+          </div>
+        ))}
+        {hoverAt && shownBar && hoverIndex !== null && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute z-10 flex h-[22px] -translate-x-1/2 items-center justify-center whitespace-nowrap bg-[#3a3a3a] px-1.5 text-xs leading-none text-ui-white"
+            style={{
+              left: Math.min(Math.max(hoverAt.x, 70), hoverAt.width - 70),
+              top: hoverAt.height - TIME_AXIS_HEIGHT + 3,
+            }}
+          >
+            {dateWithWeekday(shownBar.date)}
+          </div>
+        )}
         {/* TradingView 출처 표시 — 차트 라이브러리 사용 조건이라 지우지 않는다. 기본 로고 대신 둥근 배지로 보이고, 누르면 TradingView에서 이 종목 차트를 연다(2026-11-20 사용자 결정). */}
         <a
           href={tradingViewUrl(market, stockCode)}
