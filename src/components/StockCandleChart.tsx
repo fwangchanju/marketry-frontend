@@ -302,7 +302,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
         {/* 셋째 줄: 마우스를 올린 날(없으면 가장 최근 날)의 값. 차트를 가리지 않게 상자 대신 줄로 보인다(2026-11-20 사용자 결정). */}
         {shownBar && (
           <div className="flex h-4 items-center gap-3 overflow-hidden whitespace-nowrap">
-            <span className="font-semibold text-ui-white">{dateWithWeekday(shownBar.date)}{shownBar.provisional && <span className="ml-1 font-normal text-ui-muted">장중 임시</span>}</span>
+            <span className="font-semibold text-ui-white">{dateWithWeekday(shownBar.date)}</span>
             {[
               ['시가', priceText(market, shownBar.open)],
               ['고가', priceText(market, shownBar.high)],
@@ -312,7 +312,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             ))}
             <span><span className="mr-1 text-ui-muted">종가</span><span className={changeClass(shownRate)}>{priceText(market, shownBar.close)}</span></span>
             {shownRate !== null && <span className={changeClass(shownRate)}>{shownRate > 0 ? '+' : ''}{shownRate.toFixed(2)}%</span>}
-            <span><span className="mr-1 text-ui-muted">거래량</span><span className="text-ui-text">{shownBar.provisional && shownBar.volume === 0 ? '-' : shownBar.volume.toLocaleString('ko-KR')}</span></span>
+            <span><span className="mr-1 text-ui-muted">거래량</span><span className="text-ui-text">{shownBar.provisional && shownBar.volume === 0 ? '-' : shownBar.volume.toLocaleString('ko-KR')}</span>{shownBar.provisional && <span className="ml-1 text-ui-muted">(장중 임시)</span>}</span>
           </div>
         )}
       </div>
