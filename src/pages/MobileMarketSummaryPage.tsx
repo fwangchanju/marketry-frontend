@@ -5,6 +5,10 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
 import PhoneMapShell from '@/components/PhoneMapShell'
+import MapToolbar from '@/components/MapToolbar'
+import TaxonomyBadge from '@/components/TaxonomyBadge'
+import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
+import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { navigateWithMobileSlide } from '@/utils/mobilePageTransition'
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
@@ -261,6 +265,14 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     changeRateChoice,
     pinnedSnapshotTime,
     rangeStartTime,
+    isAfterHoursControlsVisible,
+    isAfterHoursSelectable,
+    onChangeChangeRateMode,
+    liveSnapshotTime,
+    onChangePinnedSnapshotTime,
+    onSelectRange,
+    rangeExcludedStocks,
+    isRefetchingHeatmap,
   } = useGlobalSettings({ allowChangeRateMode: true, defaultTaxonomy: 'MARKETRY', taxonomyStorageKey: 'mobile.taxonomySelection' })
   const [majorSelection, setMajorSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
   const [midSelection, setMidSelection] = useState<{ market: MarketQuery; name: string } | null>(null)
@@ -735,7 +747,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p>
             : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface p-1"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={() => undefined} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>
 
-  if (isSectorMode) {
+  // 업종 지도와 그룹 등락률은 같은 판 양식(상단 줄·툴바·가운데 판·하단 설정 줄)을 쓴다.
+  if (isSectorMode || isGraph) {
     return (
       <PhoneMapShell
         topBar={
@@ -750,14 +763,28 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         }
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * (window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH)}
         frame={<div className="flex flex-col" style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, transform: `scale(${window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH})`, transformOrigin: 'top left' }}>
-      <header className="shrink-0 bg-ui-background px-3 py-0">
-        <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-          {pathCrumbs.map(crumb => crumb.go
-            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
-            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
-        </nav>
-      </header>
+          <MapToolbar
+            market={market}
+            marketLabel={market === 'ALL_STOCK' ? 'K-STOCK' : market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}
+            snapshotTime={data?.snapshotTime ?? null}
+            liveSnapshotTime={liveSnapshotTime}
+            pinnedSnapshotTime={pinnedSnapshotTime}
+            rangeStartTime={rangeStartTime}
+            isPastSnapshot={pinnedSnapshotTime !== undefined}
+            colorScale={colorScale}
+            onChangePinnedSnapshotTime={onChangePinnedSnapshotTime}
+            onSelectRange={onSelectRange}
+            rangeExcludedStocks={rangeExcludedStocks}
+            refetchHeatmap={refetchHeatmap}
+            isRefetchingHeatmap={isRefetchingHeatmap}
+            changeRateChoice={changeRateChoice}
+            onChangeChangeRateMode={onChangeChangeRateMode}
+            isAfterHoursControlsVisible={isAfterHoursControlsVisible}
+            isAfterHoursSelectable={isAfterHoursSelectable}
+            modeStatusText={<TaxonomyBadge taxonomy={taxonomy} strongIndustryColor={strongIndustryColor} />}
+            refreshHelpText={SNAPSHOT_REFRESH_HELP}
+            refreshSpinMs={REFRESH_BUTTON_SPIN_MS}
+          />
       <section
         ref={pageContentRef}
         aria-label={isGraph ? (viewMode === 'sector' ? '업종 등락률 그래프' : '종목 등락률 그래프') : (viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵')}
@@ -827,6 +854,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       />
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
+
       <header className="shrink-0 bg-ui-background px-3 py-0">
         <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
           <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
@@ -835,7 +863,6 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
             : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
         </nav>
       </header>
-
       <section
         ref={pageContentRef}
         aria-label={isGraph ? (viewMode === 'sector' ? '업종 등락률 그래프' : '종목 등락률 그래프') : (viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵')}
