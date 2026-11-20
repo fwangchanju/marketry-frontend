@@ -8,8 +8,9 @@ const TOOLBAR_BASE_HEIGHT = 28
 const TOOLBAR_SIDE_GUTTER = 6
 const TOOLBAR_MAX_SCALE = 2
 
-export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize }: {
+export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe }: {
   topBar?: ReactNode
+  onSwipe?: (direction: 'next' | 'previous') => void
   frameHeight: number
   frame: ReactNode
   toolbar?: ReactNode
@@ -20,6 +21,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   const rowRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null)
   const [scale, setScale] = useState(0.94)
 
   // 툴바 원래 폭을 재서, 화면 폭(양쪽 여백 제외)에 맞는 배율로 키운다.
@@ -45,13 +47,27 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
     <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
       {topBar ?? <MobileTopBar title="" />}
       <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch overflow-hidden bg-ui-background">
-        <div ref={mapRef} className="relative w-full shrink-0 overflow-hidden" style={{ height: `${frameHeight}px`, marginTop: `${frameTop}px` }}>
-          {frame}
-        </div>
-        <div ref={rowRef} className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px` }}>
+        <div ref={rowRef} className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
           <div className="origin-top-left" style={{ transform: `translateX(${TOOLBAR_SIDE_GUTTER}px) scale(${scale})` }}>
             <div ref={contentRef} className="w-max">{toolbar}</div>
           </div>
+        </div>
+        <div
+          ref={mapRef}
+          className="relative w-full shrink-0 overflow-hidden"
+          style={{ height: `${frameHeight}px` }}
+          onPointerDown={event => { swipeStartRef.current = { x: event.clientX, y: event.clientY } }}
+          onPointerUp={event => {
+            const start = swipeStartRef.current
+            swipeStartRef.current = null
+            if (!start || !onSwipe) return
+            const dx = event.clientX - start.x
+            const dy = event.clientY - start.y
+            if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+            onSwipe(dx < 0 ? 'next' : 'previous')
+          }}
+        >
+          {frame}
         </div>
       </div>
       <MobileMapSheet current={current} boxSize={boxSize} onChangeBoxSize={onChangeBoxSize} />
