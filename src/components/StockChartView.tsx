@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { MaximizeIcon, MinimizeIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
+import { ReturnArrowIcon } from '@/components/icons/AppIcons'
+import { ChartFullscreenContext } from '@/components/chartFullscreenContext'
 
 interface Props {
   // 지도 경로 줄 맨 앞과 같은 시장 이름(K-STOCK·S&P 500 등).
@@ -53,17 +54,9 @@ export default function StockChartView({ marketLabel, sectors, levelLabels, chil
             <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
           </button>
         ))}
-        <button type="button" aria-label="차트 전체 화면" data-hint="차트 전체 화면" onClick={toggleChartFullscreen} className="ml-auto flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-[var(--accent)]">
-          <MaximizeIcon strokeWidth={1.6} className="h-5 w-5" />
-        </button>
       </nav>
       <div ref={chartRef} className="relative flex min-h-0 flex-1 flex-col bg-ui-background">
-        {children}
-        {isChartFullscreen && (
-          <button type="button" aria-label="전체 화면 끄기" data-hint="전체 화면 끄기 (Esc)" onClick={toggleChartFullscreen} className="absolute right-2 top-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border-0 bg-ui-background/70 p-0 text-[var(--accent)] outline-none hover:bg-ui-control">
-            <MinimizeIcon strokeWidth={1.6} className="h-5 w-5" />
-          </button>
-        )}
+        <ChartFullscreenContext.Provider value={{ isFullscreen: isChartFullscreen, toggle: toggleChartFullscreen }}>{children}</ChartFullscreenContext.Provider>
       </div>
     </>
   )

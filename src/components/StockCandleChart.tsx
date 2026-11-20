@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { CandlestickSeries, ColorType, HistogramSeries, LineSeries, LineStyle, createChart, type Time } from 'lightweight-charts'
+import { CandlestickSeries, ColorType, HistogramSeries, LineSeries, LineStyle, createChart, type ISeriesApi, type Time } from 'lightweight-charts'
 import { getJapanStockDailyCandles, getStockDailyCandles, getUsaStockDailyCandles, type StockDailyCandle } from '@/api/stockChart'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import MainAreaLoading from '@/components/MainAreaLoading'
 import Spinner from '@/components/Spinner'
+import { MaximizeIcon, MinimizeIcon } from '@/components/icons/AppIcons'
+import { ChartFullscreenContext } from '@/components/chartFullscreenContext'
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 
 type Market = 'korea' | 'japan' | 'usa'
 type Interval = 'day' | 'week' | 'month'
@@ -48,6 +51,9 @@ const PRICE_TEXT_INSET = 9
 // 직접 그리는 배지의 글자 좌우 여백과 높이.
 const BADGE_PADDING_X = 6
 const BADGE_HEIGHT = 22
+
+// 숨긴 이동평균선(일수 목록)의 처음 값 — 모두 보인다. 매 렌더 새 배열을 넘기지 않게 상수로 둔다.
+const NO_HIDDEN_AVERAGES: number[] = []
 
 type PriceBadge = { top: number; text: string; color: string }
 const INTERVALS: { value: Interval; label: string }[] = [
@@ -141,6 +147,11 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   const [interval, setInterval] = useState<Interval>('day')
   // 마우스를 올린 봉의 순서. 없으면 가장 최근 봉 값을 보인다.
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const fullscreen = useContext(ChartFullscreenContext)
+  // 숨긴 이동평균선 — 일봉 버튼 옆 표시를 눌러 켜고 끈다. 로그인한 사용자만 이 브라우저에 기억한다(2026-11-20 사용자 요청).
+  const [hiddenAverages, setHiddenAverages] = useLocalPersistedState<number[]>('marketry:stock-chart-hidden-averages', NO_HIDDEN_AVERAGES)
+  const averageLinesRef = useRef(new Map<number, ISeriesApi<'Line'>>())
+  const hiddenAveragesRef = useRef(hiddenAverages)
   // 날짜 배지 자리 — 커서의 가로 위치와 차트 크기.
   const [hoverAt, setHoverAt] = useState<{ x: number; width: number; height: number } | null>(null)
   // 오른쪽 가격축 위에 직접 그리는 배지 — 커서 가격(위·아래 칸)과 현재가. top은 차트 영역 위에서부터의 거리, left는 축 글자 시작 자리.
@@ -167,7 +178,8 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
         attributionLogo: false,
       },
       grid: { vertLines: { visible: false }, horzLines: { color: GRID_COLOR } },
-      rightPriceScale: { borderVisible: false },
+      // 가격 칸 위아래 빈 공간은 10%씩(라이브러리 기본은 위 20%·아래 10%, 2026-11-20 사용자 결정).
+      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.1 } },
       timeScale: { borderVisible: false, rightOffset: RIGHT_OFFSET_BARS },
       crosshair: {
         mode: 0,
@@ -191,9 +203,12 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
     candles.setData(bars.map(({ date, open, high, low, close, provisional }) => ({
       time: date as Time, open, high, low, close, ...(provisional ? { color: close >= open ? PROVISIONAL_UP_BODY : PROVISIONAL_DOWN_BODY } : {}),
     })))
+    const averageLines = averageLinesRef.current
+    averageLines.clear()
     for (const average of MOVING_AVERAGES) {
-      const line = chart.addSeries(LineSeries, { priceFormat, color: average.color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false })
+      const line = chart.addSeries(LineSeries, { priceFormat, color: average.color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, visible: !hiddenAveragesRef.current.includes(average.days) })
       line.setData(movingAverage(bars, average.days))
+      averageLines.set(average.days, line)
     }
     // 거래량은 봉과 겹치지 않게 아래 칸(두 번째 판)에 회색 막대로 그린다.
     const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'custom', minMove: 1, formatter: (amount: number) => Math.round(amount).toLocaleString('ko-KR') }, color: VOLUME_COLOR, priceLineVisible: false, lastValueVisible: false }, 1)
@@ -251,6 +266,12 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
     }
   }, [bars, interval, market])
 
+  // 이동평균선을 켜고 끌 때는 차트를 다시 만들지 않고 선만 숨긴다.
+  useEffect(() => {
+    hiddenAveragesRef.current = hiddenAverages
+    for (const [days, line] of averageLinesRef.current) line.applyOptions({ visible: !hiddenAverages.includes(days) })
+  }, [hiddenAverages])
+
   if (isLoading) return <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
   if (isError) return <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetch() }} /></MainAreaLoading>
   if (!data || data.length === 0) return <div className="relative flex-1"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
@@ -295,9 +316,32 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
           </div>
           <div aria-label="이동평균선" className="flex shrink-0 gap-2">
             {MOVING_AVERAGES.map(average => (
-              <span key={average.days} className="inline-flex items-center gap-1" style={{ color: average.color }}><i aria-hidden="true" className="inline-block h-0.5 w-3" style={{ backgroundColor: average.color }} />{average.days}</span>
+              <button
+                key={average.days}
+                type="button"
+                aria-pressed={!hiddenAverages.includes(average.days)}
+                aria-label={`${average.days}일 이동평균선 ${hiddenAverages.includes(average.days) ? '보이기' : '숨기기'}`}
+                data-hint={`${average.days}일선 ${hiddenAverages.includes(average.days) ? '보이기' : '숨기기'}`}
+                onClick={() => setHiddenAverages(hidden => (hidden.includes(average.days) ? hidden.filter(days => days !== average.days) : [...hidden, average.days]))}
+                className={`inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-xs ${hiddenAverages.includes(average.days) ? 'opacity-35' : ''}`}
+                style={{ color: average.color }}
+              >
+                <i aria-hidden="true" className="inline-block h-0.5 w-3" style={{ backgroundColor: average.color }} />{average.days}
+              </button>
             ))}
           </div>
+          {/* 차트만 전체 화면 — 봉 단위 줄 오른쪽 끝(2026-11-20 사용자 결정: 경로 줄에서 옮김). */}
+          {fullscreen && (
+            <button
+              type="button"
+              aria-label={fullscreen.isFullscreen ? '전체 화면 끄기' : '차트 전체 화면'}
+              data-hint={fullscreen.isFullscreen ? '전체 화면 끄기 (Esc)' : '차트 전체 화면'}
+              onClick={fullscreen.toggle}
+              className="ml-auto flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-ui-text outline-none hover:text-ui-white"
+            >
+              {fullscreen.isFullscreen ? <MinimizeIcon strokeWidth={1.6} className="h-4 w-4" /> : <MaximizeIcon strokeWidth={1.6} className="h-4 w-4" />}
+            </button>
+          )}
         </div>
         {/* 셋째 줄: 마우스를 올린 날(없으면 가장 최근 날)의 값. 차트를 가리지 않게 상자 대신 줄로 보인다(2026-11-20 사용자 결정). */}
         {shownBar && (
