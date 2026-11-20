@@ -7,8 +7,7 @@ import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { useEffect, useRef, useState } from 'react'
 import { useSettled } from '@/hooks/useSettled'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
-import MobileTopBar from '@/components/MobileTopBar'
-import MobileMapSheet from '@/components/MobileMapSheet'
+import PhoneMapShell from '@/components/PhoneMapShell'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
@@ -516,16 +515,7 @@ export default function MapPage() {
 
   if (isPhoneMapFrame) {
     return (
-      <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
-        <MobileTopBar title="" />
-        <div className="relative flex min-h-0 w-full flex-1 items-start overflow-hidden bg-ui-background">
-          <div className="relative w-full shrink-0" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px`, marginTop: `${Math.max(0, (window.innerHeight - 44 - 25 - MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale) / 2)}px` }}>
-            {mobileFrameNode}
-          </div>
-        </div>
-        <MobileMapSheet current="korea" boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
-        <div aria-hidden="true" className="pointer-events-none absolute left-0 right-0 top-0 h-0 overflow-hidden opacity-0">{mapToolbarNode}</div>
-      </div>
+      <PhoneMapShell frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode} toolbar={mapToolbarNode} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
     )
   }
 

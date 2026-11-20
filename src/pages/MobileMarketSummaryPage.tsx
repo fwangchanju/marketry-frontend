@@ -4,6 +4,8 @@ import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } fr
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
+import PhoneMapShell from '@/components/PhoneMapShell'
+import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { navigateWithMobileSlide } from '@/utils/mobilePageTransition'
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
@@ -732,6 +734,86 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
           : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p>
             : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface p-1"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={() => undefined} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>
+
+  if (isSectorMode) {
+    return (
+      <PhoneMapShell
+        topBar={
+        <MobileTopBar
+          title={isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}
+          titleTo={titleTo}
+          titleLabel={titleLabel}
+          onTitleClick={transitionToNextMode}
+          showDivider={false}
+        />
+
+        }
+        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * (window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH)}
+        frame={<div className="flex flex-col" style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, transform: `scale(${window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH})`, transformOrigin: 'top left' }}>
+      <header className="shrink-0 bg-ui-background px-3 py-0">
+        <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
+          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
+          {pathCrumbs.map(crumb => crumb.go
+            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
+            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
+        </nav>
+      </header>
+      <section
+        ref={pageContentRef}
+        aria-label={isGraph ? (viewMode === 'sector' ? '업종 등락률 그래프' : '종목 등락률 그래프') : (viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵')}
+        onPointerDownCapture={beginPageSwipe}
+        onPointerMoveCapture={movePageSwipe}
+        onPointerUpCapture={endPageSwipe}
+        onPointerCancelCapture={event => {
+          if (pageSwipeRef.current?.pointerId !== event.pointerId) return
+          pageSwipeRef.current = null
+          if (pageSwipePreviewRef.current) finishSwipe(false)
+        }}
+        onClickCapture={event => { if (suppressPageClickRef.current) { suppressPageClickRef.current = false; event.preventDefault(); event.stopPropagation() } }}
+        className="relative min-h-0 flex-1 touch-pan-y overflow-hidden"
+      >
+        <div className="absolute inset-0 p-1" style={{ transform: currentSwipeTransform, transition: swipeTransition, willChange: pageSwipePreview ? 'transform' : undefined }}>
+        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
+          : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
+            : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
+            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
+              <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={stock => { setStockPinned(false); setFocusedStockCode(current => current === stock.stockCode ? null : stock.stockCode) }} onLongPress={stock => {
+                if (stockPinned && focusedStockCode === stock.stockCode) { setStockPinned(false); setFocusedStockCode(null) } else { setStockPinned(true); setFocusedStockCode(stock.stockCode) }
+              }} />
+              {focusedStock && <button type="button" aria-label="종목 정보 닫기" onClick={() => setFocusedStockCode(null)} className="absolute left-3 right-3 top-3 flex flex-col gap-1 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" aria-live="polite">
+                <span className="flex min-w-0 items-center justify-between gap-3">
+                  <span className="truncate text-[16px] font-semibold">{focusedStock.stockName}</span>
+                  <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedStock.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedStock.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedStock.changeRate, MOBILE_DECIMAL_PLACES)}</span>
+                </span>
+                <span className="block text-[12px] leading-snug text-ui-muted">
+                  종목코드 {focusedStock.stockCode} · <span className="whitespace-nowrap">시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span>
+                </span>
+              </button>}
+            </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface">
+              {focusedSector && <button type="button" aria-label="업종 정보 닫기" onClick={() => setFocusedSectorKey(null)} className="absolute left-3 right-3 top-3 z-10 flex flex-col gap-1 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" aria-live="polite">
+                <span className="flex min-w-0 items-center justify-between gap-3">
+                  <span className="truncate text-[16px] font-semibold">{focusedSector.name}</span>
+                  <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ backgroundColor: resolveHeatmapColor(focusedSector.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedSector.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedSector.changeRate, MOBILE_DECIMAL_PLACES)}</span>
+                </span>
+                <span className="block text-[12px] leading-snug tabular-nums text-ui-muted">
+                  {focusedSector.simpleAvg !== undefined && <>동일 가중 {focusedSector.simpleAvg === null ? '-' : toPctSigned(focusedSector.simpleAvg, MOBILE_DECIMAL_PLACES)} · </>}
+                  ▲{focusedSector.advancers ?? 0} ▼{focusedSector.decliners ?? 0} ■{focusedSector.unchanged ?? 0} · <span className="whitespace-nowrap">시가총액 {toJoEok(focusedSector.marketValue / 100_000_000)}</span>
+                </span>
+              </button>}
+              <MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} decimalPlaces={MOBILE_DECIMAL_PLACES} />
+            </div>}
+        </div>
+        {pageSwipePreview && <div aria-hidden="true" inert className="absolute inset-0 p-1" style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
+          {renderSwipePreview()}
+        </div>}
+      </section>
+        </div>}
+        current="korea"
+        boxSize={boxSizeMarketCapRatio}
+        onChangeBoxSize={onChangeBoxSizeMarketCapRatio}
+      />
+    )
+  }
 
   return (
     <main ref={pageRootRef} className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-ui-background text-ui-white">
