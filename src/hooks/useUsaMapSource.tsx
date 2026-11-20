@@ -37,9 +37,9 @@ export function useUsaMapSource(): OverseasMapSource {
   // 기준가가 없어 기간에서 뺀 종목 — 제외 종목 배지에 이름과 함께 보인다.
   const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: names[stock.stockCode] ?? stock.stockCode }))
   const tree = useMemo(() => (categories.data && classifications.data && stocks.data && shownQuotes?.snapshotTime ? buildJapanTree(treeStocks, categories.data, classifications.data, names, shownQuotes.quotes, shownQuotes.snapshotTime) : []), [categories.data, classifications.data, stocks.data, shownQuotes, treeStocks, names])
-  const { preferences, update } = useUsaMapPreferences()
+  const { preferences, update, isLoadingDefaults } = useUsaMapPreferences()
   const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch(), koreanNames.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
-  const isLoading = isPeriodResolving || categories.isLoading || classifications.isLoading || stocks.isLoading || koreanNames.isLoading || quotes.isLoading || periodQuotes.isLoading
+  const isLoading = isPeriodResolving || isLoadingDefaults || categories.isLoading || classifications.isLoading || stocks.isLoading || koreanNames.isLoading || quotes.isLoading || periodQuotes.isLoading
   const isError = categories.isError || classifications.isError || stocks.isError || koreanNames.isError || quotes.isError || periodQuotes.isError
   return {
     market: 'USA',
