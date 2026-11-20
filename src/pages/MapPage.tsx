@@ -485,7 +485,7 @@ export default function MapPage() {
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               <NxtOnlyNotice active={nxtOnly && pinnedSnapshotTime === undefined && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError} nodes={rootNodes} />
               {chartStock !== null ? (
-                <MapStockChart chartStock={chartStock} marketLabel={MARKET_LABEL[market]} levelLabels={SECTOR_LEVEL_LABEL} market="korea" colorScale={colorScale} accentColor={taxonomy === 'MINE' ? strongIndustryColor : taxonomy === 'KRX' || taxonomy === 'NXT' ? 'var(--exchange-accent)' : undefined} closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
+                <MapStockChart chartStock={chartStock} marketLabel={MARKET_LABEL[market]} levelLabels={SECTOR_LEVEL_LABEL} market="korea" closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
               ) : (
               <>
               {path.length > 0 && (
