@@ -159,6 +159,7 @@ export default function TelegramImageSettings({
     setExclusionsOpen(true)
   }
 
+  const hasChange = saved !== null && current !== null && [0, 1, 2, 3, 4, 5, 6, 7, 9].some(index => hasDifferentValue(saved, current, index, profileLabel))
   return <InfoSection number={number} title={title}>
     <div className="mx-auto w-full max-w-[674px] overflow-hidden border border-ui-border bg-ui-panel p-4 text-sm">
       <div className="space-y-3">
@@ -203,7 +204,7 @@ export default function TelegramImageSettings({
       )}
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ui-border pt-3">
         <button type="button" disabled={loadState === 'loading'} onClick={onLoad} className={`${ACTION_CLASS} bg-ui-control font-medium hover:bg-ui-control-hover focus-visible:outline-brand`}>{loadState === 'loading' ? '불러오는 중' : '불러오기'}</button>
-        <button type="button" disabled={loadState !== 'ready'} onClick={onSave} className={`${ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>저장</button>
+        <button type="button" disabled={loadState !== 'ready' || !hasChange} onClick={onSave} className={`${ACTION_CLASS} bg-brand-surface hover:bg-brand-surface-hover focus-visible:outline-brand`}>저장</button>
         {loadState === 'ready' && <span role="status" className="text-xs text-ui-muted">{isSaved ? '저장 완료' : '저장 전'}</span>}
       </div>
     </div>
