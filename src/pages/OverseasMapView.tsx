@@ -269,8 +269,10 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     return (
       <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
         <MobileTopBar title="" />
-        <div className="relative min-h-0 w-full flex-1 overflow-hidden bg-ui-background">
-          {overseasFrameNode}
+        <div className="relative flex min-h-0 w-full flex-1 items-start overflow-hidden bg-ui-background">
+          <div className="relative w-full shrink-0" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
+            {overseasFrameNode}
+          </div>
         </div>
         <MobileMapSheet current={market === 'JAPAN' ? 'japan' : 'usa'} boxSize={preferences.boxSizeMarketCapRatio} onChangeBoxSize={value => update({ boxSizeMarketCapRatio: value })} />
         <div aria-hidden="true" className="pointer-events-none absolute left-0 right-0 top-0 h-0 overflow-hidden opacity-0">{overseasToolbarNode}</div>
