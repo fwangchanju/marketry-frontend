@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 
-// 폰 지도 하단 설정 줄. 업종 지도 설정 줄(MobileMarketSummaryPage)과 같은 클래스·구조를 쓴다.
+// 폰 지도 하단 설정 줄. 업종 지도 설정 줄(MobileMarketSummaryPage)과 같은 클래스·구조를 쓴다. 분류 기준 줄은 아직 없다.
 // 마켓은 한국·일본·미국 세 가지이며 누르면 해당 지도로 이동한다. 분류 기준·박스 크기는 이 화면에서만 바뀌고 저장되지 않는다.
 export type MobileMapMarket = 'korea' | 'japan' | 'usa'
 
@@ -18,7 +18,6 @@ const MARKET_OPTIONS: { key: MobileMapMarket; label: string; path: string }[] = 
   { key: 'japan', label: '일본', path: '/map/japan' },
   { key: 'usa', label: '미국', path: '/map/usa' },
 ]
-const CLASSIFY_OPTIONS = ['MARKETRY', '거래소', '내 기준']
 const BOX_OPTIONS: { value: number; label: string }[] = [
   { value: 0, label: '동일' },
   { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형' },
@@ -45,7 +44,6 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
       return next
     })
   }
-  const [classify, setClassify] = useState(CLASSIFY_OPTIONS[0])
   const normalizedBox = normalizeMobileBoxSizeRatio(boxSize)
   const navigate = useNavigate()
   return (
@@ -63,13 +61,6 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
       </div>
       {open && (
         <div className="max-h-[calc(40dvh-24px)] [@media(max-height:500px)]:max-h-[calc(60dvh-24px)] overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
-          <SettingRow label="분류 기준">
-            <div role="radiogroup" aria-label="분류 기준" className="grid flex-1 grid-cols-3 gap-1.5">
-              {CLASSIFY_OPTIONS.map(option => (
-                <button key={option} type="button" role="radio" aria-checked={classify === option} onClick={() => setClassify(option)} className={`${SETTING_CHIP_CLASS} ${classify === option ? CHIP_ON : CHIP_OFF}`}>{option}</button>
-              ))}
-            </div>
-          </SettingRow>
           <SettingRow label="마켓">
             <div role="radiogroup" aria-label="마켓 선택" className="grid flex-1 grid-cols-3 gap-1.5">
               {MARKET_OPTIONS.map(option => (
