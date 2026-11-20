@@ -519,7 +519,7 @@ export default function MapPage() {
         <div className="relative w-full overflow-hidden bg-ui-background" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
           {mobileFrameNode}
         </div>
-        <MobileMapSheet current="korea" />
+        <MobileMapSheet current="korea" boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
         <div aria-hidden="true" className="pointer-events-none absolute left-0 right-0 top-0 h-0 overflow-hidden opacity-0">{mapToolbarNode}</div>
       </div>
     )

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 
 // 폰 지도 하단 설정 줄. 업종 지도 설정 줄(MobileMarketSummaryPage)과 같은 클래스·구조를 쓴다.
 // 마켓은 한국·일본·미국 세 가지이며 누르면 해당 지도로 이동한다. 분류 기준·박스 크기는 이 화면에서만 바뀌고 저장되지 않는다.
@@ -15,7 +16,11 @@ const MARKET_OPTIONS: { key: MobileMapMarket; label: string; path: string }[] = 
   { key: 'usa', label: '미국', path: '/map/usa' },
 ]
 const CLASSIFY_OPTIONS = ['MARKETRY', '거래소', '내 기준']
-const BOX_OPTIONS = ['동일', '균형', '시총 비례']
+const BOX_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: '동일' },
+  { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형' },
+  { value: 100, label: '시총 비례' },
+]
 
 // 설정 줄 한 칸 — 이름은 왼쪽, 선택지는 오른쪽에 한 줄로 둔다(업종 지도 설정 줄과 같다).
 function SettingRow({ label, children }: { label: string; children: ReactNode }) {
@@ -27,10 +32,10 @@ function SettingRow({ label, children }: { label: string; children: ReactNode })
   )
 }
 
-export default function MobileMapSheet({ current }: { current: MobileMapMarket }) {
+export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { current: MobileMapMarket; boxSize: number; onChangeBoxSize: (value: number) => void }) {
   const [open, setOpen] = useState(false)
   const [classify, setClassify] = useState(CLASSIFY_OPTIONS[0])
-  const [box, setBox] = useState(BOX_OPTIONS[2])
+  const normalizedBox = normalizeMobileBoxSizeRatio(boxSize)
   const navigate = useNavigate()
   return (
     <section aria-label="설정" role="region" className="relative z-10 mx-1 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
@@ -64,7 +69,7 @@ export default function MobileMapSheet({ current }: { current: MobileMapMarket }
           <SettingRow label="박스 크기">
             <div className="grid flex-1 grid-cols-3 gap-1.5">
               {BOX_OPTIONS.map(option => (
-                <button key={option} type="button" aria-pressed={box === option} onClick={() => setBox(option)} className={`${SETTING_CHIP_CLASS} ${box === option ? CHIP_ON : CHIP_OFF}`}>{option}</button>
+                <button key={option.value} type="button" aria-pressed={normalizedBox === option.value} onClick={() => onChangeBoxSize(option.value)} className={`${SETTING_CHIP_CLASS} ${normalizedBox === option.value ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
               ))}
             </div>
           </SettingRow>
