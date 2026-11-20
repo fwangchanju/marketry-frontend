@@ -6,6 +6,7 @@ import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { useEffect, useRef, useState } from 'react'
 import { useSettled } from '@/hooks/useSettled'
+import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
 import { useSearchParams } from 'react-router-dom'
@@ -45,7 +46,7 @@ import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
-import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
@@ -221,6 +222,10 @@ export default function MapPage() {
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
   // 텔레그램 렌더러가 이 함수를 호출해 화면 캡처와 같은 글꼴·여백·배율로 저장한다.
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
+  // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 5:8 프레임)만 화면 폭에 맞춰 보여 준다. 실험 기능이라 되돌리기 쉽게 이 분기만 둔다.
+  const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
+  const isMobileFrameVisible = isMobileCaptureMode || isPhoneMapFrame
+  const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   // 텔레그램 캡션은 지도 첫 화면 업종 헤더에 실제로 보이는 등락률을 읽는다. 동일 가중만 보이면 동일 가중, 그 밖에는 시총 가중이다.
   const captureRowMetric = isInDepthRange(simpleAvgDepthRange, 0) && !isInDepthRange(weightedAvgDepthRange, 0)
     ? 'simpleAvgChangeRate'
@@ -355,7 +360,7 @@ export default function MapPage() {
   const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
   // 렌더러용 모바일 판 — 데이터가 오고 히트맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
-  const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && visibleItems.length > 0
+  const canShowMobileCapture = isMobileFrameVisible && !isLoading && !isError && visibleItems.length > 0
   // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 복제하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
   const isMobileCaptureSettled = useSettled(canShowMobileCapture, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
   useEffect(() => {
@@ -383,6 +388,81 @@ export default function MapPage() {
     window.marketryCaptureMap = capture
     return () => { delete window.marketryCaptureMap }
   }, [isMobileCaptureMode, isMobileCaptureReady])
+
+  // 모바일 판 프레임(캡처 모드와 폰 화면이 같이 쓴다). 데이터·배치 준비가 끝난 뒤에만 그린다.
+  const mobileFrameNode = ((isShareOpen && isMobileScreenshotSelected) || isMobileFrameVisible) && !isLoading && !isError && visibleItems.length > 0 && (
+            <div
+              aria-hidden={isPhoneMapFrame ? undefined : true}
+              data-map-mobile-capture-frame
+              data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
+              data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
+              // 모바일 캡처와 텔레그램 지도는 동일한 5:8 프레임과 여백을 쓴다.
+              style={{ opacity: isPhoneMapFrame ? 1 : 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left' }}
+              className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"
+            >
+            <div
+              aria-hidden="true"
+              data-map-mobile-capture
+              style={{ opacity: 0, width: '100%', height: '100%' }}
+              className="flex flex-col bg-ui-background"
+            >
+              {isPhoneMapFrame ? (
+                // 폰에는 PC 툴바가 없어 시장과 시각만 적은 줄을 둔다(캡처 복제 대신 직접 그린다).
+                <div className="relative mt-[3px] mb-0 flex h-7 w-full shrink-0 items-center justify-between gap-2 bg-ui-background/70 px-2 text-sm font-bold text-ui-white">
+                  <span>{MARKET_LABEL[market]}</span>
+                  {data?.snapshotTime && <span className="truncate text-xs font-normal tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
+                </div>
+              ) : (
+                <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
+              )}
+              <div aria-hidden="true" className="h-2 shrink-0" />
+              {path.length > 0 && (
+                <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
+                  <span className={BREADCRUMB_LINK_CLASS}>{MARKET_LABEL[market]}<BreadcrumbBackIcon /></span>
+                  {path.map((name, index) => (
+                    <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 && strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <BreadcrumbBackIcon />}</span>
+                  ))}
+                </nav>
+              )}
+              <div className="flex min-h-0 flex-1 flex-col">
+                <Heatmap
+                  groups={groups}
+                  selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
+                  depth={path.length}
+                  onSelectSector={() => {}}
+                  onExcludeSector={() => {}}
+                  heightClassName="min-h-0 flex-1"
+                  marketValueDepthRange={marketValueDepthRange}
+                  weightedAvgDepthRange={weightedAvgDepthRange}
+                  simpleAvgDepthRange={simpleAvgDepthRange}
+                  upDownCountDepthRange={upDownCountDepthRange}
+                  boxSizeMarketCapRatio={boxSizeMarketCapRatio}
+                  stretch={mapStretchFor(settingsModalProps.taxonomy)}
+                  tile={mapTileMethod()}
+                  canExclude={false}
+                  colorScale={colorScale}
+                  labelMinAreaPercent={boxLabelMinAreaPercent}
+                  stockLabelMode={stockLabelMode}
+                  stockPopupOnHover={false}
+                  decimalPlaces={decimalPlaces}
+                  topPickSectorKeys={topPickSectorKeys}
+                  strongIndustryColor={strongIndustryColor}
+                  zoomOutRequestDepth={null}
+                  onZoomOutComplete={() => {}}
+                  captureRowMetric={captureRowMetric}
+                />
+              </div>
+            </div>
+            </div>
+          );
+
+  if (isPhoneMapFrame) {
+    return (
+      <div className="relative w-full overflow-hidden bg-ui-background" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
+        {mobileFrameNode}
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
@@ -584,63 +664,7 @@ export default function MapPage() {
               </div>
             </div>
           {/* 모니터 캡처에서는 모바일용 히트맵을 만들지 않아 화면 렌더링과 DOM 복제 비용을 줄인다. */}
-          {((isShareOpen && isMobileScreenshotSelected) || isMobileCaptureMode) && !isLoading && !isError && visibleItems.length > 0 && (
-            <div
-              aria-hidden="true"
-              data-map-mobile-capture-frame
-              data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
-              data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
-              // 모바일 캡처와 텔레그램 지도는 동일한 5:8 프레임과 여백을 쓴다.
-              style={{ opacity: 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }}
-              className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"
-            >
-            <div
-              aria-hidden="true"
-              data-map-mobile-capture
-              style={{ opacity: 0, width: '100%', height: '100%' }}
-              className="flex flex-col bg-ui-background"
-            >
-              <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
-              <div aria-hidden="true" className="h-2 shrink-0" />
-              {path.length > 0 && (
-                <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
-                  <span className={BREADCRUMB_LINK_CLASS}>{MARKET_LABEL[market]}<BreadcrumbBackIcon /></span>
-                  {path.map((name, index) => (
-                    <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 && strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <BreadcrumbBackIcon />}</span>
-                  ))}
-                </nav>
-              )}
-              <div className="flex min-h-0 flex-1 flex-col">
-                <Heatmap
-                  groups={groups}
-                  selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
-                  depth={path.length}
-                  onSelectSector={() => {}}
-                  onExcludeSector={() => {}}
-                  heightClassName="min-h-0 flex-1"
-                  marketValueDepthRange={marketValueDepthRange}
-                  weightedAvgDepthRange={weightedAvgDepthRange}
-                  simpleAvgDepthRange={simpleAvgDepthRange}
-                  upDownCountDepthRange={upDownCountDepthRange}
-                  boxSizeMarketCapRatio={boxSizeMarketCapRatio}
-                  stretch={mapStretchFor(settingsModalProps.taxonomy)}
-                  tile={mapTileMethod()}
-                  canExclude={false}
-                  colorScale={colorScale}
-                  labelMinAreaPercent={boxLabelMinAreaPercent}
-                  stockLabelMode={stockLabelMode}
-                  stockPopupOnHover={false}
-                  decimalPlaces={decimalPlaces}
-                  topPickSectorKeys={topPickSectorKeys}
-                  strongIndustryColor={strongIndustryColor}
-                  zoomOutRequestDepth={null}
-                  onZoomOutComplete={() => {}}
-                  captureRowMetric={captureRowMetric}
-                />
-              </div>
-            </div>
-            </div>
-          )}
+          {mobileFrameNode}
           </div>
           {/* 설정창 위쪽 여백 4px — 헤더를 위로 3px 늘리고 아래 구분선 위치는 유지한다. */}
           <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>

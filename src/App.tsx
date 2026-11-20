@@ -117,9 +117,9 @@ function ResponsiveGraphPage() {
   return isNarrow ? <MobileMarketSummaryPage mode="graph" /> : <GraphPage />
 }
 
+// 폰에서도 PC 지도 페이지를 쓴다. MapPage가 폰 화면이면 모바일 판(캡처 프레임)만 화면 폭에 맞춰 보여 준다(실험, 2026-11-21).
 function ResponsiveMapPage() {
-  const isNarrow = useIsNarrowScreen()
-  return isNarrow ? <MobileMarketSummaryPage mode="stock" /> : <MapPage />
+  return <MapPage />
 }
 
 // 모바일(폭 768px 미만)에서는 서머리·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
