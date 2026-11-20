@@ -7,6 +7,7 @@ import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { useEffect, useRef, useState } from 'react'
 import { useSettled } from '@/hooks/useSettled'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
+import MobileTopBar from '@/components/MobileTopBar'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
 import { useSearchParams } from 'react-router-dom'
@@ -458,8 +459,11 @@ export default function MapPage() {
 
   if (isPhoneMapFrame) {
     return (
-      <div className="relative w-full overflow-hidden bg-ui-background" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
-        {mobileFrameNode}
+      <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
+        <MobileTopBar title="" />
+        <div className="relative w-full overflow-hidden bg-ui-background" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
+          {mobileFrameNode}
+        </div>
       </div>
     )
   }
