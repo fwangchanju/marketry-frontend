@@ -36,8 +36,14 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
       setScale(Math.min(TOOLBAR_MAX_SCALE, available / natural))
     }
     fit()
+    const observer = new ResizeObserver(fit)
+    if (mapRef.current) observer.observe(mapRef.current)
+    if (contentRef.current) observer.observe(contentRef.current)
     window.addEventListener('resize', fit)
-    return () => window.removeEventListener('resize', fit)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', fit)
+    }
   }, [toolbar])
 
   // 닫힌 설정 줄(24px)과 상단 줄(44px), 툴바 줄을 뺀 자리에서 툴바와 판을 한 묶음으로 가운데에 둔다.
