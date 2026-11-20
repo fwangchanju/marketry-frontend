@@ -40,10 +40,10 @@ export default function MarketryLogo({ className, layout = 'horizontal' }: Props
         <svg x={0} y={0} width={425} height={400} viewBox="0 0 425 400">
           <image href={marketrySymbol} x={-32} y={-47} width={486} height={486} />
         </svg>
-        <g transform={`translate(495 47.5) scale(${1117.5 / MARKETRY_WORDMARK_WIDTH})`}>
+        <g className="hidden xl:inline" transform={`translate(495 47.5) scale(${1117.5 / MARKETRY_WORDMARK_WIDTH})`}>
           <path d={MARKETRY_WORDMARK_PATH} fill="var(--ui-white)" fillRule="evenodd" stroke="var(--ui-background)" strokeWidth={41} paintOrder="stroke" />
         </g>
-        <text x={495} y={242.5} dominantBaseline="text-before-edge" fontSize={110} fontWeight={500} fill="var(--ui-white)" className="font-roboto-latin">
+        <text x={495} y={242.5} dominantBaseline="text-before-edge" fontSize={110} fontWeight={500} fill="var(--ui-white)" className="font-roboto-latin hidden xl:inline">
           Design Your Market
         </text>
       </svg>
