@@ -11,10 +11,11 @@ export interface AdBannerSize {
 }
 const AD_BANNER_SIZES: AdBannerSize[] = [
   { width: 728, height: 90 },
-  { width: 468, height: 60 },
 ]
 // 배너와 메뉴·프로필 묶음 사이의 최소 간격.
 const GAP = 16
+// 이 너비보다 좁으면 메뉴 아이콘을 숨긴다.
+const ICON_HIDE_WIDTH = 1100
 // 아직 재지 못했을 때(첫 그림) 쓰는 값 — 메뉴 4개 끝(300px)과 프로필 묶음 폭(130px), 메뉴 아이콘 한 개가 차지하는 폭(아이콘 18px + 글자와의 간격 4.5px).
 const FALLBACK_MENU_RIGHT = 300
 const FALLBACK_ACCOUNT_WIDTH = 130
@@ -61,7 +62,8 @@ interface Placement {
 function place({ screenWidth, menuRightWithIcons, menuRightWithoutIcons, accountLeft }: Layout): Placement | null {
   const zoneRight = accountLeft - GAP
   for (const size of AD_BANNER_SIZES) {
-    for (const hideMenuIcons of [false, true]) {
+    // 창이 좁으면 메뉴 아이콘을 먼저 숨겨 배너 자리를 넓힌다.
+    for (const hideMenuIcons of screenWidth < ICON_HIDE_WIDTH ? [true] : [false, true]) {
       const left = Math.max((screenWidth - size.width) / 2, (hideMenuIcons ? menuRightWithoutIcons : menuRightWithIcons) + GAP)
       if (left + size.width <= zoneRight) return { size, left, hideMenuIcons }
     }

@@ -85,7 +85,7 @@ export default function NavBar({ hideAccount = false, staticMode = false, banner
       <Link
         to="/"
         aria-label="홈으로 이동: 지도 전체 종목"
-        className={`flex h-[60px] shrink-0 items-center ${centered ? 'mt-[15px]' : ''}`}
+        className={`flex h-[60px] shrink-0 items-center pl-[2px] ${centered ? 'mt-[15px]' : ''}`}
       >
         <MarketryLogo layout="horizontalClean" className="h-auto w-[min(13rem,calc(100vw-10rem))]" />
       </Link>
