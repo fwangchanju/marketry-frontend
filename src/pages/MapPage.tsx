@@ -370,7 +370,7 @@ export default function MapPage() {
       onChangeChangeRateMode={onChangeChangeRateMode}
       isAfterHoursControlsVisible={isAfterHoursControlsVisible}
       isAfterHoursSelectable={isAfterHoursSelectable}
-      modeStatusText={modeStatusText}
+      modeStatusText={isPhoneMapFrame ? null : modeStatusText}
       refreshHelpText={SNAPSHOT_REFRESH_HELP}
       refreshSpinMs={REFRESH_BUTTON_SPIN_MS}
     />
@@ -392,7 +392,7 @@ export default function MapPage() {
               style={{ opacity: isPhoneMapFrame ? 1 : 0, width: '100%', height: '100%' }}
               className="flex flex-col bg-ui-background"
             >
-              {isPhoneMapFrame ? <div className="relative mt-[3px] mb-0 h-7 w-full shrink-0">{mapToolbarNode}</div> : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
+              {isPhoneMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
               <div aria-hidden="true" className="h-2 shrink-0" />
               {path.length > 0 && (
                 <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
@@ -443,7 +443,7 @@ export default function MapPage() {
 
   if (isPhoneMapFrame) {
     return (
-      <PhoneMapShell topBar={<MobileTopBar title="종목 지도" titleTo="/summary/korea?map" titleLabel="업종 지도로 이동" />} frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode || phoneEmptyFrame} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
+      <PhoneMapShell toolbar={mapToolbarNode} topBar={<MobileTopBar title="종목 지도" titleTo="/summary/korea?map" titleLabel="업종 지도로 이동" right={modeStatusText} />} frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode || phoneEmptyFrame} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
     )
   }
   return (
