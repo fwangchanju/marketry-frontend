@@ -6,6 +6,9 @@ import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/u
 // 마켓은 한국·일본·미국 세 가지이며 누르면 해당 지도로 이동한다. 분류 기준·박스 크기는 이 화면에서만 바뀌고 저장되지 않는다.
 export type MobileMapMarket = 'korea' | 'japan' | 'usa'
 
+// 페이지가 바뀌어도 열림 상태를 잇는 메모리 값. 저장소에는 쓰지 않는다.
+let sheetOpenInMemory = false
+
 const SETTING_CHIP_CLASS = 'h-[32px] rounded-[4px] border-0 px-1 text-[13px] font-medium'
 const CHIP_ON = 'bg-brand-surface text-ui-on-dark'
 const CHIP_OFF = 'bg-ui-control text-ui-white'
@@ -33,7 +36,15 @@ function SettingRow({ label, children }: { label: string; children: ReactNode })
 }
 
 export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { current: MobileMapMarket; boxSize: number; onChangeBoxSize: (value: number) => void }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpenState] = useState(sheetOpenInMemory)
+  // 열림 상태는 앱 메모리에만 둔다(브라우저 저장 없음). 마켓을 바꿔 다른 지도로 가도 유지되고, 새로고침하면 닫힌 상태로 시작한다.
+  const setOpen = (value: boolean | ((previous: boolean) => boolean)) => {
+    setOpenState(previous => {
+      const next = typeof value === 'function' ? value(previous) : value
+      sheetOpenInMemory = next
+      return next
+    })
+  }
   const [classify, setClassify] = useState(CLASSIFY_OPTIONS[0])
   const normalizedBox = normalizeMobileBoxSizeRatio(boxSize)
   const navigate = useNavigate()
