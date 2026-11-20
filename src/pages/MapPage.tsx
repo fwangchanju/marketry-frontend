@@ -47,7 +47,7 @@ import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
-import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
@@ -390,123 +390,8 @@ export default function MapPage() {
     return () => { delete window.marketryCaptureMap }
   }, [isMobileCaptureMode, isMobileCaptureReady])
 
-  // 모바일 판 프레임(캡처 모드와 폰 화면이 같이 쓴다). 데이터·배치 준비가 끝난 뒤에만 그린다.
-  const mobileFrameNode = ((isShareOpen && isMobileScreenshotSelected) || isMobileFrameVisible) && !isLoading && !isError && visibleItems.length > 0 && (
-            <div
-              aria-hidden={isPhoneMapFrame ? undefined : true}
-              data-map-mobile-capture-frame
-              data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
-              data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
-              // 모바일 캡처와 텔레그램 지도는 동일한 5:8 프레임과 여백을 쓴다.
-              style={{ opacity: isPhoneMapFrame ? 1 : 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left' }}
-              className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"
-            >
-            <div
-              aria-hidden="true"
-              data-map-mobile-capture
-              style={{ opacity: 0, width: '100%', height: '100%' }}
-              className="flex flex-col bg-ui-background"
-            >
-              {isPhoneMapFrame ? (
-                // 폰에는 PC 툴바가 없어 시장과 시각만 적은 줄을 둔다(캡처 복제 대신 직접 그린다).
-                <div className="relative mt-[3px] mb-0 flex h-7 w-full shrink-0 items-center justify-between gap-2 bg-ui-background/70 px-2 text-sm font-bold text-ui-white">
-                  <span>{MARKET_LABEL[market]}</span>
-                  {data?.snapshotTime && <span className="truncate text-xs font-normal tabular-nums text-ui-muted">{toSnapshotDateLabel(data.snapshotTime)} {toSnapshotTimeOnlyLabel(data.snapshotTime)}</span>}
-                </div>
-              ) : (
-                <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
-              )}
-              <div aria-hidden="true" className="h-2 shrink-0" />
-              {path.length > 0 && (
-                <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
-                  <span className={BREADCRUMB_LINK_CLASS}>{MARKET_LABEL[market]}<BreadcrumbBackIcon /></span>
-                  {path.map((name, index) => (
-                    <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 && strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <BreadcrumbBackIcon />}</span>
-                  ))}
-                </nav>
-              )}
-              <div className="flex min-h-0 flex-1 flex-col">
-                <Heatmap
-                  groups={groups}
-                  selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
-                  depth={path.length}
-                  onSelectSector={() => {}}
-                  onExcludeSector={() => {}}
-                  heightClassName="min-h-0 flex-1"
-                  marketValueDepthRange={marketValueDepthRange}
-                  weightedAvgDepthRange={weightedAvgDepthRange}
-                  simpleAvgDepthRange={simpleAvgDepthRange}
-                  upDownCountDepthRange={upDownCountDepthRange}
-                  boxSizeMarketCapRatio={boxSizeMarketCapRatio}
-                  stretch={mapStretchFor(settingsModalProps.taxonomy)}
-                  tile={mapTileMethod()}
-                  canExclude={false}
-                  colorScale={colorScale}
-                  labelMinAreaPercent={boxLabelMinAreaPercent}
-                  stockLabelMode={stockLabelMode}
-                  stockPopupOnHover={false}
-                  decimalPlaces={decimalPlaces}
-                  topPickSectorKeys={topPickSectorKeys}
-                  strongIndustryColor={strongIndustryColor}
-                  zoomOutRequestDepth={null}
-                  onZoomOutComplete={() => {}}
-                  captureRowMetric={captureRowMetric}
-                />
-              </div>
-            </div>
-            </div>
-          );
-
-  if (isPhoneMapFrame) {
-    return (
-      <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
-        <MobileTopBar title="" />
-        <div className="relative w-full overflow-hidden bg-ui-background" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
-          {mobileFrameNode}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
-      <NavBar
-        centered
-        tall
-        actions={
-          <NavBarPageActions
-            onRefresh={refetchHeatmap}
-            isRefreshing={isRefetchingHeatmap}
-            onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
-            isSettingsOpen={settingsModalProps.isOpen}
-            onOpenShare={() => setIsShareOpen(true)}
-            isScreenshotOpen={isShareOpen}
-            isNativeFullscreen={isNativeFullscreen}
-            onToggleFullscreen={handleToggleNativeFullscreen}
-            showRefresh={false}
-          />
-        }
-      />
-      <div className="flex min-h-0 flex-1">
-        {/* 메뉴 줄을 화면 왼쪽 세로 줄로 뺀다. 오른쪽 버튼 묶음은 위쪽 상단 영역에 둔다. */}
-        <NavSubBar
-          vertical
-          // 지금 보는 시장을 메뉴 목록에서 다시 고르면 처음 단계(드릴다운 맨 위)로 돌아간다.
-          onReselectCurrent={() => handleGoToDepth(0)}
-        />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1">
-        {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
-        <div
-          ref={settingsRowRef}
-          className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 bg-ui-background"
-        >
-          {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
-              min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
-              항상 같은 폭을 유지하게 한다 — 내부 콘텐츠(히트맵)가 넘치면 이 컬럼 안에서만 처리된다. */}
-          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
-            {/* 왼쪽은 마켓·기간·시계·시간대 묶음, 오른쪽 끝은 프로필(사진 + 거래소·MARKETRY). 두 묶음이 같은 줄에서 서로 밀어내므로
-                창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
+  // PC 툴바. 화면에서는 이 자리에, 폰 판에서는 캡처와 같은 방식으로 복제할 원본으로 쓴다.
+  const mapToolbarNode = (
             <Toolbar>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <ToolbarModeText page="MAP" label={MARKET_LABEL[market]} showChevron menu={marketMenu('/map', market, true)} />
@@ -565,6 +450,119 @@ export default function MapPage() {
               {/* 맨 오른쪽 — 분류명을 설정창 업종 분류 선택 버튼 모양으로 표시하고, 좁아지면 이름을 줄인다. 로딩·오류·빈 화면에서도 제자리에 둔다. */}
               <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>{modeStatusText}</div>
             </Toolbar>
+  )
+
+  // 모바일 판 프레임(캡처 모드와 폰 화면이 같이 쓴다). 데이터·배치 준비가 끝난 뒤에만 그린다.
+  const mobileFrameNode = ((isShareOpen && isMobileScreenshotSelected) || isMobileFrameVisible) && !isLoading && !isError && visibleItems.length > 0 && (
+            <div
+              aria-hidden={isPhoneMapFrame ? undefined : true}
+              data-map-mobile-capture-frame
+              data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
+              data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
+              // 모바일 캡처와 텔레그램 지도는 동일한 5:8 프레임과 여백을 쓴다.
+              style={{ opacity: isPhoneMapFrame ? 1 : 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left' }}
+              className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"
+            >
+            <div
+              aria-hidden="true"
+              data-map-mobile-capture
+              style={{ opacity: 0, width: '100%', height: '100%' }}
+              className="flex flex-col bg-ui-background"
+            >
+              <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
+              <div aria-hidden="true" className="h-2 shrink-0" />
+              {path.length > 0 && (
+                <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
+                  <span className={BREADCRUMB_LINK_CLASS}>{MARKET_LABEL[market]}<BreadcrumbBackIcon /></span>
+                  {path.map((name, index) => (
+                    <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 && strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <BreadcrumbBackIcon />}</span>
+                  ))}
+                </nav>
+              )}
+              <div className="flex min-h-0 flex-1 flex-col">
+                <Heatmap
+                  groups={groups}
+                  selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
+                  depth={path.length}
+                  onSelectSector={() => {}}
+                  onExcludeSector={() => {}}
+                  heightClassName="min-h-0 flex-1"
+                  marketValueDepthRange={marketValueDepthRange}
+                  weightedAvgDepthRange={weightedAvgDepthRange}
+                  simpleAvgDepthRange={simpleAvgDepthRange}
+                  upDownCountDepthRange={upDownCountDepthRange}
+                  boxSizeMarketCapRatio={boxSizeMarketCapRatio}
+                  stretch={mapStretchFor(settingsModalProps.taxonomy)}
+                  tile={mapTileMethod()}
+                  canExclude={false}
+                  colorScale={colorScale}
+                  labelMinAreaPercent={boxLabelMinAreaPercent}
+                  stockLabelMode={stockLabelMode}
+                  stockPopupOnHover={false}
+                  decimalPlaces={decimalPlaces}
+                  topPickSectorKeys={topPickSectorKeys}
+                  strongIndustryColor={strongIndustryColor}
+                  zoomOutRequestDepth={null}
+                  onZoomOutComplete={() => {}}
+                  captureRowMetric={captureRowMetric}
+                />
+              </div>
+            </div>
+            </div>
+          );
+
+  if (isPhoneMapFrame) {
+    return (
+      <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
+        <MobileTopBar title="" />
+        <div className="relative w-full overflow-hidden bg-ui-background" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
+          {mobileFrameNode}
+        </div>
+        <div aria-hidden="true" className="pointer-events-none absolute left-0 right-0 top-0 h-0 overflow-hidden opacity-0">{mapToolbarNode}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
+      <NavBar
+        centered
+        tall
+        actions={
+          <NavBarPageActions
+            onRefresh={refetchHeatmap}
+            isRefreshing={isRefetchingHeatmap}
+            onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
+            isSettingsOpen={settingsModalProps.isOpen}
+            onOpenShare={() => setIsShareOpen(true)}
+            isScreenshotOpen={isShareOpen}
+            isNativeFullscreen={isNativeFullscreen}
+            onToggleFullscreen={handleToggleNativeFullscreen}
+            showRefresh={false}
+          />
+        }
+      />
+      <div className="flex min-h-0 flex-1">
+        {/* 메뉴 줄을 화면 왼쪽 세로 줄로 뺀다. 오른쪽 버튼 묶음은 위쪽 상단 영역에 둔다. */}
+        <NavSubBar
+          vertical
+          // 지금 보는 시장을 메뉴 목록에서 다시 고르면 처음 단계(드릴다운 맨 위)로 돌아간다.
+          onReselectCurrent={() => handleGoToDepth(0)}
+        />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1">
+        {/* 공유·텔레그램 모두 [세 번째 바+본문] 열만 스크린샷으로 찍어 설정창을 제외한다. */}
+        <div
+          ref={settingsRowRef}
+          className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 bg-ui-background"
+        >
+          {/* min-w-0: 이 컬럼의 자동 최소 폭을 0으로 눌러서(overflow: visible이면 내부 콘텐츠의
+              min-content 폭을 그대로 강제해서 사이드바 쪽을 밀어냄) 창을 좁혀도 사이드바(w-80)가
+              항상 같은 폭을 유지하게 한다 — 내부 콘텐츠(히트맵)가 넘치면 이 컬럼 안에서만 처리된다. */}
+          <div ref={screenshotRef} data-main-area data-captureid={CAPTURE_ID.MAP} data-capture-ready={!isLoading} className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
+            {/* 왼쪽은 마켓·기간·시계·시간대 묶음, 오른쪽 끝은 프로필(사진 + 거래소·MARKETRY). 두 묶음이 같은 줄에서 서로 밀어내므로
+                창이 좁아져도 겹치지 않고, 부족하면 오른쪽 글자가 먼저 줄어든다. */}
+            {mapToolbarNode}
             <div className="flex min-h-0 flex-1">
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               <NxtOnlyNotice active={nxtOnly && pinnedSnapshotTime === undefined && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError} nodes={rootNodes} />
