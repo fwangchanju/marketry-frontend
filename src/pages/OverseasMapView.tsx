@@ -250,7 +250,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           </Toolbar>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
             {chartStock !== null && chart ? (
-              <MapStockChart chartStock={chartStock} marketLabel={label} levelLabels={levelLabels} market={chart.market} colorScale={colorScale} closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
+              <MapStockChart chartStock={chartStock} marketLabel={label} levelLabels={levelLabels} market={chart.market} closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
             ) : (
             <>
             {path.length > 0 && (
