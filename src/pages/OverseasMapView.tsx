@@ -1,4 +1,8 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import MobileTopBar from '@/components/MobileTopBar'
+import MobileMapSheet from '@/components/MobileMapSheet'
+import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
+import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
@@ -113,6 +117,11 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ stockPopupOnHover, sectorNodes: filteredRootNodes })
   const [searchParams] = useSearchParams()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
+  // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 프레임)만 화면 폭에 맞춰 보여 준다. 위 상단 줄은 모바일 양식을 쓴다.
+  const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
+  useCarriedBoxSize(value => update({ boxSizeMarketCapRatio: value }))
+  const isMobileFrameVisible = isMobileCaptureMode || isPhoneMapFrame
+  const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const [isShareOpen, setIsShareOpen] = useState(false)
@@ -141,7 +150,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveSnapshotTime !== null && snapshotTime !== liveSnapshotTime)
   const shownCount = countShown(filteredRootNodes)
-  const canShowMobileCapture = isMobileCaptureMode && !isLoading && !isError && shownCount > 0
+  const canShowMobileCapture = isMobileFrameVisible && !isLoading && !isError && shownCount > 0
   const isMobileCaptureSettled = useSettled(canShowMobileCapture, snapshotTime ?? '', 1300)
   useEffect(() => {
     if (!isMobileCaptureSettled || isMobileCaptureReady) return
@@ -219,12 +228,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   // 한국 지도와 같은 부품(useMapDrilldownHistory)이 한다.
   const { markEntryFromOtherPage } = useMapDrilldownHistory({ path, setPath, zoomOutRequestDepth, handleGoToDepth, isShareOpen })
   useMapSectorEntry({ filteredRootNodes, enterSector, pathLength: path.length, markEntryFromOtherPage })
-  return (
-    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background text-ui-white">
-      <NavBar />
-      <NavSubBar onReselectCurrent={() => handleGoToDepth(0)} actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
-      <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
-        <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
+  const overseasToolbarNode = (
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label={label} showChevron menu={marketMenu('/map', market, true)} />
@@ -248,6 +252,39 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
             </div>
             <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
           </Toolbar>
+  )
+  const overseasFrameNode = ((isShareOpen && isMobileScreenshotSelected) || isMobileFrameVisible) && !isLoading && !isError && shownCount > 0 && (
+            <div aria-hidden={isPhoneMapFrame ? undefined : true} data-map-mobile-capture-frame data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined} data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined} style={{ opacity: isPhoneMapFrame ? 1 : 0, transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left', width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }} className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background">
+              <div data-map-mobile-capture style={{ opacity: 0, width: '100%', height: '100%' }} className="flex flex-col bg-ui-background">
+                <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
+                <div aria-hidden="true" className="h-2 shrink-0" />
+                {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
+                </div>
+              </div>
+            </div>
+          );
+  if (isPhoneMapFrame) {
+    return (
+      <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
+        <MobileTopBar title="" />
+        <div className="relative w-full overflow-hidden bg-ui-background" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
+          {overseasFrameNode}
+        </div>
+        <MobileMapSheet current={market === 'JAPAN' ? 'japan' : 'usa'} boxSize={preferences.boxSizeMarketCapRatio} onChangeBoxSize={value => update({ boxSizeMarketCapRatio: value })} />
+        <div aria-hidden="true" className="pointer-events-none absolute left-0 right-0 top-0 h-0 overflow-hidden opacity-0">{overseasToolbarNode}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background text-ui-white">
+      <NavBar />
+      <NavSubBar onReselectCurrent={() => handleGoToDepth(0)} actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
+      <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
+        <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
+          {overseasToolbarNode}
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
             {chartStock !== null && chart ? (
               <MapStockChart chartStock={chartStock} marketLabel={label} levelLabels={levelLabels} market={chart.market} closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
@@ -304,18 +341,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
             )}
             <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
           </div>
-          {((isShareOpen && isMobileScreenshotSelected) || isMobileCaptureMode) && !isLoading && !isError && shownCount > 0 && (
-            <div aria-hidden="true" data-map-mobile-capture-frame data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined} data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined} style={{ opacity: 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }} className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background">
-              <div data-map-mobile-capture style={{ opacity: 0, width: '100%', height: '100%' }} className="flex flex-col bg-ui-background">
-                <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
-                <div aria-hidden="true" className="h-2 shrink-0" />
-                {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
-                <div className="flex min-h-0 flex-1 flex-col">
-                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
-                </div>
-              </div>
-            </div>
-          )}
+          {overseasFrameNode}
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
           <SettingsPanel sectionOrder={[...SECTION_ORDER, 'special']} pageLabel="Map" draftKeyMap={draftKeyMap} tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>

@@ -141,7 +141,7 @@ function isMobileKoreaPath(pathname: string, base: '/map' | '/graph') {
 
 function isMobileMarketPath(pathname: string) {
   // 첫 화면(/)은 곧 /summary로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
-  return pathname === '/' || pathname === '/home' || pathname === '/summary/korea' || pathname.startsWith('/summary/korea/') || isMobileKoreaPath(pathname, '/map') || isMobileKoreaPath(pathname, '/graph')
+  return pathname === '/' || pathname === '/home' || pathname === '/summary/korea' || pathname.startsWith('/summary/korea/') || isMobileKoreaPath(pathname, '/map') || isMobileKoreaPath(pathname, '/graph') || pathname === '/map/japan' || pathname === '/map/usa'
 }
 
 function MobileGate({ children }: { children: ReactNode }) {

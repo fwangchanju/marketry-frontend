@@ -8,7 +8,7 @@ import { MARKETRY_WORDMARK_PATH, MARKETRY_WORDMARK_WIDTH } from '@/components/ma
 
 interface Props {
   className?: string
-  layout?: 'horizontal' | 'stacked' | 'horizontalClean'
+  layout?: 'horizontal' | 'stacked' | 'horizontalClean' | 'horizontalMobile'
 }
 
 // 원본 PNG는 보관하고 슬로건 영역만 가린다. SVG 텍스트가 로고와 같은 비율로 확대·축소된다.
@@ -34,16 +34,18 @@ export default function MarketryLogo({ className, layout = 'horizontal' }: Props
     )
   }
 
-  if (layout === 'horizontalClean') {
+  if (layout === 'horizontalClean' || layout === 'horizontalMobile') {
+    // 1280px 미만 글자 숨김은 PC 상단 줄(horizontalClean)만 쓴다. 모바일 상단 줄(horizontalMobile)은 항상 글자를 보인다.
+    const narrowHidden = layout === 'horizontalClean' ? 'hidden xl:inline' : undefined
     return (
       <svg aria-hidden="true" focusable="false" viewBox="0 0 2025 400" width={2025} height={400} className={`block ${className ?? ''}`}>
         <svg x={0} y={0} width={425} height={400} viewBox="0 0 425 400">
           <image href={marketrySymbol} x={-32} y={-47} width={486} height={486} />
         </svg>
-        <g className="hidden xl:inline" transform={`translate(495 47.5) scale(${1117.5 / MARKETRY_WORDMARK_WIDTH})`}>
+        <g className={narrowHidden} transform={`translate(495 47.5) scale(${1117.5 / MARKETRY_WORDMARK_WIDTH})`}>
           <path d={MARKETRY_WORDMARK_PATH} fill="var(--ui-white)" fillRule="evenodd" stroke="var(--ui-background)" strokeWidth={41} paintOrder="stroke" />
         </g>
-        <text x={495} y={242.5} dominantBaseline="text-before-edge" fontSize={110} fontWeight={500} fill="var(--ui-white)" className="font-roboto-latin hidden xl:inline">
+        <text x={495} y={242.5} dominantBaseline="text-before-edge" fontSize={110} fontWeight={500} fill="var(--ui-white)" className={narrowHidden ? `font-roboto-latin ${narrowHidden}` : "font-roboto-latin"}>
           Design Your Market
         </text>
       </svg>
