@@ -6,7 +6,6 @@ import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import MapToolbar from '@/components/MapToolbar'
-import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
@@ -757,7 +756,6 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           titleTo={titleTo}
           titleLabel={titleLabel}
           onTitleClick={transitionToNextMode}
-          right={<TaxonomyBadge taxonomy={taxonomy} strongIndustryColor={strongIndustryColor} />}
         />
 
         }

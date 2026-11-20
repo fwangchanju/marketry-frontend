@@ -443,7 +443,7 @@ export default function MapPage() {
 
   if (isPhoneMapFrame) {
     return (
-      <PhoneMapShell toolbar={mapToolbarNode} topBar={<MobileTopBar title="종목 지도" titleTo="/summary/korea?map" titleLabel="업종 지도로 이동" right={modeStatusText} />} frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode || phoneEmptyFrame} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
+      <PhoneMapShell toolbar={mapToolbarNode} topBar={<MobileTopBar title="종목 지도" titleTo="/summary/korea?map" titleLabel="업종 지도로 이동" />} frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode || phoneEmptyFrame} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
     )
   }
   return (
