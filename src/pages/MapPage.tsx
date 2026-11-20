@@ -9,7 +9,8 @@ import MapToolbar from '@/components/MapToolbar'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { marketRoute } from '@/utils/marketRoute'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import NxtOnlyNotice from '@/components/NxtOnlyNotice'
@@ -189,6 +190,7 @@ export default function MapPage() {
   // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
   const isPastSnapshot = pinnedSnapshotTime !== undefined
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const [isShareOpen, setIsShareOpen] = useState(false)
   // 종목 박스의 차트 아이콘·클릭·더블 클릭으로 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
@@ -443,7 +445,7 @@ export default function MapPage() {
 
   if (isPhoneMapFrame) {
     return (
-      <PhoneMapShell toolbar={mapToolbarNode} topBar={<MobileTopBar title="종목 지도" titleTo="/summary/korea?map" titleLabel="업종 지도로 이동" />} frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode || phoneEmptyFrame} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
+      <PhoneMapShell onSwipe={direction => navigate(direction === 'next' ? `/summary/korea?map&market=${market}` : marketRoute('/graph', market))} toolbar={mapToolbarNode}topBar={<MobileTopBar title="종목 지도" titleTo="/summary/korea?map" titleLabel="업종 지도로 이동" />} frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode || phoneEmptyFrame} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
     )
   }
   return (
