@@ -9,6 +9,8 @@ const StockDailyCandleSchema = z.object({
   low: z.number(),
   close: z.number(),
   volume: z.number(),
+  // 아직 일봉이 저장되지 않은 날(장중)의 임시 봉 — 5분 시세로 만들어 시가·고가·저가가 실제와 다를 수 있고 거래량은 0이다.
+  provisional: z.boolean().optional(),
 })
 export type StockDailyCandle = z.infer<typeof StockDailyCandleSchema>
 
