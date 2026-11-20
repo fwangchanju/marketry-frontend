@@ -640,9 +640,9 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     }
   }
 
-  // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 가이드 → 종목 지도로 이동한다(마켓은 유지).
-  const titleTo = isStockMode ? `/summary/korea?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : `/info/guide?market=${market}`
-  const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '가이드로 이동'
+  // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 종목 지도로 이동한다(마켓은 유지).
+  const titleTo = isStockMode ? `/summary/korea?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
+  const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '종목 지도로 이동'
   const modeForSwipe = (direction: 'next' | 'previous') => {
     const order = ['stock', 'sector', 'graph', 'guide'] as const
     const index = order.indexOf(mode)
@@ -757,7 +757,6 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           titleTo={titleTo}
           titleLabel={titleLabel}
           onTitleClick={transitionToNextMode}
-          showDivider={false}
         />
 
         }
@@ -850,7 +849,6 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         titleTo={titleTo}
         titleLabel={titleLabel}
         onTitleClick={transitionToNextMode}
-        showDivider={false}
       />
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}

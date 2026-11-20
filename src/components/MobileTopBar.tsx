@@ -6,7 +6,7 @@ import { ChevronDownIcon } from '@/components/icons/AppIcons'
 export default function MobileTopBar({ title, titleTo, titleLabel, onTitleClick, showDivider = true, className = '' }: { title: string; titleTo?: string; titleLabel?: string; onTitleClick?: () => void; showDivider?: boolean; className?: string }) {
 
   return (
-    <header className={`relative z-20 grid h-[calc(44px+env(safe-area-inset-top))] shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 ${showDivider ? 'border-b border-ui-border' : ''} bg-ui-surface px-4 pt-[env(safe-area-inset-top)] ${className}`}>
+    <header className={`relative z-20 grid h-[calc(44px+env(safe-area-inset-top))] shrink-0 grid-cols-[1fr_auto_1fr] grid-rows-[minmax(0,1fr)] items-center gap-2 ${showDivider ? 'border-b border-ui-border' : ''} bg-ui-background px-4 pt-[env(safe-area-inset-top)] ${className}`}>
       <Link to="/summary/korea" aria-label="MARKETRY 홈으로 이동" className="min-w-0 justify-self-start">
         <MarketryLogo layout="horizontalMobile" className="h-auto w-[132px] max-w-none" />
       </Link>
