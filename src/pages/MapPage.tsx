@@ -518,7 +518,7 @@ export default function MapPage() {
     return (
       <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
         <MobileTopBar title="" />
-        <div className="relative w-full overflow-hidden bg-ui-background" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
+        <div className="relative min-h-0 w-full flex-1 overflow-hidden bg-ui-background">
           {mobileFrameNode}
         </div>
         <MobileMapSheet current="korea" boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
