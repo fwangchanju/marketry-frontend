@@ -1,6 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileMapSheet from '@/components/MobileMapSheet'
+import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
@@ -118,6 +119,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 프레임)만 화면 폭에 맞춰 보여 준다. 위 상단 줄은 모바일 양식을 쓴다.
   const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
+  useCarriedBoxSize(value => update({ boxSizeMarketCapRatio: value }))
   const isMobileFrameVisible = isMobileCaptureMode || isPhoneMapFrame
   const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)

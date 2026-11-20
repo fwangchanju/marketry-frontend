@@ -9,6 +9,7 @@ import { useSettled } from '@/hooks/useSettled'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileMapSheet from '@/components/MobileMapSheet'
+import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
 import { useSearchParams } from 'react-router-dom'
@@ -226,6 +227,7 @@ export default function MapPage() {
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 5:8 프레임)만 화면 폭에 맞춰 보여 준다. 실험 기능이라 되돌리기 쉽게 이 분기만 둔다.
   const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
+  useCarriedBoxSize(onChangeBoxSizeMarketCapRatio)
   const isMobileFrameVisible = isMobileCaptureMode || isPhoneMapFrame
   const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   // 텔레그램 캡션은 지도 첫 화면 업종 헤더에 실제로 보이는 등락률을 읽는다. 동일 가중만 보이면 동일 가중, 그 밖에는 시총 가중이다.

@@ -73,7 +73,7 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
           <SettingRow label="마켓">
             <div role="radiogroup" aria-label="마켓 선택" className="grid flex-1 grid-cols-3 gap-1.5">
               {MARKET_OPTIONS.map(option => (
-                <button key={option.key} type="button" role="radio" aria-checked={current === option.key} onClick={() => navigate(option.path)} className={`${SETTING_CHIP_CLASS} ${current === option.key ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
+                <button key={option.key} type="button" role="radio" aria-checked={current === option.key} onClick={() => navigate(option.path, { state: { mobileBoxSize: boxSize } })} className={`${SETTING_CHIP_CLASS} ${current === option.key ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
               ))}
             </div>
           </SettingRow>
