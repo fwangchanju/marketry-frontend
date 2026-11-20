@@ -383,7 +383,7 @@ export default function MapPage() {
               data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
               data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
               // 모바일 캡처와 텔레그램 지도는 동일한 5:8 프레임과 여백을 쓴다.
-              style={{ opacity: isPhoneMapFrame ? 1 : 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: isPhoneMapFrame ? 0 : '4px', boxSizing: 'border-box', transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left' }}
+              style={{ opacity: isPhoneMapFrame ? 1 : 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left' }}
               className={isPhoneMapFrame ? "relative z-[60] bg-ui-background" : "pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"}
             >
             <div
@@ -392,7 +392,7 @@ export default function MapPage() {
               style={{ opacity: isPhoneMapFrame ? 1 : 0, width: '100%', height: '100%' }}
               className="flex flex-col bg-ui-background"
             >
-              {isPhoneMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
+              {isPhoneMapFrame ? <div className="relative mt-[3px] mb-0 h-7 w-full shrink-0">{mapToolbarNode}</div> : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
               <div aria-hidden="true" className="h-2 shrink-0" />
               {path.length > 0 && (
                 <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
@@ -443,7 +443,7 @@ export default function MapPage() {
 
   if (isPhoneMapFrame) {
     return (
-      <PhoneMapShell toolbar={mapToolbarNode} topBar={<MobileTopBar title="종목 지도" titleTo="/summary/korea?map" titleLabel="업종 지도로 이동" />} frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode || phoneEmptyFrame} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
+      <PhoneMapShell topBar={<MobileTopBar title="종목 지도" titleTo="/summary/korea?map" titleLabel="업종 지도로 이동" />} frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode || phoneEmptyFrame} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
     )
   }
   return (

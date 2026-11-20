@@ -641,10 +641,10 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   }
 
   // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 가이드 → 종목 지도로 이동한다(마켓은 유지).
-  const titleTo = isStockMode ? `/summary/korea?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
-  const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '종목 지도로 이동'
+  const titleTo = isStockMode ? `/summary/korea?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : `/info/guide?market=${market}`
+  const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '가이드로 이동'
   const modeForSwipe = (direction: 'next' | 'previous') => {
-    const order = ['stock', 'sector', 'graph'] as const
+    const order = ['stock', 'sector', 'graph', 'guide'] as const
     const index = order.indexOf(mode)
     return order[(index + (direction === 'next' ? 1 : order.length - 1)) % order.length]
   }
@@ -757,35 +757,34 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           titleTo={titleTo}
           titleLabel={titleLabel}
           onTitleClick={transitionToNextMode}
+          showDivider={false}
         />
 
         }
-        toolbar={
-            <MapToolbar
-              market={market}
-              marketLabel={market === 'ALL_STOCK' ? 'K-STOCK' : market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}
-              snapshotTime={data?.snapshotTime ?? null}
-              liveSnapshotTime={liveSnapshotTime}
-              pinnedSnapshotTime={pinnedSnapshotTime}
-              rangeStartTime={rangeStartTime}
-              isPastSnapshot={pinnedSnapshotTime !== undefined}
-              colorScale={colorScale}
-              onChangePinnedSnapshotTime={onChangePinnedSnapshotTime}
-              onSelectRange={onSelectRange}
-              rangeExcludedStocks={rangeExcludedStocks}
-              refetchHeatmap={refetchHeatmap}
-              isRefetchingHeatmap={isRefetchingHeatmap}
-              changeRateChoice={changeRateChoice}
-              onChangeChangeRateMode={onChangeChangeRateMode}
-              isAfterHoursControlsVisible={isAfterHoursControlsVisible}
-              isAfterHoursSelectable={isAfterHoursSelectable}
-              modeStatusText={<TaxonomyBadge taxonomy={taxonomy} strongIndustryColor={strongIndustryColor} />}
-              refreshHelpText={SNAPSHOT_REFRESH_HELP}
-              refreshSpinMs={REFRESH_BUTTON_SPIN_MS}
-            />
-        }
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * (window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH)}
         frame={<div className="flex flex-col" style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, transform: `scale(${window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH})`, transformOrigin: 'top left' }}>
+          <MapToolbar
+            market={market}
+            marketLabel={market === 'ALL_STOCK' ? 'K-STOCK' : market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}
+            snapshotTime={data?.snapshotTime ?? null}
+            liveSnapshotTime={liveSnapshotTime}
+            pinnedSnapshotTime={pinnedSnapshotTime}
+            rangeStartTime={rangeStartTime}
+            isPastSnapshot={pinnedSnapshotTime !== undefined}
+            colorScale={colorScale}
+            onChangePinnedSnapshotTime={onChangePinnedSnapshotTime}
+            onSelectRange={onSelectRange}
+            rangeExcludedStocks={rangeExcludedStocks}
+            refetchHeatmap={refetchHeatmap}
+            isRefetchingHeatmap={isRefetchingHeatmap}
+            changeRateChoice={changeRateChoice}
+            onChangeChangeRateMode={onChangeChangeRateMode}
+            isAfterHoursControlsVisible={isAfterHoursControlsVisible}
+            isAfterHoursSelectable={isAfterHoursSelectable}
+            modeStatusText={<TaxonomyBadge taxonomy={taxonomy} strongIndustryColor={strongIndustryColor} />}
+            refreshHelpText={SNAPSHOT_REFRESH_HELP}
+            refreshSpinMs={REFRESH_BUTTON_SPIN_MS}
+          />
       <section
         ref={pageContentRef}
         aria-label={isGraph ? (viewMode === 'sector' ? '업종 등락률 그래프' : '종목 등락률 그래프') : (viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵')}
@@ -851,6 +850,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         titleTo={titleTo}
         titleLabel={titleLabel}
         onTitleClick={transitionToNextMode}
+        showDivider={false}
       />
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
