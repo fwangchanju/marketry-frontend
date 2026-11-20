@@ -518,7 +518,7 @@ export default function MapPage() {
     return (
       <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
         <MobileTopBar title="" />
-        <div className="relative flex min-h-0 w-full flex-1 items-center overflow-hidden bg-ui-background">
+        <div className="relative flex min-h-0 w-full flex-1 items-start overflow-hidden bg-ui-background">
           <div className="relative w-full shrink-0" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px` }}>
             {mobileFrameNode}
           </div>
