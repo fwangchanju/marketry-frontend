@@ -46,7 +46,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
       {topBar ?? <MobileTopBar title="" />}
       <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch overflow-hidden bg-ui-background">
         <div aria-hidden="true" className="h-[6px] shrink-0" />
-        <div ref={rowRef} className="relative w-full shrink-0 overflow-hidden" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
+        <div ref={rowRef} className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
           <div className="origin-top-left" style={{ transform: `translateX(${TOOLBAR_SIDE_GUTTER}px) scale(${scale})` }}>
             <div ref={contentRef} className="w-max">{toolbar}</div>
           </div>
