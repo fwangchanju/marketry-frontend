@@ -25,7 +25,7 @@ import type { DefaultProfiles } from '@/hooks/useDefaultPreferences'
 import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
-import { USA_MAP_SETTING_PREFIX } from '@/utils/usaMapSettings'
+import { USA_MAP_SETTING_PREFIX, usaMapManagedDefaults } from '@/utils/usaMapSettings'
 import { japanMapDisplayValues, japanMapManagedDefaults, japanMapPublishPayload, japanMapSavedValues, type JapanMapPreferences } from '@/utils/japanMapSettings'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
 import { defaultExcludedTierLabels } from '@/utils/marketValueTier'
@@ -234,7 +234,7 @@ export default function AdminDefaultPage() {
     if (!await appConfirm('[일본 지도] 설정을 기본값으로 저장하시겠습니까?', { title: '기본값 저장' })) return
     save.mutate({ value: { ...defaults.data, japan: japanMapPublishPayload(japanSnapshot) }, profile: 'japan', snapshot: JSON.stringify(japanSnapshot) })
   }
-  const usaManaged = japanMapManagedDefaults(defaults.data, 'usa')
+  const usaManaged = usaMapManagedDefaults(defaults.data)
   const handleLoadUsa = () => {
     setSavedSnapshots(previous => ({ ...previous, usa: null }))
     setUsaSnapshot({ ...usaManaged, ...japanMapSavedValues(ownPreferences, USA_MAP_SETTING_PREFIX) })

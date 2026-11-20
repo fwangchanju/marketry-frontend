@@ -81,8 +81,8 @@ export function pickJapanMapPreferenceValues(source: unknown): Partial<JapanMapP
 }
 
 // 관리자가 정한 일본 지도 기본값(서버의 관리 기본값 japan)을 코드 기본값 위에 얹는다. 형식이 맞지 않는 값은 쓰지 않는다.
-export function japanMapManagedDefaults(profiles: Record<string, unknown> | undefined, profileKey: 'japan' | 'usa' = 'japan'): JapanMapPreferences {
-  return { ...JAPAN_MAP_DEFAULTS, ...pickJapanMapPreferenceValues(profiles?.[profileKey]) }
+export function japanMapManagedDefaults(profiles: Record<string, unknown> | undefined): JapanMapPreferences {
+  return { ...JAPAN_MAP_DEFAULTS, ...pickJapanMapPreferenceValues(profiles?.japan) }
 }
 
 // 기본값 화면(관리자)이 보여 주는 모양 — 국내 MARKETRY·거래소와 같은 줄을 쓰도록 같은 이름('heatmap.*')으로 옮긴다.

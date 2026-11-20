@@ -12,11 +12,8 @@ export function useJapanMapPreferences() {
   const { sheet } = useOverseasSheet()
   const settingKey = (name: Parameters<typeof japanMapSettingKey>[0]) => overseasSettingKey(japanMapSettingKey(name), sheet)
   const defaults = useDefaultPreferences()
-  // 미국 지도 경로는 미국 기본값(usa)을 쓴다. 텔레그램 캡처(/map/usa?capture=mobile)도 그 기본값으로 그린다.
-  const isUsaPath = window.location.pathname.startsWith('/map/usa') || window.location.pathname.startsWith('/summary/usa') || window.location.pathname.startsWith('/graph/usa')
-  const isUsaCapture = isUsaPath && new URLSearchParams(window.location.search).get('capture') === 'mobile'
-  const isCapture = isJapanMapCapture() || isUsaCapture
-  const base = useMemo(() => japanMapManagedDefaults(defaults.data, isUsaPath ? 'usa' : 'japan'), [defaults.data, isUsaPath])
+  const isCapture = isJapanMapCapture()
+  const base = useMemo(() => japanMapManagedDefaults(defaults.data), [defaults.data])
   const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting(settingKey('sectorLevelEnabled'), base.sectorLevelEnabled)
   const [maxDepth, setMaxDepth] = usePageSetting<number | null>(settingKey('maxDepth'), base.maxDepth)
   const [depthMetricEnabled, setDepthMetricEnabled] = usePageSetting(settingKey('depthMetricEnabled'), base.depthMetricEnabled)

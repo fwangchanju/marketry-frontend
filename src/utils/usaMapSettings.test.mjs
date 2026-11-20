@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { currencySuffix } from './currencyUnit.ts'
 import { draftScopeOfKeyMap } from './settingsDraft.ts'
 import { JAPAN_MAP_DRAFT_KEY_MAP } from './japanMapSettings.ts'
-import { USA_MAP_DEFAULTS, USA_MAP_DRAFT_KEY_MAP, USA_MAP_SETTING_PREFIX, usaMapSettingKey } from './usaMapSettings.ts'
+import { USA_MAP_DEFAULTS, USA_MAP_DRAFT_KEY_MAP, USA_MAP_SETTING_PREFIX, usaMapManagedDefaults, usaMapSettingKey } from './usaMapSettings.ts'
 
 test('미국 지도 설정 저장 이름은 usa.map.으로 시작한다', () => {
   assert.equal(USA_MAP_SETTING_PREFIX, 'usa.map.')
@@ -31,4 +31,13 @@ test('시가총액 뒤에는 엔과 달러만 단위를 붙이고 원은 붙이�
   assert.equal(currencySuffix('원'), '')
   assert.equal(currencySuffix('엔'), ' 엔')
   assert.equal(currencySuffix('달러'), ' 달러')
+})
+
+test('미국 지도 기본값은 관리자가 정한 usa 값을 코드 기본값 위에 얹고 일본 값은 쓰지 않는다', () => {
+  const managed = usaMapManagedDefaults({ usa: { maxDepth: 1, topPickCount: 5, unknown: 1 }, japan: { decimalPlaces: 2 } })
+  assert.equal(managed.maxDepth, 1)
+  assert.equal(managed.topPickCount, 5)
+  assert.equal(managed.decimalPlaces, USA_MAP_DEFAULTS.decimalPlaces)
+  assert.equal('unknown' in managed, false)
+  assert.deepEqual(usaMapManagedDefaults(undefined), USA_MAP_DEFAULTS)
 })

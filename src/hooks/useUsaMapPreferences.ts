@@ -1,15 +1,20 @@
+import { useMemo } from 'react'
 import { usePageSetting } from './usePageSetting'
+import { useDefaultPreferences } from './useDefaultPreferences'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { overseasSettingKey } from '@/utils/overseasSettingKey'
-import { USA_MAP_DEFAULTS, usaMapSettingKey, type UsaMapPreferences } from '@/utils/usaMapSettings'
+import { isUsaMapCapture, usaMapManagedDefaults, usaMapSettingKey, type UsaMapPreferences } from '@/utils/usaMapSettings'
 
-// 미국 지도의 표시 설정 — 코드 기본값 위에 사용자가 바꾼 값을 얹는다. 일본 지도와 달리 관리자 기본값은 아직 없다.
+// 미국 지도의 표시 설정 — 코드 기본값 위에 관리자가 정한 기본값(서버의 usa)을 얹고, 그 위에 사용자가 바꾼 값을 얹는다(일본 지도와 같다).
+// 텔레그램 렌더러는 개인 저장값을 쓰지 않고 관리자가 정한 기본값만 쓴다.
 // 바꾼 값은 임시값이고 설정창의 저장을 눌러야 계정에 저장된다(usePageSetting). 항목마다 저장 이름이 따로라 설정창 항목 제목에
 // 저장 안 한 변경 점이 항목별로 찍힌다.
 export function useUsaMapPreferences() {
   const { sheet } = useOverseasSheet()
   const settingKey = (name: Parameters<typeof usaMapSettingKey>[0]) => overseasSettingKey(usaMapSettingKey(name), sheet)
-  const base = USA_MAP_DEFAULTS
+  const defaults = useDefaultPreferences()
+  const isCapture = isUsaMapCapture()
+  const base = useMemo(() => usaMapManagedDefaults(defaults.data), [defaults.data])
   const [sectorLevelEnabled, setSectorLevelEnabled] = usePageSetting(settingKey('sectorLevelEnabled'), base.sectorLevelEnabled)
   const [maxDepth, setMaxDepth] = usePageSetting<number | null>(settingKey('maxDepth'), base.maxDepth)
   const [depthMetricEnabled, setDepthMetricEnabled] = usePageSetting(settingKey('depthMetricEnabled'), base.depthMetricEnabled)
@@ -23,7 +28,9 @@ export function useUsaMapPreferences() {
   const [topPickEnabled, setTopPickEnabled] = usePageSetting(settingKey('topPickEnabled'), base.topPickEnabled)
   const [topPickDepth, setTopPickDepth] = usePageSetting(settingKey('topPickDepth'), base.topPickDepth)
   const [topPickCount, setTopPickCount] = usePageSetting(settingKey('topPickCount'), base.topPickCount)
-  const preferences: UsaMapPreferences = { ...base, sectorLevelEnabled, maxDepth, depthMetricEnabled, activeDepthMetric, depthMetricMinIndex, depthMetricMaxIndex, boxSizeMarketCapRatio, stockLabelEnabled, stockLabelModeIndex, decimalPlaces, topPickEnabled, topPickDepth, topPickCount }
+  const preferences: UsaMapPreferences = isCapture
+    ? base
+    : { ...base, sectorLevelEnabled, maxDepth, depthMetricEnabled, activeDepthMetric, depthMetricMinIndex, depthMetricMaxIndex, boxSizeMarketCapRatio, stockLabelEnabled, stockLabelModeIndex, decimalPlaces, topPickEnabled, topPickDepth, topPickCount }
   const update = (changes: Partial<UsaMapPreferences>) => {
     if ('sectorLevelEnabled' in changes) setSectorLevelEnabled(changes.sectorLevelEnabled!)
     if ('maxDepth' in changes) setMaxDepth(changes.maxDepth!)
@@ -39,5 +46,5 @@ export function useUsaMapPreferences() {
     if ('topPickDepth' in changes) setTopPickDepth(changes.topPickDepth!)
     if ('topPickCount' in changes) setTopPickCount(changes.topPickCount!)
   }
-  return { preferences, update }
+  return { preferences, update, isLoadingDefaults: defaults.isLoading }
 }

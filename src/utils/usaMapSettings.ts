@@ -1,5 +1,6 @@
 import { createDefaultColorScale } from './heatmapColorScale.ts'
 import { settingDefaultsFor } from './settingDefaults.ts'
+import { pickJapanMapPreferenceValues } from './japanMapSettings.ts'
 
 export type UsaDepthMetric = 'weightedAvgChangeRate' | 'simpleAvgChangeRate' | 'upDownCount' | 'marketValue'
 
@@ -65,3 +66,13 @@ export const USA_SETTINGS_TAB_STORAGE = { map: 'Map', graph: 'Graph', stock: 'St
 
 // 미국 화면의 Basis는 MARKETRY만 제공해서 다른 분류를 고를 수 없다. 공통 선택 영역에 넘기는 빈 동작이다.
 export const NO_TAXONOMY_CHANGE = () => {}
+
+// 관리자가 기본값 화면에서 정한 미국 지도 기본값(서버의 관리 기본값 usa)을 코드 기본값 위에 얹는다. 값 이름이 일본 지도와 같아 같은 검사를 쓴다.
+export function usaMapManagedDefaults(profiles: Record<string, unknown> | undefined): UsaMapPreferences {
+  return { ...USA_MAP_DEFAULTS, ...pickJapanMapPreferenceValues(profiles?.usa) }
+}
+
+// 텔레그램 렌더러가 미국 지도를 찍는 주소(/map/usa?capture=mobile). 이때는 개인 저장값 없이 관리자 기본값만 쓴다.
+export function isUsaMapCapture() {
+  return window.location.pathname === '/map/usa' && new URLSearchParams(window.location.search).get('capture') === 'mobile'
+}
