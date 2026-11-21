@@ -48,6 +48,7 @@ const MARKETS: { value: MarketQuery; label: string }[] = [
 const STOCK_MAP_COUNT = 30
 const MOBILE_SETTINGS_BAR_HEIGHT = 24
 const MOBILE_PAGE_SWIPE_EDGE_GUARD = 24
+const MOBILE_PAGE_SWIPE_SETTLE_MS = 300
 const MOBILE_DECIMAL_PLACES = 1
 
 function stockLayoutValue(stock: HeatmapItem, ratio: number) {
@@ -667,7 +668,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     const preview = pageSwipePreviewRef.current
     if (!preview) return
     setPageSwipePreview({ ...preview, settling: finish ? 'finish' : 'cancel' })
-    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180
+    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS
     if (pageSwipeSettleTimerRef.current !== null) window.clearTimeout(pageSwipeSettleTimerRef.current)
     pageSwipeSettleTimerRef.current = window.setTimeout(() => {
       pageSwipeSettleTimerRef.current = null
@@ -682,6 +683,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       return
     }
     const direction = 'next' as const
+    // 미리보기가 오른쪽에 먼저 그린 뒤 다음 틱에서 완료 상태로 바꿔야 transform 전환이 걸린다.
     setPageSwipePreview({ direction, targetMode: modeForSwipe(direction), offset: 0, settling: null })
     requestAnimationFrame(() => finishSwipe(true))
   }
@@ -737,7 +739,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         : `translateX(${pageSwipePreview.offset}px)`
     : ''
   const swipeTransition = pageSwipePreview?.settling
-    ? `transform ${window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180}ms cubic-bezier(0.2, 0.7, 0.2, 1)`
+    ? `transform ${window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)`
     : 'none'
   // 스와이프 미리보기의 종목 지도는 목적지(/map)와 같은 루트 트리를 그린다. 예전 상위 30종목 전용 지도와 달리
   // 업종별 박스와 전체 종목이 보이도록, MapPage가 최상위에서 쓰는 것과 같은 filteredRootNodes·뎁스 제한을 쓴다.

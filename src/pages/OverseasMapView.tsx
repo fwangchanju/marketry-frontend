@@ -1,5 +1,6 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import MobileTopBar from '@/components/MobileTopBar'
+import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
@@ -55,6 +56,7 @@ import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
+import { calculateSectorLayoutWeights } from '@/utils/sectorLayoutWeights'
 
 declare global {
   interface Window {
@@ -146,6 +148,17 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   }
   const stockMoves = stockMoveEnabled && stockMoveState.scope === market ? stockMoveState.moves : NO_STOCK_MOVES
   const groups = applyStockMoves(baseGroups, stockMoves)
+  // 종목 지도에서 업종 지도로 스와이프·상단 버튼 이동할 때 따라올 미리보기. 업종 지도 화면과 같은 박스 비율로 그린다.
+  const sectorPreviewItems = useMemo(() => {
+    const source: MobileSectorMapItem[] = groups.map(group => ({
+      key: String(group.sectorId),
+      name: group.sectorName,
+      marketValue: group.totalMarketValue,
+      changeRate: group.weightedAvgChangeRate ?? group.simpleAvgChangeRate ?? 0,
+    }))
+    const weights = calculateSectorLayoutWeights(source, preferences.boxSizeMarketCapRatio)
+    return source.map((item, index) => ({ ...item, layoutValue: weights[index] }))
+  }, [groups, preferences.boxSizeMarketCapRatio])
   const handleMoveStock = (drop: StockDrop) => {
     setStockMoveState(previous => ({ scope: market, moves: { ...(previous.scope === market ? previous.moves : {}), [drop.stockCode]: drop.targetSectorId } }))
   }
@@ -285,6 +298,13 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const phoneEmptyFrame = (
     <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">{isLoading ? '불러오는 중입니다.' : isError ? '데이터를 불러오지 못했습니다.' : '이 날짜에는 표시할 데이터가 없습니다.'}</div>
   )
+  const sectorPreview = (
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+      <div className="flex h-full min-h-0 flex-col bg-ui-background">
+        <MobileSectorMap items={sectorPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={preferences.decimalPlaces} />
+      </div>
+    </div>
+  )
 
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
@@ -297,6 +317,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
         topBar={<MobileTopBar title="종목 지도" titleTo={summaryPath} titleLabel="업종 지도로 이동" />}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
         frame={overseasFrameNode || phoneEmptyFrame}
+        nextPreview={sectorPreview}
         current={marketKey}
         boxSize={preferences.boxSizeMarketCapRatio}
         onChangeBoxSize={value => update({ boxSizeMarketCapRatio: value })}
