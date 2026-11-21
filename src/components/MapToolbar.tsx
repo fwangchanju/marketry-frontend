@@ -18,6 +18,9 @@ import type { MarketQuery } from '@/types/api'
 // 지도 툴바 공통 부품. 종목·업종·그래프 화면이 같은 줄을 쓴다. 각 화면은 자기 데이터 값을 넘긴다.
 export type MapToolbarProps = {
   market: MarketQuery
+  // 시장 드롭다운이 현재 화면 경로를 유지하도록 쓴다. 종목 지도가 기본값이다.
+  // 업종 지도는 ?map을 유지해야 하므로 '/summary?map'을 쓴다.
+  menuBasePath?: '/map' | '/graph' | '/summary' | '/summary?map'
   marketLabel: string
   snapshotTime: string | null
   liveSnapshotTime: string | null
@@ -39,11 +42,14 @@ export type MapToolbarProps = {
   refreshSpinMs: number
 }
 
-export default function MapToolbar({ market, marketLabel, snapshotTime, liveSnapshotTime, pinnedSnapshotTime, rangeStartTime, isPastSnapshot, colorScale, onChangePinnedSnapshotTime, onSelectRange, rangeExcludedStocks, refetchHeatmap, isRefetchingHeatmap, changeRateChoice, onChangeChangeRateMode, isAfterHoursControlsVisible, isAfterHoursSelectable, modeStatusText, refreshHelpText, refreshSpinMs }: MapToolbarProps) {
+export default function MapToolbar({ market, menuBasePath = '/map', marketLabel, snapshotTime, liveSnapshotTime, pinnedSnapshotTime, rangeStartTime, isPastSnapshot, colorScale, onChangePinnedSnapshotTime, onSelectRange, rangeExcludedStocks, refetchHeatmap, isRefetchingHeatmap, changeRateChoice, onChangeChangeRateMode, isAfterHoursControlsVisible, isAfterHoursSelectable, modeStatusText, refreshHelpText, refreshSpinMs }: MapToolbarProps) {
+  // '/summary?map'은 marketMenu이 받지 않으므로 목록 주소에만 쿼리를 붙인다.
+  const baseMenu = marketMenu(menuBasePath === '/summary?map' ? '/summary' : menuBasePath, market, true)
+  const menu = menuBasePath === '/summary?map' ? baseMenu.map(item => ({ ...item, to: `${item.to}?map` })) : baseMenu
   return (
     <Toolbar>
       <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-        <ToolbarModeText page="MAP" label={marketLabel} showChevron menu={marketMenu('/map', market, true)} />
+        <ToolbarModeText page="MAP" label={marketLabel} showChevron menu={menu} />
         {/* 로딩·오류·빈 화면에서도 시계·시간대·합산/별도를 제자리에 둔다. 데이터가 없으면 시각 글자만 비어 있다. */}
         <>
           {/* 데이터가 없어도 날짜·시각 자리는 같은 폭으로 잡아 둬서 뒤의 시장 시간대 표시가 당겨지지 않게 한다. */}

@@ -423,7 +423,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const [storedBoxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
   const boxSizeMarketCapRatio = normalizeMobileBoxSizeRatio(storedBoxSizeMarketCapRatio)
   // 경로의 맨 앞은 전체일 때 국내 증시, 그 밖에는 고른 마켓 이름이다.
-  const marketLabel = market === 'ALL_STOCK' ? '국내 증시' : MARKETS.find(option => option.value === market)?.label ?? '국내 증시'
+  // 경로 줄 첫 이름은 툴바 배지와 같은 표기를 쓴다(K-STOCK / KOSPI / KOSDAQ).
+  const marketLabel = market === 'ALL_STOCK' ? 'K-STOCK' : market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'
   const marketHeadingLabel = isStockMode ? `${marketLabel} 상위 ${STOCK_MAP_COUNT}` : marketLabel
   const selectableDepth = taxonomy === 'KRX' || taxonomy === 'NXT' ? 1 : 3
   // 모바일 종목 지도는 마켓 상위 30개로 고정한다. 업종 하위 탐색은 업종 지도 안에서만 한다.
@@ -509,14 +510,18 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     ...(mid && (!isGraph || graphEntryOffset < 2) ? [{ key: 'mid', label: mid.sectorName, go: selectedStocks ? () => { setSelectedStocks(null); setViewMode('sector') } : null }] : []),
     ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
   ]
-  // 종목 지도와 업종·그룹 지도가 같은 경로 줄을 쓴다. 뒤의 PhoneMapShell 분기에서도 그대로 넘겨 툴바 아래에 둔다.
+  // 그룹 등락률은 하위 항목에 진입한 뒤부터 경로를 보여 준다. 대분류 상태에서도 줄 자리는 비워 둔다.
+  const hasGraphEntry = Boolean(major || mid || selectedStocks || stockCategoryName)
+  // 종목 지도와 그룹 등락률에서 쓰는 경로 줄이다. 업종 지도(PhoneMapShell 분기)에는 넣지 않는다.
   const pathNav = (
     <header className="shrink-0 bg-ui-background px-3 py-0">
       <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-        <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-        {pathCrumbs.map(crumb => crumb.go
-          ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
-          : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
+        {(!isGraph || hasGraphEntry) && <>
+          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
+          {pathCrumbs.map(crumb => crumb.go
+            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
+            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
+        </>}
       </nav>
     </header>
   )
@@ -814,6 +819,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         toolbar={
           <MapToolbar
             market={market}
+            menuBasePath={isGraph ? '/graph' : isSectorMode ? '/summary?map' : '/map'}
             marketLabel={market === 'ALL_STOCK' ? 'K-STOCK' : market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}
             snapshotTime={data?.snapshotTime ?? null}
             liveSnapshotTime={liveSnapshotTime}
@@ -835,8 +841,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
             refreshSpinMs={REFRESH_BUTTON_SPIN_MS}
           />
         }
-        pathNav={pathNav}
-        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * (window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH)}
+        pathNav={isGraph ? pathNav : undefined}
+        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * (window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH) - (isGraph ? 32 : 0)}
         frame={<div className="flex flex-col" style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH})`, transformOrigin: 'top left' }}>
       <section
         ref={pageContentRef}

@@ -50,7 +50,8 @@ export function useUsaGraphSource(): OverseasGraphSource {
   const liveQuotes = useUsaQuotes()
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const treeStocks = useMemo(() => (stocks.data ?? []).map(stock => ({ code: stock.symbol, name: stock.name })), [stocks.data])
-  const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, stock.symbol])), [stocks.data])
+  // 일본과 같게 /usa/stock-names의 한글 이름을 트리에 넘긴다. 없으면 종목 목록의 이름으로 폴백한다.
+  const names = useMemo(() => Object.fromEntries((stocks.data ?? []).map(stock => [stock.symbol, koreanNames.data?.[stock.symbol] ?? stock.name])), [stocks.data, koreanNames.data])
   // 지수 막대는 하루 보기면 그 거래일의 종가 변동, 기간 보기면 시작일 전 거래일 종가부터 종료일 종가까지의 변동이다.
   // 미국은 저장된 시세가 모두 종가라서 가장 최근 날도 막대를 만든다.
   const day = snapshotTime ? snapshotTime.slice(0, 10) : null

@@ -11,10 +11,10 @@ const CHIP_ON = 'bg-brand-surface text-ui-on-dark'
 const CHIP_OFF = 'bg-ui-control text-ui-white'
 const SETTINGS_BAR_HEIGHT = 24
 
-const MARKET_OPTIONS: { key: MobileMapMarket; label: string; path: string; summaryPath: string }[] = [
-  { key: 'korea', label: '한국', path: '/map/korea', summaryPath: '/summary/korea?map' },
-  { key: 'japan', label: '일본', path: '/map/japan', summaryPath: '/summary/japan?map' },
-  { key: 'usa', label: '미국', path: '/map/usa', summaryPath: '/summary/usa?map' },
+const MARKET_OPTIONS: { key: MobileMapMarket; label: string; path: string; graphPath: string; summaryPath: string }[] = [
+  { key: 'korea', label: '한국', path: '/map/korea', graphPath: '/graph/korea', summaryPath: '/summary/korea?map' },
+  { key: 'japan', label: '일본', path: '/map/japan', graphPath: '/graph/japan', summaryPath: '/summary/japan?map' },
+  { key: 'usa', label: '미국', path: '/map/usa', graphPath: '/graph/usa', summaryPath: '/summary/usa?map' },
 ]
 const BOX_OPTIONS: { value: number; label: string }[] = [
   { value: 100, label: '시총 비례' },
@@ -51,8 +51,9 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
   const normalizedBox = normalizeMobileBoxSizeRatio(boxSize)
   const navigate = useNavigate()
   const location = useLocation()
-  // 업종 지도에서 마켓을 바꾸면 같은 종류의 지도로 간다(종목 지도는 종목 지도로 유지).
+  // 업종 지도에서 마켓을 바꾸면 같은 종류의 지도로 간다(종목 지도는 종목 지도로, 그룹 등락률은 그룹 등락률로 유지).
   const isSectorMap = location.pathname.startsWith('/summary/')
+  const isGraph = location.pathname.startsWith('/graph/')
   // 처음 그릴 때는 열림 애니메이션을 재생하지 않도록, 첫 그리기 뒤에 전환을 켠다(업종 지도와 같다).
   useEffect(() => {
     const frame = requestAnimationFrame(() => setLayoutReady(true))
@@ -124,7 +125,7 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
           <SettingRow label="마켓">
             <div role="radiogroup" aria-label="마켓 선택" className="grid flex-1 grid-cols-3 gap-1.5">
               {MARKET_OPTIONS.map(option => (
-                <button key={option.key} type="button" role="radio" aria-checked={current === option.key} onClick={() => navigate(isSectorMap ? option.summaryPath : option.path, { state: { mobileBoxSize: boxSize } })} className={`${SETTING_CHIP_CLASS} ${current === option.key ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
+                <button key={option.key} type="button" role="radio" aria-checked={current === option.key} onClick={() => navigate(isSectorMap ? option.summaryPath : isGraph ? option.graphPath : option.path, { state: { mobileBoxSize: boxSize } })} className={`${SETTING_CHIP_CLASS} ${current === option.key ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
               ))}
             </div>
           </SettingRow>
