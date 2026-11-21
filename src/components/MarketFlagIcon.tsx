@@ -54,7 +54,7 @@ const FLAG_ARTWORK: Record<MarketFlag, { label: string; viewBox: string; body: R
 }
 
 // 높이는 메인 툴바 배지와 같은 26.25px(1.5rem + 2.25px)이고 너비는 3:2 비율(39.38px)로 따라온다.
-// 흰 바탕 국기(일본·미국)가 주간 모드에서 배경에 묻히지 않도록 UI 테두리를 안쪽에 두른다.
+// 흰 바탕 국기(일본·미국)가 배경에 묻히지 않도록 UI 테두리를 안쪽에 두른다.
 export default function MarketFlagIcon({ flag, className = '' }: { flag: MarketFlag; className?: string }) {
   const artwork = FLAG_ARTWORK[flag]
   return (

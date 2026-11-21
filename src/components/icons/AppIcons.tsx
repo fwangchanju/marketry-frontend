@@ -318,7 +318,7 @@ export function CopyIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-// 모바일 화면 모드 버튼 — 해(주간)와 달(야간). Lucide sun·moon이다.
+// 해·달 아이콘(Lucide sun·moon) — 화면 모드 버튼 제거로 현재 쓰지 않는다.
 export function SunIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
