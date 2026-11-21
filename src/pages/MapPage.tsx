@@ -7,6 +7,8 @@ import MobileTopBar from '@/components/MobileTopBar'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import MapToolbar from '@/components/MapToolbar'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
+import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
+import { normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -188,7 +190,10 @@ export default function MapPage() {
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 5:8 프레임)만 화면 폭에 맞춰 보여 준다. 실험 기능이라 되돌리기 쉽게 이 분기만 둔다.
   const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
-  useCarriedBoxSize(onChangeBoxSizeMarketCapRatio)
+  // 폰 지도의 박스 크기는 PC 설정과 따로 두고, 다른 시장·화면과 같은 모바일 값(기본 시총 비례)을 쓴다.
+  const [storedMobileBoxSizeRatio, onChangeMobileBoxSizeRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
+  const mobileBoxSizeRatio = normalizeMobileBoxSizeRatio(storedMobileBoxSizeRatio)
+  useCarriedBoxSize(onChangeMobileBoxSizeRatio)
   const isMobileFrameVisible = isMobileCaptureMode || isPhoneMapFrame
   const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   // 텔레그램 캡션은 지도 첫 화면 업종 헤더에 실제로 보이는 등락률을 읽는다. 동일 가중만 보이면 동일 가중, 그 밖에는 시총 가중이다.
@@ -395,7 +400,7 @@ export default function MapPage() {
                   weightedAvgDepthRange,
                   simpleAvgDepthRange,
                   upDownCountDepthRange,
-                  boxSizeMarketCapRatio,
+                  boxSizeMarketCapRatio: mobileBoxSizeRatio,
                   stretch: mapStretchFor(settingsModalProps.taxonomy),
                   tile: mapTileMethod(),
                   canExclude: false,
@@ -428,8 +433,8 @@ export default function MapPage() {
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
         frame={mobileFrameNode || phoneEmptyFrame}
         current="korea"
-        boxSize={boxSizeMarketCapRatio}
-        onChangeBoxSize={onChangeBoxSizeMarketCapRatio}
+        boxSize={mobileBoxSizeRatio}
+        onChangeBoxSize={onChangeMobileBoxSizeRatio}
       />
     )
   }

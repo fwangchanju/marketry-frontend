@@ -1016,7 +1016,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           </SettingRow>}
           {!isGraph && <SettingRow label="박스 크기">
             <div className="grid flex-1 grid-cols-3 gap-1.5">
-              {[{ value: 0, label: '동일' }, { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형' }, { value: 100, label: '시총 비례' }].map(option => <button key={option.value} type="button" aria-pressed={boxSizeMarketCapRatio === option.value} onClick={() => onChangeBoxSizeMarketCapRatio(option.value)} className={`${SETTING_CHIP_CLASS} ${boxSizeMarketCapRatio === option.value ? 'bg-brand-surface text-ui-on-dark' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
+              {[{ value: 100, label: '시총 비례' }, { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형' }, { value: 0, label: '동일' }].map(option => <button key={option.value} type="button" aria-pressed={boxSizeMarketCapRatio === option.value} onClick={() => onChangeBoxSizeMarketCapRatio(option.value)} className={`${SETTING_CHIP_CLASS} ${boxSizeMarketCapRatio === option.value ? 'bg-brand-surface text-ui-on-dark' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
             </div>
           </SettingRow>}
           </div>
