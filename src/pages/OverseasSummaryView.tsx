@@ -49,7 +49,7 @@ import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
 import MobileTopBar from '@/components/MobileTopBar'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
-import Spinner from '@/components/Spinner'
+import Spinner, { MOBILE_LOADING_SIZE_CLASS } from '@/components/Spinner'
 import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { captureSwipeArrivalOverlay } from '@/utils/mobileSwipeArrivalOverlay'
@@ -369,7 +369,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
             <div className="flex h-full flex-col bg-ui-background">
-              {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed /></div> : hasData ? (
+              {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div> : hasData ? (
                 <div className="flex min-h-0 flex-1 flex-col p-1">
                   {phoneDrillMapItems.length ? <MobileSectorMap items={phoneDrillMapItems} colorScale={colorScale} decimalPlaces={1} zoomable onSelect={handlePhoneSectorSelect} /> : <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
                 </div>
