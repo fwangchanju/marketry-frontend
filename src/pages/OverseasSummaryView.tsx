@@ -27,7 +27,7 @@ import RankBars from '@/components/RankBars'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { ClockIcon } from '@/components/icons/AppIcons'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
-import Toolbar from '@/components/Toolbar'
+import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
@@ -187,7 +187,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
               <AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} />
             </PageRefreshButton>
           </ToolbarChip>
-          {sessionChip}
+          <span className="flex shrink-0" style={{ width: TOOLBAR_SESSION_SLOT_WIDTH }}>{sessionChip}</span>
         </>
       )}
     </div>
