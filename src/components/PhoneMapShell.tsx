@@ -12,7 +12,7 @@ const TOOLBAR_REFERENCE_WIDTH = 438
 // 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.
 const TOOLBAR_FIXED_SCALE = 0.863
 
-export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe }: {
+export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, nextPreview }: {
   topBar?: ReactNode
   onSwipe?: (direction: 'next' | 'previous') => void
   frameHeight: number
@@ -21,6 +21,8 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   current: MobileMapMarket
   boxSize: number
   onChangeBoxSize: (value: number) => void
+  // 왼쪽으로 밀 때 따라오는 다음 화면 미리보기. 넘기지 않으면 예전처럼 현재 판만 움직인다.
+  nextPreview?: ReactNode
 }) {
   const [scale, setScale] = useState(TOOLBAR_FIXED_SCALE)
 
@@ -53,12 +55,18 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
             <div className="w-max">{toolbar}</div>
           </div>
         </div>
-        <div
-          className="relative w-full shrink-0 overflow-hidden"
-          style={{ height: `${frameHeight}px`, ...swipe.style }}
-          {...swipe.handlers}
-        >
-          {frame}
+        <div className="relative w-full shrink-0 overflow-hidden" style={{ height: `${frameHeight}px` }}>
+          <div className="relative h-full w-full" style={swipe.style} {...swipe.handlers}>
+            {frame}
+            {nextPreview && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-full top-0 h-full w-full bg-ui-background"
+              >
+                {nextPreview}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <MobileMapSheet current={current} boxSize={boxSize} onChangeBoxSize={onChangeBoxSize} />

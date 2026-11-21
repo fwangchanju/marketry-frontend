@@ -78,11 +78,11 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     event.preventDefault()
     event.stopPropagation()
   }
-  if (!enabled) return { handlers: undefined, style: undefined }
+  if (!enabled) return { handlers: undefined, style: undefined, offset: 0 }
   const style: CSSProperties = {
     touchAction: 'pan-y',
     transform: offset === 0 ? undefined : `translateX(${offset}px)`,
     transition: settling ? `transform ${SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }
-  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style }
+  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset }
 }
