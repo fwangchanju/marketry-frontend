@@ -2,11 +2,11 @@ import { cloneElement, isValidElement, useLayoutEffect, useState, type ReactNode
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileMapSheet, { type MobileMapMarket } from '@/components/MobileMapSheet'
 import { useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
+import { TOOLBAR_SIDE_GUTTER } from '@/utils/phonePathBar'
 
 // 폰 지도 공통 화면: 상단 줄 · 툴바 줄 · 가운데 판(세로 가운데 정렬, 설정 창이 열려도 판은 움직이지 않는다) · 하단 설정 줄.
 // 종목·업종·그래프 화면이 같은 틀을 쓴다. 툴바는 판 밖에 두고, 화면 폭에 맞춰 판 가로폭까지 키운다.
 const TOOLBAR_BASE_HEIGHT = 28
-const TOOLBAR_SIDE_GUTTER = 6
 // 툴바 슬롯을 한국 기준으로 고정했으므로 세 시장의 자연 폭은 모두 이 값이다. 화면을 읽지 않고 이 상수로 배율을 계산한다.
 const TOOLBAR_REFERENCE_WIDTH = 438
 // 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.

@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
 import PhoneMapShell from '@/components/PhoneMapShell'
+import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
 import MapToolbar from '@/components/MapToolbar'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
@@ -511,8 +512,10 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
   ]
   // 종목 지도·그룹 등락률에서 쓰는 경로 줄이다. 업종 지도(PhoneMapShell 분기)에는 넣지 않는다.
+  // 폰 판 안에서만 맨 앞 막대를 위 툴바 첫 배지 왼쪽에 맞춘다(세로는 그대로).
+  const pathBarLeftShift = isSectorMode || isGraph ? phonePathBarLeftShift(4) : 0
   const pathNav = (
-    <header className="shrink-0 bg-ui-background px-3 py-0">
+    <header className="shrink-0 bg-ui-background px-3 py-0" style={pathBarLeftShift ? { transform: `translateX(-${pathBarLeftShift}px)` } : undefined}>
       <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
         <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
         {pathCrumbs.map(crumb => crumb.go
@@ -521,9 +524,9 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       </nav>
     </header>
   )
-  // 경로 줄은 페이지 판 안에 그린다. 판은 810px 캔버스를 화면 폭으로 줄이므로 zoom으로 배율을 상쇄해 화면에서 32px·16px로 보이게 한다.
+  // 경로 줄도 그래프 글자와 같은 판 기준 값으로 그린다. 810px 판의 16px·32px가 390px 폰에서 화면 16px·32px로 보인다.
   // 셸의 스와이프 대상 밖에 두면 다음 페이지 미리보기에 이 자리가 비어 당겨지는 동안 빈 띠가 보인다.
-  const renderPathNav = () => <div style={{ zoom: SUMMARY_CAPTURE_FRAME_WIDTH / window.innerWidth }}>{pathNav}</div>
+  const renderPathNav = () => <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>{pathNav}</div>
 
   const selectSector = (name: string) => {
     const selected = marketItems.find(item => item.name === name)
