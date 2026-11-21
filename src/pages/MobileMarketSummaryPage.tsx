@@ -240,7 +240,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const isSectorMode = mode === 'sector'
   // 지도 화면에서도 지수를 미리 받아 둔다. 지도에서 그룹 등락률로 스와이프할 때 지수가 도착 뒤에야 조회되면
   // 미리보기와 전환 순간에 지수만 비어 보인다(2026-11-22 사용자 제보).
-  const { data: marketSummary, isLoading: isMarketSummaryLoading, refetch: refetchMarketSummary } = useMarketSummary()
+  const { data: marketSummary, isLoading: isMarketSummaryLoading, isFetching: isMarketSummaryFetching, refetch: refetchMarketSummary } = useMarketSummary()
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
   const { pathname } = location
@@ -657,7 +657,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     : marketItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate, onSelect: () => selectSector(item.name) }))
   const showLiveIndexes = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
   // 지수 막대가 heatmap과 다른 쿼리에서 오므로, 지수까지 준비된 뒤 한 번에 그린다.
-  const isLoading = isBaseLoading || (isGraph && showLiveIndexes && isMarketSummaryLoading)
+  // 캐시가 있어도 백그라운드 refetch 중이면 값이 바뀌면서 업종 줄이 밀리므로, 응답이 확정될 때까지 기다린다(2026-11-22 사용자 제보).
+  const isLoading = isBaseLoading || (isGraph && showLiveIndexes && (isMarketSummaryLoading || isMarketSummaryFetching))
   if (isGraph && showLiveIndexes && !major && !mid && viewMode === 'sector') {
     for (const index of marketSummary?.marketOverviews.items ?? []) {
       if (index.market === 'KOSPI' || index.market === 'KOSDAQ') {
@@ -781,7 +782,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     : 'weightedAvgChangeRate'
   // 그룹 등락률 미리보기는 지수까지 준비된 뒤에 그린다. 지도에서는 지수 조회가 화면 로딩에 포함되지 않으므로
   // 미리보기에서 따로 기다리지 않으면 막대만 먼저 뜨고 지수가 뒤따라온다.
-  const isGraphPreviewLoading = isLoading || (showLiveIndexes && isMarketSummaryLoading)
+  const isGraphPreviewLoading = isLoading || (showLiveIndexes && (isMarketSummaryLoading || isMarketSummaryFetching))
   const renderSwipePreview = () => pageSwipePreview?.targetMode === 'graph'
     ? isGraphPreviewLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
       : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>

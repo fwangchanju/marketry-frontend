@@ -1,6 +1,7 @@
 export type MobileRankEntry = { key: string; value: number; reference?: boolean; hiddenCount?: number }
 
-// 기준 지수는 생략하지 않고, 업종 수가 많으면 양쪽 끝만 남긴다.
+// 기준 지수는 생략하지 않고 등락률 순서에 그대로 참여한다. 지수보다 강한 업종·약한 업종을 비교하기 위한 기준점이다.
+// 업종 수가 많으면 양쪽 끝만 남긴다.
 export function mobileGraphRank<T extends MobileRankEntry>(entries: T[], edge = 7): (T | MobileRankEntry)[] {
   const sorted = [...entries].sort((a, b) => b.value - a.value)
   const sectors = sorted.filter(item => !item.reference)
