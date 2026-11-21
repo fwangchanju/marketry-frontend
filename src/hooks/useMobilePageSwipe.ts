@@ -6,7 +6,7 @@ const EDGE_GUARD = 24
 export const MOBILE_PAGE_SWIPE_SETTLE_MS = 500
 
 // 모바일 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
-export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void) {
+export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void) {
   const startRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
   const suppressClickRef = useRef(false)
   const timerRef = useRef<number | null>(null)
@@ -16,7 +16,7 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   const [reducedMotion, setReducedMotion] = useState(false)
   useEffect(() => () => { if (timerRef.current !== null) window.clearTimeout(timerRef.current) }, [])
   const isHorizontal = (dx: number, dy: number) => Math.abs(dx) >= Math.abs(dy) * 1.1
-  const settle = (target: number, then?: () => void) => {
+  const settle = (target: number, then?: () => void, direction?: 'next' | 'previous') => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     setReducedMotion(reduced)
     const duration = reduced ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS
@@ -25,6 +25,8 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null
       setSettling(false)
+      // 새 주소가 붙기 전에 미리보기 판을 덮어 둔다. 방향은 화면마다 어느 쪽이 종목 지도인지 다르므로 그대로 넘긴다.
+      if (direction) onBeforeNavigate?.(direction)
       then?.()
     }, duration)
   }
@@ -51,7 +53,7 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     }
     suppressClickRef.current = true
     window.setTimeout(() => { suppressClickRef.current = false }, 0)
-    settle(dx < 0 ? -window.innerWidth : window.innerWidth, dx < 0 ? onNext : onPrevious)
+    settle(dx < 0 ? -window.innerWidth : window.innerWidth, dx < 0 ? onNext : onPrevious, dx < 0 ? 'next' : 'previous')
   }
   const onPointerCancelCapture = (event: PointerEvent<HTMLElement>) => {
     if (startRef.current?.pointerId !== event.pointerId) return
@@ -67,7 +69,7 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   // 상단 페이지 이동 버튼도 손가락 스와이프와 같은 settle 경로로 다음 판을 밀어 준다.
   const next = () => {
     if (settling) return
-    settle(-window.innerWidth, onNext)
+    settle(-window.innerWidth, onNext, 'next')
   }
   if (!enabled) return { handlers: undefined, style: undefined, offset: 0, next: () => {} }
   const style: CSSProperties = {

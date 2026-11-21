@@ -12,6 +12,7 @@ import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
+import { captureSwipeArrivalOverlay } from '@/utils/mobileSwipeArrivalOverlay'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
@@ -93,6 +94,8 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
+  // 종목 지도로 넘어갈 때 덮개로 남길 미리보기 판.
+  const mapPreviewRef = useRef<HTMLDivElement>(null)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const copy = async (previewSrc?: string | null) => {
@@ -247,7 +250,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     </Toolbar>
   )
   const mapPreview = (
-    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+    <div ref={mapPreviewRef} style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <div className="flex h-full min-h-0 flex-col bg-ui-background">
         {mapPreviewGroups.length === 0 ? (
           <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">표시할 종목이 없습니다.</div>
@@ -328,6 +331,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     return (
       <PhoneMapShell
         onSwipe={direction => navigate(direction === 'next' ? mapPath : summaryPath)}
+        onBeforeSwipeNavigate={direction => { if (direction === 'next') captureSwipeArrivalOverlay(mapPreviewRef.current) }}
         toolbar={graphToolbarNode}
         topBar={<MobileTopBar title="그룹 등락률" titleTo={mapPath} titleLabel="종목 지도로 이동" />}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
