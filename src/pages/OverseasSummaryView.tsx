@@ -14,7 +14,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
-import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
+import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
@@ -43,6 +43,13 @@ import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector } from '@/utils/sectorAverage'
 import { overseasRoute } from '@/utils/markets'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
+import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
+import PhoneMapShell from '@/components/PhoneMapShell'
+import MobileTopBar from '@/components/MobileTopBar'
+import type { MobileMapMarket } from '@/components/MobileMapSheet'
+import Spinner from '@/components/Spinner'
+import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
+import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 
 // 국내 서머리와 같은 키를 쓴다 — 한 번 바꾼 좌우 순서가 세 서머리에 똑같이 적용된다.
 const SUMMARY_FRAME_ORDER_KEY = 'marketry-home-frame-order'
@@ -101,6 +108,12 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: 'mine' })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   const navigate = useNavigate()
+  // 폰에서는 업종 지도 한 장을 5:8 판에 맞춰 보여 준다. 상단 줄·툴바 줄·하단 설정 줄은 세 시장이 같은 틀을 쓴다.
+  const isPhoneMapFrame = useIsNarrowScreen()
+  const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
+  const [storedMobileBoxSizeRatio, onChangeMobileBoxSizeRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
+  const boxSizeMarketCapRatio = normalizeMobileBoxSizeRatio(storedMobileBoxSizeRatio)
+  useCarriedBoxSize(onChangeMobileBoxSizeRatio)
   // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(국내 서머리와 같은 동작).
   const handleSelectSector = (sectorName: string) => navigate(`${overseasRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
 
@@ -116,6 +129,11 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     return { items, chart }
   }, [tree, tierRange.excludedMarketValueTiers, sectorExclusion.excludedSectorIds])
   const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
+  // 폰의 박스 크기 설정을 업종 칸 면적에 반영한다(국내 모바일 업종 지도와 같은 방식).
+  const phoneSectorItems = useMemo(() => {
+    const weights = calculateSectorLayoutWeights(overview.items, boxSizeMarketCapRatio)
+    return overview.items.map((item, index) => ({ ...item, layoutValue: weights[index] }))
+  }, [overview.items, boxSizeMarketCapRatio])
 
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 서머리는 특별 회원·관리자만 열 수 있다.
   const menu = marketMenu('/summary', market, true)
@@ -178,6 +196,8 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     </div>
     </>
   )
+  // PC 화면과 폰 화면이 같은 툴바 원본을 쓴다(폰에서는 툴바 줄을 판 밖에 둔다).
+  const summaryToolbarNode = <Toolbar>{toolbarContent}</Toolbar>
   // 서머리의 두 틀(제목·캡처 이름·본문) — 화면과 틀별 캡처판이 같은 본문을 쓴다.
   const summaryFrames = [
               { title: '업종 지도', captureId: 'market-map', node: (
@@ -209,15 +229,40 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     if (from >= 0 && to >= 0) setSummaryFrameOrder(arrayMove(safeSummaryFrameOrder, from, to))
   }
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
+  if (isPhoneMapFrame) {
+    const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
+    const mapPath = overseasRoute('/map', market)
+    const graphPath = overseasRoute('/graph', market)
+    return (
+      <PhoneMapShell
+        onSwipe={direction => navigate(direction === 'next' ? graphPath : mapPath)}
+        toolbar={summaryToolbarNode}
+        topBar={<MobileTopBar title="업종 지도" titleTo={graphPath} titleLabel="그룹 등락률로 이동" />}
+        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+        frame={
+          <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+            <div className="flex h-full flex-col bg-ui-background">
+              {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed /></div> : hasData ? (
+                <div className="flex min-h-0 flex-1 flex-col p-1">
+                  <OverviewMap items={phoneSectorItems} colorScale={colorScale} decimalPlaces={1} hoverPopup={false} onSelect={handleSelectSector} />
+                </div>
+              ) : <div className="flex flex-1 items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
+            </div>
+          </div>
+        }
+        current={marketKey}
+        boxSize={boxSizeMarketCapRatio}
+        onChangeBoxSize={onChangeMobileBoxSizeRatio}
+      />
+    )
+  }
   return (
     <div className="flex h-screen min-h-0 select-none flex-col bg-ui-background">
       <NavBar />
       <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
       <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
-          <Toolbar>
-            {toolbarContent}
-          </Toolbar>
+          {summaryToolbarNode}
           <div className="flex min-h-0 flex-1">
             {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서, 캡처 중에는 스크롤을 풀어 둔다. */}
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isShareOpen ? 'overflow-visible' : 'overflow-x-auto'}`}>
