@@ -1,4 +1,5 @@
 import { cloneElement, isValidElement, useLayoutEffect, useState, type ReactNode } from 'react'
+import { PhoneToolbarContext } from '@/components/PhoneToolbarContext'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileMapSheet, { type MobileMapMarket } from '@/components/MobileMapSheet'
 import { useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
@@ -65,7 +66,9 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
       <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch overflow-hidden bg-ui-background">
         <div className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
           <div className="origin-top-left" style={{ transform: `translateX(${TOOLBAR_SIDE_GUTTER}px) scale(${scale})` }}>
-            <div className="w-max">{toolbar}</div>
+            <PhoneToolbarContext.Provider value={{ isPhone: true, scale }}>
+              <div className="w-max">{toolbar}</div>
+            </PhoneToolbarContext.Provider>
           </div>
         </div>
         <div className="relative w-full shrink-0 overflow-hidden" style={{ height: `${frameHeight}px` }}>

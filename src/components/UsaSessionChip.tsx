@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
+import ToolbarPopup from '@/components/ToolbarPopup'
 import { accentColor } from '@/utils/accentPalette'
 import { USA_SESSION_GUIDE, type UsaSession } from '@/utils/usaMarketSession'
 
@@ -17,9 +18,10 @@ const SessionDot = ({ session }: { session: UsaSession }) => <span aria-hidden="
 export default function UsaSessionChip({ session }: { session: UsaSession }) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
+  const popupRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!isOpen) return
-    const handlePointerDown = (event: PointerEvent) => { if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false) }
+    const handlePointerDown = (event: PointerEvent) => { if (!rootRef.current?.contains(event.target as Node) && !popupRef.current?.contains(event.target as Node)) setIsOpen(false) }
     const handleKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') setIsOpen(false) }
     document.addEventListener('pointerdown', handlePointerDown)
     document.addEventListener('keydown', handleKeyDown)
@@ -36,7 +38,7 @@ export default function UsaSessionChip({ session }: { session: UsaSession }) {
         </button>
       </ToolbarChip>
       {isOpen && (
-        <div role="dialog" aria-label="미국 증시 세션 안내" className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl">
+        <ToolbarPopup open={isOpen} triggerRef={rootRef} popupRef={popupRef} ariaLabel="미국 증시 세션 안내" className="w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl">
           {USA_SESSION_GUIDE.map(row => (
             <div key={row.session} className="flex items-center justify-between gap-4 px-2 py-1">
               <span className="flex items-center">
@@ -46,7 +48,7 @@ export default function UsaSessionChip({ session }: { session: UsaSession }) {
               <span className="w-[11ch] shrink-0 text-center font-normal tabular-nums">{row.range}</span>
             </div>
           ))}
-        </div>
+        </ToolbarPopup>
       )}
     </span>
   )
