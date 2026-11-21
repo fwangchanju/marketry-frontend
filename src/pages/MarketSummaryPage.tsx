@@ -125,7 +125,7 @@ export default function MarketSummaryPage() {
   const [screenshotTarget, setScreenshotTarget] = useState<HTMLElement | null>(null)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const {
-    settingsModalProps, data, rootNodes, isLoading, isError, refetchHeatmap, isRefetchingHeatmap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
+    settingsModalProps, data, rootNodes, isLoading: isBaseLoading, isError, refetchHeatmap, isRefetchingHeatmap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
     changeRateMode, changeRateChoice, colorScale, strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps, excludedSectorIds, excludedMarketValueTiers,
     market, nxtOnly, nxtOnlyWindow, liveSnapshotTime, onChangePinnedSnapshotTime, onSelectRange,
     isAfterHoursControlsVisible, isAfterHoursSelectable, onChangeChangeRateMode,
@@ -157,11 +157,11 @@ export default function MarketSummaryPage() {
   const isPastSnapshot = pinnedSnapshotTime !== undefined
 
   // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
-  const { data: marketSummary } = useMarketSummary()
+  const { data: marketSummary, isLoading: isMarketSummaryLoading } = useMarketSummary()
   const queryClient = useQueryClient()
   const rangePreviousDay = usePreviousTradingDay(market, rangeStartTime?.slice(0, 10) ?? null, { enabled: rangeStartTime !== undefined })
   const indexEndDate = pinnedSnapshotTime?.slice(0, 10) ?? marketSummary?.marketOverviews.snapshotTime?.slice(0, 10) ?? null
-  const { data: historicalIndexData } = useQuery({
+  const { data: historicalIndexData, isLoading: isHistoricalIndexLoading } = useQuery({
     queryKey: ['home-historical-market-index', indexEndDate, rangeStartTime, rangePreviousDay?.snapshotTime, changeRateChoice],
     enabled: Boolean(indexEndDate && pinnedSnapshotTime !== undefined && (!rangeStartTime || rangePreviousDay !== undefined)),
     queryFn: async () => {
@@ -196,6 +196,9 @@ export default function MarketSummaryPage() {
   })
   // 실시간 요약 지수는 최신 일간 보기에서만 쓴다. 과거 날짜·기간 보기에는 조회한 해당 날짜/기간의 지수 추이를 쓴다.
   const isLatestDailyView = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
+  // 지수 막대가 heatmap과 다른 쿼리에서 오므로, 지수까지 준비된 뒤 한 번에 그린다.
+  const isIndexLoading = (isLatestDailyView && isMarketSummaryLoading) || (pinnedSnapshotTime !== undefined && isHistoricalIndexLoading)
+  const isLoading = isBaseLoading || isIndexLoading
   // 서머리는 업종 분류 단계를 대분류로 잠가 둔다 — 단계를 내리면 상위 업종에 직접 붙은 종목이 막대에서 빠져 종목 수·평균이 달라지기 때문이다(docs/history.md).
   const effectiveDepth = 1
   const handleSelectSector = (sectorName: string) => {

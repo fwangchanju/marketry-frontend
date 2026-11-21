@@ -9,7 +9,6 @@ import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
 import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
-import { navigateWithMobileSlide } from '@/utils/mobilePageTransition'
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
@@ -48,7 +47,7 @@ const MARKETS: { value: MarketQuery; label: string }[] = [
 const STOCK_MAP_COUNT = 30
 const MOBILE_SETTINGS_BAR_HEIGHT = 24
 const MOBILE_PAGE_SWIPE_EDGE_GUARD = 24
-const MOBILE_PAGE_SWIPE_SETTLE_MS = 300
+const MOBILE_PAGE_SWIPE_SETTLE_MS = 500
 const MOBILE_DECIMAL_PLACES = 1
 
 function stockLayoutValue(stock: HeatmapItem, ratio: number) {
@@ -237,7 +236,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const isGraph = mode === 'graph'
   const isStockMode = mode === 'stock'
   const isSectorMode = mode === 'sector'
-  const { data: marketSummary, refetch: refetchMarketSummary } = useMarketSummary(isGraph)
+  const { data: marketSummary, isLoading: isMarketSummaryLoading, refetch: refetchMarketSummary } = useMarketSummary(isGraph)
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
   const { pathname } = location
@@ -256,7 +255,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     market,
     taxonomy,
     data,
-    isLoading,
+    isLoading: isBaseLoading,
     isError,
     refetchHeatmap,
     filteredRootNodes,
@@ -634,6 +633,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     ? stockContextItems.map(stock => ({ key: stock.stockCode, name: stock.alias ?? stock.stockName, value: stock.changeRate }))
     : marketItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate, onSelect: () => selectSector(item.name) }))
   const showLiveIndexes = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
+  // 지수 막대가 heatmap과 다른 쿼리에서 오므로, 지수까지 준비된 뒤 한 번에 그린다.
+  const isLoading = isBaseLoading || (isGraph && showLiveIndexes && isMarketSummaryLoading)
   if (isGraph && showLiveIndexes && !major && !mid && viewMode === 'sector') {
     for (const index of marketSummary?.marketOverviews.items ?? []) {
       if (index.market === 'KOSPI' || index.market === 'KOSDAQ') {
@@ -678,10 +679,6 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   }
   const transitionToNextMode = () => {
     if (pageSwipePreviewRef.current) return
-    if (isGraph) {
-      navigateWithMobileSlide(navigate, titleTo)
-      return
-    }
     const direction = 'next' as const
     // 미리보기가 오른쪽에 먼저 그린 뒤 다음 틱에서 완료 상태로 바꿔야 transform 전환이 걸린다.
     setPageSwipePreview({ direction, targetMode: modeForSwipe(direction), offset: 0, settling: null })
