@@ -11,8 +11,9 @@ import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import MobileTopBar from '@/components/MobileTopBar'
+import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
@@ -40,6 +41,8 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { overseasRoute } from '@/utils/markets'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
+import { collectAtDepth } from '@/utils/sectorDepth'
+import { summarizeSector } from '@/utils/sectorAverage'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 
 const SECTION_ORDER: SettingsPanelSectionId[] = ['graph', 'composition', 'colors']
@@ -85,6 +88,27 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     }
   }
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
+  // 폰의 그룹 등락률은 PC 그래프의 대각선 막대가 아니라 서머리의 업종 집계를 쓴다(국내 모바일 그래프와 같은 방식).
+  // exclusionTree는 필터 적용 전 원본 트리라 서머리 화면이 쓰는 tree와 같고, 필터는 graph source의 공 저장값을 그대로 쓴다.
+  const mobileGraphItems = useMemo<MobileGraphItem[]>(() => {
+    const items: MobileGraphItem[] = []
+    for (const { node, pathKey } of collectAtDepth(exclusionTree, 1, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, true, '')) {
+      const summary = summarizeSector(node, tierRange.excludedMarketValueTiers)
+      if (!summary) continue
+      items.push({
+        key: pathKey,
+        name: node.sectorName,
+        value: summary.weightedAvg,
+        onSelect: () => navigate(`${mapPath}?sector=${encodeURIComponent(node.sectorName)}`),
+      })
+    }
+    // 기준 지수는 서머리 집계에 없으므로 그래프 소스의 참조 막대에서 가져온다(국내의 코스피·코스닥과 같은 역할).
+    for (const item of chart.rankedItems) {
+      if (!item.isReference || item.hiddenCount !== undefined) continue
+      items.push({ key: item.key, name: item.sectorName, value: item.value, reference: true })
+    }
+    return items
+  }, [exclusionTree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers, chart.rankedItems, mapPath, navigate])
   // PC 화면과 폰 화면이 같은 툴바 원본을 쓴다(폰에서는 툴바 줄을 판 밖에 둔다).
   const graphToolbarNode = (
     <Toolbar>
@@ -121,27 +145,12 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
-            <div className="flex h-full flex-col bg-ui-background">
-              {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed /></div> : isError ? <div className="flex flex-1 items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div> : chart.rankedItems.length === 0 ? (
-                <div className="flex flex-1 items-center justify-center"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
-              ) : (
-                <>
-                  <div className="mt-[25px] flex w-full shrink-0 items-center justify-center font-bold whitespace-nowrap" style={{ fontSize: 22, color: 'var(--ui-white)' }}>
-                    <span className="inline-flex items-center leading-none font-bold">
-                      <span>{titleText} <span className="font-light">({titleUnit})</span></span>
-                      <span className="ml-2.5 rounded bg-[var(--brand-surface)] px-2 py-1 text-sm leading-none font-semibold text-ui-white">{depthNames[groupDepth - 1]}</span>
-                    </span>
-                  </div>
-                  <p className="mt-1.5 mb-[19.5px] flex w-full shrink-0 items-center justify-center gap-1.5 text-[13px] font-medium leading-5 whitespace-nowrap text-ui-muted">
-                    <span aria-hidden="true">-</span>
-                    그룹에 포함된 종목이 적을수록 왜곡이 커질 수 있습니다.
-                  </p>
-                  <div className="flex min-h-[260px] min-w-0 w-full flex-1 pl-[1%] pr-[2%]">
-                    <RankColumns chart={chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={name => navigate(`${mapPath}?sector=${encodeURIComponent(name)}`)} onSelectIndex={() => navigate(mapPath)} applyAxisBreak />
-                  </div>
-                </>
-              )}
-            </div>
+            <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
+              {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed /></div>
+                : isError ? <div className="flex flex-1 items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
+                  : mobileGraphItems.length === 0 ? <div className="flex flex-1 items-center justify-center"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
+                    : <MobileGraphBars items={mobileGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />}
+            </section>
           </div>
         }
         current={marketKey}
