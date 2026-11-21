@@ -138,7 +138,7 @@ export function useJapanGraphSource(): OverseasGraphSource {
     rangeExcludedStocks,
     isLoading,
     isError,
-    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching,
+    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching || indexCloses.isFetching || indexQuotesNow.isFetching || indexQuotesBefore.isFetching,
     refetchAll,
     DatePicker: JapanDatePicker,
     sessionChip: <JapanSessionChip session={session} />,

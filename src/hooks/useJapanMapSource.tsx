@@ -12,6 +12,7 @@ import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { flattenAllItems } from '@/hooks/useFilteredHeatmap'
 import { useJapanMapPreferences } from '@/hooks/useJapanMapPreferences'
 import { useJapanPeriodQuotes, useJapanPreviousTradingDay, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
+import { useOverseasPreviewIndex } from '@/hooks/useOverseasPreviewIndex'
 import { JAPAN_MAP_DRAFT_KEY_MAP, JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE } from '@/utils/japanMapSettings'
 import { buildJapanTree, excludePreviousCloseQuotes, findJapanCloseSnapshotTime, japanFilterQueryState, shouldFilterJapanQuotes } from '@/utils/japanMap'
 import { japanSessionAt } from '@/utils/japanMarketSession'
@@ -50,6 +51,7 @@ export function useJapanMapSource(): OverseasMapSource {
   const filterState = japanFilterQueryState(applyQuoteFilter, snapshotTimes.isLoading || previousTradingDay.isLoading, snapshotTimes.isError, previousTime, previousQuotes.isLoading, previousQuotes.isError)
   const isLoading = isPeriodResolving || isLoadingDefaults || categories.isLoading || classifications.isLoading || names.isLoading || quotes.isLoading || periodQuotes.isLoading || filterState.isLoading
   const isError = categories.isError || classifications.isError || names.isError || quotes.isError || periodQuotes.isError || filterState.isError
+  const { graphIndexItems, isFetching: isIndexFetching } = useOverseasPreviewIndex('JAPAN', snapshotTime, liveQuotes.data?.snapshotTime ?? null, rangeStart)
   // 국내 지도처럼 데이터가 없으면 지금 시각의 세션을 보여 준다.
   const session = japanSessionAt(snapshotTime ?? new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace(' ', 'T'))
   return {
@@ -65,7 +67,8 @@ export function useJapanMapSource(): OverseasMapSource {
     rangeExcludedStocks,
     isLoading,
     isError,
-    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching,
+    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching || isIndexFetching,
+    graphIndexItems,
     refetchAll,
     preferences,
     update,

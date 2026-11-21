@@ -9,6 +9,7 @@ import UsaSessionChip from '@/components/UsaSessionChip'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
+import { useOverseasPreviewIndex } from '@/hooks/useOverseasPreviewIndex'
 import { buildJapanTree } from '@/utils/japanMap'
 import { overseasMarketInfo } from '@/utils/markets'
 import { USA_MAP_FIXED, USA_MAP_SETTING_PREFIX } from '@/utils/usaMapSettings'
@@ -41,6 +42,7 @@ export function useUsaSummarySource(): OverseasSummarySource {
   }, [categories.data, classifications.data, shownQuotes, names.data, stocks.data])
   const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: names.data?.[stock.stockCode] ?? stock.stockCode }))
   const refetchAll = () => Promise.all([quotes.refetch(), categories.refetch(), classifications.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
+  const { graphIndexItems, isFetching: isIndexFetching } = useOverseasPreviewIndex('USA', snapshotTime, liveQuotes.data?.snapshotTime ?? null, rangeStart)
   return {
     market: 'USA',
     label: overseasMarketInfo('USA').badgeLabel,
@@ -53,7 +55,8 @@ export function useUsaSummarySource(): OverseasSummarySource {
     selectRange,
     rangeExcludedStocks,
     isLoading: isPeriodResolving || categories.isLoading || classifications.isLoading || quotes.isLoading || periodQuotes.isLoading,
-    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching,
+    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || isIndexFetching,
+    graphIndexItems,
     refetchAll,
     DatePicker: UsaDatePicker,
     sessionChip: snapshotTime ? <UsaSessionChip session={USA_SESSION} /> : null,

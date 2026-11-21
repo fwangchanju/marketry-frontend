@@ -11,6 +11,7 @@ import { flattenAllItems } from '@/hooks/useFilteredHeatmap'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaMapPreferences } from '@/hooks/useUsaMapPreferences'
 import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
+import { useOverseasPreviewIndex } from '@/hooks/useOverseasPreviewIndex'
 import { buildJapanTree } from '@/utils/japanMap'
 import { overseasMarketInfo } from '@/utils/markets'
 import { USA_MAP_DRAFT_KEY_MAP, USA_MAP_FIXED, USA_MAP_SETTING_PREFIX, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
@@ -41,6 +42,7 @@ export function useUsaMapSource(): OverseasMapSource {
   const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch(), koreanNames.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const isLoading = isPeriodResolving || isLoadingDefaults || categories.isLoading || classifications.isLoading || stocks.isLoading || koreanNames.isLoading || quotes.isLoading || periodQuotes.isLoading
   const isError = categories.isError || classifications.isError || stocks.isError || koreanNames.isError || quotes.isError || periodQuotes.isError
+  const { graphIndexItems, isFetching: isIndexFetching } = useOverseasPreviewIndex('USA', snapshotTime, liveQuotes.data?.snapshotTime ?? null, rangeStart)
   return {
     market: 'USA',
     label: overseasMarketInfo('USA').badgeLabel,
@@ -54,7 +56,8 @@ export function useUsaMapSource(): OverseasMapSource {
     rangeExcludedStocks,
     isLoading,
     isError,
-    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || stocks.isFetching,
+    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || stocks.isFetching || isIndexFetching,
+    graphIndexItems,
     refetchAll,
     preferences,
     update,

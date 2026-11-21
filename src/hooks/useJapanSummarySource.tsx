@@ -10,6 +10,7 @@ import japanStocks from '@/data/japanStocks.json'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
+import { useOverseasPreviewIndex } from '@/hooks/useOverseasPreviewIndex'
 import { buildJapanTree } from '@/utils/japanMap'
 import { JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP } from '@/utils/japanMapSettings'
 import { japanSessionAt } from '@/utils/japanMarketSession'
@@ -38,6 +39,7 @@ export function useJapanSummarySource(): OverseasSummarySource {
   }, [categories.data, classifications.data, shownQuotes, names.data])
   const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: names.data?.[stock.stockCode] ?? stock.stockCode }))
   const refetchAll = () => Promise.all([quotes.refetch(), categories.refetch(), classifications.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
+  const { graphIndexItems, isFetching: isIndexFetching } = useOverseasPreviewIndex('JAPAN', snapshotTime, liveQuotes.data?.snapshotTime ?? null, rangeStart)
   return {
     market: 'JAPAN',
     label: overseasMarketInfo('JAPAN').badgeLabel,
@@ -50,7 +52,8 @@ export function useJapanSummarySource(): OverseasSummarySource {
     selectRange,
     rangeExcludedStocks,
     isLoading: isPeriodResolving || categories.isLoading || classifications.isLoading || quotes.isLoading || periodQuotes.isLoading,
-    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching,
+    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || isIndexFetching,
+    graphIndexItems,
     refetchAll,
     DatePicker: JapanDatePicker,
     sessionChip: snapshotTime ? <JapanSessionChip session={japanSessionAt(snapshotTime)} /> : null,
