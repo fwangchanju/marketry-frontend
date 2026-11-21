@@ -701,7 +701,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   }
   const beginPageSwipe = (event: React.PointerEvent<HTMLElement>) => {
     const mobilePointer = event.pointerType === 'touch' || event.pointerType === 'pen'
-      || (event.pointerType === 'mouse' && window.matchMedia('(max-width: 767px)').matches)
+      || (event.pointerType === 'mouse' && window.matchMedia('(max-width: 768px)').matches)
     if (!mobilePointer) return
     if (event.clientX <= MOBILE_PAGE_SWIPE_EDGE_GUARD || event.clientX >= window.innerWidth - MOBILE_PAGE_SWIPE_EDGE_GUARD) return
     if (pageSwipePreviewRef.current) return

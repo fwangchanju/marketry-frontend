@@ -1445,7 +1445,7 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
 }
 
 /* 모바일 화면의 조작 중 글자가 선택되지 않도록 하고 입력 편집은 유지한다. */
-@media (max-width: 767px), (pointer: coarse) and (max-height: 500px) {
+@media (max-width: 768px), (pointer: coarse) and (max-height: 500px) {
   body { user-select: none; -webkit-user-select: none; }
   input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-select: text; }
 }
