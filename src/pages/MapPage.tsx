@@ -196,7 +196,7 @@ export default function MapPage() {
   // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 5:8 프레임)만 화면 폭에 맞춰 보여 준다. 실험 기능이라 되돌리기 쉽게 이 분기만 둔다.
   const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
   // 종목 지도에서 그룹 등락률로 스와이프할 때 지수가 도착 뒤에야 오지 않도록 폰 화면에서 미리 받아 둔다(2026-11-22 사용자 제보).
-  const { data: marketSummary, isLoading: isMarketSummaryLoading } = useMarketSummary(isPhoneMapFrame)
+  const { data: marketSummary, isLoading: isMarketSummaryLoading, isFetching: isMarketSummaryFetching } = useMarketSummary(isPhoneMapFrame)
   const showGraphPreviewIndexes = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
   // 폰 지도의 박스 크기는 PC 설정과 따로 두고, 다른 시장·화면과 같은 모바일 값(기본 시총 비례)을 쓴다.
   const [storedMobileBoxSizeRatio, onChangeMobileBoxSizeRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
@@ -459,7 +459,7 @@ export default function MapPage() {
     }
   }
   // 지수는 히트맵과 다른 쿼리에서 오므로, 지수까지 준비된 뒤 막대와 함께 그린다.
-  const isGraphPreviewLoading = isLoading || (showGraphPreviewIndexes && isMarketSummaryLoading)
+  const isGraphPreviewLoading = isLoading || (showGraphPreviewIndexes && (isMarketSummaryLoading || isMarketSummaryFetching))
   const graphPreview = (
     <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
