@@ -1,4 +1,6 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
+import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
+import { useFilteredHeatmap, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
@@ -44,8 +46,24 @@ import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/sc
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector } from '@/utils/sectorAverage'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
+import { mapTileMethod } from '@/utils/mapStretch'
+import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 
 const SECTION_ORDER: SettingsPanelSectionId[] = ['graph', 'composition', 'colors']
+const PREVIEW_FILTERS = { stockChangeFilter: 'all' as const, sectorChangeFilter: 'all' as const, sectorChangeDepth: 0, sectorUseSimpleAverage: false }
+const NO_TOP_PICKS = new Set<string>()
+
+function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
+  return {
+    sectorId: node.sectorId,
+    sectorName: node.sectorName,
+    totalMarketValue: node.totalMarketValue,
+    weightedAvgChangeRate: node.weightedAvgChangeRate,
+    simpleAvgChangeRate: node.simpleAvgChangeRate,
+    items: node.items,
+    children: node.children.map(toDisplayGroup),
+  }
+}
 
 export default function OverseasGraphView({ source }: { source: OverseasGraphSource }) {
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
@@ -109,6 +127,9 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     }
     return items
   }, [exclusionTree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers, chart.rankedItems, mapPath, navigate])
+  // 그룹 등락률에서 종목 지도로 스와이프·상단 버튼 이동할 때 따라올 미리보기. 종목 지도와 같은 트리·필터로 그린다.
+  const { filteredRootNodes: mapPreviewNodes } = useFilteredHeatmap(exclusionTree, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, PREVIEW_FILTERS)
+  const mapPreviewGroups = useMemo(() => mapPreviewNodes.map(toDisplayGroup), [mapPreviewNodes])
   // PC 화면과 폰 화면이 같은 툴바 원본을 쓴다(폰에서는 툴바 줄을 판 밖에 둔다).
   const graphToolbarNode = (
     <Toolbar>
@@ -137,6 +158,46 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
       )}
     </Toolbar>
   )
+  const mapPreview = (
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+      <div className="flex h-full min-h-0 flex-col bg-ui-background">
+        {mapPreviewGroups.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">표시할 종목이 없습니다.</div>
+        ) : (
+          <MobileMapHeatmapFrame
+            path={[]}
+            marketLabel={label}
+            strongIndustryColor={strongIndustryColor}
+            heatmapProps={{
+              groups: mapPreviewGroups,
+              selfSectorName: null,
+              depth: 0,
+              onSelectSector: () => {},
+              onExcludeSector: () => {},
+              heightClassName: 'min-h-0 flex-1',
+              marketValueDepthRange: null,
+              weightedAvgDepthRange: null,
+              simpleAvgDepthRange: null,
+              upDownCountDepthRange: null,
+              boxSizeMarketCapRatio,
+              tile: mapTileMethod(),
+              canExclude: false,
+              colorScale,
+              labelMinAreaPercent: 2,
+              stockLabelMode: 'both',
+              stockPopupOnHover: false,
+              decimalPlaces: 1,
+              topPickSectorKeys: NO_TOP_PICKS,
+              strongIndustryColor,
+              zoomOutRequestDepth: null,
+              onZoomOutComplete: () => {},
+              currencyUnit,
+            }}
+          />
+        )}
+      </div>
+    </div>
+  )
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
     return (
@@ -145,6 +206,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         toolbar={graphToolbarNode}
         topBar={<MobileTopBar title="그룹 등락률" titleTo={mapPath} titleLabel="종목 지도로 이동" />}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+        nextPreview={mapPreview}
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
             <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">

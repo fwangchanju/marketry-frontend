@@ -22,12 +22,14 @@ export default function MobileSectorMap({
   onSelect,
   onLongPress,
   decimalPlaces = 1,
+  zoomable = false,
 }: {
   items: MobileSectorMapItem[]
   colorScale: ColorScaleConfig
   onSelect: (name: string) => void
   onLongPress?: (item: MobileSectorMapItem) => void
   decimalPlaces?: number
+  zoomable?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const { bind: bindLongPress, consumeClick } = useLongPress()
@@ -35,7 +37,7 @@ export default function MobileSectorMap({
   const [size, setSize] = useState({ width: 0, height: 0 })
   const signature = useMemo(() => items.map(item => item.key).join(','), [items])
   const [zoomState, setZoomState] = useState<{ signature: string; transform: ZoomTransform }>({ signature: '', transform: IDENTITY })
-  const zoom = zoomState.signature === signature ? zoomState.transform : IDENTITY
+  const zoom = zoomable && zoomState.signature === signature ? zoomState.transform : IDENTITY
   const pointers = useRef(new Map<number, Point>())
   const gesture = useRef<{ start: ZoomTransform; origin: Point; distance: number } | null>(null)
   const suppressClick = useRef(false)
@@ -60,13 +62,14 @@ export default function MobileSectorMap({
   }
   const setZoom = (transform: ZoomTransform) => setZoomState({ signature, transform })
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!zoomable) return
     if (pointers.current.size === 0) suppressClick.current = false
     pointers.current.set(event.pointerId, localPoint(event))
     if (pointers.current.size >= 2) suppressClick.current = true
     beginGesture()
   }
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!pointers.current.has(event.pointerId)) return
+    if (!zoomable || !pointers.current.has(event.pointerId)) return
     pointers.current.set(event.pointerId, localPoint(event))
     const active = gesture.current
     if (!active) return
@@ -85,6 +88,7 @@ export default function MobileSectorMap({
     }
   }
   const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!zoomable) return
     pointers.current.delete(event.pointerId)
     beginGesture()
   }
@@ -122,12 +126,12 @@ export default function MobileSectorMap({
   })), [decimalPlaces, fontsVersion, rects, zoom.scale])
 
   return (
-    <div ref={ref} data-mobile-map-scale={zoom.scale} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onClickCapture={event => {
+    <div ref={ref} data-mobile-map-scale={zoomable ? zoom.scale : undefined} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerEnd} onPointerCancel={handlePointerEnd} onClickCapture={event => {
       if (!suppressClick.current) return
       suppressClick.current = false
       event.preventDefault()
       event.stopPropagation()
-    }} style={{ touchAction: 'none' }} className="relative min-h-0 w-full flex-1 overflow-hidden">
+    }} style={zoomable ? { touchAction: 'none' } : undefined} className="relative min-h-0 w-full flex-1 overflow-hidden">
       <div className="absolute inset-0" style={{ transformOrigin: '0 0', transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})` }}>
         {rects.map(({ item, x, y, width, height }) => {
           const background = resolveHeatmapColor(item.changeRate, colorScale)
@@ -144,7 +148,7 @@ export default function MobileSectorMap({
           )
         })}
       </div>
-      {zoom.scale > 1.05 && <button type="button" onPointerDown={event => event.stopPropagation()} onClick={() => setZoom(IDENTITY)} className="absolute bottom-2 left-2 z-10 h-[32px] rounded-[4px] border-0 bg-ui-panel/95 px-3 text-[13px] font-medium text-ui-white shadow-lg">원래 크기</button>}
+      {zoomable && zoom.scale > 1.05 && <button type="button" onPointerDown={event => event.stopPropagation()} onClick={() => setZoom(IDENTITY)} className="absolute bottom-2 left-2 z-10 h-[32px] rounded-[4px] border-0 bg-ui-panel/95 px-3 text-[13px] font-medium text-ui-white shadow-lg">원래 크기</button>}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import { buildExcludedSectorRows, countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
+import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import { marketMenu } from '@/utils/marketMenu'
@@ -128,6 +129,8 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     const chart = buildRankChart(items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false })))
     return { items, chart }
   }, [tree, tierRange.excludedMarketValueTiers, sectorExclusion.excludedSectorIds])
+  // 업종 지도에서 그룹 등락률로 스와이프·상단 버튼 이동할 때 따라올 미리보기.
+  const graphPreviewItems: MobileGraphItem[] = overview.items.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
   const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
   // 폰의 박스 크기 설정을 업종 칸 면적에 반영한다(국내 모바일 업종 지도와 같은 방식).
   const phoneSectorItems = useMemo(() => {
@@ -231,6 +234,13 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     if (from >= 0 && to >= 0) setSummaryFrameOrder(arrayMove(safeSummaryFrameOrder, from, to))
   }
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
+  const graphPreview = (
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+      <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
+        <MobileGraphBars items={graphPreviewItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
+      </section>
+    </div>
+  )
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
     const mapPath = overseasRoute('/map', market)
@@ -241,6 +251,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
         toolbar={summaryToolbarNode}
         topBar={<MobileTopBar title="업종 지도" titleTo={graphPath} titleLabel="그룹 등락률로 이동" />}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+        nextPreview={graphPreview}
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
             <div className="flex h-full flex-col bg-ui-background">

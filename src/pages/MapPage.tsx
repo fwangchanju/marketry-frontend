@@ -438,7 +438,6 @@ export default function MapPage() {
   const sectorPreview = (
     <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <div className="flex h-full min-h-0 flex-col bg-ui-background">
-        <div aria-hidden="true" className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
         <MobileSectorMap items={sectorPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={decimalPlaces} />
       </div>
     </div>
