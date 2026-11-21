@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPoi
 import { useNavigate } from 'react-router-dom'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
+import ToolbarPopup from '@/components/ToolbarPopup'
 
 export interface ToolbarModeMenuItem {
   label: string
@@ -20,6 +21,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const popupRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<number | null>(null)
   // 마우스가 배지와 목록 사이를 지나거나 살짝 벗어나도 바로 닫히지 않게 잠시 기다린다.
   const cancelClose = useCallback(() => {
@@ -41,7 +43,8 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
   useEffect(() => {
     if (!isOpen) return
     const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false)
+      // 폰에서는 목록이 document.body로 옮겨지므로 루트 밖이라도 목록 안 클릭은 닫지 않는다.
+      if (!rootRef.current?.contains(event.target as Node) && !popupRef.current?.contains(event.target as Node)) setIsOpen(false)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsOpen(false)
@@ -63,6 +66,15 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
     if (event.pointerType !== 'mouse') return
     closeLater()
   }
+  // 폰에서는 목록이 포털로 옮겨져 루트의 pointerleave가 먼저 일어난다. 목록 위로 들어오면 닫기 예약을 취소한다.
+  const handlePopupPointerEnter = (event: ReactPointerEvent) => {
+    if (event.pointerType !== 'mouse') return
+    cancelClose()
+  }
+  const handlePopupPointerLeave = (event: ReactPointerEvent) => {
+    if (event.pointerType !== 'mouse') return
+    closeLater()
+  }
 
   const isMenu = menu !== undefined && menu.length > 0
   return (
@@ -71,7 +83,10 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
       className="font-roboto-latin relative shrink-0"
       onPointerEnter={isMenu ? handlePointerEnter : undefined}
       onPointerLeave={isMenu ? handlePointerLeave : undefined}
-      onBlur={isMenu ? event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsOpen(false) } : undefined}
+      onBlur={isMenu ? event => {
+        const next = event.relatedTarget as Node | null
+        if (!event.currentTarget.contains(next) && !popupRef.current?.contains(next)) setIsOpen(false)
+      } : undefined}
     >
       <span className="absolute -top-[5px] left-1.5 z-10 bg-ui-background px-1 text-[9px] leading-none font-bold tracking-[0.12em] text-[var(--brand)]">{page}</span>
       <div
@@ -87,10 +102,23 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
         <span className="min-w-0 flex-1 justify-center text-center tracking-[0.04em]">{label}</span>
         {showChevron ? <ChevronDownIcon className="ml-auto h-3 w-3 shrink-0" aria-hidden /> : <span aria-hidden className="ml-auto h-3 w-3 shrink-0" />}
       </div>
+      {/* 폰에서는 배지·목록 사이 6px를 ToolbarPopup이 벌려 두어 마우스가 틈을 지나도 밖으로 나간 것으로 보지 않는다. */}
       {isMenu && isOpen && (
-        // 배지와 목록 사이 6px는 비워 두지 않고 이 칸의 위쪽 여백으로 채운다 — 마우스가 틈을 지나도 배지·목록 밖으로 나간 것으로 보지 않는다.
-        <div className="absolute left-0 top-full z-50 w-[110px] pt-1.5">
-        <div role="listbox" aria-label="시장 목록" className={`w-[110px] overflow-hidden text-sm font-normal tracking-normal ${DROPDOWN_PANEL_CLASS}`}>
+      <ToolbarPopup
+        open
+        triggerRef={rootRef}
+        popupRef={popupRef}
+        ariaLabel="시장 목록"
+        className="w-[110px]"
+        gapPx={6}
+      >
+        <div
+          role="listbox"
+          aria-label="시장 목록"
+          className={`w-[110px] overflow-hidden text-sm font-normal tracking-normal ${DROPDOWN_PANEL_CLASS}`}
+          onPointerEnter={handlePopupPointerEnter}
+          onPointerLeave={handlePopupPointerLeave}
+        >
           {menu.map(item => (
             <button
               key={item.to}
@@ -111,7 +139,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
             </button>
           ))}
         </div>
-        </div>
+      </ToolbarPopup>
       )}
     </div>
   )

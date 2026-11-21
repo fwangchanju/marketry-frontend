@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import ToolbarPopup from '@/components/ToolbarPopup'
 import type { ExcludedStock } from '@/utils/rangeChangeRate'
 
 // 제외된 종목 팝업에 이름을 적는 최대 종목 수.
@@ -26,11 +27,13 @@ function MinusCircleIcon({ className }: { className?: string }) {
 export default function RangeExcludedStocks({ excludedStocks }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
+  const popupRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isOpen) return
     const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false)
+      // 폰에서는 팝업이 document.body로 옮겨지므로 루트 밖이라도 팝업 안 클릭은 닫지 않는다.
+      if (!rootRef.current?.contains(event.target as Node) && !popupRef.current?.contains(event.target as Node)) setIsOpen(false)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsOpen(false)
@@ -64,34 +67,34 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
             <MinusCircleIcon className="h-[15px] w-[15px] shrink-0" />
             <span>제외 종목</span>
           </button>
-          {isPopupOpen && (
-                <div
-                  role="dialog"
-                  aria-label="제외 종목"
-                  className="absolute left-0 top-full z-50 mt-1 w-60 whitespace-normal rounded-md border border-ui-border bg-[var(--ui-panel)] p-3 text-sm font-normal tracking-normal text-ui-white shadow-xl"
-                >
-                  <p className="font-semibold">제외 종목 ({excludedStocks.length})</p>
-                  <p className="mt-1 text-xs font-medium leading-relaxed text-ui-text">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>
-                  {!hasExcluded && (
-                    <p className="mt-2 border-t border-ui-border pt-2 text-xs font-medium text-ui-text">제외된 종목이 없습니다.</p>
-                  )}
-                  {hasExcluded && (
-                  <div className="mt-2 border-t border-ui-border pt-2">
-                    {/* 목록은 시가총액이 큰 10종목까지만 적는다. 10종목이 넘으면 제목에 "10 종목"이라고 밝힌다. */}
-                    <p className="mb-1 text-xs font-medium text-ui-text">{excludedStocks.length > MAX_LISTED_STOCKS ? `시가총액 순 ${MAX_LISTED_STOCKS} 종목` : '시가총액 순'}</p>
-                    <ul className="space-y-1">
-                      {excludedStocks.slice(0, MAX_LISTED_STOCKS).map(stock => (
-                        <li key={stock.stockCode} className="flex items-center justify-between gap-2">
-                          <span className="min-w-0 truncate" data-hint={stock.stockName}>{stock.stockName}</span>
-                          {/* 종목코드는 숫자와 영문이 섞여 있어(예: 0035S0) 글자 폭이 같은 고정폭 글꼴로 써야 코드마다 너비가 같다. */}
-                          <span className="shrink-0 font-mono text-xs text-ui-muted">{stock.stockCode}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  )}
-                </div>
-              )}
+          <ToolbarPopup
+            open={isPopupOpen}
+            triggerRef={rootRef}
+            popupRef={popupRef}
+            ariaLabel="제외 종목"
+            className="w-60 whitespace-normal rounded-md border border-ui-border bg-[var(--ui-panel)] p-3 text-sm font-normal tracking-normal text-ui-white shadow-xl"
+          >
+            <p className="font-semibold">제외 종목 ({excludedStocks.length})</p>
+            <p className="mt-1 text-xs font-medium leading-relaxed text-ui-text">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>
+            {!hasExcluded && (
+              <p className="mt-2 border-t border-ui-border pt-2 text-xs font-medium text-ui-text">제외된 종목이 없습니다.</p>
+            )}
+            {hasExcluded && (
+              <div className="mt-2 border-t border-ui-border pt-2">
+                {/* 목록은 시가총액이 큰 10종목까지만 적는다. 10종목이 넘으면 제목에 "10 종목"이라고 밝힌다. */}
+                <p className="mb-1 text-xs font-medium text-ui-text">{excludedStocks.length > MAX_LISTED_STOCKS ? `시가총액 순 ${MAX_LISTED_STOCKS} 종목` : '시가총액 순'}</p>
+                <ul className="space-y-1">
+                  {excludedStocks.slice(0, MAX_LISTED_STOCKS).map(stock => (
+                    <li key={stock.stockCode} className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 truncate" data-hint={stock.stockName}>{stock.stockName}</span>
+                      {/* 종목코드는 숫자와 영문이 섞여 있어(예: 0035S0) 글자 폭이 같은 고정폭 글꼴로 써야 코드마다 너비가 같다. */}
+                      <span className="shrink-0 font-mono text-xs text-ui-muted">{stock.stockCode}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </ToolbarPopup>
         </span>
       )}
     </span>
