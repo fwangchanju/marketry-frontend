@@ -78,11 +78,16 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     event.preventDefault()
     event.stopPropagation()
   }
-  if (!enabled) return { handlers: undefined, style: undefined, offset: 0 }
+  // 상단 페이지 이동 버튼도 손가락 스와이프와 같은 settle 경로로 다음 판을 밀어 준다.
+  const next = () => {
+    if (settling) return
+    settle(-window.innerWidth, onNext)
+  }
+  if (!enabled) return { handlers: undefined, style: undefined, offset: 0, next: () => {} }
   const style: CSSProperties = {
     touchAction: 'pan-y',
     transform: offset === 0 ? undefined : `translateX(${offset}px)`,
     transition: settling ? `transform ${SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }
-  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset }
+  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset, next }
 }

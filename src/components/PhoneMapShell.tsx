@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type ReactNode } from 'react'
+import { cloneElement, isValidElement, useLayoutEffect, useState, type ReactNode } from 'react'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileMapSheet, { type MobileMapMarket } from '@/components/MobileMapSheet'
 import { useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
@@ -43,12 +43,19 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
     return () => window.removeEventListener('resize', fit)
   }, [])
 
+  // 상단 이동 버튼은 스와이프와 같은 전환을 재생한다. 이미 전환을 가진 화면(한국 업종·그룹)은 그대로 둔다.
+  const topBarNode = isValidElement<{ onTitleClick?: () => void }>(topBar)
+    ? onSwipe && !topBar.props.onTitleClick
+      ? cloneElement(topBar, { onTitleClick: () => swipe.next() })
+      : topBar
+    : (topBar ?? <MobileTopBar title="" />)
+
   // 닫힌 설정 줄(24px)과 상단 줄(44px), 툴바 줄을 뺀 자리에서 툴바와 판을 한 묶음으로 가운데에 둔다.
   const rowHeight = TOOLBAR_BASE_HEIGHT * scale
   const frameTop = Math.max(0, (window.innerHeight - 44 - 25 - rowHeight - frameHeight) / 2)
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
-      {topBar ?? <MobileTopBar title="" />}
+      {topBarNode}
       <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch overflow-hidden bg-ui-background">
         <div className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
           <div className="origin-top-left" style={{ transform: `translateX(${TOOLBAR_SIDE_GUTTER}px) scale(${scale})` }}>
