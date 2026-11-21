@@ -509,6 +509,17 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     ...(mid && (!isGraph || graphEntryOffset < 2) ? [{ key: 'mid', label: mid.sectorName, go: selectedStocks ? () => { setSelectedStocks(null); setViewMode('sector') } : null }] : []),
     ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
   ]
+  // 종목 지도와 업종·그룹 지도가 같은 경로 줄을 쓴다. 뒤의 PhoneMapShell 분기에서도 그대로 넘겨 툴바 아래에 둔다.
+  const pathNav = (
+    <header className="shrink-0 bg-ui-background px-3 py-0">
+      <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
+        <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
+        {pathCrumbs.map(crumb => crumb.go
+          ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
+          : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
+      </nav>
+    </header>
+  )
 
   const selectSector = (name: string) => {
     const selected = marketItems.find(item => item.name === name)
@@ -824,6 +835,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
             refreshSpinMs={REFRESH_BUTTON_SPIN_MS}
           />
         }
+        pathNav={pathNav}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * (window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH)}
         frame={<div className="flex flex-col" style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH})`, transformOrigin: 'top left' }}>
       <section
@@ -841,7 +853,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         className="relative min-h-0 flex-1 touch-pan-y overflow-hidden"
       >
         <div className="absolute inset-0 p-1" style={{ transform: currentSwipeTransform, transition: swipeTransition, willChange: pageSwipePreview ? 'transform' : undefined }}>
-        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
+        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className="h-[min(30rem,94vmin)] w-[min(30rem,94vmin)]" /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
@@ -894,15 +906,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       />
       <h1 className="sr-only">{isGraph ? heading.replace('히트맵', '등락률 그래프') : heading}</h1>
       {/* 경로 줄은 맨 처음(국내 증시)에서도 항상 둔다 — 단계에 들어갈 때마다 지도 크기가 달라지지 않게 한다. */}
-
-      <header className="shrink-0 bg-ui-background px-3 py-0">
-        <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-          {pathCrumbs.map(crumb => crumb.go
-            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
-            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
-        </nav>
-      </header>
+      {pathNav}
       <section
         ref={pageContentRef}
         aria-label={isGraph ? (viewMode === 'sector' ? '업종 등락률 그래프' : '종목 등락률 그래프') : (viewMode === 'sector' ? '업종 히트맵' : '주식 히트맵')}
@@ -918,7 +922,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         className="relative min-h-0 flex-1 touch-pan-y overflow-hidden"
       >
         <div className="absolute inset-0 p-1" style={{ transform: currentSwipeTransform, transition: swipeTransition, willChange: pageSwipePreview ? 'transform' : undefined }}>
-        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
+        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className="h-[min(30rem,94vmin)] w-[min(30rem,94vmin)]" /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>

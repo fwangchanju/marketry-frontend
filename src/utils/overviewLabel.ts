@@ -44,9 +44,10 @@ function width100(text: string, weight: 400 | 500, version: number): number {
 // 박스 크기(가로·세로의 기하평균)에 맞춰 정하는 글자 크기 — 작은 박스는 12px, 큰 박스일수록 커진다(가장 큰 박스는 약 28px).
 function sizeByBox(width: number, height: number, large = false): number {
   const span = Math.sqrt(width * height)
-  // large는 PC 지도 종목 박스와 같은 값이다(60→12px … 300 이상→34px). 폰은 화면이 좁아 기존 값(70→12px … 364 이상→28px)을 쓴다.
+  // large는 PC 지도 종목 박스와 같은 값이다(60→12px … 300 이상→34px).
   if (large) return Math.round(12 + 22 * Math.sqrt(Math.min(Math.max((span - 60) / 240, 0), 1)))
-  return Math.round(12 + 16 * Math.sqrt(Math.min(Math.max((span - 70) / 294, 0), 1)))
+  // 폰 화면은 프레임이 810px 기준으로 축소되므로, 보이는 글자가 16~24px가 되도록 CSS 값을 키운다.
+  return Math.round(33 + 17 * Math.sqrt(Math.min(Math.max((span - 70) / 294, 0), 1)))
 }
 
 // 단어 경계가 없는 이름을 가운데에서 나눈다(앞줄이 같거나 한 글자 더 길다). 세 글자 이하는 나누지 않는다.
@@ -112,8 +113,8 @@ export function layoutOverviewLabel(name: string, rateText: string, width: numbe
     if (nameHeight > innerHeight) return null
     const rate = rateSizeFor(size)
     const withRate = rate !== null && nameHeight + rate * LINE_HEIGHT <= innerHeight
-    // PC 서머리는 이름만 보일 때 작은 글씨로 등락률까지 들어가는지 먼저 확인한다.
-    if (options.large && !withRate) {
+    // 이름만 보일 때 작은 글씨로 등락률까지 들어가는지 먼저 확인한다. 폰도 박스가 작아지면 같은 방식으로 줄인다.
+    if (!withRate) {
       for (let smaller = size - 1; smaller >= MIN_NAME_SIZE; smaller -= 1) {
         const smallerRate = rateSizeFor(smaller)
         if (smallerRate !== null && (lines.length * smaller + smallerRate) * LINE_HEIGHT <= innerHeight) {
@@ -128,6 +129,7 @@ export function layoutOverviewLabel(name: string, rateText: string, width: numbe
     if (nameWidth(name, size) <= innerWidth) {
       const fit = build([name], size)
       if (fit) return fit
+      if (!options.large) continue
       break
     }
   }
