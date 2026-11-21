@@ -32,7 +32,7 @@ import { limitDepth } from '@/hooks/useFilteredHeatmap'
 import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
-import { collectAtDepth } from '@/utils/sectorDepth'
+import { collectAtDepth, isInDepthRange } from '@/utils/sectorDepth'
 import { summarizeSector, type SectorSummary } from '@/utils/sectorAverage'
 import { indexSectorsByPath, sectorPathKey } from '@/utils/sectorPath'
 import { resolveMobileStockSelection } from '@/utils/mobileStockSelection'
@@ -762,6 +762,10 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     () => (maxDepth != null && maxDepth > 0 ? limitDepth(filteredRootNodes, maxDepth) : filteredRootNodes).map(toDisplayGroup),
     [filteredRootNodes, maxDepth],
   )
+  // 도착 화면(MapPage)의 폰 판과 같은 행 지표를 써야 전환 뒤 첫 행이 바뀌지 않는다.
+  const swipeCaptureRowMetric = isInDepthRange(simpleAvgDepthRange, 0) && !isInDepthRange(weightedAvgDepthRange, 0)
+    ? 'simpleAvgChangeRate'
+    : 'weightedAvgChangeRate'
   const renderSwipePreview = () => pageSwipePreview?.targetMode === 'graph'
     ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
       : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
@@ -770,36 +774,43 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
         : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
           : swipeMapGroups.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p>
-            : <MobileMapHeatmapFrame
-                path={[]}
-                marketLabel={market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK'}
-                strongIndustryColor={strongIndustryColor}
-                heatmapProps={{
-                  groups: swipeMapGroups,
-                  selfSectorName: null,
-                  depth: 0,
-                  onSelectSector: () => {},
-                  onExcludeSector: () => {},
-                  heightClassName: 'min-h-0 flex-1',
-                  marketValueDepthRange,
-                  weightedAvgDepthRange,
-                  simpleAvgDepthRange,
-                  upDownCountDepthRange,
-                  boxSizeMarketCapRatio,
-                  stretch: mapStretchFor(taxonomy),
-                  tile: mapTileMethod(),
-                  canExclude: false,
-                  colorScale,
-                  labelMinAreaPercent: boxLabelMinAreaPercent,
-                  stockLabelMode,
-                  stockPopupOnHover: false,
-                  decimalPlaces: MOBILE_DECIMAL_PLACES,
-                  topPickSectorKeys,
-                  strongIndustryColor,
-                  zoomOutRequestDepth: null,
-                  onZoomOutComplete: () => {},
-                }}
-              />
+            // 종목 지도 도착지는 MapPage의 8px 폰 판이다. 예전처럼 4px 판으로 그리면 전환이 끝날 때 지도가 한 번 커져 보인다.
+            // 이 화면의 판 부모가 이미 810px 좌표를 화면 폭으로 축소하므로 여기서는 배율을 또 곱하지 않는다.
+            : <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box' }} className="relative bg-ui-background">
+                <div className="flex h-full min-h-0 flex-col bg-ui-background">
+                  <MobileMapHeatmapFrame
+                    path={[]}
+                    marketLabel={market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK'}
+                    strongIndustryColor={strongIndustryColor}
+                    heatmapProps={{
+                      groups: swipeMapGroups,
+                      selfSectorName: null,
+                      depth: 0,
+                      onSelectSector: () => {},
+                      onExcludeSector: () => {},
+                      heightClassName: 'min-h-0 flex-1',
+                      marketValueDepthRange,
+                      weightedAvgDepthRange,
+                      simpleAvgDepthRange,
+                      upDownCountDepthRange,
+                      boxSizeMarketCapRatio,
+                      stretch: mapStretchFor(taxonomy),
+                      tile: mapTileMethod(),
+                      canExclude: false,
+                      colorScale,
+                      labelMinAreaPercent: boxLabelMinAreaPercent,
+                      stockLabelMode,
+                      stockPopupOnHover: false,
+                      decimalPlaces: MOBILE_DECIMAL_PLACES,
+                      topPickSectorKeys,
+                      strongIndustryColor,
+                      captureRowMetric: swipeCaptureRowMetric,
+                      zoomOutRequestDepth: null,
+                      onZoomOutComplete: () => {},
+                    }}
+                  />
+                </div>
+              </div>
       : isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
         : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
           : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p>
@@ -895,7 +906,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         </div>
         </div>
         </div>
-        {pageSwipePreview && <div aria-hidden="true" inert className="absolute inset-0 p-1" style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
+        {pageSwipePreview && <div aria-hidden="true" inert className={`absolute inset-0 ${pageSwipePreview.targetMode === 'stock' ? '' : 'p-1'}`} style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
           <div className="flex h-full flex-col">
           {pageSwipePreview.targetMode === 'graph' && renderPathNav()}
           <div className="min-h-0 flex-1">{renderSwipePreview()}</div>
@@ -967,7 +978,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
               <MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} decimalPlaces={MOBILE_DECIMAL_PLACES} />
             </div>}
         </div>
-        {pageSwipePreview && <div aria-hidden="true" inert className="absolute inset-0 p-1" style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
+        {pageSwipePreview && <div aria-hidden="true" inert className={`absolute inset-0 ${pageSwipePreview.targetMode === 'stock' ? '' : 'p-1'}`} style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
           {renderSwipePreview()}
         </div>}
       </section>
