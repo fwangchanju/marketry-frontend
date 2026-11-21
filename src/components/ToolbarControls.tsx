@@ -5,6 +5,7 @@ import { type TradingSession } from '@/utils/tradingWindow'
 import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
+import ToolbarPopup from '@/components/ToolbarPopup'
 import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
@@ -42,11 +43,12 @@ const SESSION_GUIDE: { session: TradingSession; range: string }[] = [
 function TradingSessionChip({ session: sessionOverride }: { session?: TradingSession }) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
+  const popupRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isOpen) return
     const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false)
+      if (!rootRef.current?.contains(event.target as Node) && !popupRef.current?.contains(event.target as Node)) setIsOpen(false)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsOpen(false)
@@ -74,10 +76,12 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
         </button>
       </ToolbarChip>
       {isOpen && (
-        <div
-          role="dialog"
-          aria-label="시장 시간대 안내"
-          className="absolute left-0 top-full z-50 mt-1 w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
+        <ToolbarPopup
+          open={isOpen}
+          triggerRef={rootRef}
+          popupRef={popupRef}
+          ariaLabel="시장 시간대 안내"
+          className="w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
           {SESSION_GUIDE.map(row => (
             <div key={row.session} className={`flex items-center justify-between gap-4 px-2 py-1 ${row.session === '마켓 종료' ? 'hidden' : ''}`}>
@@ -93,7 +97,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
               )}
             </div>
           ))}
-        </div>
+        </ToolbarPopup>
       )}
     </span>
   )
@@ -112,12 +116,13 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
+  const popupRef = useRef<HTMLDivElement>(null)
   const options = CHANGE_RATE_OPTIONS.map(option => ({ ...option, locked: option.value === 'afterHours' && !selectable }))
 
   useEffect(() => {
     if (!isOpen) return
     const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false)
+      if (!rootRef.current?.contains(event.target as Node) && !popupRef.current?.contains(event.target as Node)) setIsOpen(false)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsOpen(false)
@@ -147,10 +152,13 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
       </ToolbarChip>
       {/* 눈에 보이는 칩보다 감싸는 칸이 2px 짧아서 mt-1.5로 칩 기준 4px(DROPDOWN_GAP_PX)를 맞춘다. */}
       {isOpen && (
-        <div
-          role="dialog"
-          aria-label="등락률 기준 선택"
-          className={`absolute left-0 top-full z-50 mt-1.5 w-max overflow-hidden ${DROPDOWN_PANEL_CLASS} text-sm font-normal tracking-normal`}
+        <ToolbarPopup
+          open={isOpen}
+          triggerRef={rootRef}
+          popupRef={popupRef}
+          ariaLabel="등락률 기준 선택"
+          gapPx={6}
+          className={`w-max overflow-hidden ${DROPDOWN_PANEL_CLASS} text-sm font-normal tracking-normal`}
         >
           <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col">
             {options.map(option => (
@@ -182,7 +190,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
               </button>
             ))}
           </div>
-        </div>
+        </ToolbarPopup>
       )}
     </span>
   )
