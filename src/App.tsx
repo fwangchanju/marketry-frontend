@@ -122,7 +122,7 @@ function ResponsiveMapPage() {
   return <MapPage />
 }
 
-// 모바일(폭 768px 미만)에서는 서머리·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
+// 모바일(폭 768px 이하, 769px 미만)에서는 서머리·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
 // 글 페이지(/info 아래의 가이드·개인정보처리방침·데이터·약관·문의)는 모바일 틀(MobileDocumentShell)이 있어 모바일에서도 열린다.
 function isMobileOpenPath(pathname: string) {
   return pathname === '/info' || pathname.startsWith('/info/')

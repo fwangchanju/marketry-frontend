@@ -13,6 +13,7 @@ import { normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import PhoneMapShell from '@/components/PhoneMapShell'
+import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
@@ -286,10 +287,12 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   )
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
-    // 경로 줄은 페이지 판 안에 그린다. 판은 810px 캔버스를 화면 폭으로 줄이므로 zoom으로 배율을 상쇄해 화면에서 32px·16px로 보이게 한다.
+    // 경로 줄도 그래프 글자와 같은 판 기준 값으로 그린다. 810px 판의 16px·32px가 390px 폰에서 화면 16px·32px로 보인다.
     // 셸의 스와이프 대상 밖에 두면 다음 페이지 미리보기에 이 자리가 비어 당겨지는 동안 빈 띠가 보인다.
+    // 맨 앞 막대의 가로 위치를 위 툴바 첫 배지 왼쪽 끝에 맞춘다(세로는 그대로).
+    const pathBarLeftShift = phonePathBarLeftShift(4)
     const pathNav = (
-      <header className="shrink-0 bg-ui-background px-3 py-0">
+      <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${pathBarLeftShift}px)` }}>
         <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
           <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
           {mobileGraphPath.length === 0 && !selectedLeaf
@@ -311,7 +314,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
             <section aria-label={selectedLeaf ? '종목 등락률 그래프' : '업종 등락률 그래프'} className="flex h-full flex-col bg-ui-background p-1">
-              <div style={{ zoom: SUMMARY_CAPTURE_FRAME_WIDTH / window.innerWidth }}>{pathNav}</div>
+              {!isLoading && !isError && <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>{pathNav}</div>}
               <div className="min-h-0 flex-1">
                 {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
                   : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>

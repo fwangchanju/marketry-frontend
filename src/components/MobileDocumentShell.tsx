@@ -3,7 +3,7 @@ import { useNavigationType } from 'react-router-dom'
 import DisclaimerNotice from '@/components/DisclaimerNotice'
 import MobileTopBar from '@/components/MobileTopBar'
 
-// 좁은 화면(폭 768px 미만)의 글 페이지 틀 — 설정창 없이 본문을 전체 폭으로 보여 준다.
+// 좁은 화면(폭 768px 이하, 769px 미만)의 글 페이지 틀 — 설정창 없이 본문을 전체 폭으로 보여 준다.
 // 상단은 로고 한 줄(48px)이며 스크롤해도 항상 보인다. 글 내용(heading·children)은 PC와 같은 한 벌을 그대로 쓴다.
 export default function MobileDocumentShell({ title, heading, children, titleTo, titleLabel, onTitleClick }: { title: string; heading: ReactNode; children: ReactNode; titleTo?: string; titleLabel?: string; onTitleClick?: () => void }) {
   // 글 페이지는 창 스크롤을 쓰므로, 새 페이지로 이동하면 이전 페이지의 스크롤 위치가 남아 아래쪽부터 열린다.

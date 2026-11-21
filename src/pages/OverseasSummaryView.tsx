@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
@@ -10,7 +10,7 @@ import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphB
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import { marketMenu } from '@/utils/marketMenu'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -46,11 +46,14 @@ import { overseasRoute } from '@/utils/markets'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import PhoneMapShell from '@/components/PhoneMapShell'
+import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
 import MobileTopBar from '@/components/MobileTopBar'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
 import Spinner from '@/components/Spinner'
 import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
+import MobileSectorMap from '@/components/MobileSectorMap'
+import { isMarketValueExcluded } from '@/utils/marketValueTier'
 
 // 국내 서머리와 같은 키를 쓴다 — 한 번 바꾼 좌우 순서가 세 서머리에 똑같이 적용된다.
 const SUMMARY_FRAME_ORDER_KEY = 'marketry-home-frame-order'
@@ -115,8 +118,58 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const [storedMobileBoxSizeRatio, onChangeMobileBoxSizeRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
   const boxSizeMarketCapRatio = normalizeMobileBoxSizeRatio(storedMobileBoxSizeRatio)
   useCarriedBoxSize(onChangeMobileBoxSizeRatio)
-  // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(국내 서머리와 같은 동작).
+  // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(PC 서머리의 기존 동작).
   const handleSelectSector = (sectorName: string) => navigate(`${overseasRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
+
+  // 폰에서는 한국처럼 주소를 그대로 두고 업종을 한 단계씩 연다. 단계는 기록에만 남겨 뒤로가기가 된다.
+  const location = useLocation()
+  const readPhoneSectorPath = (state: unknown): string[] => {
+    const value = state && typeof state === 'object' ? (state as { phoneSectorPath?: unknown }).phoneSectorPath : null
+    return Array.isArray(value) && value.every(name => typeof name === 'string') ? value as string[] : []
+  }
+  const [phoneSectorPath, setPhoneSectorPath] = useState<string[]>(() => readPhoneSectorPath(location.state))
+  useEffect(() => {
+    setPhoneSectorPath(readPhoneSectorPath(location.state))
+  }, [location.key, location.state])
+  const phoneSectorNode = useMemo(() => {
+    let node: (typeof tree)[number] | null = null
+    let siblings = tree
+    for (const name of phoneSectorPath) {
+      const found = siblings.find(item => item.sectorName === name)
+      if (!found) break
+      node = found
+      siblings = found.children
+    }
+    return node
+  }, [tree, phoneSectorPath])
+  const phoneShowingStocks = phoneSectorNode !== null && phoneSectorNode.children.length === 0
+  const phoneDrillItems = useMemo(() => {
+    const excludedTiers = tierRange.excludedMarketValueTiers
+    if (phoneShowingStocks && phoneSectorNode) {
+      return phoneSectorNode.items
+        .filter(stock => !isMarketValueExcluded(stock, excludedTiers))
+        .map(stock => ({ key: stock.stockCode, name: stock.stockName, marketValue: stock.totalMarketValue, changeRate: stock.changeRate }))
+        .filter(item => item.marketValue > 0)
+    }
+    const prefix = phoneSectorPath.length ? `${phoneSectorPath.join('>')}>` : ''
+    return collectAtDepth(tree, phoneSectorPath.length + 1, sectorExclusion.excludedSectorIds as Set<number>, excludedTiers, true)
+      .filter(entry => !prefix || entry.pathKey.startsWith(prefix))
+      .map(entry => {
+        const summary = summarizeSector(entry.node, excludedTiers)
+        return summary && summary.marketValue > 0 ? { key: entry.pathKey, name: entry.node.sectorName, marketValue: summary.marketValue, changeRate: summary.weightedAvg } : null
+      })
+      .filter((item): item is { key: string; name: string; marketValue: number; changeRate: number } => item !== null)
+  }, [tree, phoneSectorPath, phoneShowingStocks, phoneSectorNode, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
+  const phoneDrillMapItems = useMemo(() => {
+    const weights = calculateSectorLayoutWeights(phoneDrillItems, boxSizeMarketCapRatio)
+    return phoneDrillItems.map((item, index) => ({ ...item, layoutValue: weights[index] }))
+  }, [phoneDrillItems, boxSizeMarketCapRatio])
+  const handlePhoneSectorSelect = (name: string) => {
+    if (phoneShowingStocks) return
+    const next = [...phoneSectorPath, name]
+    setPhoneSectorPath(next)
+    navigate(location.pathname + location.search, { state: { phoneSectorPath: next } })
+  }
 
   // 업종 지도 항목과 그룹 등락률 막대 — 지도 화면과 같이 한 단계(대분류)만 쓴다.
   const overview = useMemo(() => {
@@ -132,12 +185,6 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   // 업종 지도에서 그룹 등락률로 스와이프·상단 버튼 이동할 때 따라올 미리보기.
   const graphPreviewItems: MobileGraphItem[] = overview.items.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
   const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
-  // 폰의 박스 크기 설정을 업종 칸 면적에 반영한다(국내 모바일 업종 지도와 같은 방식).
-  const phoneSectorItems = useMemo(() => {
-    const weights = calculateSectorLayoutWeights(overview.items, boxSizeMarketCapRatio)
-    return overview.items.map((item, index) => ({ ...item, layoutValue: weights[index] }))
-  }, [overview.items, boxSizeMarketCapRatio])
-
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 서머리는 특별 회원·관리자만 열 수 있다.
   // 폰 업종 지도에서 국가를 바꾸면 ?map을 유지한다(국내 모바일과 같은 방식). PC 서머리는 그대로다.
   const baseMenu = marketMenu('/summary', market, true)
@@ -236,9 +283,19 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     if (from >= 0 && to >= 0) setSummaryFrameOrder(arrayMove(safeSummaryFrameOrder, from, to))
   }
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
+  // 미리보기 판은 실제 그래프 판보다 여백이 4px 더 넓다. 같은 막대가 전환 후에도 툴바 첫 배지 왼쪽에 오도록 가로만 맞춘다.
+  const graphPreviewPathBarLeftShift = phonePathBarLeftShift(8)
   const graphPreview = (
     <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
+        {hasData && <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>
+          <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${graphPreviewPathBarLeftShift}px)` }}>
+            <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
+              <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
+              <span aria-current="location" className="shrink-0 px-2 text-ui-white">{label}</span>
+            </nav>
+          </header>
+        </div>}
         <MobileGraphBars items={graphPreviewItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
       </section>
     </div>
@@ -259,7 +316,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
             <div className="flex h-full flex-col bg-ui-background">
               {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed /></div> : hasData ? (
                 <div className="flex min-h-0 flex-1 flex-col p-1">
-                  <OverviewMap items={phoneSectorItems} colorScale={colorScale} decimalPlaces={1} hoverPopup={false} onSelect={handleSelectSector} />
+                  {phoneDrillMapItems.length ? <MobileSectorMap items={phoneDrillMapItems} colorScale={colorScale} decimalPlaces={1} zoomable onSelect={handlePhoneSectorSelect} /> : <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
                 </div>
               ) : <div className="flex flex-1 items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
             </div>
