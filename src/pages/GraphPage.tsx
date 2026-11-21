@@ -95,7 +95,7 @@ export default function GraphPage() {
     rangeStartTime,
     rangeExcludedStocks,
     pinnedSnapshotTime,
-    isLoading,
+    isLoading: isBaseLoading,
     isError,
     isHeatmapSuccess,
     isMarketValueTierRangeReady,
@@ -171,6 +171,9 @@ export default function GraphPage() {
     },
     staleTime: 60_000,
   })
+  // 기간 모드의 지수는 별도 쿼리에서 오므로, 지수까지 준비된 뒤 한 번에 그린다.
+  // 일간 모드는 displayNow와 지수가 같은 쌍 쿼리에서 와서 isPairSettled로 이미 함께 준비된다.
+  const isLoading = isBaseLoading || (isRangeView && rangeMarketIndexes.isLoading)
   // data-capture-ready(결정 4) — now가 성공했고 비어 있으면(그 시각 데이터가 아예 없음) 그대로
   // "데이터가 없습니다" 화면을 스크린샷으로 찍는다. 그 외에는 쌍 쿼리까지 끝나 있고(성공 또는 에러), placeholder가
   // 아니고, 시가총액 구간 설정이 준비된 뒤에야 스크린샷을 허용한다 — now 에러는 항상 false다.
