@@ -37,6 +37,7 @@ import { collectAtDepth, isInDepthRange } from '@/utils/sectorDepth'
 import { summarizeSector, type SectorSummary } from '@/utils/sectorAverage'
 import { indexSectorsByPath, sectorPathKey } from '@/utils/sectorPath'
 import { resolveMobileStockSelection } from '@/utils/mobileStockSelection'
+import { captureSwipeArrivalOverlay } from '@/utils/mobileSwipeArrivalOverlay'
 
 const MARKETS: { value: MarketQuery; label: string }[] = [
   { value: 'ALL_STOCK', label: '국내 증시' },
@@ -243,6 +244,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const { pathname } = location
   const navigate = useNavigate()
   const pageContentRef = useRef<HTMLElement>(null)
+  // 종목 지도로 넘어갈 때 덮개로 남길 미리보기 판.
+  const swipePreviewCanvasRef = useRef<HTMLDivElement>(null)
   const pageRootRef = useRef<HTMLElement>(null)
   const settingsSectionRef = useRef<HTMLElement>(null)
   const pullGestureRef = useRef<{ startX: number; startY: number; eligible: boolean; inOpenSettings: boolean; scrollable: HTMLElement | null } | null>(null)
@@ -691,8 +694,11 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     if (pageSwipeSettleTimerRef.current !== null) window.clearTimeout(pageSwipeSettleTimerRef.current)
     pageSwipeSettleTimerRef.current = window.setTimeout(() => {
       pageSwipeSettleTimerRef.current = null
-      if (finish) navigate(routeForMode(preview.targetMode))
-      else setPageSwipePreview(null)
+      if (finish) {
+        // 주소가 바뀌기 직전에 미리보기 판을 덮어 둔다. 새 지도가 붙을 때까지 이 판이 보이게 한다.
+        if (preview.targetMode === 'stock') captureSwipeArrivalOverlay(swipePreviewCanvasRef.current)
+        navigate(routeForMode(preview.targetMode))
+      } else setPageSwipePreview(null)
     }, duration)
   }
   const transitionToNextMode = () => {
@@ -748,6 +754,11 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       : pageSwipePreview.settling === 'cancel' ? (pageSwipePreview.direction === 'next' ? 'translateX(100%)' : 'translateX(-100%)')
         : pageSwipePreview.direction === 'next' ? `translateX(calc(100% + ${pageSwipePreview.offset}px))` : `translateX(calc(-100% + ${pageSwipePreview.offset}px))`
     : ''
+  // 국내 미리보기는 4px 여백이 있는 판 안에 있어 도착 판보다 4px(화면 약 1.9px) 오른쪽·아래로 어긋난다.
+  // 종목 지도 미리보기만 그만큼 되돌려 주소 전환 순간 지도가 튀지 않게 한다.
+  const swipePreviewFrameTransform = pageSwipePreview?.targetMode === 'stock'
+    ? `${swipePreviewTransform} translate(-4px, -4px)`
+    : swipePreviewTransform
   const currentSwipeTransform = pageSwipePreview
     ? pageSwipePreview.settling === 'finish' ? (pageSwipePreview.direction === 'next' ? 'translateX(-100%)' : 'translateX(100%)')
       : pageSwipePreview.settling === 'cancel' ? 'translateX(0)'
@@ -776,7 +787,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           : swipeMapGroups.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p>
             // 종목 지도 도착지는 MapPage의 8px 폰 판이다. 예전처럼 4px 판으로 그리면 전환이 끝날 때 지도가 한 번 커져 보인다.
             // 이 화면의 판 부모가 이미 810px 좌표를 화면 폭으로 축소하므로 여기서는 배율을 또 곱하지 않는다.
-            : <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box' }} className="relative bg-ui-background">
+            : <div ref={swipePreviewCanvasRef} style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box' }} className="relative bg-ui-background">
                 <div className="flex h-full min-h-0 flex-col bg-ui-background">
                   <MobileMapHeatmapFrame
                     path={[]}
@@ -906,7 +917,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         </div>
         </div>
         </div>
-        {pageSwipePreview && <div aria-hidden="true" inert className={`absolute inset-0 ${pageSwipePreview.targetMode === 'stock' ? '' : 'p-1'}`} style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
+        {pageSwipePreview && <div aria-hidden="true" inert className={`absolute inset-0 overflow-hidden ${pageSwipePreview.targetMode === 'stock' ? '' : 'p-1'}`} style={{ transform: swipePreviewFrameTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
           <div className="flex h-full flex-col">
           {pageSwipePreview.targetMode === 'graph' && renderPathNav()}
           <div className="min-h-0 flex-1">{renderSwipePreview()}</div>
@@ -978,7 +989,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
               <MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} decimalPlaces={MOBILE_DECIMAL_PLACES} />
             </div>}
         </div>
-        {pageSwipePreview && <div aria-hidden="true" inert className={`absolute inset-0 ${pageSwipePreview.targetMode === 'stock' ? '' : 'p-1'}`} style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
+        {pageSwipePreview && <div aria-hidden="true" inert className={`absolute inset-0 overflow-hidden ${pageSwipePreview.targetMode === 'stock' ? '' : 'p-1'}`} style={{ transform: swipePreviewFrameTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
           {renderSwipePreview()}
         </div>}
       </section>

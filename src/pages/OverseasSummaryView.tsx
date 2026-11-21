@@ -52,6 +52,7 @@ import type { MobileMapMarket } from '@/components/MobileMapSheet'
 import Spinner from '@/components/Spinner'
 import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
+import { captureSwipeArrivalOverlay } from '@/utils/mobileSwipeArrivalOverlay'
 import MobileSectorMap from '@/components/MobileSectorMap'
 import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
 import { useFilteredHeatmap } from '@/hooks/useFilteredHeatmap'
@@ -201,6 +202,8 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
 
   // 화면 캡처·전체화면 — 지도 화면과 같은 방식이다.
   const screenshotRef = useRef<HTMLDivElement>(null)
+  // 종목 지도로 넘어갈 때 덮개로 남길 미리보기 판.
+  const mapPreviewRef = useRef<HTMLDivElement>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const [isShareOpen, setIsShareOpen] = useState(false)
@@ -311,7 +314,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const { filteredRootNodes: mapPreviewNodes } = useFilteredHeatmap(tree, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, PHONE_MAP_PREVIEW_FILTERS)
   const mapPreviewGroups = useMemo(() => mapPreviewNodes.map(toDisplayGroup), [mapPreviewNodes])
   const mapPreview = (
-    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+    <div ref={mapPreviewRef} style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <div className="flex h-full min-h-0 flex-col bg-ui-background">
         {mapPreviewGroups.length === 0 ? (
           <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">표시할 종목이 없습니다.</div>
@@ -357,6 +360,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     return (
       <PhoneMapShell
         onSwipe={direction => navigate(direction === 'next' ? graphPath : mapPath)}
+        onBeforeSwipeNavigate={direction => { if (direction === 'previous') captureSwipeArrivalOverlay(mapPreviewRef.current) }}
         toolbar={summaryToolbarNode}
         topBar={<MobileTopBar title="업종 지도" titleTo={graphPath} titleLabel="그룹 등락률로 이동" />}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
