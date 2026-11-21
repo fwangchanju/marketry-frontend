@@ -12,7 +12,7 @@ const TOOLBAR_REFERENCE_WIDTH = 438
 // 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.
 const TOOLBAR_FIXED_SCALE = 0.863
 
-export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, nextPreview }: {
+export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, nextPreview, previousPreview }: {
   topBar?: ReactNode
   onSwipe?: (direction: 'next' | 'previous') => void
   frameHeight: number
@@ -21,8 +21,10 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   current: MobileMapMarket
   boxSize: number
   onChangeBoxSize: (value: number) => void
-  // 왼쪽으로 밀 때 따라오는 다음 화면 미리보기. 넘기지 않으면 예전처럼 현재 판만 움직인다.
+  // 왼쪽으로 밀 때 오른쪽에서 따라오는 다음 화면 미리보기, 오른쪽으로 밀 때 왼쪽에서 따라오는 이전 화면 미리보기.
+  // 넘기지 않으면 그 방향은 현재 판만 움직인다.
   nextPreview?: ReactNode
+  previousPreview?: ReactNode
 }) {
   const [scale, setScale] = useState(TOOLBAR_FIXED_SCALE)
 
@@ -72,6 +74,14 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
                 className="pointer-events-none absolute left-full top-0 h-full w-full bg-ui-background"
               >
                 {nextPreview}
+              </div>
+            )}
+            {previousPreview && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute right-full top-0 h-full w-full bg-ui-background"
+              >
+                {previousPreview}
               </div>
             )}
           </div>

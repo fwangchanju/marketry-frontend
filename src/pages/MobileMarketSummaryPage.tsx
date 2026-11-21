@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { MOBILE_PAGE_SWIPE_SETTLE_MS } from '@/hooks/useMobilePageSwipe'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ReturnArrowIcon } from '@/components/icons/AppIcons'
@@ -48,7 +49,6 @@ const MARKETS: { value: MarketQuery; label: string }[] = [
 const STOCK_MAP_COUNT = 30
 const MOBILE_SETTINGS_BAR_HEIGHT = 24
 const MOBILE_PAGE_SWIPE_EDGE_GUARD = 24
-const MOBILE_PAGE_SWIPE_SETTLE_MS = 500
 const MOBILE_DECIMAL_PLACES = 1
 
 type MobileSectorItem = MobileSectorMapItem & {
