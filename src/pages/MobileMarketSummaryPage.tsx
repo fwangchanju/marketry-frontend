@@ -238,7 +238,9 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const isGraph = mode === 'graph'
   const isStockMode = mode === 'stock'
   const isSectorMode = mode === 'sector'
-  const { data: marketSummary, isLoading: isMarketSummaryLoading, refetch: refetchMarketSummary } = useMarketSummary(isGraph)
+  // 지도 화면에서도 지수를 미리 받아 둔다. 지도에서 그룹 등락률로 스와이프할 때 지수가 도착 뒤에야 조회되면
+  // 미리보기와 전환 순간에 지수만 비어 보인다(2026-11-22 사용자 제보).
+  const { data: marketSummary, isLoading: isMarketSummaryLoading, refetch: refetchMarketSummary } = useMarketSummary()
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
   const { pathname } = location
@@ -777,8 +779,11 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const swipeCaptureRowMetric = isInDepthRange(simpleAvgDepthRange, 0) && !isInDepthRange(weightedAvgDepthRange, 0)
     ? 'simpleAvgChangeRate'
     : 'weightedAvgChangeRate'
+  // 그룹 등락률 미리보기는 지수까지 준비된 뒤에 그린다. 지도에서는 지수 조회가 화면 로딩에 포함되지 않으므로
+  // 미리보기에서 따로 기다리지 않으면 막대만 먼저 뜨고 지수가 뒤따라온다.
+  const isGraphPreviewLoading = isLoading || (showLiveIndexes && isMarketSummaryLoading)
   const renderSwipePreview = () => pageSwipePreview?.targetMode === 'graph'
-    ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
+    ? isGraphPreviewLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
       : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
         : <MobileGraphBars items={swipeGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
     : pageSwipePreview?.targetMode === 'stock'
