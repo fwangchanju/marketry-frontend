@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type 
 
 // 브라우저 가장자리 뒤로가기 제스처와 겹치지 않게, 좌우 이 폭 안에서 시작한 슬라이드는 무시한다(지도 화면과 같은 값).
 const EDGE_GUARD = 24
-const SETTLE_MS = 500
+// 한국 업종·그룹 화면의 전환과 같은 값 — 한 곳에서 관리해 시장·화면마다 속도가 어긋나지 않게 한다.
+export const MOBILE_PAGE_SWIPE_SETTLE_MS = 500
 
 // 모바일 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
 export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void) {
@@ -11,10 +12,14 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   const timerRef = useRef<number | null>(null)
   const [offset, setOffset] = useState(0)
   const [settling, setSettling] = useState(false)
+  // 애니메이션을 줄이기 설정에서는 타이머와 CSS 전환이 함께 0이 돼야 한다. 타이머만 0이면 페이지가 바뀐 뒤 판이 계속 움직인다.
+  const [reducedMotion, setReducedMotion] = useState(false)
   useEffect(() => () => { if (timerRef.current !== null) window.clearTimeout(timerRef.current) }, [])
   const isHorizontal = (dx: number, dy: number) => Math.abs(dx) >= Math.abs(dy) * 1.1
   const settle = (target: number, then?: () => void) => {
-    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : SETTLE_MS
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    setReducedMotion(reduced)
+    const duration = reduced ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS
     setSettling(true)
     setOffset(target)
     timerRef.current = window.setTimeout(() => {
@@ -68,7 +73,7 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   const style: CSSProperties = {
     touchAction: 'pan-y',
     transform: offset === 0 ? undefined : `translateX(${offset}px)`,
-    transition: settling ? `transform ${SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
+    transition: settling ? `transform ${reducedMotion ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }
   return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset, next }
 }

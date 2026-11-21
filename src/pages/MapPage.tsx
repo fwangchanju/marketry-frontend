@@ -10,6 +10,8 @@ import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
+import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
+import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -442,6 +444,23 @@ export default function MapPage() {
       </div>
     </div>
   )
+  // 종목 지도에서 그룹 등락률 쪽(오른쪽 스와이프)으로 갈 때 왼쪽에서 따라올 미리보기. 도착 화면과 같은 막대·경로 줄을 그린다.
+  const graphPreviewItems: MobileGraphItem[] = sectorPreviewItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
+  const graphPreview = (
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+      <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
+        <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>
+          <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${phonePathBarLeftShift(8)}px)` }}>
+            <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
+              <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
+              <span aria-current="location" className="shrink-0 px-2 text-ui-white">{market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK'}</span>
+            </nav>
+          </header>
+        </div>
+        <MobileGraphBars items={graphPreviewItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
+      </section>
+    </div>
+  )
 
   if (isPhoneMapFrame) {
     return (
@@ -452,6 +471,7 @@ export default function MapPage() {
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
         frame={mobileFrameNode || phoneEmptyFrame}
         nextPreview={sectorPreview}
+        previousPreview={graphPreview}
         current="korea"
         boxSize={mobileBoxSizeRatio}
         onChangeBoxSize={onChangeMobileBoxSizeRatio}

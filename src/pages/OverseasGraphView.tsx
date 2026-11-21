@@ -1,5 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
+import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
+import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { collectAllItems, useFilteredHeatmap, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import type { HeatmapSectorNode } from '@/types/api'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
@@ -9,7 +11,6 @@ import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
 import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
-import { normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import PhoneMapShell from '@/components/PhoneMapShell'
@@ -285,6 +286,26 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
       </div>
     </div>
   )
+  // 그룹 등락률에서 업종 지도 쪽(오른쪽 스와이프)으로 갈 때 왼쪽에서 따라올 미리보기. 서머리 화면의 업종 지도와 같은 박스 비율을 쓴다.
+  const summaryPreviewItems = useMemo(() => {
+    const source: Omit<MobileSectorMapItem, 'layoutValue'>[] = collectAtDepth(exclusionTree, 1, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, true, '')
+      .map(entry => {
+        const summary = summarizeSector(entry.node, tierRange.excludedMarketValueTiers)
+        return summary && summary.marketValue > 0
+          ? { key: entry.pathKey, name: entry.node.sectorName, marketValue: summary.marketValue, changeRate: summary.weightedAvg }
+          : null
+      })
+      .filter((item): item is Omit<MobileSectorMapItem, 'layoutValue'> => item !== null)
+    const weights = calculateSectorLayoutWeights(source, boxSizeMarketCapRatio)
+    return source.map((item, index) => ({ ...item, layoutValue: weights[index] }))
+  }, [exclusionTree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers, boxSizeMarketCapRatio])
+  const summaryPreview = (
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+      <div className="flex h-full min-h-0 flex-col bg-ui-background">
+        <MobileSectorMap items={summaryPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={1} />
+      </div>
+    </div>
+  )
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
     // 경로 줄도 그래프 글자와 같은 판 기준 값으로 그린다. 810px 판의 16px·32px가 390px 폰에서 화면 16px·32px로 보인다.
@@ -311,6 +332,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         topBar={<MobileTopBar title="그룹 등락률" titleTo={mapPath} titleLabel="종목 지도로 이동" />}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
         nextPreview={mapPreview}
+        previousPreview={summaryPreview}
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
             <section aria-label={selectedLeaf ? '종목 등락률 그래프' : '업종 등락률 그래프'} className="flex h-full flex-col bg-ui-background p-1">

@@ -53,11 +53,18 @@ import Spinner from '@/components/Spinner'
 import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import MobileSectorMap from '@/components/MobileSectorMap'
+import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
+import { useFilteredHeatmap } from '@/hooks/useFilteredHeatmap'
+import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
+import { mapTileMethod } from '@/utils/mapStretch'
 import { isMarketValueExcluded } from '@/utils/marketValueTier'
 
 // 국내 서머리와 같은 키를 쓴다 — 한 번 바꾼 좌우 순서가 세 서머리에 똑같이 적용된다.
 const SUMMARY_FRAME_ORDER_KEY = 'marketry-home-frame-order'
 const DEFAULT_SUMMARY_FRAME_ORDER = ['업종 지도', '그룹 등락률 (%)']
+// 종목 지도로 스와이프할 때 따라올 미리보기도 그래프 화면의 종목 지도 미리보기와 같은 필터·강조 목록을 쓴다.
+const PHONE_MAP_PREVIEW_FILTERS = { stockChangeFilter: 'all' as const, sectorChangeFilter: 'all' as const, sectorChangeDepth: 0, sectorUseSimpleAverage: false }
+const PHONE_MAP_PREVIEW_NO_TOP_PICKS = new Set<string>()
 
 // 서머리의 틀 — 제목 배지를 끌어서 순서를 바꾼다(국내 서머리의 SortableHomeFrame과 같은 모양).
 function SortableSummaryFrame({ title, captureId, index, children, captureUntil }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string }) {
@@ -300,6 +307,49 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
       </section>
     </div>
   )
+  // 업종 지도에서 종목 지도 쪽(오른쪽 스와이프)으로 갈 때 왼쪽에서 따라올 미리보기. 그룹 등락률 화면의 미리보기와 같은 판을 쓴다.
+  const { filteredRootNodes: mapPreviewNodes } = useFilteredHeatmap(tree, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, PHONE_MAP_PREVIEW_FILTERS)
+  const mapPreviewGroups = useMemo(() => mapPreviewNodes.map(toDisplayGroup), [mapPreviewNodes])
+  const mapPreview = (
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+      <div className="flex h-full min-h-0 flex-col bg-ui-background">
+        {mapPreviewGroups.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">표시할 종목이 없습니다.</div>
+        ) : (
+          <MobileMapHeatmapFrame
+            path={[]}
+            marketLabel={label}
+            strongIndustryColor={strongIndustryColor}
+            heatmapProps={{
+              groups: mapPreviewGroups,
+              selfSectorName: null,
+              depth: 0,
+              onSelectSector: () => {},
+              onExcludeSector: () => {},
+              heightClassName: 'min-h-0 flex-1',
+              marketValueDepthRange: null,
+              weightedAvgDepthRange: null,
+              simpleAvgDepthRange: null,
+              upDownCountDepthRange: null,
+              boxSizeMarketCapRatio,
+              tile: mapTileMethod(),
+              canExclude: false,
+              colorScale,
+              labelMinAreaPercent: 2,
+              stockLabelMode: 'both',
+              stockPopupOnHover: false,
+              decimalPlaces: 1,
+              topPickSectorKeys: PHONE_MAP_PREVIEW_NO_TOP_PICKS,
+              strongIndustryColor,
+              zoomOutRequestDepth: null,
+              onZoomOutComplete: () => {},
+              currencyUnit,
+            }}
+          />
+        )}
+      </div>
+    </div>
+  )
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
     const mapPath = overseasRoute('/map', market)
@@ -311,6 +361,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
         topBar={<MobileTopBar title="업종 지도" titleTo={graphPath} titleLabel="그룹 등락률로 이동" />}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
         nextPreview={graphPreview}
+        previousPreview={mapPreview}
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
             <div className="flex h-full flex-col bg-ui-background">
