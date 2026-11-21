@@ -7,6 +7,7 @@ import PhoneMapShell from '@/components/PhoneMapShell'
 import MapToolbar from '@/components/MapToolbar'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
+import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
 import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { navigateWithMobileSlide } from '@/utils/mobilePageTransition'
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
@@ -25,6 +26,9 @@ import { changeDirectionOf } from '@/utils/changeDirection'
 import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { calculateSectorLayoutWeights, MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
+import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
+import { limitDepth } from '@/hooks/useFilteredHeatmap'
+import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { useFontsVersion } from '@/utils/stockLabelFit'
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
@@ -259,6 +263,14 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     excludedMarketValueTiers,
     colorScale,
     strongIndustryColor,
+    marketValueDepthRange,
+    weightedAvgDepthRange,
+    simpleAvgDepthRange,
+    upDownCountDepthRange,
+    topPickSectorKeys,
+    boxLabelMinAreaPercent,
+    stockLabelMode,
+    maxDepth,
     changeRateMode,
     changeRateChoice,
     pinnedSnapshotTime,
@@ -727,6 +739,12 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const swipeTransition = pageSwipePreview?.settling
     ? `transform ${window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180}ms cubic-bezier(0.2, 0.7, 0.2, 1)`
     : 'none'
+  // 스와이프 미리보기의 종목 지도는 목적지(/map)와 같은 루트 트리를 그린다. 예전 상위 30종목 전용 지도와 달리
+  // 업종별 박스와 전체 종목이 보이도록, MapPage가 최상위에서 쓰는 것과 같은 filteredRootNodes·뎁스 제한을 쓴다.
+  const swipeMapGroups = useMemo(
+    () => (maxDepth != null && maxDepth > 0 ? limitDepth(filteredRootNodes, maxDepth) : filteredRootNodes).map(toDisplayGroup),
+    [filteredRootNodes, maxDepth],
+  )
   const renderSwipePreview = () => pageSwipePreview?.targetMode === 'graph'
     ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
       : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
@@ -734,8 +752,37 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     : pageSwipePreview?.targetMode === 'stock'
       ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
         : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
-          : stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p>
-            : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={() => undefined} onLongPress={() => undefined} />
+          : swipeMapGroups.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p>
+            : <MobileMapHeatmapFrame
+                path={[]}
+                marketLabel={market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK'}
+                strongIndustryColor={strongIndustryColor}
+                heatmapProps={{
+                  groups: swipeMapGroups,
+                  selfSectorName: null,
+                  depth: 0,
+                  onSelectSector: () => {},
+                  onExcludeSector: () => {},
+                  heightClassName: 'min-h-0 flex-1',
+                  marketValueDepthRange,
+                  weightedAvgDepthRange,
+                  simpleAvgDepthRange,
+                  upDownCountDepthRange,
+                  boxSizeMarketCapRatio,
+                  stretch: mapStretchFor(taxonomy),
+                  tile: mapTileMethod(),
+                  canExclude: false,
+                  colorScale,
+                  labelMinAreaPercent: boxLabelMinAreaPercent,
+                  stockLabelMode,
+                  stockPopupOnHover: false,
+                  decimalPlaces: MOBILE_DECIMAL_PLACES,
+                  topPickSectorKeys,
+                  strongIndustryColor,
+                  zoomOutRequestDepth: null,
+                  onZoomOutComplete: () => {},
+                }}
+              />
       : isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
         : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
           : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p>

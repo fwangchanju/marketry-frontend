@@ -27,6 +27,8 @@ import SettingsPanel, {
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import Heatmap from '@/components/Heatmap'
+import MobileMapHeatmapFrame, { BreadcrumbBackIcon } from '@/components/MobileMapHeatmapFrame'
+import { BREADCRUMB_LINK_CLASS, toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { isInDepthRange } from '@/utils/sectorDepth'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
@@ -47,11 +49,10 @@ import { toCount } from '@/utils/format'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
-import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useMapDrilldownHistory, useMapSectorEntry } from '@/hooks/useMapDrilldownHistory'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
-import { limitDepth, flattenAllItems, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
+import { limitDepth, flattenAllItems } from '@/hooks/useFilteredHeatmap'
 import type { MarketQuery, HeatmapSectorNode, HeatmapItem } from '@/types/api'
 declare global {
   interface Window {
@@ -62,11 +63,6 @@ const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOS
 // 종목·업종 헤더와 같은 방식 — 올리면 흰색 35% 덮개가 씌워진다(index.css의 hover와 같은 불투명도).
 // 이동 경로의 이름이 몇 번째 업종 단계인지(0부터) — 마우스가 이미 그 이름 위에 있어서 툴팁에는 이름 대신 단계 이름만 쓴다. 업종은 최대 4단계(대분류·중분류·소분류·세분류)다.
 const SECTOR_LEVEL_LABEL = ['대분류', '중분류', '소분류', '세분류']
-const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
-// 이름 오른쪽의 되돌아가기 표시 — 이름과 한 버튼이라서 올리면 함께 하이라이트된다.
-function BreadcrumbBackIcon() {
-  return <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-}
 const MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [
   'stockDisplay', 'composition', 'industry', 'colors',
 ]
@@ -88,17 +84,6 @@ function toFlatDisplayGroup(items: HeatmapItem[]): DisplayGroup {
   }
 }
 const NO_STOCK_MOVES: StockMoves = {}
-function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
-  return {
-    sectorId: node.sectorId,
-    sectorName: node.sectorName,
-    totalMarketValue: node.totalMarketValue,
-    weightedAvgChangeRate: node.weightedAvgChangeRate,
-    simpleAvgChangeRate: node.simpleAvgChangeRate,
-    items: node.items,
-    children: node.children.map(toDisplayGroup),
-  }
-}
 // 등락률 평균/상승·하락·보합 종목수는 개별 종목(changeRate) 기준이라, 지금 화면에 보이는
 // 그룹들의 종목을 전부(하위 섹터 포함) 펼쳐서 모아야 한다.
 function collectItems(groups: DisplayGroup[]): HeatmapItem[] {
@@ -395,43 +380,37 @@ export default function MapPage() {
               className="flex flex-col bg-ui-background"
             >
               {isPhoneMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
-              <div aria-hidden="true" className="h-2 shrink-0" />
-              {path.length > 0 && (
-                <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
-                  <span className={BREADCRUMB_LINK_CLASS}>{MARKET_LABEL[market]}<BreadcrumbBackIcon /></span>
-                  {path.map((name, index) => (
-                    <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 && strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <BreadcrumbBackIcon />}</span>
-                  ))}
-                </nav>
-              )}
-              <div className="flex min-h-0 flex-1 flex-col">
-                <Heatmap
-                  groups={groups}
-                  selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
-                  depth={path.length}
-                  onSelectSector={() => {}}
-                  onExcludeSector={() => {}}
-                  heightClassName="min-h-0 flex-1"
-                  marketValueDepthRange={marketValueDepthRange}
-                  weightedAvgDepthRange={weightedAvgDepthRange}
-                  simpleAvgDepthRange={simpleAvgDepthRange}
-                  upDownCountDepthRange={upDownCountDepthRange}
-                  boxSizeMarketCapRatio={boxSizeMarketCapRatio}
-                  stretch={mapStretchFor(settingsModalProps.taxonomy)}
-                  tile={mapTileMethod()}
-                  canExclude={false}
-                  colorScale={colorScale}
-                  labelMinAreaPercent={boxLabelMinAreaPercent}
-                  stockLabelMode={stockLabelMode}
-                  stockPopupOnHover={false}
-                  decimalPlaces={decimalPlaces}
-                  topPickSectorKeys={topPickSectorKeys}
-                  strongIndustryColor={strongIndustryColor}
-                  zoomOutRequestDepth={null}
-                  onZoomOutComplete={() => {}}
-                  captureRowMetric={captureRowMetric}
-                />
-              </div>
+              <MobileMapHeatmapFrame
+                path={path}
+                marketLabel={MARKET_LABEL[market]}
+                strongIndustryColor={strongIndustryColor}
+                heatmapProps={{
+                  groups,
+                  selfSectorName: isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null),
+                  depth: path.length,
+                  onSelectSector: () => {},
+                  onExcludeSector: () => {},
+                  heightClassName: 'min-h-0 flex-1',
+                  marketValueDepthRange,
+                  weightedAvgDepthRange,
+                  simpleAvgDepthRange,
+                  upDownCountDepthRange,
+                  boxSizeMarketCapRatio,
+                  stretch: mapStretchFor(settingsModalProps.taxonomy),
+                  tile: mapTileMethod(),
+                  canExclude: false,
+                  colorScale,
+                  labelMinAreaPercent: boxLabelMinAreaPercent,
+                  stockLabelMode,
+                  stockPopupOnHover: false,
+                  decimalPlaces,
+                  topPickSectorKeys,
+                  strongIndustryColor,
+                  zoomOutRequestDepth: null,
+                  onZoomOutComplete: () => {},
+                  captureRowMetric,
+                }}
+              />
             </div>
             </div>
           );
