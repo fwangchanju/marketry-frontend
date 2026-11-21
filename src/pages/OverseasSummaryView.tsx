@@ -191,9 +191,11 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
         </>
       )}
     </div>
-    <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>
-      <TaxonomyBadge taxonomy={sheet} strongIndustryColor={strongIndustryColor} />
-    </div>
+    {!isPhoneMapFrame && (
+      <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>
+        <TaxonomyBadge taxonomy={sheet} strongIndustryColor={strongIndustryColor} />
+      </div>
+    )}
     </>
   )
   // PC 화면과 폰 화면이 같은 툴바 원본을 쓴다(폰에서는 툴바 줄을 판 밖에 둔다).

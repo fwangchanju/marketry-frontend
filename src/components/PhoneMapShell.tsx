@@ -7,7 +7,8 @@ import { useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
 // 종목·업종·그래프 화면이 같은 틀을 쓴다. 툴바는 판 밖에 두고, 화면 폭에 맞춰 판 가로폭까지 키운다.
 const TOOLBAR_BASE_HEIGHT = 28
 const TOOLBAR_SIDE_GUTTER = 6
-const TOOLBAR_MAX_SCALE = 2
+// 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.
+const TOOLBAR_FIXED_SCALE = 0.863
 
 export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe }: {
   topBar?: ReactNode
@@ -22,7 +23,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   const rowRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0.94)
+  const [scale, setScale] = useState(TOOLBAR_FIXED_SCALE)
 
   const swipe = useMobilePageSwipe(
     Boolean(onSwipe),
@@ -30,7 +31,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
     () => onSwipe?.('previous')
   )
 
-  // 툴바 원래 폭을 재서, 화면 폭(양쪽 여백 제외)에 맞는 배율로 키운다.
+  // 배율은 고정하고, 툴바가 판 폭을 넘지 않을 때만 줄인다. 시장별 자연 폭 차이로 배지 크기가 달라지지 않는다.
   useLayoutEffect(() => {
     const fit = () => {
       const map = mapRef.current
@@ -39,7 +40,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
       const natural = content.offsetWidth
       if (natural <= 0) return
       const available = map.clientWidth - TOOLBAR_SIDE_GUTTER * 2
-      setScale(Math.min(TOOLBAR_MAX_SCALE, available / natural))
+      setScale(Math.min(TOOLBAR_FIXED_SCALE, available / natural))
     }
     fit()
     const observer = new ResizeObserver(fit)

@@ -132,7 +132,9 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
           </>
         )}
       </div>
-      <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
+      {!isPhoneMapFrame && (
+        <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
+      )}
     </Toolbar>
   )
   if (isPhoneMapFrame) {
