@@ -94,17 +94,20 @@ export interface OverviewLabelOptions {
   splitInsideWord?: boolean
   // PC 서머리 업종 지도처럼 박스가 큰 화면은 글자를 더 키운다(최대 34px).
   large?: boolean
+  // 박스 가로 여백. 폰 업종 지도처럼 작은 박스가 많으면 기본값(8)보다 키워 글자가 양끝에 붙지 않게 한다.
+  paddingX?: number
 }
 
 export function layoutOverviewLabel(name: string, rateText: string, width: number, height: number, fontsVersion: number, options: OverviewLabelOptions = {}): OverviewLabel {
-  const innerWidth = width - PADDING_X
+  const paddingX = options.paddingX ?? PADDING_X
+  const innerWidth = width - paddingX
   const innerHeight = height - PADDING_Y
   const bySize = sizeByBox(width, height, options.large)
   const nameWidth = (text: string, size: number) => width100(text, 500, fontsVersion) * size / 100
   // 등락률: 이름 크기의 90%(최소 12px)를 쓰되 폭에 안 들어가면 12px까지 줄이고, 그래도 안 되면 뺀다.
   const rateSizeFor = (nameSize: number): number | null => {
     const wanted = Math.max(MIN_NAME_SIZE, Math.round(nameSize * RATE_SCALE))
-    const fitting = (width - PADDING_X) * 100 / width100(rateText, 400, fontsVersion)
+    const fitting = (width - paddingX) * 100 / width100(rateText, 400, fontsVersion)
     const size = Math.min(wanted, Math.floor(fitting))
     return size >= MIN_NAME_SIZE ? size : null
   }

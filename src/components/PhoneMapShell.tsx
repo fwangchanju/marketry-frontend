@@ -18,7 +18,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, pat
   frameHeight: number
   frame: ReactNode
   toolbar?: ReactNode
-  // 툴바 줄 아래에 붙는 업종 이동 경로. 넘기지 않으면 경로 줄 자리를 비운다.
+  // 툴바 줄 아래 경로 줄. 넘기지 않으면 자리를 비운다.
   pathNav?: ReactNode
   current: MobileMapMarket
   boxSize: number

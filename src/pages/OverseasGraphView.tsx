@@ -1,6 +1,7 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
-import { useFilteredHeatmap, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
+import { collectAllItems, useFilteredHeatmap, type FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
+import type { HeatmapSectorNode } from '@/types/api'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
@@ -15,7 +16,7 @@ import PhoneMapShell from '@/components/PhoneMapShell'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
@@ -36,7 +37,7 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import { ClockIcon } from '@/components/icons/AppIcons'
+import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
@@ -106,27 +107,112 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     }
   }
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
-  // 폰의 그룹 등락률은 PC 그래프의 대각선 막대가 아니라 서머리의 업종 집계를 쓴다(국내 모바일 그래프와 같은 방식).
+  // 폰의 그룹 등락률도 국내 모바일처럼 같은 화면에서 대분류 → 중분류 → 소분류로 들어간다.
+  const [mobileGraphPath, setMobileGraphPath] = useState<string[]>([])
+  // 잎 업종을 누르면 국내처럼 같은 화면에서 종목 등락률 그래프로 바뀐다(해외는 종목 지도 페이지로 나가지 않는다).
+  const [selectedLeaf, setSelectedLeaf] = useState<HeatmapSectorNode | null>(null)
+  // 하위 진입은 국내 모바일처럼 브라우저 기록 한 칸으로 쌓는다. 뒤로가기에서 같은 화면의 이전 단계로 돌아온다.
+  const graphDepth = mobileGraphPath.length + (selectedLeaf ? 1 : 0)
+  const reduceToDepth = (target: number) => {
+    if (target <= mobileGraphPath.length) setMobileGraphPath(previous => previous.slice(0, target))
+    setSelectedLeaf(null)
+  }
+  const historyDepthRef = useRef(0)
+  const historyConsumingRef = useRef(false)
+  const historyLocationRef = useRef('')
+  const historyNormalizedRef = useRef(false)
+  useEffect(() => {
+    // 다른 페이지에 갔다가 뒤로가기로 돌아오면 쌓인 칸만 남고 경로는 처음 상태라, 칸을 걷어 낸다.
+    if (historyNormalizedRef.current) return
+    historyNormalizedRef.current = true
+    const stacked = window.history.state?.mobileGraphDepth
+    if (typeof stacked === 'number' && stacked > 0) {
+      historyConsumingRef.current = true
+      window.history.go(-stacked)
+    }
+  }, [])
+  useEffect(() => {
+    if (graphDepth > historyDepthRef.current) {
+      for (let k = historyDepthRef.current + 1; k <= graphDepth; k++) {
+        window.history.pushState({ ...(window.history.state ?? {}), mobileGraphDepth: k }, '')
+      }
+      historyDepthRef.current = graphDepth
+      historyLocationRef.current = window.location.pathname + window.location.search
+    } else if (graphDepth < historyDepthRef.current) {
+      const stale = historyDepthRef.current - graphDepth
+      historyDepthRef.current = graphDepth
+      if (window.location.pathname + window.location.search === historyLocationRef.current) {
+        historyConsumingRef.current = true
+        window.history.go(-stale)
+      }
+    }
+  }, [graphDepth])
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (historyConsumingRef.current) {
+        historyConsumingRef.current = false
+        return
+      }
+      // 다른 페이지로 나가는 뒤로가기는 그대로 둔다.
+      if (!window.location.pathname.startsWith('/graph/')) return
+      const target: number = typeof event.state?.mobileGraphDepth === 'number' ? event.state.mobileGraphDepth : 0
+      if (target < graphDepth) {
+        // 깊이를 먼저 반영해야 경로 되돌림이 다시 history.go()를 일으키지 않는다(국내 모바일과 같다).
+        historyDepthRef.current = target
+        reduceToDepth(target)
+      } else if (target > graphDepth) {
+        // 앞으로가기로 들어갔던 단계는 복원할 수 없어, 지금 화면에 맞는 칸으로 되돌린다.
+        historyConsumingRef.current = true
+        window.history.go(-(target - graphDepth))
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reduceToDepth는 매 렌더 새 함수이고 graphDepth로 충분히 갱신된다
+  }, [graphDepth])
+  const mobileGraphNodes = useMemo(() => {
+    let nodes = exclusionTree
+    for (const name of mobileGraphPath) {
+      const found = nodes.find(node => node.sectorName === name)
+      if (!found?.children.length) break
+      nodes = found.children
+    }
+    return nodes
+  }, [exclusionTree, mobileGraphPath])
   // exclusionTree는 필터 적용 전 원본 트리라 서머리 화면이 쓰는 tree와 같고, 필터는 graph source의 공 저장값을 그대로 쓴다.
   const mobileGraphItems = useMemo<MobileGraphItem[]>(() => {
     const items: MobileGraphItem[] = []
-    for (const { node, pathKey } of collectAtDepth(exclusionTree, 1, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, true, '')) {
+    for (const { node, pathKey } of collectAtDepth(mobileGraphNodes, 1, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, true, '')) {
       const summary = summarizeSector(node, tierRange.excludedMarketValueTiers)
       if (!summary) continue
       items.push({
         key: pathKey,
         name: node.sectorName,
         value: summary.weightedAvg,
-        onSelect: () => navigate(`${mapPath}?sector=${encodeURIComponent(node.sectorName)}`),
+        onSelect: () => {
+          if (node.children.length && mobileGraphPath.length < 2) { setMobileGraphPath([...mobileGraphPath, node.sectorName]); setSelectedLeaf(null) }
+          else setSelectedLeaf(node)
+        },
       })
     }
-    // 기준 지수는 서머리 집계에 없으므로 그래프 소스의 참조 막대에서 가져온다(국내의 코스피·코스닥과 같은 역할).
-    for (const item of chart.rankedItems) {
-      if (!item.isReference || item.hiddenCount !== undefined) continue
-      items.push({ key: item.key, name: item.sectorName, value: item.value, reference: true })
+    // 기준 지수는 대분류에서만 보여 준다(국내의 코스피·코스닥과 같은 역할). 하위 단계에는 섹터 값만 남긴다.
+    if (mobileGraphPath.length === 0) {
+      for (const item of chart.rankedItems) {
+        if (!item.isReference || item.hiddenCount !== undefined) continue
+        items.push({ key: item.key, name: item.sectorName, value: item.value, reference: true })
+      }
     }
     return items
-  }, [exclusionTree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers, chart.rankedItems, mapPath, navigate])
+  }, [mobileGraphNodes, mobileGraphPath, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers, chart.rankedItems])
+  // 잎 업종에 들어가면 그 업종의 종목을 국내의 종목 등락률 그래프와 같은 방식으로 보여 준다.
+  const leafGraphItems = useMemo<MobileGraphItem[]>(() => {
+    if (!selectedLeaf) return []
+    // collectAllItems는 items·children만 쓰므로 필터 타입으로 좁혀도 안전하다.
+    return [...collectAllItems(selectedLeaf as FilteredHeatmapSectorNode)]
+      .sort((a, b) => b.totalMarketValue - a.totalMarketValue)
+      .map(stock => ({ key: stock.stockCode, name: stock.alias ?? stock.stockName, value: stock.changeRate }))
+  }, [selectedLeaf])
+  const shownGraphItems = selectedLeaf ? leafGraphItems : mobileGraphItems
   // 그룹 등락률에서 종목 지도로 스와이프·상단 버튼 이동할 때 따라올 미리보기. 종목 지도와 같은 트리·필터로 그린다.
   const { filteredRootNodes: mapPreviewNodes } = useFilteredHeatmap(exclusionTree, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, PREVIEW_FILTERS)
   const mapPreviewGroups = useMemo(() => mapPreviewNodes.map(toDisplayGroup), [mapPreviewNodes])
@@ -205,15 +291,28 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         onSwipe={direction => navigate(direction === 'next' ? mapPath : summaryPath)}
         toolbar={graphToolbarNode}
         topBar={<MobileTopBar title="그룹 등락률" titleTo={mapPath} titleLabel="종목 지도로 이동" />}
-        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+        pathNav={
+          <header className="shrink-0 bg-ui-background px-3 py-0">
+            <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
+              {(mobileGraphPath.length > 0 || selectedLeaf) && <>
+                <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
+                <button type="button" onClick={() => reduceToDepth(0)} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
+                {(selectedLeaf ? [...mobileGraphPath, selectedLeaf.sectorName] : mobileGraphPath).map((name, index, names) => index === names.length - 1
+                  ? <span key={name} aria-current="location" className="shrink-0 px-2 text-ui-white">{name}</span>
+                  : <button key={name} type="button" onClick={() => reduceToDepth(index + 1)} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{name}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>)}
+              </>}
+            </nav>
+          </header>
+        }
+        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale - 32}
         nextPreview={mapPreview}
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
-            <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
+            <section aria-label={selectedLeaf ? '종목 등락률 그래프' : '업종 등락률 그래프'} className="flex h-full flex-col bg-ui-background p-1">
               {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed /></div>
                 : isError ? <div className="flex flex-1 items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
-                  : mobileGraphItems.length === 0 ? <div className="flex flex-1 items-center justify-center"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
-                    : <MobileGraphBars items={mobileGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />}
+                  : shownGraphItems.length === 0 ? <div className="flex flex-1 items-center justify-center"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
+                    : <MobileGraphBars items={shownGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />}
             </section>
           </div>
         }

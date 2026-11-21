@@ -27,11 +27,6 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     if (settling || event.clientX <= EDGE_GUARD || event.clientX >= window.innerWidth - EDGE_GUARD) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
     startRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
-    try {
-      event.currentTarget.setPointerCapture(event.pointerId)
-    } catch {
-      // 포인터 캡처를 지원하지 않거나 이미 캡처된 환경은 무시한다.
-    }
   }
   const onPointerMoveCapture = (event: PointerEvent<HTMLElement>) => {
     const start = startRef.current
@@ -42,13 +37,6 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   const onPointerUpCapture = (event: PointerEvent<HTMLElement>) => {
     const start = startRef.current
     if (!start || start.pointerId !== event.pointerId) return
-    try {
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId)
-      }
-    } catch {
-      // 포인터 캡처 해제가 불필요하거나 지원되지 않는 환경은 무시한다.
-    }
     startRef.current = null
     const dx = event.clientX - start.x
     const moved = Math.abs(dx) >= Math.max(24, window.innerWidth * 0.08) && isHorizontal(dx, event.clientY - start.y)
@@ -62,13 +50,6 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   }
   const onPointerCancelCapture = (event: PointerEvent<HTMLElement>) => {
     if (startRef.current?.pointerId !== event.pointerId) return
-    try {
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId)
-      }
-    } catch {
-      // 포인터 캡처 해제가 불필요하거나 지원되지 않는 환경은 무시한다.
-    }
     startRef.current = null
     if (offset !== 0) settle(0)
   }

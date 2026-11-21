@@ -122,7 +122,7 @@ export default function MobileSectorMap({
   const labels = useMemo(() => new Map(rects.map(({ item, width, height }) => {
     const rateText = toPctSignedGrouped(item.changeRate, decimalPlaces)
     // 업종 지도의 기존 방식처럼 확대된 박스 전체 크기로 글자를 맞춘다.
-    return [item.key, layoutOverviewLabel(item.name, rateText, width * zoom.scale, height * zoom.scale, fontsVersion, { splitInsideWord: true })] as const
+    return [item.key, layoutOverviewLabel(item.name, rateText, width * zoom.scale, height * zoom.scale, fontsVersion, { splitInsideWord: true, paddingX: 20 })] as const
   })), [decimalPlaces, fontsVersion, rects, zoom.scale])
 
   return (
