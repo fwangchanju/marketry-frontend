@@ -20,6 +20,8 @@ export interface OverseasSummarySource {
   rangeExcludedStocks: { stockCode: string; stockName: string }[]
   isLoading: boolean
   isFetching: boolean
+  // 그룹 등락률 스와이프 미리보기에 넣을 지수 막대(일본 닛케이·미국 S&P500). 한국의 코스피·코스닥과 같은 역할이다.
+  graphIndexItems: { key: string; name: string; value: number }[]
   refetchAll: () => Promise<unknown>
   DatePicker: ComponentType<{ snapshotTime: string | null; liveTime: string | null; rangeStart: string | null; holidayColor: string; onSelect: (pick: string | null) => void; onSelectRange: (start: string, end: string) => void }>
   // 장 상태 칩(시세가 아직 없으면 null).

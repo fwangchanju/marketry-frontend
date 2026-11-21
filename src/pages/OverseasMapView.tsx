@@ -90,7 +90,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   // 시장마다 다른 부분(데이터를 받는 방법·날짜 선택·장 상태 칩·설정 값)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
     market, label, tree, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange, rangeExcludedStocks,
-    isLoading, isError, isFetching, refetchAll, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit, chart,
+    isLoading, isError, isFetching, refetchAll, graphIndexItems, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit, chart,
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, settingPrefix, tabStorageName, totalCount, countShown,
   } = source
   const publishedAt = useOverseasPublishedAt(market, sheet)
@@ -309,6 +309,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   )
   // 종목 지도에서 그룹 등락률 쪽(오른쪽 스와이프)으로 갈 때 왼쪽에서 따라올 미리보기. 한국 종목 지도와 같은 판·경로 줄을 쓴다.
   const graphPreviewItems: MobileGraphItem[] = sectorPreviewItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
+  for (const index of graphIndexItems) graphPreviewItems.push({ ...index, reference: true })
   const graphPreview = (
     <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
@@ -320,7 +321,8 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
             </nav>
           </header>
         </div>
-        <MobileGraphBars items={graphPreviewItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
+        {isLoading || isFetching ? <div className="flex h-full items-center justify-center"><Spinner /></div>
+          : <MobileGraphBars items={graphPreviewItems} colorScale={colorScale} highlightColor={strongIndustryColor} />}
       </section>
     </div>
   )

@@ -78,6 +78,8 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     totalCount, shownCount, graphSettings, tierRange, currencyUnit, sectorExclusion, exclusionTree,
   } = source
   const publishedAt = useOverseasPublishedAt(market, sheet)
+  // 캐시가 있어도 백그라운드 refetch 중이면 지수 값이 바뀌며 업종 줄이 밀린다. 값이 확정될 때까지 기다렸다가 막대와 함께 그린다(2026-11-22 사용자 정정).
+  const isWaiting = isLoading || isFetching
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: market === 'JAPAN' ? 'japan' : 'usa' })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   const navigate = useNavigate()
@@ -340,9 +342,9 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
             <section aria-label={selectedLeaf ? '종목 등락률 그래프' : '업종 등락률 그래프'} className="flex h-full flex-col bg-ui-background p-1">
-              {!isLoading && !isError && <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>{pathNav}</div>}
+              {!isWaiting && !isError && <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>{pathNav}</div>}
               <div className="min-h-0 flex-1">
-                {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
+                {isWaiting ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
                   : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
                     : shownGraphItems.length === 0 ? <div className="flex h-full items-center justify-center"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
                       : <MobileGraphBars items={shownGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />}
@@ -364,8 +366,8 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           {graphToolbarNode}
           <div className="relative flex min-h-0 flex-1">
-            <div className={`flex min-h-0 w-full flex-1 flex-col ${isLoading || isError ? '' : 'pt-4 pb-[19.5px]'}`}>
-              {isLoading ? (
+            <div className={`flex min-h-0 w-full flex-1 flex-col ${isWaiting || isError ? '' : 'pt-4 pb-[19.5px]'}`}>
+              {isWaiting ? (
                 <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
               ) : isError ? (
                 <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></MainAreaLoading>

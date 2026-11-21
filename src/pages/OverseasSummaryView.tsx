@@ -111,7 +111,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   // 시장마다 다른 부분(데이터 받기·날짜 선택 칩·장 상태 칩·갱신 안내·고정 색상·종목 수)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
     market, label, tree, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange, rangeExcludedStocks,
-    isLoading, isFetching, refetchAll, DatePicker, sessionChip, refreshHelp, fixed, tabStorageName, settingPrefix, currencyUnit, totalCount,
+    isLoading, isFetching, refetchAll, graphIndexItems, DatePicker, sessionChip, refreshHelp, fixed, tabStorageName, settingPrefix, currencyUnit, totalCount,
   } = source
   const publishedAt = useOverseasPublishedAt(market, sheet)
   // 시가총액 범위 — 지도·그래프와 같은 저장 값. 업종 요약과 막대, 설정창의 종목 수에 함께 반영한다.
@@ -192,6 +192,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   }, [tree, tierRange.excludedMarketValueTiers, sectorExclusion.excludedSectorIds])
   // 업종 지도에서 그룹 등락률로 스와이프·상단 버튼 이동할 때 따라올 미리보기.
   const graphPreviewItems: MobileGraphItem[] = overview.items.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
+  for (const index of graphIndexItems) graphPreviewItems.push({ ...index, reference: true })
   const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 서머리는 특별 회원·관리자만 열 수 있다.
   // 폰 업종 지도에서 국가를 바꾸면 ?map을 유지한다(국내 모바일과 같은 방식). PC 서머리는 그대로다.
@@ -306,7 +307,8 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
             </nav>
           </header>
         </div>}
-        <MobileGraphBars items={graphPreviewItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
+        {isLoading || isFetching ? <div className="flex h-full items-center justify-center"><Spinner /></div>
+          : <MobileGraphBars items={graphPreviewItems} colorScale={colorScale} highlightColor={strongIndustryColor} />}
       </section>
     </div>
   )

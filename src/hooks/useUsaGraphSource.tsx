@@ -100,7 +100,7 @@ export function useUsaGraphSource(): OverseasGraphSource {
     rangeExcludedStocks,
     isLoading,
     isError,
-    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || stocks.isFetching,
+    isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || stocks.isFetching || indexCloses.isFetching,
     refetchAll,
     DatePicker: UsaDatePicker,
     sessionChip: <UsaSessionChip session={USA_SESSION} />,
