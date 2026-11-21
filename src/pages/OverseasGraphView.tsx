@@ -35,7 +35,7 @@ import NavSubBar from '@/components/NavSubBar'
 import RankColumns from '@/components/RankColumns'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
-import Spinner from '@/components/Spinner'
+import Spinner, { MOBILE_LOADING_SIZE_CLASS } from '@/components/Spinner'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import ToolbarChip from '@/components/ToolbarChip'
@@ -342,7 +342,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
             <section aria-label={selectedLeaf ? '종목 등락률 그래프' : '업종 등락률 그래프'} className="flex h-full flex-col bg-ui-background p-1">
               {!isLoading && !isError && <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>{pathNav}</div>}
               <div className="min-h-0 flex-1">
-                {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
+                {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
                   : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
                     : shownGraphItems.length === 0 ? <div className="flex h-full items-center justify-center"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
                       : <MobileGraphBars items={shownGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />}

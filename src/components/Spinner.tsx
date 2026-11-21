@@ -1,6 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import MarketryLogo from '@/components/MarketryLogo'
 
+// 모바일 810px 판 안에서 쓰는 로딩 원 크기(2026-11-22 사용자 결정). 판이 화면 폭의 390/810으로 줄어들어 판 안 499px가 화면 240px로 보인다.
+// 이 앱은 루트 글자 크기가 12.8px라 rem 대신 px로 지정한다(128vmin은 390px 화면에서 499px).
+// 한국 업종·그룹과 해외 서머리·그래프의 모바일 로딩원이 같은 크기가 되도록 이 상수를 공유한다(PC 로딩원은 기본 크기 유지).
+export const MOBILE_LOADING_SIZE_CLASS = 'h-[min(499px,128vmin)] w-[min(499px,128vmin)]'
+
 interface Props {
   className?: string
   // 1초 뒤부터 경과 시간을 보여 주는 메인 영역 로딩.

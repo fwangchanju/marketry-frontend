@@ -14,7 +14,7 @@ import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
-import Spinner from '@/components/Spinner'
+import Spinner, { MOBILE_LOADING_SIZE_CLASS } from '@/components/Spinner'
 import { useGlobalSettings } from '@/hooks/useGlobalSettings'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { useLongPress } from '@/hooks/useLongPress'
@@ -885,7 +885,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         <div className="flex h-full flex-col">
         {isGraph && renderPathNav()}
         <div className="min-h-0 flex-1">
-        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className="h-[min(30rem,94vmin)] w-[min(30rem,94vmin)]" /></div>
+        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
@@ -959,7 +959,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         className="relative min-h-0 flex-1 touch-pan-y overflow-hidden"
       >
         <div className="absolute inset-0 p-1" style={{ transform: currentSwipeTransform, transition: swipeTransition, willChange: pageSwipePreview ? 'transform' : undefined }}>
-        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className="h-[min(30rem,94vmin)] w-[min(30rem,94vmin)]" /></div>
+        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
