@@ -173,10 +173,12 @@ interface MonthGridProps {
   onPick: (date: string, snapshotTime: string | undefined) => void
   // false면 불러오는 중·오류 원을 이 달력이 그리지 않는다 — 두 달을 나란히 둘 때 바깥에서 원 하나만 가운데에 그린다.
   showSpinner?: boolean
+  // 6주 행 마지막 칸(토요일 자리)에 들어가는 최근 버튼. 날짜가 올 수 없는 자리라 버튼을 놓아도 겹치지 않는다.
+  recentButton?: ReactNode
 }
 
 // 한 달짜리 달력. 그 달의 종가 지도 목록 조회·불러오는 중/오류 화면을 스스로 맡는다.
-function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMonthAllowed, showPrevButton = true, showNextButton = true, liveDate, isSelectable, isSelected, bandStart, bandEnd, onHoverDate, onPick, showSpinner = true }: MonthGridProps) {
+function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMonthAllowed, showPrevButton = true, showNextButton = true, liveDate, isSelectable, isSelected, bandStart, bandEnd, onHoverDate, onPick, showSpinner = true, recentButton }: MonthGridProps) {
   const monthKey = toMonthKey(month)
   const todayDate = getKstDate(new Date())
   // 월·년 선택 화면 — 날짜 화면의 "10월"을 누르면 월 선택, "2026년"을 누르면 년 선택이 나온다. 년을 고르면 그 해의 월 선택으로, 월을 고르면 날짜 화면으로 돌아온다.
@@ -281,7 +283,9 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
         <div className="relative flex-1">
           <div className="grid grid-cols-7 grid-rows-6 text-center font-roboto-latin tabular-nums" aria-busy={isLoading}>
             {cells.map((day, index) => {
-              if (day === null) return <span key={`blank-${index}`} />
+              if (day === null) return recentButton !== undefined && index === cells.length - 1
+                ? <div key={`blank-${index}`} className="flex items-center justify-center">{recentButton}</div>
+                : <span key={`blank-${index}`} />
               const date = `${monthKey}-${String(day).padStart(2, '0')}`
               const isToday = date === todayDate
               const hasClosingMap = closingTimeByDate.has(date)
@@ -414,6 +418,10 @@ const APPLY_BUTTON_CLASS =
 
 const RESET_BUTTON_CLASS =
   'shrink-0 rounded border-0 bg-ui-control px-2.5 py-1 text-center text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
+
+// 거래일 배지와 같은 모양의 YTD 버튼 — 누르면 연초~최근일 날짜만 고른다.
+const YTD_BUTTON_CLASS =
+  'inline-flex h-5 shrink-0 items-center rounded border-0 bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
 
 // 달력 아이콘을 누르면 아래로 달력 창이 뜬다. 데이터가 있는 날짜(종가 지도가 있는 날과 오늘)만 누를 수 있다.
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.
@@ -603,7 +611,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
 
   // ── 지금 버튼 — 날짜 칸을 가장 최근 지도의 날짜로 채운다(적용을 눌러야 지도가 바뀐다). 하루는 실시간이고, 기간은 종료일이 된다. ──
   // 최근 거래일의 종가 지도가 있으면 그 시각, 아직 없으면(장중) 실시간 지도의 시각을 종료로 쓴다.
-  const { data: liveMonthDays } = useCalendarDays(market, liveDate?.slice(0, 7) ?? '', { enabled: isOpen && isRangeCalendar && liveDate !== null, retry: 1 })
+  const { data: liveMonthDays } = useCalendarDays(market, liveDate?.slice(0, 7) ?? '', { enabled: isOpen && liveDate !== null, retry: 1 })
   const pickToday = () => {
     if (liveDate === null) return
     if (isRangeCalendar) {
@@ -615,6 +623,26 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       setDraftDay({ date: liveDate, snapshotTime: null })
       setRangeLeftMonth(isPhone ? toShownMonth(liveDate) : addMonths(toShownMonth(liveDate), -1))
     }
+  }
+
+  // ── YTD 버튼 — 날짜만 고른다(수익률 계산은 하지 않는다). 시작일은 최근일이 속한 해의 1월에서 가져온다. ──
+  // 기간 시작일은 1거래일 전 종가가 있어야 하므로 1월과 그 전 달을 함께 보고, 데이터가 있는 가장 이른 날 다음 날부터 고른다.
+  const ytdYear = liveDate === null ? null : Number(liveDate.slice(0, 4))
+  const { data: ytdJanDays } = useCalendarDays(market, ytdYear === null ? '' : `${ytdYear}-01`, { enabled: isOpen && ytdYear !== null, retry: 1 })
+  const { data: ytdPrevDays } = useCalendarDays(market, ytdYear === null ? '' : `${ytdYear - 1}-12`, { enabled: isOpen && ytdYear !== null, retry: 1 })
+  const ytdStart = (() => {
+    if (ytdYear === null || ytdJanDays === undefined || ytdPrevDays === undefined) return null
+    const firstDataDate = [...ytdPrevDays, ...ytdJanDays].map(day => day.date).sort()[0] ?? null
+    return firstDataDate === null ? null : ytdJanDays.find(day => day.date > firstDataDate) ?? null
+  })()
+  const pickYtd = () => {
+    if (liveDate === null || ytdStart === null) return
+    const endSnapshotTime = liveMonthDays?.find(day => day.date === liveDate)?.snapshotTime ?? liveSnapshotTime
+    if (endSnapshotTime === null) return
+    if (!isRangeMode) switchMode(true)
+    setDraftStart(ytdStart)
+    setDraftEnd({ date: liveDate, snapshotTime: endSnapshotTime })
+    setRangeLeftMonth({ year: Number(ytdStart.date.slice(0, 4)), monthIndex: 0 })
   }
 
   // 지난 날짜나 기간을 보는 중일 때만 보인다(하루·기간 모드 모두) — 고른 날짜·기간을 모두 풀고 실시간 지도로 바로 돌아간다(적용을 따로 누를 필요 없다).
@@ -660,7 +688,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           ariaLabel="날짜 선택 달력"
           className={`${isPhone ? 'w-64' : 'w-[32.125rem]'} rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl`}
         >
-          {/* 위쪽 줄: 왼쪽에 하루/기간 스위치와 선택 날짜(폰은 날짜 대신 거래일 배지만), 오른쪽 끝에 최근 버튼. 하루·기간 모드가 같은 배치다. */}
+          {/* 위쪽 줄: 왼쪽에 하루/기간 스위치와 선택 날짜, 오른쪽 끝에 거래일 배지(폰만). 최근 버튼은 달력 6주 행의 마지막 칸으로 옮겼다. */}
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-ui-border pb-2 text-[13px]">
             <span className="flex min-w-0 items-center gap-3">
               {onSelectRange && (
@@ -679,11 +707,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   ))}
                 </span>
               )}
-              {isPhone ? (
-                tradingDayBadge !== null && (
-                  <span className="inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text">{tradingDayBadge}</span>
-                )
-              ) : isRangeCalendar ? (
+              {isPhone ? null : isRangeCalendar ? (
             <span className="flex min-w-0 items-center gap-1">
               {draftStart && (
                 <span className="flex min-w-0 items-center gap-1.5">
@@ -717,7 +741,9 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
             </span>
               )}
             </span>
-            <span className="flex shrink-0 items-center">{todayButton}</span>
+            {isPhone && tradingDayBadge !== null && (
+              <span className="inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text">{tradingDayBadge}</span>
+            )}
           </div>
           {isRangeCalendar ? (
             <>
@@ -748,6 +774,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                     bandEnd={rangeBand.end}
                     onHoverDate={setHoverDate}
                     onPick={pickRangeDay}
+                    recentButton={todayButton}
                   />
                 ) : (
                   <>
@@ -784,11 +811,15 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                       bandEnd={rangeBand.end}
                       onHoverDate={setHoverDate}
                       onPick={pickRangeDay}
+                      recentButton={todayButton}
                     />
                   </>
                 )}
               </div>
-              <div className="mt-1 flex min-w-0 items-center justify-end gap-2 border-t border-ui-border pt-2 text-[13px]">
+              <div className="mt-1 flex min-w-0 items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]">
+                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={YTD_BUTTON_CLASS}>
+                  YTD
+                </button>
                 <span className="flex shrink-0 items-center gap-1.5">
                   <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
                     선택 해제
@@ -827,6 +858,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                     bandStart={null}
                     bandEnd={null}
                     onPick={pickSingleDay}
+                    recentButton={todayButton}
                   />
                 ) : (
                   <>
@@ -862,11 +894,15 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                       bandStart={null}
                       bandEnd={null}
                       onPick={pickSingleDay}
+                      recentButton={todayButton}
                     />
                   </>
                 )}
               </div>
-              <div className={`mt-1 flex ${isPhone ? 'w-60' : 'w-[31rem]'} items-center justify-end gap-2 border-t border-ui-border pt-2 text-[13px]`}>
+              <div className={`mt-1 flex ${isPhone ? 'w-60' : 'w-[31rem]'} items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]`}>
+                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={YTD_BUTTON_CLASS}>
+                  YTD
+                </button>
                 <button type="button" disabled={draftDay === null} onClick={applyDay} className={APPLY_BUTTON_CLASS}>
                   적용
                 </button>
