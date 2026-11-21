@@ -253,7 +253,9 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                 </>
               )}
             </div>
-            <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
+            {!isPhoneMapFrame && (
+              <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
+            )}
           </Toolbar>
   )
   const overseasFrameNode = ((isShareOpen && isMobileScreenshotSelected) || isMobileFrameVisible) && !isLoading && !isError && shownCount > 0 && (
