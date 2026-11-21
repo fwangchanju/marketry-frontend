@@ -1,6 +1,6 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSettled } from '@/hooks/useSettled'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import MobileTopBar from '@/components/MobileTopBar'
@@ -8,7 +8,8 @@ import PhoneMapShell from '@/components/PhoneMapShell'
 import MapToolbar from '@/components/MapToolbar'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
-import { normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
+import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
+import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -235,6 +236,17 @@ export default function MapPage() {
   const stockMoves = stockMoveEnabled && stockMoveState.scope === stockMoveScope ? stockMoveState.moves : NO_STOCK_MOVES
   const groups = applyStockMoves(baseGroups, stockMoves)
   const visibleItems = collectItems(groups)
+  // 종목 지도에서 업종 지도로 스와이프할 때 따라올 미리보기. 업종 지도 화면과 같은 크기·박스 비율로 그린다.
+  const sectorPreviewItems = useMemo(() => {
+    const source: MobileSectorMapItem[] = groups.map(group => ({
+      key: String(group.sectorId),
+      name: group.sectorName,
+      marketValue: group.totalMarketValue,
+      changeRate: group.weightedAvgChangeRate ?? group.simpleAvgChangeRate ?? 0,
+    }))
+    const weights = calculateSectorLayoutWeights(source, mobileBoxSizeRatio)
+    return source.map((item, index) => ({ ...item, layoutValue: weights[index] }))
+  }, [groups, mobileBoxSizeRatio])
   // 지금 뎁스(path) 기준으로, 섹터 제외/시가총액 구간 필터를 적용하기 전 원본 트리에 있는 전체 종목 수.
   const rawCurrentNode = findRawNodeByPath(rootNodes, path)
   // 시장 전체를 볼 때는 정지로 뺀 종목도 분모에 더해 전체 종목 수와 맞춘다(한 업종 안으로 들어가면 그 업종 종목만 센다).
@@ -375,7 +387,7 @@ export default function MapPage() {
               data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
               data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
               // 모바일 캡처와 텔레그램 지도는 동일한 5:8 프레임과 여백을 쓴다.
-              style={{ opacity: isPhoneMapFrame ? 1 : 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left' }}
+              style={{ opacity: isPhoneMapFrame ? 1 : 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left' }}
               className={isPhoneMapFrame ? "relative z-[60] bg-ui-background" : "pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"}
             >
             <div
@@ -423,6 +435,14 @@ export default function MapPage() {
   const phoneEmptyFrame = (
     <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">{isLoading ? '불러오는 중입니다.' : isError ? '데이터를 불러오지 못했습니다.' : '이 날짜에는 표시할 데이터가 없습니다.'}</div>
   )
+  const sectorPreview = (
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+      <div className="flex h-full min-h-0 flex-col bg-ui-background">
+        <div aria-hidden="true" className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
+        <MobileSectorMap items={sectorPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={decimalPlaces} />
+      </div>
+    </div>
+  )
 
   if (isPhoneMapFrame) {
     return (
@@ -432,6 +452,7 @@ export default function MapPage() {
         topBar={<MobileTopBar title="종목 지도" titleTo={`/summary/korea?map&market=${market}`} titleLabel="업종 지도로 이동" />}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
         frame={mobileFrameNode || phoneEmptyFrame}
+        nextPreview={sectorPreview}
         current="korea"
         boxSize={mobileBoxSizeRatio}
         onChangeBoxSize={onChangeMobileBoxSizeRatio}
