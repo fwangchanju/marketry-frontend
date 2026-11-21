@@ -414,12 +414,9 @@ export default function MapPage() {
             </div>
             </div>
           );
-  // 데이터가 없거나 불러오는 중이어도 툴바와 안내 문구는 보이게 한다(툴바는 판 안에 있으므로 판이 없으면 같이 사라지던 문제).
+  // 툴바는 판 밖의 PhoneMapShell이 그린다. 판 안에서는 안내 문구만 보여 툴바가 두 번 그려지지 않게 한다.
   const phoneEmptyFrame = (
-    <div className="flex h-full flex-col">
-      <div className="relative mt-[3px] mb-0 h-7 w-full shrink-0">{mapToolbarNode}</div>
-      <div className="flex flex-1 items-center justify-center text-[14px] text-ui-muted">{isLoading ? '불러오는 중입니다.' : isError ? '데이터를 불러오지 못했습니다.' : '이 날짜에는 표시할 데이터가 없습니다.'}</div>
-    </div>
+    <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">{isLoading ? '불러오는 중입니다.' : isError ? '데이터를 불러오지 못했습니다.' : '이 날짜에는 표시할 데이터가 없습니다.'}</div>
   )
 
   if (isPhoneMapFrame) {

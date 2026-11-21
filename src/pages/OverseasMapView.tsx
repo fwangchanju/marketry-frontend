@@ -38,7 +38,7 @@ import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsExcludeSection, SettingsMarketValueSection, SettingsColorSection, SettingsPanelGroup, SettingsSectorLevelSection, SettingsStockSizeSelector, SettingsStrongIndustryColorSection, SettingsTopPickSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import Spinner from '@/components/Spinner'
-import Toolbar from '@/components/Toolbar'
+import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
@@ -249,7 +249,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveSnapshotTime?.slice(0, 10)) && (
                 <>
                 <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={isFetching} helpText={refreshHelp} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
-                {sessionChip}
+                <span className="flex shrink-0" style={{ width: TOOLBAR_SESSION_SLOT_WIDTH }}>{sessionChip}</span>
                 </>
               )}
             </div>

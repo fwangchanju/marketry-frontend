@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import Toolbar from '@/components/Toolbar'
+import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
@@ -90,7 +90,7 @@ export default function MapToolbar({ market, marketLabel, snapshotTime, liveSnap
           )}
         {/* 시장 시간대 말머리와 합산/별도 — 시간과 관련된 표시라 시계 옆에 붙인다. */}
         {isPastSnapshot === false && (
-          <span className="flex shrink-0">
+          <span className="flex shrink-0" style={{ width: TOOLBAR_SESSION_SLOT_WIDTH }}>
             <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} onChange={onChangeChangeRateMode} />
           </span>
         )}

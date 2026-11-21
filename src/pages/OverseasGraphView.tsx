@@ -31,7 +31,7 @@ import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import Spinner from '@/components/Spinner'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
-import Toolbar from '@/components/Toolbar'
+import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { ClockIcon } from '@/components/icons/AppIcons'
@@ -128,7 +128,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveSnapshotTime?.slice(0, 10)) && (
           <>
           <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={isFetching} helpText={refreshHelp} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
-          {sessionChip}
+          <span className="flex shrink-0" style={{ width: TOOLBAR_SESSION_SLOT_WIDTH }}>{sessionChip}</span>
           </>
         )}
       </div>
