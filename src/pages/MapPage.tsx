@@ -445,7 +445,16 @@ export default function MapPage() {
 
   if (isPhoneMapFrame) {
     return (
-      <PhoneMapShell onSwipe={direction => navigate(direction === 'next' ? `/summary/korea?map&market=${market}` : marketRoute('/graph', market))} toolbar={mapToolbarNode}topBar={<MobileTopBar title="종목 지도" titleTo="/summary/korea?map" titleLabel="업종 지도로 이동" />} frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale} frame={mobileFrameNode || phoneEmptyFrame} current={"korea"} boxSize={boxSizeMarketCapRatio} onChangeBoxSize={onChangeBoxSizeMarketCapRatio} />
+      <PhoneMapShell
+        onSwipe={direction => navigate(direction === 'next' ? `/summary/korea?map&market=${market}` : marketRoute('/graph', market))}
+        toolbar={mapToolbarNode}
+        topBar={<MobileTopBar title="종목 지도" titleTo={`/summary/korea?map&market=${market}`} titleLabel="업종 지도로 이동" />}
+        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+        frame={mobileFrameNode || phoneEmptyFrame}
+        current="korea"
+        boxSize={boxSizeMarketCapRatio}
+        onChangeBoxSize={onChangeBoxSizeMarketCapRatio}
+      />
     )
   }
   return (

@@ -4,7 +4,6 @@ import { navigateWithMobileSlide } from '@/utils/mobilePageTransition'
 import { InfoPageHeading, InfoSection } from '@/components/InfoDocument'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
-import { useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
 import { SECTOR_KOREA } from '@/utils/customRoutes'
 import { marketRoute } from '@/utils/marketRoute'
 
@@ -47,10 +46,8 @@ export default function GuidePage() {
   const requestedMarket = searchParams.get('market')
   const returnMarket = requestedMarket === 'KOSPI' || requestedMarket === 'KOSDAQ' ? requestedMarket : 'ALL_STOCK'
   const returnPath = marketRoute('/map', returnMarket)
-  // 모바일 페이지 순서는 종목 지도 → 업종 지도 → 그룹 등락률 → 가이드 → 종목 지도다. 슬라이드도 상단 제목 버튼과 같은 순서로 돈다.
-  const swipe = useMobilePageSwipe(isNarrow, () => navigate(returnPath), () => navigate(marketRoute('/graph', returnMarket)))
   return (
-    <div {...swipe.handlers} style={swipe.style} className={isNarrow ? 'bg-ui-background' : undefined}>
+    <div className={isNarrow ? 'bg-ui-background' : undefined}>
     <DocumentPageLayout
       title="GUIDE"
       panelDescription="나만의 분류로 시장 흐름 관찰하기"
