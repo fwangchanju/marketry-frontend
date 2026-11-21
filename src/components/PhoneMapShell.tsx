@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileMapSheet, { type MobileMapMarket } from '@/components/MobileMapSheet'
+import { useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
 
 // 폰 지도 공통 화면: 상단 줄 · 툴바 줄 · 가운데 판(세로 가운데 정렬, 설정 창이 열려도 판은 움직이지 않는다) · 하단 설정 줄.
 // 종목·업종·그래프 화면이 같은 틀을 쓴다. 툴바는 판 밖에 두고, 화면 폭에 맞춰 판 가로폭까지 키운다.
@@ -21,8 +22,13 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   const rowRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const swipeStartRef = useRef<{ x: number; y: number } | null>(null)
   const [scale, setScale] = useState(0.94)
+
+  const swipe = useMobilePageSwipe(
+    Boolean(onSwipe),
+    () => onSwipe?.('next'),
+    () => onSwipe?.('previous')
+  )
 
   // 툴바 원래 폭을 재서, 화면 폭(양쪽 여백 제외)에 맞는 배율로 키운다.
   useLayoutEffect(() => {
@@ -61,17 +67,8 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
         <div
           ref={mapRef}
           className="relative w-full shrink-0 overflow-hidden"
-          style={{ height: `${frameHeight}px` }}
-          onPointerDown={event => { swipeStartRef.current = { x: event.clientX, y: event.clientY } }}
-          onPointerUp={event => {
-            const start = swipeStartRef.current
-            swipeStartRef.current = null
-            if (!start || !onSwipe) return
-            const dx = event.clientX - start.x
-            const dy = event.clientY - start.y
-            if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
-            onSwipe(dx < 0 ? 'next' : 'previous')
-          }}
+          style={{ height: `${frameHeight}px`, ...swipe.style }}
+          {...swipe.handlers}
         >
           {frame}
         </div>

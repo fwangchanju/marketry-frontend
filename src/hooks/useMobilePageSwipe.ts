@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type 
 const EDGE_GUARD = 24
 const SETTLE_MS = 180
 
-// 세로 스크롤하는 글 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
+// 모바일 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
 export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void) {
   const startRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
   const suppressClickRef = useRef(false)
@@ -25,7 +25,13 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   }
   const onPointerDownCapture = (event: PointerEvent<HTMLElement>) => {
     if (settling || event.clientX <= EDGE_GUARD || event.clientX >= window.innerWidth - EDGE_GUARD) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
     startRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch {
+      // 포인터 캡처를 지원하지 않거나 이미 캡처된 환경은 무시한다.
+    }
   }
   const onPointerMoveCapture = (event: PointerEvent<HTMLElement>) => {
     const start = startRef.current
@@ -36,6 +42,13 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   const onPointerUpCapture = (event: PointerEvent<HTMLElement>) => {
     const start = startRef.current
     if (!start || start.pointerId !== event.pointerId) return
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+    } catch {
+      // 포인터 캡처 해제가 불필요하거나 지원되지 않는 환경은 무시한다.
+    }
     startRef.current = null
     const dx = event.clientX - start.x
     const moved = Math.abs(dx) >= Math.max(24, window.innerWidth * 0.08) && isHorizontal(dx, event.clientY - start.y)
@@ -49,6 +62,13 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   }
   const onPointerCancelCapture = (event: PointerEvent<HTMLElement>) => {
     if (startRef.current?.pointerId !== event.pointerId) return
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+    } catch {
+      // 포인터 캡처 해제가 불필요하거나 지원되지 않는 환경은 무시한다.
+    }
     startRef.current = null
     if (offset !== 0) settle(0)
   }

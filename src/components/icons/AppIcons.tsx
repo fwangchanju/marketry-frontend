@@ -181,6 +181,14 @@ export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+export function ChevronRightIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
+  )
+}
+
 // 스냅샷 날짜·시각 글자 앞에 붙이는 달력·시계 모양.
 export function CalendarIcon(props: SVGProps<SVGSVGElement>) {
   return (
