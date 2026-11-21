@@ -12,14 +12,12 @@ const TOOLBAR_REFERENCE_WIDTH = 438
 // 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.
 const TOOLBAR_FIXED_SCALE = 0.863
 
-export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, pathNav, current, boxSize, onChangeBoxSize, onSwipe, nextPreview }: {
+export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, nextPreview }: {
   topBar?: ReactNode
   onSwipe?: (direction: 'next' | 'previous') => void
   frameHeight: number
   frame: ReactNode
   toolbar?: ReactNode
-  // 툴바 줄 아래 경로 줄. 넘기지 않으면 자리를 비운다.
-  pathNav?: ReactNode
   current: MobileMapMarket
   boxSize: number
   onChangeBoxSize: (value: number) => void
@@ -52,9 +50,10 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, pat
       : topBar
     : (topBar ?? <MobileTopBar title="" />)
 
-  // 닫힌 설정 줄(24px)과 상단 줄(44px), 툴바 줄, 경로 줄(32px)을 뺀 자리에서 툴바와 판을 한 묶음으로 가운데에 둔다.
+  // 닫힌 설정 줄(24px)과 상단 줄(44px), 툴바 줄을 뺀 자리에서 툴바와 판을 한 묶음으로 가운데에 둔다.
+  // 경로 줄은 페이지 내용 안에 있어 따로 빼지 않고, 열린 설정 줄(40px)이 차지할 자리만 절반 미리 빼 둔다.
   const rowHeight = TOOLBAR_BASE_HEIGHT * scale
-  const frameTop = Math.max(0, (window.innerHeight - 44 - 25 - rowHeight - (pathNav ? 32 : 0) - frameHeight) / 2)
+  const frameTop = Math.max(0, (window.innerHeight - 44 - 25 - rowHeight - 40 - frameHeight) / 2)
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
       {topBarNode}
@@ -64,7 +63,6 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, pat
             <div className="w-max">{toolbar}</div>
           </div>
         </div>
-        {pathNav && <div className="relative z-10 w-full shrink-0">{pathNav}</div>}
         <div className="relative w-full shrink-0 overflow-hidden" style={{ height: `${frameHeight}px` }}>
           <div className="relative h-full w-full" style={swipe.style} {...swipe.handlers}>
             {frame}

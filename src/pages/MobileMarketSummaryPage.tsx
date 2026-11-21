@@ -20,15 +20,15 @@ import { IDENTITY, panTransform, pinchTransform, type Point, type ZoomTransform 
 import type { HeatmapItem } from '@/types/api'
 import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
+import { layoutOverviewLabel } from '@/utils/overviewLabel'
+import { useFontsVersion } from '@/utils/stockLabelFit'
 import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { changeDirectionOf } from '@/utils/changeDirection'
 import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
-import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { calculateSectorLayoutWeights, MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { limitDepth } from '@/hooks/useFilteredHeatmap'
 import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
-import { useFontsVersion } from '@/utils/stockLabelFit'
 import type { MarketQuery } from '@/types/api'
 import { marketRoute } from '@/utils/marketRoute'
 import { collectAtDepth } from '@/utils/sectorDepth'
@@ -49,10 +49,6 @@ const MOBILE_SETTINGS_BAR_HEIGHT = 24
 const MOBILE_PAGE_SWIPE_EDGE_GUARD = 24
 const MOBILE_PAGE_SWIPE_SETTLE_MS = 500
 const MOBILE_DECIMAL_PLACES = 1
-
-function stockLayoutValue(stock: HeatmapItem, ratio: number) {
-  return ratio <= 0 ? 1 : Math.pow(Math.max(stock.totalMarketValue, 0), ratio / 100)
-}
 
 type MobileSectorItem = MobileSectorMapItem & {
   node: FilteredHeatmapSectorNode | null
@@ -98,6 +94,10 @@ function toDirectStocksItem(stocks: HeatmapItem[], parentPath: string): MobileSe
     stocks,
     isDirectStocks: true,
   }
+}
+
+function stockLayoutValue(stock: HeatmapItem, ratio: number) {
+  return ratio <= 0 ? 1 : Math.pow(Math.max(stock.totalMarketValue, 0), ratio / 100)
 }
 
 function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, onSelect, onLongPress }: {
@@ -510,21 +510,20 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     ...(mid && (!isGraph || graphEntryOffset < 2) ? [{ key: 'mid', label: mid.sectorName, go: selectedStocks ? () => { setSelectedStocks(null); setViewMode('sector') } : null }] : []),
     ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
   ]
-  // 그룹 등락률은 하위 항목에 진입한 뒤부터 경로를 보여 준다. 대분류 상태에서도 줄 자리는 비워 둔다.
-  const hasGraphEntry = Boolean(major || mid || selectedStocks || stockCategoryName)
-  // 종목 지도와 그룹 등락률에서 쓰는 경로 줄이다. 업종 지도(PhoneMapShell 분기)에는 넣지 않는다.
+  // 종목 지도·그룹 등락률에서 쓰는 경로 줄이다. 업종 지도(PhoneMapShell 분기)에는 넣지 않는다.
   const pathNav = (
     <header className="shrink-0 bg-ui-background px-3 py-0">
       <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-        {(!isGraph || hasGraphEntry) && <>
-          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-          {pathCrumbs.map(crumb => crumb.go
-            ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
-            : <span key={crumb.key} aria-current="location" className="shrink-0 px-2 text-ui-white">{crumb.label}</span>)}
-        </>}
+        <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
+        {pathCrumbs.map(crumb => crumb.go
+          ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
+          : <span key={crumb.key} aria-current="location" className={`shrink-0 px-2 ${pathCrumbs.length > 1 ? 'text-[var(--accent)]' : 'text-ui-white'}`} style={pathCrumbs.length > 1 && strongIndustryColor ? { color: strongIndustryColor } : undefined}>{crumb.label}</span>)}
       </nav>
     </header>
   )
+  // 경로 줄은 페이지 판 안에 그린다. 판은 810px 캔버스를 화면 폭으로 줄이므로 zoom으로 배율을 상쇄해 화면에서 32px·16px로 보이게 한다.
+  // 셸의 스와이프 대상 밖에 두면 다음 페이지 미리보기에 이 자리가 비어 당겨지는 동안 빈 띠가 보인다.
+  const renderPathNav = () => <div style={{ zoom: SUMMARY_CAPTURE_FRAME_WIDTH / window.innerWidth }}>{pathNav}</div>
 
   const selectSector = (name: string) => {
     const selected = marketItems.find(item => item.name === name)
@@ -841,8 +840,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
             refreshSpinMs={REFRESH_BUTTON_SPIN_MS}
           />
         }
-        pathNav={isGraph ? pathNav : undefined}
-        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * (window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH) - (isGraph ? 32 : 0)}
+        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * (window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH)}
         frame={<div className="flex flex-col" style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH})`, transformOrigin: 'top left' }}>
       <section
         ref={pageContentRef}
@@ -859,6 +857,9 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         className="relative min-h-0 flex-1 touch-pan-y overflow-hidden"
       >
         <div className="absolute inset-0 p-1" style={{ transform: currentSwipeTransform, transition: swipeTransition, willChange: pageSwipePreview ? 'transform' : undefined }}>
+        <div className="flex h-full flex-col">
+        {isGraph && renderPathNav()}
+        <div className="min-h-0 flex-1">
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className="h-[min(30rem,94vmin)] w-[min(30rem,94vmin)]" /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
@@ -889,8 +890,13 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
               <MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} decimalPlaces={MOBILE_DECIMAL_PLACES} />
             </div>}
         </div>
+        </div>
+        </div>
         {pageSwipePreview && <div aria-hidden="true" inert className="absolute inset-0 p-1" style={{ transform: swipePreviewTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
-          {renderSwipePreview()}
+          <div className="flex h-full flex-col">
+          {pageSwipePreview.targetMode === 'graph' && renderPathNav()}
+          <div className="min-h-0 flex-1">{renderSwipePreview()}</div>
+          </div>
         </div>}
       </section>
         </div>}

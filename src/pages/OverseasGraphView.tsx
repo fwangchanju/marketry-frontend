@@ -286,33 +286,38 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   )
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
+    // 경로 줄은 페이지 판 안에 그린다. 판은 810px 캔버스를 화면 폭으로 줄이므로 zoom으로 배율을 상쇄해 화면에서 32px·16px로 보이게 한다.
+    // 셸의 스와이프 대상 밖에 두면 다음 페이지 미리보기에 이 자리가 비어 당겨지는 동안 빈 띠가 보인다.
+    const pathNav = (
+      <header className="shrink-0 bg-ui-background px-3 py-0">
+        <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
+          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
+          {mobileGraphPath.length === 0 && !selectedLeaf
+            ? <span aria-current="location" className="shrink-0 px-2 text-ui-white">{label}</span>
+            : <button type="button" onClick={() => reduceToDepth(0)} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>}
+          {(selectedLeaf ? [...mobileGraphPath, selectedLeaf.sectorName] : mobileGraphPath).map((name, index, names) => index === names.length - 1
+            ? <span key={name} aria-current="location" className="shrink-0 px-2 text-[var(--accent)]" style={strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}</span>
+            : <button key={name} type="button" onClick={() => reduceToDepth(index + 1)} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{name}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>)}
+        </nav>
+      </header>
+    )
     return (
       <PhoneMapShell
         onSwipe={direction => navigate(direction === 'next' ? mapPath : summaryPath)}
         toolbar={graphToolbarNode}
         topBar={<MobileTopBar title="그룹 등락률" titleTo={mapPath} titleLabel="종목 지도로 이동" />}
-        pathNav={
-          <header className="shrink-0 bg-ui-background px-3 py-0">
-            <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-              {(mobileGraphPath.length > 0 || selectedLeaf) && <>
-                <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-                <button type="button" onClick={() => reduceToDepth(0)} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
-                {(selectedLeaf ? [...mobileGraphPath, selectedLeaf.sectorName] : mobileGraphPath).map((name, index, names) => index === names.length - 1
-                  ? <span key={name} aria-current="location" className="shrink-0 px-2 text-ui-white">{name}</span>
-                  : <button key={name} type="button" onClick={() => reduceToDepth(index + 1)} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{name}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>)}
-              </>}
-            </nav>
-          </header>
-        }
-        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale - 32}
+        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
         nextPreview={mapPreview}
         frame={
           <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
             <section aria-label={selectedLeaf ? '종목 등락률 그래프' : '업종 등락률 그래프'} className="flex h-full flex-col bg-ui-background p-1">
-              {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed /></div>
-                : isError ? <div className="flex flex-1 items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
-                  : shownGraphItems.length === 0 ? <div className="flex flex-1 items-center justify-center"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
-                    : <MobileGraphBars items={shownGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />}
+              <div style={{ zoom: SUMMARY_CAPTURE_FRAME_WIDTH / window.innerWidth }}>{pathNav}</div>
+              <div className="min-h-0 flex-1">
+                {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed /></div>
+                  : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div>
+                    : shownGraphItems.length === 0 ? <div className="flex h-full items-center justify-center"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
+                      : <MobileGraphBars items={shownGraphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />}
+              </div>
             </section>
           </div>
         }

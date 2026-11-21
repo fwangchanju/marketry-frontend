@@ -20,6 +20,7 @@ export default function MobileMapHeatmapFrame({ path, marketLabel, strongIndustr
       <div aria-hidden="true" className="h-2 shrink-0" />
       {path.length > 0 && (
         <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
+          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
           <span className={BREADCRUMB_LINK_CLASS}>{marketLabel}<BreadcrumbBackIcon /></span>
           {path.map((name, index) => (
             <span
