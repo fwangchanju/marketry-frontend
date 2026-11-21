@@ -5,6 +5,13 @@ import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
 import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
 import ScrollArea from '@/components/ScrollArea'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
+import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
+import { normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
+import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
+import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
+import PhoneMapShell from '@/components/PhoneMapShell'
+import MobileTopBar from '@/components/MobileTopBar'
+import type { MobileMapMarket } from '@/components/MobileMapSheet'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { marketMenu } from '@/utils/marketMenu'
@@ -50,6 +57,13 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   const navigate = useNavigate()
   const mapPath = overseasRoute('/map', market)
+  const summaryPath = `${overseasRoute('/summary', market)}?map`
+  // 폰에서는 그래프 한 장을 5:8 판에 맞춰 보여 준다. 상단 줄·툴바 줄·하단 설정 줄은 세 시장이 같은 틀을 쓴다.
+  const isPhoneMapFrame = useIsNarrowScreen()
+  const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
+  const [storedMobileBoxSizeRatio, onChangeMobileBoxSizeRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
+  const boxSizeMarketCapRatio = normalizeMobileBoxSizeRatio(storedMobileBoxSizeRatio)
+  useCarriedBoxSize(onChangeMobileBoxSizeRatio)
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveSnapshotTime !== null && snapshotTime !== liveSnapshotTime)
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const [isShareOpen, setIsShareOpen] = useState(false)
@@ -71,35 +85,78 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     }
   }
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
+  // PC 화면과 폰 화면이 같은 툴바 원본을 쓴다(폰에서는 툴바 줄을 판 밖에 둔다).
+  const graphToolbarNode = (
+    <Toolbar>
+      <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+        <ToolbarModeText page="GRAPH" label={label} showChevron menu={marketMenu('/graph', market, true)} />
+        <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><DatePicker snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
+        {isPastSnapshot && (
+          <ToolbarChip bare>
+            <ToolbarPinButton pinned={isPastSnapshot} onUnpin={() => select(null)} />
+          </ToolbarChip>
+        )}
+        {rangeStart !== null && (
+          <ToolbarChip bare tone="text-ui-muted">
+            <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
+          </ToolbarChip>
+        )}
+        {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveSnapshotTime?.slice(0, 10)) && (
+          <>
+          <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={isFetching} helpText={refreshHelp} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
+          {sessionChip}
+          </>
+        )}
+      </div>
+      <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
+    </Toolbar>
+  )
+  if (isPhoneMapFrame) {
+    const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
+    return (
+      <PhoneMapShell
+        onSwipe={direction => navigate(direction === 'next' ? mapPath : summaryPath)}
+        toolbar={graphToolbarNode}
+        topBar={<MobileTopBar title="그룹 등락률" titleTo={mapPath} titleLabel="종목 지도로 이동" />}
+        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+        frame={
+          <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+            <div className="flex h-full flex-col bg-ui-background">
+              {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed /></div> : isError ? <div className="flex flex-1 items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetchAll() }} /></div> : chart.rankedItems.length === 0 ? (
+                <div className="flex flex-1 items-center justify-center"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
+              ) : (
+                <>
+                  <div className="mt-[25px] flex w-full shrink-0 items-center justify-center font-bold whitespace-nowrap" style={{ fontSize: 22, color: 'var(--ui-white)' }}>
+                    <span className="inline-flex items-center leading-none font-bold">
+                      <span>{titleText} <span className="font-light">({titleUnit})</span></span>
+                      <span className="ml-2.5 rounded bg-[var(--brand-surface)] px-2 py-1 text-sm leading-none font-semibold text-ui-white">{depthNames[groupDepth - 1]}</span>
+                    </span>
+                  </div>
+                  <p className="mt-1.5 mb-[19.5px] flex w-full shrink-0 items-center justify-center gap-1.5 text-[13px] font-medium leading-5 whitespace-nowrap text-ui-muted">
+                    <span aria-hidden="true">-</span>
+                    그룹에 포함된 종목이 적을수록 왜곡이 커질 수 있습니다.
+                  </p>
+                  <div className="flex min-h-[260px] min-w-0 w-full flex-1 pl-[1%] pr-[2%]">
+                    <RankColumns chart={chart} highlightColor={strongIndustryColor} colorScale={colorScale} onSelectSector={name => navigate(`${mapPath}?sector=${encodeURIComponent(name)}`)} onSelectIndex={() => navigate(mapPath)} applyAxisBreak />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        }
+        current={marketKey}
+        boxSize={boxSizeMarketCapRatio}
+        onChangeBoxSize={onChangeMobileBoxSizeRatio}
+      />
+    )
+  }
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background text-ui-white">
       <NavBar />
       <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
       <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
-          <Toolbar>
-            <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              <ToolbarModeText page="GRAPH" label={label} showChevron menu={marketMenu('/graph', market, true)} />
-              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><DatePicker snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
-              {isPastSnapshot && (
-                <ToolbarChip bare>
-                  <ToolbarPinButton pinned={isPastSnapshot} onUnpin={() => select(null)} />
-                </ToolbarChip>
-              )}
-              {rangeStart !== null && (
-                <ToolbarChip bare tone="text-ui-muted">
-                  <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
-                </ToolbarChip>
-              )}
-              {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveSnapshotTime?.slice(0, 10)) && (
-                <>
-                <ToolbarChip bare><PageRefreshButton cell onRefresh={refetchAll} isRefreshing={isFetching} helpText={refreshHelp} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}><AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} /></PageRefreshButton></ToolbarChip>
-                {sessionChip}
-                </>
-              )}
-            </div>
-            <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
-          </Toolbar>
+          {graphToolbarNode}
           <div className="relative flex min-h-0 flex-1">
             <div className={`flex min-h-0 w-full flex-1 flex-col ${isLoading || isError ? '' : 'pt-4 pb-[19.5px]'}`}>
               {isLoading ? (

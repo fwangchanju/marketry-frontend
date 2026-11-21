@@ -1,7 +1,9 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import MobileTopBar from '@/components/MobileTopBar'
-import MobileMapSheet from '@/components/MobileMapSheet'
+import PhoneMapShell from '@/components/PhoneMapShell'
+import type { MobileMapMarket } from '@/components/MobileMapSheet'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
+import { overseasRoute } from '@/utils/markets'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
@@ -19,7 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
 import type { OverseasMapSource } from '@/hooks/overseasMapSource'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
@@ -116,6 +118,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   // 종목 박스의 차트 아이콘·클릭·더블 클릭으로 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
   const { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ stockPopupOnHover, sectorNodes: filteredRootNodes })
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 프레임)만 화면 폭에 맞춰 보여 준다. 위 상단 줄은 모바일 양식을 쓴다.
   const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
@@ -254,9 +257,21 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           </Toolbar>
   )
   const overseasFrameNode = ((isShareOpen && isMobileScreenshotSelected) || isMobileFrameVisible) && !isLoading && !isError && shownCount > 0 && (
-            <div aria-hidden={isPhoneMapFrame ? undefined : true} data-map-mobile-capture-frame data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined} data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined} style={{ opacity: isPhoneMapFrame ? 1 : 0, transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left', width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }} className="pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background">
-              <div data-map-mobile-capture style={{ opacity: 0, width: '100%', height: '100%' }} className="flex flex-col bg-ui-background">
-                <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />
+            <div
+              aria-hidden={isPhoneMapFrame ? undefined : true}
+              data-map-mobile-capture-frame
+              data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
+              data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
+              style={{ opacity: isPhoneMapFrame ? 1 : 0, transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left', width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box' }}
+              className={isPhoneMapFrame ? "relative z-[60] bg-ui-background" : "pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"}
+            >
+              <div
+                aria-hidden="true"
+                data-map-mobile-capture
+                style={{ opacity: isPhoneMapFrame ? 1 : 0, width: '100%', height: '100%' }}
+                className="flex flex-col bg-ui-background"
+              >
+                {isPhoneMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
                 <div aria-hidden="true" className="h-2 shrink-0" />
                 {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
                 <div className="flex min-h-0 flex-1 flex-col">
@@ -265,18 +280,25 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               </div>
             </div>
           );
+  const phoneEmptyFrame = (
+    <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">{isLoading ? '불러오는 중입니다.' : isError ? '데이터를 불러오지 못했습니다.' : '이 날짜에는 표시할 데이터가 없습니다.'}</div>
+  )
+
   if (isPhoneMapFrame) {
+    const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
+    const summaryPath = `${overseasRoute('/summary', market)}?map`
+    const graphPath = overseasRoute('/graph', market)
     return (
-      <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
-        <MobileTopBar title="" />
-        <div className="relative flex min-h-0 w-full flex-1 items-start overflow-hidden bg-ui-background">
-          <div className="relative w-full shrink-0" style={{ height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}px`, marginTop: `${Math.max(0, (window.innerHeight - 44 - 25 - MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale) / 2)}px` }}>
-            {overseasFrameNode}
-          </div>
-        </div>
-        <MobileMapSheet current={market === 'JAPAN' ? 'japan' : 'usa'} boxSize={preferences.boxSizeMarketCapRatio} onChangeBoxSize={value => update({ boxSizeMarketCapRatio: value })} />
-        <div aria-hidden="true" className="pointer-events-none absolute left-0 right-0 top-0 h-0 overflow-hidden opacity-0">{overseasToolbarNode}</div>
-      </div>
+      <PhoneMapShell
+        onSwipe={direction => navigate(direction === 'next' ? summaryPath : graphPath)}
+        toolbar={overseasToolbarNode}
+        topBar={<MobileTopBar title="종목 지도" titleTo={summaryPath} titleLabel="업종 지도로 이동" />}
+        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+        frame={overseasFrameNode || phoneEmptyFrame}
+        current={marketKey}
+        boxSize={preferences.boxSizeMarketCapRatio}
+        onChangeBoxSize={value => update({ boxSizeMarketCapRatio: value })}
+      />
     )
   }
 
