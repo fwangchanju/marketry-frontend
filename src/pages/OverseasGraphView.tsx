@@ -44,10 +44,10 @@ import ToolbarModeText from '@/components/ToolbarModeText'
 import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
+import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { overseasRoute } from '@/utils/markets'
-import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector } from '@/utils/sectorAverage'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
@@ -94,27 +94,12 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   useCarriedBoxSize(onChangeMobileBoxSizeRatio)
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveSnapshotTime !== null && snapshotTime !== liveSnapshotTime)
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
-  const [isShareOpen, setIsShareOpen] = useState(false)
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
+  const { target: screenshotTarget, isOpen: isShareOpen, open: openScreenshot, close: closeScreenshot, copy, copyLabel, isCopying } = useScreenshotShare()
   // 종목 지도로 넘어갈 때 덮개로 남길 미리보기 판.
   const mapPreviewRef = useRef<HTMLDivElement>(null)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const copy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotRef.current) return
-    setCopyStatus('copying')
-    try {
-      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
-      setCopyStatus('copied')
-    } catch {
-      setCopyStatus('error')
-    } finally {
-      setTimeout(() => setCopyStatus('idle'), 2000)
-    }
-  }
-  const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   // 폰의 그룹 등락률도 국내 모바일처럼 같은 화면에서 대분류 → 중분류 → 소분류로 들어간다.
   const [mobileGraphPath, setMobileGraphPath] = useState<string[]>([])
   // 잎 업종을 누르면 국내처럼 같은 화면에서 종목 등락률 그래프로 바뀐다(해외는 종목 지도 페이지로 나가지 않는다).
@@ -362,7 +347,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background text-ui-white">
       <NavBar />
-      <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
+      <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
       <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
           {graphToolbarNode}
@@ -415,7 +400,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
           </SettingsPanel>
         </div>
       </div>
-      {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} />}
+      {isShareOpen && <ScreenshotModal onClose={closeScreenshot} onCopy={copy} copyLabel={copyLabel} isCopying={isCopying} screenshotTarget={screenshotTarget} />}
     </div>
   )
 }
