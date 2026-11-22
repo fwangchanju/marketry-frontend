@@ -397,7 +397,7 @@ export default function MarketSummaryPage() {
           className="fixed flex flex-col bg-ui-background"
           style={{ left: 0, top: 0, width: SUMMARY_CAPTURE_FRAME_WIDTH * summaryFrames.length, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
         >
-          <SummaryCaptureFrames frames={captureFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} captureFrameClassName="min-h-0 flex-1" badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} />
+          <SummaryCaptureFrames frames={captureFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} />
         </div>
       )}
       {screenshotTarget && (
