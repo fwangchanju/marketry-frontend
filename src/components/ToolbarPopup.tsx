@@ -4,10 +4,10 @@ import { TOOLBAR_SIDE_GUTTER } from '@/utils/phonePathBar'
 import { usePhoneToolbar } from './PhoneToolbarContext'
 
 // 폰 팝업 전용 배율. 툴바는 화면 폭에 맞춰 작게 그리지만, 그 아래에 열리는 팝업은
-// 읽기 쉽도록 툴바 축소(0.863)를 빼고 각 팝업의 원본 CSS 크기로 그린다.
+// 읽기 쉽도록 툴바 축소(0.863)를 빼고 원본 CSS 크기의 1.2배로 그린다.
 // 화면 폭 393px(가용 381px)에 5종 모두 들어간다.
 // 바꿀 때는 이 값만 조절하면 위치 보정·클램프·간격이 함께 따라온다.
-const POPUP_FIXED_SCALE = 1.0
+const POPUP_FIXED_SCALE = 1.2
 
 // 툴바 버튼 아래에 열리는 팝업 공통 부품.
 // PC는 예전처럼 트리거 기준 absolute로 그대로 열고, 폰 프레임에서는 document.body로 옮겨
@@ -33,8 +33,9 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
     const popup = popupRef.current
     if (!trigger || !popup) return
     const triggerRect = trigger.getBoundingClientRect()
-    // transform 전 레이아웃 폭을 재고 팝업 배율을 곱해 화면에 실제로 차지하는 폭을 구한다.
-    const visualWidth = popup.offsetWidth * POPUP_FIXED_SCALE
+    // transform이 적용된 실제 화면 폭을 쓴다. offsetWidth(정수 반올림)에 배율을 곱하면
+    // 서브픽셀 오차로 오른쪽 끝이 여백 1px을 넘을 수 있다.
+    const visualWidth = popup.getBoundingClientRect().width
     const maxLeft = Math.max(TOOLBAR_SIDE_GUTTER, window.innerWidth - TOOLBAR_SIDE_GUTTER - visualWidth)
     popup.style.left = `${Math.min(Math.max(triggerRect.left, TOOLBAR_SIDE_GUTTER), maxLeft)}px`
     popup.style.top = `${triggerRect.bottom + gapPx * POPUP_FIXED_SCALE}px`
