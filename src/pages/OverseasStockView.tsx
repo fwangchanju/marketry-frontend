@@ -39,6 +39,7 @@ import { SearchBar } from '@/components/ReadOnlyTaxonomySheet'
 import { AdminStockSectorCell, BulkAssignButton } from '@/components/AdminStockTable'
 import { STOCK_SEARCH_MAX_LENGTH, createStockMatcher } from '@/utils/stockSearch'
 import { toJoEokDecimal } from '@/utils/format'
+import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { buildSectorParentHints } from '@/utils/sectorFilterHints'
 import { isProtectedSectorName } from '@/utils/protectedSector'
@@ -289,7 +290,7 @@ export default function OverseasStockView({ source }: { source: OverseasStockSou
           <DisclaimerFooter />
         </main>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={`${filtered.length}/${stocks.length}종목`} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={sheet === 'MINE' ? ['custom', 'adminOps'] : ['custom']}>
+          <SettingsPanel pageLabel="Stock" customTabLabel="종목" customTabIcon="stock-single" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} stockCountLabel={formatStockCountLabel(filtered.length, stocks.length)} showPreferenceActions={false} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={sheet === 'MINE' ? ['custom', 'adminOps'] : ['custom']}>
             <SettingsPanelGroup section="custom">
               {canEdit ? (
                 <>

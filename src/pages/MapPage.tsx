@@ -51,7 +51,7 @@ import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
-import { toCount } from '@/utils/format'
+import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
@@ -651,7 +651,7 @@ export default function MapPage() {
               sectionOrder={SPECIAL_MAP_SETTINGS_SECTION_ORDER}
               taxonomyAtBottom
               snapshotTime={data?.taxonomyUpdatedAt}
-              stockCountLabel={`${toCount(visibleItems.length)}/${toCount(totalItemCount)}종목`}
+              stockCountLabel={formatStockCountLabel(visibleItems.length, totalItemCount)}
               onSelectTaxonomy={next => {
                 settingsModalProps.onSelectTaxonomy(next)
                 reset()

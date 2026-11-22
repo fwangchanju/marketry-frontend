@@ -44,7 +44,8 @@ import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/c
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
-import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel } from '@/utils/format'
+import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { marketRoute } from '@/utils/marketRoute'
 import type { Market, HeatmapSectorNode } from '@/types/api'
 import RankColumns, { type RankColumnItem, type RankIndexMarket } from '@/components/RankColumns'
@@ -260,7 +261,7 @@ export default function GraphPage() {
       (sum, node) => sum + collectAllItems(node).length,
       0,
     )
-    return `${toCount(included)}/${toCount(total)}종목`
+    return formatStockCountLabel(included, total)
   }, [displayNow, excludedSectorIds, excludedMarketValueTiers])
 
   const charts = useMemo(() => {
