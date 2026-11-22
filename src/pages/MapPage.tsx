@@ -52,7 +52,7 @@ import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 import { formatStockCountLabel } from '@/utils/stockCountLabel'
-import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
+import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 import { CAPTURE_ID } from '@/utils/captureIds'
 import { SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
@@ -121,7 +121,6 @@ function findRawNodeByPath(nodes: HeatmapSectorNode[], path: string[]): HeatmapS
   }
   return node
 }
-type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 export default function MapPage() {
   const isLoggedIn = useIsLoggedIn()
   const {
@@ -184,7 +183,6 @@ export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const [isShareOpen, setIsShareOpen] = useState(false)
   // 종목 박스의 차트 아이콘·클릭·더블 클릭으로 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
   const { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ stockPopupOnHover, sectorNodes: filteredRootNodes })
   const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
@@ -209,12 +207,12 @@ export default function MapPage() {
     ? 'simpleAvgChangeRate'
     : 'weightedAvgChangeRate'
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   // null이 아니면 Heatmap이 해당 뎁스로 줄어드는 줌아웃 애니메이션을 재생하고, 끝나면
   // handleZoomOutComplete를 불러서 실제 이동을 한다 — 애니메이션 도중엔 path/groups를 먼저 바꾸지 않는다.
   const [zoomOutRequestDepth, setZoomOutRequestDepth] = useState<number | null>(null)
   const screenshotRef = useRef<HTMLDivElement>(null)
+  const { target: screenshotTarget, isOpen: isShareOpen, open: openScreenshot, close: closeScreenshot, copy: handleCopy, copyLabel, isCopying } = useScreenshotShare()
   const { path, setPath, currentNode, currentSiblings, enterSector, goToDepth, reset } = useHeatmapDrilldown(filteredRootNodes)
   // "업종 단계" 뎁스 제한은 진짜 루트(대분류) 기준 절대값이다 — 설정이 중분류까지면 어디로 드릴다운해도 중분류까지만 보인다.
   // 드릴다운해서 대분류 하나로 들어가면(path.length = 1) 이미 한 단계를 내려온 것이라, 그 안에서는 남은 단계(설정값 - path.length)만 보인다.
@@ -312,19 +310,6 @@ export default function MapPage() {
   // 일본·미국 지도와 같은 부품(useMapDrilldownHistory)이 한다.
   const { markEntryFromOtherPage } = useMapDrilldownHistory({ path, setPath, zoomOutRequestDepth, handleGoToDepth, isShareOpen })
   useMapSectorEntry({ filteredRootNodes, enterSector, pathLength: path.length, markEntryFromOtherPage })
-  const handleCopy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotRef.current) return
-    setCopyStatus('copying')
-    try {
-      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
-      setCopyStatus('copied')
-    } catch {
-      setCopyStatus('error')
-    } finally {
-      setTimeout(() => setCopyStatus('idle'), 2000)
-    }
-  }
   // 끌어서 놓은 종목을 화면에서만 옮긴다. 저장되지 않는다는 안내는 켤 때 한 번만 띄운다.
   const handleMoveStock = (drop: StockDrop) => {
     setStockMoveState(previous => ({
@@ -332,7 +317,6 @@ export default function MapPage() {
       moves: { ...(previous.scope === stockMoveScope ? previous.moves : {}), [drop.stockCode]: drop.targetSectorId },
     }))
   }
-  const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   // 렌더러용 모바일 판 — 데이터가 오고 히트맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
   const canShowMobileCapture = isMobileFrameVisible && !isLoading && !isError && visibleItems.length > 0
   // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 복제하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
@@ -505,7 +489,7 @@ export default function MapPage() {
             isRefreshing={isRefetchingHeatmap}
             onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
             isSettingsOpen={settingsModalProps.isOpen}
-            onOpenShare={() => setIsShareOpen(true)}
+            onOpenShare={() => openScreenshot(screenshotRef.current)}
             isScreenshotOpen={isShareOpen}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
@@ -705,13 +689,13 @@ export default function MapPage() {
       {isShareOpen && (
         <ScreenshotModal
           onClose={() => {
-            setIsShareOpen(false)
+            closeScreenshot()
             setIsMobileScreenshotSelected(false)
           }}
           onCopy={handleCopy}
           copyLabel={copyLabel}
-          isCopying={copyStatus === 'copying'}
-          screenshotTarget={screenshotRef.current}
+          isCopying={isCopying}
+          screenshotTarget={screenshotTarget}
           captureReady={!isLoading}
           emptyPreview={isMineEmpty && !isLoading && !isError ? (
             <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>

@@ -4,9 +4,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 
-test('해외 섹터·그래프·지도와 국내 그래프 화면은 캡처창 열기·복사 상태를 직접 만들지 않는다', () => {
+test('섹터·그래프·지도 화면은 캡처창 열기·복사 상태를 직접 만들지 않는다', () => {
   const pagesDir = join(dirname(fileURLToPath(import.meta.url)), '../pages')
-  for (const name of ['OverseasSectorView.tsx', 'OverseasGraphView.tsx', 'OverseasMapView.tsx', 'GraphPage.tsx']) {
+  for (const name of ['OverseasSectorView.tsx', 'OverseasGraphView.tsx', 'OverseasMapView.tsx', 'GraphPage.tsx', 'MapPage.tsx']) {
     const source = readFileSync(join(pagesDir, name), 'utf8')
     assert.ok(source.includes('useScreenshotShare'), `${name}에서 공통 훅을 쓴다`)
     assert.ok(!source.includes('copyStatus'), `${name}에서 복사 상태를 직접 만들지 않는다`)
