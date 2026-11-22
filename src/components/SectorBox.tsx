@@ -51,6 +51,8 @@ interface Props {
   depthOffset?: number
   depth?: number
   captureRowMetric?: 'weightedAvgChangeRate' | 'simpleAvgChangeRate'
+  // 하위 StockBox까지 그대로 관통 — 폰 종목 지도의 화면 확대 배율(없으면 1).
+  zoomScale?: number
 }
 
 // 절대 depth(트리 기준 실제 단계) → 배경/글자색. 배열 끝을 넘으면 마지막 값을 반복한다.
@@ -89,6 +91,7 @@ function SectorBox({
   depthOffset = 0,
   depth = 0,
   captureRowMetric,
+  zoomScale = 1,
 }: Props) {
   const boxRef = useRef<HTMLDivElement>(null)
   // 이 섹터까지의 전체 경로(루트부터) — 하이라이트 키와 하위로 넘길 ancestorPath에 그대로 쓴다.
@@ -284,6 +287,7 @@ function SectorBox({
           strongIndustryColor={strongIndustryColor}
           depthOffset={depthOffset}
           depth={sector.isSelf ? depth : depth + 1}
+          zoomScale={zoomScale}
         />
       ))}
       {sector.boxes.map(box => (
@@ -305,6 +309,7 @@ function SectorBox({
           stockPopupOnHover={stockPopupOnHover}
           highlightedKey={highlightedKey}
           ancestorPath={sectorPath}
+          zoomScale={zoomScale}
         />
       ))}
     </div>

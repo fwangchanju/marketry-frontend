@@ -37,6 +37,9 @@ interface Props {
   // 이 박스를 담고 있는 섹터의 전체 경로(SectorBox.sectorPath) — stockCode만으로는
   // 같은 종목이 트리 여러 자리에 나타날 가능성을 배제할 수 없어, 종목 키도 경로로 유일하게 만든다.
   ancestorPath: string
+  // 폰 종목 지도 전용 — 화면 확대 배율. 커진 박스 크기로 이름을 다시 맞추고 글자 크기는 배율로 나눠
+  // 화면에서 같은 크기로 보이게 한다. 100%에서 안 들어가던 이름이 확대하면 나타난다. 없으면 1(변화 없음).
+  zoomScale?: number
 }
 
 export default function StockBox({
@@ -56,21 +59,28 @@ export default function StockBox({
   stockPopupOnHover,
   highlightedKey,
   ancestorPath,
+  zoomScale = 1,
 }: Props) {
   // 글자는 박스 크기에 맞춘다(utils/stockLabelFit.ts) — 종목명은 한 줄에 들어가면 그대로, 안 들어가면 두 줄로 나누고, 그래도 안 되면 글자를 9px까지 줄이고,
   // 그래도 안 되면 종목명을 감추고 등락률만 보여 준다. 말줄임표나 잘린 글자는 만들지 않는다. 종목명만 고른 경우에 이름이 안 들어가면 아무것도 그리지 않는다.
   const wantName = stockLabelMode !== 'rateOnly'
   const wantRate = stockLabelMode !== 'nameOnly'
-  const fontSize = stockFitBaseFontPx(width, height, wantRate)
+  // 폰 종목 지도에서 화면을 확대하면 박스가 커 보인다. 커진 크기로 이름을 다시 맞춰 100%에서 안 들어가던 이름도 나타나게 하고,
+  // 글자 크기는 배율로 나눠 화면에서는 같은 크기로 보이게 한다(업종 지도의 확대 라벨과 같은 방식).
+  const fitWidth = width * zoomScale
+  const fitHeight = height * zoomScale
+  const fontSize = stockFitBaseFontPx(fitWidth, fitHeight, wantRate)
   const fontsVersion = useFontsVersion()
   const name = item.alias ?? item.stockName
   const rateText = toPctSignedGrouped(item.changeRate, decimalPlaces)
   const fit = useMemo(
-    () => fitStockLabel({ name, rateText, width, height, baseFont: fontSize, wantName, wantRate, market: currencyUnit === '엔' ? 'japan' : currencyUnit === '달러' ? 'usa' : 'korea' }),
+    () => fitStockLabel({ name, rateText, width: fitWidth, height: fitHeight, baseFont: fontSize, wantName, wantRate, market: currencyUnit === '엔' ? 'japan' : currencyUnit === '달러' ? 'usa' : 'korea' }),
     // fontsVersion은 글꼴이 늦게 로드돼 글자 폭이 달라졌을 때 다시 계산하려는 값이다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, rateText, width, height, fontSize, wantName, wantRate, currencyUnit, fontsVersion],
+    [name, rateText, fitWidth, fitHeight, fontSize, wantName, wantRate, currencyUnit, fontsVersion],
   )
+  const nameSize = fit.nameSize / zoomScale
+  const rateSize = fit.rateSize === null ? null : fit.rateSize / zoomScale
   const showLabel = stockLabelMode !== 'off' && areaPercent >= labelMinAreaPercent && (fit.nameLines !== null || fit.rateSize !== null)
   const backgroundColor = resolveHeatmapColor(item.changeRate, colorScale)
   const stockKey = `stock:${ancestorPath}\u0000${item.stockCode}`
@@ -120,15 +130,15 @@ export default function StockBox({
       {showLabel && (
         <>
           {fit.nameLines && (
-            <span className="w-full px-1 text-center" style={{ fontSize: fit.nameSize, lineHeight: LABEL_LINE_HEIGHT }}>
+            <span className="w-full px-1 text-center" style={{ fontSize: nameSize, lineHeight: LABEL_LINE_HEIGHT }}>
               {fit.nameLines.map((line, lineIndex) => (
                 // 이름이 여러 줄로 나뉠 때 같은 글자의 줄이 둘일 수 있어(예: "토" "토") 순번까지 키에 넣는다.
                 <span key={`${lineIndex}:${line}`} className="block whitespace-nowrap">{line}</span>
               ))}
             </span>
           )}
-          {fit.rateSize !== null && (
-            <span className="tabular-nums text-center" style={{ fontSize: fit.rateSize, lineHeight: LABEL_LINE_HEIGHT }}>
+          {rateSize !== null && (
+            <span className="tabular-nums text-center" style={{ fontSize: rateSize, lineHeight: LABEL_LINE_HEIGHT }}>
               {rateText}
             </span>
           )}

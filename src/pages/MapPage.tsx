@@ -3,6 +3,7 @@ import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSettled } from '@/hooks/useSettled'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
+import { useVisualViewportScale } from '@/hooks/useVisualViewportScale'
 import MobileTopBar from '@/components/MobileTopBar'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import MapToolbar from '@/components/MapToolbar'
@@ -195,6 +196,9 @@ export default function MapPage() {
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 5:8 프레임)만 화면 폭에 맞춰 보여 준다. 실험 기능이라 되돌리기 쉽게 이 분기만 둔다.
   const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
+  // 화면 확대 배율 — 폰 종목 지도에서만 라벨을 커진 박스 기준으로 다시 맞춘다(캡처는 100% 기준으로 고정).
+  const viewportScale = useVisualViewportScale()
+  const phoneLabelZoomScale = isPhoneMapFrame ? viewportScale : 1
   // 종목 지도에서 그룹 등락률로 스와이프할 때 지수가 도착 뒤에야 오지 않도록 폰 화면에서 미리 받아 둔다(2026-11-22 사용자 제보).
   const { data: marketSummary, isLoading: isMarketSummaryLoading, isFetching: isMarketSummaryFetching } = useMarketSummary(isPhoneMapFrame)
   const showGraphPreviewIndexes = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
@@ -433,6 +437,7 @@ export default function MapPage() {
                   zoomOutRequestDepth: null,
                   onZoomOutComplete: () => {},
                   captureRowMetric,
+                  zoomScale: phoneLabelZoomScale,
                 }}
               />
             </div>
