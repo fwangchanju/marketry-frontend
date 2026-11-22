@@ -41,3 +41,34 @@ export function CaptureFrame({ title, className = '', children, badgeClassName, 
     </div>
   )
 }
+
+export type SummaryFrameItem = { title: string; captureId: string; children: ReactNode }
+
+// 화면의 두 틀에 내용을 넣는 조립 — 한국·해외 서머리가 같은 코드를 쓴다.
+export function SummaryScreenFrames({ frames, badgeClassName, badgeStyle }: { frames: SummaryFrameItem[] } & BadgeStyle) {
+  return (
+    <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
+      {frames.map((frame, index) => (
+        <SortableSummaryFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={index} captureUntil={index === 1 ? '' : undefined} badgeClassName={badgeClassName} badgeStyle={badgeStyle}>
+          {frame.children}
+        </SortableSummaryFrame>
+      ))}
+    </div>
+  )
+}
+
+// 캡처용 두 틀에 내용을 넣는 조립 — 화면과 같은 순서·내용을 쓰고, 틀별 차이는 값으로 받는다.
+export function SummaryCaptureFrames({ frames, toolbar, frameWidth, captureFrameClassName, badgeClassName, badgeStyle }: { frames: SummaryFrameItem[]; toolbar: ReactNode; frameWidth: number; captureFrameClassName?: string } & BadgeStyle) {
+  return (
+    <div className="flex min-h-0 flex-1 bg-ui-background">
+      {frames.map(frame => (
+        <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: frameWidth }}>
+          {toolbar}
+          <CaptureFrame title={frame.title} className={captureFrameClassName} badgeClassName={badgeClassName} badgeStyle={badgeStyle}>
+            {frame.children}
+          </CaptureFrame>
+        </div>
+      ))}
+    </div>
+  )
+}
