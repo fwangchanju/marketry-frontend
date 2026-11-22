@@ -1,7 +1,9 @@
-import { type CSSProperties, type ReactNode, useState } from 'react'
-import { useSortable } from '@dnd-kit/sortable'
+import { type CSSProperties, type ReactNode, type RefObject, useState } from 'react'
+import { DndContext, closestCenter, type DndContextProps } from '@dnd-kit/core'
+import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { FRAME_BADGE_CLASS } from '@/utils/frameBadge'
+import { SUMMARY_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
 
 type BadgeStyle = { badgeClassName?: string; badgeStyle?: CSSProperties }
 
@@ -55,6 +57,38 @@ export function SummaryScreenFrames({ frames, badgeClassName, badgeStyle }: { fr
           {frame.children}
         </SortableSummaryFrame>
       ))}
+    </div>
+  )
+}
+
+// 순서 끌기까지 감싼 화면 틀 조립. 한국·해외 서머리가 같은 감지기·충돌 판정·순서 목록을 쓰게 한다.
+// 스크롤을 푸는 조건은 시장별로 다르므로 이 조립 밖에 둔다.
+export function SortableSummaryScreenFrames({ frames, order, sensors, onDragEnd, badgeClassName, badgeStyle }: {
+  frames: SummaryFrameItem[]
+  order: string[]
+  sensors: DndContextProps['sensors']
+  onDragEnd: DndContextProps['onDragEnd']
+} & BadgeStyle) {
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={order} strategy={horizontalListSortingStrategy}>
+        <SummaryScreenFrames frames={frames} badgeClassName={badgeClassName} badgeStyle={badgeStyle} />
+      </SortableContext>
+    </DndContext>
+  )
+}
+
+// 화면 밖에 숨겨 둔 캡처판 — 두 서머리가 같은 크기·스타일·툴바를 쓰고, 프레임 목록만 시장별로 받는다.
+export function HiddenSummaryCaptureFrames({ captureRef, frameCount, frames, toolbar, frameWidth, badgeClassName, badgeStyle }: {
+  captureRef: RefObject<HTMLDivElement | null>
+  frameCount: number
+  frames: SummaryFrameItem[]
+  toolbar: ReactNode
+  frameWidth: number
+} & BadgeStyle) {
+  return (
+    <div ref={captureRef} aria-hidden="true" data-summary-fixed-capture className="fixed flex flex-col bg-ui-background" style={{ left: 0, top: 0, width: frameWidth * frameCount, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}>
+      <SummaryCaptureFrames frames={frames} toolbar={toolbar} frameWidth={frameWidth} badgeClassName={badgeClassName} badgeStyle={badgeStyle} />
     </div>
   )
 }
