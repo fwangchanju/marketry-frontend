@@ -56,8 +56,6 @@ interface Props {
   // 금액 단위 — 일본 지도는 엔으로 표시한다.
   currencyUnit?: CurrencyUnit
   captureRowMetric?: 'weightedAvgChangeRate' | 'simpleAvgChangeRate'
-  // 하위 SectorBox/StockBox까지 그대로 관통 — 폰 종목 지도의 화면 확대 배율(없으면 1).
-  zoomScale?: number
 }
 
 // 컨테이너 기준 0~1 비율 좌표 — 컨테이너 크기가 나중에 달라져도(리사이즈) 값이 그대로 유효하다.
@@ -134,7 +132,6 @@ export default function Heatmap({
   onMoveStock,
   currencyUnit = '원',
   captureRowMetric,
-  zoomScale = 1,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   useStockDrag(containerRef, stockMoveEnabled && onMoveStock !== undefined, drop => onMoveStock?.(drop))
@@ -415,7 +412,6 @@ export default function Heatmap({
               topPickSectorKeys={topPickSectorKeys}
               strongIndustryColor={strongIndustryColor}
               captureRowMetric={undefined}
-              zoomScale={zoomScale}
             />
           ))}
         </div>
@@ -447,7 +443,6 @@ export default function Heatmap({
             topPickSectorKeys={topPickSectorKeys}
             strongIndustryColor={strongIndustryColor}
             captureRowMetric={depth === 0 ? captureRowMetric : undefined}
-            zoomScale={zoomScale}
           />
         ))}
       </div>
