@@ -11,6 +11,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useQueryClient } from '@tanstack/react-query'
 import type { SectorItem, StockSectorListItem } from '@/types/api'
 import { toCount, toJoEokDecimal, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
+import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { findAliasConflict } from '@/utils/aliasConflict'
 import { ClassificationUploadError, buildUploadPlan, readClassificationFile } from '@/utils/classificationUpload'
@@ -1697,7 +1698,7 @@ export default function AdminStockTable({
   )
 
 
-  useReportCountLabel(`${toCount(sorted.length)}/${toCount(items.length)}종목`, onCountLabelChange)
+  useReportCountLabel(formatStockCountLabel(sorted.length, items.length), onCountLabelChange)
   const hasCustomClassification = sectors.length > 0 || items.some(item => item.sectorId != null)
   return (
     <div ref={rootRef} className="relative flex h-full min-h-0 flex-col">

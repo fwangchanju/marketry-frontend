@@ -24,7 +24,8 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import Spinner from '@/components/Spinner'
 import EmptyMessage, { EMPTY_DATA_MESSAGE, EMPTY_SEARCH_MESSAGE } from '@/components/EmptyMessage'
 import type { Market, HeatmapResponse } from '@/types/api'
-import { toCount, toJoEokDecimal } from '@/utils/format'
+import { toJoEokDecimal } from '@/utils/format'
+import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { compareKoreanText } from '@/utils/koreanSort'
 import { STOCK_SEARCH_MAX_LENGTH, createStockMatcher } from '@/utils/stockSearch'
 import { useSession } from '@/hooks/useSession'
@@ -377,7 +378,7 @@ function StockTable({ showHierarchy, showAlias, sectors, emptyMessage, stockMark
       <StockSortHeader label={label} state={activeSortKey === key ? direction : null} filter={filter} onSort={() => toggle(key)} />
     </th>
   )
-  useReportCountLabel(`${toCount(visibleRows.length)}/${toCount(rows.length)}종목`, onCountLabelChange)
+  useReportCountLabel(formatStockCountLabel(visibleRows.length, rows.length), onCountLabelChange)
   // 맨 왼쪽 체크박스 — MARKETRY 종목 표와 같은 모양이다. 읽기 전용 시트라 고른 종목으로 할 수 있는 작업은 아직 없고, 표시만 한다.
   const [selectedCodes, setSelectedCodes] = useState<ReadonlySet<string>>(new Set())
   const isAllVisibleSelected = visibleRows.length > 0 && visibleRows.every(row => selectedCodes.has(row.stockCode))

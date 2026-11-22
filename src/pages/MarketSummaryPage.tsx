@@ -1,13 +1,14 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import { frameBadgeStyle } from '@/utils/frameBadge'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import { SummaryCaptureFrames, SummaryScreenFrames } from '@/components/SummaryFrame'
 import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
+import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -37,9 +38,9 @@ import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
-import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
 import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
-import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toCount, toSnapshotDateLabel } from '@/utils/format'
+import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel } from '@/utils/format'
+import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { buildRankChart } from '@/utils/rankChart'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { collectItems, summarizeSector } from '@/utils/sectorAverage'
@@ -52,7 +53,6 @@ import { marketMenu } from '@/utils/marketMenu'
 import type { MarketQuery } from '@/types/api'
 
 // 서머리 배치
-type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type HistoricalIndexPoint = {
   date: string
   market: 'KOSPI' | 'KOSDAQ'
@@ -83,8 +83,7 @@ export default function MarketSummaryPage() {
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const allFramesRef = useRef<HTMLDivElement>(null)
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
-  const [screenshotTarget, setScreenshotTarget] = useState<HTMLElement | null>(null)
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
+  const { target: screenshotTarget, isWhole: isCapturingAll, open: openScreenshot, close: closeScreenshot, copy: handleCopy, copyLabel, isCopying } = useScreenshotShare()
   const {
     settingsModalProps, data, rootNodes, isLoading: isBaseLoading, isError, refetchHeatmap, isRefetchingHeatmap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
     changeRateMode, changeRateChoice, colorScale, strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps, excludedSectorIds, excludedMarketValueTiers,
@@ -195,26 +194,8 @@ export default function MarketSummaryPage() {
       (sum, node) => sum + collectAllItems(node).length,
       0,
     )
-    return `${toCount(included)}/${toCount(total)}종목`
+    return formatStockCountLabel(included, total)
   }, [rootNodes, data, excludedSectorIds, excludedMarketValueTiers])
-  // 두 틀을 한 장으로 스크린샷으로 찍는 중에는 틀마다 있는 스크린샷 버튼을 감춰서 이미지에 찍히지 않게 한다.
-  const isCapturingAll = screenshotTarget !== null && screenshotTarget === allFramesRef.current
-  const handleCopy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotTarget) return
-    setCopyStatus('copying')
-    try {
-      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (screenshotTarget) await screenshotElementToClipboard(screenshotTarget)
-      setCopyStatus('copied')
-    } catch {
-      setCopyStatus('error')
-    } finally {
-      setTimeout(() => setCopyStatus('idle'), 2000)
-    }
-  }
-
-
-  const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   // 두 틀의 제목 줄 오른쪽 끝에 같은 기준 날짜·시각을 보여 준다 — 데이터를 받은 뒤에만 보인다.
 
   // 툴바 왼쪽(제목 배지·날짜·시각·시간대)과 오른쪽(분류 배지) — 화면의 툴바와 3:4 캡처용 판이 같은 내용을 쓴다.
@@ -314,7 +295,7 @@ export default function MarketSummaryPage() {
             isSettingsOpen={isSettingsOpen}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
-            onOpenShare={() => setScreenshotTarget(allFramesRef.current)}
+            onOpenShare={() => openScreenshot(allFramesRef.current, true)}
             isScreenshotOpen={isCapturingAll}
           />
         }
@@ -402,10 +383,10 @@ export default function MarketSummaryPage() {
       )}
       {screenshotTarget && (
         <ScreenshotModal
-          onClose={() => setScreenshotTarget(null)}
+          onClose={closeScreenshot}
           onCopy={handleCopy}
           copyLabel={copyLabel}
-          isCopying={copyStatus === 'copying'}
+          isCopying={isCopying}
           screenshotTarget={screenshotTarget}
           captureReady={!isLoading}
           emptyPreview={isMineEmpty && !isLoading && !isError ? (

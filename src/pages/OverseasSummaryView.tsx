@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
 import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import { buildExcludedSectorRows, countVisibleItems } from '@/utils/overseasSectorExclusion'
+import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
@@ -17,13 +18,13 @@ import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { frameBadgeStyle } from '@/utils/frameBadge'
 import { SummaryCaptureFrames, SummaryScreenFrames } from '@/components/SummaryFrame'
 import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
+import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
-import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import RankBars from '@/components/RankBars'
@@ -100,9 +101,11 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     return Array.isArray(value) && value.every(name => typeof name === 'string') ? value as string[] : []
   }
   const [phoneSectorPath, setPhoneSectorPath] = useState<string[]>(() => readPhoneSectorPath(location.state))
-  useEffect(() => {
+  const [phoneSectorKey, setPhoneSectorKey] = useState(location.key)
+  if (phoneSectorKey !== location.key) {
+    setPhoneSectorKey(location.key)
     setPhoneSectorPath(readPhoneSectorPath(location.state))
-  }, [location.key, location.state])
+  }
   const phoneSectorNode = useMemo(() => {
     let node: (typeof tree)[number] | null = null
     let siblings = tree
@@ -171,23 +174,8 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const mapPreviewRef = useRef<HTMLDivElement>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
-  const [isShareOpen, setIsShareOpen] = useState(false)
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
+  const { target: screenshotTarget, isOpen: isShareOpen, open: openScreenshot, close: closeScreenshot, copy, copyLabel, isCopying } = useScreenshotShare()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const copy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotRef.current) return
-    setCopyStatus('copying')
-    try {
-      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
-      setCopyStatus('copied')
-    } catch {
-      setCopyStatus('error')
-    } finally {
-      setTimeout(() => setCopyStatus('idle'), 2000)
-    }
-  }
-  const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   const hasData = tree.length > 0
 
   const toolbarContent = (
@@ -337,7 +325,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   return (
     <div className="flex h-screen min-h-0 select-none flex-col bg-ui-background">
       <NavBar />
-      <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
+      <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
       <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           {summaryToolbarNode}
@@ -354,7 +342,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
           <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-        <SettingsPanel pageLabel="Summary" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={`${shownCount}/${totalCount}종목`} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
+        <SettingsPanel pageLabel="Summary" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={formatStockCountLabel(shownCount, totalCount)} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
           <SettingsPanelGroup section="composition">
             <SettingsMarketValueSection isCustom={false} tiers={tierRange.tiers} tierRangeMinIndex={tierRange.minIndex} tierRangeMaxIndex={tierRange.maxIndex} onChangeTierRange={tierRange.setRange} showDivider={false} currencyUnit={currencyUnit} />
             <SettingsExcludeSection sectorFilterEnabled={sectorExclusion.enabled} onToggleSectorFilter={sectorExclusion.toggle} excludedSectors={buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers)} onRemoveExcludedSector={sectorExclusion.remove} />
@@ -378,7 +366,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
           <SummaryCaptureFrames frames={orderedSummaryFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} {...badgeStyleProps} />
         </div>
       )}
-      {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} captureReady={!isLoading}
+      {isShareOpen && <ScreenshotModal onClose={closeScreenshot} onCopy={copy} copyLabel={copyLabel} isCopying={isCopying} screenshotTarget={screenshotTarget} captureReady={!isLoading}
           fixedSummaryCaptureRef={fixedCaptureRef}
           frameCaptureOptions={safeSummaryFrameOrder.map((title, selectedSlot) => {
             const captureId = title === '업종 지도' ? 'market-map' : 'group-change-rate'
