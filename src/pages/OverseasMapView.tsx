@@ -57,7 +57,7 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { mapTileMethod } from '@/utils/mapStretch'
-import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
+import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { calculateSectorLayoutWeights } from '@/utils/sectorLayoutWeights'
 import { BREADCRUMB_LINK_CLASS, toDisplayGroup } from '@/utils/mobileMapHeatmap'
@@ -120,10 +120,9 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
-  const [isShareOpen, setIsShareOpen] = useState(false)
   const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLDivElement>(null)
+  const { target: screenshotTarget, isOpen: isShareOpen, open: openScreenshot, close: closeScreenshot, copy, copyLabel, isCopying } = useScreenshotShare()
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   // 업종 단계를 끄면 박스를 묶지 않고 종목만 그린다. 켜면 고른 단계까지 보여 주고, 더 깊이 들어가면 최소 바로 아래 단계는 보여 준다.
@@ -216,20 +215,6 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     decimalPlacesIndex: preferences.decimalPlaces,
     onChangeDecimalPlacesIndex: (index: number) => update({ decimalPlaces: index }),
   }
-  const copy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotRef.current) return
-    setCopyStatus('copying')
-    try {
-      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
-      setCopyStatus('copied')
-    } catch {
-      setCopyStatus('error')
-    } finally {
-      setTimeout(() => setCopyStatus('idle'), 2000)
-    }
-  }
-  const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   const handleGoToDepth = (depth: number) => { if (depth < path.length) setZoomOutRequestDepth(depth) }
   // 분류를 한 단계씩 들어가고 나오는 것의 브라우저 기록(뒤로가기·앞으로가기)·백스페이스와, 그래프에서 업종을 눌러 온 주소(?sector=) 처리는
   // 한국 지도와 같은 부품(useMapDrilldownHistory)이 한다.
@@ -339,7 +324,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background text-ui-white">
       <NavBar />
-      <NavSubBar onReselectCurrent={() => handleGoToDepth(0)} actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setIsShareOpen(true)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
+      <NavSubBar onReselectCurrent={() => handleGoToDepth(0)} actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
       <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
         <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
           {overseasToolbarNode}
@@ -440,7 +425,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           </SettingsPanel>
         </div>
       </div>
-      {isShareOpen && <ScreenshotModal onClose={() => { setIsShareOpen(false); setIsMobileScreenshotSelected(false) }} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} captureReady={!isLoading} mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }} onMobileSelectionChange={setIsMobileScreenshotSelected} />}
+      {isShareOpen && <ScreenshotModal onClose={() => { closeScreenshot(); setIsMobileScreenshotSelected(false) }} onCopy={copy} copyLabel={copyLabel} isCopying={isCopying} screenshotTarget={screenshotTarget} captureReady={!isLoading} mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }} onMobileSelectionChange={setIsMobileScreenshotSelected} />}
     </div>
   )
 }
