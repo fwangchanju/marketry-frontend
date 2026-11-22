@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode } from 'react'
+import { type CSSProperties, type ReactNode, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
@@ -6,9 +6,10 @@ import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 type BadgeStyle = { badgeClassName?: string; badgeStyle?: CSSProperties }
 
 // 서머리의 틀 — 제목 배지를 끌어서 순서를 바꾼다. 배지 색만 값으로 받고 시장 이름은 모른다.
-export function SortableSummaryFrame({ title, captureId, index, children, captureUntil, badgeClassName, badgeStyle }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string } & BadgeStyle) {
+// 호버 상태는 두 틀을 감싼 조립이 갖는다 — 한쪽 배지에 올려도 양쪽 선이 함께 보인다.
+export function SortableSummaryFrame({ title, captureId, index, children, captureUntil, showBorder, onBadgeHover, badgeClassName, badgeStyle }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; showBorder: boolean; onBadgeHover: (hovered: boolean) => void } & BadgeStyle) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
-  const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" style={badgeStyle} className={`${badgeClassName ?? FRAME_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title}</span>
+  const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" onMouseEnter={() => onBadgeHover(true)} onMouseLeave={() => onBadgeHover(false)} style={badgeStyle} className={`${badgeClassName ?? FRAME_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title}</span>
   return (
     <section
       ref={setNodeRef}
@@ -17,9 +18,9 @@ export function SortableSummaryFrame({ title, captureId, index, children, captur
       style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.7 : undefined }}
       className="home-summary-frame relative flex h-full min-w-[320px] flex-1 basis-0 flex-col bg-ui-background"
     >
-      {/* 두 틀의 너비가 같다 — 틀 사이(안쪽)만 4px씩 띄우고 바깥쪽은 0이라 내용 폭이 같다. */}
-      <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : 'pl-1 pr-0'}`}>
-        <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] py-[7px]">
+      {/* 두 틀 사이 간격은 4px — 오른쪽 틀의 왼쪽 여백만 둔다. */}
+      <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-0' : 'pl-1 pr-0'}`}>
+        <div className={`flex min-h-0 flex-1 flex-col border bg-ui-background ${showBorder ? 'border-ui-border' : 'border-transparent'}`}>
           <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
             {dragBadge}
           </div>
@@ -46,10 +47,11 @@ export type SummaryFrameItem = { title: string; captureId: string; children: Rea
 
 // 화면의 두 틀에 내용을 넣는 조립 — 한국·해외 서머리가 같은 코드를 쓴다.
 export function SummaryScreenFrames({ frames, badgeClassName, badgeStyle }: { frames: SummaryFrameItem[] } & BadgeStyle) {
+  const [badgeHovered, setBadgeHovered] = useState(false)
   return (
     <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
       {frames.map((frame, index) => (
-        <SortableSummaryFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={index} captureUntil={index === 1 ? '' : undefined} badgeClassName={badgeClassName} badgeStyle={badgeStyle}>
+        <SortableSummaryFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={index} captureUntil={index === 1 ? '' : undefined} showBorder={badgeHovered} onBadgeHover={setBadgeHovered} badgeClassName={badgeClassName} badgeStyle={badgeStyle}>
           {frame.children}
         </SortableSummaryFrame>
       ))}
@@ -58,7 +60,7 @@ export function SummaryScreenFrames({ frames, badgeClassName, badgeStyle }: { fr
 }
 
 // 캡처용 두 틀에 내용을 넣는 조립 — 화면과 같은 순서·내용을 쓰고, 틀별 차이는 값으로 받는다.
-export function SummaryCaptureFrames({ frames, toolbar, frameWidth, captureFrameClassName, badgeClassName, badgeStyle }: { frames: SummaryFrameItem[]; toolbar: ReactNode; frameWidth: number; captureFrameClassName?: string } & BadgeStyle) {
+export function SummaryCaptureFrames({ frames, toolbar, frameWidth, captureFrameClassName = 'min-h-0 flex-1', badgeClassName, badgeStyle }: { frames: SummaryFrameItem[]; toolbar: ReactNode; frameWidth: number; captureFrameClassName?: string } & BadgeStyle) {
   return (
     <div className="flex min-h-0 flex-1 bg-ui-background">
       {frames.map(frame => (
