@@ -162,9 +162,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   for (const index of graphIndexItems) graphPreviewItems.push({ ...index, reference: true })
   const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 서머리는 특별 회원·관리자만 열 수 있다.
-  // 폰 업종 지도에서 국가를 바꾸면 ?map을 유지한다(국내 모바일과 같은 방식). PC 서머리는 그대로다.
-  const baseMenu = marketMenu('/summary', market, true)
-  const menu = isPhoneMapFrame ? baseMenu.map(item => ({ ...item, to: `${item.to}?map` })) : baseMenu
+  const menu = marketMenu('/summary', market, true)
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveSnapshotTime !== null && snapshotTime !== liveSnapshotTime)
   const holidayColor = resolveHeatmapColor(8, colorScale)
 

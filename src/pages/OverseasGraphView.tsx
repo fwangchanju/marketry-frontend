@@ -73,7 +73,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   const navigate = useNavigate()
   const mapPath = overseasRoute('/map', market)
-  const summaryPath = `${overseasRoute('/summary', market)}?map`
+  const summaryPath = overseasRoute('/summary', market)
   // 폰에서는 그래프 한 장을 5:8 판에 맞춰 보여 준다. 상단 줄·툴바 줄·하단 설정 줄은 세 시장이 같은 틀을 쓴다.
   const isPhoneMapFrame = useIsNarrowScreen()
   const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
