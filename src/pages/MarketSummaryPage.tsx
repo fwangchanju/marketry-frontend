@@ -4,9 +4,10 @@ import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import { DndContext, closestCenter } from '@dnd-kit/core'
+import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
+import { CaptureFrame, SortableSummaryFrame } from '@/components/SummaryFrame'
+import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -70,45 +71,6 @@ function earliestTrendDate(endDate: string): string {
 }
 const EXCHANGE_BADGE_CLASS = FRAME_BADGE_CLASS.replace('bg-[var(--brand-surface)]', 'bg-[var(--exchange-surface)]')
 
-const SUMMARY_FRAME_ORDER_KEY = 'marketry-home-frame-order'
-const DEFAULT_SUMMARY_FRAME_ORDER = ['업종 지도', '그룹 등락률 (%)']
-
-function SortableSummaryFrame({ title, captureId, index, children, captureUntil, isExchange, mineColor }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string; isExchange: boolean; mineColor?: string }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
-  const dragBadge = <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" style={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} className={`${isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title}</span>
-  return (
-    <section
-      ref={setNodeRef}
-      aria-label={title}
-      data-capture-until={captureUntil}
-      style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.7 : undefined }}
-      className="home-summary-frame relative flex h-full min-w-[320px] flex-1 basis-0 flex-col bg-ui-background"
-    >
-      {/* 두 틀의 너비가 같다 — 틀 사이(안쪽)만 4px씩 띄우고 바깥쪽은 0이라 내용 폭이 같다. */}
-      <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : 'pl-1 pr-0'}`}>
-        <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] py-[7px]">
-          <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
-            {dragBadge}
-          </div>
-          <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{children}</div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// 3:4 캡처용 판의 틀 — SortableHomeFrame의 안쪽 틀(insetHeader)과 같은 모양이다(끌기·정렬 없이 고정).
-function CaptureFrame({ title, className = '', children, isExchange, mineColor }: { title: string; className?: string; children: ReactNode; isExchange: boolean; mineColor?: string }) {
-  return (
-    <div className={`flex min-h-0 flex-col rounded-sm border border-transparent bg-ui-background pb-1.5 pl-[7px] pr-[7px] pt-[7px] ${className}`}>
-      <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
-        <span style={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} className={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS}>{title}</span>
-      </div>
-      <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{children}</div>
-    </div>
-  )
-}
-
 export default function MarketSummaryPage() {
   // 시장 배지 드롭다운 — 서머리의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI 225·S&P 500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
   const location = useLocation()
@@ -133,23 +95,7 @@ export default function MarketSummaryPage() {
   const isExchange = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'
   const mineColor = settingsModalProps.taxonomy === 'MINE' ? strongIndustryColor : undefined
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
-  const [summaryFrameOrder, setSummaryFrameOrder] = useLocalPersistedState(SUMMARY_FRAME_ORDER_KEY, DEFAULT_SUMMARY_FRAME_ORDER)
-  const frameSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-  // 예전 이름('시장 지도'·'요약 지도')으로 저장된 순서도 새 이름('업종 지도')의 같은 자리로 읽는다.
-  const savedSummaryFrameOrder = summaryFrameOrder.map(title => (title === '시장 지도' || title === '요약 지도' ? '업종 지도' : title))
-  const safeSummaryFrameOrder = [
-    ...savedSummaryFrameOrder.filter((title, index) => DEFAULT_SUMMARY_FRAME_ORDER.includes(title) && savedSummaryFrameOrder.indexOf(title) === index),
-    ...DEFAULT_SUMMARY_FRAME_ORDER.filter(title => !savedSummaryFrameOrder.includes(title)),
-  ]
-  const handleFrameDragEnd = ({ active, over }: DragEndEvent) => {
-    if (!over || active.id === over.id) return
-    const from = safeSummaryFrameOrder.indexOf(String(active.id))
-    const to = safeSummaryFrameOrder.indexOf(String(over.id))
-    if (from >= 0 && to >= 0) setSummaryFrameOrder(arrayMove(safeSummaryFrameOrder, from, to))
-  }
+  const { frameSensors, safeSummaryFrameOrder, handleFrameDragEnd, orderFrames } = useSummaryFrameOrder()
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
 
@@ -347,7 +293,7 @@ export default function MarketSummaryPage() {
               },
             ]
   // 화면과 고정 캡처판이 같은 순서를 쓴다 — summaryFrames 자체는 건드리지 않는다.
-  const orderedSummaryFrames = [...summaryFrames].sort((a, b) => safeSummaryFrameOrder.indexOf(a.title) - safeSummaryFrameOrder.indexOf(b.title))
+  const orderedSummaryFrames = orderFrames(summaryFrames)
   const isMineEmpty = settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0)
 
   return (
@@ -405,7 +351,7 @@ export default function MarketSummaryPage() {
             <SortableContext items={safeSummaryFrameOrder} strategy={horizontalListSortingStrategy}>
             <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
             {orderedSummaryFrames.map((frame, frameIndex) => (
-              <SortableSummaryFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} isExchange={isExchange} mineColor={mineColor}>
+              <SortableSummaryFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined}>
                 {frame.body}
               </SortableSummaryFrame>
             ))}
@@ -456,7 +402,7 @@ export default function MarketSummaryPage() {
             {orderedSummaryFrames.map(frame => (
               <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: SUMMARY_CAPTURE_FRAME_WIDTH }}>
                 <Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>
-                <CaptureFrame title={frame.title} className="min-h-0 flex-1" isExchange={isExchange} mineColor={mineColor}>
+                <CaptureFrame title={frame.title} className="min-h-0 flex-1" badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined}>
                   {isMineEmpty ? (
                     <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
                       <CustomPageBadgeLink />

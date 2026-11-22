@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
@@ -11,10 +11,11 @@ import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import { marketMenu } from '@/utils/marketMenu'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import { DndContext, closestCenter } from '@dnd-kit/core'
+import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
+import { CaptureFrame, SortableSummaryFrame } from '@/components/SummaryFrame'
+import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
 import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
@@ -31,7 +32,6 @@ import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
-import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import ToolbarChip from '@/components/ToolbarChip'
@@ -60,47 +60,9 @@ import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { isMarketValueExcluded } from '@/utils/marketValueTier'
 
-// 국내 서머리와 같은 키를 쓴다 — 한 번 바꾼 좌우 순서가 세 서머리에 똑같이 적용된다.
-const SUMMARY_FRAME_ORDER_KEY = 'marketry-home-frame-order'
-const DEFAULT_SUMMARY_FRAME_ORDER = ['업종 지도', '그룹 등락률 (%)']
 // 종목 지도로 스와이프할 때 따라올 미리보기도 그래프 화면의 종목 지도 미리보기와 같은 필터·강조 목록을 쓴다.
 const PHONE_MAP_PREVIEW_FILTERS = { stockChangeFilter: 'all' as const, sectorChangeFilter: 'all' as const, sectorChangeDepth: 0, sectorUseSimpleAverage: false }
 const PHONE_MAP_PREVIEW_NO_TOP_PICKS = new Set<string>()
-
-// 서머리의 틀 — 제목 배지를 끌어서 순서를 바꾼다(국내 서머리의 SortableHomeFrame과 같은 모양).
-function SortableSummaryFrame({ title, captureId, index, children, captureUntil }: { title: string; captureId: string; index: number; children: ReactNode; captureUntil?: string }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: title })
-  return (
-    <section
-      ref={setNodeRef}
-      aria-label={title}
-      data-capture-until={captureUntil}
-      style={{ order: index, transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, opacity: isDragging ? 0.7 : undefined }}
-      className="home-summary-frame relative flex h-full min-w-[320px] flex-1 basis-0 flex-col bg-ui-background"
-    >
-      <div data-capture-frame={captureId} className={`flex min-h-0 flex-1 flex-col bg-ui-background ${index === 0 ? 'pl-0 pr-1' : 'pl-1 pr-0'}`}>
-        <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-ui-border bg-ui-background px-[7px] py-[7px]">
-          <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
-            <span ref={setActivatorNodeRef} {...attributes} {...listeners} data-hint="끌어서 항목 순서 변경" className={`${FRAME_BADGE_CLASS} cursor-grab active:cursor-grabbing`}>{title}</span>
-          </div>
-          <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{children}</div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// 틀 하나만 찍는 3:4 캡처판의 틀 — SortableHomeFrame의 안쪽 틀과 같은 모양(끌기·정렬 없이 고정).
-function CaptureFrame({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col rounded-sm border border-transparent bg-ui-background pb-1.5 pl-[7px] pr-[7px] pt-[7px]">
-      <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
-        <span className={FRAME_BADGE_CLASS}>{title}</span>
-      </div>
-      <div className="mt-0.5 flex min-h-0 flex-1 flex-col">{children}</div>
-    </div>
-  )
-}
 
 const SECTION_ORDER: SettingsPanelSectionId[] = ['composition', 'colors']
 
@@ -276,23 +238,8 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
                 </div>
               ) },
   ]
-  const frameSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-  const [summaryFrameOrder, setSummaryFrameOrder] = useLocalPersistedState(SUMMARY_FRAME_ORDER_KEY, DEFAULT_SUMMARY_FRAME_ORDER)
-  const savedSummaryFrameOrder = summaryFrameOrder.map(title => (title === '시장 지도' || title === '요약 지도' ? '업종 지도' : title))
-  const safeSummaryFrameOrder = [
-    ...savedSummaryFrameOrder.filter((title, index) => DEFAULT_SUMMARY_FRAME_ORDER.includes(title) && savedSummaryFrameOrder.indexOf(title) === index),
-    ...DEFAULT_SUMMARY_FRAME_ORDER.filter(title => !savedSummaryFrameOrder.includes(title)),
-  ]
-  const orderedSummaryFrames = [...summaryFrames].sort((a, b) => safeSummaryFrameOrder.indexOf(a.title) - safeSummaryFrameOrder.indexOf(b.title))
-  const handleFrameDragEnd = ({ active, over }: DragEndEvent) => {
-    if (!over || active.id === over.id) return
-    const from = safeSummaryFrameOrder.indexOf(String(active.id))
-    const to = safeSummaryFrameOrder.indexOf(String(over.id))
-    if (from >= 0 && to >= 0) setSummaryFrameOrder(arrayMove(safeSummaryFrameOrder, from, to))
-  }
+  const { frameSensors, safeSummaryFrameOrder, handleFrameDragEnd, orderFrames } = useSummaryFrameOrder()
+  const orderedSummaryFrames = orderFrames(summaryFrames)
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
   // 미리보기 판은 실제 그래프 판보다 여백이 4px 더 넓다. 같은 막대가 전환 후에도 툴바 첫 배지 왼쪽에 오도록 가로만 맞춘다.
   const graphPreviewPathBarLeftShift = phonePathBarLeftShift(8)
