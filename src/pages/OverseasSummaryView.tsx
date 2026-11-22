@@ -14,7 +14,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
-import { CaptureFrame, SortableSummaryFrame } from '@/components/SummaryFrame'
+import { SummaryCaptureFrames, SummaryScreenFrames } from '@/components/SummaryFrame'
 import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
 import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
 import NavBarPageActions from '@/components/NavBarPageActions'
@@ -225,14 +225,14 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   )
   // PC 화면과 폰 화면이 같은 툴바 원본을 쓴다(폰에서는 툴바 줄을 판 밖에 둔다).
   const summaryToolbarNode = <Toolbar>{toolbarContent}</Toolbar>
-  // 서머리의 두 틀(제목·캡처 이름·본문) — 화면과 틀별 캡처판이 같은 본문을 쓴다.
+  // 서머리의 두 틀(제목·캡처 이름·내용) — 화면과 틀별 캡처판이 같은 내용을 쓴다.
   const summaryFrames = [
-              { title: '업종 지도', captureId: 'market-map', node: (
+              { title: '업종 지도', captureId: 'market-map', children: (
                 <div className="relative flex min-h-0 flex-1 flex-col">
                   {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={handleSelectSector} /> : isLoading ? <p className="text-ui-muted">불러오는 중</p> : <EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" />}
                 </div>
               ) },
-              { title: '그룹 등락률 (%)', captureId: 'group-change-rate', node: (
+              { title: '그룹 등락률 (%)', captureId: 'group-change-rate', children: (
                 <div className="relative flex min-h-0 flex-1 flex-col">
                   {hasData ? <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} decimalPlaces={1} onSelectSector={handleSelectSector} /> : null}
                 </div>
@@ -344,13 +344,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isShareOpen ? 'overflow-visible' : 'overflow-x-auto'}`}>
               <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
                 <SortableContext items={safeSummaryFrameOrder} strategy={horizontalListSortingStrategy}>
-                  <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
-                    {orderedSummaryFrames.map((frame, frameIndex) => (
-                      <SortableSummaryFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined}>
-                        {frame.node}
-                      </SortableSummaryFrame>
-                    ))}
-                  </div>
+                  <SummaryScreenFrames frames={orderedSummaryFrames} />
                 </SortableContext>
               </DndContext>
             </div>
@@ -379,14 +373,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
           className="fixed flex flex-col bg-ui-background"
           style={{ left: 0, top: 0, width: SUMMARY_CAPTURE_FRAME_WIDTH * summaryFrames.length, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
         >
-          <div className="flex min-h-0 flex-1 bg-ui-background">
-            {orderedSummaryFrames.map(frame => (
-              <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: SUMMARY_CAPTURE_FRAME_WIDTH }}>
-                <Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>
-                <CaptureFrame title={frame.title}>{frame.node}</CaptureFrame>
-              </div>
-            ))}
-          </div>
+          <SummaryCaptureFrames frames={orderedSummaryFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} />
         </div>
       )}
       {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} captureReady={!isLoading}

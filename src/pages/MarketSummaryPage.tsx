@@ -1,12 +1,12 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
-import { CaptureFrame, SortableSummaryFrame } from '@/components/SummaryFrame'
+import { SummaryCaptureFrames, SummaryScreenFrames } from '@/components/SummaryFrame'
 import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
@@ -275,19 +275,19 @@ export default function MarketSummaryPage() {
             </div>
     </>
   )
-  // 서머리의 두 틀(제목·캡처 이름·본문) — 화면과 3:4 캡처용 판이 같은 본문을 쓴다.
+  // 서머리의 두 틀(제목·캡처 이름·내용) — 화면과 3:4 캡처용 판이 같은 내용을 쓴다.
   const summaryFrames = [
               {
                 title: '업종 지도',
                 captureId: 'market-map',
-                body: (
+                children: (
                   <OverviewMap items={overview.items} colorScale={colorScale} onSelect={handleSelectSector} large decimalPlaces={1} />
                 ),
               },
               {
                 title: '그룹 등락률 (%)',
                 captureId: 'group-change-rate',
-                body: (
+                children: (
                   <RankBars chart={overview.chart} highlightColor={isExchange ? 'var(--exchange-accent)' : strongIndustryColor} referenceValueColor={isExchange ? 'var(--exchange-accent)' : mineColor} colorScale={colorScale} onSelectSector={handleSelectSector} onSelectIndex={handleSelectIndex} applyAxisBreak={rangeStartTime === undefined} decimalPlaces={1} />
                 ),
               },
@@ -295,6 +295,11 @@ export default function MarketSummaryPage() {
   // 화면과 고정 캡처판이 같은 순서를 쓴다 — summaryFrames 자체는 건드리지 않는다.
   const orderedSummaryFrames = orderFrames(summaryFrames)
   const isMineEmpty = settingsModalProps.taxonomy === 'MINE' && rootNodes.every(node => collectItems(node).length === 0)
+  // 캡처판만 빈 내 기준 안내를 보여 준다(화면에서는 위에서 이미 다른 안내를 표시한다).
+  const captureFrames = orderedSummaryFrames.map(frame => ({
+    ...frame,
+    children: isMineEmpty ? <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}><CustomPageBadgeLink /></EmptyLogoMessage> : frame.children,
+  }))
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
@@ -349,13 +354,7 @@ export default function MarketSummaryPage() {
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
             <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
             <SortableContext items={safeSummaryFrameOrder} strategy={horizontalListSortingStrategy}>
-            <div data-capture-full-width className="flex min-h-0 min-w-full flex-1 bg-ui-background">
-            {orderedSummaryFrames.map((frame, frameIndex) => (
-              <SortableSummaryFrame key={frame.title} title={frame.title} captureId={frame.captureId} index={frameIndex} captureUntil={frameIndex === 1 ? '' : undefined} badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined}>
-                {frame.body}
-              </SortableSummaryFrame>
-            ))}
-            </div>
+            <SummaryScreenFrames frames={orderedSummaryFrames} badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} />
             </SortableContext>
             </DndContext>
             </div>
@@ -398,20 +397,7 @@ export default function MarketSummaryPage() {
           className="fixed flex flex-col bg-ui-background"
           style={{ left: 0, top: 0, width: SUMMARY_CAPTURE_FRAME_WIDTH * summaryFrames.length, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
         >
-          <div className="flex min-h-0 flex-1 bg-ui-background">
-            {orderedSummaryFrames.map(frame => (
-              <div key={frame.title} data-capture-fixed-frame={frame.captureId} data-capture-frame={frame.captureId} className="flex h-full shrink-0 flex-col bg-ui-background p-1" style={{ width: SUMMARY_CAPTURE_FRAME_WIDTH }}>
-                <Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>
-                <CaptureFrame title={frame.title} className="min-h-0 flex-1" badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined}>
-                  {isMineEmpty ? (
-                    <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
-                      <CustomPageBadgeLink />
-                    </EmptyLogoMessage>
-                  ) : frame.body as ReactNode}
-                </CaptureFrame>
-              </div>
-            ))}
-          </div>
+          <SummaryCaptureFrames frames={captureFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} captureFrameClassName="min-h-0 flex-1" badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} />
         </div>
       )}
       {screenshotTarget && (
