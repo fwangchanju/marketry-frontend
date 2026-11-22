@@ -1,4 +1,5 @@
 import { useSession } from '@/hooks/useSession'
+import { frameBadgeSurface } from '@/utils/frameBadge'
 import { TAXONOMY_NAMES, type TaxonomyKey } from '@/utils/taxonomyNames'
 
 // 상단 오른쪽 분류 배지 — 지도·그룹·커스텀 페이지가 같은 모양을 쓰고, 높이는 왼쪽 제목 배지·칩(툴바에서 기본 26.25px)과 같다. 왼쪽 밝은 칸이 지금 보는 분류, 오른쪽 짙은 칸이 "모드"다("MARKETRY 분류"처럼 읽힌다).
@@ -8,7 +9,7 @@ export default function TaxonomyBadge({ taxonomy, strongIndustryColor }: { taxon
   const title = taxonomy === 'MINE' ? session?.nickname || TAXONOMY_NAMES.MINE.title : TAXONOMY_NAMES[taxonomy].title
   const isExchange = taxonomy === 'KRX' || taxonomy === 'NXT'
   const accent = isExchange ? 'var(--exchange-accent)' : taxonomy === 'MINE' ? strongIndustryColor ?? '#fff59d' : 'var(--brand)'
-  const surface = isExchange ? 'var(--exchange-surface)' : taxonomy === 'MINE' ? `color-mix(in srgb, ${strongIndustryColor ?? '#fff59d'} 60%, #0a0a0a)` : 'var(--brand-surface)'
+  const surface = frameBadgeSurface(taxonomy, strongIndustryColor)
   return (
     // 그룹·커스텀의 body에 적용된 tabular-nums를 상속하지 않아 페이지마다 이름 폭이 달라지지 않게 한다.
     <span className="flex min-w-0 items-center justify-end normal-nums">

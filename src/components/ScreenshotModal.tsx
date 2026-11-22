@@ -8,6 +8,8 @@ import Spinner from '@/components/Spinner'
 
 // 팝업 미리보기 높이 상한(px) — 큰 창에서 팝업이 지나치게 커지지 않게 한다.
 const PREVIEW_MAX_HEIGHT_PX = 640
+// 툴바 배지 점선은 배지 바깥 6px를 감싼다. 항목 점선의 위쪽도 같은 값을 써서 두 선의 y축을 맞춘다.
+const CAPTURE_HEADER_PADDING = 6
 
 interface Props {
   onClose: () => void
@@ -78,7 +80,7 @@ export default function ScreenshotModal({
   const [highlightRegion, setHighlightRegion] = useState<{ left: number; top: number; width: number; height: number } | null>(() => {
     const frameOption = frameCaptureOptions?.find(option => selectedCapture === `frame:${option.id}`)
     if (!frameOption || !screenshotTarget) return null
-    return regionOverlay(screenshotTarget, frameOption.selector, frameOption.mode ?? 'element', mobileRegionOption?.monitorHorizontalPadding ?? 4)
+    return regionOverlay(screenshotTarget, frameOption.selector, frameOption.selectedSlot, mobileRegionOption?.monitorHorizontalPadding ?? 4)
   })
   const selectedFrame = frameCaptureOptions?.find(option => selectedCapture === `frame:${option.id}`)
   const showContextPreview = Boolean(selectedFrame)
@@ -220,7 +222,7 @@ export default function ScreenshotModal({
     const frameOption = frameCaptureOptions?.find(item => next === `frame:${item.id}`)
     if (frameOption && screenshotTarget) {
       setPreviewRatio(elementRatio(screenshotTarget, undefined, undefined, fullPreviewPadding))
-      setHighlightRegion(regionOverlay(screenshotTarget, frameOption.selector, frameOption.mode ?? 'element', fullPreviewPadding))
+      setHighlightRegion(regionOverlay(screenshotTarget, frameOption.selector, frameOption.selectedSlot, fullPreviewPadding))
     } else {
       setHighlightRegion(null)
       setPreviewRatio(elementRatio(screenshotTarget, option?.selector, mode, horizontalPadding))
@@ -233,9 +235,8 @@ export default function ScreenshotModal({
   const fitWidth = frameRatio ? `min(calc(100vw - 4rem), calc(min(100dvh - 11rem, ${PREVIEW_MAX_HEIGHT_PX}px) * ${frameRatio}))` : undefined
   const displayPreviewSrc = contextPreviewSrc ?? previewSrc
   const toolbar = screenshotTarget?.querySelector<HTMLElement>('.main-toolbar')
-  const headerSelections = toolbar && screenshotTarget && highlightRegion
+  const headerSelections = toolbar && screenshotTarget
     ? Array.from(toolbar.children).slice(0, 2).map(child => {
-      const headerPadding = 6
       const rect = child.getBoundingClientRect()
       const origin = screenshotTarget.getBoundingClientRect()
       const toolbarRect = toolbar.getBoundingClientRect()
@@ -245,11 +246,11 @@ export default function ScreenshotModal({
       const childLeft = child === toolbar.lastElementChild
         ? toolbarRect.left - origin.left + size.width - (toolbarRect.right - rect.right) - rect.width
         : rect.left - origin.left
-      const left = Math.max(0, (childLeft + fullPreviewPadding - headerPadding) / width)
-      const top = Math.max(0, (rect.top - origin.top - headerPadding) / size.height)
-      const right = Math.min(1, (childLeft + rect.width + fullPreviewPadding + headerPadding) / width)
-      const bottom = Math.min(highlightRegion.top - 4 / size.height, (rect.bottom - origin.top + headerPadding) / size.height)
-      return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) }
+      const left = Math.max(0, (childLeft + fullPreviewPadding - CAPTURE_HEADER_PADDING) / width)
+      const top = Math.max(0, (rect.top - origin.top - CAPTURE_HEADER_PADDING) / size.height)
+      const right = Math.min(1, (childLeft + rect.width + fullPreviewPadding + CAPTURE_HEADER_PADDING) / width)
+      const bottom = headerSelectionBottom(screenshotTarget, child)
+      return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom / size.height - top) }
     })
     : []
 
@@ -402,15 +403,21 @@ export default function ScreenshotModal({
   )
 }
 
-function regionOverlay(element: HTMLElement, selector: string, mode: 'element' | 'content', horizontalPadding = 0): { left: number; top: number; width: number; height: number } | null {
-  const region = captureRegionRect(element, selector, mode)
+// 툴바 점선의 아래쪽 y(원본 기준 px). 항목 점선의 위쪽도 같은 값을 써서 두 선이 틈 없이 맞닿게 한다.
+function headerSelectionBottom(element: HTMLElement, child: Element): number {
+  return Math.max(0, child.getBoundingClientRect().bottom - element.getBoundingClientRect().top + CAPTURE_HEADER_PADDING)
+}
+
+function regionOverlay(element: HTMLElement, selector: string, selectedSlot: 0 | 1, horizontalPadding = 0): { left: number; top: number; width: number; height: number } | null {
+  const region = captureRegionRect(element, selector, 'content')
   const size = fullScreenshotSize(element)
   const fullWidth = size.width + horizontalPadding * 2
   if (!region || fullWidth <= 0 || size.height <= 0) return null
-  // 본문 점선은 원본 패널의 외곽선 안쪽에 둔다. content 범위의 3px 여유도 함께 걷어 낸다.
-  const inset = 4
+  const inset = -2
+  const badge = Array.from(element.querySelector('.main-toolbar')?.children ?? []).slice(0, 2)[selectedSlot]
   const left = Math.max(0, Math.min(fullWidth, region.x + horizontalPadding + inset))
-  const top = Math.max(0, Math.min(size.height, region.y + inset))
+  // 가로는 원래 점선을 유지하고, 위쪽만 툴바 점선 아래와 같은 y로 맞춘다.
+  const top = Math.max(0, Math.min(size.height, badge ? headerSelectionBottom(element, badge) : region.y + inset))
   const right = Math.max(left, Math.min(fullWidth, region.x + horizontalPadding + region.width - inset))
   const bottom = Math.max(top, Math.min(size.height, region.y + region.height - inset))
   return { left: left / fullWidth, top: top / size.height, width: (right - left) / fullWidth, height: (bottom - top) / size.height }

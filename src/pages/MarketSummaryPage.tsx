@@ -1,6 +1,6 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
-import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
+import { frameBadgeStyle } from '@/utils/frameBadge'
 import { useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -69,7 +69,6 @@ function earliestTrendDate(endDate: string): string {
   start.setUTCFullYear(start.getUTCFullYear() - TREND_MAX_YEARS)
   return start.toISOString().slice(0, 10)
 }
-const EXCHANGE_BADGE_CLASS = FRAME_BADGE_CLASS.replace('bg-[var(--brand-surface)]', 'bg-[var(--exchange-surface)]')
 
 export default function MarketSummaryPage() {
   // 시장 배지 드롭다운 — 서머리의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI 225·S&P 500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
@@ -94,6 +93,7 @@ export default function MarketSummaryPage() {
   } = useGlobalSettings({ allowChangeRateMode: true })
   const isExchange = settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'
   const mineColor = settingsModalProps.taxonomy === 'MINE' ? strongIndustryColor : undefined
+  const badgeStyleProps = frameBadgeStyle(settingsModalProps.taxonomy, strongIndustryColor)
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const { frameSensors, safeSummaryFrameOrder, handleFrameDragEnd, orderFrames } = useSummaryFrameOrder()
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
@@ -354,7 +354,7 @@ export default function MarketSummaryPage() {
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
             <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
             <SortableContext items={safeSummaryFrameOrder} strategy={horizontalListSortingStrategy}>
-            <SummaryScreenFrames frames={orderedSummaryFrames} badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} />
+            <SummaryScreenFrames frames={orderedSummaryFrames} {...badgeStyleProps} />
             </SortableContext>
             </DndContext>
             </div>
@@ -397,7 +397,7 @@ export default function MarketSummaryPage() {
           className="fixed flex flex-col bg-ui-background"
           style={{ left: 0, top: 0, width: SUMMARY_CAPTURE_FRAME_WIDTH * summaryFrames.length, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
         >
-          <SummaryCaptureFrames frames={captureFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} badgeClassName={isExchange ? EXCHANGE_BADGE_CLASS : FRAME_BADGE_CLASS} badgeStyle={mineColor ? { backgroundColor: `color-mix(in srgb, ${mineColor} 60%, #0a0a0a)` } : undefined} />
+          <SummaryCaptureFrames frames={captureFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} {...badgeStyleProps} />
         </div>
       )}
       {screenshotTarget && (
