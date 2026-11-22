@@ -7,9 +7,11 @@ interface Props {
 
 function PinIcon({ filled, className }: { filled: boolean; className?: string }) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 16 16" className={className} fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round">
-      <path d="M9.6 1.8 14.2 6.4 11.9 7.2 9.6 9.5 9.9 12.2 8.6 13.5 6 10.9 2.5 14.4" />
-      <path d="M6.4 4.6 11.4 9.6" />
+    <svg aria-hidden="true" viewBox="-160 -48 704 704" className={className} fill={filled ? 'currentColor' : 'none'}>
+      <g transform="rotate(45 192 304)">
+        <path d="M32 32C32 14.3 46.3 0 64 0L320 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-29.5 0 11.4 148.2c36.7 19.9 65.7 53.2 79.5 94.7l1 3c3.3 9.8 1.6 20.5-4.4 28.8s-15.7 13.3-26 13.3L32 352c-10.3 0-19.9-4.9-26-13.3s-7.7-19.1-4.4-28.8l1-3c13.8-41.5 42.8-74.8 79.5-94.7L93.5 64 64 64C46.3 64 32 49.7 32 32z" />
+        <path d="M160 352h64v224c0 17.7-14.3 32-32 32s-32-14.3-32-32V352z" />
+      </g>
     </svg>
   )
 }
@@ -24,7 +26,7 @@ export default function ToolbarPinButton({ pinned, onUnpin }: Props) {
       onClick={onUnpin}
       className="toolbar-badge-control flex h-6 items-center border-0 bg-transparent px-1.5 text-[var(--brand)] transition-colors hover:bg-ui-control"
     >
-      <PinIcon filled className="h-[15px] w-[15px] shrink-0" />
+      <PinIcon filled className="h-[20px] w-[20px] shrink-0" />
     </button>
   )
 }
