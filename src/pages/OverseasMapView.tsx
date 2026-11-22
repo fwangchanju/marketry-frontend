@@ -60,6 +60,7 @@ import { mapTileMethod } from '@/utils/mapStretch'
 import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { calculateSectorLayoutWeights } from '@/utils/sectorLayoutWeights'
+import { BREADCRUMB_LINK_CLASS, toDisplayGroup } from '@/utils/mobileMapHeatmap'
 
 declare global {
   interface Window {
@@ -67,24 +68,11 @@ declare global {
   }
 }
 
-const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 const NO_TOP_PICKS = new Set<string>()
 const NO_STOCK_MOVES: StockMoves = {}
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 const FLAT_GROUP_NAME = '__flat__'
 const SECTION_ORDER: SettingsPanelSectionId[] = ['stockDisplay', 'composition', 'industry', 'colors']
-
-function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
-  return {
-    sectorId: node.sectorId,
-    sectorName: node.sectorName,
-    totalMarketValue: node.totalMarketValue,
-    weightedAvgChangeRate: node.weightedAvgChangeRate,
-    simpleAvgChangeRate: node.simpleAvgChangeRate,
-    items: node.items,
-    children: node.children.map(toDisplayGroup),
-  }
-}
 
 export default function OverseasMapView({ source }: { source: OverseasMapSource }) {
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
