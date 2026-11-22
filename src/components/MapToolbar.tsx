@@ -19,8 +19,7 @@ import type { MarketQuery } from '@/types/api'
 export type MapToolbarProps = {
   market: MarketQuery
   // 시장 드롭다운이 현재 화면 경로를 유지하도록 쓴다. 종목 지도가 기본값이다.
-  // 업종 지도는 ?map을 유지해야 하므로 '/summary?map'을 쓴다.
-  menuBasePath?: '/map' | '/graph' | '/summary' | '/summary?map'
+  menuBasePath?: '/map' | '/graph' | '/summary'
   marketLabel: string
   snapshotTime: string | null
   liveSnapshotTime: string | null
@@ -43,9 +42,7 @@ export type MapToolbarProps = {
 }
 
 export default function MapToolbar({ market, menuBasePath = '/map', marketLabel, snapshotTime, liveSnapshotTime, pinnedSnapshotTime, rangeStartTime, isPastSnapshot, colorScale, onChangePinnedSnapshotTime, onSelectRange, rangeExcludedStocks, refetchHeatmap, isRefetchingHeatmap, changeRateChoice, onChangeChangeRateMode, isAfterHoursControlsVisible, isAfterHoursSelectable, modeStatusText, refreshHelpText, refreshSpinMs }: MapToolbarProps) {
-  // '/summary?map'은 marketMenu이 받지 않으므로 목록 주소에만 쿼리를 붙인다.
-  const baseMenu = marketMenu(menuBasePath === '/summary?map' ? '/summary' : menuBasePath, market, true)
-  const menu = menuBasePath === '/summary?map' ? baseMenu.map(item => ({ ...item, to: `${item.to}?map` })) : baseMenu
+  const menu = marketMenu(menuBasePath, market, true)
   return (
     <Toolbar>
       <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">

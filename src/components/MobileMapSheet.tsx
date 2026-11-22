@@ -12,9 +12,9 @@ const CHIP_OFF = 'bg-ui-control text-ui-white'
 const SETTINGS_BAR_HEIGHT = 24
 
 const MARKET_OPTIONS: { key: MobileMapMarket; label: string; path: string; graphPath: string; summaryPath: string }[] = [
-  { key: 'korea', label: '한국', path: '/map/korea', graphPath: '/graph/korea', summaryPath: '/summary/korea?map' },
-  { key: 'japan', label: '일본', path: '/map/japan', graphPath: '/graph/japan', summaryPath: '/summary/japan?map' },
-  { key: 'usa', label: '미국', path: '/map/usa', graphPath: '/graph/usa', summaryPath: '/summary/usa?map' },
+  { key: 'korea', label: '한국', path: '/map/korea', graphPath: '/graph/korea', summaryPath: '/summary/korea' },
+  { key: 'japan', label: '일본', path: '/map/japan', graphPath: '/graph/japan', summaryPath: '/summary/japan' },
+  { key: 'usa', label: '미국', path: '/map/usa', graphPath: '/graph/usa', summaryPath: '/summary/usa' },
 ]
 const BOX_OPTIONS: { value: number; label: string }[] = [
   { value: 100, label: '시총 비례' },

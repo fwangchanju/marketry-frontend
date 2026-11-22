@@ -233,7 +233,7 @@ function SettingRow({ label, hint, children }: { label: string; hint?: string; c
   )
 }
 
-// stock = 마켓 전체 상위 30개 종목 지도(`/map/...`), sector = 업종 분류 지도(`/summary/korea?map`), graph = 그룹 등락률(`/graph/...`).
+// stock = 마켓 전체 상위 30개 종목 지도(`/map/...`), sector = 업종 분류 지도(`/summary/korea`), graph = 그룹 등락률(`/graph/...`).
 export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'stock' | 'sector' | 'graph' }) {
   const isGraph = mode === 'graph'
   const isStockMode = mode === 'stock'
@@ -677,7 +677,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   }
 
   // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 종목 지도로 이동한다(마켓은 유지).
-  const titleTo = isStockMode ? `/summary/korea?map&market=${market}` : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
+  const titleTo = isStockMode ? `/summary/korea?market=${market}` : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
   const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '종목 지도로 이동'
   const modeForSwipe = (direction: 'next' | 'previous') => {
     const order = ['stock', 'sector', 'graph'] as const
@@ -687,7 +687,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const routeForMode = (targetMode: 'stock' | 'sector' | 'graph') => targetMode === 'stock'
     ? marketRoute('/map', market)
     : targetMode === 'sector'
-      ? `/summary/korea?map&market=${market}`
+      ? `/summary/korea?market=${market}`
       : marketRoute('/graph', market)
   const finishSwipe = (finish: boolean) => {
     const preview = pageSwipePreviewRef.current
@@ -849,7 +849,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         toolbar={
           <MapToolbar
             market={market}
-            menuBasePath={isGraph ? '/graph' : isSectorMode ? '/summary?map' : '/map'}
+            menuBasePath={isGraph ? '/graph' : isSectorMode ? '/summary' : '/map'}
             marketLabel={market === 'ALL_STOCK' ? 'K-STOCK' : market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}
             snapshotTime={data?.snapshotTime ?? null}
             liveSnapshotTime={liveSnapshotTime}

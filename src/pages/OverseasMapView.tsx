@@ -303,7 +303,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
 
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
-    const summaryPath = `${overseasRoute('/summary', market)}?map`
+    const summaryPath = overseasRoute('/summary', market)
     const graphPath = overseasRoute('/graph', market)
     return (
       <PhoneMapShell
