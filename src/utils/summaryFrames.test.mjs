@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { test } from 'node:test'
+import { captureIdForFrameTitle, frameCaptureOptionsFor, SUMMARY_FRAME_TITLES } from './summaryFrames.ts'
+
+test('서머리 틀 제목과 캡처 이름이 한 쌍이다', () => {
+  assert.deepEqual([...SUMMARY_FRAME_TITLES], ['업종 지도', '그룹 등락률 (%)'])
+  assert.equal(captureIdForFrameTitle('업종 지도'), 'market-map')
+  assert.equal(captureIdForFrameTitle('그룹 등락률 (%)'), 'group-change-rate')
+  assert.equal(captureIdForFrameTitle('없는 제목'), '')
+})
+
+test('캡처창 선택지는 틀 순서와 같은 셀렉터 규칙으로 만든다', () => {
+  assert.deepEqual(frameCaptureOptionsFor(['업종 지도', '그룹 등락률 (%)']), [
+    { id: 'market-map', label: '좌측', selector: '[data-capture-frame="market-map"]', selectedSlot: 0, mode: 'content' },
+    { id: 'group-change-rate', label: '우측', selector: '[data-capture-frame="group-change-rate"]', selectedSlot: 1, mode: 'content' },
+  ])
+  assert.deepEqual(frameCaptureOptionsFor(['그룹 등락률 (%)', '업종 지도']).map(option => option.id), ['group-change-rate', 'market-map'])
+})
+
+test('두 서머리 페이지는 틀 제목과 캡처 이름을 직접 적지 않는다', () => {
+  const pagesDir = join(dirname(fileURLToPath(import.meta.url)), '../pages')
+  for (const name of ['MarketSummaryPage.tsx', 'OverseasSummaryView.tsx']) {
+    const source = readFileSync(join(pagesDir, name), 'utf8')
+    assert.ok(!source.includes("title: '업종 지도'"), `${name}에서 제목을 직접 적지 않는다`)
+    assert.ok(!source.includes("captureId: 'market-map'"), `${name}에서 캡처 이름을 직접 적지 않는다`)
+    assert.ok(!source.includes("title === '업종 지도'"), `${name}에서 제목으로 캡처 이름을 추론하지 않는다`)
+    assert.ok(!source.includes('safeSummaryFrameOrder.map'), `${name}에서 캡처 선택지를 직접 만들지 않는다`)
+    assert.ok(!source.includes('DndContext'), `${name}에서 순서 끌기 조립을 직접 만들지 않는다`)
+    assert.ok(!source.includes('data-summary-fixed-capture'), `${name}에서 숨김 캡처판을 직접 만들지 않는다`)
+  }
+})

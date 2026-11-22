@@ -12,14 +12,14 @@ import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
 import { marketMenu } from '@/utils/marketMenu'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { DndContext, closestCenter } from '@dnd-kit/core'
-import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
+
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { frameBadgeStyle } from '@/utils/frameBadge'
-import { SummaryCaptureFrames, SummaryScreenFrames } from '@/components/SummaryFrame'
+import { HiddenSummaryCaptureFrames, SortableSummaryScreenFrames } from '@/components/SummaryFrame'
 import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
 import { useScreenshotShare } from '@/hooks/useScreenshotShare'
-import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
+import { GROUP_CHANGE_FRAME, MARKET_MAP_FRAME, frameCaptureOptionsFor } from '@/utils/summaryFrames'
+import { SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
 import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
@@ -217,12 +217,12 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const summaryToolbarNode = <Toolbar>{toolbarContent}</Toolbar>
   // 서머리의 두 틀(제목·캡처 이름·내용) — 화면과 틀별 캡처판이 같은 내용을 쓴다.
   const summaryFrames = [
-              { title: '업종 지도', captureId: 'market-map', children: (
+              { ...MARKET_MAP_FRAME, children: (
                 <div className="relative flex min-h-0 flex-1 flex-col">
                   {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={handleSelectSector} /> : isLoading ? <p className="text-ui-muted">불러오는 중</p> : <EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" />}
                 </div>
               ) },
-              { title: '그룹 등락률 (%)', captureId: 'group-change-rate', children: (
+              { ...GROUP_CHANGE_FRAME, children: (
                 <div className="relative flex min-h-0 flex-1 flex-col">
                   {hasData ? <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} decimalPlaces={1} onSelectSector={handleSelectSector} /> : null}
                 </div>
@@ -332,11 +332,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
           <div className="flex min-h-0 flex-1">
             {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서, 캡처 중에는 스크롤을 풀어 둔다. */}
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isShareOpen ? 'overflow-visible' : 'overflow-x-auto'}`}>
-              <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
-                <SortableContext items={safeSummaryFrameOrder} strategy={horizontalListSortingStrategy}>
-                  <SummaryScreenFrames frames={orderedSummaryFrames} {...badgeStyleProps} />
-                </SortableContext>
-              </DndContext>
+              <SortableSummaryScreenFrames frames={orderedSummaryFrames} order={safeSummaryFrameOrder} sensors={frameSensors} onDragEnd={handleFrameDragEnd} {...badgeStyleProps} />
             </div>
           </div>
           <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
@@ -356,22 +352,11 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
         </div>
       </div>
       {isShareOpen && (
-        <div
-          ref={fixedCaptureRef}
-          aria-hidden="true"
-          data-summary-fixed-capture
-          className="fixed flex flex-col bg-ui-background"
-          style={{ left: 0, top: 0, width: SUMMARY_CAPTURE_FRAME_WIDTH * summaryFrames.length, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
-        >
-          <SummaryCaptureFrames frames={orderedSummaryFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} {...badgeStyleProps} />
-        </div>
+        <HiddenSummaryCaptureFrames captureRef={fixedCaptureRef} frameCount={summaryFrames.length} frames={orderedSummaryFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} {...badgeStyleProps} />
       )}
       {isShareOpen && <ScreenshotModal onClose={closeScreenshot} onCopy={copy} copyLabel={copyLabel} isCopying={isCopying} screenshotTarget={screenshotTarget} captureReady={!isLoading}
           fixedSummaryCaptureRef={fixedCaptureRef}
-          frameCaptureOptions={safeSummaryFrameOrder.map((title, selectedSlot) => {
-            const captureId = title === '업종 지도' ? 'market-map' : 'group-change-rate'
-            return { id: captureId, label: ['좌측', '우측'][selectedSlot], selector: `[data-capture-frame="${captureId}"]`, selectedSlot: selectedSlot as 0 | 1, mode: 'content' as const }
-          })}
+          frameCaptureOptions={frameCaptureOptionsFor(safeSummaryFrameOrder)}
         />}
     </div>
   )

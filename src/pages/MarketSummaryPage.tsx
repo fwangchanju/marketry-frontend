@@ -4,11 +4,10 @@ import { frameBadgeStyle } from '@/utils/frameBadge'
 import { useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { DndContext, closestCenter } from '@dnd-kit/core'
-import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
-import { SummaryCaptureFrames, SummaryScreenFrames } from '@/components/SummaryFrame'
+import { HiddenSummaryCaptureFrames, SortableSummaryScreenFrames } from '@/components/SummaryFrame'
 import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
 import { useScreenshotShare } from '@/hooks/useScreenshotShare'
+import { GROUP_CHANGE_FRAME, MARKET_MAP_FRAME, frameCaptureOptionsFor } from '@/utils/summaryFrames'
 import NavBar from '@/components/NavBar'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NavSubBar from '@/components/NavSubBar'
@@ -38,7 +37,7 @@ import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
-import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
+import { SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel } from '@/utils/format'
 import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { buildRankChart } from '@/utils/rankChart'
@@ -83,7 +82,7 @@ export default function MarketSummaryPage() {
   // 시험용 — 지도와 그래프를 대분류가 아니라 중분류·소분류로도 그려 본다(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 된다.
   const allFramesRef = useRef<HTMLDivElement>(null)
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
-  const { target: screenshotTarget, isWhole: isCapturingAll, open: openScreenshot, close: closeScreenshot, copy: handleCopy, copyLabel, isCopying } = useScreenshotShare()
+  const { target: screenshotTarget, isOpen: isShareOpen, isWhole: isCapturingAll, open: openScreenshot, close: closeScreenshot, copy: handleCopy, copyLabel, isCopying } = useScreenshotShare()
   const {
     settingsModalProps, data, rootNodes, isLoading: isBaseLoading, isError, refetchHeatmap, isRefetchingHeatmap, pinnedSnapshotTime, rangeStartTime, rangeExcludedStocks,
     changeRateMode, changeRateChoice, colorScale, strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps, excludedSectorIds, excludedMarketValueTiers,
@@ -259,15 +258,13 @@ export default function MarketSummaryPage() {
   // 서머리의 두 틀(제목·캡처 이름·내용) — 화면과 3:4 캡처용 판이 같은 내용을 쓴다.
   const summaryFrames = [
               {
-                title: '업종 지도',
-                captureId: 'market-map',
+                ...MARKET_MAP_FRAME,
                 children: (
                   <OverviewMap items={overview.items} colorScale={colorScale} onSelect={handleSelectSector} large decimalPlaces={1} />
                 ),
               },
               {
-                title: '그룹 등락률 (%)',
-                captureId: 'group-change-rate',
+                ...GROUP_CHANGE_FRAME,
                 children: (
                   <RankBars chart={overview.chart} highlightColor={isExchange ? 'var(--exchange-accent)' : strongIndustryColor} referenceValueColor={isExchange ? 'var(--exchange-accent)' : mineColor} colorScale={colorScale} onSelectSector={handleSelectSector} onSelectIndex={handleSelectIndex} applyAxisBreak={rangeStartTime === undefined} decimalPlaces={1} />
                 ),
@@ -333,11 +330,7 @@ export default function MarketSummaryPage() {
             <div className="flex min-h-0 min-w-0 flex-1">
             {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서(지도 아래 약 15px), 캡처 중에는 스크롤을 풀어 둔다. */}
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isCapturingAll ? 'overflow-visible' : 'overflow-x-auto'}`}>
-            <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
-            <SortableContext items={safeSummaryFrameOrder} strategy={horizontalListSortingStrategy}>
-            <SummaryScreenFrames frames={orderedSummaryFrames} {...badgeStyleProps} />
-            </SortableContext>
-            </DndContext>
+            <SortableSummaryScreenFrames frames={orderedSummaryFrames} order={safeSummaryFrameOrder} sensors={frameSensors} onDragEnd={handleFrameDragEnd} {...badgeStyleProps} />
             </div>
             </div>
             )}
@@ -370,16 +363,8 @@ export default function MarketSummaryPage() {
           </SettingsPanel>
         </div>
       </div>
-      {screenshotTarget && (
-        <div
-          ref={fixedCaptureRef}
-          aria-hidden="true"
-          data-summary-fixed-capture
-          className="fixed flex flex-col bg-ui-background"
-          style={{ left: 0, top: 0, width: SUMMARY_CAPTURE_FRAME_WIDTH * summaryFrames.length, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
-        >
-          <SummaryCaptureFrames frames={captureFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} {...badgeStyleProps} />
-        </div>
+      {isShareOpen && (
+        <HiddenSummaryCaptureFrames captureRef={fixedCaptureRef} frameCount={summaryFrames.length} frames={captureFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} {...badgeStyleProps} />
       )}
       {screenshotTarget && (
         <ScreenshotModal
@@ -395,16 +380,7 @@ export default function MarketSummaryPage() {
             </EmptyLogoMessage>
           ) : undefined}
           fixedSummaryCaptureRef={fixedCaptureRef}
-          frameCaptureOptions={safeSummaryFrameOrder.map((title, selectedSlot) => {
-            const captureId = title === '업종 지도' ? 'market-map' : 'group-change-rate'
-            return {
-              id: captureId,
-              label: ['좌측', '우측'][selectedSlot],
-              selector: `[data-capture-frame="${captureId}"]`,
-              selectedSlot: selectedSlot as 0 | 1,
-              mode: 'content' as const,
-            }
-          })}
+          frameCaptureOptions={frameCaptureOptionsFor(safeSummaryFrameOrder)}
         />
       )}
     </div>
