@@ -8,7 +8,7 @@ export default function MobileTopBar({ title, titleTo, titleLabel, onTitleClick,
 
   return (
     <header className={`relative z-20 flex h-[calc(44px+env(safe-area-inset-top))] shrink-0 items-center justify-between gap-2 ${showDivider ? 'border-b border-ui-border' : ''} bg-ui-surface px-4 pt-[env(safe-area-inset-top)] ${className}`}>
-      <Link to="/summary/korea" aria-label="MARKETRY 홈으로 이동" className="min-w-0 shrink-0">
+      <Link to="/" aria-label="MARKETRY 홈으로 이동" className="min-w-0 shrink-0">
         <MarketryLogo layout="horizontalMobile" className="h-auto w-[132px] max-w-none" />
       </Link>
       <div className="flex min-w-0 items-center justify-end gap-2">

@@ -618,7 +618,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       }
       // 이 지도 화면 안에서의 이동만 다룬다 — 다른 페이지로 나가는 뒤로가기는 그대로 둔다.
       const path = window.location.pathname
-      const isMobileSectorRoute = path === '/summary/korea' && new URLSearchParams(window.location.search).has('map')
+      const isMobileSectorRoute = path === '/summary/korea' || path === '/summary/korea/kospi' || path === '/summary/korea/kosdaq'
       if (!path.startsWith('/map/') && !path.startsWith('/graph/') && !isMobileSectorRoute) return
       const target: number = typeof e.state?.mobileMapDepth === 'number' ? e.state.mobileMapDepth : 0
       if (target < depth) {

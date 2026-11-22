@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react'
 import OverseasSummaryPage from './pages/OverseasSummaryPage'
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
 import MobileSummaryPage from './pages/MobileSummaryPage'
 import LoginGateProvider from './components/LoginGateProvider'
@@ -106,10 +106,9 @@ function AdminRouteGuard() {
 
 function ResponsiveSummaryPage() {
   const isNarrow = useIsNarrowScreen()
-  const [searchParams] = useSearchParams()
-  // 모바일의 업종 지도는 서머리 주소에 ?map을 붙여 연다(PC 서머리는 이 값을 읽지 않는다).
-  if (isNarrow && searchParams.has('map')) return <MobileMarketSummaryPage mode="sector" />
-  return isNarrow ? <MobileSummaryPage /> : <MarketSummaryPage />
+  // 해외 서머리와 같게, 폰의 서머리 주소는 자기 화면(업종 지도)을 연다. 모바일 홈은 / 따로 있다.
+  if (isNarrow) return <MobileMarketSummaryPage mode="sector" />
+  return <MarketSummaryPage />
 }
 
 function ResponsiveGraphPage() {
@@ -133,6 +132,13 @@ function RedirectKeepingQuery({ to }: { to: string }) {
   return <Navigate to={{ pathname: to, search, hash }} replace />
 }
 
+// PC 첫 화면은 지도, 폰 첫 화면은 모바일 홈(메뉴)이다.
+function ResponsiveHomePage() {
+  const isNarrow = useIsNarrowScreen()
+  if (isNarrow) return <MobileSummaryPage />
+  return <Navigate to="/map/korea" replace />
+}
+
 // 폰용 지도·그래프 화면은 한국만 있다. 일본·미국 지도·그래프는 PC 화면뿐이라 폰에서는 안내만 보여 준다(2026-11-19).
 // 옛 주소(/map/kospi·/map/kosdaq 등)는 한국 주소로 옮겨 가므로 폰에서도 열어 둔다.
 function isMobileKoreaPath(pathname: string, base: '/map' | '/graph') {
@@ -140,7 +146,7 @@ function isMobileKoreaPath(pathname: string, base: '/map' | '/graph') {
 }
 
 function isMobileMarketPath(pathname: string) {
-  // 첫 화면(/)은 곧 /summary로 옮겨 가지만, 폰 화면 판정이 먼저 일어나므로 여기서도 열어 둔다.
+  // 첫 화면(/)은 모바일 홈이라 폰 화면 판정보다 먼저 열어 둔다.
   return (
     pathname === '/' ||
     pathname === '/home' ||
@@ -177,7 +183,7 @@ export default function App() {
         {/* 페이지 코드를 불러오는 동안의 화면. 전체화면 로딩원은 띄우지 않고 배경만 유지한다. */}
         <Suspense fallback={<div className="h-screen bg-ui-background" />}>
         <Routes>
-          <Route path="/" element={<Navigate to="/map/korea" replace />} />
+          <Route path="/" element={<ResponsiveHomePage />} />
           <Route path="/summary/korea" element={<ResponsiveSummaryPage />} />
           <Route path="/summary/korea/kospi" element={<ResponsiveSummaryPage />} />
           <Route path="/summary/korea/kosdaq" element={<ResponsiveSummaryPage />} />
