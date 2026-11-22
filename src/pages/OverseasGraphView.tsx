@@ -14,6 +14,7 @@ import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { captureSwipeArrivalOverlay } from '@/utils/mobileSwipeArrivalOverlay'
+import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
@@ -52,23 +53,10 @@ import { collectAtDepth } from '@/utils/sectorDepth'
 import { summarizeSector } from '@/utils/sectorAverage'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { mapTileMethod } from '@/utils/mapStretch'
-import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
 
 const SECTION_ORDER: SettingsPanelSectionId[] = ['graph', 'composition', 'colors']
 const PREVIEW_FILTERS = { stockChangeFilter: 'all' as const, sectorChangeFilter: 'all' as const, sectorChangeDepth: 0, sectorUseSimpleAverage: false }
 const NO_TOP_PICKS = new Set<string>()
-
-function toDisplayGroup(node: FilteredHeatmapSectorNode): DisplayGroup {
-  return {
-    sectorId: node.sectorId,
-    sectorName: node.sectorName,
-    totalMarketValue: node.totalMarketValue,
-    weightedAvgChangeRate: node.weightedAvgChangeRate,
-    simpleAvgChangeRate: node.simpleAvgChangeRate,
-    items: node.items,
-    children: node.children.map(toDisplayGroup),
-  }
-}
 
 export default function OverseasGraphView({ source }: { source: OverseasGraphSource }) {
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
