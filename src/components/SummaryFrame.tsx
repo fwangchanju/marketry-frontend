@@ -1,7 +1,7 @@
 import { type CSSProperties, type ReactNode, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { FRAME_BADGE_CLASS } from '@/components/FrameBadge'
+import { FRAME_BADGE_CLASS } from '@/utils/frameBadge'
 
 type BadgeStyle = { badgeClassName?: string; badgeStyle?: CSSProperties }
 
@@ -34,7 +34,7 @@ export function SortableSummaryFrame({ title, captureId, index, children, captur
 // 3:4 캡처용 판의 틀 — SortableSummaryFrame의 안쪽 틀과 같은 모양이다(끌기·정렬 없이 고정).
 export function CaptureFrame({ title, className = '', children, badgeClassName, badgeStyle }: { title: string; className?: string; children: ReactNode } & BadgeStyle) {
   return (
-    <div className={`flex min-h-0 flex-col rounded-sm border border-transparent bg-ui-background pb-1.5 pl-[7px] pr-[7px] pt-[7px] ${className}`}>
+    <div className={`flex min-h-0 flex-col rounded-sm border border-transparent bg-ui-background ${className}`}>
       <div className="relative z-[6] flex h-6 min-h-6 shrink-0 items-center">
         <span style={badgeStyle} className={badgeClassName ?? FRAME_BADGE_CLASS}>{title}</span>
       </div>

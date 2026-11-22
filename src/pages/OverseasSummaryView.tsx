@@ -14,6 +14,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
+import { frameBadgeStyle } from '@/utils/frameBadge'
 import { SummaryCaptureFrames, SummaryScreenFrames } from '@/components/SummaryFrame'
 import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
 import { SUMMARY_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
@@ -81,6 +82,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: 'mine' })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
+  const badgeStyleProps = frameBadgeStyle(sheet, strongIndustryColor)
   const navigate = useNavigate()
   // 폰에서는 업종 지도 한 장을 5:8 판에 맞춰 보여 준다. 상단 줄·툴바 줄·하단 설정 줄은 세 시장이 같은 틀을 쓴다.
   const isPhoneMapFrame = useIsNarrowScreen()
@@ -344,7 +346,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
             <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isShareOpen ? 'overflow-visible' : 'overflow-x-auto'}`}>
               <DndContext sensors={frameSensors} collisionDetection={closestCenter} onDragEnd={handleFrameDragEnd}>
                 <SortableContext items={safeSummaryFrameOrder} strategy={horizontalListSortingStrategy}>
-                  <SummaryScreenFrames frames={orderedSummaryFrames} />
+                  <SummaryScreenFrames frames={orderedSummaryFrames} {...badgeStyleProps} />
                 </SortableContext>
               </DndContext>
             </div>
@@ -373,7 +375,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
           className="fixed flex flex-col bg-ui-background"
           style={{ left: 0, top: 0, width: SUMMARY_CAPTURE_FRAME_WIDTH * summaryFrames.length, height: SUMMARY_CAPTURE_FRAME_HEIGHT, opacity: 0, pointerEvents: 'none' }}
         >
-          <SummaryCaptureFrames frames={orderedSummaryFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} />
+          <SummaryCaptureFrames frames={orderedSummaryFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} {...badgeStyleProps} />
         </div>
       )}
       {isShareOpen && <ScreenshotModal onClose={() => setIsShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} captureReady={!isLoading}
