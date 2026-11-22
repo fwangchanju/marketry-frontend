@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import type { PopupContent } from './Popup'
 import type { HeatmapItem } from '@/types/api'
 import { toJoEok, toPctSignedGrouped, toVolume } from '@/utils/format'
@@ -65,22 +65,26 @@ export default function StockBox({
   // 그래도 안 되면 종목명을 감추고 등락률만 보여 준다. 말줄임표나 잘린 글자는 만들지 않는다. 종목명만 고른 경우에 이름이 안 들어가면 아무것도 그리지 않는다.
   const wantName = stockLabelMode !== 'rateOnly'
   const wantRate = stockLabelMode !== 'nameOnly'
-  // 폰 종목 지도에서 화면을 확대하면 박스가 커 보인다. 커진 크기로 이름을 다시 맞춰 100%에서 안 들어가던 이름도 나타나게 하고,
-  // 글자 크기는 배율로 나눠 화면에서는 같은 크기로 보이게 한다(업종 지도의 확대 라벨과 같은 방식).
+  // 폰 종목 지도에서 화면을 확대하면 박스가 커 보인다. 커진 박스로 이름이 들어가는지만 다시 판단하고,
+  // 글자 크기는 처음 정해진 값을 유지한다. 이후 확대는 브라우저가 처리하므로 CSS 크기는 그대로 두면 된다.
   const fitWidth = width * zoomScale
   const fitHeight = height * zoomScale
-  const fontSize = stockFitBaseFontPx(fitWidth, fitHeight, wantRate)
   const fontsVersion = useFontsVersion()
   const name = item.alias ?? item.stockName
   const rateText = toPctSignedGrouped(item.changeRate, decimalPlaces)
   const fit = useMemo(
-    () => fitStockLabel({ name, rateText, width: fitWidth, height: fitHeight, baseFont: fontSize, wantName, wantRate, market: currencyUnit === '엔' ? 'japan' : currencyUnit === '달러' ? 'usa' : 'korea' }),
+    () => fitStockLabel({ name, rateText, width: fitWidth, height: fitHeight, baseFont: stockFitBaseFontPx(fitWidth, fitHeight, wantRate), wantName, wantRate, market: currencyUnit === '엔' ? 'japan' : currencyUnit === '달러' ? 'usa' : 'korea' }),
     // fontsVersion은 글꼴이 늦게 로드돼 글자 폭이 달라졌을 때 다시 계산하려는 값이다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, rateText, fitWidth, fitHeight, fontSize, wantName, wantRate, currencyUnit, fontsVersion],
+    [name, rateText, fitWidth, fitHeight, wantName, wantRate, currencyUnit, fontsVersion],
   )
-  const nameSize = fit.nameSize / zoomScale
-  const rateSize = fit.rateSize === null ? null : fit.rateSize / zoomScale
+  // 이름이 처음 보이기 시작한 배율에서 정해진 크기를 기억한다. 그 뒤로는 확대해도 CSS 크기를 바꾸지 않는다.
+  const [revealed, setRevealed] = useState<{ name: number; rate: number | null } | null>(null)
+  useEffect(() => {
+    setRevealed(prev => !fit.nameLines ? (prev ? null : prev) : (prev ?? { name: fit.nameSize, rate: fit.rateSize }))
+  }, [fit.nameLines, fit.nameSize, fit.rateSize])
+  const nameSize = revealed?.name ?? fit.nameSize
+  const rateSize = revealed ? revealed.rate : fit.rateSize
   const showLabel = stockLabelMode !== 'off' && areaPercent >= labelMinAreaPercent && (fit.nameLines !== null || fit.rateSize !== null)
   const backgroundColor = resolveHeatmapColor(item.changeRate, colorScale)
   const stockKey = `stock:${ancestorPath}\u0000${item.stockCode}`

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react'
 
-// 브라우저 가장자리 뒤로가기 제스처와 겹치지 않게, 좌우 이 폭 안에서 시작한 슬라이드는 무시한다(지도 화면과 같은 값).
-const EDGE_GUARD = 24
+// 화면 확대 중 오스와이프를 막기 위해, 스와이프는 보이는 화면의 양 끝 이 비율 안에서만 시작할 수 있다.
+// 다음 판(왼쪽으로 밀기)은 오른쪽 끝에서, 이전 판(오른쪽으로 밀기)은 왼쪽 끝에서만 허용한다.
+// visualViewport 기준으로 잡아야 확대해도 보이는 화면의 끝과 어긋나지 않는다.
+const SWIPE_EDGE_RATIO = 0.2
 // 한국 업종·그룹 화면의 전환과 같은 값 — 한 곳에서 관리해 시장·화면마다 속도가 어긋나지 않게 한다.
 export const MOBILE_PAGE_SWIPE_SETTLE_MS = 500
 
 // 모바일 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
 export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void) {
-  const startRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
+  const startRef = useRef<{ pointerId: number; x: number; y: number; edge: 'left' | 'right' | null } | null>(null)
   const suppressClickRef = useRef(false)
   const timerRef = useRef<number | null>(null)
   const [offset, setOffset] = useState(0)
@@ -31,14 +33,23 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     }, duration)
   }
   const onPointerDownCapture = (event: PointerEvent<HTMLElement>) => {
-    if (settling || event.clientX <= EDGE_GUARD || event.clientX >= window.innerWidth - EDGE_GUARD) return
+    if (settling) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
-    startRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
+    // 확대 중에는 보이는 화면이 레이아웃 화면과 달라지므로 visualViewport를 기준으로 양 끝을 잡는다.
+    const viewport = window.visualViewport
+    const left = viewport?.offsetLeft ?? 0
+    const right = left + (viewport?.width ?? window.innerWidth)
+    const edgeWidth = (right - left) * SWIPE_EDGE_RATIO
+    const edge = event.clientX <= left + edgeWidth ? 'left' : event.clientX >= right - edgeWidth ? 'right' : null
+    if (!edge) return
+    startRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, edge }
   }
   const onPointerMoveCapture = (event: PointerEvent<HTMLElement>) => {
     const start = startRef.current
     if (!start || start.pointerId !== event.pointerId || settling) return
     const dx = event.clientX - start.x
+    const allowedEdge = dx < 0 ? 'right' : 'left'
+    if (start.edge !== allowedEdge) return
     if (Math.abs(dx) >= 4 && isHorizontal(dx, event.clientY - start.y)) setOffset(dx)
   }
   const onPointerUpCapture = (event: PointerEvent<HTMLElement>) => {
@@ -46,7 +57,9 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     if (!start || start.pointerId !== event.pointerId) return
     startRef.current = null
     const dx = event.clientX - start.x
-    const moved = Math.abs(dx) >= Math.max(24, window.innerWidth * 0.08) && isHorizontal(dx, event.clientY - start.y)
+    // 오른쪽 끝에서 시작한 왼쪽 밀기만 다음 판으로, 왼쪽 끝에서 시작한 오른쪽 밀기만 이전 판으로 간다.
+    const allowedEdge = dx < 0 ? 'right' : 'left'
+    const moved = start.edge === allowedEdge && Math.abs(dx) >= Math.max(24, window.innerWidth * 0.08) && isHorizontal(dx, event.clientY - start.y)
     if (!moved) {
       if (offset !== 0) settle(0)
       return
