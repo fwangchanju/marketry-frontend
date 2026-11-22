@@ -19,12 +19,12 @@ import Spinner from '@/components/Spinner'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
+import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 import type { OverseasSectorSource } from '@/hooks/overseasSectorSource'
 import { useSession } from '@/hooks/useSession'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
-import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/screenshotToClipboard'
 import type { SectorItem } from '@/types/api'
 import { overseasMarketInfo } from '@/utils/markets'
 
@@ -46,11 +46,9 @@ export default function OverseasSectorView({ source }: { source: OverseasSectorS
   const create = useMutation({ meta: { failure: '분류를 추가하지 못했습니다.' }, mutationFn: async ({ name, parentId }: { name: string; parentId: number | null }): Promise<SectorItem> => { const item = (await client.post<Category>(endpoint, { name, parentId })).data; return { ...item, depth: depthOf(item.parentId) + 1 } }, onSuccess: invalidate })
   const rename = useMutation({ meta: { failure: '분류 이름을 바꾸지 못했습니다.' }, mutationFn: async ({ id, name }: { id: number; name: string }) => client.put(`${endpoint}/${id}`, { name }), onSuccess: invalidate })
   const reparent = useMutation({ meta: { failure: '분류를 옮기지 못했습니다.' }, mutationFn: async ({ id, parentId }: { id: number; parentId: number | null }) => client.put(`${endpoint}/${id}/parent`, { parentId }), onSuccess: invalidate })
-  const sectors = useMemo<SectorItem[]>(() => {
-    const all = categories.data ?? []
-    const depth = (item: Category): number => { const parent = all.find(candidate => candidate.id === item.parentId); return parent ? depth(parent) + 1 : 0 }
-    return all.map(item => ({ ...item, depth: Math.min(depth(item), MAX_DEPTH) }))
-  }, [categories.data])
+  const all = categories.data ?? []
+  const depth = (item: Category): number => { const parent = all.find(candidate => candidate.id === item.parentId); return parent ? depth(parent) + 1 : 0 }
+  const sectors: SectorItem[] = all.map(item => ({ ...item, depth: Math.min(depth(item), MAX_DEPTH) }))
   const stats = useMemo(() => {
     const result = new Map<number, { marketValue: number; stockCount: number }>()
     const quoteByCode = new Map((quotes.data?.quotes ?? []).map(quote => [quote.stockCode, quote.totalMarketValue]))
@@ -76,21 +74,12 @@ export default function OverseasSectorView({ source }: { source: OverseasSectorS
   const [toolbar, setToolbar] = useState<HTMLDivElement | null>(null)
   const [settingsActions, setSettingsActions] = useState<HTMLDivElement | null>(null)
   const [settingsOpen, setSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
-  const [shareOpen, setShareOpen] = useState(false)
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const screenshotRef = useRef<HTMLElement>(null)
+  const { target: screenshotTarget, isOpen: isShareOpen, open: openScreenshot, close: closeScreenshot, copy, copyLabel, isCopying } = useScreenshotShare()
   const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
-  const copy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotRef.current) return
-    setCopyStatus('copying')
-    try { if (previewSrc) await copyDataUrlToClipboard(previewSrc); else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current); setCopyStatus('copied') }
-    catch { setCopyStatus('error') }
-    finally { setTimeout(() => setCopyStatus('idle'), 2000) }
-  }
-  const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
   return <div className="flex h-screen flex-col overflow-hidden bg-ui-background text-ui-white">
-    <NavBar /><NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => setShareOpen(true)} isScreenshotOpen={shareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setSettingsOpen(open => !open)} isSettingsOpen={settingsOpen} />} />
+    <NavBar /><NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setSettingsOpen(open => !open)} isSettingsOpen={settingsOpen} />} />
     <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 flex-1 overflow-hidden bg-ui-background">
       <main ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="main-toolbar mt-[3px] mb-[8px] flex h-7 shrink-0 items-center gap-1 text-sm font-bold"><ToolbarModeText page="SECTOR" label={badgeLabel} showChevron menu={customMenu('sector', market, true, sheet === 'MINE')} /><div ref={setToolbar} className="min-w-0 flex-1" /><div className={`${FONT_BAR_MODE_STATUS} ml-2 flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div></div>
@@ -99,6 +88,6 @@ export default function OverseasSectorView({ source }: { source: OverseasSectorS
       </main>
       <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}><SettingsPanel pageLabel="Sector" customTabLabel="섹터" customTabIcon="industry" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={false} isOpen={settingsOpen} onOpenChange={setSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={['custom']}><SettingsPanelGroup section="custom">{canEdit ? <div ref={setSettingsActions} /> : <div className="settings-empty-message"><span className="text-center">읽기 전용{canUseMine && <><br /><span className="text-ui-muted">[내 기준] 모드만 쓰기 가능</span></>}</span></div>}</SettingsPanelGroup></SettingsPanel></div>
     </div>
-    {shareOpen && <ScreenshotModal onClose={() => setShareOpen(false)} onCopy={copy} copyLabel={copyLabel} isCopying={copyStatus === 'copying'} screenshotTarget={screenshotRef.current} />}
+    {isShareOpen && <ScreenshotModal onClose={closeScreenshot} onCopy={copy} copyLabel={copyLabel} isCopying={isCopying} screenshotTarget={screenshotTarget} />}
   </div>
 }

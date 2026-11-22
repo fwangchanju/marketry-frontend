@@ -4,7 +4,7 @@ import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import { marketMenu } from '@/utils/marketMenu'
 import ToolbarPinButton from '@/components/ToolbarPinButton'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import NavBar from '@/components/NavBar'
@@ -43,7 +43,7 @@ import { CAPTURE_ID } from '@/utils/captureIds'
 import NavBarPageActions, { PageRefreshButton, SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
-import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
+import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel } from '@/utils/format'
 import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { marketRoute } from '@/utils/marketRoute'
@@ -55,7 +55,6 @@ import { getMarketIndexHistory } from '@/api/marketSummary'
 import { trendMonths } from '@/utils/trendDates'
 import { usePreviousTradingDay } from '@/hooks/useHeatmap'
 
-type CopyStatus = 'idle' | 'copying' | 'copied' | 'error'
 type GraphViewMode = 'current' | 'delta'
 
 // 지수 등락률 참조 막대에 붙는 한글 라벨 — ALL STOCK은 두 지수를 각각 표시한다.
@@ -228,28 +227,9 @@ export default function GraphPage() {
   const modeStatusText = <TaxonomyBadge taxonomy={settingsModalProps.taxonomy} strongIndustryColor={strongIndustryColor} />
 
   const { isOnLeft: isSettingsOnLeft, toggleSide: toggleSettingsSide, rowRef: settingsRowRef } = useSettingsPanelSide()
-  const [isShareOpen, setIsShareOpen] = useState(false)
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const screenshotRef = useRef<HTMLDivElement>(null)
-
-  const handleCopy = async (previewSrc?: string | null) => {
-    if (!previewSrc && !screenshotRef.current) return
-    setCopyStatus('copying')
-    try {
-      if (previewSrc) await copyDataUrlToClipboard(previewSrc)
-      else if (screenshotRef.current) await screenshotElementToClipboard(screenshotRef.current)
-      setCopyStatus('copied')
-    } catch {
-      setCopyStatus('error')
-    } finally {
-      setTimeout(() => setCopyStatus('idle'), 2000)
-    }
-  }
-
-
-  const copyLabel =
-    copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
+  const { target: screenshotTarget, isOpen: isShareOpen, open: openScreenshot, close: closeScreenshot, copy: handleCopy, copyLabel, isCopying } = useScreenshotShare()
 
   // 설정창 위쪽 "nn/nn종목" — 분모는 지금 시장의 모든 종목, 분자는 지도 설정창과 같은 기준(제외한 업종은 하위 업종까지,
   // 제외한 시가총액 구간)으로 걸러 남은 종목이다.
@@ -327,7 +307,7 @@ export default function GraphPage() {
             isRefreshing={isRefreshing}
             onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
             isSettingsOpen={settingsModalProps.isOpen}
-            onOpenShare={() => setIsShareOpen(true)}
+            onOpenShare={() => openScreenshot(screenshotRef.current)}
             isScreenshotOpen={isShareOpen}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
@@ -513,11 +493,11 @@ export default function GraphPage() {
 
       {isShareOpen && (
         <ScreenshotModal
-          onClose={() => setIsShareOpen(false)}
+          onClose={closeScreenshot}
           onCopy={handleCopy}
           copyLabel={copyLabel}
-          isCopying={copyStatus === 'copying'}
-          screenshotTarget={screenshotRef.current}
+          isCopying={isCopying}
+          screenshotTarget={screenshotTarget}
           captureReady={!isLoading && (source !== 'MINE' || Boolean(displayNow))}
           emptyPreview={source === 'MINE' && !isLoading && !isError && displayNow && displayNow.items.every(node => collectItems(node).length === 0) ? (
             <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
