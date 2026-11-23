@@ -56,6 +56,8 @@ interface Props {
   // 금액 단위 — 일본 지도는 엔으로 표시한다.
   currencyUnit?: CurrencyUnit
   captureRowMetric?: 'weightedAvgChangeRate' | 'simpleAvgChangeRate'
+  // 실제 폰 화면에서만 종목 팝업을 툴바 줄 팝업과 같은 배율로 키운다. PC·캡처·스와이프 미리보기는 기본값(false).
+  phonePopupEnlarged?: boolean
 }
 
 // 컨테이너 기준 0~1 비율 좌표 — 컨테이너 크기가 나중에 달라져도(리사이즈) 값이 그대로 유효하다.
@@ -132,6 +134,7 @@ export default function Heatmap({
   onMoveStock,
   currencyUnit = '원',
   captureRowMetric,
+  phonePopupEnlarged = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   useStockDrag(containerRef, stockMoveEnabled && onMoveStock !== undefined, drop => onMoveStock?.(drop))
@@ -446,7 +449,9 @@ export default function Heatmap({
           />
         ))}
       </div>
-      <Popup popup={popup} onExcludeSector={onExcludeSector} onOpenChart={stockChartTrigger === 'rightClick' ? onOpenStockChart : undefined} onClose={() => setPopup(null)} />
+      {/* 폰은 종목 박스 한 번 클릭으로 차트를 열지 않고, 우클릭·길게 누르기 팝업의 차트 아이콘으로만 연다.
+          PC는 기존처럼 설정이 우클릭일 때만 아이콘을 보여 준다. */}
+      <Popup popup={popup} onExcludeSector={onExcludeSector} onOpenChart={stockChartTrigger === 'rightClick' || phonePopupEnlarged ? onOpenStockChart : undefined} onClose={() => setPopup(null)} phoneEnlarged={phonePopupEnlarged} />
     </div>
   )
 }

@@ -32,6 +32,7 @@ import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
 import Heatmap from '@/components/Heatmap'
 import MapStockChart from '@/components/MapStockChart'
+import MobileMapStockChart from '@/components/MobileMapStockChart'
 import { MapChangeFilterSections, MapExperimentSections } from '@/components/MapSettingsSections'
 import { useMapStockChart, useStockPopupOnHover } from '@/hooks/useStockChart'
 import { useTransientSetting } from '@/hooks/useTransientSetting'
@@ -266,7 +267,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                 <div aria-hidden="true" className="h-2 shrink-0" />
                 {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" /><span className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
+                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} stockChartTrigger="rightClick" onOpenStockChart={isPhoneMapFrame && chart ? openStockChart : undefined} phonePopupEnlarged={isPhoneMapFrame} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
                 </div>
               </div>
             </div>
@@ -306,18 +307,31 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     const summaryPath = overseasRoute('/summary', market)
     const graphPath = overseasRoute('/graph', market)
     return (
-      <PhoneMapShell
-        onSwipe={direction => navigate(direction === 'next' ? summaryPath : graphPath)}
-        toolbar={overseasToolbarNode}
-        topBar={<MobileTopBar title="종목 지도" titleTo={summaryPath} titleLabel="업종 지도로 이동" />}
-        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
-        frame={overseasFrameNode || phoneEmptyFrame}
-        nextPreview={sectorPreview}
-        previousPreview={graphPreview}
-        current={marketKey}
-        boxSize={preferences.boxSizeMarketCapRatio}
-        onChangeBoxSize={value => update({ boxSizeMarketCapRatio: value })}
-      />
+      <>
+        <PhoneMapShell
+          onSwipe={direction => navigate(direction === 'next' ? summaryPath : graphPath)}
+          toolbar={overseasToolbarNode}
+          topBar={<MobileTopBar title="종목 지도" titleTo={summaryPath} titleLabel="업종 지도로 이동" />}
+          frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+          frame={overseasFrameNode || phoneEmptyFrame}
+          nextPreview={sectorPreview}
+          previousPreview={graphPreview}
+          current={marketKey}
+          boxSize={preferences.boxSizeMarketCapRatio}
+          onChangeBoxSize={value => update({ boxSizeMarketCapRatio: value })}
+        />
+        {chartStock !== null && chart && (
+          <MobileMapStockChart
+            chartStock={chartStock}
+            marketLabel={label}
+            levelLabels={levelLabels}
+            market={chart.market}
+            closeChart={closeChart}
+            onGoToRoot={() => goToDepth(0)}
+            onEnterSector={enterSector}
+          />
+        )}
+      </>
     )
   }
 
