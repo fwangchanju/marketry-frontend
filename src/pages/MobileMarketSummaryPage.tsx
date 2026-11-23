@@ -4,8 +4,8 @@ import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } fr
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import MobileTopBar from '@/components/MobileTopBar'
 import PhoneMapShell from '@/components/PhoneMapShell'
+import Popup, { type PopupContent, type PopupState } from '@/components/Popup'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
-import { PHONE_POPUP_SCALE } from '@/utils/phonePopupScale'
 import PathBar from '@/components/PathBar'
 import MapToolbar from '@/components/MapToolbar'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
@@ -25,9 +25,9 @@ import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import { collectAllItems } from '@/hooks/useFilteredHeatmap'
 import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { useFontsVersion } from '@/utils/stockLabelFit'
-import { isLightColor, resolveHeatmapColor } from '@/utils/heatmapColorScale'
+import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { changeDirectionOf } from '@/utils/changeDirection'
-import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
+import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel, toVolume } from '@/utils/format'
 import { calculateSectorLayoutWeights, MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { limitDepth } from '@/hooks/useFilteredHeatmap'
@@ -52,10 +52,6 @@ const STOCK_MAP_COUNT = 30
 const MOBILE_SETTINGS_BAR_HEIGHT = 24
 const MOBILE_PAGE_SWIPE_EDGE_GUARD = 24
 const MOBILE_DECIMAL_PLACES = 1
-// 업종 지도에서 길게 눌러 띄우는 정보 팝업도 종목 지도 팝업과 같은 배율로 키운다.
-// transform으로 키우면 가로가 화면을 넘치므로 글자·여백만 같은 비율로 키운다.
-const infoPopupPx = (px: number) => `${Math.round(px * PHONE_POPUP_SCALE)}px`
-
 type MobileSectorItem = MobileSectorMapItem & {
   node: FilteredHeatmapSectorNode | null
   stocks: HeatmapItem[]
@@ -112,8 +108,8 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
   colorScale: ReturnType<typeof useGlobalSettings>['colorScale']
   decimalPlaces: number
   onSelect: (stock: HeatmapItem) => void
-  // 길게 누르면 팝업을 연다(짧게 누르는 것과 달리 이미 떠 있어도 닫지 않는다).
-  onLongPress: (stock: HeatmapItem) => void
+  // 길게 누르면 눌린 칸과 함께 PC용 팝업을 연다.
+  onLongPress: (stock: HeatmapItem, target: HTMLElement) => void
 }) {
   const { bind: bindLongPress, consumeClick } = useLongPress()
   const ref = useRef<HTMLDivElement>(null)
@@ -212,7 +208,7 @@ function MobileStockHeatmap({ stocks, boxSizeRatio, colorScale, decimalPlaces, o
         const name = stock.alias ?? stock.stockName
         const rateText = toPctSigned(stock.changeRate, decimalPlaces)
         const label = layoutOverviewLabel(name, rateText, width, height, fontsVersion, { splitInsideWord: true })
-        const press = bindLongPress(() => onLongPress(stock))
+        const press = bindLongPress(target => onLongPress(stock, target))
         return (
           <button key={stock.stockCode} type="button" aria-label={`${stock.stockName} ${toPctSigned(stock.changeRate, decimalPlaces)}`} onClick={() => { if (!consumeClick()) onSelect(stock) }} {...press} className="select-none [-webkit-touch-callout:none] absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight text-white" style={{ left: x, top: y, width, height, backgroundColor: color }}>
             {label.lines.length > 0 && <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize }}>{label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}</span>}
@@ -302,10 +298,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const [graphDepth, setGraphDepth] = useLocalPersistedState<number>('mobile.graphDepth', 1)
   const [viewModeState, setViewMode] = useState<'sector' | 'stock'>('sector')
   const viewMode = isStockMode ? 'stock' : viewModeState
-  const [focusedStockCode, setFocusedStockCode] = useState<string | null>(null)
-  // 길게 눌러 연 종목 팝업은 저절로 닫히지 않고(같은 종목을 다시 길게 누르면 닫힌다), 짧게 눌러 연 팝업은 잠깐 보였다 사라진다.
-  const [stockPinned, setStockPinned] = useState(false)
-  const [focusedSectorKey, setFocusedSectorKey] = useState<string | null>(null)
+  // 업종 지도에서 길게 누르면 PC에서 쓰는 것과 같은 Popup을 연다.
+  const [infoPopup, setInfoPopup] = useState<PopupState | null>(null)
   const [settingsOpen, setSettingsOpen] = useLocalPersistedState('settings-panel-open', false)
   // 터치 핸들러 안에서 최신 열림 상태를 읽기 위한 ref.
   const settingsOpenRef = useRef(settingsOpen)
@@ -500,15 +494,45 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     return [...stocks].sort((a, b) => b.totalMarketValue - a.totalMarketValue)
   }, [filteredRootNodes, selectedStocks, stockScope])
   const stockHeatmapItems = stockContextItems.slice(0, STOCK_MAP_COUNT)
-  const focusedStock = stockHeatmapItems.find(stock => stock.stockCode === focusedStockCode) ?? null
-  // 종목 정보는 지도 가운데에 띄운다. 짧게 눌러 연 것은 2초 뒤 저절로 닫고, 길게 눌러 연 것은 닫을 때까지 둔다.
-  useEffect(() => {
-    if (!focusedStockCode || stockPinned) return
-    const timer = window.setTimeout(() => setFocusedStockCode(null), 2000)
-    return () => window.clearTimeout(timer)
-  }, [focusedStockCode, stockPinned])
-  // 업종 정보도 길게 누르면 지도 가운데에 띄우고, 같은 업종을 다시 길게 누르거나 눌러서 닫을 때까지 둔다. 업종 목록이 바뀌어 없어지면 보이지 않는다.
-  const focusedSector = marketItems.find(item => item.key === focusedSectorKey) ?? null
+  // PC에서 쓰는 것과 같은 Popup을 눌린 칸에 띄운다. 눌린 칸의 화면 위치와 지도 경계를 함께 넘긴다.
+  // 같은 칸을 다시 길게 누르면 닫는다.
+  const openInfoPopup = (content: PopupContent, target: HTMLElement) => {
+    if (infoPopup?.targetKey === content.targetKey) {
+      setInfoPopup(null)
+      return
+    }
+    const rect = target.getBoundingClientRect()
+    const mapRect = (target.closest('[data-mobile-map-scale]') ?? pageContentRef.current)?.getBoundingClientRect()
+    setInfoPopup({
+      ...content,
+      anchorRect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
+      mapBounds: {
+        left: mapRect?.left ?? 0,
+        right: mapRect?.right ?? window.innerWidth,
+        top: mapRect?.top ?? 0,
+        bottom: mapRect?.bottom ?? window.innerHeight,
+      },
+    })
+  }
+  const openStockPopup = (stock: HeatmapItem, target: HTMLElement) => openInfoPopup({
+    title: stock.stockName,
+    rows: [
+      `등락률: ${toPctSigned(stock.changeRate, MOBILE_DECIMAL_PLACES)}`,
+      `현재가: ${toVolume(stock.currentPrice)}원`,
+      `시가총액: ${toJoEok(stock.totalMarketValue / 100_000_000)}원`,
+    ],
+    targetKey: `stock:${stock.stockCode}`,
+  }, target)
+  const openSectorPopup = (item: MobileSectorMapItem & Partial<MobileSectorItem>, target: HTMLElement) => openInfoPopup({
+    title: item.name,
+    rows: [
+      `시총 가중: ${toPctSigned(item.changeRate, MOBILE_DECIMAL_PLACES)}`,
+      ...(item.simpleAvg === undefined ? [] : [`동일 가중: ${item.simpleAvg === null ? '-' : toPctSigned(item.simpleAvg, MOBILE_DECIMAL_PLACES)}`]),
+      `등락 종목: ▲${item.advancers ?? 0} ▼${item.decliners ?? 0} ■${item.unchanged ?? 0}`,
+      `그룹 시총: ${toJoEok(item.marketValue / 100_000_000)}원`,
+    ],
+    targetKey: `sector:${item.key}`,
+  }, target)
   const heading = viewMode === 'stock'
     ? `${stockCategoryName || stockScope?.sectorName || '전체 시장'} 주식 히트맵`
     : mid ? `${mid.sectorName} 소분류 업종 히트맵` : major ? `${major.sectorName} 중분류 업종 히트맵` : '국내 업종 히트맵'
@@ -583,14 +607,14 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const historyNormalizedRef = useRef(false)
   const reduceToDepth = (target: number) => {
     if (isGraph && target === 0 && graphEntryOffset > 0) {
-      setMajorSelection(null); setMidSelection(null); setStockSelection(null); setGraphEntryOffset(0); setViewMode('sector'); setFocusedStockCode(null)
+      setMajorSelection(null); setMidSelection(null); setStockSelection(null); setGraphEntryOffset(0); setViewMode('sector'); setInfoPopup(null)
       return
     }
     let current = depth
     if (current > target && selectedStocks) { setStockSelection(null); setViewMode('sector'); current -= 1 }
     if (current > target && mid) { setMidSelection(null); current -= 1 }
     if (current > target && major) { setMajorSelection(null); setViewMode('sector') }
-    setFocusedStockCode(null)
+    setInfoPopup(null)
   }
   useEffect(() => {
     // 다른 페이지에 갔다가 뒤로가기로 돌아오면 쌓인 칸만 남고 화면은 처음 상태라, 칸을 걷어 내 기준 칸으로 돌아간다.
@@ -646,7 +670,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     setMidName(null)
     setSelectedStocks(null)
     setViewMode('sector')
-    setFocusedStockCode(null)
+    setInfoPopup(null)
     setGraphEntryOffset(0)
     if (pathname.startsWith('/map/') || pathname.startsWith('/graph/')) {
       // 종목 지도에서 업종을 보던 중이어도 마켓을 바꾸면 그 마켓의 전체 종목 지도로 간다(업종 이름이 마켓마다 다를 수 있다).
@@ -903,32 +927,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
-            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
-              <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={stock => { setStockPinned(false); setFocusedStockCode(current => current === stock.stockCode ? null : stock.stockCode) }} onLongPress={stock => {
-                if (stockPinned && focusedStockCode === stock.stockCode) { setStockPinned(false); setFocusedStockCode(null) } else { setStockPinned(true); setFocusedStockCode(stock.stockCode) }
-              }} />
-              {focusedStock && <button type="button" aria-label="종목 정보 닫기" onClick={() => setFocusedStockCode(null)} className="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 flex-col gap-1 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" style={{ gap: infoPopupPx(4), borderRadius: infoPopupPx(6), padding: `${infoPopupPx(8)} ${infoPopupPx(12)}` }} aria-live="polite">
-                <span className="flex min-w-0 items-center justify-between gap-3">
-                  <span className="truncate text-[16px] font-semibold" style={{ fontSize: infoPopupPx(16) }}>{focusedStock.stockName}</span>
-                  <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ fontSize: infoPopupPx(15), padding: `${infoPopupPx(4)} ${infoPopupPx(8)}`, borderRadius: infoPopupPx(4), backgroundColor: resolveHeatmapColor(focusedStock.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedStock.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedStock.changeRate, MOBILE_DECIMAL_PLACES)}</span>
-                </span>
-                <span className="block text-[12px] leading-snug text-ui-muted" style={{ fontSize: infoPopupPx(12) }}>
-                  종목코드 {focusedStock.stockCode} · <span className="whitespace-nowrap">시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span>
-                </span>
-              </button>}
-            </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface">
-              {focusedSector && <button type="button" aria-label="업종 정보 닫기" onClick={() => setFocusedSectorKey(null)} className="absolute left-3 right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" style={{ gap: infoPopupPx(4), borderRadius: infoPopupPx(6), padding: `${infoPopupPx(8)} ${infoPopupPx(12)}` }} aria-live="polite">
-                <span className="flex min-w-0 items-center justify-between gap-3">
-                  <span className="truncate text-[16px] font-semibold" style={{ fontSize: infoPopupPx(16) }}>{focusedSector.name}</span>
-                  <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ fontSize: infoPopupPx(15), padding: `${infoPopupPx(4)} ${infoPopupPx(8)}`, borderRadius: infoPopupPx(4), backgroundColor: resolveHeatmapColor(focusedSector.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedSector.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedSector.changeRate, MOBILE_DECIMAL_PLACES)}</span>
-                </span>
-                <span className="block text-[12px] leading-snug tabular-nums text-ui-muted" style={{ fontSize: infoPopupPx(12) }}>
-                  {focusedSector.simpleAvg !== undefined && <>동일 가중 {focusedSector.simpleAvg === null ? '-' : toPctSigned(focusedSector.simpleAvg, MOBILE_DECIMAL_PLACES)} · </>}
-                  ▲{focusedSector.advancers ?? 0} ▼{focusedSector.decliners ?? 0} ■{focusedSector.unchanged ?? 0} · <span className="whitespace-nowrap">시가총액 {toJoEok(focusedSector.marketValue / 100_000_000)}</span>
-                </span>
-              </button>}
-              <MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} decimalPlaces={MOBILE_DECIMAL_PLACES} />
-            </div>}
+            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={() => setInfoPopup(null)} onLongPress={(stock, target) => openStockPopup(stock, target)} />
+            : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={(item, target) => openSectorPopup(marketItems.find(sector => sector.key === item.key) ?? item, target)} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>}
         </div>
         </div>
         </div>
@@ -939,6 +939,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           </div>
         </div>}
       </section>
+        <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={() => setInfoPopup(null)} phoneEnlarged />
         </div>}
         current="korea"
         boxSize={boxSizeMarketCapRatio}
@@ -977,37 +978,14 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
-            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <>
-              <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={stock => { setStockPinned(false); setFocusedStockCode(current => current === stock.stockCode ? null : stock.stockCode) }} onLongPress={stock => {
-                if (stockPinned && focusedStockCode === stock.stockCode) { setStockPinned(false); setFocusedStockCode(null) } else { setStockPinned(true); setFocusedStockCode(stock.stockCode) }
-              }} />
-              {focusedStock && <button type="button" aria-label="종목 정보 닫기" onClick={() => setFocusedStockCode(null)} className="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 flex-col gap-1 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" style={{ gap: infoPopupPx(4), borderRadius: infoPopupPx(6), padding: `${infoPopupPx(8)} ${infoPopupPx(12)}` }} aria-live="polite">
-                <span className="flex min-w-0 items-center justify-between gap-3">
-                  <span className="truncate text-[16px] font-semibold" style={{ fontSize: infoPopupPx(16) }}>{focusedStock.stockName}</span>
-                  <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ fontSize: infoPopupPx(15), padding: `${infoPopupPx(4)} ${infoPopupPx(8)}`, borderRadius: infoPopupPx(4), backgroundColor: resolveHeatmapColor(focusedStock.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedStock.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedStock.changeRate, MOBILE_DECIMAL_PLACES)}</span>
-                </span>
-                <span className="block text-[12px] leading-snug text-ui-muted" style={{ fontSize: infoPopupPx(12) }}>
-                  종목코드 {focusedStock.stockCode} · <span className="whitespace-nowrap">시가총액 {toJoEok(focusedStock.totalMarketValue / 100_000_000)}</span>
-                </span>
-              </button>}
-            </> : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface">
-              {focusedSector && <button type="button" aria-label="업종 정보 닫기" onClick={() => setFocusedSectorKey(null)} className="absolute left-3 right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1 rounded-[6px] border-0 bg-ui-panel/95 px-3 py-2 text-left shadow-lg" style={{ gap: infoPopupPx(4), borderRadius: infoPopupPx(6), padding: `${infoPopupPx(8)} ${infoPopupPx(12)}` }} aria-live="polite">
-                <span className="flex min-w-0 items-center justify-between gap-3">
-                  <span className="truncate text-[16px] font-semibold" style={{ fontSize: infoPopupPx(16) }}>{focusedSector.name}</span>
-                  <span className="shrink-0 rounded-[4px] px-2 py-1 text-[15px] font-bold tabular-nums" style={{ fontSize: infoPopupPx(15), padding: `${infoPopupPx(4)} ${infoPopupPx(8)}`, borderRadius: infoPopupPx(4), backgroundColor: resolveHeatmapColor(focusedSector.changeRate, colorScale), color: isLightColor(resolveHeatmapColor(focusedSector.changeRate, colorScale)) ? 'var(--ui-on-light)' : 'var(--ui-on-dark)' }}>{toPctSigned(focusedSector.changeRate, MOBILE_DECIMAL_PLACES)}</span>
-                </span>
-                <span className="block text-[12px] leading-snug tabular-nums text-ui-muted" style={{ fontSize: infoPopupPx(12) }}>
-                  {focusedSector.simpleAvg !== undefined && <>동일 가중 {focusedSector.simpleAvg === null ? '-' : toPctSigned(focusedSector.simpleAvg, MOBILE_DECIMAL_PLACES)} · </>}
-                  ▲{focusedSector.advancers ?? 0} ▼{focusedSector.decliners ?? 0} ■{focusedSector.unchanged ?? 0} · <span className="whitespace-nowrap">시가총액 {toJoEok(focusedSector.marketValue / 100_000_000)}</span>
-                </span>
-              </button>}
-              <MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={item => setFocusedSectorKey(current => current === item.key ? null : item.key)} decimalPlaces={MOBILE_DECIMAL_PLACES} />
-            </div>}
+            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={() => setInfoPopup(null)} onLongPress={(stock, target) => openStockPopup(stock, target)} />
+            : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={(item, target) => openSectorPopup(marketItems.find(sector => sector.key === item.key) ?? item, target)} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>}
         </div>
         {pageSwipePreview && <div aria-hidden="true" inert className={`absolute inset-0 overflow-hidden ${pageSwipePreview.targetMode === 'stock' ? '' : 'p-1'}`} style={{ transform: swipePreviewFrameTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
           {renderSwipePreview()}
         </div>}
       </section>
+      <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={() => setInfoPopup(null)} phoneEnlarged />
 
       <section ref={settingsSectionRef} data-mobile-settings-panel role="region" aria-label="설정" className="relative z-10 mx-1 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
         <div className="relative h-[24px]">
@@ -1052,7 +1030,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
                 return <button key={option.key} type="button" role="radio" aria-checked={selected} onClick={() => {
                   if (selected) return
                   settingsModalProps.onSelectTaxonomy(option.key)
-                  setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); setFocusedStockCode(null)
+                  setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); setInfoPopup(null)
                 }} className={`${SETTING_CHIP_CLASS} ${selected ? 'bg-brand-surface text-ui-on-dark' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>
               })}
             </div>
@@ -1065,7 +1043,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           {isGraph && <SettingRow label="업종 단계">
             <div role="radiogroup" aria-label="업종 분류 단계" className="grid flex-1 grid-cols-3 gap-1.5">
               {[{ value: 1, label: '대분류' }, { value: 2, label: '중분류' }, { value: 3, label: '소분류' }].map(option => <button key={option.value} type="button" role="radio" aria-checked={Math.min(graphDepth, selectableDepth) === option.value} disabled={option.value > selectableDepth} onClick={() => {
-                setGraphDepth(option.value); setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); setFocusedStockCode(null)
+                setGraphDepth(option.value); setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); setInfoPopup(null)
               }} className={`${SETTING_CHIP_CLASS} disabled:opacity-35 ${Math.min(graphDepth, selectableDepth) === option.value ? 'bg-brand-surface text-ui-on-dark' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
             </div>
           </SettingRow>}

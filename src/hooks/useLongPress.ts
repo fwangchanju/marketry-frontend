@@ -15,15 +15,16 @@ export function useLongPress() {
   }, [])
   useEffect(() => cancel, [cancel])
 
-  const bind = useCallback((onLongPress?: () => void) => ({
+  const bind = useCallback((onLongPress?: (target: HTMLElement) => void) => ({
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
       if (!onLongPress || event.pointerType !== 'touch') return
       firedRef.current = false
       cancel()
+      const target = event.currentTarget
       const timer = window.setTimeout(() => {
         pressRef.current = null
         firedRef.current = true
-        onLongPress()
+        onLongPress(target)
       }, LONG_PRESS_MS)
       pressRef.current = { timer, x: event.clientX, y: event.clientY }
     },

@@ -117,6 +117,15 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
   useLayoutEffect(() => {
     const el = elRef.current
     if (!el) return
+    if (phoneEnlarged) {
+      // 폰에서는 누린 칸 옆이 아니라 가로는 화면 가운데, 세로는 툴바 줄 바로 아래(지도 맨 위)에 띄운다.
+      // transform(1.2배)이 적용된 실제 그린 폭으로 가운데를 맞춘다(transformOrigin이 top left라 그대로 쓴다).
+      const { width } = el.getBoundingClientRect()
+      el.style.left = `${Math.max(POPUP_MARGIN, (window.innerWidth - width) / 2)}px`
+      el.style.top = `${minTop}px`
+      el.style.visibility = 'visible'
+      return
+    }
     if (pointer) {
       placeNearPointer(el, pointer, { minLeft, maxRight, minTop, maxBottom })
       return
@@ -153,7 +162,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     el.style.left = `${left}px`
     el.style.top = `${top}px`
     el.style.visibility = 'visible'
-  }, [popup, pointer, minLeft, maxRight, minTop, maxBottom])
+  }, [popup, pointer, minLeft, maxRight, minTop, maxBottom, phoneEnlarged])
 
   // 커서 이동 팝업은 마우스를 따라간다. 지도 전체를 다시 그리지 않도록 상태를 바꾸지 않고 위치만 직접 옮기며, 프레임당 한 번만 갱신한다.
   useEffect(() => {
@@ -185,7 +194,9 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible fixed ${phoneEnlarged ? 'z-[70]' : 'z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        className={`invisible fixed ${phoneEnlarged ? 'z-[70] cursor-pointer' : 'z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        // 폰에서는 팝업을 누르면 닫는다(길게 누르기 전의 모바일 동작 유지).
+        onClick={phoneEnlarged ? onClose : undefined}
         style={{
           maxWidth,
           backgroundColor: POPUP_BACKGROUND,

@@ -27,7 +27,7 @@ export default function MobileSectorMap({
   items: MobileSectorMapItem[]
   colorScale: ColorScaleConfig
   onSelect: (name: string) => void
-  onLongPress?: (item: MobileSectorMapItem) => void
+  onLongPress?: (item: MobileSectorMapItem, target: HTMLElement) => void
   decimalPlaces?: number
   zoomable?: boolean
 }) {
@@ -137,7 +137,7 @@ export default function MobileSectorMap({
           const background = resolveHeatmapColor(item.changeRate, colorScale)
           const rateText = toPctSignedGrouped(item.changeRate, decimalPlaces)
           const label = labels.get(item.key) ?? { lines: [], nameSize: 12, rateSize: null }
-          const press = bindLongPress(onLongPress ? () => onLongPress(item) : undefined)
+          const press = bindLongPress(onLongPress ? target => onLongPress(item, target) : undefined)
           return (
             <button key={item.key} type="button" aria-label={`${item.name} ${rateText}`} onClick={() => { if (!consumeClick()) onSelect(item.name) }} onPointerDown={event => press.onPointerDown(event)} onPointerMove={press.onPointerMove} onPointerUp={press.onPointerUp} onPointerCancel={press.onPointerCancel} onContextMenu={press.onContextMenu} onPointerLeave={press.onPointerLeave} className="overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight select-none [-webkit-touch-callout:none]" style={{ left: x, top: y, width, height, backgroundColor: background, color: '#fff', '--heatmap-base-color': background } as React.CSSProperties}>
               <span aria-hidden="true" className="pointer-events-none flex flex-col items-center justify-center overflow-hidden p-0.5 text-center leading-tight">
