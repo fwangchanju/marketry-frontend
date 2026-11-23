@@ -189,7 +189,9 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
         style={{
           maxWidth,
           backgroundColor: POPUP_BACKGROUND,
-          ...(phoneEnlarged ? { transform: `scale(${PHONE_POPUP_SCALE})`, transformOrigin: 'top left' } : {}),
+          // 폰은 루트 글자 크기가 80%라 rem 기반 text-base·text-sm이 12.8·11.2px로 줄어든다.
+          // 1.2배를 그 위에 곱하면 PC(16·14px)보다 여전히 작으므로, 원래 크기로 되돌린 뒤 배율을 적용한다.
+          ...(phoneEnlarged ? { fontSize: '16px', transform: `scale(${PHONE_POPUP_SCALE})`, transformOrigin: 'top left' } : {}),
         }}
       >
         <div className="flex items-center justify-between gap-3 font-bold">
@@ -232,7 +234,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
             </button>
           )}
         </div>
-        <div className="pl-1 text-sm tabular-nums">
+        <div className="pl-1 text-sm tabular-nums" style={phoneEnlarged ? { fontSize: '14px' } : undefined}>
           {popup.rows.map((row, index) => (
             <div key={index}>{row}</div>
           ))}
