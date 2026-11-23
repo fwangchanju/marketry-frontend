@@ -2,10 +2,10 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { isMobilePageZoomed, MOBILE_PAGE_SWIPE_SETTLE_MS } from '@/hooks/useMobilePageSwipe'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ReturnArrowIcon } from '@/components/icons/AppIcons'
 import MobileTopBar from '@/components/MobileTopBar'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
+import PathBar from '@/components/PathBar'
 import MapToolbar from '@/components/MapToolbar'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
@@ -521,12 +521,14 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const pathBarLeftShift = isSectorMode || isGraph ? phonePathBarLeftShift(4) : 0
   const pathNav = (
     <header className="shrink-0 bg-ui-background px-3 py-0" style={pathBarLeftShift ? { transform: `translateX(-${pathBarLeftShift}px)` } : undefined}>
-      <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-        <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-        {pathCrumbs.map(crumb => crumb.go
-          ? <button key={crumb.key} type="button" onClick={crumb.go} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{crumb.label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
-          : <span key={crumb.key} aria-current="location" className={`shrink-0 px-2 ${pathCrumbs.length > 1 ? 'text-[var(--accent)]' : 'text-ui-white'}`} style={pathCrumbs.length > 1 && strongIndustryColor ? { color: strongIndustryColor } : undefined}>{crumb.label}</span>)}
-      </nav>
+      <PathBar
+        variant="phone"
+        currentAria="location"
+        accentColor={strongIndustryColor}
+        crumbs={pathCrumbs.map(crumb => crumb.go
+          ? { key: crumb.key, label: crumb.label, onClick: crumb.go }
+          : { key: crumb.key, label: crumb.label, current: true })}
+      />
     </header>
   )
   // 경로 줄도 그래프 글자와 같은 판 기준 값으로 그린다. 810px 판의 16px·32px가 390px 폰에서 화면 16px·32px로 보인다.

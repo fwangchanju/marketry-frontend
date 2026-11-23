@@ -45,7 +45,7 @@ import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import Spinner from '@/components/Spinner'
 import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
+import { ClockIcon } from '@/components/icons/AppIcons'
 import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import ToolbarChip from '@/components/ToolbarChip'
@@ -61,7 +61,8 @@ import { mapTileMethod } from '@/utils/mapStretch'
 import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { calculateSectorLayoutWeights } from '@/utils/sectorLayoutWeights'
-import { BREADCRUMB_LINK_CLASS, toDisplayGroup } from '@/utils/mobileMapHeatmap'
+import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
+import PathBar, { type PathCrumb } from '@/components/PathBar'
 
 declare global {
   interface Window {
@@ -265,7 +266,13 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               >
                 {isPhoneMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
                 <div aria-hidden="true" className="h-2 shrink-0" />
-                {path.length > 0 && <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"><span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" /><span className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></span>{path.map((name, index) => <span key={`${name}-${index}`} className={index === path.length - 1 ? 'px-2 text-[var(--accent)]' : BREADCRUMB_LINK_CLASS} style={index === path.length - 1 ? { color: strongIndustryColor } : undefined}>{name}{index < path.length - 1 && <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}</span>)}</nav>}
+                {path.length > 0 && <PathBar
+                  accentColor={strongIndustryColor}
+                  crumbs={[
+                    { key: 'market', label },
+                    ...path.map((name, index): PathCrumb => ({ key: `${name}-${index}`, label: name, current: index === path.length - 1 })),
+                  ]}
+                />}
                 <div className="flex min-h-0 flex-1 flex-col">
                   <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} stockChartTrigger="rightClick" onOpenStockChart={isPhoneMapFrame && chart ? openStockChart : undefined} phonePopupEnlarged={isPhoneMapFrame} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
                 </div>
@@ -290,10 +297,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
         <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>
           <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${phonePathBarLeftShift(8)}px)` }}>
-            <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-              <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-              <span aria-current="location" className="shrink-0 px-2 text-ui-white">{label}</span>
-            </nav>
+            <PathBar variant="phone" currentAria="location" crumbs={[{ key: 'market', label, current: true }]} />
           </header>
         </div>
         {isLoading || isFetching ? <div className="flex h-full items-center justify-center"><Spinner /></div>
@@ -347,15 +351,16 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
               <MapStockChart chartStock={chartStock} marketLabel={label} levelLabels={levelLabels} market={chart.market} closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
             ) : (
             <>
-            {path.length > 0 && (
-              <nav aria-label="업종 이동 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
-                <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-                <button type="button" data-hint="전체로 돌아가기" onClick={() => handleGoToDepth(0)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>
-                {path.map((name, index) => index === path.length - 1
-                  ? <span key={name} aria-current="page" className="px-2 text-[var(--accent)]" style={{ color: strongIndustryColor }}>{name}</span>
-                  : <button key={name} type="button" data-hint={`${levelLabels[index]}로 돌아가기`} onClick={() => handleGoToDepth(index + 1)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>{name}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>)}
-              </nav>
-            )}
+            {path.length > 0 && <PathBar
+              currentAria="page"
+              accentColor={strongIndustryColor}
+              crumbs={[
+                { key: 'market', label, onClick: () => handleGoToDepth(0), hint: '전체로 돌아가기' },
+                ...path.map((name, index): PathCrumb => index === path.length - 1
+                  ? { key: `path-${index}`, label: name, current: true }
+                  : { key: `path-${index}`, label: name, onClick: () => handleGoToDepth(index + 1), hint: `${levelLabels[index]}로 돌아가기` }),
+              ]}
+            />}
             {isLoading ? (
               <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
             ) : isError ? (

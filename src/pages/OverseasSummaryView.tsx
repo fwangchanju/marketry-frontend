@@ -49,6 +49,7 @@ import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
+import PathBar from '@/components/PathBar'
 import MobileTopBar from '@/components/MobileTopBar'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
 import Spinner, { MOBILE_LOADING_SIZE_CLASS } from '@/components/Spinner'
@@ -236,10 +237,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
         {hasData && <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>
           <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${graphPreviewPathBarLeftShift}px)` }}>
-            <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-              <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-              <span aria-current="location" className="shrink-0 px-2 text-ui-white">{label}</span>
-            </nav>
+            <PathBar variant="phone" currentAria="location" crumbs={[{ key: 'market', label, current: true }]} />
           </header>
         </div>}
         {isLoading || isFetching ? <div className="flex h-full items-center justify-center"><Spinner /></div>
