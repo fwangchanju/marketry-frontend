@@ -18,6 +18,7 @@ import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
+import PathBar from '@/components/PathBar'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
@@ -42,7 +43,7 @@ import TaxonomyBadge from '@/components/TaxonomyBadge'
 import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarModeText from '@/components/ToolbarModeText'
-import { ClockIcon, ReturnArrowIcon } from '@/components/icons/AppIcons'
+import { ClockIcon } from '@/components/icons/AppIcons'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useScreenshotShare } from '@/hooks/useScreenshotShare'
@@ -291,17 +292,22 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     // 셸의 스와이프 대상 밖에 두면 다음 페이지 미리보기에 이 자리가 비어 당겨지는 동안 빈 띠가 보인다.
     // 맨 앞 막대의 가로 위치를 위 툴바 첫 배지 왼쪽 끝에 맞춘다(세로는 그대로).
     const pathBarLeftShift = phonePathBarLeftShift(4)
+    const graphNames = selectedLeaf ? [...mobileGraphPath, selectedLeaf.sectorName] : mobileGraphPath
     const pathNav = (
       <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${pathBarLeftShift}px)` }}>
-        <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-          <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-          {mobileGraphPath.length === 0 && !selectedLeaf
-            ? <span aria-current="location" className="shrink-0 px-2 text-ui-white">{label}</span>
-            : <button type="button" onClick={() => reduceToDepth(0)} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{label}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>}
-          {(selectedLeaf ? [...mobileGraphPath, selectedLeaf.sectorName] : mobileGraphPath).map((name, index, names) => index === names.length - 1
-            ? <span key={name} aria-current="location" className="shrink-0 px-2 text-[var(--accent)]" style={strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}</span>
-            : <button key={name} type="button" onClick={() => reduceToDepth(index + 1)} style={{ fontFamily: 'inherit', fontWeight: 'inherit' }} className="flex h-full shrink-0 items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-ui-white active:bg-ui-white/15">{name}<ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" /></button>)}
-        </nav>
+        <PathBar
+          variant="phone"
+          currentAria="location"
+          accentColor={strongIndustryColor}
+          crumbs={[
+            mobileGraphPath.length === 0 && !selectedLeaf
+              ? { key: 'market', label, current: true }
+              : { key: 'market', label, onClick: () => reduceToDepth(0) },
+            ...graphNames.map((name, index) => index === graphNames.length - 1
+              ? { key: `${name}-${index}`, label: name, current: true }
+              : { key: `${name}-${index}`, label: name, onClick: () => reduceToDepth(index + 1) }),
+          ]}
+        />
       </header>
     )
     return (

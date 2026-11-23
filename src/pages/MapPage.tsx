@@ -12,6 +12,7 @@ import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/uti
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
+import PathBar, { type PathCrumb } from '@/components/PathBar'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -32,8 +33,8 @@ import SettingsPanel, {
 } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
 import Heatmap from '@/components/Heatmap'
-import MobileMapHeatmapFrame, { BreadcrumbBackIcon } from '@/components/MobileMapHeatmapFrame'
-import { BREADCRUMB_LINK_CLASS, toDisplayGroup } from '@/utils/mobileMapHeatmap'
+import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
+import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { isInDepthRange } from '@/utils/sectorDepth'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
@@ -455,10 +456,7 @@ export default function MapPage() {
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
         <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>
           <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${phonePathBarLeftShift(8)}px)` }}>
-            <nav aria-label="업종 이동 경로" className="flex h-[32px] items-center overflow-x-auto whitespace-nowrap text-[16px] leading-none font-bold">
-              <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-              <span aria-current="location" className="shrink-0 px-2 text-ui-white">{market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK'}</span>
-            </nav>
+            <PathBar variant="phone" currentAria="location" crumbs={[{ key: 'market', label: market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK', current: true }]} />
           </header>
         </div>
         {isGraphPreviewLoading
@@ -545,42 +543,17 @@ export default function MapPage() {
               ) : (
               <>
               {path.length > 0 && (
-                // 이름마다 "그 단계로만" 이동하는 링크다 — 줄 전체를 눌러 전체로 가던 동작은 없앴다. 지금 보고 있는
-                // 마지막 이름은 링크가 아니라 현재 위치 표시(흰색)다.
-                <nav
-                  aria-label="업종 이동 경로"
-                  className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold"
-                >
-                  <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
-                  <button
-                    type="button"
-                    data-hint="전체로 돌아가기"
-                    onClick={() => handleGoToDepth(0)}
-                    style={{ fontFamily: 'inherit' }}
-                    className={BREADCRUMB_LINK_CLASS}
-                  >
-                    {MARKET_LABEL[market]}
-                    <BreadcrumbBackIcon />
-                  </button>
-                  {path.map((name, index) => {
-                    const isLastPath = index === path.length - 1
-                    return isLastPath ? (
-                      <span key={index} aria-current="page" className="px-2 text-[var(--accent)]" style={strongIndustryColor ? { color: strongIndustryColor } : undefined}>{name}</span>
-                    ) : (
-                      <button
-                        key={index}
-                        type="button"
-                        data-hint={`${SECTOR_LEVEL_LABEL[index]}로 돌아가기`}
-                        onClick={() => handleGoToDepth(index + 1)}
-                        style={{ fontFamily: 'inherit' }}
-                        className={BREADCRUMB_LINK_CLASS}
-                      >
-                        {name}
-                        <BreadcrumbBackIcon />
-                      </button>
-                    )
-                  })}
-                </nav>
+                // 이름마다 "그 단계로만" 이동하는 링크다 — 줄 전체를 눌러 전체로 가던 동작은 없앴다. 지금 보고 있는 마지막 이름은 현재 위치 표시다.
+                <PathBar
+                  currentAria="page"
+                  accentColor={strongIndustryColor}
+                  crumbs={[
+                    { key: 'market', label: MARKET_LABEL[market], onClick: () => handleGoToDepth(0), hint: '전체로 돌아가기' },
+                    ...path.map((name, index): PathCrumb => index === path.length - 1
+                      ? { key: `path-${index}`, label: name, current: true }
+                      : { key: `path-${index}`, label: name, onClick: () => handleGoToDepth(index + 1), hint: `${SECTOR_LEVEL_LABEL[index]}로 돌아가기` }),
+                  ]}
+                />
               )}
               {/* 로딩·오류 원은 모든 페이지 공통 자리(MainAreaLoading, 메인 영역 기준)에 둔다. */}
               {isLoading ? (

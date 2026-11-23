@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ReturnArrowIcon } from '@/components/icons/AppIcons'
+import PathBar, { type PathCrumb } from '@/components/PathBar'
 import { ChartFullscreenContext } from '@/components/chartFullscreenContext'
 
 interface Props {
@@ -16,9 +16,6 @@ interface Props {
   // 차트를 닫고 그 분류(null = 전체)의 지도로 이동한다.
   onGoToSector: (sectorName: string | null) => void
 }
-
-// 지도 경로 줄의 이름 버튼과 같은 모양.
-const BREADCRUMB_LINK_CLASS = 'flex h-full cursor-pointer items-center gap-1.5 border-0 bg-transparent pl-2 pr-1.5 text-lg leading-none font-bold text-ui-white transition-colors hover:bg-ui-white/35'
 
 // 지도를 그리는 영역 자리에 띄우는 종목 차트 — 위쪽 경로 줄(시장 › 대분류 › 중분류 … 를 지도 경로 줄 모양 그대로 ; 종목명은 아래 차트 첫 줄에 있어 경로 줄에는 쓰지 않는다)과 종목 일봉 차트.
 // 이름을 누르면 차트를 닫고 그 분류의 지도로 이동하고, Esc나 뒤로가기는 지금 보던 지도로 돌아간다.
@@ -41,20 +38,13 @@ export default function StockChartView({ marketLabel, sectors, levelLabels, chil
     document.addEventListener('keydown', closeOnEscape)
     return () => document.removeEventListener('keydown', closeOnEscape)
   }, [onClose])
+  const crumbs: PathCrumb[] = [
+    { key: 'market', label: marketLabel, onClick: () => onGoToSector(null), hint: '전체로 돌아가기' },
+    ...sectors.map((name, index) => ({ key: `${name}-${index}`, label: name, onClick: () => onGoToSector(name), hint: `${levelLabels[index]}로 돌아가기` })),
+  ]
   return (
     <>
-      <nav aria-label="종목 차트 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
-        <button type="button" data-hint="전체로 돌아가기" onClick={() => onGoToSector(null)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>
-          {marketLabel}
-          <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-        </button>
-        {sectors.map((name, index) => (
-          <button key={index} type="button" data-hint={`${levelLabels[index]}로 돌아가기`} onClick={() => onGoToSector(name)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>
-            {name}
-            <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-          </button>
-        ))}
-      </nav>
+      <PathBar crumbs={crumbs} ariaLabel="종목 차트 경로" />
       <div ref={chartRef} className="relative flex min-h-0 flex-1 flex-col bg-ui-background">
         <ChartFullscreenContext.Provider value={{ isFullscreen: isChartFullscreen, toggle: toggleChartFullscreen }}>{children}</ChartFullscreenContext.Provider>
       </div>

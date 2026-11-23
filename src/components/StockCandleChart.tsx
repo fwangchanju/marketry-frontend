@@ -347,6 +347,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
         {shownBar && (
           <div className="flex h-4 items-center gap-3 overflow-hidden whitespace-nowrap">
             <span className="font-semibold text-ui-white">{dateWithWeekday(shownBar.date)}</span>
+            {shownRate !== null && <span><span className="mr-1 text-ui-muted">등락률</span><span className={changeClass(shownRate)}>{shownRate > 0 ? '+' : ''}{shownRate.toFixed(2)}%</span></span>}
             {[
               ['시가', priceText(market, shownBar.open)],
               ['고가', priceText(market, shownBar.high)],
@@ -355,7 +356,6 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
               <span key={label}><span className="mr-1 text-ui-muted">{label}</span><span className="text-ui-text">{value}</span></span>
             ))}
             <span><span className="mr-1 text-ui-muted">종가</span><span className={changeClass(shownRate)}>{priceText(market, shownBar.close)}</span></span>
-            {shownRate !== null && <span className={changeClass(shownRate)}>{shownRate > 0 ? '+' : ''}{shownRate.toFixed(2)}%</span>}
             <span><span className="mr-1 text-ui-muted">거래량</span><span className="text-ui-text">{shownBar.provisional && shownBar.volume === 0 ? '-' : shownBar.volume.toLocaleString('ko-KR')}</span>{shownBar.provisional && <span className="ml-1 text-ui-muted">(장중 임시)</span>}</span>
           </div>
         )}
