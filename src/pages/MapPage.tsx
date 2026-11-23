@@ -465,9 +465,9 @@ export default function MapPage() {
   if (isPhoneMapFrame) {
     return (
       <PhoneMapShell
-        onSwipe={direction => navigate(direction === 'next' ? `/summary/korea?market=${market}` : marketRoute('/graph', market))}
+        onSwipe={direction => navigate(direction === 'next' ? marketRoute('/summary', market) : marketRoute('/graph', market))}
         toolbar={mapToolbarNode}
-        topBar={<MobileTopBar title="종목 지도" titleTo={`/summary/korea?market=${market}`} titleLabel="업종 지도로 이동" />}
+        topBar={<MobileTopBar title="종목 지도" titleTo={marketRoute('/summary', market)} titleLabel="업종 지도로 이동" />}
         frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
         frame={mobileFrameNode || phoneEmptyFrame}
         nextPreview={sectorPreview}

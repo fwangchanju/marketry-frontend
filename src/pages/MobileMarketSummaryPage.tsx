@@ -646,9 +646,11 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
       // 종목 지도에서 업종을 보던 중이어도 마켓을 바꾸면 그 마켓의 전체 종목 지도로 간다(업종 이름이 마켓마다 다를 수 있다).
       navigate(marketRoute(isGraph ? '/graph' : '/map', nextMarket), { replace: true })
     } else {
+      // 업종 지도는 시장을 경로로 구분한다. ?market=은 옛 주소 호환용으로만 읽고 새로 만들지는 않는다.
       const next = new URLSearchParams(searchParams)
-      next.set('market', nextMarket)
-      setSearchParams(next, { replace: true })
+      next.delete('market')
+      const rest = next.toString()
+      navigate(`${marketRoute('/summary', nextMarket)}${rest ? `?${rest}` : ''}`, { replace: true })
     }
   }
 
@@ -677,7 +679,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   }
 
   // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 종목 지도로 이동한다(마켓은 유지).
-  const titleTo = isStockMode ? `/summary/korea?market=${market}` : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
+  const titleTo = isStockMode ? marketRoute('/summary', market) : isSectorMode ? marketRoute('/graph', market) : marketRoute('/map', market)
   const titleLabel = isStockMode ? '업종 지도로 이동' : isSectorMode ? '그룹 등락률로 이동' : '종목 지도로 이동'
   const modeForSwipe = (direction: 'next' | 'previous') => {
     const order = ['stock', 'sector', 'graph'] as const
@@ -687,7 +689,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const routeForMode = (targetMode: 'stock' | 'sector' | 'graph') => targetMode === 'stock'
     ? marketRoute('/map', market)
     : targetMode === 'sector'
-      ? `/summary/korea?market=${market}`
+      ? marketRoute('/summary', market)
       : marketRoute('/graph', market)
   const finishSwipe = (finish: boolean) => {
     const preview = pageSwipePreviewRef.current
