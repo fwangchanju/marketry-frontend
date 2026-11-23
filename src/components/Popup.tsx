@@ -91,6 +91,17 @@ function placeNearPointer(el: HTMLElement, point: { x: number; y: number }, boun
   el.style.visibility = 'visible'
 }
 
+// 폰 팝업을 가로 가운데·툴바 줄 바로 아래에 다시 놓는다. 창 크기(브라우저 확대 포함)가 바뀌어도
+// 같은 자리를 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
+function placePhonePopup(el: HTMLElement) {
+  el.style.maxWidth = `${Math.max(1, (window.innerWidth - POPUP_MARGIN * 2) / PHONE_POPUP_SCALE)}px`
+  const { width, height } = el.getBoundingClientRect()
+  const toolbarBottom = document.querySelector('[data-phone-toolbar-slot]')?.getBoundingClientRect().bottom ?? POPUP_MARGIN
+  el.style.left = `${Math.max(POPUP_MARGIN, (window.innerWidth - width) / 2)}px`
+  el.style.top = `${Math.min(toolbarBottom, window.innerHeight - height - POPUP_MARGIN)}px`
+  el.style.visibility = 'visible'
+}
+
 interface PopupBodyProps {
   popup: PopupState
   onExcludeSector: (sectorId: number, sectorName: string) => void
@@ -118,12 +129,9 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     const el = elRef.current
     if (!el) return
     if (phoneEnlarged) {
-      // 폰에서는 누린 칸 옆이 아니라 가로는 화면 가운데, 세로는 툴바 줄 바로 아래(지도 맨 위)에 띄운다.
-      // transform(1.2배)이 적용된 실제 그린 폭으로 가운데를 맞춘다(transformOrigin이 top left라 그대로 쓴다).
-      const { width } = el.getBoundingClientRect()
-      el.style.left = `${Math.max(POPUP_MARGIN, (window.innerWidth - width) / 2)}px`
-      el.style.top = `${minTop}px`
-      el.style.visibility = 'visible'
+      // 폰에서는 누린 칸 옆이 아니라 가로는 화면 가운데, 세로는 툴바 줄 바로 아래에 띄운다.
+      // transform(공통 배율)이 적용된 실제 그린 크기로 맞춘다(transformOrigin이 top left라 그대로 쓴다).
+      placePhonePopup(el)
       return
     }
     if (pointer) {
@@ -164,6 +172,17 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     el.style.visibility = 'visible'
   }, [popup, pointer, minLeft, maxRight, minTop, maxBottom, phoneEnlarged])
 
+  // 팝업이 열려 있는 동안 창 크기(브라우저 확대·창 크기 조절)가 바뀌면 가운데·툴바 아래 자리를 다시 잡는다.
+  // popup 상태는 그대로라 위 레이아웃 효과가 다시 실행되지 않으므로 별도로 듣는다. PC 팝업은 예전 동작을 유지한다.
+  useLayoutEffect(() => {
+    if (!phoneEnlarged) return
+    const el = elRef.current
+    if (!el) return
+    const place = () => placePhonePopup(el)
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [phoneEnlarged])
+
   // 커서 이동 팝업은 마우스를 따라간다. 지도 전체를 다시 그리지 않도록 상태를 바꾸지 않고 위치만 직접 옮기며, 프레임당 한 번만 갱신한다.
   useEffect(() => {
     const el = elRef.current
@@ -201,7 +220,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
           maxWidth,
           backgroundColor: POPUP_BACKGROUND,
           // 폰은 루트 글자 크기가 80%라 rem 기반 text-base·text-sm이 12.8·11.2px로 줄어든다.
-          // 1.2배를 그 위에 곱하면 PC(16·14px)보다 여전히 작으므로, 원래 크기로 되돌린 뒤 배율을 적용한다.
+          // 공통 배율을 그 위에 곱하면 PC(16·14px)보다 여전히 작으므로, 원래 크기로 되돌린 뒤 배율을 적용한다.
           ...(phoneEnlarged ? { fontSize: '16px', transform: `scale(${PHONE_POPUP_SCALE})`, transformOrigin: 'top left' } : {}),
         }}
       >

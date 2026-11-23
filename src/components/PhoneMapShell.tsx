@@ -64,7 +64,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
     <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
       {topBarNode}
       <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch overflow-hidden bg-ui-background">
-        <div className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
+        <div data-phone-toolbar-slot className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
           <div className="origin-top-left" style={{ transform: `translateX(${TOOLBAR_SIDE_GUTTER}px) scale(${scale})` }}>
             <PhoneToolbarContext.Provider value={{ isPhone: true, scale }}>
               <div className="w-max">{toolbar}</div>
