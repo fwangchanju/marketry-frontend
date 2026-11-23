@@ -1,13 +1,11 @@
 import { useLayoutEffect, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { TOOLBAR_SIDE_GUTTER } from '@/utils/phonePathBar'
+import { PHONE_POPUP_SCALE } from '@/utils/phonePopupScale'
 import { usePhoneToolbar } from './PhoneToolbarContext'
 
-// 폰 팝업 전용 배율. 툴바는 화면 폭에 맞춰 작게 그리지만, 그 아래에 열리는 팝업은
-// 읽기 쉽도록 툴바 축소(0.863)를 빼고 원본 CSS 크기의 1.2배로 그린다.
 // 화면 폭 393px(가용 381px)에 5종 모두 들어간다.
-// 바꿀 때는 이 값만 조절하면 위치 보정·클램프·간격이 함께 따라온다.
-const POPUP_FIXED_SCALE = 1.2
+const POPUP_FIXED_SCALE = PHONE_POPUP_SCALE
 
 // 툴바 버튼 아래에 열리는 팝업 공통 부품.
 // PC는 예전처럼 트리거 기준 absolute로 그대로 열고, 폰 프레임에서는 document.body로 옮겨

@@ -40,6 +40,7 @@ import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner from '@/components/Spinner'
 import MapStockChart from '@/components/MapStockChart'
+import MobileMapStockChart from '@/components/MobileMapStockChart'
 import { MapChangeFilterSections, MapExperimentSections } from '@/components/MapSettingsSections'
 import { useMapStockChart } from '@/hooks/useStockChart'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
@@ -411,6 +412,11 @@ export default function MapPage() {
                   labelMinAreaPercent: boxLabelMinAreaPercent,
                   stockLabelMode,
                   stockPopupOnHover: false,
+                  // 실제 폰 화면에서만 한 번 눌러 차트를 연다. 캡처·스와이프 미리보기는 히트맵을 같은 렌더로 공유하므로 손을 대지 않는다.
+                  stockChartTrigger: isPhoneMapFrame ? 'click' : 'rightClick',
+                  onOpenStockChart: isPhoneMapFrame ? openStockChart : undefined,
+                  // 실제 폰 화면에서만 종목 팝업을 툴바 줄 팝업과 같은 배율로 키운다. 캡처·미리보기는 그대로다.
+                  phonePopupEnlarged: isPhoneMapFrame,
                   decimalPlaces,
                   topPickSectorKeys,
                   strongIndustryColor,
@@ -464,18 +470,31 @@ export default function MapPage() {
 
   if (isPhoneMapFrame) {
     return (
-      <PhoneMapShell
-        onSwipe={direction => navigate(direction === 'next' ? marketRoute('/summary', market) : marketRoute('/graph', market))}
-        toolbar={mapToolbarNode}
-        topBar={<MobileTopBar title="종목 지도" titleTo={marketRoute('/summary', market)} titleLabel="업종 지도로 이동" />}
-        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
-        frame={mobileFrameNode || phoneEmptyFrame}
-        nextPreview={sectorPreview}
-        previousPreview={graphPreview}
-        current="korea"
-        boxSize={mobileBoxSizeRatio}
-        onChangeBoxSize={onChangeMobileBoxSizeRatio}
-      />
+      <>
+        <PhoneMapShell
+          onSwipe={direction => navigate(direction === 'next' ? marketRoute('/summary', market) : marketRoute('/graph', market))}
+          toolbar={mapToolbarNode}
+          topBar={<MobileTopBar title="종목 지도" titleTo={marketRoute('/summary', market)} titleLabel="업종 지도로 이동" />}
+          frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+          frame={mobileFrameNode || phoneEmptyFrame}
+          nextPreview={sectorPreview}
+          previousPreview={graphPreview}
+          current="korea"
+          boxSize={mobileBoxSizeRatio}
+          onChangeBoxSize={onChangeMobileBoxSizeRatio}
+        />
+        {chartStock !== null && (
+          <MobileMapStockChart
+            chartStock={chartStock}
+            marketLabel={MARKET_LABEL[market]}
+            levelLabels={SECTOR_LEVEL_LABEL}
+            market="korea"
+            closeChart={closeChart}
+            onGoToRoot={() => goToDepth(0)}
+            onEnterSector={enterSector}
+          />
+        )}
+      </>
     )
   }
   return (

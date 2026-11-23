@@ -5,6 +5,11 @@ const EDGE_GUARD = 24
 // 한국 업종·그룹 화면의 전환과 같은 값 — 한 곳에서 관리해 시장·화면마다 속도가 어긋나지 않게 한다.
 export const MOBILE_PAGE_SWIPE_SETTLE_MS = 500
 
+// 브라우저·디스플레이에서 화면을 확대하면 가로 드래그가 지도 조작과 겹치므로 페이지 전환을 받지 않는다.
+export function isMobilePageZoomed(): boolean {
+  return typeof window !== 'undefined' && (window.visualViewport?.scale ?? 1) > 1.01
+}
+
 // 모바일 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
 export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void) {
   const startRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
@@ -31,7 +36,7 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     }, duration)
   }
   const onPointerDownCapture = (event: PointerEvent<HTMLElement>) => {
-    if (settling || event.clientX <= EDGE_GUARD || event.clientX >= window.innerWidth - EDGE_GUARD) return
+    if (isMobilePageZoomed() || settling || event.clientX <= EDGE_GUARD || event.clientX >= window.innerWidth - EDGE_GUARD) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
     startRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
   }

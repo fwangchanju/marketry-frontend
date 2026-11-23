@@ -2,6 +2,7 @@ import KindBadge from '@/components/KindBadge'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { appConfirm } from '@/utils/appDialogBus'
+import { PHONE_POPUP_SCALE } from '@/utils/phonePopupScale'
 
 export interface PopupContent {
   title: string
@@ -41,16 +42,18 @@ interface Props {
   onExcludeSector: (sectorId: number, sectorName: string) => void
   onOpenChart?: (stock: { code: string; name: string }) => void
   onClose: () => void
+  // 실제 폰 화면에서만 true. 툴바 줄 팝업과 같은 배율·클램프로 키운다. 캡처·미리보기·PC는 false.
+  phoneEnlarged?: boolean
 }
 
-export default function Popup({ popup, onExcludeSector, onOpenChart, onClose }: Props) {
+export default function Popup({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged = false }: Props) {
   // popup이 null이면 PopupBody를 트리에서 아예 뺀다 — 이래야 popup이 바뀔 때마다(닫혔다 다시 열릴
   // 때마다) PopupBody가 실제로 언마운트·재마운트되어 confirming/위치 계산 state가 매번 새로 시작한다.
   // Popup 자신은 부모가 항상 렌더하는 컴포넌트라 여기 직접 훅을 두면 그 state가 다음 팝업까지
   // 이어져버린다.
   if (!popup) return null
   return createPortal(
-    <PopupBody popup={popup} onExcludeSector={onExcludeSector} onOpenChart={onOpenChart} onClose={onClose} />,
+    <PopupBody popup={popup} onExcludeSector={onExcludeSector} onOpenChart={onOpenChart} onClose={onClose} phoneEnlarged={phoneEnlarged} />,
     document.body,
   )
 }
@@ -93,13 +96,17 @@ interface PopupBodyProps {
   onExcludeSector: (sectorId: number, sectorName: string) => void
   onOpenChart?: (stock: { code: string; name: string }) => void
   onClose: () => void
+  phoneEnlarged: boolean
 }
 
-function PopupBody({ popup, onExcludeSector, onOpenChart, onClose }: PopupBodyProps) {
+function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged }: PopupBodyProps) {
   const elRef = useRef<HTMLDivElement>(null)
   const minLeft = Math.max(POPUP_MARGIN, popup.mapBounds.left + POPUP_MARGIN)
   const maxRight = Math.min(window.innerWidth - POPUP_MARGIN, popup.mapBounds.right - POPUP_MARGIN)
-  const maxWidth = Math.max(1, maxRight - minLeft)
+  // transform은 레이아웃 폭을 바꾸지 않고 그린 크기만 키운다. 지도 경계 안에 들어가도록
+  // 최대 폭은 배율로 나눠 둔다(아래 위치 계산은 getBoundingClientRect의 실제 그린 크기를 쓴다).
+  const scale = phoneEnlarged ? PHONE_POPUP_SCALE : 1
+  const maxWidth = Math.max(1, (maxRight - minLeft) / scale)
   const minTop = Math.max(POPUP_MARGIN, popup.mapBounds.top + POPUP_MARGIN)
   const maxBottom = Math.min(window.innerHeight - POPUP_MARGIN, popup.mapBounds.bottom - POPUP_MARGIN)
   const pointer = popup.pointer
@@ -178,8 +185,12 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose }: PopupBodyPr
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible fixed z-[9999] w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
-        style={{ maxWidth, backgroundColor: POPUP_BACKGROUND }}
+        className={`invisible fixed ${phoneEnlarged ? 'z-[70]' : 'z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        style={{
+          maxWidth,
+          backgroundColor: POPUP_BACKGROUND,
+          ...(phoneEnlarged ? { transform: `scale(${PHONE_POPUP_SCALE})`, transformOrigin: 'top left' } : {}),
+        }}
       >
         <div className="flex items-center justify-between gap-3 font-bold">
           <div className="flex items-center gap-1.5">

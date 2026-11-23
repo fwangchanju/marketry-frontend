@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { MOBILE_PAGE_SWIPE_SETTLE_MS } from '@/hooks/useMobilePageSwipe'
+import { isMobilePageZoomed, MOBILE_PAGE_SWIPE_SETTLE_MS } from '@/hooks/useMobilePageSwipe'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ReturnArrowIcon } from '@/components/icons/AppIcons'
@@ -717,6 +717,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     const mobilePointer = event.pointerType === 'touch' || event.pointerType === 'pen'
       || (event.pointerType === 'mouse' && window.matchMedia('(max-width: 768px)').matches)
     if (!mobilePointer) return
+    if (isMobilePageZoomed()) return
     if (event.clientX <= MOBILE_PAGE_SWIPE_EDGE_GUARD || event.clientX >= window.innerWidth - MOBILE_PAGE_SWIPE_EDGE_GUARD) return
     if (pageSwipePreviewRef.current) return
     const map = (event.target as HTMLElement).closest<HTMLElement>('[data-mobile-map-scale]')
