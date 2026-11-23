@@ -449,7 +449,7 @@ export default function Heatmap({
           />
         ))}
       </div>
-      {/* 폰은 차트를 한 번 눌러 열지만, 우클릭·길게 누르기 팝업의 차트 아이콘도 같은 차트를 연다.
+      {/* 폰은 종목 박스 한 번 클릭으로 차트를 열지 않고, 우클릭·길게 누르기 팝업의 차트 아이콘으로만 연다.
           PC는 기존처럼 설정이 우클릭일 때만 아이콘을 보여 준다. */}
       <Popup popup={popup} onExcludeSector={onExcludeSector} onOpenChart={stockChartTrigger === 'rightClick' || phonePopupEnlarged ? onOpenStockChart : undefined} onClose={() => setPopup(null)} phoneEnlarged={phonePopupEnlarged} />
     </div>

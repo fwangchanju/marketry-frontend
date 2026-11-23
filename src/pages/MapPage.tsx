@@ -412,8 +412,8 @@ export default function MapPage() {
                   labelMinAreaPercent: boxLabelMinAreaPercent,
                   stockLabelMode,
                   stockPopupOnHover: false,
-                  // 실제 폰 화면에서만 한 번 눌러 차트를 연다. 캡처·스와이프 미리보기는 히트맵을 같은 렌더로 공유하므로 손을 대지 않는다.
-                  stockChartTrigger: isPhoneMapFrame ? 'click' : 'rightClick',
+                  // 실제 폰 화면에서는 한 번 눌러 차트를 열던 동작을 없애고, 팝업의 차트 아이콘으로만 연다. 캡처·스와이프 미리보기는 그대로다.
+                  stockChartTrigger: 'rightClick',
                   onOpenStockChart: isPhoneMapFrame ? openStockChart : undefined,
                   // 실제 폰 화면에서만 종목 팝업을 툴바 줄 팝업과 같은 배율로 키운다. 캡처·미리보기는 그대로다.
                   phonePopupEnlarged: isPhoneMapFrame,
