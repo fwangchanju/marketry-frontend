@@ -44,6 +44,8 @@ export default function StockChartView({ marketLabel, sectors, levelLabels, chil
   return (
     <>
       <nav aria-label="종목 차트 경로" className="flex h-7 w-full shrink-0 items-center truncate bg-ui-background/70 text-lg leading-none font-bold">
+        {/* 지도 경로 줄 맨 앞과 같은 4px 흰 막대 */}
+        <span aria-hidden="true" className="h-4 w-[4px] shrink-0 bg-ui-white" />
         <button type="button" data-hint="전체로 돌아가기" onClick={() => onGoToSector(null)} style={{ fontFamily: 'inherit' }} className={BREADCRUMB_LINK_CLASS}>
           {marketLabel}
           <ReturnArrowIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
