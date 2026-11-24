@@ -31,22 +31,33 @@ export function useIsMobilePageZoomed(): boolean {
 }
 
 // 업종 지도·그룹 등락률 화면에서는 화면 확대 자체를 받지 않는다. 확대되면 지도 조작과 페이지 전환이 겹친다.
-// 뷰포트 메타로 제한하고, iOS Safari는 user-scalable=no를 무시하므로 제스처 이벤트도 함께 막는다.
+// 뷰포트 메타는 iOS Safari가 무시하고, 헤드리스에서만 먹히는 확인이었다. 실제 폰에서도 막히도록
+// 문서 전체에 세로 스크롤만 허용하고, 두 손가락이 동시에 닿은 뒤의 이동도 취소한다.
 export function useDisableScreenZoom(enabled = true): void {
   useEffect(() => {
     if (!enabled) return
     const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
-    const previous = meta?.content
+    const previousMeta = meta?.content
+    const previousTouchAction = document.body.style.touchAction
     if (meta) meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+    document.body.style.touchAction = 'pan-y'
     const block = (event: Event) => event.preventDefault()
+    const blockPinch = (event: TouchEvent) => {
+      if (event.touches.length > 1) event.preventDefault()
+    }
     document.addEventListener('gesturestart', block, { passive: false })
     document.addEventListener('gesturechange', block, { passive: false })
     document.addEventListener('gestureend', block, { passive: false })
+    document.addEventListener('touchstart', blockPinch, { passive: false })
+    document.addEventListener('touchmove', blockPinch, { passive: false })
     return () => {
-      if (meta && previous !== undefined) meta.content = previous
+      if (meta && previousMeta !== undefined) meta.content = previousMeta
+      document.body.style.touchAction = previousTouchAction
       document.removeEventListener('gesturestart', block)
       document.removeEventListener('gesturechange', block)
       document.removeEventListener('gestureend', block)
+      document.removeEventListener('touchstart', blockPinch)
+      document.removeEventListener('touchmove', blockPinch)
     }
   }, [enabled])
 }
