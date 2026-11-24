@@ -297,6 +297,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     const graphPath = overseasRoute('/graph', market)
     return (
       <PhoneMapShell
+        allowPinchZoom={false}
         onSwipe={direction => navigate(direction === 'next' ? graphPath : mapPath)}
         onBeforeSwipeNavigate={direction => { if (direction === 'previous') captureSwipeArrivalOverlay(mapPreviewRef.current) }}
         toolbar={summaryToolbarNode}

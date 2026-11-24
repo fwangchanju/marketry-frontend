@@ -63,7 +63,7 @@ export function useDisableScreenZoom(enabled = true): void {
 }
 
 // 모바일 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
-export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void) {
+export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void, allowPinchZoom = true) {
   const zoomed = useIsMobilePageZoomed()
   const startRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
   const suppressClickRef = useRef(false)
@@ -134,10 +134,11 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   }
   if (!enabled) return { handlers: undefined, style: undefined, offset: 0, next: () => {} }
   const style: CSSProperties = {
-    // 1배에서는 세로 스크롤만 브라우저에 맡기고 가로 전환은 이 훅이 처리한다. pinch-zoom을 함께 넣지 않으면
-    // 브라우저가 핀치 확대 자체를 받지 않아 확대 상태로 진입할 수 없다(2026-11-25 실제 핀치 확인).
+    // 1배에서는 세로 스크롤만 브라우저에 맡기고 가로 전환은 이 훅이 처리한다. 종목 지도는 pinch-zoom을 함께
+    // 넣지 않으면 브라우저가 핀치 확대 자체를 받지 않는다(2026-11-25 실제 핀치 확인). 업종 지도·그룹 등락률은
+    // 반대로 확대를 받지 않아야 하므로 안쪽 판에서도 pinch-zoom을 빼야 한다(2026-11-25 사용자 보고: 해외만 안 됨).
     // 확대 후에는 한 손가락으로 보이는 화면을 이동할 수 있게 auto로 바꾼다.
-    touchAction: zoomed ? 'auto' : 'pan-y pinch-zoom',
+    touchAction: zoomed ? 'auto' : allowPinchZoom ? 'pan-y pinch-zoom' : 'pan-y',
     transform: offset === 0 ? undefined : `translateX(${offset}px)`,
     transition: settling ? `transform ${reducedMotion ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }

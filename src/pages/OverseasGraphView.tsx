@@ -315,6 +315,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     )
     return (
       <PhoneMapShell
+        allowPinchZoom={false}
         onSwipe={direction => navigate(direction === 'next' ? mapPath : summaryPath)}
         onBeforeSwipeNavigate={direction => { if (direction === 'next') captureSwipeArrivalOverlay(mapPreviewRef.current) }}
         toolbar={graphToolbarNode}
