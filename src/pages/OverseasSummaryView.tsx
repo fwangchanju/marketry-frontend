@@ -57,16 +57,28 @@ import Spinner, { MOBILE_LOADING_SIZE_CLASS } from '@/components/Spinner'
 import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { captureSwipeArrivalOverlay } from '@/utils/mobileSwipeArrivalOverlay'
-import MobileSectorMap from '@/components/MobileSectorMap'
+import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
+import Popup, { type PopupContent, type PopupState } from '@/components/Popup'
 import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
 import { useFilteredHeatmap } from '@/hooks/useFilteredHeatmap'
 import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { mapTileMethod } from '@/utils/mapStretch'
 import { isMarketValueExcluded } from '@/utils/marketValueTier'
+import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
 
 // 종목 지도로 스와이프할 때 따라올 미리보기도 그래프 화면의 종목 지도 미리보기와 같은 필터·강조 목록을 쓴다.
 const PHONE_MAP_PREVIEW_FILTERS = { stockChangeFilter: 'all' as const, sectorChangeFilter: 'all' as const, sectorChangeDepth: 0, sectorUseSimpleAverage: false }
 const PHONE_MAP_PREVIEW_NO_TOP_PICKS = new Set<string>()
+
+// 폰 업종 지도 칸 — 한국과 같은 PC용 팝업에 넣을 집계값과 종목 가격을 함께 든다.
+type PhoneDrillItem = MobileSectorMapItem & {
+  isStock?: boolean
+  currentPrice?: number
+  simpleAvg?: number | null
+  advancers?: number
+  decliners?: number
+  unchanged?: number
+}
 
 const SECTION_ORDER: SettingsPanelSectionId[] = ['composition', 'colors']
 
@@ -122,33 +134,79 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     return node
   }, [tree, phoneSectorPath])
   const phoneShowingStocks = phoneSectorNode !== null && phoneSectorNode.children.length === 0
-  const phoneDrillItems = useMemo(() => {
+  const phoneDrillItems = useMemo<PhoneDrillItem[]>(() => {
     const excludedTiers = tierRange.excludedMarketValueTiers
     if (phoneShowingStocks && phoneSectorNode) {
       return phoneSectorNode.items
         .filter(stock => !isMarketValueExcluded(stock, excludedTiers))
-        .map(stock => ({ key: stock.stockCode, name: stock.stockName, marketValue: stock.totalMarketValue, changeRate: stock.changeRate }))
+        .map(stock => ({ key: stock.stockCode, name: stock.stockName, marketValue: stock.totalMarketValue, changeRate: stock.changeRate, isStock: true, currentPrice: stock.currentPrice }))
         .filter(item => item.marketValue > 0)
     }
     const prefix = phoneSectorPath.length ? `${phoneSectorPath.join('>')}>` : ''
     return collectAtDepth(tree, phoneSectorPath.length + 1, sectorExclusion.excludedSectorIds as Set<number>, excludedTiers, true)
       .filter(entry => !prefix || entry.pathKey.startsWith(prefix))
-      .map(entry => {
+      .flatMap(entry => {
         const summary = summarizeSector(entry.node, excludedTiers)
-        return summary && summary.marketValue > 0 ? { key: entry.pathKey, name: entry.node.sectorName, marketValue: summary.marketValue, changeRate: summary.weightedAvg } : null
+        if (!summary || summary.marketValue <= 0) return []
+        return [{
+          key: entry.pathKey,
+          name: entry.node.sectorName,
+          marketValue: summary.marketValue,
+          changeRate: summary.weightedAvg,
+          isStock: false,
+          simpleAvg: summary.simpleAvg,
+          advancers: summary.advancers,
+          decliners: summary.decliners,
+          unchanged: summary.unchanged,
+        }]
       })
-      .filter((item): item is { key: string; name: string; marketValue: number; changeRate: number } => item !== null)
   }, [tree, phoneSectorPath, phoneShowingStocks, phoneSectorNode, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
   const phoneDrillMapItems = useMemo(() => {
     const weights = calculateSectorLayoutWeights(phoneDrillItems, boxSizeMarketCapRatio)
     return phoneDrillItems.map((item, index) => ({ ...item, layoutValue: weights[index] }))
   }, [phoneDrillItems, boxSizeMarketCapRatio])
+  // 한국 업종 지도와 같은 PC용 팝업을 길게 눌러 띄운다. 같은 칸을 다시 길게 누르면 닫힌다.
+  const [infoPopup, setInfoPopup] = useState<PopupState | null>(null)
+  const [popupLocationKey, setPopupLocationKey] = useState(location.key)
+  if (popupLocationKey !== location.key) {
+    setPopupLocationKey(location.key)
+    setInfoPopup(null)
+  }
   const handlePhoneSectorSelect = (name: string) => {
+    setInfoPopup(null)
     if (phoneShowingStocks) return
     const next = [...phoneSectorPath, name]
     setPhoneSectorPath(next)
     navigate(location.pathname + location.search, { state: { phoneSectorPath: next } })
   }
+  const openInfoPopup = (content: PopupContent, target: HTMLElement) => {
+    if (infoPopup?.targetKey === content.targetKey) {
+      setInfoPopup(null)
+      return
+    }
+    const rect = target.getBoundingClientRect()
+    setInfoPopup({
+      ...content,
+      anchorRect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
+      mapBounds: { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight },
+    })
+  }
+  const openSectorPopup = (item: PhoneDrillItem, target: HTMLElement) => openInfoPopup({
+    title: item.name,
+    rows: item.isStock
+      ? [
+          `등락률: ${toPctSigned(item.changeRate, 1)}`,
+          `현재가: ${toVolume(item.currentPrice ?? 0)}원`,
+          `시가총액: ${toJoEok(item.marketValue / 100_000_000)}원`,
+        ]
+      : [
+          `시총 가중: ${toPctSigned(item.changeRate, 1)}`,
+          `동일 가중: ${item.simpleAvg === null || item.simpleAvg === undefined ? '-' : toPctSigned(item.simpleAvg, 1)}`,
+          `등락 종목: ▲${item.advancers ?? 0} ▼${item.decliners ?? 0} ■${item.unchanged ?? 0}`,
+          `그룹 시총: ${toJoEok(item.marketValue / 100_000_000)}원`,
+        ],
+    targetKey: `${item.isStock ? 'stock' : 'sector'}:${item.key}`,
+  }, target)
 
   // 업종 지도 항목과 그룹 등락률 막대 — 지도 화면과 같이 한 단계(대분류)만 쓴다.
   const overview = useMemo(() => {
@@ -296,30 +354,33 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     const mapPath = overseasRoute('/map', market)
     const graphPath = overseasRoute('/graph', market)
     return (
-      <PhoneMapShell
-        allowPinchZoom={false}
-        onSwipe={direction => navigate(direction === 'next' ? graphPath : mapPath)}
-        onBeforeSwipeNavigate={direction => { if (direction === 'previous') captureSwipeArrivalOverlay(mapPreviewRef.current) }}
-        toolbar={summaryToolbarNode}
-        topBar={<MobileTopBar title="업종 지도" titleTo={graphPath} titleLabel="그룹 등락률로 이동" />}
-        frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
-        nextPreview={graphPreview}
-        previousPreview={mapPreview}
-        frame={
-          <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
-            <div className="flex h-full flex-col bg-ui-background">
-              {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div> : hasData ? (
-                <div className="flex min-h-0 flex-1 flex-col p-1">
-                  {phoneDrillMapItems.length ? <MobileSectorMap items={phoneDrillMapItems} colorScale={colorScale} decimalPlaces={1} zoomable onSelect={handlePhoneSectorSelect} /> : <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
-                </div>
-              ) : <div className="flex flex-1 items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
+      <>
+        <PhoneMapShell
+          allowPinchZoom={false}
+          onSwipe={direction => navigate(direction === 'next' ? graphPath : mapPath)}
+          onBeforeSwipeNavigate={direction => { if (direction === 'previous') captureSwipeArrivalOverlay(mapPreviewRef.current) }}
+          toolbar={summaryToolbarNode}
+          topBar={<MobileTopBar title="업종 지도" titleTo={graphPath} titleLabel="그룹 등락률로 이동" />}
+          frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
+          nextPreview={graphPreview}
+          previousPreview={mapPreview}
+          frame={
+            <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+              <div className="flex h-full flex-col bg-ui-background">
+                {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div> : hasData ? (
+                  <div className="flex min-h-0 flex-1 flex-col p-1">
+                    {phoneDrillMapItems.length ? <MobileSectorMap items={phoneDrillMapItems} colorScale={colorScale} decimalPlaces={1} onSelect={handlePhoneSectorSelect} onLongPress={(item, target) => openSectorPopup(phoneDrillMapItems.find(drill => drill.key === item.key) ?? item, target)} /> : <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
+                  </div>
+                ) : <div className="flex flex-1 items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
+              </div>
             </div>
-          </div>
-        }
-        current={marketKey}
-        boxSize={boxSizeMarketCapRatio}
-        onChangeBoxSize={onChangeMobileBoxSizeRatio}
-      />
+          }
+          current={marketKey}
+          boxSize={boxSizeMarketCapRatio}
+          onChangeBoxSize={onChangeMobileBoxSizeRatio}
+        />
+        <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={() => setInfoPopup(null)} phoneEnlarged />
+      </>
     )
   }
   return (

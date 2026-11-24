@@ -32,32 +32,39 @@ export function useIsMobilePageZoomed(): boolean {
 
 // 업종 지도·그룹 등락률 화면에서는 화면 확대 자체를 받지 않는다. 확대되면 지도 조작과 페이지 전환이 겹친다.
 // 뷰포트 메타는 iOS Safari가 무시하고, 헤드리스에서만 먹히는 확인이었다. 실제 폰에서도 막히도록
-// 문서 전체에 세로 스크롤만 허용하고, 두 손가락이 동시에 닿은 뒤의 이동도 취소한다.
+// 문서 루트와 본문 모두 세로 스크롤만 허용하고, 두 손가락이 닿은 뒤의 이동을 캡처 단계에서 취소한다.
+// iOS는 touches.length와 별도로 scale을 주므로 둘 다 본다.
 export function useDisableScreenZoom(enabled = true): void {
   useEffect(() => {
     if (!enabled) return
     const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
     const previousMeta = meta?.content
-    const previousTouchAction = document.body.style.touchAction
+    const root = document.documentElement
+    const previousRootTouchAction = root.style.touchAction
+    const previousBodyTouchAction = document.body.style.touchAction
     if (meta) meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+    root.style.touchAction = 'pan-y'
     document.body.style.touchAction = 'pan-y'
     const block = (event: Event) => event.preventDefault()
     const blockPinch = (event: TouchEvent) => {
-      if (event.touches.length > 1) event.preventDefault()
+      const scale = (event as TouchEvent & { scale?: number }).scale
+      if (event.touches.length > 1 || (typeof scale === 'number' && scale !== 1)) event.preventDefault()
     }
+    const touchOptions: AddEventListenerOptions = { capture: true, passive: false }
     document.addEventListener('gesturestart', block, { passive: false })
     document.addEventListener('gesturechange', block, { passive: false })
     document.addEventListener('gestureend', block, { passive: false })
-    document.addEventListener('touchstart', blockPinch, { passive: false })
-    document.addEventListener('touchmove', blockPinch, { passive: false })
+    document.addEventListener('touchstart', blockPinch, touchOptions)
+    document.addEventListener('touchmove', blockPinch, touchOptions)
     return () => {
       if (meta && previousMeta !== undefined) meta.content = previousMeta
-      document.body.style.touchAction = previousTouchAction
+      root.style.touchAction = previousRootTouchAction
+      document.body.style.touchAction = previousBodyTouchAction
       document.removeEventListener('gesturestart', block)
       document.removeEventListener('gesturechange', block)
       document.removeEventListener('gestureend', block)
-      document.removeEventListener('touchstart', blockPinch)
-      document.removeEventListener('touchmove', blockPinch)
+      document.removeEventListener('touchstart', blockPinch, touchOptions)
+      document.removeEventListener('touchmove', blockPinch, touchOptions)
     }
   }, [enabled])
 }
@@ -135,10 +142,10 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   if (!enabled) return { handlers: undefined, style: undefined, offset: 0, next: () => {} }
   const style: CSSProperties = {
     // 1배에서는 세로 스크롤만 브라우저에 맡기고 가로 전환은 이 훅이 처리한다. 종목 지도는 pinch-zoom을 함께
-    // 넣지 않으면 브라우저가 핀치 확대 자체를 받지 않는다(2026-11-25 실제 핀치 확인). 업종 지도·그룹 등락률은
-    // 반대로 확대를 받지 않아야 하므로 안쪽 판에서도 pinch-zoom을 빼야 한다(2026-11-25 사용자 보고: 해외만 안 됨).
-    // 확대 후에는 한 손가락으로 보이는 화면을 이동할 수 있게 auto로 바꾼다.
-    touchAction: zoomed ? 'auto' : allowPinchZoom ? 'pan-y pinch-zoom' : 'pan-y',
+    // 넣지 않으면 브라우저가 핀치 확대 자체를 받지 않는다(2026-11-25 실제 핀치 확인). 확대 후에는 한 손가락으로
+    // 보이는 화면을 이동할 수 있게 auto로 바꾼다. 업종 지도·그룹 등락률은 확대 상태여도 auto로 풀지 않는다 —
+    // 종목 지도에서 확대한 채 넘어오면 안쪽 판이 다시 확대를 허용하는 구멍이 된다.
+    touchAction: allowPinchZoom ? (zoomed ? 'auto' : 'pan-y pinch-zoom') : 'pan-y',
     transform: offset === 0 ? undefined : `translateX(${offset}px)`,
     transition: settling ? `transform ${reducedMotion ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }
