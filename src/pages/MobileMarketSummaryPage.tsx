@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { isMobilePageZoomed, MOBILE_PAGE_SWIPE_SETTLE_MS } from '@/hooks/useMobilePageSwipe'
+import { isMobilePageZoomed, MOBILE_PAGE_SWIPE_SETTLE_MS, useDisableScreenZoom } from '@/hooks/useMobilePageSwipe'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import MobileTopBar from '@/components/MobileTopBar'
@@ -238,6 +238,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const isGraph = mode === 'graph'
   const isStockMode = mode === 'stock'
   const isSectorMode = mode === 'sector'
+  // 업종 지도와 그룹 등락률은 화면 확대를 받지 않는다(사용자 정정). 종목 지도는 확대한 화면 안을 이동할 수 있다.
+  useDisableScreenZoom()
   // 지도 화면에서도 지수를 미리 받아 둔다. 지도에서 그룹 등락률로 스와이프할 때 지수가 도착 뒤에야 조회되면
   // 미리보기와 전환 순간에 지수만 비어 보인다(2026-11-22 사용자 제보).
   const { data: marketSummary, isLoading: isMarketSummaryLoading, isFetching: isMarketSummaryFetching, refetch: refetchMarketSummary } = useMarketSummary()

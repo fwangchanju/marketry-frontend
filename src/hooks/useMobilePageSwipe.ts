@@ -10,8 +10,50 @@ export function isMobilePageZoomed(): boolean {
   return typeof window !== 'undefined' && (window.visualViewport?.scale ?? 1) > 1.01
 }
 
+// 확대 상태를 렌더에도 반영한다. 확대 중에는 페이지 전환 대신 브라우저의 한 손가락 화면 이동을 살려야
+// 하므로 touch-action을 바꿔 준다(판정만으로는 이미 그려진 touch-action이 남는다).
+export function useIsMobilePageZoomed(): boolean {
+  const [zoomed, setZoomed] = useState(isMobilePageZoomed)
+  useEffect(() => {
+    const update = () => setZoomed(isMobilePageZoomed())
+    const viewport = window.visualViewport
+    viewport?.addEventListener('resize', update)
+    viewport?.addEventListener('scroll', update)
+    window.addEventListener('resize', update)
+    update()
+    return () => {
+      viewport?.removeEventListener('resize', update)
+      viewport?.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [])
+  return zoomed
+}
+
+// 업종 지도·그룹 등락률 화면에서는 화면 확대 자체를 받지 않는다. 확대되면 지도 조작과 페이지 전환이 겹친다.
+// 뷰포트 메타로 제한하고, iOS Safari는 user-scalable=no를 무시하므로 제스처 이벤트도 함께 막는다.
+export function useDisableScreenZoom(enabled = true): void {
+  useEffect(() => {
+    if (!enabled) return
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
+    const previous = meta?.content
+    if (meta) meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+    const block = (event: Event) => event.preventDefault()
+    document.addEventListener('gesturestart', block, { passive: false })
+    document.addEventListener('gesturechange', block, { passive: false })
+    document.addEventListener('gestureend', block, { passive: false })
+    return () => {
+      if (meta && previous !== undefined) meta.content = previous
+      document.removeEventListener('gesturestart', block)
+      document.removeEventListener('gesturechange', block)
+      document.removeEventListener('gestureend', block)
+    }
+  }, [enabled])
+}
+
 // 모바일 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
 export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void) {
+  const zoomed = useIsMobilePageZoomed()
   const startRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
   const suppressClickRef = useRef(false)
   const timerRef = useRef<number | null>(null)
@@ -37,6 +79,9 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   }
   const onPointerDownCapture = (event: PointerEvent<HTMLElement>) => {
     if (isMobilePageZoomed() || settling || event.clientX <= EDGE_GUARD || event.clientX >= window.innerWidth - EDGE_GUARD) return
+    // 확대된 지도 안의 한 손가락 드래그는 지도 이동이다. 화면 확대가 아니어도 페이지 전환을 받지 않는다.
+    const map = (event.target as HTMLElement).closest<HTMLElement>('[data-mobile-map-scale]')
+    if (map && Number(map.dataset.mobileMapScale) > 1.05) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
     startRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
   }
@@ -78,7 +123,8 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   }
   if (!enabled) return { handlers: undefined, style: undefined, offset: 0, next: () => {} }
   const style: CSSProperties = {
-    touchAction: 'pan-y',
+    // 화면을 확대하면 가로 드래그를 브라우저가 받아 보이는 영역을 이동해야 한다. 기존 'pan-y'는 가로를 막는다.
+    touchAction: zoomed ? 'auto' : 'pan-y',
     transform: offset === 0 ? undefined : `translateX(${offset}px)`,
     transition: settling ? `transform ${reducedMotion ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }
