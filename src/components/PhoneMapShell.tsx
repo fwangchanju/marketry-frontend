@@ -13,7 +13,7 @@ const TOOLBAR_REFERENCE_WIDTH = 438
 // 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.
 const TOOLBAR_FIXED_SCALE = 0.863
 
-export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, onBeforeSwipeNavigate, nextPreview, previousPreview }: {
+export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, onBeforeSwipeNavigate, nextPreview, previousPreview, allowPinchZoom = true }: {
   topBar?: ReactNode
   onSwipe?: (direction: 'next' | 'previous') => void
   // 주소가 바뀌기 직전에 해당 방향의 미리보기 판을 덮개로 남길지 정한다(종목 지도 도착 번쩍임 방지).
@@ -28,6 +28,8 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   // 넘기지 않으면 그 방향은 현재 판만 움직인다.
   nextPreview?: ReactNode
   previousPreview?: ReactNode
+  // 종목 지도는 화면 확대를 받지만 업종 지도·그룹 등락률은 막는다. 안쪽 판의 touch-action도 함께 정한다.
+  allowPinchZoom?: boolean
 }) {
   const [scale, setScale] = useState(TOOLBAR_FIXED_SCALE)
 
@@ -35,7 +37,8 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
     Boolean(onSwipe),
     () => onSwipe?.('next'),
     () => onSwipe?.('previous'),
-    onBeforeSwipeNavigate
+    onBeforeSwipeNavigate,
+    allowPinchZoom
   )
 
   // 화면을 읽지 않고 창 폭과 기준 폭으로만 배율을 정한다. 로딩 중 툴바 내용이 바뀌어도 재측정·재배치가 없다.
