@@ -93,11 +93,12 @@ function placeNearPointer(el: HTMLElement, point: { x: number; y: number }, boun
 
 // 폰에서 실제로 보이는 화면 영역. 두 손가락으로 화면을 확대·이동하면 window.innerWidth/innerHeight는 그대로지만
 // visualViewport의 크기와 시작점이 바뀐다. 팝업은 이 영역 안에 들어와야 보인다.
+// pageLeft/pageTop은 문서 좌표라 absolute로 붙이는 폰 팝업과 같은 기준을 쓴다. 없는 브라우저는 스크롤+오프셋으로 대신한다.
 function phoneViewport() {
   const vv = window.visualViewport
   return {
-    left: vv?.offsetLeft ?? 0,
-    top: vv?.offsetTop ?? 0,
+    left: vv?.pageLeft ?? window.scrollX + (vv?.offsetLeft ?? 0),
+    top: vv?.pageTop ?? window.scrollY + (vv?.offsetTop ?? 0),
     width: vv?.width ?? window.innerWidth,
     height: vv?.height ?? window.innerHeight,
   }
@@ -109,7 +110,19 @@ function placePhonePopup(el: HTMLElement) {
   const view = phoneViewport()
   el.style.maxWidth = `${Math.max(1, (view.width - POPUP_MARGIN * 2) / PHONE_POPUP_SCALE)}px`
   const { width, height } = el.getBoundingClientRect()
-  const toolbarBottom = document.querySelector('[data-phone-toolbar-slot]')?.getBoundingClientRect().bottom ?? view.top + POPUP_MARGIN
+  // 툴바는 뷰포트 기준 rect라 문서 좌표인 팝업에 그대로 쓰면 확대·이동 시 어긋난다. offsetParent를 따라
+  // 문서 좌표를 구한다. 확대해서 툴바가 화면 위로 벗어나면 아래 클램프가 보이는 영역 맨 위로 옮긴다.
+  const toolbar = document.querySelector('[data-phone-toolbar-slot]') as HTMLElement | null
+  let toolbarBottom = view.top + POPUP_MARGIN
+  if (toolbar) {
+    toolbarBottom = 0
+    let node: HTMLElement | null = toolbar
+    while (node) {
+      toolbarBottom += node.offsetTop
+      node = node.offsetParent as HTMLElement | null
+    }
+    toolbarBottom += toolbar.offsetHeight
+  }
   const minLeft = view.left + POPUP_MARGIN
   const maxLeft = Math.max(minLeft, view.left + view.width - width - POPUP_MARGIN)
   const minTop = view.top + POPUP_MARGIN
@@ -237,7 +250,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible fixed ${phoneEnlarged ? 'z-[70] cursor-pointer' : 'z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        className={`invisible ${phoneEnlarged ? 'absolute z-[70] cursor-pointer' : 'fixed z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
         // 폰에서는 팝업을 누르면 닫는다(길게 누르기 전의 모바일 동작 유지).
         onClick={phoneEnlarged ? onClose : undefined}
         style={{
