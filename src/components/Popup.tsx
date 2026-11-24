@@ -105,8 +105,8 @@ function phoneViewport() {
   }
 }
 
-// 폰 팝업을 보이는 화면의 가로 가운데·툴바 줄 바로 아래에 다시 놓는다. 창 크기와 화면 확대·이동이
-// 바뀌어도 같은 자리를 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
+// 폰 팝업을 보이는 화면의 정중앙에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
+// 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
 function placePhonePopup(el: HTMLElement) {
   const view = phoneViewport()
   // 화면을 확대하면 브라우저가 페이지 전체를 키우므로, 팝업 배율에서 그 배율을 나눠 보이는 크기를 일정하게 유지한다.
@@ -114,25 +114,12 @@ function placePhonePopup(el: HTMLElement) {
   el.style.transform = `scale(${scale})`
   el.style.maxWidth = `${Math.max(1, (view.width - POPUP_MARGIN * 2) / scale)}px`
   const { width, height } = el.getBoundingClientRect()
-  // 툴바는 뷰포트 기준 rect라 문서 좌표인 팝업에 그대로 쓰면 확대·이동 시 어긋난다. offsetParent를 따라
-  // 문서 좌표를 구한다. 확대해서 툴바가 화면 위로 벗어나면 아래 클램프가 보이는 영역 맨 위로 옮긴다.
-  const toolbar = document.querySelector('[data-phone-toolbar-slot]') as HTMLElement | null
-  let toolbarBottom = view.top + POPUP_MARGIN
-  if (toolbar) {
-    toolbarBottom = 0
-    let node: HTMLElement | null = toolbar
-    while (node) {
-      toolbarBottom += node.offsetTop
-      node = node.offsetParent as HTMLElement | null
-    }
-    toolbarBottom += toolbar.offsetHeight
-  }
   const minLeft = view.left + POPUP_MARGIN
   const maxLeft = Math.max(minLeft, view.left + view.width - width - POPUP_MARGIN)
   const minTop = view.top + POPUP_MARGIN
   const maxTop = Math.max(minTop, view.top + view.height - height - POPUP_MARGIN)
   el.style.left = `${Math.min(Math.max(view.left + (view.width - width) / 2, minLeft), maxLeft)}px`
-  el.style.top = `${Math.min(Math.max(Math.min(toolbarBottom, maxTop), minTop), maxTop)}px`
+  el.style.top = `${Math.min(Math.max(view.top + (view.height - height) / 2, minTop), maxTop)}px`
   el.style.visibility = 'visible'
 }
 
@@ -163,7 +150,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     const el = elRef.current
     if (!el) return
     if (phoneEnlarged) {
-      // 폰에서는 누린 칸 옆이 아니라 가로는 화면 가운데, 세로는 툴바 줄 바로 아래에 띄운다.
+      // 폰에서는 누린 칸 옆이 아니라 보이는 화면 정중앙에 띄운다.
       // transform(공통 배율)이 적용된 실제 그린 크기로 맞춘다(transformOrigin이 top left라 그대로 쓴다).
       placePhonePopup(el)
       return
