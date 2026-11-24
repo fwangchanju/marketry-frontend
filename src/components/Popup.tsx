@@ -101,6 +101,7 @@ function phoneViewport() {
     top: vv?.pageTop ?? window.scrollY + (vv?.offsetTop ?? 0),
     width: vv?.width ?? window.innerWidth,
     height: vv?.height ?? window.innerHeight,
+    scale: vv?.scale ?? 1,
   }
 }
 
@@ -108,7 +109,10 @@ function phoneViewport() {
 // 바뀌어도 같은 자리를 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
 function placePhonePopup(el: HTMLElement) {
   const view = phoneViewport()
-  el.style.maxWidth = `${Math.max(1, (view.width - POPUP_MARGIN * 2) / PHONE_POPUP_SCALE)}px`
+  // 화면을 확대하면 브라우저가 페이지 전체를 키우므로, 팝업 배율에서 그 배율을 나눠 보이는 크기를 일정하게 유지한다.
+  const scale = PHONE_POPUP_SCALE / Math.max(view.scale, 0.1)
+  el.style.transform = `scale(${scale})`
+  el.style.maxWidth = `${Math.max(1, (view.width - POPUP_MARGIN * 2) / scale)}px`
   const { width, height } = el.getBoundingClientRect()
   // 툴바는 뷰포트 기준 rect라 문서 좌표인 팝업에 그대로 쓰면 확대·이동 시 어긋난다. offsetParent를 따라
   // 문서 좌표를 구한다. 확대해서 툴바가 화면 위로 벗어나면 아래 클램프가 보이는 영역 맨 위로 옮긴다.
@@ -202,6 +206,13 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     el.style.visibility = 'visible'
   }, [popup, pointer, minLeft, maxRight, minTop, maxBottom, phoneEnlarged])
 
+  // React 렌더가 style을 다시 쓸 때 폰 배율·최대 폭이 되돌아가므로 매 렌더마다 다시 맞춘다.
+  useLayoutEffect(() => {
+    if (!phoneEnlarged) return
+    const el = elRef.current
+    if (el) placePhonePopup(el)
+  })
+
   // 팝업이 열려 있는 동안 창 크기·화면 확대·화면 이동이 바뀌면 가운데·툴바 아래 자리를 다시 잡는다.
   // popup 상태는 그대로라 위 레이아웃 효과가 다시 실행되지 않으므로 별도로 듣는다. PC 팝업은 예전 동작을 유지한다.
   useLayoutEffect(() => {
@@ -258,7 +269,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
           backgroundColor: POPUP_BACKGROUND,
           // 폰은 루트 글자 크기가 80%라 rem 기반 text-base·text-sm이 12.8·11.2px로 줄어든다.
           // 공통 배율을 그 위에 곱하면 PC(16·14px)보다 여전히 작으므로, 원래 크기로 되돌린 뒤 배율을 적용한다.
-          ...(phoneEnlarged ? { fontSize: '16px', transform: `scale(${PHONE_POPUP_SCALE})`, transformOrigin: 'top left' } : {}),
+          ...(phoneEnlarged ? { fontSize: '16px', transformOrigin: 'top left' } : {}),
         }}
       >
         <div className="flex items-center justify-between gap-3 font-bold">
