@@ -91,14 +91,31 @@ function placeNearPointer(el: HTMLElement, point: { x: number; y: number }, boun
   el.style.visibility = 'visible'
 }
 
-// 폰 팝업을 가로 가운데·툴바 줄 바로 아래에 다시 놓는다. 창 크기(브라우저 확대 포함)가 바뀌어도
-// 같은 자리를 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
+// 폰에서 실제로 보이는 화면 영역. 두 손가락으로 화면을 확대·이동하면 window.innerWidth/innerHeight는 그대로지만
+// visualViewport의 크기와 시작점이 바뀐다. 팝업은 이 영역 안에 들어와야 보인다.
+function phoneViewport() {
+  const vv = window.visualViewport
+  return {
+    left: vv?.offsetLeft ?? 0,
+    top: vv?.offsetTop ?? 0,
+    width: vv?.width ?? window.innerWidth,
+    height: vv?.height ?? window.innerHeight,
+  }
+}
+
+// 폰 팝업을 보이는 화면의 가로 가운데·툴바 줄 바로 아래에 다시 놓는다. 창 크기와 화면 확대·이동이
+// 바뀌어도 같은 자리를 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
 function placePhonePopup(el: HTMLElement) {
-  el.style.maxWidth = `${Math.max(1, (window.innerWidth - POPUP_MARGIN * 2) / PHONE_POPUP_SCALE)}px`
+  const view = phoneViewport()
+  el.style.maxWidth = `${Math.max(1, (view.width - POPUP_MARGIN * 2) / PHONE_POPUP_SCALE)}px`
   const { width, height } = el.getBoundingClientRect()
-  const toolbarBottom = document.querySelector('[data-phone-toolbar-slot]')?.getBoundingClientRect().bottom ?? POPUP_MARGIN
-  el.style.left = `${Math.max(POPUP_MARGIN, (window.innerWidth - width) / 2)}px`
-  el.style.top = `${Math.min(toolbarBottom, window.innerHeight - height - POPUP_MARGIN)}px`
+  const toolbarBottom = document.querySelector('[data-phone-toolbar-slot]')?.getBoundingClientRect().bottom ?? view.top + POPUP_MARGIN
+  const minLeft = view.left + POPUP_MARGIN
+  const maxLeft = Math.max(minLeft, view.left + view.width - width - POPUP_MARGIN)
+  const minTop = view.top + POPUP_MARGIN
+  const maxTop = Math.max(minTop, view.top + view.height - height - POPUP_MARGIN)
+  el.style.left = `${Math.min(Math.max(view.left + (view.width - width) / 2, minLeft), maxLeft)}px`
+  el.style.top = `${Math.min(Math.max(Math.min(toolbarBottom, maxTop), minTop), maxTop)}px`
   el.style.visibility = 'visible'
 }
 
@@ -172,15 +189,22 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     el.style.visibility = 'visible'
   }, [popup, pointer, minLeft, maxRight, minTop, maxBottom, phoneEnlarged])
 
-  // 팝업이 열려 있는 동안 창 크기(브라우저 확대·창 크기 조절)가 바뀌면 가운데·툴바 아래 자리를 다시 잡는다.
+  // 팝업이 열려 있는 동안 창 크기·화면 확대·화면 이동이 바뀌면 가운데·툴바 아래 자리를 다시 잡는다.
   // popup 상태는 그대로라 위 레이아웃 효과가 다시 실행되지 않으므로 별도로 듣는다. PC 팝업은 예전 동작을 유지한다.
   useLayoutEffect(() => {
     if (!phoneEnlarged) return
     const el = elRef.current
     if (!el) return
     const place = () => placePhonePopup(el)
+    const vv = window.visualViewport
     window.addEventListener('resize', place)
-    return () => window.removeEventListener('resize', place)
+    vv?.addEventListener('resize', place)
+    vv?.addEventListener('scroll', place)
+    return () => {
+      window.removeEventListener('resize', place)
+      vv?.removeEventListener('resize', place)
+      vv?.removeEventListener('scroll', place)
+    }
   }, [phoneEnlarged])
 
   // 커서 이동 팝업은 마우스를 따라간다. 지도 전체를 다시 그리지 않도록 상태를 바꾸지 않고 위치만 직접 옮기며, 프레임당 한 번만 갱신한다.
