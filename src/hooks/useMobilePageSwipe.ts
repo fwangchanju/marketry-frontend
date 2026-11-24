@@ -123,8 +123,10 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   }
   if (!enabled) return { handlers: undefined, style: undefined, offset: 0, next: () => {} }
   const style: CSSProperties = {
-    // 화면을 확대하면 가로 드래그를 브라우저가 받아 보이는 영역을 이동해야 한다. 기존 'pan-y'는 가로를 막는다.
-    touchAction: zoomed ? 'auto' : 'pan-y',
+    // 1배에서는 세로 스크롤만 브라우저에 맡기고 가로 전환은 이 훅이 처리한다. pinch-zoom을 함께 넣지 않으면
+    // 브라우저가 핀치 확대 자체를 받지 않아 확대 상태로 진입할 수 없다(2026-11-25 실제 핀치 확인).
+    // 확대 후에는 한 손가락으로 보이는 화면을 이동할 수 있게 auto로 바꾼다.
+    touchAction: zoomed ? 'auto' : 'pan-y pinch-zoom',
     transform: offset === 0 ? undefined : `translateX(${offset}px)`,
     transition: settling ? `transform ${reducedMotion ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }
