@@ -444,7 +444,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           </SettingsPanel>
         </div>
       </div>
-      {isShareOpen && <ScreenshotModal onClose={() => { closeScreenshot(); setIsMobileScreenshotSelected(false) }} onCopy={copy} copyLabel={copyLabel} isCopying={isCopying} screenshotTarget={screenshotTarget} captureReady={!isLoading} mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }} onMobileSelectionChange={setIsMobileScreenshotSelected} />}
+      {isShareOpen && <ScreenshotModal onClose={() => { closeScreenshot(); setIsMobileScreenshotSelected(false) }} onCopy={copy} copyLabel={copyLabel} isCopying={isCopying} screenshotTarget={screenshotTarget} captureReady={!isLoading} mobileRegionOption={{ label: 'MOBILE', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }} onMobileSelectionChange={setIsMobileScreenshotSelected} />}
     </div>
   )
 }
