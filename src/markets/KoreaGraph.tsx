@@ -49,7 +49,7 @@ export default function KoreaGraph() {
     (data?.snapshotTime == null ||
       (isPairSettled && !pairQuery.isPlaceholderData && isMarketValueTierRangeReady))
   // 렌더러가 /sector/kosdaq?beforeMinutes=15&avgMode=simple&sectorFilter=true로
-  // 스크린샷을 요청할 때 쓰는 진입점 — MapPage와 동일한 패턴(초기 상태 반영 용도일 뿐 주소창엔
+  // 스크린샷을 요청할 때 쓰는 진입점 — MapScreen와 동일한 패턴(초기 상태 반영 용도일 뿐 주소창엔
   // 남길 필요 없어 반영 직후 지움). market은 useGlobalSettings()가 내부에서 이미 우선 반영했으므로
   // 여기서는 나머지 세 파라미터만 다룬다. 셋은 서로 독립적으로 판정한다 — 하나가 없거나 잘못됐다고
   // 다른 것까지 무시하면 안 된다. 실제로 소비한(유효했던) 파라미터만 주소에서 지운다.

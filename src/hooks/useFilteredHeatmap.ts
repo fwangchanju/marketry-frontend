@@ -128,7 +128,7 @@ export function flattenAllItems(nodes: FilteredHeatmapSectorNode[]): HeatmapItem
 }
 
 // depth는 nodes를 1로 보는 기준(= "업종 단계" 슬라이더 값과 동일 단위) — 진짜 루트가 아니라 "지금
-// 보고 있는 위치"를 1로 삼아 호출부(MapPage)가 드릴다운할 때마다 새로 호출한다. 그래야
+// 보고 있는 위치"를 1로 삼아 호출부(MapScreen)가 드릴다운할 때마다 새로 호출한다. 그래야
 // 뎁스 제한이 절대(진짜 루트 기준)가 아니라 항상 지금 위치 기준 상대값으로 적용된다 — 안 그러면 뎁스
 // 제한이 드릴다운 경로 탐색에 쓰는 트리(useHeatmapDrilldown)까지 미리 잘라버려서, maxDepth를 줄일
 // 때 이미 진입해 있던 깊은 섹터가 트리에서 통째로 사라져 경로 매칭이 중간에 끊기는 문제가 있었다.
@@ -176,7 +176,7 @@ export function useFilteredHeatmap(
   )
   // 슬라이더 분모(전체 뎁스) — exclude/tier 필터링까지 반영된 트리 기준으로, 실제로 의미 있는 뎁스만
   // 센다. 뎁스 제한(limitDepth)은 여기서 미리 적용하지 않는다 — 드릴다운이 실제 뎁스를 그대로 오갈 수
-  // 있어야 하고, 화면에 그릴 시점(MapPage)에 "지금 보고 있는 위치" 기준으로 매번 새로
+  // 있어야 하고, 화면에 그릴 시점(MapScreen)에 "지금 보고 있는 위치" 기준으로 매번 새로
   // 적용한다.
   const availableMaxDepth = useMemo(() => computeMaxDepth(excludeTierFiltered), [excludeTierFiltered])
   return { filteredRootNodes: excludeTierFiltered, availableMaxDepth }

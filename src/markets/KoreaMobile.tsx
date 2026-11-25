@@ -33,7 +33,7 @@ export default function KoreaMobile({ mode }: { mode: 'sector' | 'graph' }) {
         colors: { colorScale, strongIndustryColor },
         mapPreview: {
           groups, marketValueDepthRange, weightedAvgDepthRange, simpleAvgDepthRange, upDownCountDepthRange, stretch: mapStretchFor(taxonomy), tile: mapTileMethod(), colorScale, labelMinAreaPercent: boxLabelMinAreaPercent, stockLabelMode, decimalPlaces: 1, topPickSectorKeys, strongIndustryColor,
-          // 도착 화면(MapPage)의 MOBILE과 같은 행 지표를 써야 전환 뒤 첫 행이 바뀌지 않는다.
+          // 도착 화면(MapScreen)의 MOBILE과 같은 행 지표를 써야 전환 뒤 첫 행이 바뀌지 않는다.
           captureRowMetric: isInDepthRange(simpleAvgDepthRange, 0) && !isInDepthRange(weightedAvgDepthRange, 0) ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate',
         },
         routes: { summary: marketRoute('/summary', market), graph: marketRoute('/graph', market), map: marketRoute('/map', market) },

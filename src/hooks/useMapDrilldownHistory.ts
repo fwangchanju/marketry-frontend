@@ -4,7 +4,7 @@ import { useLeaveToEntryPage } from '@/hooks/useLeaveToEntryPage'
 import { appAlert } from '@/utils/appDialogBus'
 
 // 지도(한국·일본·미국)에서 분류를 한 단계씩 들어가고 나오는 것을 브라우저 기록과 키보드에 이어 준다.
-// 한국 지도(MapPage)에 있던 처리를 그대로 옮긴 공통 부품이다 — 세 지도가 같이 쓴다(2026-11-14).
+// 한국 지도(MapScreen)에 있던 처리를 그대로 옮긴 공통 부품이다 — 세 지도가 같이 쓴다(2026-11-14).
 // 정리: path = 지금 들어가 있는 분류 경로, setPath = 경로를 직접 바꾸기, zoomOutRequestDepth = 줌아웃 애니메이션 중인 목표 깊이,
 // handleGoToDepth = 위로 가는 줌아웃을 요청하는 함수, isShareOpen = 공유 팝업이 떠 있는지(떠 있으면 백스페이스를 쓰지 않는다).
 // 돌려주는 markEntryFromOtherPage는 다른 페이지(그래프)에서 업종을 눌러 들어온 경우 그 칸을 기준 칸으로 삼게 알린다.
@@ -143,7 +143,7 @@ export function useMapDrilldownHistory({
 
 
 // 그래프에서 업종을 눌러 온 주소(?sector=이름) — 데이터가 준비되면 그 업종을 누른 상태로 열고 주소에서 지운다.
-// 못 찾으면 안내하고 닫으면 들어온 곳으로 돌려보낸다. 한국 지도(MapPage)에 있던 처리를 그대로 옮긴 공통 부품이다.
+// 못 찾으면 안내하고 닫으면 들어온 곳으로 돌려보낸다. 한국 지도(MapScreen)에 있던 처리를 그대로 옮긴 공통 부품이다.
 export function useMapSectorEntry({
   filteredRootNodes,
   enterSector,

@@ -20,7 +20,8 @@ import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
 // 화면별로 코드를 나눠 받는다. 모바일 서머리·지도는 첫 화면이라 바로 번들에 두고,
 // PC 전용·관리자·글 페이지는 해당 주소를 열 때만 내려받는다.
 const KoreaSummary = lazy(() => import('./markets/KoreaSummary'))
-const MapPage = lazy(() => import('./pages/MapPage'))
+const KoreaMap = lazy(() => import('./markets/KoreaMap'))
+const SnapshotMap = lazy(() => import('./markets/SnapshotMap'))
 const KoreaGraph = lazy(() => import('./markets/KoreaGraph'))
 const SnapshotGraph = lazy(() => import('./markets/SnapshotGraph'))
 const CustomPage = lazy(() => import('./pages/CustomPage'))
@@ -28,8 +29,6 @@ const JapanStockPage = lazy(() => import('./pages/JapanStockPage'))
 const JapanSectorPage = lazy(() => import('./pages/JapanSectorPage'))
 const UsaSectorPage = lazy(() => import('./pages/UsaSectorPage'))
 const UsaStockPage = lazy(() => import('./pages/UsaStockPage'))
-const JapanMapPage = lazy(() => import('./pages/JapanMapPage'))
-const UsaMapPage = lazy(() => import('./pages/UsaMapPage'))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
 const SourcePage = lazy(() => import('./pages/SourcePage'))
@@ -120,11 +119,6 @@ function ResponsiveSnapshotGraph({ market }: { market: OverseasMarket }) {
   return useIsNarrowScreen() ? <SnapshotMobile key={market} market={market} mode="graph" /> : <SnapshotGraph key={market} market={market} />
 }
 
-// MOBILE에서도 PC 지도 페이지를 쓴다. MapPage가 MOBILE 화면이면 모바일 판(캡처 프레임)만 화면 폭에 맞춰 보여 준다(실험, 2026-11-21).
-function ResponsiveMapPage() {
-  return <MapPage />
-}
-
 // 모바일(폭 768px 이하, 769px 미만)에서는 서머리·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
 // 글 페이지(/info 아래의 가이드·개인정보처리방침·데이터·약관·문의)는 모바일 틀(MobileDocumentShell)이 있어 모바일에서도 열린다.
 function isMobileOpenPath(pathname: string) {
@@ -194,12 +188,12 @@ export default function App() {
           {/* 옛 주소 이동은 구글·네이버에 등록돼 있던 주소(/home, /map|graph/kospi|kosdaq)에만 둔다(사용자 결정 2026-11-15, 회원이 없어 그 밖의 옛 주소는 살릴 이유가 없다). 쿼리는 붙여서 보낸다(텔레그램 캡처 ?capture=mobile 등). */}
           <Route path="/home" element={<RedirectKeepingQuery to="/summary/korea" />} />
           <Route path="/map" element={<LegacyMarketRedirect basePath="/map" />} />
-          <Route path="/map/korea/kospi" element={<ResponsiveMapPage />} />
-          <Route path="/map/korea/kosdaq" element={<ResponsiveMapPage />} />
+          <Route path="/map/korea/kospi" element={<KoreaMap />} />
+          <Route path="/map/korea/kosdaq" element={<KoreaMap />} />
           {/* 코스피·코스닥을 korea 아래로 옮기기 전의 옛 주소 */}
           <Route path="/map/kospi" element={<RedirectKeepingQuery to="/map/korea/kospi" />} />
           <Route path="/map/kosdaq" element={<RedirectKeepingQuery to="/map/korea/kosdaq" />} />
-          <Route path="/map/korea" element={<ResponsiveMapPage />} />
+          <Route path="/map/korea" element={<KoreaMap />} />
           <Route path="/graph" element={<LegacyMarketRedirect basePath="/graph" />} />
           <Route path="/graph/korea/kospi" element={<ResponsiveGraphPage />} />
           <Route path="/graph/korea/kosdaq" element={<ResponsiveGraphPage />} />
@@ -217,10 +211,9 @@ export default function App() {
             <Route path={SECTOR_USA} element={<UsaSectorPage />} />
             <Route path={STOCK_USA} element={<UsaStockPage />} />
             {/* 해외 시장의 서머리 — 시장 목록표(markets.ts)에서 만든다. 지도·그래프·섹터·주식은 시장별 화면이라 아래에 따로 둔다(2단계에서 공통 화면으로 합칠 예정). */}
+            {OVERSEAS_MARKETS.map(market => <Route key={`map-${market.id}`} path={overseasRoute('/map', market.id)} element={<SnapshotMap key={market.id} market={market.id} />} />)}
             {OVERSEAS_MARKETS.map(market => <Route key={`graph-${market.id}`} path={overseasRoute('/graph', market.id)} element={<ResponsiveSnapshotGraph market={market.id} />} />)}
             {OVERSEAS_MARKETS.map(market => <Route key={market.id} path={overseasRoute('/summary', market.id)} element={<OverseasSummaryPage market={market.id} />} />)}
-            <Route path="/map/japan" element={<JapanMapPage />} />
-            <Route path="/map/usa" element={<UsaMapPage />} />
           </Route>
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}
           <Route path="/info" element={<Navigate to="/info/guide" replace />} />

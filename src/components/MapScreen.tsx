@@ -1,12 +1,11 @@
 import MainAreaLoading from '@/components/MainAreaLoading'
 import { revealMobileCapture } from '@/utils/revealMobileCapture'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { useSettled } from '@/hooks/useSettled'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileSectorMapFrame from '@/components/MobileSectorMapFrame'
 import MobileMapShell from '@/components/MobileMapShell'
-import MapToolbar from '@/components/MapToolbar'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
@@ -17,10 +16,8 @@ import PathBar, { type PathCrumb } from '@/components/PathBar'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { marketRoute } from '@/utils/marketRoute'
 import NavBar from '@/components/NavBar'
 import NavSubBar from '@/components/NavSubBar'
-import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import SettingsPanel, {
   SettingsPanelGroup,
   SettingsMarketValueSection,
@@ -40,17 +37,13 @@ import { isInDepthRange } from '@/utils/sectorDepth'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
-import Spinner from '@/components/Spinner'
+import Spinner, { MOBILE_LOADING_SIZE_CLASS } from '@/components/Spinner'
 import MapStockChart from '@/components/MapStockChart'
 import MobileMapStockChart from '@/components/MobileMapStockChart'
 import { MapChangeFilterSections, MapExperimentSections } from '@/components/MapSettingsSections'
 import { useMapStockChart } from '@/hooks/useStockChart'
-import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
-import NavBarPageActions, { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
+import NavBarPageActions from '@/components/NavBarPageActions'
 import { useHeatmapDrilldown } from '@/hooks/useHeatmapDrilldown'
-import { useIsLoggedIn } from '@/hooks/useSession'
-import { useGlobalSettings } from '@/hooks/useGlobalSettings'
-import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import type { DisplayGroup } from '@/hooks/useHeatmapLayout'
@@ -60,22 +53,24 @@ import { CAPTURE_ID } from '@/utils/captureIds'
 import { SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT, screenshotElementToDataUrl } from '@/utils/screenshotToPreview'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import { useMapDrilldownHistory, useMapSectorEntry } from '@/hooks/useMapDrilldownHistory'
-import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { limitDepth, flattenAllItems } from '@/hooks/useFilteredHeatmap'
-import type { MarketQuery, HeatmapSectorNode, HeatmapItem } from '@/types/api'
+import type { HeatmapSectorNode, HeatmapItem } from '@/types/api'
+import MarketToolbarContent from '@/components/MarketToolbarContent'
+import Toolbar from '@/components/Toolbar'
+import type { MobileMapMarket } from '@/components/MobileMapSheet'
+import type { MarketColors, MarketFilters, MarketMap, MarketScreenData } from '@/markets/marketContract'
+import type { marketMenu } from '@/utils/marketMenu'
+import type { TaxonomyKey } from '@/utils/taxonomyNames'
+
 declare global {
   interface Window {
     marketryCaptureMap?: () => Promise<string>
   }
 }
-const MARKET_LABEL: Record<MarketQuery, string> = { KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ', ALL_STOCK: 'K-STOCK' }
 // 종목·업종 헤더와 같은 방식 — 올리면 흰색 35% 덮개가 씌워진다(index.css의 hover와 같은 불투명도).
 // 이동 경로의 이름이 몇 번째 업종 단계인지(0부터) — 마우스가 이미 그 이름 위에 있어서 툴팁에는 이름 대신 단계 이름만 쓴다. 업종은 최대 4단계(대분류·중분류·소분류·세분류)다.
-const SECTOR_LEVEL_LABEL = ['대분류', '중분류', '소분류', '세분류']
-const MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [
-  'stockDisplay', 'composition', 'industry', 'colors',
-]
-const SPECIAL_MAP_SETTINGS_SECTION_ORDER: SettingsPanelSectionId[] = [...MAP_SETTINGS_SECTION_ORDER, 'special']
+const LEVEL_LABELS = ['대분류', '중분류', '소분류', '세분류']
+const SECTION_ORDER: SettingsPanelSectionId[] = ['stockDisplay', 'composition', 'industry', 'colors', 'special']
 // "업종 단계" 슬라이더가 "끄기"(뎁스 0)일 때만 쓰는 합성 섹터 — 실제 섹터가 아니므로
 // sectorId는 실제 값과 겹치지 않는 sentinel을 쓰고, isSelf로 매칭해 헤더 자체를 안 그리게 한다
 // (드릴다운으로 들어온 섹터의 헤더를 breadcrumb과 중복되지 않게 숨기는 것과 동일한 메커니즘).
@@ -124,66 +119,29 @@ function findRawNodeByPath(nodes: HeatmapSectorNode[], path: string[]): HeatmapS
   }
   return node
 }
-export default function MapPage() {
-  const isLoggedIn = useIsLoggedIn()
-  const {
-    settingsModalProps,
-    colorEditorPanelProps,
-    market,
-    isCustom,
-    isMarketry,
-    taxonomy,
-    nxtOnly,
-    nxtOnlyWindow,
-    changeRateMode,
-    changeRateChoice,
-    isAfterHoursControlsVisible,
-    isAfterHoursSelectable,
-    onChangeChangeRateMode,
-    data,
-    liveSnapshotTime,
-    onChangePinnedSnapshotTime,
-    onSelectRange,
-    rangeStartTime,
-    rangeExcludedStocks,
-    pinnedSnapshotTime,
-    refetchHeatmap,
-    isRefetchingHeatmap,
-    sectorChangeMaxDepth,
-    sectorChangeFilter,
-    sectorChangeDepth,
-    setSectorChangeFilter,
-    setSectorChangeDepth,
-    isLoading,
-    isError,
-    rootNodes,
-    filteredRootNodes,
-    stockChangeFilter,
-    onChangeStockChangeFilter,
-    maxDepth,
-    marketValueDepthRange,
-    weightedAvgDepthRange,
-    simpleAvgDepthRange,
-    upDownCountDepthRange,
-    boxSizeMarketCapRatio,
-    onChangeBoxSizeMarketCapRatio,
-    topPickSectorKeys,
-    strongIndustryColor,
-    onChangeStrongIndustryColor,
-    onChangeAvgChangeRateUseSimple,
-    onChangeSectorFilterEnabled,
-    boxLabelMinAreaPercent,
-    stockLabelMode,
-    stockPopupOnHover,
-    setStockPopupOnHover,
-    decimalPlaces,
-    colorScale,
-    handleExcludeSector,
-  } = useGlobalSettings({ allowChangeRateMode: true })
-  // 특별 회원 탭은 특별 회원과 운영자가 쓴다.
-  // 달력에서 지난 날짜를 골라 보는 중이면 시각·시간대·합산/별도 표시는 숨긴다(실시간 정보라서).
-  const isPastSnapshot = pinnedSnapshotTime !== undefined
-  const [searchParams, setSearchParams] = useSearchParams()
+export type MapPanelProps = Omit<ComponentProps<typeof SettingsPanel>, 'children' | 'pageLabel' | 'taxonomyAtBottom' | 'isOpen' | 'onOpenChange' | 'isOnLeft' | 'onToggleSide' | 'taxonomy' | 'sectionOrder' | 'stockCountLabel'>
+
+// 모든 시장의 MAP — PC, MOBILE 종목 지도, 텔레그램 캡처. 시장 이름을 보고 갈라지지 않고 넘겨받은 값만 그린다.
+export default function MapScreen({ market, map, menu, taxonomy, filters, colors, routes, sheetMarket, panel }: {
+  market: MarketScreenData
+  map: MarketMap
+  menu: ReturnType<typeof marketMenu>
+  taxonomy: TaxonomyKey
+  filters: MarketFilters
+  colors: MarketColors
+  routes: { summary: string; graph: string }
+  sheetMarket: MobileMapMarket
+  panel: MapPanelProps
+}) {
+  const { label, tree: rootNodes, state, indexBars, isMineEmpty, features, currencyUnit } = market
+  const { filteredNodes: filteredRootNodes, maxDepth, heatmap, boxSizeRatio, captureBoxSizeRatio, stockPopupOnHover, scope } = map
+  const { valueRange, sectorExclusion } = filters
+  const { colorScale, strongIndustryColor, legendSwatches } = colors
+  const { marketValueDepthRange, weightedAvgDepthRange, simpleAvgDepthRange, upDownCountDepthRange, stretch, tile, canExclude, labelMinAreaPercent, stockLabelMode, decimalPlaces, topPickSectorKeys, onExcludeSector } = heatmap
+  const isLoading = state.status === 'loading'
+  const isError = state.status === 'error'
+  const retry = state.status === 'error' ? state.retry : undefined
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   // 종목 박스의 차트 아이콘·클릭·더블 클릭으로 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
@@ -196,13 +154,11 @@ export default function MapPage() {
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
   // MOBILE(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 5:8 프레임)만 화면 폭에 맞춰 보여 준다. 실험 기능이라 되돌리기 쉽게 이 분기만 둔다.
   const isMobileMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
-  // 종목 지도에서 그룹 등락률로 스와이프할 때 지수가 도착 뒤에야 오지 않도록 MOBILE 화면에서 미리 받아 둔다(2026-11-22 사용자 제보).
-  const { data: marketSummary, isLoading: isMarketSummaryLoading, isFetching: isMarketSummaryFetching } = useMarketSummary(isMobileMapFrame)
-  const showGraphPreviewIndexes = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
   // MOBILE 지도의 박스 크기는 PC 설정과 따로 두고, 다른 시장·화면과 같은 모바일 값(기본 시총 비례)을 쓴다.
   const [storedMobileBoxSizeRatio, onChangeMobileBoxSizeRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
   const mobileBoxSizeRatio = normalizeMobileBoxSizeRatio(storedMobileBoxSizeRatio)
   useCarriedBoxSize(onChangeMobileBoxSizeRatio)
+  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const isMobileFrameVisible = isMobileCaptureMode || isMobileMapFrame
   const mobileFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   // 텔레그램 캡션은 지도 첫 화면 업종 헤더에 실제로 보이는 등락률을 읽는다. 동일 가중만 보이면 동일 가중, 그 밖에는 시총 가중이다.
@@ -240,7 +196,7 @@ export default function MapPage() {
       : displaySiblings.map(toDisplayGroup)
   // 공통 설정 탭의 종목 이동 — 끌어서 옮긴 종목을 화면에서만 도착 업종으로 옮겨 그린다. 메모리에만 두고(서버·브라우저에 저장하지 않는다),
   // 켜기를 끄거나 시장·분류를 바꾸면 쓰지 않으며 다른 페이지로 가면 상태째 사라진다.
-  const stockMoveScope = `${market}|${settingsModalProps.taxonomy}`
+  const stockMoveScope = `${scope}|${taxonomy}`
   const stockMoves = stockMoveEnabled && stockMoveState.scope === stockMoveScope ? stockMoveState.moves : NO_STOCK_MOVES
   const groups = applyStockMoves(baseGroups, stockMoves)
   const visibleItems = collectItems(groups)
@@ -257,49 +213,15 @@ export default function MapPage() {
   }, [groups, mobileBoxSizeRatio])
   // 지금 뎁스(path) 기준으로, 섹터 제외/시가총액 구간 필터를 적용하기 전 원본 트리에 있는 전체 종목 수.
   const rawCurrentNode = findRawNodeByPath(rootNodes, path)
-  // 시장 전체를 볼 때는 정지로 뺀 종목도 분모에 더해 전체 종목 수와 맞춘다(한 업종 안으로 들어가면 그 업종 종목만 센다).
-  const totalItemCount = collectRawItems(rawCurrentNode ? [rawCurrentNode] : rootNodes).length + (rawCurrentNode ? 0 : (data?.suspendedStockCount ?? 0))
-  // 내 분류에 종목이 하나도 배정되지 않은 상태 — 필터·시총 범위로 다 가려진 경우나 한 업종 안으로 들어간 경우와 구분하려고 전체 트리로 센다.
-  const isMineEmpty = isCustom && collectRawItems(rootNodes).length === 0
-  // 상단 오른쪽 분류 배지(설정창 분류 선택 버튼과 같은 청록색).
-  const modeStatusText = <TaxonomyBadge taxonomy={taxonomy} strongIndustryColor={strongIndustryColor} />
-  // market은 이제 useGlobalSettings(useRouteAwareMarket)가 경로를 반영해서 매 렌더 계산해준다 —
-  // 여기서는 그 값이 바뀔 때(NavSubBar에서 마켓을 고르는 등) 드릴다운만 초기화한다. 첫 렌더는 초기화할
-  // 드릴다운이 없으므로 ref로 이전 값과 비교해서 실제로 바뀐 경우에만 반응한다.
-  const previousMarketRef = useRef(market)
+  const totalItemCount = rawCurrentNode ? collectRawItems([rawCurrentNode]).length : map.totalStockCount
+  // 시장 안의 구분이 바뀌면 들어간 업종을 처음으로 돌린다. 첫 렌더는 되돌릴 것이 없어 실제로 바뀐 때만 반응한다.
+  const previousScopeRef = useRef(scope)
   useEffect(() => {
-    if (previousMarketRef.current === market) return
-    previousMarketRef.current = market
+    if (previousScopeRef.current === scope) return
+    previousScopeRef.current = scope
     reset()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- market이 바뀔 때만 반응하면 됨(reset은 매 렌더 새 함수)
-  }, [market])
-  // 스크린샷 URL의 avgMode/sectorFilter를 반영하고, 소비한 쿼리 파라미터를 주소에서 지운다.
-  // 옛 스크린샷 URL의 ?market=은 /map·/group 리다이렉트(App.tsx LegacyMarketRedirect)가 이미 경로로 옮겼다.
-  // 여기서 지우는 market은 경로가 있는 주소에 붙어 온 값뿐이다 — 마켓은 경로가 정하므로 지우기만 한다.
-  useEffect(() => {
-    const marketParam = searchParams.get('market')
-    const isValidMarket = marketParam === 'KOSPI' || marketParam === 'KOSDAQ' || marketParam === 'ALL_STOCK'
-    // 백엔드가 스크린샷 URL에 싣는 avgMode=simple|weighted, sectorFilter=true|false 계약에 맞춘다
-    // (marketry-backend의 instructions-telegram-average-mode.md 결정 6).
-    const avgModeParam = searchParams.get('avgMode')
-    const isValidAvgMode = avgModeParam === 'simple' || avgModeParam === 'weighted'
-    if (isValidAvgMode) onChangeAvgChangeRateUseSimple(avgModeParam === 'simple')
-    const sectorFilterParam = searchParams.get('sectorFilter')
-    const isValidSectorFilter = sectorFilterParam === 'true' || sectorFilterParam === 'false'
-    if (isValidSectorFilter) onChangeSectorFilterEnabled(sectorFilterParam === 'true')
-    if (!isValidMarket && !isValidAvgMode && !isValidSectorFilter) return
-    setSearchParams(
-      prev => {
-        const next = new URLSearchParams(prev)
-        if (isValidMarket) next.delete('market')
-        if (isValidAvgMode) next.delete('avgMode')
-        if (isValidSectorFilter) next.delete('sectorFilter')
-        return next
-      },
-      { replace: true },
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 파라미터가 있을 때만 반응하면 됨
-  }, [searchParams])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scope가 바뀔 때만 반응하면 됨(reset은 매 렌더 새 함수)
+  }, [scope])
   // breadcrumb에서 상위 뎁스로 갈 때, 바로 이동하지 않고 줌아웃 애니메이션을 먼저 요청한다.
   const handleGoToDepth = (depth: number) => {
     if (depth >= path.length) return
@@ -323,7 +245,7 @@ export default function MapPage() {
   // 렌더러용 모바일 판 — 데이터가 오고 히트맵 배치가 끝나면 스크린샷 창이 복제본에 하던 것(툴바 채우기·보이게 하기)을 화면의 틀에 한 번 하고 준비됐다고 알린다.
   const canShowMobileCapture = isMobileFrameVisible && !isLoading && !isError && visibleItems.length > 0
   // 툴바 시계가 새 시각으로 움직이는 동안(1초)에는 복제하지 않는다 — 종가·별도 기준으로 옮겨 가면 시각이 바뀐다.
-  const isMobileCaptureSettled = useSettled(canShowMobileCapture, `${data?.snapshotTime}|${changeRateChoice}`, 1300)
+  const isMobileCaptureSettled = useSettled(canShowMobileCapture, map.captureSettleKey, 1300)
   useEffect(() => {
     if (!isMobileCaptureSettled || isMobileCaptureReady) return
     let rafId = 0
@@ -349,30 +271,7 @@ export default function MapPage() {
     return () => { delete window.marketryCaptureMap }
   }, [isMobileCaptureMode, isMobileCaptureReady])
   // PC 툴바. 화면에서는 이 자리에, MOBILE 판에서는 캡처와 같은 방식으로 복제할 원본으로 쓴다.
-  const mapToolbarNode = (
-    <MapToolbar
-      market={market}
-      marketLabel={MARKET_LABEL[market]}
-      snapshotTime={data?.snapshotTime ?? null}
-      liveSnapshotTime={liveSnapshotTime}
-      pinnedSnapshotTime={pinnedSnapshotTime}
-      rangeStartTime={rangeStartTime}
-      isPastSnapshot={isPastSnapshot}
-      colorScale={colorScale}
-      onChangePinnedSnapshotTime={onChangePinnedSnapshotTime}
-      onSelectRange={onSelectRange}
-      rangeExcludedStocks={rangeExcludedStocks}
-      refetchHeatmap={refetchHeatmap}
-      isRefetchingHeatmap={isRefetchingHeatmap}
-      changeRateChoice={changeRateChoice}
-      onChangeChangeRateMode={onChangeChangeRateMode}
-      isAfterHoursControlsVisible={isAfterHoursControlsVisible}
-      isAfterHoursSelectable={isAfterHoursSelectable}
-      modeStatusText={isMobileMapFrame ? null : modeStatusText}
-      refreshHelpText={SNAPSHOT_REFRESH_HELP}
-      refreshSpinMs={REFRESH_BUTTON_SPIN_MS}
-    />
-  )
+  const mapToolbarNode = <Toolbar><MarketToolbarContent page="MAP" market={market} menu={menu} right={isMobileMapFrame ? null : <TaxonomyBadge taxonomy={taxonomy} strongIndustryColor={strongIndustryColor} />} /></Toolbar>
   // 모바일 판 프레임(캡처 모드와 MOBILE 화면이 같이 쓴다). 데이터·배치 준비가 끝난 뒤에만 그린다.
   const mobileFrameNode = ((isShareOpen && isMobileScreenshotSelected) || isMobileFrameVisible) && !isLoading && !isError && visibleItems.length > 0 && (
             <div
@@ -393,7 +292,7 @@ export default function MapPage() {
               {isMobileMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
               <MobileMapHeatmapFrame
                 path={path}
-                marketLabel={MARKET_LABEL[market]}
+                marketLabel={label}
                 strongIndustryColor={strongIndustryColor}
                 heatmapProps={{
                   groups,
@@ -406,12 +305,13 @@ export default function MapPage() {
                   weightedAvgDepthRange,
                   simpleAvgDepthRange,
                   upDownCountDepthRange,
-                  boxSizeMarketCapRatio: mobileBoxSizeRatio,
-                  stretch: mapStretchFor(settingsModalProps.taxonomy),
-                  tile: mapTileMethod(),
+                  boxSizeMarketCapRatio: isMobileMapFrame ? mobileBoxSizeRatio : captureBoxSizeRatio,
+                  currencyUnit,
+                  stretch: stretch ?? undefined,
+                  tile,
                   canExclude: false,
                   colorScale,
-                  labelMinAreaPercent: boxLabelMinAreaPercent,
+                  labelMinAreaPercent,
                   stockLabelMode,
                   stockPopupOnHover: false,
                   // 실제 MOBILE 화면에서는 한 번 눌러 차트를 열던 동작을 없애고, 팝업의 차트 아이콘으로만 연다. 캡처·스와이프 미리보기는 그대로다.
@@ -430,32 +330,30 @@ export default function MapPage() {
             </div>
             </div>
           );
-  // 툴바는 판 밖의 MobileMapShell이 그린다. 판 안에서는 안내 문구만 보여 툴바가 두 번 그려지지 않게 한다.
-  const mobileEmptyFrame = (
-    <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">{isLoading ? '불러오는 중입니다.' : isError ? '데이터를 불러오지 못했습니다.' : '이 날짜에는 표시할 데이터가 없습니다.'}</div>
+  // 지도를 그릴 수 없을 때의 안내. 판과 같은 좌표계에 그려 다른 MOBILE 화면과 같은 크기로 보이게 한다.
+  const mobileStatusFrame = (
+    <div className="flex items-center justify-center bg-ui-background" style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, transform: `scale(${mobileFrameScale})`, transformOrigin: 'top left' }}>
+      {isLoading ? <Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} />
+        : isError ? <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retry} />
+          : <p className="text-[28px] text-ui-muted">{isMineEmpty ? EMPTY_MINE_MESSAGE : totalItemCount === 0 ? EMPTY_DATA_MESSAGE : EMPTY_FILTER_MESSAGE}</p>}
+    </div>
   )
   const sectorPreview = (
-    <MobileSectorMapFrame scale={mobileFrameScale} crumbs={[{ key: 'market', label: market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK', current: true }]}>
+    <MobileSectorMapFrame scale={mobileFrameScale} crumbs={[{ key: 'market', label, current: true }]}>
       <MobileSectorMap items={sectorPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={decimalPlaces} />
     </MobileSectorMapFrame>
   )
   // 종목 지도에서 그룹 등락률 쪽(오른쪽 스와이프)으로 갈 때 왼쪽에서 따라올 미리보기. 도착 화면과 같은 막대·경로 줄·지수를 그린다.
   const graphPreviewItems: MobileGraphItem[] = sectorPreviewItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
-  if (showGraphPreviewIndexes) {
-    for (const index of marketSummary?.marketOverviews.items ?? []) {
-      if (index.market === 'KOSPI' || index.market === 'KOSDAQ') {
-        graphPreviewItems.push({ key: `market-index:${index.market}`, name: index.market === 'KOSPI' ? '코스피' : '코스닥', value: index.changeRate, reference: true })
-      }
-    }
-  }
-  // 지수는 히트맵과 다른 쿼리에서 오므로, 지수까지 준비된 뒤 막대와 함께 그린다.
-  const isGraphPreviewLoading = isLoading || (showGraphPreviewIndexes && (isMarketSummaryLoading || isMarketSummaryFetching))
+  for (const bar of indexBars) if (bar.value !== null) graphPreviewItems.push({ key: bar.key, name: bar.name, value: bar.value, reference: true })
+  // 지수는 히트맵과 다른 조회에서 오므로, 지수까지 준비된 뒤 막대와 함께 그린다.
+  const isGraphPreviewLoading = isLoading || map.isIndexPending
   const graphPreview = (
-    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${mobileFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${mobileFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
         <div style={{ zoom: MOBILE_PATH_CANVAS_ZOOM }}>
-          <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${mobilePathBarLeftShift(8)}px)` }}>
-            <PathBar variant="mobile" currentAria="location" crumbs={[{ key: 'market', label: market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK', current: true }]} />
+          <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${mobilePathBarLeftShift(4)}px)` }}>
+            <PathBar variant="mobile" currentAria="location" crumbs={[{ key: 'market', label, current: true }]} />
           </header>
         </div>
         {isGraphPreviewLoading
@@ -470,23 +368,23 @@ export default function MapPage() {
       <>
         <MobileMapShell
           zoomMode="pinch"
-          onSwipe={direction => navigate(direction === 'next' ? marketRoute('/summary', market) : marketRoute('/graph', market))}
+          onSwipe={direction => navigate(direction === 'next' ? routes.summary : routes.graph)}
           toolbar={mapToolbarNode}
-          topBar={<MobileTopBar title="종목 지도" titleTo={marketRoute('/summary', market)} titleLabel="업종 지도로 이동" />}
+          topBar={<MobileTopBar title="종목 지도" titleTo={routes.summary} titleLabel="업종 지도로 이동" />}
           frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * mobileFrameScale}
-          frame={mobileFrameNode || mobileEmptyFrame}
+          frame={mobileFrameNode || mobileStatusFrame}
           nextPreview={sectorPreview}
           previousPreview={graphPreview}
-          current="korea"
+          current={sheetMarket}
           boxSize={mobileBoxSizeRatio}
           onChangeBoxSize={onChangeMobileBoxSizeRatio}
         />
         {chartStock !== null && (
           <MobileMapStockChart
             chartStock={chartStock}
-            marketLabel={MARKET_LABEL[market]}
-            levelLabels={SECTOR_LEVEL_LABEL}
-            market="korea"
+            marketLabel={label}
+            levelLabels={LEVEL_LABELS}
+            market={sheetMarket}
             closeChart={closeChart}
             onGoToRoot={() => goToDepth(0)}
             onEnterSector={enterSector}
@@ -497,23 +395,7 @@ export default function MapPage() {
   }
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
-      <NavBar
-        centered
-        tall
-        actions={
-          <NavBarPageActions
-            onRefresh={refetchHeatmap}
-            isRefreshing={isRefetchingHeatmap}
-            onToggleSettings={() => settingsModalProps.onOpenChange(!settingsModalProps.isOpen)}
-            isSettingsOpen={settingsModalProps.isOpen}
-            onOpenShare={() => openScreenshot(screenshotRef.current)}
-            isScreenshotOpen={isShareOpen}
-            isNativeFullscreen={isNativeFullscreen}
-            onToggleFullscreen={handleToggleNativeFullscreen}
-            showRefresh={false}
-          />
-        }
-      />
+      <NavBar actions={<NavBarPageActions onRefresh={market.refresh.run} isRefreshing={market.refresh.isRunning} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} showRefresh={false} />} />
       <div className="flex min-h-0 flex-1">
         {/* 메뉴 줄을 화면 왼쪽 세로 줄로 뺀다. 오른쪽 버튼 묶음은 위쪽 상단 영역에 둔다. */}
         <NavSubBar
@@ -537,9 +419,9 @@ export default function MapPage() {
             {mapToolbarNode}
             <div className="flex min-h-0 flex-1">
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
-              <NxtOnlyNotice active={nxtOnly && pinnedSnapshotTime === undefined && rangeStartTime === undefined} window={nxtOnlyWindow} ready={!isLoading && !isError} nodes={rootNodes} />
+              {features.timeWindowNotice}
               {chartStock !== null ? (
-                <MapStockChart chartStock={chartStock} marketLabel={MARKET_LABEL[market]} levelLabels={SECTOR_LEVEL_LABEL} market="korea" closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
+                <MapStockChart chartStock={chartStock} marketLabel={label} levelLabels={LEVEL_LABELS} market={sheetMarket} closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
               ) : (
               <>
               {path.length > 0 && (
@@ -548,10 +430,10 @@ export default function MapPage() {
                   currentAria="page"
                   accentColor={strongIndustryColor}
                   crumbs={[
-                    { key: 'market', label: MARKET_LABEL[market], onClick: () => handleGoToDepth(0), hint: '전체로 돌아가기' },
+                    { key: 'market', label: label, onClick: () => handleGoToDepth(0), hint: '전체로 돌아가기' },
                     ...path.map((name, index): PathCrumb => index === path.length - 1
                       ? { key: `path-${index}`, label: name, current: true }
-                      : { key: `path-${index}`, label: name, onClick: () => handleGoToDepth(index + 1), hint: `${SECTOR_LEVEL_LABEL[index]}로 돌아가기` }),
+                      : { key: `path-${index}`, label: name, onClick: () => handleGoToDepth(index + 1), hint: `${LEVEL_LABELS[index]}로 돌아가기` }),
                   ]}
                 />
               )}
@@ -559,11 +441,11 @@ export default function MapPage() {
               {isLoading ? (
                 <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
               ) : isError ? (
-                <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></MainAreaLoading>
+                <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retry} /></MainAreaLoading>
               ) : visibleItems.length === 0 ? (
                 isMineEmpty ? (
                   <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
-                    <CustomPageBadgeLink />
+                    <CustomPageBadgeLink to={market.mineSetupPath} />
                   </EmptyLogoMessage>
                 ) : (
                   <div className="relative flex-1">
@@ -581,7 +463,7 @@ export default function MapPage() {
                     selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
                     depth={path.length}
                     onSelectSector={enterSector}
-                    onExcludeSector={handleExcludeSector}
+                    onExcludeSector={onExcludeSector}
                     stockChartTrigger={stockChartTrigger}
                     onOpenStockChart={openStockChart}
                     heightClassName="min-h-0 flex-1"
@@ -589,12 +471,13 @@ export default function MapPage() {
                     weightedAvgDepthRange={weightedAvgDepthRange}
                     simpleAvgDepthRange={simpleAvgDepthRange}
                     upDownCountDepthRange={upDownCountDepthRange}
-                    boxSizeMarketCapRatio={boxSizeMarketCapRatio}
-                    stretch={mapStretchFor(settingsModalProps.taxonomy)}
-                    tile={mapTileMethod()}
-                    canExclude={isCustom || isMarketry || !isLoggedIn}
+                    boxSizeMarketCapRatio={boxSizeRatio}
+                    currencyUnit={currencyUnit}
+                    stretch={stretch ?? undefined}
+                    tile={tile}
+                    canExclude={canExclude}
                     colorScale={colorScale}
-                    labelMinAreaPercent={boxLabelMinAreaPercent}
+                    labelMinAreaPercent={labelMinAreaPercent}
                     stockLabelMode={stockLabelMode}
                     stockPopupOnHover={stockPopupOnHover}
                     decimalPlaces={decimalPlaces}
@@ -610,7 +493,7 @@ export default function MapPage() {
               </>
               )}
               {/* 등락률 색상 범례 — 지도 우하단에 오른쪽 끝에 붙여 둔다. 이 줄만큼 지도 아래쪽이 올라온다. 로딩·오류·빈 화면에서도 면책 문구와 함께 맨 아래에 그대로 둔다. */}
-              <DisclaimerFooter rightContent={<ChangeRateBar swatches={settingsModalProps.legendSwatches} />} />
+              <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
               </div>
             </div>
           {/* PC 캡처에서는 모바일용 히트맵을 만들지 않아 화면 렌더링과 DOM 복제 비용을 줄인다. */}
@@ -619,55 +502,48 @@ export default function MapPage() {
           {/* 설정창 위쪽 여백 4px — 헤더를 위로 3px 늘리고 아래 구분선 위치는 유지한다. */}
           <div className={`flex shrink-0 pt-[4px] ${isSettingsOnLeft ? 'order-first' : ''}`}>
             <SettingsPanel
-              {...settingsModalProps}
+              {...panel}
+              taxonomy={taxonomy}
+              isOpen={isSettingsOpen}
+              onOpenChange={setIsSettingsOpen}
               isOnLeft={isSettingsOnLeft}
               onToggleSide={toggleSettingsSide}
               pageLabel="Map"
-              strongIndustryColor={strongIndustryColor}
-              sectionOrder={SPECIAL_MAP_SETTINGS_SECTION_ORDER}
+              sectionOrder={SECTION_ORDER}
               taxonomyAtBottom
-              snapshotTime={data?.taxonomyUpdatedAt}
               stockCountLabel={formatStockCountLabel(visibleItems.length, totalItemCount)}
               onSelectTaxonomy={next => {
-                settingsModalProps.onSelectTaxonomy(next)
+                panel.onSelectTaxonomy?.(next)
                 reset()
               }}
             >
               <SettingsPanelGroup section="composition">
-                <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
-                <SettingsExcludeSection {...settingsModalProps} />
+                <SettingsMarketValueSection isCustom={false} tiers={valueRange.tiers} tierRangeMinIndex={valueRange.minIndex} tierRangeMaxIndex={valueRange.maxIndex} onChangeTierRange={valueRange.setRange} showDivider={false} currencyUnit={currencyUnit} />
+                <SettingsExcludeSection sectorFilterEnabled={sectorExclusion.enabled} onToggleSectorFilter={sectorExclusion.toggle} excludedSectors={sectorExclusion.rows} onRemoveExcludedSector={sectorExclusion.remove} suspendedStockCount={sectorExclusion.suspendedStockCount ?? undefined} />
                 <MapChangeFilterSections
-                  stockChangeFilter={stockChangeFilter}
+                  {...map.changeFilters}
                   onChangeStockChangeFilter={value => {
-                    onChangeStockChangeFilter(value)
+                    map.changeFilters.onChangeStockChangeFilter(value)
                     reset()
                   }}
-                  sectorChangeFilter={sectorChangeFilter}
-                  onChangeSectorChangeFilter={setSectorChangeFilter}
-                  sectorChangeDepth={sectorChangeDepth}
-                  onChangeSectorChangeDepth={setSectorChangeDepth}
-                  maxSelectableDepth={sectorChangeMaxDepth}
-                  noDataLimited={settingsModalProps.taxonomy === 'KRX' || settingsModalProps.taxonomy === 'NXT'}
                 />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="industry">
-                <SettingsSectorLevelSection {...settingsModalProps} showStockDisplay={false} />
+                <SettingsSectorLevelSection {...map.sectorLevel} showStockDisplay={false} />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="stockDisplay">
-                <SettingsStockSizeSelector marketCapRatio={boxSizeMarketCapRatio} onChangeMarketCapRatio={onChangeBoxSizeMarketCapRatio} />
-                <SettingsSectorLevelSection {...settingsModalProps} showTaxonomy={false} showDecimalPlaces />
+                <SettingsStockSizeSelector marketCapRatio={boxSizeRatio} onChangeMarketCapRatio={map.setBoxSizeRatio} />
+                <SettingsSectorLevelSection {...map.sectorLevel} showTaxonomy={false} showDecimalPlaces />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="colors">
-                <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} fixed={settingsModalProps.taxonomy !== 'MINE'} />
-                {strongIndustryColor && onChangeStrongIndustryColor && (
-                  <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} fixed={settingsModalProps.taxonomy !== 'MINE'} />
-                )}
-                <SettingsTopPickSection {...settingsModalProps} />
+                <SettingsColorSection {...colors.scaleSection} />
+                <SettingsStrongIndustryColorSection {...colors.strongSection} />
+                <SettingsTopPickSection {...map.topPick} />
               </SettingsPanelGroup>
               <SettingsPanelGroup section="special">
                 <MapExperimentSections
                   stockPopupOnHover={stockPopupOnHover}
-                  onChangeStockPopupOnHover={setStockPopupOnHover}
+                  onChangeStockPopupOnHover={map.setStockPopupOnHover}
                   stockChartTrigger={stockChartTrigger}
                   onChangeStockChartTrigger={setStockChartTrigger}
                   stockMoveEnabled={stockMoveEnabled}
@@ -691,7 +567,7 @@ export default function MapPage() {
           captureReady={!isLoading}
           emptyPreview={isMineEmpty && !isLoading && !isError ? (
             <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}>
-              <CustomPageBadgeLink />
+              <CustomPageBadgeLink to={market.mineSetupPath} />
             </EmptyLogoMessage>
           ) : undefined}
           mobileRegionOption={{ label: 'MOBILE', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }}

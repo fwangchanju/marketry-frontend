@@ -7,14 +7,14 @@ import { useSnapshotMarketIndex } from '@/markets/useSnapshotMarketIndex'
 import type { OverseasSheet } from '@/hooks/useOverseasSheet'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { SNAPSHOT_MARKETS } from '@/markets/snapshotMarkets'
-import { useListedStocks, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes, type MarketQuoteSnapshot } from '@/markets/useMarketQuotes'
-import { buildJapanTree } from '@/utils/japanMap'
+import { useListedStocks, useMarketPeriodQuotes, useMarketPreviousTradingDay, useMarketQuotes, useMarketSnapshotTimes, type MarketQuoteSnapshot } from '@/markets/useMarketQuotes'
+import { buildJapanTree, excludePreviousCloseQuotes, findJapanCloseSnapshotTime, japanFilterQueryState, shouldFilterJapanQuotes } from '@/utils/japanMap'
 import { overseasMarketInfo, type OverseasMarket } from '@/utils/markets'
 import { overseasSettingKey } from '@/utils/overseasSettingKey'
 
 // 스냅샷 목록으로 시세를 주는 시장의 SUMMARY 데이터. 시장마다 다른 값은 SNAPSHOT_MARKETS에서만 온다.
-export function useSnapshotMarketSummary(market: OverseasMarket, sheet: OverseasSheet): OverseasSummarySource {
-  const { currencyUnit, settingPrefix, fixed, bundledStocks, intradayDelta, session, refreshHelp } = SNAPSHOT_MARKETS[market]
+export function useSnapshotMarketSummary(market: OverseasMarket, sheet: OverseasSheet, hideStaleQuotes = false): OverseasSummarySource {
+  const { hidesStaleQuotes, currencyUnit, settingPrefix, fixed, bundledStocks, intradayDelta, session, refreshHelp } = SNAPSHOT_MARKETS[market]
   const { routeSegment, badgeLabel } = overseasMarketInfo(market)
   // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
   const { categories, classifications } = useOverseasClassificationData(market, sheet)
@@ -29,8 +29,19 @@ export function useSnapshotMarketSummary(market: OverseasMarket, sheet: Overseas
   const liveQuotes = useMarketQuotes(market, null)
   const periodQuotes = useMarketPeriodQuotes(market, rangeStart, selectedTime)
   // 기간이면 기간 등락률 시세를, 아니면 고른 날짜(없으면 최신)의 시세를 쓴다.
-  const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
+  const baseQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
+  // 장 중에 아직 전일 종가 그대로인 종목을 뺀다(그 시장이 쓰고, 화면이 원할 때만).
+  const filtersStale = hideStaleQuotes && hidesStaleQuotes && shouldFilterJapanQuotes(snapshotTime, new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }), rangeStart)
+  const previousDay = useMarketPreviousTradingDay(market, snapshotTime?.slice(0, 10) ?? null, filtersStale)
+  const previousTime = filtersStale && previousDay.data ? findJapanCloseSnapshotTime(times.data ?? [], previousDay.data) : null
+  const previousQuotes = useMarketQuotes(market, previousTime, previousTime !== null)
+  const shownQuotes = useMemo(() => {
+    if (!filtersStale || !baseQuotes || !quotes.data || !previousQuotes.data) return baseQuotes
+    const valid = new Set(excludePreviousCloseQuotes(quotes.data.quotes, previousQuotes.data.quotes).map(quote => quote.stockCode))
+    return { ...baseQuotes, quotes: baseQuotes.quotes.filter(quote => valid.has(quote.stockCode)) }
+  }, [filtersStale, baseQuotes, quotes.data, previousQuotes.data])
+  const staleState = japanFilterQueryState(filtersStale, times.isLoading || previousDay.isLoading, times.isError, previousTime, previousQuotes.isLoading, previousQuotes.isError)
   const liveSnapshotTime = liveQuotes.data?.snapshotTime ?? null
   const treeOf = useCallback((snapshot: MarketQuoteSnapshot | undefined) => {
     if (!categories.data || !classifications.data || !snapshot?.snapshotTime || !stocks || !names.data) return []
@@ -51,14 +62,14 @@ export function useSnapshotMarketSummary(market: OverseasMarket, sheet: Overseas
     select,
     selectRange,
     rangeExcludedStocks: periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: names.data?.[stock.stockCode] ?? stock.stockCode })),
-    isLoading: isResolving || required.some(query => query.isLoading) || periodQuotes.isLoading,
-    isError: required.some(query => query.isError) || times.isError || periodQuotes.isError,
+    isLoading: isResolving || required.some(query => query.isLoading) || periodQuotes.isLoading || staleState.isLoading,
+    isError: required.some(query => query.isError) || times.isError || periodQuotes.isError || staleState.isError,
     isIndexLoading: index.isLoading,
     isIndexFetching: index.isFetching,
     isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || index.isFetching,
     graphIndexItems: index.graphIndexItems,
     indexBars: index.indexBars,
-    refetchAll: () => Promise.all([...required.map(query => query.refetch()), times.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])]),
+    refetchAll: () => Promise.all([...required.map(query => query.refetch()), times.refetch(), ...(previousTime ? [previousQuotes.refetch()] : []), ...(rangeStart ? [periodQuotes.refetch()] : [])]),
     sessionChip: snapshotTime ? session(snapshotTime) : null,
     refreshHelp: refreshHelp(snapshotTime),
     fixed,

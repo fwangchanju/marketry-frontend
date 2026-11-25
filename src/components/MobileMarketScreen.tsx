@@ -354,7 +354,7 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
       ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
         : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetch} /></div>
           : mapPreview.groups.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p>
-            // 종목 지도 도착지는 MapPage의 8px MOBILE 판이다. 예전처럼 4px 판으로 그리면 전환이 끝날 때 지도가 한 번 커져 보인다.
+            // 종목 지도 도착지는 MapScreen의 8px MOBILE 판이다. 예전처럼 4px 판으로 그리면 전환이 끝날 때 지도가 한 번 커져 보인다.
             : <div ref={swipePreviewCanvasRef} style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${frameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
                 <div className="flex h-full min-h-0 flex-col bg-ui-background">
                   <MobileMapHeatmapFrame
