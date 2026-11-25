@@ -8,7 +8,7 @@ export function sortedSignRows(thresholds: ColorScaleThreshold[], positive: bool
     .sort((a, b) => Math.abs(a.threshold.thresholdPercent) - Math.abs(b.threshold.thresholdPercent))
 }
 
-// 색상을 바꿀 수 없는 화면(국내 MARKETRY·거래소 분류, 일본 지도)이 보여 주는 기본 색 막대. 조작은 설정창이 막으므로 동작은 비워 둔다.
+// 색상을 바꿀 수 없는 화면(한국 MARKETRY·거래소 분류, 일본 지도)이 보여 주는 기본 색 막대. 조작은 설정창이 막으므로 동작은 비워 둔다.
 export function buildFixedColorEditorProps() {
   const fixedColorScale = createDefaultColorScale().thresholds
   const fixedPositiveRows = sortedSignRows(fixedColorScale, true)

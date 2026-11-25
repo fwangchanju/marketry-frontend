@@ -53,7 +53,7 @@ async function getMarketIndexPair(
 }
 
 /**
- * 섹터 페이지의 now·before 쌍. now는 useGlobalSettings()가 이미 부르는 useHeatmap(market, source)
+ * 섹터 페이지의 now·before 쌍. now는 useKoreaSettings()가 이미 부르는 useHeatmap(market, source)
  * 결과를 그대로 받아 쓴다 — 여기서 now를 다시 조회하지 않는다.
  *
  * 쌍은 (market, source, beforeMinutes, now.snapshotTime, basis)에 묶인다. now.snapshotTime만 바뀌면(60초

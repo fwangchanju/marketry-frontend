@@ -6,7 +6,7 @@ import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/
 const FRAME_PADDING = 4
 
 // MOBILE 업종 지도 판 — 경로 줄과 지도를 한 판에 담아 스와이프할 때 함께 움직인다.
-// 해외 실제 화면과 세 시장의 스와이프 미리보기가 같은 판을 써서 전환 순간 지도가 튀지 않는다.
+// 일본·미국 실제 화면과 세 시장의 스와이프 미리보기가 같은 판을 써서 전환 순간 지도가 튀지 않는다.
 export default function MobileSectorMapFrame({ scale, crumbs, accentColor, children }: {
   scale: number
   // 로딩 중에는 null을 넘겨 경로 줄을 지도와 함께 나타나게 한다.

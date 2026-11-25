@@ -47,7 +47,7 @@ export function CaptureFrame({ title, className = '', children, badgeClassName, 
 
 export type SummaryFrameItem = { title: string; captureId: string; children: ReactNode }
 
-// 화면의 두 틀에 내용을 넣는 조립 — 한국·해외 서머리가 같은 코드를 쓴다.
+// 화면의 두 틀에 내용을 넣는 조립 — 한국·일본·미국 서머리가 같은 코드를 쓴다.
 export function SummaryScreenFrames({ frames, badgeClassName, badgeStyle }: { frames: SummaryFrameItem[] } & BadgeStyle) {
   const [badgeHovered, setBadgeHovered] = useState(false)
   return (
@@ -61,7 +61,7 @@ export function SummaryScreenFrames({ frames, badgeClassName, badgeStyle }: { fr
   )
 }
 
-// 순서 끌기까지 감싼 화면 틀 조립. 한국·해외 서머리가 같은 감지기·충돌 판정·순서 목록을 쓰게 한다.
+// 순서 끌기까지 감싼 화면 틀 조립. 한국·일본·미국 서머리가 같은 감지기·충돌 판정·순서 목록을 쓰게 한다.
 // 스크롤을 푸는 조건은 시장별로 다르므로 이 조립 밖에 둔다.
 export function SortableSummaryScreenFrames({ frames, order, sensors, onDragEnd, badgeClassName, badgeStyle }: {
   frames: SummaryFrameItem[]

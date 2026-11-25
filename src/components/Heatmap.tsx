@@ -4,7 +4,7 @@ import { useHeatmapLayout, type DisplayGroup, type LaidOutSector } from '@/hooks
 import SectorBox from './SectorBox'
 import Popup, { type PopupContent, type PopupState } from './Popup'
 import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
-import type { StockLabelMode } from '@/hooks/useGlobalSettings'
+import type { StockLabelMode } from '@/utils/heatmapTypes'
 import { useStockDrag, type StockDrop } from '@/hooks/useStockDrag'
 import type { CurrencyUnit } from '@/utils/currencyUnit'
 

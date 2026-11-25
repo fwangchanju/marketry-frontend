@@ -1,0 +1,46 @@
+import type { MarketQuoteSnapshot } from '@/markets/useMarketQuotes'
+import type { MarketScreenData } from '@/markets/marketContract'
+import type { ReactNode } from 'react'
+import type { CurrencyUnit } from '@/utils/currencyUnit'
+import type { HeatmapSectorNode } from '@/types/api'
+import type { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
+import type { SnapshotMarket } from '@/utils/markets'
+
+// 스냅샷 시장 서머리(SnapshotSummary)가 시장마다 다른 부분을 받는 모양. 공통 훅(useSnapshotMarketSummary)이 이 모양으로 돌려준다.
+// 새 시장(대만 등)은 같은 모양의 훅 하나를 만들면 된다 — 화면 구성은 공통 화면이 한다.
+export interface SnapshotSource {
+  market: SnapshotMarket
+  // 툴바 배지 글자(시장 목록표의 배지 글자).
+  label: string
+  tree: HeatmapSectorNode[]
+  // 다른 시각의 시세로 같은 분류 트리를 만든다(N분 전 대비).
+  treeOf: (snapshot: MarketQuoteSnapshot | undefined) => HeatmapSectorNode[]
+  snapshotTimes: string[] | undefined
+  snapshotTime: string | null
+  liveSnapshotTime: string | null
+  rangeStart: string | null
+  select: (pick: string | null) => void
+  selectRange: (start: string, end: string) => void
+  rangeExcludedStocks: { stockCode: string; stockName: string }[]
+  isLoading: boolean
+  isError: boolean
+  isIndexLoading: boolean
+  isIndexFetching: boolean
+  isFetching: boolean
+  // 그룹 등락률 스와이프 미리보기에 넣을 지수 막대(일본 닛케이·미국 S&P500). 한국의 코스피·코스닥과 같은 역할이다.
+  graphIndexItems: { key: string; name: string; value: number }[]
+  indexBars: MarketScreenData['indexBars']
+  refetchAll: () => Promise<unknown>
+  // 장 상태 칩(시세가 아직 없으면 null).
+  sessionChip: ReactNode
+  refreshHelp: string
+  // 설정 화면이 없는 고정 값(색상).
+  fixed: { colorScale: (typeof JAPAN_MAP_FIXED)['colorScale']; strongIndustryColor: string }
+  tabStorageName: string
+  // 종목 구성 탭의 시가총액 범위(지도·그래프와 같은 저장 값)와 금액 단위.
+  settingPrefix: string
+  currencyUnit: CurrencyUnit
+  intradayDelta: boolean
+  // 설정창의 "n/m종목"의 m.
+  totalCount: number
+}

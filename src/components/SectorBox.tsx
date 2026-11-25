@@ -4,7 +4,7 @@ import type { PopupContent } from './Popup'
 import { sectorHeaderFontSize, sectorHeaderHeight, PADDING, type LaidOutSector } from '@/hooks/useHeatmapLayout'
 import { TAB_GAP, toJoEokDecimal, toPctSignedGrouped } from '@/utils/format'
 import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
-import type { StockLabelMode } from '@/hooks/useGlobalSettings'
+import type { StockLabelMode } from '@/utils/heatmapTypes'
 import { isInDepthRange } from '@/utils/sectorDepth'
 import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 

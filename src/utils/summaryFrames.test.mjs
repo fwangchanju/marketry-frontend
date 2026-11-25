@@ -34,7 +34,7 @@ test('SUMMARY 화면은 틀 제목과 캡처 이름을 직접 적지 않는다',
 })
 
 test('공통 화면은 시장 이름으로 갈라지지 않는다', () => {
-  for (const name of ['../components/SummaryScreen.tsx', '../components/MarketToolbarContent.tsx', '../components/MobileMarketScreen.tsx', '../components/MobileStockHeatmap.tsx']) {
+  for (const name of ['../components/SummaryScreen.tsx', '../components/GraphScreen.tsx', '../components/SheetScreen.tsx', '../components/MapScreen.tsx', '../components/MarketToolbarContent.tsx', '../components/MobileMarketScreen.tsx', '../components/MobileStockHeatmap.tsx']) {
     const source = readFileSync(new URL(name, import.meta.url), 'utf8')
     for (const word of ["'KOREA'", "'JAPAN'", "'USA'", 'Overseas', 'overseas', 'Japan', 'Usa', 'Korea', '/korea', '/japan', '/usa']) assert.equal(source.includes(word), false, `${name}: ${word}`)
   }

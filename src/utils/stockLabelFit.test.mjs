@@ -73,7 +73,7 @@ test('미국 종목명은 usaLabelBreaks 목록의 자리에서 뜻 단위로 �
 })
 
 test('미국 종목은 국내·일본 그룹명 목록을 쓰지 않는다', () => {
-  // 국내 규칙에서는 '대한'이 그룹명이라 앞에서 끊기지만, 미국 이름에는 쓰지 않는다.
+  // 한국 규칙에서는 '대한'이 그룹명이라 앞에서 끊기지만, 미국 이름에는 쓰지 않는다.
   const usa = fitStockLabel({ ...BOX, name: '대한테스트', market: 'usa' }).nameLines
   const korea = fitStockLabel({ ...BOX, name: '대한테스트', market: 'korea' }).nameLines
   assert.deepEqual(korea, ['대한', '테스트'])

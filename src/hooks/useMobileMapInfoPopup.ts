@@ -3,7 +3,7 @@ import { type PopupContent, type PopupState } from '@/components/Popup'
 import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
 
-// 업종 지도·종목 지도 MOBILE 팝업의 공통 상태. 한국과 해외가 같은 PC용 Popup을 같은 규칙으로 띄운다.
+// 업종 지도·종목 지도 MOBILE 팝업의 공통 상태. 한국과 일본·미국가 같은 PC용 Popup을 같은 규칙으로 띄운다.
 // 칸 데이터가 조금 달라도 이 훅이 받는 값만 맞추면 행·토글·위치 계산은 한 곳에서 관리된다.
 export interface MobileMapPopupStock {
   key: string
@@ -25,7 +25,7 @@ export interface MobileMapPopupSector {
 }
 
 export function useMobileMapInfoPopup({ currencyUnit, mapBoundsRef }: {
-  // 기본값을 두지 않는다. 해외 화면이 빠뜨리면 금액에 원이 붙는다.
+  // 기본값을 두지 않는다. 일본·미국 화면이 빠뜨리면 금액에 원이 붙는다.
   currencyUnit: CurrencyUnit
   mapBoundsRef?: RefObject<HTMLElement | null>
 }) {
@@ -47,7 +47,7 @@ export function useMobileMapInfoPopup({ currencyUnit, mapBoundsRef }: {
     })
   }, [mapBoundsRef])
 
-  // 해외 금액은 종목 지도 팝업과 같은 표기(예: 153조 엔)를 쓰고, 한국 MOBILE 팝업은 기존대로 원을 붙인다.
+  // 일본·미국 금액은 종목 지도 팝업과 같은 표기(예: 153조 엔)를 쓰고, 한국 MOBILE 팝업은 기존대로 원을 붙인다.
   const marketValueText = (value: number) => `${toJoEok(value / 100_000_000)}${currencySuffix(currencyUnit) || '원'}`
 
   const openStockPopup = (stock: MobileMapPopupStock, target: HTMLElement, decimalPlaces = 1) => open({

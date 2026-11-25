@@ -14,7 +14,7 @@ import type { marketMenu } from '@/utils/marketMenu'
 
 // 툴바 내용 — PC와 MOBILE, 화면과 캡처, 모든 시장이 같은 것을 쓴다. 오른쪽(분류 배지)은 있을 때만 그린다.
 export default function MarketToolbarContent({ page, market, menu, right }: {
-  page: 'SUMMARY' | 'GRAPH'
+  page: 'SUMMARY' | 'GRAPH' | 'MAP'
   market: Pick<MarketScreenData, 'label' | 'period' | 'session' | 'refresh'>
   menu: ReturnType<typeof marketMenu>
   right: ReactNode | null

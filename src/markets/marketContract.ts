@@ -1,11 +1,14 @@
 import type { ComponentProps, ReactNode } from 'react'
 import type ChangeRateBar from '@/components/ChangeRateBar'
-import type { SettingsColorSection, SettingsStrongIndustryColorSection } from '@/components/SettingsPanel'
+import type Heatmap from '@/components/Heatmap'
+import type { MapChangeFilterSections } from '@/components/MapSettingsSections'
+import type { SettingsColorSection, SettingsSectorLevelSection, SettingsStrongIndustryColorSection, SettingsTopPickSection } from '@/components/SettingsPanel'
 import type { CurrencyUnit } from '@/utils/currencyUnit'
+import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import type { HeatmapSectorNode, MarketValueTierItem } from '@/types/api'
 import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { MarketValueExclusions } from '@/utils/marketValueTier'
-import type { ExcludedSectorRow } from '@/utils/overseasSectorExclusion'
+import type { ExcludedSectorRow } from '@/utils/sectorExclusion'
 
 // 모든 시장이 화면에 넘겨야 하는 것. 화면은 이 모양만 알고 어느 시장인지, 시세가 어디서 오는지 묻지 않는다.
 // 필수 항목에 ?(생략 가능)를 붙이지 않는다 — 한 시장이라도 빠뜨리면 빌드가 실패해야 한다.
@@ -70,7 +73,7 @@ export type MarketRegistry<T> = Readonly<Record<MarketId, T>>
 // 화면이 쓰는 설정값. 저장하는 곳과 이름은 시장마다 달라도 화면에 넘기는 모양은 같다.
 export interface MarketFilters {
   valueRange: { tiers: MarketValueTierItem[]; minIndex: number; maxIndex: number; setRange: (min: number, max: number) => void; excluded: MarketValueExclusions }
-  sectorExclusion: { enabled: boolean; toggle: () => void; excludedIds: ReadonlySet<number>; rows: ExcludedSectorRow[]; remove: (sectorId: number) => void; suspendedStockCount: number | null }
+  sectorExclusion: { enabled: boolean; toggle: () => void; excludedIds: ReadonlySet<number>; rows: ExcludedSectorRow[]; exclude: (sectorId: number, sectorName: string) => void; remove: (sectorId: number) => void; suspendedStockCount: number | null }
 }
 
 export interface MarketColors {
@@ -79,4 +82,49 @@ export interface MarketColors {
   legendSwatches: ComponentProps<typeof ChangeRateBar>['swatches']
   scaleSection: ComponentProps<typeof SettingsColorSection>
   strongSection: ComponentProps<typeof SettingsStrongIndustryColorSection>
+}
+
+// 그래프가 쓰는 값. 막대는 화면이 계산하고, 시장은 지금·N분 전 자료와 설정만 넘긴다.
+export interface MarketGraph {
+  depth: number
+  setDepth: (depth: number) => void
+  selectableDepth: number
+  useSimpleAverage: boolean
+  setUseSimpleAverage: (useSimple: boolean) => void
+  beforeMinutes: number
+  setBeforeMinutes: (minutes: number) => void
+  // "N분 전 대비"를 보는 중인지와, 그때의 N분 전 자료·지수 차이.
+  showDelta: boolean
+  toggleDelta: () => void
+  beforeNodes: HeatmapSectorNode[]
+  deltaIndexBars: MarketIndexBar[]
+  // "N분 전 대비"를 아예 쓸 수 없는 시장의 이유. 쓸 수 있으면 null이다.
+  deltaLock: { average: ReactNode; before: ReactNode } | null
+}
+
+type HeatmapProps = ComponentProps<typeof Heatmap>
+
+// 지도가 쓰는 값. 업종을 들어가고 나오는 것, 캡처, MOBILE, 설정창 배치는 화면이 맡는다.
+export interface MarketMap {
+  // 바뀌면 들어간 업종을 처음으로 돌린다(코스피·코스닥 등).
+  scope: string
+  filteredNodes: FilteredHeatmapSectorNode[]
+  // 보여 줄 업종 단계. 0은 업종 박스 없이 종목만, null은 제한 없음.
+  maxDepth: number | null
+  // 시장 전체를 볼 때의 전체 종목 수.
+  totalStockCount: number
+  heatmap: Pick<HeatmapProps, 'marketValueDepthRange' | 'weightedAvgDepthRange' | 'simpleAvgDepthRange' | 'upDownCountDepthRange' | 'tile' | 'canExclude' | 'labelMinAreaPercent' | 'stockLabelMode' | 'decimalPlaces' | 'topPickSectorKeys'> & { stretch: HeatmapProps['stretch'] | null }
+  boxSizeRatio: number
+  setBoxSizeRatio: (ratio: number) => void
+  // 캡처(텔레그램 포함)가 쓰는 박스 크기. MOBILE 화면은 자기 값을 쓴다.
+  captureBoxSizeRatio: number
+  // 캡처를 찍기 전에 화면이 멈췄는지 보는 값. 툴바 시각처럼 움직이는 표시가 바뀌면 다시 기다린다.
+  captureSettleKey: string
+  stockPopupOnHover: boolean
+  setStockPopupOnHover: (onHover: boolean) => void
+  changeFilters: ComponentProps<typeof MapChangeFilterSections>
+  sectorLevel: ComponentProps<typeof SettingsSectorLevelSection>
+  topPick: ComponentProps<typeof SettingsTopPickSection>
+  // 지수를 받거나 다시 받는 중(그룹 등락률 미리보기가 기다린다).
+  isIndexPending: boolean
 }

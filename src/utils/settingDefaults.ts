@@ -11,7 +11,7 @@ export const EXCHANGE_ACCENT_HEX = '#55c8f2'
 export type DepthMetricDefault = 'weightedAvgChangeRate' | 'simpleAvgChangeRate'
 
 export interface SettingDefaults {
-  // 분류 체계 — true는 MARKETRY 분류다. 비로그인은 이 값과 상관없이 내 분류를 쓸 수 없다(useGlobalSettings).
+  // 분류 체계 — true는 MARKETRY 분류다. 비로그인은 이 값과 상관없이 내 분류를 쓸 수 없다(useKoreaSettings).
   isCustom: boolean
   // 2-1 업종 분류 깊이: 켜짐 여부와 단계(1=대분류, 2=중분류, 3=소분류)
   sectorLevelEnabled: boolean

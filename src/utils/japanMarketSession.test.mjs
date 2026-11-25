@@ -29,17 +29,17 @@ test('한국과 일본 세션은 서로의 이름과 부품을 쓰지 않는다'
     const source = read(path)
     for (const name of ['오전 장', '점심 휴장', '오후 장', '장 마감', 'japanMarket', 'JapanSession']) assert.equal(source.includes(name), false, `${path}: ${name}`)
   }
-  for (const path of ['./japanMarketSession.ts', '../pages/JapanMapPage.tsx', '../pages/OverseasMapView.tsx', '../hooks/useJapanMapSource.tsx']) {
+  for (const path of ['./japanMarketSession.ts', '../markets/SnapshotMap.tsx']) {
     const source = read(path)
     for (const name of ['프리 마켓', '메인 마켓', '애프터 마켓', "'마켓 종료'", 'ToolbarControls', 'tradingWindow', 'useTradingSession']) assert.equal(source.includes(name), false, `${path}: ${name}`)
   }
 })
 
 test('일본 지도는 국내 지도의 설정을 읽지 않는다', () => {
-  // 일본 지도의 실제 코드는 공통 지도 화면과 일본 데이터 훅에 있다(JapanMapPage는 껍데기).
-  for (const file of ['../pages/JapanMapPage.tsx', '../pages/OverseasMapView.tsx', '../hooks/useJapanMapSource.tsx']) {
+  // 스냅샷 시장의 지도 값은 SnapshotMap이 넘긴다.
+  for (const file of ['../markets/SnapshotMap.tsx']) {
     const source = readFileSync(new URL(file, import.meta.url), 'utf8')
-    for (const name of ['settingDefaults', 'useHeatmapColorScale', 'useGlobalSettings', 'MEMBER_DEFAULTS']) assert.equal(source.includes(name), false, `${file}: ${name}`)
+    for (const name of ['settingDefaults', 'useHeatmapColorScale', 'useKoreaSettings', 'MEMBER_DEFAULTS']) assert.equal(source.includes(name), false, `${file}: ${name}`)
   }
 })
 

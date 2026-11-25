@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { MINE_COLOR_SETTING_KEYS, type SettingsProfile } from './settingsSchema.ts'
 
-// 일본·미국 화면(지도·그래프)의 임시값은 국내 분류 세 칸과 따로, 서로도 따로 센다 — 'japan.' 또는 'usa.'로 시작하는 저장 이름이 각자의 범위에 속한다.
+// 일본·미국 화면(지도·그래프)의 임시값은 한국 분류 세 칸과 따로, 서로도 따로 센다 — 'japan.' 또는 'usa.'로 시작하는 저장 이름이 각자의 범위에 속한다.
 // 'mineColor'는 내 기준의 등락률 색상 켜기·강조 색상처럼 한국·일본·미국이 같이 쓰는 값이다. 한국 내 기준('mine')과 일본·미국 내 기준 범위에서 모두 보인다.
 export type DraftScope = SettingsProfile | 'common' | 'japan' | 'usa' | 'mineColor'
 

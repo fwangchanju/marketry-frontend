@@ -51,7 +51,7 @@ export function captureSwipeArrivalOverlay(element: HTMLElement | null) {
   const overlay: Overlay = { node, releaseTimer: null, safetyTimer: null, rafId: null }
   overlay.safetyTimer = window.setTimeout(() => releaseSwipeArrivalOverlay(), MAX_HOLD_MS)
   active = overlay
-  // 도착 페이지가 어느 컴포넌트인지(국내/일본/미국) 가리지 않고, 지도 배치가 잡히면 덮개를 걷는다.
+  // 도착 페이지가 어느 컴포넌트인지(한국/일본/미국) 가리지 않고, 지도 배치가 잡히면 덮개를 걷는다.
   const releaseWhenLaidOut = () => {
     if (active !== overlay) return
     if (document.querySelector('[data-map-mobile-capture-frame] [data-heatmap-layout-ready="true"]')) {

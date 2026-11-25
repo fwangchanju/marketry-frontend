@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { KOREA_FLAG, flagForPath, flagOfOverseasMarket } from './marketFlag.ts'
+import { KOREA_FLAG, flagForPath, flagOfSnapshotMarket } from './marketFlag.ts'
 
 test('한국 시장은 태극기 하나다', () => {
   assert.equal(KOREA_FLAG, 'KR')
 })
 
 test('일본은 일장기, 미국은 성조기다', () => {
-  assert.equal(flagOfOverseasMarket('JAPAN'), 'JP')
-  assert.equal(flagOfOverseasMarket('USA'), 'US')
+  assert.equal(flagOfSnapshotMarket('JAPAN'), 'JP')
+  assert.equal(flagOfSnapshotMarket('USA'), 'US')
 })
 
 test('한국 시장 화면은 KOREA·KOSPI·KOSDAQ 모두 태극기다', () => {

@@ -1,18 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import { overseasMarketInfo, type OverseasMarket } from '@/utils/markets'
+import { snapshotMarketInfo, type SnapshotMarket } from '@/utils/markets'
 import type { IndexClose, IntradayIndexQuote } from '@/utils/indexChange'
-import { calculatePeriodDetailed, type PeriodExcludedStock } from '@/utils/japanPeriod'
+import { calculatePeriodDetailed, type PeriodExcludedStock } from '@/utils/snapshotPeriod'
 
 // 스냅샷 목록으로 시세를 주는 시장의 조회. 시장마다 다른 것은 주소 조각뿐이다. 시세가 어느 출처에서 왔는지는 서버만 안다.
 export type MarketQuote = { stockCode: string; currentPrice: number; lastPrice: number; changeRate: number; totalMarketValue: number; closeVerified?: boolean | null }
 export type MarketQuoteSnapshot = { snapshotTime: string | null; quotes: MarketQuote[] }
 export type ListedStock = { symbol: string; name: string }
 
-const segmentOf = (market: OverseasMarket) => overseasMarketInfo(market).routeSegment
+const segmentOf = (market: SnapshotMarket) => snapshotMarketInfo(market).routeSegment
 
 // 시각을 주지 않으면 서버에 저장된 가장 최근 시세를 받는다.
-export function useMarketQuotes(market: OverseasMarket, snapshotTime: string | null = null, enabled = true) {
+export function useMarketQuotes(market: SnapshotMarket, snapshotTime: string | null = null, enabled = true) {
   const segment = segmentOf(market)
   return useQuery({
     enabled,
@@ -21,7 +21,7 @@ export function useMarketQuotes(market: OverseasMarket, snapshotTime: string | n
   })
 }
 
-export function useMarketSnapshotTimes(market: OverseasMarket, enabled = true) {
+export function useMarketSnapshotTimes(market: SnapshotMarket, enabled = true) {
   const segment = segmentOf(market)
   return useQuery({
     queryKey: [segment, 'quotes', 'snapshots'],
@@ -30,7 +30,7 @@ export function useMarketSnapshotTimes(market: OverseasMarket, enabled = true) {
   })
 }
 
-export function useMarketPreviousTradingDay(market: OverseasMarket, date: string | null, enabled = true) {
+export function useMarketPreviousTradingDay(market: SnapshotMarket, date: string | null, enabled = true) {
   const segment = segmentOf(market)
   return useQuery({
     queryKey: [segment, 'quotes', 'previous-trading-day', date],
@@ -40,7 +40,7 @@ export function useMarketPreviousTradingDay(market: OverseasMarket, date: string
 }
 
 // 종목 목록을 서버에서 받는 시장의 종목(티커와 이름).
-export function useListedStocks(market: OverseasMarket, enabled = true) {
+export function useListedStocks(market: SnapshotMarket, enabled = true) {
   const segment = segmentOf(market)
   return useQuery({
     queryKey: [segment, 'stocks'],
@@ -50,7 +50,7 @@ export function useListedStocks(market: OverseasMarket, enabled = true) {
 }
 
 // 지수의 날짜별 종가. 값이 없는 날짜는 응답에 빠진다.
-export function useMarketIndexCloses(market: OverseasMarket, from: string | null, to: string | null) {
+export function useMarketIndexCloses(market: SnapshotMarket, from: string | null, to: string | null) {
   const segment = segmentOf(market)
   return useQuery({
     enabled: from !== null && to !== null,
@@ -60,7 +60,7 @@ export function useMarketIndexCloses(market: OverseasMarket, from: string | null
 }
 
 // 기간 시작일의 전일 종가와 종료일 시세가 모두 있는 종목만 계산한다.
-export function useMarketPeriodQuotes(market: OverseasMarket, startTime: string | null, endTime: string | null) {
+export function useMarketPeriodQuotes(market: SnapshotMarket, startTime: string | null, endTime: string | null) {
   const start = useMarketQuotes(market, startTime, startTime !== null)
   const end = useMarketQuotes(market, endTime, startTime !== null && endTime !== null)
   const detailed = startTime !== null && end.data && start.data ? calculatePeriodDetailed(start.data.quotes, end.data.quotes) : undefined
@@ -72,7 +72,7 @@ export function useMarketPeriodQuotes(market: OverseasMarket, startTime: string 
 
 // 지수의 그날 장중 등락률(5분 단위). 장중 값을 저장하는 시장만 켠다.
 // 값이 없거나 조회가 실패하면 data가 비어 있고, 종가 기준 막대로만 그린다.
-export function useMarketIndexQuotes(market: OverseasMarket, date: string | null) {
+export function useMarketIndexQuotes(market: SnapshotMarket, date: string | null) {
   const segment = segmentOf(market)
   return useQuery({
     enabled: date !== null,

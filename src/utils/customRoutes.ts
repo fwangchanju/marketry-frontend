@@ -1,13 +1,13 @@
-import { overseasRoute } from './markets.ts'
+import { snapshotRoute } from './markets.ts'
 
 // 섹터·스톡 화면의 주소. 예전에는 Custom 하나였고 주소가 /custom 아래에 있었다(2026-11-14 메뉴를 Sector·Stock으로 나누면서 주소도 바꿨다).
 // 서버 API 주소(/api/custom/**)와는 다르다. 그쪽은 그대로다.
 export const SECTOR_KOREA = '/sector/korea'
-export const SECTOR_JAPAN = overseasRoute('/sector', 'JAPAN')
+export const SECTOR_JAPAN = snapshotRoute('/sector', 'JAPAN')
 export const STOCK_KOREA = '/stock/korea'
-export const STOCK_JAPAN = overseasRoute('/stock', 'JAPAN')
-export const SECTOR_USA = overseasRoute('/sector', 'USA')
-export const STOCK_USA = overseasRoute('/stock', 'USA')
+export const STOCK_JAPAN = snapshotRoute('/stock', 'JAPAN')
+export const SECTOR_USA = snapshotRoute('/sector', 'USA')
+export const STOCK_USA = snapshotRoute('/stock', 'USA')
 
 // 옛 주소 → 새 주소. 구글에 등록돼 있던 주소(/custom/sector)에만 둔다(2026-11-16 정리, 그 밖의 옛 /custom 주소는 이동을 두지 않는다).
 // 일본 화면(/custom/sector/japan, /custom/stock/japan)은 특별 회원만 보던 비공개 화면이라 옛 주소 이동을 두지 않는다.

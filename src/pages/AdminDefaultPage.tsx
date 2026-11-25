@@ -14,7 +14,7 @@ import { InfoPageHeading } from '@/components/InfoDocument'
 import TelegramImageSettings from '@/components/TelegramImageSettings'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useKoreaSettings } from '@/markets/useKoreaSettings'
 import { useHeatmap } from '@/hooks/useHeatmap'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -26,7 +26,7 @@ import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
 import { USA_MAP_SETTING_PREFIX, usaMapManagedDefaults } from '@/utils/usaMapSettings'
-import { japanMapDisplayValues, japanMapManagedDefaults, japanMapPublishPayload, japanMapSavedValues, type JapanMapPreferences } from '@/utils/japanMapSettings'
+import { japanMapDisplayValues, japanMapManagedDefaults, japanMapPublishPayload, japanMapSavedValues, type SnapshotMapPreferences } from '@/utils/japanMapSettings'
 import { useCustomPreferences } from '@/hooks/useCustomPreferences'
 import { defaultExcludedTierLabels } from '@/utils/marketValueTier'
 import { screenshotElementToClipboard, copyDataUrlToClipboard } from '@/utils/screenshotToClipboard'
@@ -58,7 +58,7 @@ function ProfileReader({
   profile: 'marketry' | 'exchange'
   onSnapshot: (profile: 'marketry' | 'exchange', snapshot: ProfileSnapshot | null) => void
 }) {
-  const settings = useGlobalSettings(profile === 'marketry'
+  const settings = useKoreaSettings(profile === 'marketry'
     ? { readOnlyTelegramSnapshot: true }
     : { defaultTaxonomy: 'KRX', taxonomyStorageKey: 'admin-default-exchange-taxonomy' })
 
@@ -185,10 +185,10 @@ export default function AdminDefaultPage() {
   const [loadVersions, setLoadVersions] = useState({ marketry: 0, exchange: 0 })
   const [loadStates, setLoadStates] = useState<Record<'marketry' | 'exchange', 'idle' | 'loading' | 'ready' | 'error'>>({ marketry: 'idle', exchange: 'idle' })
   const [savedSnapshots, setSavedSnapshots] = useState<Record<DefaultProfile, string | null>>({ marketry: null, exchange: null, japan: null, usa: null })
-  // 일본 지도는 이 계정에 저장된 일본 지도 설정을 불러와 기본값으로 저장한다(국내와 같은 불러오기 → 저장 순서).
-  const [japanSnapshot, setJapanSnapshot] = useState<JapanMapPreferences | null>(null)
+  // 일본 지도는 이 계정에 저장된 일본 지도 설정을 불러와 기본값으로 저장한다(한국와 같은 불러오기 → 저장 순서).
+  const [japanSnapshot, setJapanSnapshot] = useState<SnapshotMapPreferences | null>(null)
   // 미국 지도도 같은 방식(불러오기 → 저장)으로 기본값을 저장한다.
-  const [usaSnapshot, setUsaSnapshot] = useState<JapanMapPreferences | null>(null)
+  const [usaSnapshot, setUsaSnapshot] = useState<SnapshotMapPreferences | null>(null)
   const updateSnapshot = useCallback((profile: 'marketry' | 'exchange', snapshot: ProfileSnapshot | null) => {
     setSnapshots(previous => {
       if (JSON.stringify(previous[profile]) === JSON.stringify(snapshot)) return previous

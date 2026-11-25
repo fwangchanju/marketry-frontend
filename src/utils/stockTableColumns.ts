@@ -15,7 +15,6 @@ export type StockColumnKey =
   | 'parentSector'
   | 'midSector'
   | 'subSector'
-  | 'overseasSubSector'
 
 // 맨 왼쪽 체크박스 칸 폭(px).
 export const STOCK_CHECKBOX_COLUMN_PX = 30
@@ -44,9 +43,9 @@ export const STOCK_HEADER_ROW_PX = 60
 // 표 본문 한 줄 높이(px) — 머리글 줄(30px)과 같다. 실제 높이는 index.css의 `.custom-page-table tbody tr`가 정하고, 가상 스크롤의 행 높이 추정값은 이 값을 쓴다.
 export const STOCK_ROW_PX = 30
 
-// 국내 종목 표의 칸 폭 계산 — 표가 들어가는 영역의 너비로 모든 칸의 폭(=왼쪽 경계 x 좌표)을 한 번에 정한다.
+// 한국 종목 표의 칸 폭 계산 — 표가 들어가는 영역의 너비로 모든 칸의 폭(=왼쪽 경계 x 좌표)을 한 번에 정한다.
 // 고정 폭 열은 그대로 두고, 종목명(130)·약칭(120)과 나머지 4칸(거래소 분류·대·중·소분류, 130)이 남는 폭을 비율대로 나눈다.
-// 일본 종목 표는 이 값을 그대로 따른다(stockColumnWidthsForJapan) — 두 표의 경계가 항상 같은 좌표에 놓인다.
+// 일본 종목 표는 이 값을 그대로 따른다(stockColumnWidthsWithoutTiers) — 두 표의 경계가 항상 같은 좌표에 놓인다.
 // 남는 폭을 나누는 비율 — 창 너비 1440px에서 종목명 130, 약칭 120, 거래소 분류·대·중·소분류 130이 되는 값이다(나머지 폭 770px 기준, 2026-11-15 사용자 확정).
 // 창이 넓거나 좁아지면 같은 비율로 늘고 줄며, 한 칸은 FLEX_COLUMN_MIN_PX보다 좁아지지 않는다.
 const FLEX_WEIGHTS: Partial<Record<StockColumnKey, number>> = {
@@ -122,11 +121,11 @@ export function computeStockColumnWidths(containerWidth: number, pinned: Readonl
 export const stockColumnWidthsTotal = (widths: StockColumnWidths): number =>
   STOCK_CHECKBOX_COLUMN_PX + Object.values(widths).reduce((sum, width) => sum + (width ?? 0), 0)
 
-// 일본·미국 종목 표의 칸 폭 — 국내 표의 좌표를 따른다.
-// 종목명 (영어)·종목명 (한글)(=약칭)·시가총액(¥·$)·대·중·소분류는 국내와 같다.
-// 국내 규모·마켓(2칸) 묶음은 일본·미국 시가총액(₩) 한 칸과 시작·끝이 같고, 국내 거래소 분류는 일본 야후 분류·미국 GICS 분류와 같은 칸이다(야후 업종·GICS 업종 열은 없다, 2026-11-15).
-// 규모·마켓은 함께 숨으므로 묶음은 132 아니면 0이고, 0이면 시가총액(₩)도 숨는다. 거래소 분류가 숨으면 섹터도 숨고, 종목코드는 국내와 함께 숨고, 약칭 자리는 종목명 (영어)이 숨는다 — 폭 표에 키가 없다.
-export function stockColumnWidthsForJapan(korean: StockColumnWidths): StockColumnWidths {
+// 일본·미국 종목 표의 칸 폭 — 한국 표의 좌표를 따른다.
+// 종목명 (영어)·종목명 (한글)(=약칭)·시가총액(¥·$)·대·중·소분류는 한국와 같다.
+// 한국 규모·마켓(2칸) 묶음은 일본·미국 시가총액(₩) 한 칸과 시작·끝이 같고, 한국 거래소 분류는 일본 야후 분류·미국 GICS 분류와 같은 칸이다(야후 업종·GICS 업종 열은 없다, 2026-11-15).
+// 규모·마켓은 함께 숨으므로 묶음은 132 아니면 0이고, 0이면 시가총액(₩)도 숨는다. 거래소 분류가 숨으면 섹터도 숨고, 종목코드는 한국와 함께 숨고, 약칭 자리는 종목명 (영어)이 숨는다 — 폭 표에 키가 없다.
+export function stockColumnWidthsWithoutTiers(korean: StockColumnWidths): StockColumnWidths {
   const group = (korean.sizeTier ?? 0) + (korean.market ?? 0)
   const widths: StockColumnWidths = {
     parentSector: korean.parentSector,
@@ -134,9 +133,9 @@ export function stockColumnWidthsForJapan(korean: StockColumnWidths): StockColum
     subSector: korean.subSector,
   }
   if (korean.stockCode !== undefined) widths.stockCode = korean.stockCode
-  // 국내가 시가총액을 숨기면(맨 마지막) 일본·미국 시가총액도 같은 칸이라 함께 숨는다.
+  // 한국가 시가총액을 숨기면(맨 마지막) 일본·미국 시가총액도 같은 칸이라 함께 숨는다.
   if (korean.totalMarketValue !== undefined) widths.totalMarketValue = korean.totalMarketValue
-  // 국내가 약칭을 숨기면 일본은 종목명 (영어)을 숨기고 종목명 (한글)이 국내 종목명 칸의 자리와 폭을 그대로 가져간다(2026-11-13).
+  // 한국가 약칭을 숨기면 일본은 종목명 (영어)을 숨기고 종목명 (한글)이 한국 종목명 칸의 자리와 폭을 그대로 가져간다(2026-11-13).
   if (korean.alias !== undefined) { widths.stockName = korean.stockName; widths.alias = korean.alias }
   else widths.alias = korean.stockName
   if (korean.industry !== undefined) widths.industry = korean.industry

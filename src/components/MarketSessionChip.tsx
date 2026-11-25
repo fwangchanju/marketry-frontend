@@ -1,5 +1,5 @@
 import { MARKET_SESSIONS } from '@/markets/marketSessions'
-import type { OverseasMarket } from '@/utils/markets'
+import type { SnapshotMarket } from '@/utils/markets'
 import { useEffect, useRef, useState } from 'react'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
@@ -8,7 +8,7 @@ import ToolbarPopup from '@/components/ToolbarPopup'
 // 증시 세션 칩 — 눌러서 시간표를 안내한다. 세션 이름·시간표·색은 시장 정의(marketSessions)에서 받는다.
 const SessionDot = ({ color }: { color: string }) => <span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
 
-export default function MarketSessionChip({ market, session }: { market: OverseasMarket; session: string }) {
+export default function MarketSessionChip({ market, session }: { market: SnapshotMarket; session: string }) {
   const { label, guide, dotColors } = MARKET_SESSIONS[market]
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)

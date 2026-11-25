@@ -21,11 +21,11 @@ type CalendarMarket = MarketQuery | 'JAPAN' | 'USA'
 // 달력에서 고를 수 있는 가장 이른 달. 서버 데이터는 2019년 12월(거래일 2일)부터 있지만 2020년 1월부터만 쓴다.
 const CALENDAR_FIRST_MONTH = '2020-01'
 
-// 해외 시장(일본·미국)은 저장된 스냅샷 날짜 목록으로 달력을 채운다. 국내처럼 월별 조회나 휴장 일정 조회를 하지 않는다.
-const isOverseasMarket = (market: CalendarMarket) => market === 'JAPAN' || market === 'USA'
+// 스냅샷 시장(일본·미국)은 저장된 스냅샷 날짜 목록으로 달력을 채운다. 한국처럼 월별 조회나 휴장 일정 조회를 하지 않는다.
+const isSnapshotMarket = (market: CalendarMarket) => market === 'JAPAN' || market === 'USA'
 
-// 해외 시장의 스냅샷 시각 목록. 두 훅을 모두 부르고 해당 시장 것만 켠다(훅은 조건부로 부를 수 없다).
-function useOverseasSnapshotTimes(market: CalendarMarket, enabled = true) {
+// 스냅샷 시장의 스냅샷 시각 목록. 두 훅을 모두 부르고 해당 시장 것만 켠다(훅은 조건부로 부를 수 없다).
+function useSnapshotTimes(market: CalendarMarket, enabled = true) {
   const japan = useMarketSnapshotTimes('JAPAN', market === 'JAPAN' && enabled)
   const usa = useMarketSnapshotTimes('USA', market === 'USA' && enabled)
   return market === 'USA' ? usa : japan
@@ -38,17 +38,17 @@ function useYearStepTargetMonth(market: CalendarMarket, month: ShownMonth, enabl
   const isBeforeFirst = (key: string) => key < CALENDAR_FIRST_MONTH
   const korea = useQueries({
     queries: windowMonths.map(key => ({
-      queryKey: heatmapKeys.snapshotDays(isOverseasMarket(market) ? 'KOSPI' : (market as MarketQuery), key),
-      queryFn: () => getSnapshotDays(isOverseasMarket(market) ? 'KOSPI' : (market as MarketQuery), key),
-      enabled: enabled && !isOverseasMarket(market),
+      queryKey: heatmapKeys.snapshotDays(isSnapshotMarket(market) ? 'KOSPI' : (market as MarketQuery), key),
+      queryFn: () => getSnapshotDays(isSnapshotMarket(market) ? 'KOSPI' : (market as MarketQuery), key),
+      enabled: enabled && !isSnapshotMarket(market),
       retry: 1,
     })),
   })
-  const overseas = useOverseasSnapshotTimes(market, enabled && isOverseasMarket(market))
+  const snapshotTimes = useSnapshotTimes(market, enabled && isSnapshotMarket(market))
   if (!enabled) return undefined
-  if (isOverseasMarket(market)) {
-    if (overseas.data === undefined) return undefined
-    const earliest = overseas.data.map(time => time.slice(0, 7)).filter(key => windowMonths.includes(key) && !isBeforeFirst(key)).sort()[0]
+  if (isSnapshotMarket(market)) {
+    if (snapshotTimes.data === undefined) return undefined
+    const earliest = snapshotTimes.data.map(time => time.slice(0, 7)).filter(key => windowMonths.includes(key) && !isBeforeFirst(key)).sort()[0]
     return earliest ?? null
   }
   // 앞에서부터 보며, 데이터가 있는 첫 달을 고른다. 그 전 달 목록을 아직 받는 중이면 기다린다.
@@ -64,17 +64,17 @@ function useYearStepTargetMonth(market: CalendarMarket, month: ShownMonth, enabl
 const monthDiffOf = (from: string, to: string) => (Number(to.slice(0, 4)) * 12 + Number(to.slice(5, 7))) - (Number(from.slice(0, 4)) * 12 + Number(from.slice(5, 7)))
 
 function useCalendarDays(market: CalendarMarket, month: string, options?: { enabled?: boolean; retry?: number | false }) {
-  const korea = useSnapshotDays(isOverseasMarket(market) ? 'KOSPI' : (market as MarketQuery), month, { ...options, enabled: !isOverseasMarket(market) && (options?.enabled ?? true) })
-  const japan = useOverseasSnapshotTimes(market, options?.enabled ?? true)
-  if (!isOverseasMarket(market)) return korea
+  const korea = useSnapshotDays(isSnapshotMarket(market) ? 'KOSPI' : (market as MarketQuery), month, { ...options, enabled: !isSnapshotMarket(market) && (options?.enabled ?? true) })
+  const japan = useSnapshotTimes(market, options?.enabled ?? true)
+  if (!isSnapshotMarket(market)) return korea
   const byDate = new Map((japan.data ?? []).filter(time => time.startsWith(month)).map(time => [time.slice(0, 10), time]))
   return { ...japan, data: japan.data === undefined ? undefined : [...byDate].map(([date, snapshotTime]) => ({ date, snapshotTime })) }
 }
 
 function useCalendarGap(market: CalendarMarket, from: string | null, to: string | null) {
-  const korea = useTradingDayGap(isOverseasMarket(market) ? null : from, isOverseasMarket(market) ? null : to)
-  const japan = useOverseasSnapshotTimes(market, from !== null && to !== null)
-  if (!isOverseasMarket(market)) return korea
+  const korea = useTradingDayGap(isSnapshotMarket(market) ? null : from, isSnapshotMarket(market) ? null : to)
+  const japan = useSnapshotTimes(market, from !== null && to !== null)
+  if (!isSnapshotMarket(market)) return korea
   const days = new Set((japan.data ?? []).map(time => time.slice(0, 10)))
   return { ...japan, data: japan.data && from && to ? [...days].filter(date => date > from && date <= to).length : undefined }
 }
@@ -216,18 +216,18 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
   ]
   // 모든 달을 6주 높이로 고정해 월 이동 시 달력 팝업 높이가 흔들리지 않게 한다.
   const cells: (number | null)[] = [...monthCells, ...Array.from({ length: 42 - monthCells.length }, () => null)]
-  const koreaHolidays = useKoreanCalendarHolidays(monthKey, cells, liveDate, !isOverseasMarket(market))
-  const japanTimes = useOverseasSnapshotTimes(market)
+  const koreaHolidays = useKoreanCalendarHolidays(monthKey, cells, liveDate, !isSnapshotMarket(market))
+  const japanTimes = useSnapshotTimes(market)
   const japanDates = new Set((japanTimes.data ?? []).map(time => time.slice(0, 10)))
   const latestJapanDate = japanTimes.data?.at(-1)?.slice(0, 10)
   const firstJapanDate = japanTimes.data?.[0]?.slice(0, 10)
-  // 해외 시장은 저장된 첫날~마지막 날 사이에 스냅샷이 없는 평일을 휴장으로 본다. 일본은 휴장일 목록(isJapanMarketClosed)도 같이 쓴다.
-  const holidayDates = isOverseasMarket(market) ? new Set(cells.flatMap(day => {
+  // 스냅샷 시장은 저장된 첫날~마지막 날 사이에 스냅샷이 없는 평일을 휴장으로 본다. 일본은 휴장일 목록(isJapanMarketClosed)도 같이 쓴다.
+  const holidayDates = isSnapshotMarket(market) ? new Set(cells.flatMap(day => {
     if (day === null) return []
     const date = `${monthKey}-${String(day).padStart(2, '0')}`
     return ((market === 'JAPAN' && isJapanMarketClosed(date)) || (firstJapanDate && latestJapanDate && date >= firstJapanDate && date <= latestJapanDate && !japanDates.has(date))) ? [date] : []
   })) : koreaHolidays.holidayDates
-  const pendingScheduleDates = isOverseasMarket(market) ? new Set<string>() : koreaHolidays.pendingScheduleDates
+  const pendingScheduleDates = isSnapshotMarket(market) ? new Set<string>() : koreaHolidays.pendingScheduleDates
 
   return (
     <div className="relative w-60 shrink-0">
@@ -289,7 +289,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
               const isToday = date === todayDate
               const hasClosingMap = closingTimeByDate.has(date)
               // 휴장일은 전 거래일 지도 데이터가 연결돼 있어도 선택할 수 없게 한다.
-              const selectable = (isOverseasMarket(market) || date >= '2020-01-02') && !holidayDates.has(date) && !pendingScheduleDates.has(date) && isSelectable(date, hasClosingMap, hasPreviousDay(date))
+              const selectable = (isSnapshotMarket(market) || date >= '2020-01-02') && !holidayDates.has(date) && !pendingScheduleDates.has(date) && isSelectable(date, hasClosingMap, hasPreviousDay(date))
               const selected = isSelected(date)
               const weekday = (firstWeekday + day - 1) % 7
               // 주말은 항상 거래 휴장일이고, 평일은 서버 거래 일정이 HOLIDAY라고 확인된 경우에만 휴장 색을 쓴다.

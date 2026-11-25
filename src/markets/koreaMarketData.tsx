@@ -4,7 +4,7 @@ import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
 import { ChangeRateModeToggle } from '@/components/ToolbarControls'
-import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useKoreaSettings } from '@/markets/useKoreaSettings'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel } from '@/utils/format'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { collectItems } from '@/utils/sectorAverage'
@@ -12,7 +12,7 @@ import type { MarketQuery } from '@/types/api'
 
 // 서머리 배치
 const KOREA_LABELS: Record<MarketQuery, string> = { ALL_STOCK: 'K-STOCK', KOSPI: 'KOSPI', KOSDAQ: 'KOSDAQ' }
-type KoreaSettings = ReturnType<typeof useGlobalSettings>
+type KoreaSettings = ReturnType<typeof useKoreaSettings>
 
 // 한국의 값을 공통 모양으로 바꾼다. PC와 MOBILE이 함께 쓴다.
 export function koreaMarketData(settings: KoreaSettings, indexBars: MarketScreenData['indexBars'], isLoading: boolean): MarketScreenData {

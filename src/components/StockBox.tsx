@@ -3,7 +3,7 @@ import type { PopupContent } from './Popup'
 import type { HeatmapItem } from '@/types/api'
 import { toJoEok, toPctSignedGrouped, toVolume } from '@/utils/format'
 import { isLightColor, resolveHeatmapColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
-import type { StockLabelMode } from '@/hooks/useGlobalSettings'
+import type { StockLabelMode } from '@/utils/heatmapTypes'
 import { LABEL_LINE_HEIGHT, fitStockLabel, stockFitBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
 import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 
@@ -23,7 +23,7 @@ interface Props {
   // 등락률(%) 표시 소수점 자릿수(설정 사이드바의 "소수점 아래 표시" 슬라이더).
   decimalPlaces: number
   currencyUnit?: CurrencyUnit
-  // 박스 색칠은 이 설정 하나로만 결정된다(resolveHeatmapColor) — 범례 바(MapPage)도
+  // 박스 색칠은 이 설정 하나로만 결정된다(resolveHeatmapColor) — 범례 바(MapScreen)도
   // 같은 설정 + 같은 함수를 거치므로 두 화면이 항상 수학적으로 일치한다.
   colorScale: ColorScaleConfig
   onOpenPopup: (content: PopupContent, target: HTMLElement) => void

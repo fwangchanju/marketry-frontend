@@ -131,8 +131,8 @@ PC·모바일 모두 어두운 팔레트 한 벌만 쓴다. `color-scheme: dark`
 
 | 자리 | 파일 | 연동 값 | 상태 |
 |---|---|---|---|
-| 지도 설정창 강조 색 | `pages/MapPage.tsx` `<SettingsPanel strongIndustryColor>` | 강조 색 | 연동 |
-| 차트 종목명 | `components/StockChartView.tsx`, `MapStockChart.tsx`, `MapPage.tsx` `accentColor` | 내 기준 강조 색 / 거래소 `--exchange-accent` | 연동 |
+| 지도 설정창 강조 색 | `components/MapScreen.tsx` `<SettingsPanel strongIndustryColor>` | 강조 색 | 연동 |
+| 차트 종목명 | `components/StockChartView.tsx`, `MapStockChart.tsx`, `MapScreen.tsx` `accentColor` | 내 기준 강조 색 / 거래소 `--exchange-accent` | 연동 |
 | 분류 배지 | `components/TaxonomyBadge.tsx` | 내 기준 강조 색 + 60% 혼합 | 연동 |
 | 설정 기본값 | `utils/settingDefaults.ts` `profileAccent` | 거래소 `#55c8f2` | 미연동 |
 | 텔레그램 색 이름표 | `components/TelegramImageSettings.tsx` `fixedLabels` | 거래소 `#55c8f2` | 미연동 |
