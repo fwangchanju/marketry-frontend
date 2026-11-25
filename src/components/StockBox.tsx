@@ -3,7 +3,7 @@ import type { PopupContent } from './Popup'
 import type { HeatmapItem } from '@/types/api'
 import { toJoEok, toPctSignedGrouped, toVolume } from '@/utils/format'
 import { isLightColor, resolveHeatmapColor, type ColorScaleConfig } from '@/utils/heatmapColorScale'
-import type { StockLabelMode } from '@/hooks/useGlobalSettings'
+import type { StockLabelMode } from '@/utils/heatmapTypes'
 import { LABEL_LINE_HEIGHT, fitStockLabel, stockFitBaseFontPx, useFontsVersion } from '@/utils/stockLabelFit'
 import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 

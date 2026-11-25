@@ -3,8 +3,8 @@ import { useMemo } from 'react'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
-import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
-import { buildExcludedSectorRows, countVisibleItems } from '@/utils/overseasSectorExclusion'
+import { useSnapshotSectorExclusion } from '@/markets/useSnapshotSectorExclusion'
+import { countVisibleItems } from '@/utils/sectorExclusion'
 import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
 import { marketMenu } from '@/utils/marketMenu'
@@ -27,10 +27,10 @@ export default function SnapshotSummary({ market }: { market: OverseasMarket }) 
   const publishedAt = useOverseasPublishedAt(market, sheet)
   // 시가총액 범위 — 지도·그래프와 같은 저장 값. 업종 요약과 막대, 설정창의 종목 수에 함께 반영한다.
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
-  const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
+  const sectorExclusion = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers)
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: 'mine' })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
-  const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
+  const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedIds, tierRange.excludedMarketValueTiers])
   const menu = marketMenu('/summary', market, true)
   const marketData = snapshotMarketData(source, sheet, resolveHeatmapColor(8, colorScale), isLoading || isIndexLoading)
   return (
@@ -40,7 +40,7 @@ export default function SnapshotSummary({ market }: { market: OverseasMarket }) 
       taxonomy={sheet}
       filters={{
         valueRange: { ...tierRange, excluded: tierRange.excludedMarketValueTiers },
-        sectorExclusion: { enabled: sectorExclusion.enabled, toggle: sectorExclusion.toggle, excludedIds: sectorExclusion.excludedSectorIds, rows: buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers), remove: sectorExclusion.remove, suspendedStockCount: null },
+        sectorExclusion,
       }}
       colors={{ colorScale, strongIndustryColor, legendSwatches, scaleSection: colorSettings.colorSectionProps, strongSection: colorSettings.strongSectionProps }}
       mapPath={overseasRoute('/map', market)}

@@ -6,7 +6,7 @@ import { marketMenu } from '@/utils/marketMenu'
 import { useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useSectorHeatmapPair } from '@/hooks/useSectorHeatmapPair'
-import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useKoreaSettings } from '@/markets/useKoreaSettings'
 import { useTransientSetting } from '@/hooks/useTransientSetting'
 import { usePageSetting } from '@/hooks/usePageSetting'
 import { profileSettingKey } from '@/utils/settingsSchema'
@@ -24,8 +24,9 @@ export default function KoreaGraph() {
   const navigate = useNavigate()
   const [beforeMinutes, setBeforeMinutes] = useTransientSetting('sectorChangeRate.beforeMinutes', 15)
   const [searchParams, setSearchParams] = useSearchParams()
-  const settings = useGlobalSettings({ allowChangeRateMode: true })
-  const { settingsModalProps, strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps, avgChangeRateUseSimple, onChangeAvgChangeRateUseSimple, market, source, nxtOnly, changeRateMode, data, rangeStartTime, isLoading: isBaseLoading, isError, isHeatmapSuccess, isMarketValueTierRangeReady, isRefetchingHeatmap, onChangeSectorFilterEnabled, excludedMarketValueTiers, excludedSectorIds, colorScale, settingsProfile } = settings
+  const settings = useKoreaSettings({ allowChangeRateMode: true })
+  const { excludedIds: excludedSectorIds } = settings.sectorExclusion
+  const { settingsModalProps, strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps, avgChangeRateUseSimple, onChangeAvgChangeRateUseSimple, market, source, nxtOnly, changeRateMode, data, rangeStartTime, isLoading: isBaseLoading, isError, isHeatmapSuccess, isMarketValueTierRangeReady, isRefetchingHeatmap, onChangeSectorFilterEnabled, excludedMarketValueTiers, colorScale, settingsProfile } = settings
   const [graphMode, setGraphMode] = usePageSetting<GraphViewMode>(profileSettingKey(settingsProfile, 'groupPage.graphMode'), 'current')
   // 막대 하나가 가리키는 업종 분류 깊이(1=대분류, 2=중분류, 3=소분류). 하위 단계가 없는 분류(거래소)는 대분류만 고를 수 있다.
   const [groupDepth, setGroupDepth] = usePageSetting<number>(profileSettingKey(settingsProfile, 'groupPage.depth'), 1)
@@ -50,7 +51,7 @@ export default function KoreaGraph() {
       (isPairSettled && !pairQuery.isPlaceholderData && isMarketValueTierRangeReady))
   // 렌더러가 /sector/kosdaq?beforeMinutes=15&avgMode=simple&sectorFilter=true로
   // 스크린샷을 요청할 때 쓰는 진입점 — MapScreen와 동일한 패턴(초기 상태 반영 용도일 뿐 주소창엔
-  // 남길 필요 없어 반영 직후 지움). market은 useGlobalSettings()가 내부에서 이미 우선 반영했으므로
+  // 남길 필요 없어 반영 직후 지움). market은 useKoreaSettings()가 내부에서 이미 우선 반영했으므로
   // 여기서는 나머지 세 파라미터만 다룬다. 셋은 서로 독립적으로 판정한다 — 하나가 없거나 잘못됐다고
   // 다른 것까지 무시하면 안 된다. 실제로 소비한(유효했던) 파라미터만 주소에서 지운다.
   useEffect(() => {
@@ -135,7 +136,7 @@ export default function KoreaGraph() {
       taxonomy={settingsModalProps.taxonomy}
       filters={{
         valueRange: { tiers: settingsModalProps.tiers, minIndex: settingsModalProps.tierRangeMinIndex, maxIndex: settingsModalProps.tierRangeMaxIndex, setRange: settingsModalProps.onChangeTierRange, excluded: excludedMarketValueTiers },
-        sectorExclusion: { enabled: settingsModalProps.sectorFilterEnabled, toggle: settingsModalProps.onToggleSectorFilter, excludedIds: excludedSectorIds, rows: settingsModalProps.excludedSectors, remove: settingsModalProps.onRemoveExcludedSector, suspendedStockCount: settingsModalProps.suspendedStockCount },
+        sectorExclusion: settings.sectorExclusion,
       }}
       colors={{
         colorScale, strongIndustryColor, legendSwatches: settingsModalProps.legendSwatches,

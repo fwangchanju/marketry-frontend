@@ -137,7 +137,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
   const { filteredNodes: filteredRootNodes, maxDepth, heatmap, boxSizeRatio, captureBoxSizeRatio, stockPopupOnHover, scope } = map
   const { valueRange, sectorExclusion } = filters
   const { colorScale, strongIndustryColor, legendSwatches } = colors
-  const { marketValueDepthRange, weightedAvgDepthRange, simpleAvgDepthRange, upDownCountDepthRange, stretch, tile, canExclude, labelMinAreaPercent, stockLabelMode, decimalPlaces, topPickSectorKeys, onExcludeSector } = heatmap
+  const { marketValueDepthRange, weightedAvgDepthRange, simpleAvgDepthRange, upDownCountDepthRange, stretch, tile, canExclude, labelMinAreaPercent, stockLabelMode, decimalPlaces, topPickSectorKeys } = heatmap
   const isLoading = state.status === 'loading'
   const isError = state.status === 'error'
   const retry = state.status === 'error' ? state.retry : undefined
@@ -176,7 +176,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
   // "업종 단계" 뎁스 제한은 진짜 루트(대분류) 기준 절대값이다 — 설정이 중분류까지면 어디로 드릴다운해도 중분류까지만 보인다.
   // 드릴다운해서 대분류 하나로 들어가면(path.length = 1) 이미 한 단계를 내려온 것이라, 그 안에서는 남은 단계(설정값 - path.length)만 보인다.
   // 다만 들어간 업종의 바로 아래 한 단계는 항상 보여야 하므로 최소 1단계다. 드릴다운 상태에서는 헤더를 그리지 않는 자기 자신은
-  // 단계로 세지 않고 그 자식부터 1단계로 센다. 설정(3-1)이 꺼져 있으면 제한이 없다. 거래소 분류는 useGlobalSettings가 대분류(1단계)로 제한한다.
+  // 단계로 세지 않고 그 자식부터 1단계로 센다. 설정(3-1)이 꺼져 있으면 제한이 없다. 거래소 분류는 시장 어댑터가 대분류(1단계)로 제한한다.
   const effectiveMaxDepth = maxDepth != null && maxDepth > 0 ? Math.max(1, maxDepth - path.length) : maxDepth
   // 뎁스 0("끄기")은 limitDepth로 표현할 수 없다(그 함수는 항상 최소 1뎁스 = 대분류 박스 하나는
   // 남긴다) — 완전 평탄화는 별도로 처리한다: 지금 보이는 위치 아래 종목을 전부 하나로 모아
@@ -463,7 +463,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
                     selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)}
                     depth={path.length}
                     onSelectSector={enterSector}
-                    onExcludeSector={onExcludeSector}
+                    onExcludeSector={sectorExclusion.exclude}
                     stockChartTrigger={stockChartTrigger}
                     onOpenStockChart={openStockChart}
                     heightClassName="min-h-0 flex-1"

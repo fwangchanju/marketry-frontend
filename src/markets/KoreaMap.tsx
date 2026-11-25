@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import MapScreen from '@/components/MapScreen'
-import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useKoreaSettings } from '@/markets/useKoreaSettings'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { useIsLoggedIn } from '@/hooks/useSession'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
@@ -16,8 +16,8 @@ import { normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 // 한국 MAP의 데이터와 한국에만 있는 기능을 공통 화면에 넘긴다.
 export default function KoreaMap() {
   const isLoggedIn = useIsLoggedIn()
-  const settings = useGlobalSettings({ allowChangeRateMode: true })
-  const { settingsModalProps, colorEditorPanelProps, market, isCustom, isMarketry, taxonomy, changeRateChoice, data, isLoading, rootNodes, filteredRootNodes, maxDepth, marketValueDepthRange, weightedAvgDepthRange, simpleAvgDepthRange, upDownCountDepthRange, boxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio, topPickSectorKeys, strongIndustryColor, onChangeStrongIndustryColor, onChangeAvgChangeRateUseSimple, onChangeSectorFilterEnabled, boxLabelMinAreaPercent, stockLabelMode, stockPopupOnHover, setStockPopupOnHover, decimalPlaces, colorScale, handleExcludeSector, excludedSectorIds, excludedMarketValueTiers, stockChangeFilter, onChangeStockChangeFilter, sectorChangeFilter, setSectorChangeFilter, sectorChangeDepth, setSectorChangeDepth, sectorChangeMaxDepth } = settings
+  const settings = useKoreaSettings({ allowChangeRateMode: true })
+  const { settingsModalProps, colorEditorPanelProps, market, isCustom, isMarketry, taxonomy, changeRateChoice, data, isLoading, rootNodes, filteredRootNodes, maxDepth, marketValueDepthRange, weightedAvgDepthRange, simpleAvgDepthRange, upDownCountDepthRange, boxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio, topPickSectorKeys, strongIndustryColor, onChangeStrongIndustryColor, onChangeAvgChangeRateUseSimple, onChangeSectorFilterEnabled, boxLabelMinAreaPercent, stockLabelMode, stockPopupOnHover, setStockPopupOnHover, decimalPlaces, colorScale, excludedMarketValueTiers, stockChangeFilter, onChangeStockChangeFilter, sectorChangeFilter, setSectorChangeFilter, sectorChangeDepth, setSectorChangeDepth, sectorChangeMaxDepth } = settings
   const [searchParams, setSearchParams] = useSearchParams()
   // 지수는 MOBILE의 그룹 등락률 미리보기에만 쓰므로 그때만 받는다.
   const isMobile = useIsNarrowScreen() && searchParams.get('capture') !== 'mobile'
@@ -61,7 +61,7 @@ export default function KoreaMap() {
         maxDepth: maxDepth ?? null,
         // 정지로 지도에서 뺀 종목도 더해 전체 종목 수와 맞춘다.
         totalStockCount: rootNodes.reduce((sum, node) => sum + collectItems(node).length, 0) + suspendedStockCount,
-        heatmap: { marketValueDepthRange, weightedAvgDepthRange, simpleAvgDepthRange, upDownCountDepthRange, stretch: mapStretchFor(taxonomy), tile: mapTileMethod(), canExclude: isCustom || isMarketry || !isLoggedIn, labelMinAreaPercent: boxLabelMinAreaPercent, stockLabelMode, decimalPlaces, topPickSectorKeys, onExcludeSector: handleExcludeSector },
+        heatmap: { marketValueDepthRange, weightedAvgDepthRange, simpleAvgDepthRange, upDownCountDepthRange, stretch: mapStretchFor(taxonomy), tile: mapTileMethod(), canExclude: isCustom || isMarketry || !isLoggedIn, labelMinAreaPercent: boxLabelMinAreaPercent, stockLabelMode, decimalPlaces, topPickSectorKeys },
         boxSizeRatio: boxSizeMarketCapRatio,
         setBoxSizeRatio: onChangeBoxSizeMarketCapRatio,
         captureBoxSizeRatio: normalizeMobileBoxSizeRatio(storedMobileBoxSizeRatio),
@@ -76,7 +76,7 @@ export default function KoreaMap() {
       taxonomy={settingsModalProps.taxonomy}
       filters={{
         valueRange: { tiers: settingsModalProps.tiers, minIndex: settingsModalProps.tierRangeMinIndex, maxIndex: settingsModalProps.tierRangeMaxIndex, setRange: settingsModalProps.onChangeTierRange, excluded: excludedMarketValueTiers },
-        sectorExclusion: { enabled: settingsModalProps.sectorFilterEnabled, toggle: settingsModalProps.onToggleSectorFilter, excludedIds: excludedSectorIds, rows: settingsModalProps.excludedSectors, remove: settingsModalProps.onRemoveExcludedSector, suspendedStockCount: settingsModalProps.suspendedStockCount },
+        sectorExclusion: settings.sectorExclusion,
       }}
       colors={{
         colorScale, strongIndustryColor, legendSwatches: settingsModalProps.legendSwatches,

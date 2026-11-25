@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import GraphScreen from '@/components/GraphScreen'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
-import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
+import { useSnapshotSectorExclusion } from '@/markets/useSnapshotSectorExclusion'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
 import type { MarketIndexBar } from '@/markets/marketContract'
@@ -16,7 +16,7 @@ import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { graphIndexValue, intradayRateAt } from '@/utils/indexChange'
 import { marketMenu } from '@/utils/marketMenu'
 import { overseasRoute, type OverseasMarket } from '@/utils/markets'
-import { buildExcludedSectorRows, countVisibleItems } from '@/utils/overseasSectorExclusion'
+import { countVisibleItems } from '@/utils/sectorExclusion'
 import { subtractMinutesFromSnapshotTime } from '@/utils/snapshotTime'
 import { formatStockCountLabel } from '@/utils/stockCountLabel'
 
@@ -37,7 +37,7 @@ export default function SnapshotGraph({ market }: { market: OverseasMarket }) {
   const preferences = useSnapshotGraphPreferences(market, sheet)
   const { beforeMinutes } = preferences
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
-  const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
+  const sectorExclusion = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers)
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: sheetMarket })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   const showDelta = intradayDelta && rangeStart === null && preferences.graphMode === 'delta'
@@ -53,7 +53,7 @@ export default function SnapshotGraph({ market }: { market: OverseasMarket }) {
   const indexBefore = useMarketIndexQuotes(market, showDelta && beforeTime ? beforeTime.slice(0, 10) : null)
   const deltaValue = showDelta ? graphIndexValue({ showDelta: true, nowRate: intradayRateAt(indexNow.data, snapshotTime), beforeRate: intradayRateAt(indexBefore.data, beforeTime), dailyRate: null }) : null
   const deltaIndexBars = useMemo<MarketIndexBar[]>(() => [deltaValue === null ? { key: index.key, name: index.name, value: null, reason: '비교할 지수 값이 없습니다.' } : { key: index.key, name: index.name, value: deltaValue }], [index, deltaValue])
-  const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
+  const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedIds, tierRange.excludedMarketValueTiers])
   const isAllLoading = isLoading || isIndexLoading || beforeQuotes.isLoading || indexNow.isLoading || indexBefore.isLoading
   const retrySource = { ...source, isError: isError || beforeQuotes.isError, refetchAll: () => Promise.all([refetchAll(), ...(beforeTime === null ? [] : [beforeQuotes.refetch()])]) }
   const marketData = snapshotMarketData(retrySource, sheet, resolveHeatmapColor(8, colorScale), isAllLoading)
@@ -72,7 +72,7 @@ export default function SnapshotGraph({ market }: { market: OverseasMarket }) {
       taxonomy={sheet}
       filters={{
         valueRange: { ...tierRange, excluded: tierRange.excludedMarketValueTiers },
-        sectorExclusion: { enabled: sectorExclusion.enabled, toggle: sectorExclusion.toggle, excludedIds: sectorExclusion.excludedSectorIds, rows: buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers), remove: sectorExclusion.remove, suspendedStockCount: null },
+        sectorExclusion,
       }}
       colors={{ colorScale, strongIndustryColor, legendSwatches, scaleSection: colorSettings.colorSectionProps, strongSection: colorSettings.strongSectionProps }}
       mapPath={mapPath}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildExcludedSectorRows, collectCoveredExcludedIds, countVisibleItems, findSectorPath } from './overseasSectorExclusion.ts'
+import { buildExcludedSectorRows, excludedNamesForIds, collectCoveredExcludedIds, countVisibleItems, findSectorPath } from './sectorExclusion.ts'
 
 const item = (code, value) => ({ stockCode: code, stockName: code, alias: null, lastPrice: 1, totalMarketValue: value, marketValueTier: '', changeRate: 0 })
 const node = (sectorId, sectorName, items, children = []) => ({ sectorId, sectorName, totalMarketValue: 0, items, children })
@@ -32,7 +32,7 @@ test('상위 업종도 제외된 업종은 흐리게 보이도록 표시한다',
 })
 
 test('제외 목록 줄은 이름순이고 종목 수를 담으며 사라진 업종은 뺀다', () => {
-  const rows = buildExcludedSectorRows(tree, [2, 11, 99], NONE)
+  const rows = buildExcludedSectorRows(tree, excludedNamesForIds(tree, [2, 11, 99]), NONE, true)
   assert.deepEqual(rows.map(row => [row.sectorName, row.stockCount, row.coveredByParent]), [['금융 > 은행', 2, false], ['반도체', 1, false]])
-  assert.deepEqual(buildExcludedSectorRows(tree, [], NONE), [])
+  assert.deepEqual(buildExcludedSectorRows(tree, excludedNamesForIds(tree, []), NONE, true), [])
 })

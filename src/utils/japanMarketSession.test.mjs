@@ -39,7 +39,7 @@ test('일본 지도는 국내 지도의 설정을 읽지 않는다', () => {
   // 스냅샷 시장의 지도 값은 SnapshotMap이 넘긴다.
   for (const file of ['../markets/SnapshotMap.tsx']) {
     const source = readFileSync(new URL(file, import.meta.url), 'utf8')
-    for (const name of ['settingDefaults', 'useHeatmapColorScale', 'useGlobalSettings', 'MEMBER_DEFAULTS']) assert.equal(source.includes(name), false, `${file}: ${name}`)
+    for (const name of ['settingDefaults', 'useHeatmapColorScale', 'useKoreaSettings', 'MEMBER_DEFAULTS']) assert.equal(source.includes(name), false, `${file}: ${name}`)
   }
 })
 

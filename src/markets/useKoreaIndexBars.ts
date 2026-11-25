@@ -3,7 +3,7 @@ import type { MarketIndexBar, MarketScreenData } from '@/markets/marketContract'
 import { useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getMarketIndexHistory } from '@/api/marketSummary'
-import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useKoreaSettings } from '@/markets/useKoreaSettings'
 import { useMarketSummary } from '@/hooks/useMarketSummary'
 import { usePreviousTradingDay } from '@/hooks/useHeatmap'
 import { trendMonths } from '@/utils/trendDates'
@@ -27,7 +27,7 @@ function earliestTrendDate(endDate: string): string {
 }
 
 // 한국 지수 막대(코스피·코스닥) — SUMMARY와 MOBILE이 함께 쓴다. 최신 하루는 요약 값, 지난 날짜·기간은 날짜별 지수로 구한다.
-export function useKoreaIndexBars({ market, pinnedSnapshotTime, rangeStartTime, changeRateMode, changeRateChoice }: Pick<ReturnType<typeof useGlobalSettings>, 'market' | 'pinnedSnapshotTime' | 'rangeStartTime' | 'changeRateMode' | 'changeRateChoice'>, enabled = true) {
+export function useKoreaIndexBars({ market, pinnedSnapshotTime, rangeStartTime, changeRateMode, changeRateChoice }: Pick<ReturnType<typeof useKoreaSettings>, 'market' | 'pinnedSnapshotTime' | 'rangeStartTime' | 'changeRateMode' | 'changeRateChoice'>, enabled = true) {
   // 지도 위 한 줄에 넣을 코스피·코스닥 지수 등락률 — 지도 조회(ALL STOCK)에는 지수가 없어 요약 조회에서 받는다.
   const { data: marketSummary, isLoading: isMarketSummaryLoading, isFetching: isMarketSummaryFetching } = useMarketSummary(enabled)
   const queryClient = useQueryClient()

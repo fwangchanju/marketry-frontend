@@ -1,5 +1,5 @@
 import type { FilteredHeatmapSectorNode } from '../hooks/useFilteredHeatmap.ts'
-import type { DepthMetric } from '../hooks/useGlobalSettings.ts'
+import type { DepthMetric } from './heatmapTypes.ts'
 
 // 강세 업종은 업종 탭 표시 지표를 따른다. 평균이 아닌 지표를 고르면 시총 가중으로 계산한다.
 export function topPickAverage(node: FilteredHeatmapSectorNode, metric: DepthMetric): number | null {

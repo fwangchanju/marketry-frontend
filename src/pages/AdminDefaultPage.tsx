@@ -14,7 +14,7 @@ import { InfoPageHeading } from '@/components/InfoDocument'
 import TelegramImageSettings from '@/components/TelegramImageSettings'
 import SettingsPanel, { SettingsPanelGroup } from '@/components/SettingsPanel'
 import ScreenshotModal from '@/components/ScreenshotModal'
-import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useKoreaSettings } from '@/markets/useKoreaSettings'
 import { useHeatmap } from '@/hooks/useHeatmap'
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
@@ -58,7 +58,7 @@ function ProfileReader({
   profile: 'marketry' | 'exchange'
   onSnapshot: (profile: 'marketry' | 'exchange', snapshot: ProfileSnapshot | null) => void
 }) {
-  const settings = useGlobalSettings(profile === 'marketry'
+  const settings = useKoreaSettings(profile === 'marketry'
     ? { readOnlyTelegramSnapshot: true }
     : { defaultTaxonomy: 'KRX', taxonomyStorageKey: 'admin-default-exchange-taxonomy' })
 

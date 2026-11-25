@@ -3,7 +3,7 @@ import { useKoreaIndexBars } from '@/markets/useKoreaIndexBars'
 import SummaryScreen from '@/components/SummaryScreen'
 import { useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useKoreaSettings } from '@/markets/useKoreaSettings'
 import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { collectItems } from '@/utils/sectorAverage'
 import { collectAllItems, filterTreeByExclusions } from '@/hooks/useFilteredHeatmap'
@@ -21,10 +21,11 @@ export default function KoreaSummary() {
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, 특별 회원·관리자에게만 JAPAN·USA).
   const summaryMenu = marketMenu('/summary', summaryMarket, canSeeOverseasSummary)
   const navigate = useNavigate()
-  const settings = useGlobalSettings({ allowChangeRateMode: true })
+  const settings = useKoreaSettings({ allowChangeRateMode: true })
+  const { excludedIds: excludedSectorIds } = settings.sectorExclusion
   const {
     settingsModalProps, data, rootNodes, isLoading: isBaseLoading, pinnedSnapshotTime, rangeStartTime, 
-    changeRateMode, changeRateChoice, colorScale, strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps, excludedSectorIds, excludedMarketValueTiers,
+    changeRateMode, changeRateChoice, colorScale, strongIndustryColor, onChangeStrongIndustryColor, colorEditorPanelProps, excludedMarketValueTiers,
     market, 
   } = settings
 
@@ -51,7 +52,7 @@ export default function KoreaSummary() {
       taxonomy={settingsModalProps.taxonomy}
       filters={{
         valueRange: { tiers: settingsModalProps.tiers, minIndex: settingsModalProps.tierRangeMinIndex, maxIndex: settingsModalProps.tierRangeMaxIndex, setRange: settingsModalProps.onChangeTierRange, excluded: excludedMarketValueTiers },
-        sectorExclusion: { enabled: settingsModalProps.sectorFilterEnabled, toggle: settingsModalProps.onToggleSectorFilter, excludedIds: excludedSectorIds, rows: settingsModalProps.excludedSectors, remove: settingsModalProps.onRemoveExcludedSector, suspendedStockCount: settingsModalProps.suspendedStockCount },
+        sectorExclusion: settings.sectorExclusion,
       }}
       colors={{
         colorScale,

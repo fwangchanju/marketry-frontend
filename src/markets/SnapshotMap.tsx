@@ -2,18 +2,17 @@ import { overseasRoute } from '@/utils/markets'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
-import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
-import { buildExcludedSectorRows } from '@/utils/overseasSectorExclusion'
+import { useSnapshotSectorExclusion } from '@/markets/useSnapshotSectorExclusion'
 import { marketMenu } from '@/utils/marketMenu'
 import { useMemo } from 'react'
 import { useStockPopupOnHover } from '@/hooks/useStockChart'
 import { useTransientSetting } from '@/hooks/useTransientSetting'
-import { pickTopSectorKeys } from '@/utils/topPickSectors'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
-import { collectSectorsAtDepth, useFilteredHeatmap } from '@/hooks/useFilteredHeatmap'
+import { useFilteredHeatmap } from '@/hooks/useFilteredHeatmap'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { mapTileMethod } from '@/utils/mapStretch'
 
+import { useTopPickSectorKeys } from '@/hooks/useTopPickSectorKeys'
 import MapScreen from '@/components/MapScreen'
 import type { MarketMap } from '@/markets/marketContract'
 import { snapshotMarketData } from '@/markets/snapshotMarketData'
@@ -22,7 +21,6 @@ import { useSnapshotMapPreferences } from '@/markets/useSnapshotMapPreferences'
 import { useSnapshotMarketSummary } from '@/markets/useSnapshotMarketSummary'
 import type { OverseasMarket } from '@/utils/markets'
 
-const NO_TOP_PICKS = new Set<string>()
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 
 // 스냅샷 시장의 MAP 데이터를 공통 화면에 넘긴다.
@@ -34,7 +32,7 @@ export default function SnapshotMap({ market }: { market: OverseasMarket }) {
   const { preferences, update, isLoadingDefaults } = useSnapshotMapPreferences(market, sheet)
   const publishedAt = useOverseasPublishedAt(market, sheet)
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
-  const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
+  const sectorExclusion = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers)
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: sheetMarket })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   // 공통 설정 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
@@ -45,13 +43,9 @@ export default function SnapshotMap({ market }: { market: OverseasMarket }) {
   const [sectorChangeDepth, setSectorChangeDepth] = useTransientSetting(experimentKey('sectorChangeDepth'), 0)
   const [stockPopupOnHover, setStockPopupOnHover] = useStockPopupOnHover(fixed.stockPopupOnHover)
   const directionFilters = useMemo(() => ({ stockChangeFilter, sectorChangeFilter, sectorChangeDepth, sectorUseSimpleAverage: false }), [stockChangeFilter, sectorChangeFilter, sectorChangeDepth])
-  const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, directionFilters)
-  // 상위 업종 강조 — 모든 시장이 같은 규칙으로 고른 단계의 업종 중 등락률이 높은 순서로 뽑는다. 필터가 적용된 전체 트리 기준이라 드릴다운해도 바뀌지 않는다.
+  const { filteredRootNodes, availableMaxDepth } = useFilteredHeatmap(tree, sectorExclusion.excludedIds, tierRange.excludedMarketValueTiers, directionFilters)
   const topPickMaxSelectableDepth = preferences.maxDepth === null ? Math.max(mapDepth, availableMaxDepth) : preferences.maxDepth
-  const topPickSectorKeys = useMemo(() => {
-    if (!preferences.topPickEnabled || preferences.topPickDepth < 0 || preferences.topPickDepth >= topPickMaxSelectableDepth) return NO_TOP_PICKS
-    return pickTopSectorKeys(collectSectorsAtDepth(filteredRootNodes, preferences.topPickDepth), preferences.topPickCount, preferences.activeDepthMetric)
-  }, [filteredRootNodes, preferences.topPickEnabled, preferences.topPickDepth, preferences.topPickCount, preferences.activeDepthMetric, topPickMaxSelectableDepth])
+  const topPickSectorKeys = useTopPickSectorKeys({ nodes: filteredRootNodes, enabled: preferences.topPickEnabled, depth: preferences.topPickDepth, maxDepth: topPickMaxSelectableDepth, count: preferences.topPickCount, metric: preferences.activeDepthMetric })
   const depthRange: [number, number] | null = preferences.depthMetricEnabled ? [preferences.depthMetricMinIndex, preferences.depthMetricMaxIndex] : null
   const metricRange = (metric: typeof preferences.activeDepthMetric) => (preferences.activeDepthMetric === metric ? depthRange : null)
   const topPick: MarketMap['topPick'] = {
@@ -97,7 +91,7 @@ export default function SnapshotMap({ market }: { market: OverseasMarket }) {
         // 업종 단계를 끄면 박스를 묶지 않고 종목만 그린다.
         maxDepth: preferences.sectorLevelEnabled ? preferences.maxDepth : 0,
         totalStockCount: totalCount,
-        heatmap: { marketValueDepthRange: metricRange('marketValue'), weightedAvgDepthRange: metricRange('weightedAvgChangeRate'), simpleAvgDepthRange: metricRange('simpleAvgChangeRate'), upDownCountDepthRange: metricRange('upDownCount'), stretch: null, tile: mapTileMethod(), canExclude: true, labelMinAreaPercent: fixed.boxLabelMinAreaPercent, stockLabelMode: preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off', decimalPlaces: preferences.decimalPlaces, topPickSectorKeys, onExcludeSector: sectorExclusion.exclude },
+        heatmap: { marketValueDepthRange: metricRange('marketValue'), weightedAvgDepthRange: metricRange('weightedAvgChangeRate'), simpleAvgDepthRange: metricRange('simpleAvgChangeRate'), upDownCountDepthRange: metricRange('upDownCount'), stretch: null, tile: mapTileMethod(), canExclude: true, labelMinAreaPercent: fixed.boxLabelMinAreaPercent, stockLabelMode: preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off', decimalPlaces: preferences.decimalPlaces, topPickSectorKeys },
         boxSizeRatio: preferences.boxSizeMarketCapRatio,
         setBoxSizeRatio,
         captureBoxSizeRatio: preferences.boxSizeMarketCapRatio,
@@ -111,7 +105,7 @@ export default function SnapshotMap({ market }: { market: OverseasMarket }) {
       taxonomy={sheet}
       filters={{
         valueRange: { ...tierRange, excluded: tierRange.excludedMarketValueTiers },
-        sectorExclusion: { enabled: sectorExclusion.enabled, toggle: sectorExclusion.toggle, excludedIds: sectorExclusion.excludedSectorIds, rows: buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers), remove: sectorExclusion.remove, suspendedStockCount: null },
+        sectorExclusion,
       }}
       colors={{ colorScale, strongIndustryColor, legendSwatches, scaleSection: colorSettings.colorSectionProps, strongSection: colorSettings.strongSectionProps }}
       routes={{ summary: overseasRoute('/summary', market), graph: overseasRoute('/graph', market) }}

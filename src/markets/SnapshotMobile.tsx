@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import MobileMarketScreen from '@/components/MobileMarketScreen'
 import { useFilteredHeatmap } from '@/hooks/useFilteredHeatmap'
 import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
-import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
+import { useSnapshotSectorExclusion } from '@/markets/useSnapshotSectorExclusion'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
 import { snapshotMarketData } from '@/markets/snapshotMarketData'
@@ -24,9 +24,9 @@ export default function SnapshotMobile({ market, mode }: { market: OverseasMarke
   const source = useSnapshotMarketSummary(market, sheet)
   const { tree, isLoading, isIndexLoading, isIndexFetching, fixed, settingPrefix, currencyUnit } = source
   const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
-  const { excludedSectorIds } = useOverseasSectorExclusion(settingPrefix)
+  const { excludedIds: excludedSectorIds } = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers)
   const { colorScale, strongIndustryColor } = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: 'mine' })
-  const { filteredRootNodes } = useFilteredHeatmap(tree, excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, FILTERS)
+  const { filteredRootNodes } = useFilteredHeatmap(tree, excludedSectorIds, tierRange.excludedMarketValueTiers, FILTERS)
   const groups = useMemo(() => filteredRootNodes.map(toDisplayGroup), [filteredRootNodes])
   return (
     <MobileMarketScreen

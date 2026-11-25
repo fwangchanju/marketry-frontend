@@ -32,18 +32,23 @@ export function collectCoveredExcludedIds(nodes: HeatmapSectorNode[], excluded: 
   return out
 }
 
-// 제외 목록 줄 — 이름순. 트리에서 사라진 업종 id(분류가 바뀐 경우)는 목록에 보이지 않는다.
-export function buildExcludedSectorRows(tree: HeatmapSectorNode[], excludedIds: readonly number[], exclusions: MarketValueExclusions): ExcludedSectorRow[] {
-  if (excludedIds.length === 0) return []
-  const counts = collectExcludedSectorCounts(tree, exclusions)
-  const covered = collectCoveredExcludedIds(tree, new Set(excludedIds))
-  const rows: ExcludedSectorRow[] = []
-  for (const sectorId of excludedIds) {
-    const path = findSectorPath(tree, sectorId)
-    if (!path) continue
-    rows.push({ sectorId, sectorName: path.join(' > '), stockCount: counts.get(sectorId) ?? 0, coveredByParent: covered.has(sectorId) })
+// 업종 번호 목록에 이름을 붙인다. 트리에서 사라진 업종(분류가 바뀐 경우)은 뺀다.
+export function excludedNamesForIds(tree: HeatmapSectorNode[], ids: readonly number[]): Map<number, string> {
+  const names = new Map<number, string>()
+  for (const id of ids) {
+    const path = findSectorPath(tree, id)
+    if (path) names.set(id, path.join(' > '))
   }
-  return rows.sort((a, b) => compareKoreanText(a.sectorName, b.sectorName))
+  return names
+}
+
+// 제외 목록 줄 — 이름순. 자료를 기다리는 동안에는 종목 수를 비워 둔다.
+export function buildExcludedSectorRows(tree: HeatmapSectorNode[], names: ReadonlyMap<number, string>, exclusions: MarketValueExclusions, countsReady: boolean): ExcludedSectorRow[] {
+  if (names.size === 0) return []
+  const counts = collectExcludedSectorCounts(tree, exclusions)
+  const covered = collectCoveredExcludedIds(tree, new Set(names.keys()))
+  return Array.from(names, ([sectorId, sectorName]) => ({ sectorId, sectorName, stockCount: countsReady ? counts.get(sectorId) ?? 0 : null, coveredByParent: covered.has(sectorId) }))
+    .sort((a, b) => compareKoreanText(a.sectorName, b.sectorName))
 }
 
 // 제외 업종과 시가총액 범위를 거친 뒤 화면에 남는 종목 수(설정창의 "n/m종목"에 쓴다).

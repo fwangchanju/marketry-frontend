@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileMarketScreen from '@/components/MobileMarketScreen'
 import { limitDepth } from '@/hooks/useFilteredHeatmap'
-import { useGlobalSettings } from '@/hooks/useGlobalSettings'
+import { useKoreaSettings } from '@/markets/useKoreaSettings'
 import { koreaMarketData } from '@/markets/koreaMarketData'
 import { useKoreaIndexBars } from '@/markets/useKoreaIndexBars'
 import { marketMenu } from '@/utils/marketMenu'
@@ -14,7 +14,7 @@ import { isInDepthRange } from '@/utils/sectorDepth'
 // 한국 MOBILE 업종 지도·그룹 등락률의 데이터를 공통 화면에 넘긴다.
 export default function KoreaMobile({ mode }: { mode: 'sector' | 'graph' }) {
   const navigate = useNavigate()
-  const settings = useGlobalSettings({ allowChangeRateMode: true, defaultTaxonomy: 'MARKETRY', taxonomyStorageKey: 'mobile.taxonomySelection' })
+  const settings = useKoreaSettings({ allowChangeRateMode: true, defaultTaxonomy: 'MARKETRY', taxonomyStorageKey: 'mobile.taxonomySelection' })
   const { market, taxonomy, isLoading, filteredRootNodes, maxDepth, excludedMarketValueTiers, colorScale, strongIndustryColor, marketValueDepthRange, weightedAvgDepthRange, simpleAvgDepthRange, upDownCountDepthRange, topPickSectorKeys, boxLabelMinAreaPercent, stockLabelMode } = settings
   const index = useKoreaIndexBars(settings)
   // 종목 지도(/map)가 최상위에서 쓰는 것과 같은 트리·단계 제한을 쓴다.

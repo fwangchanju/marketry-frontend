@@ -8,7 +8,7 @@ import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import type { HeatmapSectorNode, MarketValueTierItem } from '@/types/api'
 import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { MarketValueExclusions } from '@/utils/marketValueTier'
-import type { ExcludedSectorRow } from '@/utils/overseasSectorExclusion'
+import type { ExcludedSectorRow } from '@/utils/sectorExclusion'
 
 // 모든 시장이 화면에 넘겨야 하는 것. 화면은 이 모양만 알고 어느 시장인지, 시세가 어디서 오는지 묻지 않는다.
 // 필수 항목에 ?(생략 가능)를 붙이지 않는다 — 한 시장이라도 빠뜨리면 빌드가 실패해야 한다.
@@ -73,7 +73,7 @@ export type MarketRegistry<T> = Readonly<Record<MarketId, T>>
 // 화면이 쓰는 설정값. 저장하는 곳과 이름은 시장마다 달라도 화면에 넘기는 모양은 같다.
 export interface MarketFilters {
   valueRange: { tiers: MarketValueTierItem[]; minIndex: number; maxIndex: number; setRange: (min: number, max: number) => void; excluded: MarketValueExclusions }
-  sectorExclusion: { enabled: boolean; toggle: () => void; excludedIds: ReadonlySet<number>; rows: ExcludedSectorRow[]; remove: (sectorId: number) => void; suspendedStockCount: number | null }
+  sectorExclusion: { enabled: boolean; toggle: () => void; excludedIds: ReadonlySet<number>; rows: ExcludedSectorRow[]; exclude: (sectorId: number, sectorName: string) => void; remove: (sectorId: number) => void; suspendedStockCount: number | null }
 }
 
 export interface MarketColors {
@@ -113,7 +113,7 @@ export interface MarketMap {
   maxDepth: number | null
   // 시장 전체를 볼 때의 전체 종목 수.
   totalStockCount: number
-  heatmap: Pick<HeatmapProps, 'marketValueDepthRange' | 'weightedAvgDepthRange' | 'simpleAvgDepthRange' | 'upDownCountDepthRange' | 'tile' | 'canExclude' | 'labelMinAreaPercent' | 'stockLabelMode' | 'decimalPlaces' | 'topPickSectorKeys' | 'onExcludeSector'> & { stretch: HeatmapProps['stretch'] | null }
+  heatmap: Pick<HeatmapProps, 'marketValueDepthRange' | 'weightedAvgDepthRange' | 'simpleAvgDepthRange' | 'upDownCountDepthRange' | 'tile' | 'canExclude' | 'labelMinAreaPercent' | 'stockLabelMode' | 'decimalPlaces' | 'topPickSectorKeys'> & { stretch: HeatmapProps['stretch'] | null }
   boxSizeRatio: number
   setBoxSizeRatio: (ratio: number) => void
   // 캡처(텔레그램 포함)가 쓰는 박스 크기. MOBILE 화면은 자기 값을 쓴다.

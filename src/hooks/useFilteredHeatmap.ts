@@ -28,7 +28,7 @@ export interface FilteredHeatmapSectorNode extends HeatmapSectorNode {
 // 시총 0(또는 tier/방향으로 다 걸러진) 종목/섹터는 히트맵에 빈 슬리버로 남지 않도록 재귀적으로 가지치기한다.
 function filterNodes(
   nodes: HeatmapSectorNode[],
-  excludedSectorIds: Set<number>,
+  excludedSectorIds: ReadonlySet<number>,
   excludedMarketValueTiers: Set<string>,
   filters: DirectionFilters,
   depth = 0,
@@ -87,7 +87,7 @@ function filterNodes(
 // 그래프 페이지가 지도 설정창과 같은 기준으로 종목 수를 세는 데 쓴다.
 export function filterTreeByExclusions(
   nodes: HeatmapSectorNode[],
-  excludedSectorIds: Set<number>,
+  excludedSectorIds: ReadonlySet<number>,
   excludedMarketValueTiers: Set<string>,
 ): FilteredHeatmapSectorNode[] {
   return filterNodes(nodes, excludedSectorIds, excludedMarketValueTiers, {
@@ -166,7 +166,7 @@ function computeMaxDepth(nodes: FilteredHeatmapSectorNode[], depth = 1): number 
 
 export function useFilteredHeatmap(
   rootNodes: HeatmapSectorNode[],
-  excludedSectorIds: Set<number>,
+  excludedSectorIds: ReadonlySet<number>,
   excludedMarketValueTiers: Set<string>,
   filters: DirectionFilters,
 ) {
