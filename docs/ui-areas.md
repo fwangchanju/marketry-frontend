@@ -76,7 +76,7 @@
 | 사각형으로 쪼갠 지도 그림 | `Heatmap` | 히트맵 |
 | MARKETRY / 거래소 / 내 기준 선택 | `Taxonomy` (`TaxonomyKey`, `useTaxonomySelection`, `SettingsTaxonomySelector`) | **Mode** (설정창 제목) |
 | 분류 값 | `MARKETRY` · `KRX` · `MINE` · `NXT` | MARKETRY · 거래소 · 내 기준 |
-| 페이지 | `MapScreen` · `GraphPage` · `CustomPage` | Map · Graph · Custom (그래프 화면의 주소는 `/graph`) |
+| 페이지 | `MapScreen` · `GraphPage` · `KoreaSheet` | Map · Graph · Custom (그래프 화면의 주소는 `/graph`) |
 | 일본 페이지 | `SnapshotMap` · `JapanGraphPage` · `JapanSectorPage` · `JapanStockPage` | 주소는 `/map/japan`·`/graph/japan`·`/sector/japan`·`/stock/japan`. 특별 회원과 관리자만 보며 메뉴 항목은 보라색이다. 조회는 `/api/japan/**`, 수정은 관리자만 `/api/admin/**`로 한다 |
 | 상단 영역의 메뉴 줄 | `NavSubBar` | 메뉴 줄 |
 | 상단 영역 메뉴(Home·Map·Graph·Sector·Stock·Admin)는 누르면 해당 페이지로 바로 이동한다. 하위 목록은 두지 않으며, 시장과 어드민 하위 화면은 좌상단 배지 목록에서 고른다 | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |
@@ -120,7 +120,7 @@
 | 메인 | 도움말 (`?`를 누르면 열리는 설명) | `HelpBubble` 계열 — `SettingHelpBubble`(설정창), `SourceHelpBubble`(면책 문구) |
 | 메인 | 등락률 바 (색 단계 -8% … +8%, 맵·그룹 페이지 아래쪽) | `ChangeRateBar` |
 | 메인 | 면책 문구 (+ 출처 도움말) | `DisclaimerNotice` |
-| 메인 | 선택 안내 (Custom 종목 표에서 행을 세 번 누르면 표 아래 가운데에 6초간 뜨는 "여러 줄은 드래그하거나 Shift + 클릭…", 말풍선색) | `SelectionHintBubble` (`AdminStockTable`이 띄움) |
+| 메인 | 선택 안내 (Custom 종목 표에서 행을 세 번 누르면 표 아래 가운데에 6초간 뜨는 "여러 줄은 드래그하거나 Shift + 클릭…", 말풍선색) | `SelectionHintBubble` (`StockTable`이 띄움) |
 | 사이드 | 설정창 헤더 | `SettingsPanel` 안 맨 윗줄 |
 | 사이드 | 설정창 메뉴 줄 (설정창 헤더 바로 아래에 그림과 이름이 가로로 늘어선 줄: 종목 박스·종목 구성·업종 분류·색상. 누르면 아래 내용이 바뀌고 고른 것은 청록색) | `SettingsPanel`의 탭 목록, 그림은 `SettingsSectionIcon` |
 | 사이드 | 설정창 메뉴 아이콘 (메뉴 줄 안의 그림. 선 아이콘이고 24px, 선 1.1) | `SettingsSectionIcon` |

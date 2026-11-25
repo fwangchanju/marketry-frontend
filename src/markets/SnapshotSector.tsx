@@ -1,3 +1,4 @@
+import { SNAPSHOT_MAX_DEPTH, categoryPath, stocksUnder, useSnapshotSectors } from '@/markets/snapshotSectors'
 import { subSectorsBlockMessage } from '@/hooks/useSectorDeleteFlow'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
@@ -19,16 +20,9 @@ import { SNAPSHOT_MARKETS } from '@/markets/snapshotMarkets'
 import { overseasRoute, type OverseasMarket } from '@/utils/markets'
 
 type Category = OverseasCategory
-const MAX_DEPTH = 2
 // 확인한 종목 수가 그사이 바뀌어 서버가 삭제를 멈추면 새 수로 다시 확인한다. 계속 바뀌면 이 횟수까지만 다시 묻는다.
 const MAX_CONFIRM_ATTEMPTS = 3
 const protectedHint = () => '삭제한 분류의 종목이 이 그룹으로 옮겨집니다.'
-const pathOf = (sectors: Category[], target: Category) => {
-  const path: string[] = []
-  for (let current: Category | undefined = target; current; current = sectors.find(item => item.id === current?.parentId)) path.unshift(current.name)
-  return path
-}
-
 // 스냅샷 시장의 SECTOR 데이터와 편집 동작을 공통 화면에 넘긴다.
 export default function SnapshotSector({ market }: { market: OverseasMarket }) {
   const { bundledStocks, currencyUnit } = SNAPSHOT_MARKETS[market]
@@ -46,23 +40,7 @@ export default function SnapshotSector({ market }: { market: OverseasMarket }) {
   const create = useMutation({ meta: { failure: '업종을 추가하지 못했습니다.' }, mutationFn: async ({ name, parentId }: { name: string; parentId: number | null }): Promise<SectorItem> => { const item = (await client.post<Category>(endpoint, { name, parentId })).data; return { ...item, depth: depthOf(item.parentId) + 1 } }, onSuccess: invalidate })
   const rename = useMutation({ meta: { failure: '업종명을 바꾸지 못했습니다.' }, mutationFn: async ({ id, name }: { id: number; name: string }) => client.put(`${endpoint}/${id}`, { name }), onSuccess: invalidate })
   const reparent = useMutation({ meta: { failure: '업종을 옮기지 못했습니다.' }, mutationFn: async ({ id, parentId }: { id: number; parentId: number | null }) => client.put(`${endpoint}/${id}/parent`, { parentId }), onSuccess: invalidate })
-  const all = categories.data ?? []
-  const depth = (item: Category): number => { const parent = all.find(candidate => candidate.id === item.parentId); return parent ? depth(parent) + 1 : 0 }
-  const sectors: SectorItem[] = all.map(item => ({ ...item, depth: Math.min(depth(item), MAX_DEPTH) }))
-  const stats = useMemo(() => {
-    const result = new Map<number, { marketValue: number; stockCount: number }>()
-    const quoteByCode = new Map((quotes.data?.quotes ?? []).map(quote => [quote.stockCode, quote.totalMarketValue]))
-    for (const category of sectors) {
-      const path = pathOf(sectors, category)
-      const matching = stockCodes.filter(code => {
-        const classification = classifications.data?.[code]
-        const values = [classification?.sector, classification?.industry, classification?.subIndustry]
-        return path.every((name, index) => values[index] === name)
-      })
-      result.set(category.id, { marketValue: matching.reduce((sum, code) => sum + (quoteByCode.get(code) ?? 0), 0), stockCount: matching.length })
-    }
-    return result
-  }, [sectors, stockCodes, classifications.data, quotes.data])
+  const { sectors, sectorStats: stats } = useSnapshotSectors(categories.data, stockCodes, classifications.data, quotes.data?.quotes)
   const remove = async (id: number, name: string) => {
     let all: Category[] = sectors
     let count = stats.get(id)?.stockCount ?? 0
@@ -77,8 +55,7 @@ export default function SnapshotSector({ market }: { market: OverseasMarket }) {
         const draft = latest && 'categories' in latest ? latest : null
         const target = draft?.categories.find(item => item.id === id)
         if (!draft || !target) break
-        const path = pathOf(draft.categories, target)
-        const nextCount = stockCodes.filter(code => { const value = draft.classifications[code]; const values = [value?.sector, value?.industry, value?.subIndustry]; return path.every((part, index) => values[index] === part) }).length
+        const nextCount = stocksUnder(categoryPath(draft.categories, target), stockCodes, draft.classifications).length
         if (nextCount === count && !draft.categories.some(item => item.parentId === id)) break
         all = draft.categories
         count = nextCount
@@ -101,7 +78,7 @@ export default function SnapshotSector({ market }: { market: OverseasMarket }) {
       readOnlyNote={null}
       publishControls={null}
       isCaptureReady={!isLoading}
-      isMineEmpty={sheet === 'MINE' && !isLoading && !isError && all.length === 0}
+      isMineEmpty={sheet === 'MINE' && !isLoading && !isError && sectors.length === 0}
       mineSetupPath={overseasRoute('/sector', market)}
       panel={{ onlyTaxonomy: 'MARKETRY', snapshotTime: publishedAt, alsoTaxonomies: canUseMine ? ['MINE'] : undefined, withoutMiddle: true, onSelectTaxonomy: next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY') }}
     >
@@ -113,7 +90,7 @@ export default function SnapshotSector({ market }: { market: OverseasMarket }) {
           settingsActionsTarget={slots.history}
           actions={canEdit ? { create: create.mutate, rename: rename.mutate, reparent: reparent.mutate, remove: (id, name) => void remove(id, name) } : null}
           currency={currencyUnit}
-          maxDepth={MAX_DEPTH}
+          maxDepth={SNAPSHOT_MAX_DEPTH}
           protectedHint={protectedHint}
         />
       )}

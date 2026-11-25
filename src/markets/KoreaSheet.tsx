@@ -1,9 +1,9 @@
+import { KoreaMineStock, KoreaReadOnlyStock } from '@/markets/KoreaStock'
 import { useEffect, useMemo, useRef } from 'react'
 import { customMenu } from '@/utils/marketMenu'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { mineSheetReturnPath } from '@/utils/mineSheetReturn'
 import AdminSectorTable from '@/components/AdminSectorTable'
-import AdminStockTable from '@/components/AdminStockTable'
 import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { MARKET_LABEL } from '@/utils/marketOptions'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
@@ -143,7 +143,13 @@ export default function KoreaSheet() {
   // 로딩이 길어져도 설정창이 사라졌다가 다시 생기지 않는다.
   const isPageLoading = isSessionLoading || (isLoggedIn && isSectorsLoading)
 
-  const isSheetError = !isReadOnlySheet && isSectorsError
+  const isStock = mode === 'stock'
+  const isSheetLoading = isReadOnlySheet ? isTaxonomyLoading || (isStock && isStockCatalogLoading) : isStock && isStockSectorsLoading
+  const isSheetError = isReadOnlySheet ? isTaxonomyError || (isStock && isStockCatalogError) : isSectorsError || (isStock && isStockSectorsError)
+  const retrySheet = () => {
+    if (isReadOnlySheet) { void refetchTaxonomy(); if (isStock) void refetchStockCatalog() }
+    else { void refetchSectors(); if (isStock) void refetchStockSectors() }
+  }
   return (
     <SheetScreen
       page={mode === 'stock' ? 'STOCK' : 'SECTOR'}
@@ -151,7 +157,7 @@ export default function KoreaSheet() {
       menu={customMenu(mode === 'stock' ? 'stock' : 'sector', 'KOREA', true, sheet === 'MINE')}
       taxonomy={sheet}
       // 내 분류의 업종 목록을 받지 못하면 표를 그리지 않는다 — 비어 있다고 오해하거나 분류 선택지 없이 반쪽 표에서 고치지 않게 한다.
-      state={isPageLoading ? { status: 'loading' } : isSheetError ? { status: 'error', retry: () => void refetchSectors() } : { status: 'ready' }}
+      state={isPageLoading || isSheetLoading ? { status: 'loading' } : isSheetError ? { status: 'error', retry: retrySheet } : { status: 'ready' }}
       canEdit={!isReadOnlySheet}
       editItems={mode === 'stock' ? ['bulk', 'excel', 'reset'] : []}
       readOnlyNote={null}
@@ -162,36 +168,11 @@ export default function KoreaSheet() {
       mineSetupPath={SECTOR_KOREA}
       panel={{ onRequestLogin: () => requireLogin(pathname), snapshotTime: taxonomyMap?.taxonomyUpdatedAt, onSelectTaxonomy: next => handleSelectSheet(next === 'KRX' || next === 'NXT' ? 'KRX' : next) }}
     >
-      {slots => isReadOnlySheet ? (
-        <ReadOnlyTaxonomySheet
-          mode={mode === 'stock' ? 'stock' : 'category'}
-          data={taxonomyMap}
-          isLoading={isTaxonomyLoading}
-          isError={isTaxonomyError || (mode === 'stock' && isStockCatalogError)}
-          onRetry={() => { void refetchTaxonomy(); if (mode === 'stock') void refetchStockCatalog() }}
-          source={sheet === 'MARKETRY' ? 'MARKETRY' : 'KRX'}
-          stockMarkets={stockMarkets}
-          stockIndustries={stockIndustries}
-          isCatalogLoading={isStockCatalogLoading}
-          toolbarContainer={slots.toolbar}
-          onCountLabelChange={slots.setCountLabel}
-        />
-      ) : mode === 'stock' ? (
-        <AdminStockTable
-          items={stockSectors?.items ?? []}
-          sectors={sectors ?? []}
-          snapshotTime={stockSectors?.snapshotTime ?? null}
-          toolbarContainer={slots.toolbar}
-          historyContainer={slots.history}
-          excelContainer={slots.excel}
-          resetContainer={slots.reset}
-          bulkContainer={slots.bulk}
-          onCountLabelChange={slots.setCountLabel}
-          sectorStats={sectorStats}
-          isLoading={isStockSectorsLoading}
-          isError={isStockSectorsError}
-          onRetry={() => void refetchStockSectors()}
-        />
+      {slots => mode === 'stock' ? (isReadOnlySheet
+        ? <KoreaReadOnlyStock key={sheet} data={taxonomyMap} isExchange={sheet !== 'MARKETRY'} markets={stockMarkets} industries={stockIndustries} slots={slots} />
+        : <KoreaMineStock items={stockSectors?.items ?? []} sectors={sectors ?? []} sectorStats={sectorStats} snapshotTime={stockSectors?.snapshotTime ?? null} slots={slots} />
+      ) : isReadOnlySheet ? (
+        <ReadOnlyTaxonomySheet data={taxonomyMap} source={sheet === 'MARKETRY' ? 'MARKETRY' : 'KRX'} toolbarContainer={slots.toolbar} />
       ) : (
         <AdminSectorTable
           sectors={sectors ?? []}

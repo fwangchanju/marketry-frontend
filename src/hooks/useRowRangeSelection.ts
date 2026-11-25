@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type MouseEvent, type RefObject, type SetStateAction } from 'react'
 
 // 표 줄 선택 — 줄을 누르면 토글하고, Shift+클릭으로 직전에 누른 줄부터 범위를 선택하고, 줄을 누른 채 끌면 지나간 줄들을
-// 한 번에 선택(또는 해제)한다. 표 위·아래 가장자리에 닿으면 그쪽으로 자동 스크롤한다. MARKETRY 종목 표(AdminStockTable)와
-// 같은 동작이다.
+// 한 번에 선택(또는 해제)한다. 표 위·아래 가장자리에 닿으면 그쪽으로 자동 스크롤한다. 종목 표(StockTable)와 관리자 표가 쓴다.
 //
 // keys는 화면에 보이는 순서대로의 줄 키 목록이고, 각 <tr>에는 rowProps(index)를 펼쳐 준다(data-row-index가 좌표로 줄을
 // 찾는 데 쓰인다).
@@ -194,7 +193,8 @@ export function useRowRangeSelection(
           event.preventDefault()
           return
         }
-        if (event.button !== 0) return
+        // 고치는 칸(data-no-row-select)에서는 드래그 선택을 시작하지 않는다.
+        if (event.button !== 0 || (event.target as HTMLElement).closest('[data-no-row-select]')) return
         // Shift+클릭 범위가 이 줄에서 이어지도록 기준 줄도 같이 기억한다.
         lastClickedKeyRef.current = key
         dragRef.current = {
