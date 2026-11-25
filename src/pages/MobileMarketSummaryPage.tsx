@@ -2,11 +2,14 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import MobileTopBar from '@/components/MobileTopBar'
+import PhonePathStockChart from '@/components/PhonePathStockChart'
+import { chartSectorPath } from '@/utils/chartSectorPath'
+import { useStockChart } from '@/hooks/useStockChart'
 import PhoneSectorMapFrame from '@/components/PhoneSectorMapFrame'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { usePhoneMapInfoPopup } from '@/hooks/usePhoneMapInfoPopup'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
-import PathBar from '@/components/PathBar'
+import PathBar, { type PathCrumb } from '@/components/PathBar'
 import MapToolbar from '@/components/MapToolbar'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
@@ -348,15 +351,22 @@ export default function MobileMarketSummaryPage({ mode }: { mode: 'sector' | 'gr
   // 업종 지도와 그룹 등락률이 같은 경로 줄을 쓴다.
   // 폰 판 안에서만 맨 앞 막대를 위 툴바 첫 배지 왼쪽에 맞춘다(세로는 그대로).
   const pathBarLeftShift = phonePathBarLeftShift(4)
+  const phonePathCrumbs: PathCrumb[] = pathCrumbs.map(crumb => crumb.go
+    ? { key: crumb.key, label: crumb.label, onClick: crumb.go }
+    : { key: crumb.key, label: crumb.label, current: true })
+  // 종목 단계에서 누르면 종목 지도와 같은 차트를 연다.
+  const { chartStock, openChart, closeChart } = useStockChart()
+  const openStockChart = (stock: HeatmapItem) => {
+    closeInfoPopup()
+    openChart({ code: stock.stockCode, name: stock.stockName, sectorPath: chartSectorPath(phonePathCrumbs) })
+  }
   const pathNav = (
     <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${pathBarLeftShift}px)` }}>
       <PathBar
         variant="phone"
         currentAria="location"
         accentColor={strongIndustryColor}
-        crumbs={pathCrumbs.map(crumb => crumb.go
-          ? { key: crumb.key, label: crumb.label, onClick: crumb.go }
-          : { key: crumb.key, label: crumb.label, current: true })}
+        crumbs={phonePathCrumbs}
       />
     </header>
   )
@@ -486,7 +496,7 @@ export default function MobileMarketSummaryPage({ mode }: { mode: 'sector' | 'gr
   }
 
   const graphItems: MobileGraphItem[] = viewMode === 'stock'
-    ? stockContextItems.map(stock => ({ key: stock.stockCode, name: stock.alias ?? stock.stockName, value: stock.changeRate }))
+    ? stockContextItems.map(stock => ({ key: stock.stockCode, name: stock.alias ?? stock.stockName, value: stock.changeRate, onSelect: () => openStockChart(stock) }))
     : marketItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate, onSelect: () => selectSector(item.name) }))
   const showLiveIndexes = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
   // 지수 막대가 heatmap과 다른 쿼리에서 오므로, 지수까지 준비된 뒤 한 번에 그린다.
@@ -605,6 +615,7 @@ export default function MobileMarketSummaryPage({ mode }: { mode: 'sector' | 'gr
 
   // 업종 지도와 그룹 등락률은 같은 판 양식(상단 줄·툴바·가운데 판·하단 설정 줄)을 쓴다.
   return (
+      <>
       <PhoneMapShell
         zoomMode="blocked"
         infoPopup={infoPopup}
@@ -654,7 +665,7 @@ export default function MobileMarketSummaryPage({ mode }: { mode: 'sector' | 'gr
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
-            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={() => closeInfoPopup()} onLongPress={(stock, target) => openStockPopup(stock, target)} />
+            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={openStockChart} onLongPress={(stock, target) => openStockPopup(stock, target)} />
             : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={(item, target) => openSectorPopup(marketItems.find(sector => sector.key === item.key) ?? item, target)} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>}
         </div>
         </div>
@@ -665,5 +676,7 @@ export default function MobileMarketSummaryPage({ mode }: { mode: 'sector' | 'gr
         boxSize={boxSizeMarketCapRatio}
         onChangeBoxSize={onChangeBoxSizeMarketCapRatio}
       />
+        <PhonePathStockChart chartStock={chartStock} crumbs={phonePathCrumbs} market="korea" closeChart={closeChart} />
+      </>
   )
 }
