@@ -107,6 +107,7 @@ export default function StockBox({
       } as CSSProperties}
       data-stock-code={item.stockCode}
       data-stock-name={name}
+      data-stock-full-name={item.stockName}
       onContextMenu={e => {
         e.preventDefault()
         e.stopPropagation()
