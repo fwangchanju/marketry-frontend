@@ -1,3 +1,4 @@
+import MarketDatePicker from '@/components/MarketDatePicker'
 import MainAreaLoading from '@/components/MainAreaLoading'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
@@ -82,7 +83,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   // 시장마다 다른 부분(데이터를 받는 방법·날짜 선택·장 상태 칩·설정 값)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
     market, label, tree, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange, rangeExcludedStocks,
-    isLoading, isError, isFetching, refetchAll, graphIndexItems, preferences, update, DatePicker, sessionChip, refreshHelp, currencyUnit, chart,
+    isLoading, isError, isFetching, refetchAll, graphIndexItems, preferences, update, sessionChip, refreshHelp, currencyUnit, chart,
     levelLabels, defaultMaxDepth, fixed, draftKeyMap, settingPrefix, tabStorageName, totalCount, countShown,
   } = source
   const publishedAt = useOverseasPublishedAt(market, sheet)
@@ -227,7 +228,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
           <Toolbar>
             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <ToolbarModeText page="MAP" label={label} showChevron menu={marketMenu('/map', market, true)} />
-              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><DatePicker snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
+              <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}><MarketDatePicker market={market} snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={resolveHeatmapColor(8, colorScale)} onSelect={select} onSelectRange={selectRange} /></ToolbarChip>
               {isPastSnapshot && (
                 <ToolbarChip bare>
                   <ToolbarPinButton pinned={isPastSnapshot} onUnpin={() => select(null)} />

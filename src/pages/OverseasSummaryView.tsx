@@ -1,3 +1,4 @@
+import MarketDatePicker from '@/components/MarketDatePicker'
 import { useMemo, useRef, useState } from 'react'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
@@ -91,7 +92,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   // 시장마다 다른 부분(데이터 받기·날짜 선택 칩·장 상태 칩·갱신 안내·고정 색상·종목 수)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
     market, label, tree, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange, rangeExcludedStocks,
-    isLoading, isFetching, refetchAll, graphIndexItems, DatePicker, sessionChip, refreshHelp, fixed, tabStorageName, settingPrefix, currencyUnit, totalCount,
+    isLoading, isFetching, refetchAll, graphIndexItems, sessionChip, refreshHelp, fixed, tabStorageName, settingPrefix, currencyUnit, totalCount,
   } = source
   const publishedAt = useOverseasPublishedAt(market, sheet)
   // 시가총액 범위 — 지도·그래프와 같은 저장 값. 업종 요약과 막대, 설정창의 종목 수에 함께 반영한다.
@@ -224,7 +225,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
       <ToolbarModeText page="SUMMARY" label={label} showChevron menu={menu} />
       <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
-        <DatePicker snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={holidayColor} onSelect={select} onSelectRange={selectRange} />
+        <MarketDatePicker market={market} snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={holidayColor} onSelect={select} onSelectRange={selectRange} />
       </ToolbarChip>
       {isPastSnapshot && (
         <ToolbarChip bare>

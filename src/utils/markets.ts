@@ -3,9 +3,10 @@
 // 시장을 하나 더하려면 아래 목록에 한 줄을 더하고, 그 시장의 화면·데이터(지도·그래프·섹터·주식·서머리)를 붙이면 된다.
 // 한국 시장(KOREA·KOSPI·KOSDAQ)은 하위 단계가 있어서 `marketOptions.ts`·`marketRoute.ts`가 따로 맡는다.
 export const OVERSEAS_MARKETS = [
+  // dateHint: 날짜 배지에 마우스를 올렸을 때의 안내(저장 날짜가 현지 거래일인 시장만).
   // 배지 글자: 툴바 맨 왼쪽 시장 배지에 쓴다. 목록 이름: 배지를 눌렀을 때 열리는 시장 목록에 쓴다(KOREA·JAPAN·USA).
-  { id: 'JAPAN', routeSegment: 'japan', badgeLabel: 'NIKKEI 225', menuLabel: 'JAPAN' },
-  { id: 'USA', routeSegment: 'usa', badgeLabel: 'S&P 500', menuLabel: 'USA' },
+  { id: 'JAPAN', routeSegment: 'japan', badgeLabel: 'NIKKEI 225', menuLabel: 'JAPAN', dateHint: undefined },
+  { id: 'USA', routeSegment: 'usa', badgeLabel: 'S&P 500', menuLabel: 'USA', dateHint: '미국 거래일 기준입니다.' },
 ] as const
 
 export type OverseasMarket = (typeof OVERSEAS_MARKETS)[number]['id']

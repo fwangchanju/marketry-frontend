@@ -1,15 +1,14 @@
+import MarketSessionChip from '@/components/MarketSessionChip'
+import { useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
 import { useMemo } from 'react'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
 import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import JapanDatePicker from '@/components/JapanDatePicker'
-import JapanSessionChip from '@/components/JapanSessionChip'
 import japanStocks from '@/data/japanStocks.json'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
-import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import { useOverseasPreviewIndex } from '@/hooks/useOverseasPreviewIndex'
 import { buildJapanTree } from '@/utils/japanMap'
 import { JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP } from '@/utils/japanMapSettings'
@@ -23,11 +22,11 @@ export function useJapanSummarySource(): OverseasSummarySource {
   const { categories, classifications } = useOverseasClassificationData('JAPAN', sheet)
   const names = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data })
   // 날짜·기간은 지도·그래프와 같은 저장소를 쓴다(다른 화면에서 고른 기간이 이어진다).
-  const times = useJapanSnapshotTimes()
+  const times = useMarketSnapshotTimes('JAPAN')
   const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('JAPAN', times.data)
-  const quotes = useJapanQuotes(selectedTime)
-  const liveQuotes = useJapanQuotes(null)
-  const periodQuotes = useJapanPeriodQuotes(rangeStart, selectedTime)
+  const quotes = useMarketQuotes('JAPAN', selectedTime)
+  const liveQuotes = useMarketQuotes('JAPAN', null)
+  const periodQuotes = useMarketPeriodQuotes('JAPAN', rangeStart, selectedTime)
   // 기간이면 기간 등락률 시세를, 아니면 고른 날짜(없으면 최신)의 시세를 쓴다.
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
@@ -55,8 +54,7 @@ export function useJapanSummarySource(): OverseasSummarySource {
     isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || isIndexFetching,
     graphIndexItems,
     refetchAll,
-    DatePicker: JapanDatePicker,
-    sessionChip: snapshotTime ? <JapanSessionChip session={japanSessionAt(snapshotTime)} /> : null,
+    sessionChip: snapshotTime ? <MarketSessionChip market="JAPAN" session={japanSessionAt(snapshotTime)} /> : null,
     refreshHelp: JAPAN_REFRESH_HELP,
     fixed: JAPAN_MAP_FIXED,
     tabStorageName: 'Home',

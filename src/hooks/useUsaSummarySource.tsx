@@ -1,14 +1,13 @@
+import MarketSessionChip from '@/components/MarketSessionChip'
+import { useListedStocks, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
 import { useMemo } from 'react'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
 import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import UsaDatePicker from '@/components/UsaDatePicker'
-import UsaSessionChip from '@/components/UsaSessionChip'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
-import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import { useOverseasPreviewIndex } from '@/hooks/useOverseasPreviewIndex'
 import { buildJapanTree } from '@/utils/japanMap'
 import { overseasMarketInfo } from '@/utils/markets'
@@ -22,13 +21,13 @@ export function useUsaSummarySource(): OverseasSummarySource {
   const { sheet } = useOverseasSheet()
   const { categories, classifications } = useOverseasClassificationData('USA', sheet)
   const names = useQuery({ queryKey: ['usa', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/usa/stock-names')).data })
-  const stocks = useUsaStocks()
+  const stocks = useListedStocks('USA')
   // 날짜·기간은 지도·그래프와 같은 저장소를 쓴다(다른 화면에서 고른 기간이 이어진다).
-  const times = useUsaSnapshotTimes()
+  const times = useMarketSnapshotTimes('USA')
   const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('USA', times.data)
-  const quotes = useUsaQuotes(selectedTime)
-  const liveQuotes = useUsaQuotes(null)
-  const periodQuotes = useUsaPeriodQuotes(rangeStart, selectedTime)
+  const quotes = useMarketQuotes('USA', selectedTime)
+  const liveQuotes = useMarketQuotes('USA', null)
+  const periodQuotes = useMarketPeriodQuotes('USA', rangeStart, selectedTime)
   // 기간이면 기간 등락률 시세를, 아니면 고른 날짜(없으면 최신)의 시세를 쓴다.
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
@@ -58,8 +57,7 @@ export function useUsaSummarySource(): OverseasSummarySource {
     isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || isIndexFetching,
     graphIndexItems,
     refetchAll,
-    DatePicker: UsaDatePicker,
-    sessionChip: snapshotTime ? <UsaSessionChip session={USA_SESSION} /> : null,
+    sessionChip: snapshotTime ? <MarketSessionChip market="USA" session={USA_SESSION} /> : null,
     refreshHelp: usaRefreshHelp(snapshotTime),
     fixed: USA_MAP_FIXED,
     tabStorageName: 'Home',

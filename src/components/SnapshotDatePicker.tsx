@@ -1,3 +1,4 @@
+import { useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { getSnapshotDays } from '@/api/heatmap'
@@ -9,8 +10,6 @@ import { IconCornerDownRight } from '@tabler/icons-react'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
 import { useKoreanCalendarHolidays } from '@/hooks/useKoreanCalendarHolidays'
-import { useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
-import { useUsaSnapshotTimes } from '@/hooks/useUsaQuotes'
 import { isJapanMarketClosed } from '@/utils/japanMarketCalendar'
 import { getKstDate } from '@/utils/tradingWindow'
 import Spinner from '@/components/Spinner'
@@ -27,8 +26,8 @@ const isOverseasMarket = (market: CalendarMarket) => market === 'JAPAN' || marke
 
 // 해외 시장의 스냅샷 시각 목록. 두 훅을 모두 부르고 해당 시장 것만 켠다(훅은 조건부로 부를 수 없다).
 function useOverseasSnapshotTimes(market: CalendarMarket, enabled = true) {
-  const japan = useJapanSnapshotTimes(market === 'JAPAN' && enabled)
-  const usa = useUsaSnapshotTimes(market === 'USA' && enabled)
+  const japan = useMarketSnapshotTimes('JAPAN', market === 'JAPAN' && enabled)
+  const usa = useMarketSnapshotTimes('USA', market === 'USA' && enabled)
   return market === 'USA' ? usa : japan
 }
 

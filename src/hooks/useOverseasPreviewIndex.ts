@@ -1,6 +1,5 @@
-import { useJapanIndexCloses } from '@/hooks/useJapanIndexCloses'
+import { useMarketIndexCloses } from '@/markets/useMarketQuotes'
 import { useJapanIndexQuotes } from '@/hooks/useJapanIndexQuotes'
-import { useUsaIndexCloses } from '@/hooks/useUsaIndexCloses'
 import type { OverseasMarket } from '@/utils/markets'
 import { overseasMarketInfo } from '@/utils/markets'
 import { graphIndexValue, indexChangeRate, indexRange, intradayRateAt, shiftDate } from '@/utils/indexChange'
@@ -15,11 +14,11 @@ export function useOverseasPreviewIndex(market: OverseasMarket, snapshotTime: st
   // 두 시장의 쿼리를 모두 호출하되, 해당 시장이 아니면 null 인자로 비활성화한다(훅 순서 유지).
   // 쿼리 키는 그래프 소스(useJapanGraphSource·useUsaGraphSource)와 같게 만들어 같은 캐시·같은 fetching 상태를 쓴다.
   const japanSpan = indexRange(rangeStart, snapshotTime, liveSnapshotTime)
-  const japanCloses = useJapanIndexCloses(japanSpan ? shiftDate(japanSpan.startDate, -INDEX_LOOKBACK_DAYS) : null, japanSpan?.endDate ?? null)
+  const japanCloses = useMarketIndexCloses('JAPAN', japanSpan ? shiftDate(japanSpan.startDate, -INDEX_LOOKBACK_DAYS) : null, japanSpan?.endDate ?? null)
   const japanQuotes = useJapanIndexQuotes(rangeStart === null && snapshotTime ? snapshotTime.slice(0, 10) : null)
   const usaDay = snapshotTime ? snapshotTime.slice(0, 10) : null
   const usaStartDay = rangeStart ? rangeStart.slice(0, 10) : usaDay
-  const usaCloses = useUsaIndexCloses(usaStartDay ? shiftDate(usaStartDay, -INDEX_LOOKBACK_DAYS) : null, usaDay)
+  const usaCloses = useMarketIndexCloses('USA', usaStartDay ? shiftDate(usaStartDay, -INDEX_LOOKBACK_DAYS) : null, usaDay)
 
   const value = market === 'JAPAN'
     ? graphIndexValue({

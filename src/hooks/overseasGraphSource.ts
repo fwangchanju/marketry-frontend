@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import type { OverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import type { HeatmapSectorNode } from '@/types/api'
 import type { OverseasTierRange } from '@/hooks/useOverseasTierRange'
@@ -31,7 +31,6 @@ export interface OverseasGraphSource {
   isError: boolean
   isFetching: boolean
   refetchAll: () => Promise<unknown>
-  DatePicker: ComponentType<{ snapshotTime: string | null; liveTime: string | null; rangeStart: string | null; holidayColor: string; onSelect: (pick: string | null) => void; onSelectRange: (start: string, end: string) => void }>
   sessionChip: ReactNode
   refreshHelp: string
   fixed: { colorScale: (typeof JAPAN_MAP_FIXED)['colorScale']; strongIndustryColor: string }
