@@ -60,7 +60,7 @@ export function captureRegionRect(el: HTMLElement, selector: string, mode: 'thro
 const isCapturable = (node: Node) => !(node instanceof Element && node.hasAttribute('data-capture-ignore'))
 
 // 지도 모바일 캡처용 트리는 모바일을 선택했을 때만 렌더링한다. 선택 전환 중 이미 생성된 트리가 있어도
-// 모니터 이미지의 복제 대상에는 포함하지 않는다.
+// PC 이미지의 복제 대상에는 포함하지 않는다.
 const MOBILE_CAPTURE_FRAME_SELECTOR = '[data-map-mobile-capture-frame]'
 const isCapturableWithoutMobileFrame = (node: Node) =>
   isCapturable(node) && !(node instanceof Element && node.matches(MOBILE_CAPTURE_FRAME_SELECTOR))
