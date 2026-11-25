@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { usePinToVisibleBottom } from '@/hooks/usePinToVisibleBottom'
-import { phoneViewport } from '@/utils/phoneViewport'
+import { mobileViewport } from '@/utils/mobileViewport'
 import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 
-// 폰 지도 하단 설정 줄. 업종 지도 설정 줄(MobileMarketSummaryPage)과 같은 클래스·구조·열림 애니메이션·끌어서 여닫기를 쓴다.
+// MOBILE 지도 하단 설정 줄. 업종 지도 설정 줄(MobileMarketSummaryPage)과 같은 클래스·구조·열림 애니메이션·끌어서 여닫기를 쓴다.
 // 마켓은 한국·일본·미국 세 가지이며 누르면 해당 지도로 이동한다. 박스 크기는 지도 설정 값과 연결된다.
 export type MobileMapMarket = 'korea' | 'japan' | 'usa'
 
@@ -90,7 +90,7 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
     const drag = dragRef.current
     if (!drag) return
     // 확대한 화면에서는 손가락이 움직인 만큼(보이는 px) 열리도록 배율을 곱한다.
-    const delta = (drag.y - event.clientY) * phoneViewport().scale
+    const delta = (drag.y - event.clientY) * mobileViewport().scale
     if (Math.abs(delta) > 5) drag.moved = true
     if (drag.moved) setDragHeight(Math.max(0, Math.min(drag.max, drag.start + delta)))
   }
@@ -98,7 +98,7 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
     const drag = dragRef.current
     if (!drag) return
     if (drag.moved) {
-      commitOpen(drag.start + (drag.y - event.clientY) * phoneViewport().scale > drag.max / 2, drag.max)
+      commitOpen(drag.start + (drag.y - event.clientY) * mobileViewport().scale > drag.max / 2, drag.max)
       suppressClickRef.current = true
     }
     dragRef.current = null

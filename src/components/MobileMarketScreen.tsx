@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MobileTopBar from '@/components/MobileTopBar'
-import PhonePathStockChart from '@/components/PhonePathStockChart'
+import MobilePathStockChart from '@/components/MobilePathStockChart'
 import { chartSectorPath } from '@/utils/chartSectorPath'
 import { useStockChart } from '@/hooks/useStockChart'
-import PhoneSectorMapFrame from '@/components/PhoneSectorMapFrame'
-import PhoneMapShell from '@/components/PhoneMapShell'
-import { usePhoneMapInfoPopup } from '@/hooks/usePhoneMapInfoPopup'
-import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
+import MobileSectorMapFrame from '@/components/MobileSectorMapFrame'
+import MobileMapShell from '@/components/MobileMapShell'
+import { useMobileMapInfoPopup } from '@/hooks/useMobileMapInfoPopup'
+import { MOBILE_PATH_CANVAS_ZOOM, mobilePathBarLeftShift } from '@/utils/mobilePathBar'
 import PathBar, { type PathCrumb } from '@/components/PathBar'
 import MobileMapHeatmapFrame from '@/components/MobileMapHeatmapFrame'
 import { MAP_MOBILE_CAPTURE_FRAME_HEIGHT, SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
@@ -111,7 +111,7 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
   const { colorScale, strongIndustryColor } = data.colors
   const { tree: rootNodes, label: marketLabel, indexBars, state, currencyUnit } = market
   const isGraph = mode === 'graph'
-  // 화면 확대 차단은 공통 셸(PhoneMapShell)이 zoomMode로 관리한다. 종목 지도는 확대한 화면 안을 이동할 수 있다.
+  // 화면 확대 차단은 공통 셸(MobileMapShell)이 zoomMode로 관리한다. 종목 지도는 확대한 화면 안을 이동할 수 있다.
   const navigate = useNavigate()
   const frameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   const pageContentRef = useRef<HTMLElement>(null)
@@ -124,8 +124,8 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
   // 모바일 화면 설정은 저장 버튼 없이 이 브라우저에 바로 기억한다. 분류 모드와 상관없이 공통이다(화면 취향은 브라우저 저장, 2026-10-03 결정).
   const [graphDepth] = useLocalPersistedState<number>('mobile.graphDepth', 1)
   const [viewMode, setViewMode] = useState<'sector' | 'stock'>('sector')
-  const { popup: infoPopup, close: closeInfoPopup, openStockPopup: openStockPopupBase, openSectorPopup: openSectorPopupBase } = usePhoneMapInfoPopup({ currencyUnit, mapBoundsRef: pageContentRef })
-  // 박스 크기는 PC 설정과 따로 두고, 폰의 기본은 시총 비례(100)다. 동일 0 · 균형 50 · 시총 비례 100.
+  const { popup: infoPopup, close: closeInfoPopup, openStockPopup: openStockPopupBase, openSectorPopup: openSectorPopupBase } = useMobileMapInfoPopup({ currencyUnit, mapBoundsRef: pageContentRef })
+  // 박스 크기는 PC 설정과 따로 두고, MOBILE의 기본은 시총 비례(100)다. 동일 0 · 균형 50 · 시총 비례 100.
   const [storedBoxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
   useCarriedBoxSize(onChangeBoxSizeMarketCapRatio)
   const boxSizeMarketCapRatio = normalizeMobileBoxSizeRatio(storedBoxSizeMarketCapRatio)
@@ -197,30 +197,30 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
     ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
   ]
   // 업종 지도와 그룹 등락률이 같은 경로 줄을 쓴다.
-  // 폰 판 안에서만 맨 앞 막대를 위 툴바 첫 배지 왼쪽에 맞춘다(세로는 그대로).
-  const pathBarLeftShift = phonePathBarLeftShift(4)
-  const phonePathCrumbs: PathCrumb[] = pathCrumbs.map(crumb => crumb.go
+  // MOBILE 판 안에서만 맨 앞 막대를 위 툴바 첫 배지 왼쪽에 맞춘다(세로는 그대로).
+  const pathBarLeftShift = mobilePathBarLeftShift(4)
+  const mobilePathCrumbs: PathCrumb[] = pathCrumbs.map(crumb => crumb.go
     ? { key: crumb.key, label: crumb.label, onClick: crumb.go }
     : { key: crumb.key, label: crumb.label, current: true })
   // 종목 단계에서 누르면 종목 지도와 같은 차트를 연다.
   const { chartStock, openChart, closeChart } = useStockChart()
   const openStockChart = (stock: HeatmapItem) => {
     closeInfoPopup()
-    openChart({ code: stock.stockCode, name: stock.stockName, sectorPath: chartSectorPath(phonePathCrumbs) })
+    openChart({ code: stock.stockCode, name: stock.stockName, sectorPath: chartSectorPath(mobilePathCrumbs) })
   }
   const pathNav = (
     <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${pathBarLeftShift}px)` }}>
       <PathBar
-        variant="phone"
+        variant="mobile"
         currentAria="location"
         accentColor={strongIndustryColor}
-        crumbs={phonePathCrumbs}
+        crumbs={mobilePathCrumbs}
       />
     </header>
   )
-  // 경로 줄도 그래프 글자와 같은 판 기준 값으로 그린다. 810px 판의 16px·32px가 390px 폰에서 화면 16px·32px로 보인다.
+  // 경로 줄도 그래프 글자와 같은 판 기준 값으로 그린다. 810px 판의 16px·32px가 390px MOBILE에서 화면 16px·32px로 보인다.
   // 셸의 스와이프 대상 밖에 두면 다음 페이지 미리보기에 이 자리가 비어 당겨지는 동안 빈 띠가 보인다.
-  const renderPathNav = () => <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>{pathNav}</div>
+  const renderPathNav = () => <div style={{ zoom: MOBILE_PATH_CANVAS_ZOOM }}>{pathNav}</div>
 
   const selectSector = (name: string) => {
     const selected = marketItems.find(item => item.name === name)
@@ -354,7 +354,7 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
       ? isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
         : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetch} /></div>
           : mapPreview.groups.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p>
-            // 종목 지도 도착지는 MapPage의 8px 폰 판이다. 예전처럼 4px 판으로 그리면 전환이 끝날 때 지도가 한 번 커져 보인다.
+            // 종목 지도 도착지는 MapPage의 8px MOBILE 판이다. 예전처럼 4px 판으로 그리면 전환이 끝날 때 지도가 한 번 커져 보인다.
             : <div ref={swipePreviewCanvasRef} style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${frameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
                 <div className="flex h-full min-h-0 flex-col bg-ui-background">
                   <MobileMapHeatmapFrame
@@ -377,9 +377,9 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
     if (targetMode === 'stock') return renderSwipePreview(targetMode)
     if (targetMode === 'sector') {
       return (
-        <PhoneSectorMapFrame scale={frameScale} crumbs={[{ key: 'market', label: marketLabel, current: true }]}>
+        <MobileSectorMapFrame scale={frameScale} crumbs={[{ key: 'market', label: marketLabel, current: true }]}>
           {renderSwipePreview(targetMode)}
-        </PhoneSectorMapFrame>
+        </MobileSectorMapFrame>
       )
     }
     return (
@@ -397,7 +397,7 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
   // 업종 지도와 그룹 등락률은 같은 판 양식(상단 줄·툴바·가운데 판·하단 설정 줄)을 쓴다.
   return (
       <>
-      <PhoneMapShell
+      <MobileMapShell
         zoomMode="blocked"
         infoPopup={infoPopup}
         onCloseInfoPopup={closeInfoPopup}
@@ -435,7 +435,7 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
         boxSize={boxSizeMarketCapRatio}
         onChangeBoxSize={onChangeBoxSizeMarketCapRatio}
       />
-        <PhonePathStockChart chartStock={chartStock} crumbs={phonePathCrumbs} market={chartMarket} closeChart={closeChart} />
+        <MobilePathStockChart chartStock={chartStock} crumbs={mobilePathCrumbs} market={chartMarket} closeChart={closeChart} />
       </>
   )
 }

@@ -4,15 +4,15 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSettled } from '@/hooks/useSettled'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import MobileTopBar from '@/components/MobileTopBar'
-import PhoneSectorMapFrame from '@/components/PhoneSectorMapFrame'
-import PhoneMapShell from '@/components/PhoneMapShell'
+import MobileSectorMapFrame from '@/components/MobileSectorMapFrame'
+import MobileMapShell from '@/components/MobileMapShell'
 import MapToolbar from '@/components/MapToolbar'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { calculateSectorLayoutWeights, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
-import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
+import { MOBILE_PATH_CANVAS_ZOOM, mobilePathBarLeftShift } from '@/utils/mobilePathBar'
 import PathBar, { type PathCrumb } from '@/components/PathBar'
 import { applyStockMoves, type StockMoves } from '@/utils/stockMoves'
 import type { StockDrop } from '@/hooks/useStockDrag'
@@ -194,17 +194,17 @@ export default function MapPage() {
   const [stockMoveState, setStockMoveState] = useState<{ scope: string; moves: StockMoves }>({ scope: '', moves: {} })
   // 텔레그램 렌더러가 이 함수를 호출해 화면 캡처와 같은 글꼴·여백·배율로 저장한다.
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
-  // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 5:8 프레임)만 화면 폭에 맞춰 보여 준다. 실험 기능이라 되돌리기 쉽게 이 분기만 둔다.
-  const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
-  // 종목 지도에서 그룹 등락률로 스와이프할 때 지수가 도착 뒤에야 오지 않도록 폰 화면에서 미리 받아 둔다(2026-11-22 사용자 제보).
-  const { data: marketSummary, isLoading: isMarketSummaryLoading, isFetching: isMarketSummaryFetching } = useMarketSummary(isPhoneMapFrame)
+  // MOBILE(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 5:8 프레임)만 화면 폭에 맞춰 보여 준다. 실험 기능이라 되돌리기 쉽게 이 분기만 둔다.
+  const isMobileMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
+  // 종목 지도에서 그룹 등락률로 스와이프할 때 지수가 도착 뒤에야 오지 않도록 MOBILE 화면에서 미리 받아 둔다(2026-11-22 사용자 제보).
+  const { data: marketSummary, isLoading: isMarketSummaryLoading, isFetching: isMarketSummaryFetching } = useMarketSummary(isMobileMapFrame)
   const showGraphPreviewIndexes = pinnedSnapshotTime === undefined && rangeStartTime === undefined && changeRateMode === 'daily' && changeRateChoice === 'daily'
-  // 폰 지도의 박스 크기는 PC 설정과 따로 두고, 다른 시장·화면과 같은 모바일 값(기본 시총 비례)을 쓴다.
+  // MOBILE 지도의 박스 크기는 PC 설정과 따로 두고, 다른 시장·화면과 같은 모바일 값(기본 시총 비례)을 쓴다.
   const [storedMobileBoxSizeRatio, onChangeMobileBoxSizeRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
   const mobileBoxSizeRatio = normalizeMobileBoxSizeRatio(storedMobileBoxSizeRatio)
   useCarriedBoxSize(onChangeMobileBoxSizeRatio)
-  const isMobileFrameVisible = isMobileCaptureMode || isPhoneMapFrame
-  const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
+  const isMobileFrameVisible = isMobileCaptureMode || isMobileMapFrame
+  const mobileFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   // 텔레그램 캡션은 지도 첫 화면 업종 헤더에 실제로 보이는 등락률을 읽는다. 동일 가중만 보이면 동일 가중, 그 밖에는 시총 가중이다.
   const captureRowMetric = isInDepthRange(simpleAvgDepthRange, 0) && !isInDepthRange(weightedAvgDepthRange, 0)
     ? 'simpleAvgChangeRate'
@@ -348,7 +348,7 @@ export default function MapPage() {
     window.marketryCaptureMap = capture
     return () => { delete window.marketryCaptureMap }
   }, [isMobileCaptureMode, isMobileCaptureReady])
-  // PC 툴바. 화면에서는 이 자리에, 폰 판에서는 캡처와 같은 방식으로 복제할 원본으로 쓴다.
+  // PC 툴바. 화면에서는 이 자리에, MOBILE 판에서는 캡처와 같은 방식으로 복제할 원본으로 쓴다.
   const mapToolbarNode = (
     <MapToolbar
       market={market}
@@ -368,29 +368,29 @@ export default function MapPage() {
       onChangeChangeRateMode={onChangeChangeRateMode}
       isAfterHoursControlsVisible={isAfterHoursControlsVisible}
       isAfterHoursSelectable={isAfterHoursSelectable}
-      modeStatusText={isPhoneMapFrame ? null : modeStatusText}
+      modeStatusText={isMobileMapFrame ? null : modeStatusText}
       refreshHelpText={SNAPSHOT_REFRESH_HELP}
       refreshSpinMs={REFRESH_BUTTON_SPIN_MS}
     />
   )
-  // 모바일 판 프레임(캡처 모드와 폰 화면이 같이 쓴다). 데이터·배치 준비가 끝난 뒤에만 그린다.
+  // 모바일 판 프레임(캡처 모드와 MOBILE 화면이 같이 쓴다). 데이터·배치 준비가 끝난 뒤에만 그린다.
   const mobileFrameNode = ((isShareOpen && isMobileScreenshotSelected) || isMobileFrameVisible) && !isLoading && !isError && visibleItems.length > 0 && (
             <div
-              aria-hidden={isPhoneMapFrame ? undefined : true}
+              aria-hidden={isMobileMapFrame ? undefined : true}
               data-map-mobile-capture-frame
               data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
               data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
               // 모바일 캡처와 텔레그램 지도는 동일한 5:8 프레임과 여백을 쓴다.
-              style={{ opacity: isPhoneMapFrame ? 1 : 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left' }}
-              className={isPhoneMapFrame ? "relative z-[60] bg-ui-background" : "pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"}
+              style={{ opacity: isMobileMapFrame ? 1 : 0, width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: isMobileMapFrame ? `scale(${mobileFrameScale})` : undefined, transformOrigin: 'top left' }}
+              className={isMobileMapFrame ? "relative z-[60] bg-ui-background" : "pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"}
             >
             <div
               aria-hidden="true"
               data-map-mobile-capture
-              style={{ opacity: isPhoneMapFrame ? 1 : 0, width: '100%', height: '100%' }}
+              style={{ opacity: isMobileMapFrame ? 1 : 0, width: '100%', height: '100%' }}
               className="flex flex-col bg-ui-background"
             >
-              {isPhoneMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
+              {isMobileMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
               <MobileMapHeatmapFrame
                 path={path}
                 marketLabel={MARKET_LABEL[market]}
@@ -414,11 +414,11 @@ export default function MapPage() {
                   labelMinAreaPercent: boxLabelMinAreaPercent,
                   stockLabelMode,
                   stockPopupOnHover: false,
-                  // 실제 폰 화면에서는 한 번 눌러 차트를 열던 동작을 없애고, 팝업의 차트 아이콘으로만 연다. 캡처·스와이프 미리보기는 그대로다.
+                  // 실제 MOBILE 화면에서는 한 번 눌러 차트를 열던 동작을 없애고, 팝업의 차트 아이콘으로만 연다. 캡처·스와이프 미리보기는 그대로다.
                   stockChartTrigger: 'rightClick',
-                  onOpenStockChart: isPhoneMapFrame ? openStockChart : undefined,
-                  // 실제 폰 화면에서만 종목 팝업을 툴바 줄 팝업과 같은 배율로 키운다. 캡처·미리보기는 그대로다.
-                  phonePopupEnlarged: isPhoneMapFrame,
+                  onOpenStockChart: isMobileMapFrame ? openStockChart : undefined,
+                  // 실제 MOBILE 화면에서만 종목 팝업을 툴바 줄 팝업과 같은 배율로 키운다. 캡처·미리보기는 그대로다.
+                  mobilePopupEnlarged: isMobileMapFrame,
                   decimalPlaces,
                   topPickSectorKeys,
                   strongIndustryColor,
@@ -430,14 +430,14 @@ export default function MapPage() {
             </div>
             </div>
           );
-  // 툴바는 판 밖의 PhoneMapShell이 그린다. 판 안에서는 안내 문구만 보여 툴바가 두 번 그려지지 않게 한다.
-  const phoneEmptyFrame = (
+  // 툴바는 판 밖의 MobileMapShell이 그린다. 판 안에서는 안내 문구만 보여 툴바가 두 번 그려지지 않게 한다.
+  const mobileEmptyFrame = (
     <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">{isLoading ? '불러오는 중입니다.' : isError ? '데이터를 불러오지 못했습니다.' : '이 날짜에는 표시할 데이터가 없습니다.'}</div>
   )
   const sectorPreview = (
-    <PhoneSectorMapFrame scale={phoneFrameScale} crumbs={[{ key: 'market', label: market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK', current: true }]}>
+    <MobileSectorMapFrame scale={mobileFrameScale} crumbs={[{ key: 'market', label: market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK', current: true }]}>
       <MobileSectorMap items={sectorPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={decimalPlaces} />
-    </PhoneSectorMapFrame>
+    </MobileSectorMapFrame>
   )
   // 종목 지도에서 그룹 등락률 쪽(오른쪽 스와이프)으로 갈 때 왼쪽에서 따라올 미리보기. 도착 화면과 같은 막대·경로 줄·지수를 그린다.
   const graphPreviewItems: MobileGraphItem[] = sectorPreviewItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
@@ -451,11 +451,11 @@ export default function MapPage() {
   // 지수는 히트맵과 다른 쿼리에서 오므로, 지수까지 준비된 뒤 막대와 함께 그린다.
   const isGraphPreviewLoading = isLoading || (showGraphPreviewIndexes && (isMarketSummaryLoading || isMarketSummaryFetching))
   const graphPreview = (
-    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${mobileFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
-        <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>
-          <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${phonePathBarLeftShift(8)}px)` }}>
-            <PathBar variant="phone" currentAria="location" crumbs={[{ key: 'market', label: market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK', current: true }]} />
+        <div style={{ zoom: MOBILE_PATH_CANVAS_ZOOM }}>
+          <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${mobilePathBarLeftShift(8)}px)` }}>
+            <PathBar variant="mobile" currentAria="location" crumbs={[{ key: 'market', label: market === 'KOSPI' ? 'KOSPI' : market === 'KOSDAQ' ? 'KOSDAQ' : 'K-STOCK', current: true }]} />
           </header>
         </div>
         {isGraphPreviewLoading
@@ -465,16 +465,16 @@ export default function MapPage() {
     </div>
   )
 
-  if (isPhoneMapFrame) {
+  if (isMobileMapFrame) {
     return (
       <>
-        <PhoneMapShell
+        <MobileMapShell
           zoomMode="pinch"
           onSwipe={direction => navigate(direction === 'next' ? marketRoute('/summary', market) : marketRoute('/graph', market))}
           toolbar={mapToolbarNode}
           topBar={<MobileTopBar title="종목 지도" titleTo={marketRoute('/summary', market)} titleLabel="업종 지도로 이동" />}
-          frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
-          frame={mobileFrameNode || phoneEmptyFrame}
+          frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * mobileFrameScale}
+          frame={mobileFrameNode || mobileEmptyFrame}
           nextPreview={sectorPreview}
           previousPreview={graphPreview}
           current="korea"

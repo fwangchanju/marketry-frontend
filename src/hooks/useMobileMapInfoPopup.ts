@@ -3,9 +3,9 @@ import { type PopupContent, type PopupState } from '@/components/Popup'
 import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
 
-// 업종 지도·종목 지도 폰 팝업의 공통 상태. 한국과 해외가 같은 PC용 Popup을 같은 규칙으로 띄운다.
+// 업종 지도·종목 지도 MOBILE 팝업의 공통 상태. 한국과 해외가 같은 PC용 Popup을 같은 규칙으로 띄운다.
 // 칸 데이터가 조금 달라도 이 훅이 받는 값만 맞추면 행·토글·위치 계산은 한 곳에서 관리된다.
-export interface PhoneMapPopupStock {
+export interface MobileMapPopupStock {
   key: string
   name: string
   changeRate: number
@@ -13,7 +13,7 @@ export interface PhoneMapPopupStock {
   marketValue: number
 }
 
-export interface PhoneMapPopupSector {
+export interface MobileMapPopupSector {
   key: string
   name: string
   changeRate: number
@@ -24,13 +24,13 @@ export interface PhoneMapPopupSector {
   unchanged?: number
 }
 
-export function usePhoneMapInfoPopup({ currencyUnit, mapBoundsRef }: {
+export function useMobileMapInfoPopup({ currencyUnit, mapBoundsRef }: {
   // 기본값을 두지 않는다. 해외 화면이 빠뜨리면 금액에 원이 붙는다.
   currencyUnit: CurrencyUnit
   mapBoundsRef?: RefObject<HTMLElement | null>
 }) {
   const [popup, setPopup] = useState<PopupState | null>(null)
-  // 화면 이동으로 닫기는 공통 셸(PhoneMapShell)이 스와이프 시작과 navigationKey로 처리한다.
+  // 화면 이동으로 닫기는 공통 셸(MobileMapShell)이 스와이프 시작과 navigationKey로 처리한다.
   const close = useCallback(() => setPopup(null), [])
   const open = useCallback((content: PopupContent, target: HTMLElement) => {
     const rect = target.getBoundingClientRect()
@@ -47,10 +47,10 @@ export function usePhoneMapInfoPopup({ currencyUnit, mapBoundsRef }: {
     })
   }, [mapBoundsRef])
 
-  // 해외 금액은 종목 지도 팝업과 같은 표기(예: 153조 엔)를 쓰고, 한국 폰 팝업은 기존대로 원을 붙인다.
+  // 해외 금액은 종목 지도 팝업과 같은 표기(예: 153조 엔)를 쓰고, 한국 MOBILE 팝업은 기존대로 원을 붙인다.
   const marketValueText = (value: number) => `${toJoEok(value / 100_000_000)}${currencySuffix(currencyUnit) || '원'}`
 
-  const openStockPopup = (stock: PhoneMapPopupStock, target: HTMLElement, decimalPlaces = 1) => open({
+  const openStockPopup = (stock: MobileMapPopupStock, target: HTMLElement, decimalPlaces = 1) => open({
     title: stock.name,
     rows: [
       `등락률: ${toPctSigned(stock.changeRate, decimalPlaces)}`,
@@ -60,7 +60,7 @@ export function usePhoneMapInfoPopup({ currencyUnit, mapBoundsRef }: {
     targetKey: `stock:${stock.key}`,
   }, target)
 
-  const openSectorPopup = (sector: PhoneMapPopupSector, target: HTMLElement, decimalPlaces = 1) => open({
+  const openSectorPopup = (sector: MobileMapPopupSector, target: HTMLElement, decimalPlaces = 1) => open({
     title: sector.name,
     rows: [
       `시총 가중: ${toPctSigned(sector.changeRate, decimalPlaces)}`,

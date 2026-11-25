@@ -31,7 +31,7 @@ export function useIsMobilePageZoomed(): boolean {
 }
 
 // 업종 지도·그룹 등락률 화면에서는 화면 확대 자체를 받지 않는다. 확대되면 지도 조작과 페이지 전환이 겹친다.
-// 뷰포트 메타는 iOS Safari가 무시하고, 헤드리스에서만 먹히는 확인이었다. 실제 폰에서도 막히도록
+// 뷰포트 메타는 iOS Safari가 무시하고, 헤드리스에서만 먹히는 확인이었다. 실제 MOBILE에서도 막히도록
 // 문서 루트와 본문 모두 세로 스크롤만 허용하고, 두 손가락이 닿은 뒤의 이동을 캡처 단계에서 취소한다.
 // iOS는 touches.length와 별도로 scale을 주므로 둘 다 본다.
 export function useDisableScreenZoom(enabled = true): void {

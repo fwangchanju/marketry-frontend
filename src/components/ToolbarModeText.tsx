@@ -43,7 +43,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
   useEffect(() => {
     if (!isOpen) return
     const handlePointerDown = (event: PointerEvent) => {
-      // 폰에서는 목록이 document.body로 옮겨지므로 루트 밖이라도 목록 안 클릭은 닫지 않는다.
+      // MOBILE에서는 목록이 document.body로 옮겨지므로 루트 밖이라도 목록 안 클릭은 닫지 않는다.
       if (!rootRef.current?.contains(event.target as Node) && !popupRef.current?.contains(event.target as Node)) setIsOpen(false)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -66,7 +66,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
     if (event.pointerType !== 'mouse') return
     closeLater()
   }
-  // 폰에서는 목록이 포털로 옮겨져 루트의 pointerleave가 먼저 일어난다. 목록 위로 들어오면 닫기 예약을 취소한다.
+  // MOBILE에서는 목록이 포털로 옮겨져 루트의 pointerleave가 먼저 일어난다. 목록 위로 들어오면 닫기 예약을 취소한다.
   const handlePopupPointerEnter = (event: ReactPointerEvent) => {
     if (event.pointerType !== 'mouse') return
     cancelClose()
@@ -102,7 +102,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
         <span className="min-w-0 flex-1 justify-center text-center tracking-[0.04em]">{label}</span>
         {showChevron ? <ChevronDownIcon className="ml-auto h-3 w-3 shrink-0" aria-hidden /> : <span aria-hidden className="ml-auto h-3 w-3 shrink-0" />}
       </div>
-      {/* 폰에서는 배지·목록 사이 6px를 ToolbarPopup이 벌려 두어 마우스가 틈을 지나도 밖으로 나간 것으로 보지 않는다. */}
+      {/* MOBILE에서는 배지·목록 사이 6px를 ToolbarPopup이 벌려 두어 마우스가 틈을 지나도 밖으로 나간 것으로 보지 않는다. */}
       {isMenu && isOpen && (
       <ToolbarPopup
         open

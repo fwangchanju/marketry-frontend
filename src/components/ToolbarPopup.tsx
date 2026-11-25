@@ -1,14 +1,14 @@
 import { useLayoutEffect, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { TOOLBAR_SIDE_GUTTER } from '@/utils/phonePathBar'
-import { PHONE_POPUP_SCALE } from '@/utils/phonePopupScale'
-import { usePhoneToolbar } from './PhoneToolbarContext'
+import { TOOLBAR_SIDE_GUTTER } from '@/utils/mobilePathBar'
+import { MOBILE_POPUP_SCALE } from '@/utils/mobilePopupScale'
+import { useMobileToolbar } from './MobileToolbarContext'
 
 // 화면 폭 393px(가용 381px)에 5종 모두 들어간다.
-const POPUP_FIXED_SCALE = PHONE_POPUP_SCALE
+const POPUP_FIXED_SCALE = MOBILE_POPUP_SCALE
 
 // 툴바 버튼 아래에 열리는 팝업 공통 부품.
-// PC는 예전처럼 트리거 기준 absolute로 그대로 열고, 폰 프레임에서는 document.body로 옮겨
+// PC는 예전처럼 트리거 기준 absolute로 그대로 열고, MOBILE 프레임에서는 document.body로 옮겨
 // 화면 가로 안쪽으로 클램프한다. 툴바 배율과 팝업 배율은 분리되어 있다.
 type Props = {
   open: boolean
@@ -21,12 +21,12 @@ type Props = {
 }
 
 export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, className, children, gapPx = 4 }: Props) {
-  const { isPhone } = usePhoneToolbar()
+  const { isMobile } = useMobileToolbar()
 
   // 팝업이 열려 있는 동안 레이아웃이 바뀔 수 있어 매 렌더마다 트리거를 다시 측정한다.
   // 상태를 두면 effect 안의 setState로 연쇄 렌더가 생기므로 DOM 스타일을 직접 갱신한다.
   useLayoutEffect(() => {
-    if (!open || !isPhone) return
+    if (!open || !isMobile) return
     const trigger = triggerRef.current
     const popup = popupRef.current
     if (!trigger || !popup) return
@@ -42,7 +42,7 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
 
   if (!open) return null
 
-  if (!isPhone) {
+  if (!isMobile) {
     return (
       <div ref={popupRef} role="dialog" aria-label={ariaLabel} className={`absolute left-0 top-full z-50 ${className}`} style={{ marginTop: `${gapPx}px` }}>
         {children}
@@ -50,7 +50,7 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
     )
   }
 
-  // z-[70] — 폰 지도 프레임이 z-[60] stacking context라 그 안의 헤더보다 위에 그려져야 한다.
+  // z-[70] — MOBILE 지도 프레임이 z-[60] stacking context라 그 안의 헤더보다 위에 그려져야 한다.
   return createPortal(
     <div
       ref={popupRef}

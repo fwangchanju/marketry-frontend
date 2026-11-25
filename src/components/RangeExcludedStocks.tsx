@@ -32,7 +32,7 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
   useEffect(() => {
     if (!isOpen) return
     const handlePointerDown = (event: PointerEvent) => {
-      // 폰에서는 팝업이 document.body로 옮겨지므로 루트 밖이라도 팝업 안 클릭은 닫지 않는다.
+      // MOBILE에서는 팝업이 document.body로 옮겨지므로 루트 밖이라도 팝업 안 클릭은 닫지 않는다.
       if (!rootRef.current?.contains(event.target as Node) && !popupRef.current?.contains(event.target as Node)) setIsOpen(false)
     }
     const handleKeyDown = (event: KeyboardEvent) => {

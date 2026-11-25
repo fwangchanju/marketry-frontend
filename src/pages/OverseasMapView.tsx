@@ -3,9 +3,9 @@ import MainAreaLoading from '@/components/MainAreaLoading'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
-import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
-import PhoneSectorMapFrame from '@/components/PhoneSectorMapFrame'
-import PhoneMapShell from '@/components/PhoneMapShell'
+import { MOBILE_PATH_CANVAS_ZOOM, mobilePathBarLeftShift } from '@/utils/mobilePathBar'
+import MobileSectorMapFrame from '@/components/MobileSectorMapFrame'
+import MobileMapShell from '@/components/MobileMapShell'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { overseasRoute } from '@/utils/markets'
@@ -117,11 +117,11 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const isMobileCaptureMode = searchParams.get('capture') === 'mobile'
-  // 폰(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 프레임)만 화면 폭에 맞춰 보여 준다. 위 상단 줄은 모바일 양식을 쓴다.
-  const isPhoneMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
+  // MOBILE(좁은 화면)에서는 PC 화면 대신 모바일 판(캡처 모드와 같은 프레임)만 화면 폭에 맞춰 보여 준다. 위 상단 줄은 모바일 양식을 쓴다.
+  const isMobileMapFrame = useIsNarrowScreen() && !isMobileCaptureMode
   useCarriedBoxSize(value => update({ boxSizeMarketCapRatio: value }))
-  const isMobileFrameVisible = isMobileCaptureMode || isPhoneMapFrame
-  const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
+  const isMobileFrameVisible = isMobileCaptureMode || isMobileMapFrame
+  const mobileFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   const [isMobileCaptureReady, setIsMobileCaptureReady] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
   const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
@@ -246,27 +246,27 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                 </>
               )}
             </div>
-            {!isPhoneMapFrame && (
+            {!isMobileMapFrame && (
               <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}><TaxonomyBadge taxonomy={sheet} /></div>
             )}
           </Toolbar>
   )
   const overseasFrameNode = ((isShareOpen && isMobileScreenshotSelected) || isMobileFrameVisible) && !isLoading && !isError && shownCount > 0 && (
             <div
-              aria-hidden={isPhoneMapFrame ? undefined : true}
+              aria-hidden={isMobileMapFrame ? undefined : true}
               data-map-mobile-capture-frame
               data-captureid={isMobileCaptureMode ? 'map-mobile-capture' : undefined}
               data-capture-ready={isMobileCaptureMode ? isMobileCaptureReady : undefined}
-              style={{ opacity: isPhoneMapFrame ? 1 : 0, transform: isPhoneMapFrame ? `scale(${phoneFrameScale})` : undefined, transformOrigin: 'top left', width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box' }}
-              className={isPhoneMapFrame ? "relative z-[60] bg-ui-background" : "pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"}
+              style={{ opacity: isMobileMapFrame ? 1 : 0, transform: isMobileMapFrame ? `scale(${mobileFrameScale})` : undefined, transformOrigin: 'top left', width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box' }}
+              className={isMobileMapFrame ? "relative z-[60] bg-ui-background" : "pointer-events-none absolute z-[60] left-0 top-0 bg-ui-background"}
             >
               <div
                 aria-hidden="true"
                 data-map-mobile-capture
-                style={{ opacity: isPhoneMapFrame ? 1 : 0, width: '100%', height: '100%' }}
+                style={{ opacity: isMobileMapFrame ? 1 : 0, width: '100%', height: '100%' }}
                 className="flex flex-col bg-ui-background"
               >
-                {isPhoneMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
+                {isMobileMapFrame ? null : <div data-map-mobile-toolbar-placeholder className="main-toolbar relative mt-[3px] mb-0 h-7 w-full shrink-0 bg-ui-background/70" />}
                 <div aria-hidden="true" className="h-2 shrink-0" />
                 {path.length > 0 && <PathBar
                   accentColor={strongIndustryColor}
@@ -276,28 +276,28 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
                   ]}
                 />}
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} stockChartTrigger="rightClick" onOpenStockChart={isPhoneMapFrame && chart ? openStockChart : undefined} phonePopupEnlarged={isPhoneMapFrame} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
+                  <Heatmap groups={groups} selfSectorName={isFullyFlattened ? FLAT_GROUP_NAME : (currentNode?.sectorName ?? null)} depth={path.length} onSelectSector={() => {}} onExcludeSector={() => {}} heightClassName="min-h-0 flex-1" marketValueDepthRange={metricRange('marketValue')} weightedAvgDepthRange={metricRange('weightedAvgChangeRate')} simpleAvgDepthRange={metricRange('simpleAvgChangeRate')} upDownCountDepthRange={metricRange('upDownCount')} boxSizeMarketCapRatio={preferences.boxSizeMarketCapRatio} tile={mapTileMethod()} canExclude={false} colorScale={colorScale} labelMinAreaPercent={boxLabelMinAreaPercent} stockLabelMode={preferences.stockLabelEnabled ? STOCK_LABEL_MODES[preferences.stockLabelModeIndex] ?? 'both' : 'off'} stockPopupOnHover={false} stockChartTrigger="rightClick" onOpenStockChart={isMobileMapFrame && chart ? openStockChart : undefined} mobilePopupEnlarged={isMobileMapFrame} decimalPlaces={preferences.decimalPlaces} topPickSectorKeys={topPickSectorKeys} strongIndustryColor={strongIndustryColor} zoomOutRequestDepth={null} onZoomOutComplete={() => {}} currencyUnit={currencyUnit} captureRowMetric={preferences.activeDepthMetric === 'simpleAvgChangeRate' ? 'simpleAvgChangeRate' : 'weightedAvgChangeRate'} />
                 </div>
               </div>
             </div>
           );
-  const phoneEmptyFrame = (
+  const mobileEmptyFrame = (
     <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">{isLoading ? '불러오는 중입니다.' : isError ? '데이터를 불러오지 못했습니다.' : '이 날짜에는 표시할 데이터가 없습니다.'}</div>
   )
   const sectorPreview = (
-    <PhoneSectorMapFrame scale={phoneFrameScale} crumbs={[{ key: 'market', label: label, current: true }]}>
+    <MobileSectorMapFrame scale={mobileFrameScale} crumbs={[{ key: 'market', label: label, current: true }]}>
       <MobileSectorMap items={sectorPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={preferences.decimalPlaces} />
-    </PhoneSectorMapFrame>
+    </MobileSectorMapFrame>
   )
   // 종목 지도에서 그룹 등락률 쪽(오른쪽 스와이프)으로 갈 때 왼쪽에서 따라올 미리보기. 한국 종목 지도와 같은 판·경로 줄을 쓴다.
   const graphPreviewItems: MobileGraphItem[] = sectorPreviewItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
   for (const index of graphIndexItems) graphPreviewItems.push({ ...index, reference: true })
   const graphPreview = (
-    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${mobileFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
-        <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>
-          <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${phonePathBarLeftShift(8)}px)` }}>
-            <PathBar variant="phone" currentAria="location" crumbs={[{ key: 'market', label, current: true }]} />
+        <div style={{ zoom: MOBILE_PATH_CANVAS_ZOOM }}>
+          <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${mobilePathBarLeftShift(8)}px)` }}>
+            <PathBar variant="mobile" currentAria="location" crumbs={[{ key: 'market', label, current: true }]} />
           </header>
         </div>
         {isLoading || isFetching ? <div className="flex h-full items-center justify-center"><Spinner /></div>
@@ -306,19 +306,19 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     </div>
   )
 
-  if (isPhoneMapFrame) {
+  if (isMobileMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
     const summaryPath = overseasRoute('/summary', market)
     const graphPath = overseasRoute('/graph', market)
     return (
       <>
-        <PhoneMapShell
+        <MobileMapShell
           zoomMode="pinch"
           onSwipe={direction => navigate(direction === 'next' ? summaryPath : graphPath)}
           toolbar={overseasToolbarNode}
           topBar={<MobileTopBar title="종목 지도" titleTo={summaryPath} titleLabel="업종 지도로 이동" />}
-          frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * phoneFrameScale}
-          frame={overseasFrameNode || phoneEmptyFrame}
+          frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * mobileFrameScale}
+          frame={overseasFrameNode || mobileEmptyFrame}
           nextPreview={sectorPreview}
           previousPreview={graphPreview}
           current={marketKey}

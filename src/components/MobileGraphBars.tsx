@@ -18,7 +18,7 @@ export default function MobileGraphBars({ items, colorScale, highlightColor }: {
 }) {
   const sorted = mobileGraphRank(items)
   const max = Math.ceil(Math.max(1, ...sorted.map(item => Math.abs(item.value))) * 2) / 2
-  // 항목이 적으면 한 줄이 화면 높이만큼 늘어나지 않게 높이를 제한하고, 8개 이상이면 폰 길이에 맞춰 아래까지 채운다.
+  // 항목이 적으면 한 줄이 화면 높이만큼 늘어나지 않게 높이를 제한하고, 8개 이상이면 MOBILE 길이에 맞춰 아래까지 채운다.
   const rowCap = sorted.length < 8 ? 'max-h-[96px]' : ''
   if (!sorted.length) return <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 항목이 없습니다.</p>
   return (

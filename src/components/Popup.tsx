@@ -2,8 +2,8 @@ import KindBadge from '@/components/KindBadge'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { appConfirm } from '@/utils/appDialogBus'
-import { phoneViewport } from '@/utils/phoneViewport'
-import { PHONE_POPUP_SCALE } from '@/utils/phonePopupScale'
+import { mobileViewport } from '@/utils/mobileViewport'
+import { MOBILE_POPUP_SCALE } from '@/utils/mobilePopupScale'
 
 export interface PopupContent {
   title: string
@@ -43,18 +43,18 @@ interface Props {
   onExcludeSector: (sectorId: number, sectorName: string) => void
   onOpenChart?: (stock: { code: string; name: string }) => void
   onClose: () => void
-  // 실제 폰 화면에서만 true. 툴바 줄 팝업과 같은 배율·클램프로 키운다. 캡처·미리보기·PC는 false.
-  phoneEnlarged?: boolean
+  // 실제 MOBILE 화면에서만 true. 툴바 줄 팝업과 같은 배율·클램프로 키운다. 캡처·미리보기·PC는 false.
+  mobileEnlarged?: boolean
 }
 
-export default function Popup({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged = false }: Props) {
+export default function Popup({ popup, onExcludeSector, onOpenChart, onClose, mobileEnlarged = false }: Props) {
   // popup이 null이면 PopupBody를 트리에서 아예 뺀다 — 이래야 popup이 바뀔 때마다(닫혔다 다시 열릴
   // 때마다) PopupBody가 실제로 언마운트·재마운트되어 confirming/위치 계산 state가 매번 새로 시작한다.
   // Popup 자신은 부모가 항상 렌더하는 컴포넌트라 여기 직접 훅을 두면 그 state가 다음 팝업까지
   // 이어져버린다.
   if (!popup) return null
   return createPortal(
-    <PopupBody popup={popup} onExcludeSector={onExcludeSector} onOpenChart={onOpenChart} onClose={onClose} phoneEnlarged={phoneEnlarged} />,
+    <PopupBody popup={popup} onExcludeSector={onExcludeSector} onOpenChart={onOpenChart} onClose={onClose} mobileEnlarged={mobileEnlarged} />,
     document.body,
   )
 }
@@ -64,11 +64,11 @@ const POPUP_GAP = 2
 // 커서 이동 팝업과 마우스 사이의 간격(오른쪽·아래).
 const POINTER_GAP = 14
 const POPUP_MARGIN = 8
-// 폰 팝업의 윗변은 줄 수와 관계없이 보이는 화면 높이의 이 비율에서 시작한다(2026-11-25 사용자 결정). 줄이 많으면 아래로만 길어진다.
-const PHONE_POPUP_TOP_RATIO = 0.27
-// 폰 팝업의 너비는 종목·업종, 시장, 내용 길이, 화면 확대와 관계없이 늘 같다. 높이는 내용 줄 수를 따른다(2026-11-25 사용자 결정).
-// 이 값에 PHONE_POPUP_SCALE을 곱한 너비로 보인다.
-const PHONE_POPUP_WIDTH = 200
+// MOBILE 팝업의 윗변은 줄 수와 관계없이 보이는 화면 높이의 이 비율에서 시작한다(2026-11-25 사용자 결정). 줄이 많으면 아래로만 길어진다.
+const MOBILE_POPUP_TOP_RATIO = 0.27
+// MOBILE 팝업의 너비는 종목·업종, 시장, 내용 길이, 화면 확대와 관계없이 늘 같다. 높이는 내용 줄 수를 따른다(2026-11-25 사용자 결정).
+// 이 값에 MOBILE_POPUP_SCALE을 곱한 너비로 보인다.
+const MOBILE_POPUP_WIDTH = 200
 const POPUP_BACKGROUND = 'var(--ui-popup)'
 
 interface PointerBounds {
@@ -97,20 +97,20 @@ function placeNearPointer(el: HTMLElement, point: { x: number; y: number }, boun
   el.style.visibility = 'visible'
 }
 
-// 폰 팝업을 가로 가운데, 정해진 윗변 위치에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
+// MOBILE 팝업을 가로 가운데, 정해진 윗변 위치에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
 // 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
-function placePhonePopup(el: HTMLElement) {
-  const view = phoneViewport()
+function placeMobilePopup(el: HTMLElement) {
+  const view = mobileViewport()
   const zoom = Math.max(view.scale, 0.1)
   // 화면에 실제로 보이는 px로 크기·위치를 정한 뒤 확대 배율로 나눈다. 여백도 같이 나눠야 확대할수록 자리가 줄지 않는다.
   // 너비는 고정값, 높이는 화면 확대·transform의 영향을 받지 않는 offsetHeight를 쓴다.
   const screenWidth = view.width * zoom
   const screenHeight = view.height * zoom
-  const scale = Math.min(PHONE_POPUP_SCALE, (screenWidth - POPUP_MARGIN * 2) / PHONE_POPUP_WIDTH)
-  const width = PHONE_POPUP_WIDTH * scale
+  const scale = Math.min(MOBILE_POPUP_SCALE, (screenWidth - POPUP_MARGIN * 2) / MOBILE_POPUP_WIDTH)
+  const width = MOBILE_POPUP_WIDTH * scale
   const height = el.offsetHeight * scale
   const left = (screenWidth - width) / 2
-  const top = Math.max(POPUP_MARGIN, Math.min(screenHeight * PHONE_POPUP_TOP_RATIO, screenHeight - height - POPUP_MARGIN))
+  const top = Math.max(POPUP_MARGIN, Math.min(screenHeight * MOBILE_POPUP_TOP_RATIO, screenHeight - height - POPUP_MARGIN))
   el.style.transform = `scale(${scale / zoom})`
   el.style.left = `${view.left + left / zoom}px`
   el.style.top = `${view.top + top / zoom}px`
@@ -122,12 +122,12 @@ interface PopupBodyProps {
   onExcludeSector: (sectorId: number, sectorName: string) => void
   onOpenChart?: (stock: { code: string; name: string }) => void
   onClose: () => void
-  phoneEnlarged: boolean
+  mobileEnlarged: boolean
 }
 
-function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged }: PopupBodyProps) {
+function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, mobileEnlarged }: PopupBodyProps) {
   const elRef = useRef<HTMLDivElement>(null)
-  // 폰 팝업은 길게 누르는 동안(손가락을 떼기 전에) 열린다. 떼는 순간의 클릭이 팝업에 닿아 바로 닫히지 않게,
+  // MOBILE 팝업은 길게 누르는 동안(손가락을 떼기 전에) 열린다. 떼는 순간의 클릭이 팝업에 닿아 바로 닫히지 않게,
   // 팝업 위에서 누르기 시작한 클릭만 받는다. 시간으로 막으면 클릭이 늦게 올 때 뚫린다(2026-11-25 재현).
   const pressedRef = useRef(false)
   useLayoutEffect(() => {
@@ -146,9 +146,9 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
   useLayoutEffect(() => {
     const el = elRef.current
     if (!el) return
-    if (phoneEnlarged) {
-      // 폰에서는 누린 칸 옆이 아니라 가로 가운데, 정해진 윗변 위치에 띄운다.
-      placePhonePopup(el)
+    if (mobileEnlarged) {
+      // MOBILE에서는 누린 칸 옆이 아니라 가로 가운데, 정해진 윗변 위치에 띄운다.
+      placeMobilePopup(el)
       return
     }
     if (pointer) {
@@ -187,22 +187,22 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     el.style.left = `${left}px`
     el.style.top = `${top}px`
     el.style.visibility = 'visible'
-  }, [popup, pointer, minLeft, maxRight, minTop, maxBottom, phoneEnlarged])
+  }, [popup, pointer, minLeft, maxRight, minTop, maxBottom, mobileEnlarged])
 
   // 렌더 사이에 화면 확대·이동이 바뀌었을 수 있어 매 렌더마다 다시 맞춘다.
   useLayoutEffect(() => {
-    if (!phoneEnlarged) return
+    if (!mobileEnlarged) return
     const el = elRef.current
-    if (el) placePhonePopup(el)
+    if (el) placeMobilePopup(el)
   })
 
   // 팝업이 열려 있는 동안 창 크기·화면 확대·화면 이동이 바뀌면 자리를 다시 잡는다.
   // popup 상태는 그대로라 위 레이아웃 효과가 다시 실행되지 않으므로 별도로 듣는다. PC 팝업은 예전 동작을 유지한다.
   useLayoutEffect(() => {
-    if (!phoneEnlarged) return
+    if (!mobileEnlarged) return
     const el = elRef.current
     if (!el) return
-    const place = () => placePhonePopup(el)
+    const place = () => placeMobilePopup(el)
     const vv = window.visualViewport
     window.addEventListener('resize', place)
     vv?.addEventListener('resize', place)
@@ -212,7 +212,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
       vv?.removeEventListener('resize', place)
       vv?.removeEventListener('scroll', place)
     }
-  }, [phoneEnlarged])
+  }, [mobileEnlarged])
 
   // 커서 이동 팝업은 마우스를 따라간다. 지도 전체를 다시 그리지 않도록 상태를 바꾸지 않고 위치만 직접 옮기며, 프레임당 한 번만 갱신한다.
   useEffect(() => {
@@ -244,9 +244,9 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible ${phoneEnlarged ? 'absolute z-[70] box-border cursor-pointer' : 'fixed z-[9999] w-max break-words'} select-none border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
-        onPointerDown={phoneEnlarged ? () => { pressedRef.current = true } : undefined}
-        onClickCapture={phoneEnlarged ? event => {
+        className={`invisible ${mobileEnlarged ? 'absolute z-[70] box-border cursor-pointer' : 'fixed z-[9999] w-max break-words'} select-none border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        onPointerDown={mobileEnlarged ? () => { pressedRef.current = true } : undefined}
+        onClickCapture={mobileEnlarged ? event => {
           const pressed = pressedRef.current
           pressedRef.current = false
           // 키보드·보조 기술의 클릭(detail 0)은 누르기 없이 오므로 그대로 받는다.
@@ -254,22 +254,22 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
           event.preventDefault()
           event.stopPropagation()
         } : undefined}
-        // 폰에서는 팝업을 누르면 닫는다(길게 누르기 전의 모바일 동작 유지).
-        onClick={phoneEnlarged ? onClose : undefined}
+        // MOBILE에서는 팝업을 누르면 닫는다(길게 누르기 전의 모바일 동작 유지).
+        onClick={mobileEnlarged ? onClose : undefined}
         style={{
           backgroundColor: POPUP_BACKGROUND,
-          // 폰은 루트 글자 크기가 80%라 rem 기반 text-base·text-sm이 12.8·11.2px로 줄어든다.
+          // MOBILE은 루트 글자 크기가 80%라 rem 기반 text-base·text-sm이 12.8·11.2px로 줄어든다.
           // 공통 배율을 그 위에 곱하면 PC(16·14px)보다 여전히 작으므로, 원래 크기로 되돌린 뒤 배율을 적용한다.
           // 브라우저의 글자 자동 확대도 끈다. 고정 크기 안에서 줄이 바뀌지 않아야 한다.
-          ...(phoneEnlarged
-            ? { width: PHONE_POPUP_WIDTH, fontSize: '16px', transformOrigin: 'top left', textSizeAdjust: '100%', WebkitTextSizeAdjust: '100%' }
+          ...(mobileEnlarged
+            ? { width: MOBILE_POPUP_WIDTH, fontSize: '16px', transformOrigin: 'top left', textSizeAdjust: '100%', WebkitTextSizeAdjust: '100%' }
             : { maxWidth }),
         }}
       >
         <div className="flex items-center justify-between gap-3 font-bold">
           <div className="flex min-w-0 items-center gap-1.5">
             <KindBadge kind={isSectorPopup ? '업종' : '종목'} />
-            <span className={phoneEnlarged ? 'min-w-0 truncate' : undefined}>{popup.title}</span>
+            <span className={mobileEnlarged ? 'min-w-0 truncate' : undefined}>{popup.title}</span>
           </div>
           {excludeSector && (
             <button
@@ -306,7 +306,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
             </button>
           )}
         </div>
-        <div className={`pl-1 text-sm tabular-nums ${phoneEnlarged ? 'whitespace-nowrap' : ''}`} style={phoneEnlarged ? { fontSize: '14px' } : undefined}>
+        <div className={`pl-1 text-sm tabular-nums ${mobileEnlarged ? 'whitespace-nowrap' : ''}`} style={mobileEnlarged ? { fontSize: '14px' } : undefined}>
           {popup.rows.map((row, index) => (
             <div key={index}>{row}</div>
           ))}
