@@ -1,5 +1,5 @@
 import KindBadge from '@/components/KindBadge'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { appConfirm } from '@/utils/appDialogBus'
 import { PHONE_POPUP_SCALE } from '@/utils/phonePopupScale'
@@ -136,24 +136,12 @@ interface PopupBodyProps {
 
 function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged }: PopupBodyProps) {
   const elRef = useRef<HTMLDivElement>(null)
-  // 폰 팝업은 길게 누르는 동안(손가락을 떼기 전에) 열린다. 떼는 순간의 클릭이 팝업에 닿아 바로
-  // 닫히지 않게, 첫 pointerup까지 클릭을 받지 않는다. PC·툴바·캡처 팝업에는 영향이 없다.
-  const [awaitingRelease, setAwaitingRelease] = useState(phoneEnlarged)
-  const releaseTimerRef = useRef(0)
-  useEffect(() => {
-    if (!phoneEnlarged) return
-    const release = () => {
-      window.clearTimeout(releaseTimerRef.current)
-      releaseTimerRef.current = window.setTimeout(() => setAwaitingRelease(false), 0)
-    }
-    window.addEventListener('pointerup', release, { once: true })
-    window.addEventListener('pointercancel', release, { once: true })
-    return () => {
-      window.clearTimeout(releaseTimerRef.current)
-      window.removeEventListener('pointerup', release)
-      window.removeEventListener('pointercancel', release)
-    }
-  }, [phoneEnlarged])
+  // 폰 팝업은 길게 누르는 동안(손가락을 떼기 전에) 열린다. 떼는 순간의 클릭이 팝업에 닿아 바로 닫히지 않게,
+  // 팝업 위에서 누르기 시작한 클릭만 받는다. 시간으로 막으면 클릭이 늦게 올 때 뚫린다(2026-11-25 재현).
+  const pressedRef = useRef(false)
+  useLayoutEffect(() => {
+    pressedRef.current = false
+  }, [popup])
   const minLeft = Math.max(POPUP_MARGIN, popup.mapBounds.left + POPUP_MARGIN)
   const maxRight = Math.min(window.innerWidth - POPUP_MARGIN, popup.mapBounds.right - POPUP_MARGIN)
   // transform은 레이아웃 폭을 바꾸지 않고 그린 크기만 키운다. 지도 경계 안에 들어가도록
@@ -269,7 +257,16 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible ${phoneEnlarged ? 'absolute z-[70] cursor-pointer' : 'fixed z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip || awaitingRelease ? 'pointer-events-none' : ''}`}
+        className={`invisible ${phoneEnlarged ? 'absolute z-[70] cursor-pointer' : 'fixed z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        onPointerDown={phoneEnlarged ? () => { pressedRef.current = true } : undefined}
+        onClickCapture={phoneEnlarged ? event => {
+          const pressed = pressedRef.current
+          pressedRef.current = false
+          // 키보드·보조 기술의 클릭(detail 0)은 누르기 없이 오므로 그대로 받는다.
+          if (pressed || event.detail === 0) return
+          event.preventDefault()
+          event.stopPropagation()
+        } : undefined}
         // 폰에서는 팝업을 누르면 닫는다(길게 누르기 전의 모바일 동작 유지).
         onClick={phoneEnlarged ? onClose : undefined}
         style={{

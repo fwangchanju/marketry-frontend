@@ -1,4 +1,4 @@
-import { cloneElement, isValidElement, useLayoutEffect, useState, type ReactNode } from 'react'
+import { cloneElement, isValidElement, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { PhoneToolbarContext } from '@/components/PhoneToolbarContext'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileMapSheet, { type MobileMapMarket } from '@/components/MobileMapSheet'
@@ -17,7 +17,7 @@ const TOOLBAR_FIXED_SCALE = 0.863
 export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, onBeforeSwipeNavigate, nextPreview, previousPreview, zoomMode, infoPopup, onCloseInfoPopup, navigationKey }: {
   topBar?: ReactNode
   onSwipe?: (direction: 'next' | 'previous') => void
-  // 화면 위치(업종 경로·스와이프 포함)가 바뀌면 팝업을 여기서 닫는다. 페이지마다 닫기 호출을 넣지 않는다.
+  // 화면 위치(시장·업종 경로·보기 모드)가 바뀌면 팝업을 여기서 닫는다. 스와이프와 상단 이동은 셸이 시작 시점을 직접 안다. 페이지마다 닫기 호출을 넣지 않는다.
   navigationKey?: string
   // 주소가 바뀌기 직전에 해당 방향의 미리보기 판을 덮개로 남길지 정한다(종목 지도 도착 번쩍임 방지).
   onBeforeSwipeNavigate?: (direction: 'next' | 'previous') => void
@@ -29,8 +29,9 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   onChangeBoxSize: (value: number) => void
   // 왼쪽으로 밀 때 오른쪽에서 따라오는 다음 화면 미리보기, 오른쪽으로 밀 때 왼쪽에서 따라오는 이전 화면 미리보기.
   // 넘기지 않으면 그 방향은 현재 판만 움직인다.
-  nextPreview?: ReactNode
-  previousPreview?: ReactNode
+  // 함수로 넘기면 미는 동안에만 그린다(종목 전체를 그리는 무거운 미리보기용).
+  nextPreview?: ReactNode | (() => ReactNode)
+  previousPreview?: ReactNode | (() => ReactNode)
   // 종목 지도는 화면 확대를 받지만 업종 지도·그룹 등락률은 막는다. 문서와 안쪽 판 설정을 여기서 함께 정한다.
   // 기본값을 두지 않아 새 화면이 정책을 빠뜨리면 컴파일에서 막힌다.
   zoomMode: 'pinch' | 'blocked'
@@ -42,23 +43,24 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   const zoomBlocked = zoomMode === 'blocked'
   useDisableScreenZoom(zoomBlocked)
 
-  // 화면이 바뀌는 신호는 셸이 받아 팝업을 먼저 닫는다. 하위 업종 진입(주소 유지)과 스와이프 모두 여기를 거친다.
-  const [lastNavigationKey, setLastNavigationKey] = useState(navigationKey)
-  if (navigationKey !== lastNavigationKey) {
-    setLastNavigationKey(navigationKey)
+  // 하위 업종 진입처럼 주소가 그대로인 이동도 여기서 팝업을 닫는다. 그리기 전에 닫아 이전 팝업이 비치지 않는다.
+  const lastNavigationKeyRef = useRef(navigationKey)
+  useLayoutEffect(() => {
+    if (lastNavigationKeyRef.current === navigationKey) return
+    lastNavigationKeyRef.current = navigationKey
     onCloseInfoPopup?.()
-  }
+  }, [navigationKey, onCloseInfoPopup])
 
   const swipe = useMobilePageSwipe(
     Boolean(onSwipe),
     () => onSwipe?.('next'),
     () => onSwipe?.('previous'),
-    direction => {
-      onCloseInfoPopup?.()
-      onBeforeSwipeNavigate?.(direction)
-    },
-    !zoomBlocked
+    onBeforeSwipeNavigate,
+    !zoomBlocked,
+    // 팝업은 판과 함께 움직이지 않으므로 넘어간 뒤가 아니라 밀기 시작할 때 닫는다.
+    onCloseInfoPopup
   )
+  const renderPreview = (preview: ReactNode | (() => ReactNode)) => typeof preview === 'function' ? (swipe.active ? preview() : null) : preview
 
   // 화면을 읽지 않고 창 폭과 기준 폭으로만 배율을 정한다. 로딩 중 툴바 내용이 바뀌어도 재측정·재배치가 없다.
   useLayoutEffect(() => {
@@ -71,7 +73,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
     return () => window.removeEventListener('resize', fit)
   }, [])
 
-  // 상단 이동 버튼은 스와이프와 같은 전환을 재생한다. 이미 전환을 가진 화면(한국 업종·그룹)은 그대로 둔다.
+  // 상단 이동 버튼은 스와이프와 같은 전환을 재생한다.
   const topBarNode = isValidElement<{ onTitleClick?: () => void }>(topBar)
     ? onSwipe && !topBar.props.onTitleClick
       ? cloneElement(topBar, { onTitleClick: () => swipe.next() })
@@ -101,7 +103,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
                 aria-hidden="true"
                 className="pointer-events-none absolute left-full top-0 h-full w-full bg-ui-background"
               >
-                {nextPreview}
+                {renderPreview(nextPreview)}
               </div>
             )}
             {previousPreview && (
@@ -109,7 +111,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
                 aria-hidden="true"
                 className="pointer-events-none absolute right-full top-0 h-full w-full bg-ui-background"
               >
-                {previousPreview}
+                {renderPreview(previousPreview)}
               </div>
             )}
           </div>
