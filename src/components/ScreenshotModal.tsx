@@ -21,7 +21,7 @@ interface Props {
   captureReady?: boolean
   emptyPreview?: ReactNode
   fixedSummaryCaptureRef?: { current: HTMLElement | null }
-  // 지도에서 전체 화면(모니터)과 지도 영역(모바일)을 고르는 버튼을 표시한다.
+  // 지도에서 전체 화면(PC)과 지도 영역(모바일)을 고르는 버튼을 표시한다.
   mobileRegionOption?: { label: string; selector: string; mode?: 'through-right-edge' | 'element' | 'content'; onCloneNode?: (cloned: Node) => void; monitorHorizontalPadding?: number }
   onMobileSelectionChange?: (selected: boolean) => void
   // 서머리의 각 요약 항목을 따로 캡처하는 버튼들.
@@ -68,7 +68,7 @@ export default function ScreenshotModal({
   const [captureAttempt, setCaptureAttempt] = useState(0)
   const emptyPreviewRef = useRef<HTMLDivElement>(null)
   const hasEmptyPreview = emptyPreview != null
-  // 스크린샷 창은 마지막으로 고른 캡처 범위로 열고, 고른 적이 없거나 지금 페이지에 없는 범위면 전체 화면(모니터) 캡처로 연다.
+  // 스크린샷 창은 마지막으로 고른 캡처 범위로 열고, 고른 적이 없거나 지금 페이지에 없는 범위면 전체 화면(PC) 캡처로 연다.
   const choiceKey = captureChoiceKey(Boolean(mobileRegionOption), Boolean(frameCaptureOptions))
   const [selectedCapture, setSelectedCapture] = useState<string | null>(() =>
     readSavedCapture(choiceKey, Boolean(mobileRegionOption), frameCaptureOptions?.map(option => option.id) ?? []),
@@ -87,7 +87,7 @@ export default function ScreenshotModal({
   const regionSelector = selectedCapture === 'mobile' ? mobileRegionOption?.selector : selectedFrame?.selector
   const regionMode = selectedCapture === 'mobile' ? mobileRegionOption?.mode : selectedFrame?.mode ?? (selectedFrame ? 'element' : undefined)
   const onCloneNode = selectedCapture === 'mobile' ? mobileRegionOption?.onCloneNode : undefined
-  // 모니터·전체 화면 캡처에는 페이지와 무관하게 좌우 4px 바깥 여백을 포함한다.
+  // PC·전체 화면 캡처에는 페이지와 무관하게 좌우 4px 바깥 여백을 포함한다.
   const horizontalPadding = selectedCapture === null ? mobileRegionOption?.monitorHorizontalPadding ?? 4 : 0
   const fullPreviewPadding = mobileRegionOption?.monitorHorizontalPadding ?? 4
   // 미리보기 이미지의 가로/세로 비율 — 화면에 꽉 차는 폭을 이 비율로 계산한다. 스크린샷 전(스피너)에도 같은 크기로 자리를 잡도록 처음에는
@@ -352,7 +352,7 @@ export default function ScreenshotModal({
               <>
                 <button type="button" aria-pressed={selectedCapture === null} onClick={() => selectCapture(null)} className={selectedCapture === null ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
                   <MonitorIcon className="h-4 w-4" />
-                  모니터
+                  PC
                 </button>
                 <button type="button" aria-pressed={selectedCapture === 'mobile'} onClick={() => selectCapture('mobile')} className={selectedCapture === 'mobile' ? BUTTON_ACCENT_CLASS : BUTTON_BASE_CLASS}>
                   <SmartphoneIcon className="h-4 w-4" />

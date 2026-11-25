@@ -613,7 +613,7 @@ export default function MapPage() {
               <DisclaimerFooter rightContent={<ChangeRateBar swatches={settingsModalProps.legendSwatches} />} />
               </div>
             </div>
-          {/* 모니터 캡처에서는 모바일용 히트맵을 만들지 않아 화면 렌더링과 DOM 복제 비용을 줄인다. */}
+          {/* PC 캡처에서는 모바일용 히트맵을 만들지 않아 화면 렌더링과 DOM 복제 비용을 줄인다. */}
           {mobileFrameNode}
           </div>
           {/* 설정창 위쪽 여백 4px — 헤더를 위로 3px 늘리고 아래 구분선 위치는 유지한다. */}
@@ -694,7 +694,7 @@ export default function MapPage() {
               <CustomPageBadgeLink />
             </EmptyLogoMessage>
           ) : undefined}
-          mobileRegionOption={{ label: '모바일', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }}
+          mobileRegionOption={{ label: 'MOBILE', selector: '[data-map-mobile-capture-frame]', mode: 'element', onCloneNode: revealMobileCapture, monitorHorizontalPadding: 4 }}
           onMobileSelectionChange={setIsMobileScreenshotSelected}
         />
       )}
