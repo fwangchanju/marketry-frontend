@@ -7,7 +7,7 @@ export function topPickAverage(node: FilteredHeatmapSectorNode, metric: DepthMet
 }
 
 // 고른 단계의 업종 후보 중 등락률이 높은 순(같으면 시가총액, 그래도 같으면 원래 순서)으로 count개의 키를 돌려준다.
-// 국내 지도와 일본 지도가 같은 순위 규칙을 쓰도록 한 곳에 둔다.
+// 한국 지도와 일본 지도가 같은 순위 규칙을 쓰도록 한 곳에 둔다.
 // KRX 업종은 모두 sectorId=0이므로 이름까지 포함해 구별한다.
 export function pickTopSectorKeys(candidates: FilteredHeatmapSectorNode[], count: number, metric: DepthMetric): Set<string> {
   const ranked = candidates

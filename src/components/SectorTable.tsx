@@ -192,7 +192,7 @@ function DroppableSectorRow({
   )
 }
 
-export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, actions, currency, maxDepth, protectedHint }: Props) {
+export default function SectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, actions, currency, maxDepth, protectedHint }: Props) {
   const readOnly = actions === null
   const [query, setQuery] = useState('')
   // 열 폭이 좁으면 시가총액 합·종목 수 칸을 숨긴다(SECTOR_COMPACT_BELOW_COLUMN_PX). 세 열이 같은 폭이라 표 전체 폭의 3분의 1로 잰다.

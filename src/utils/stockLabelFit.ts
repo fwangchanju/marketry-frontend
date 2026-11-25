@@ -109,8 +109,8 @@ const DESCRIPTOR_WORDS = [
   '증권', '소프트웨어', '소프트', '정보통신', '일렉트릭', '에너지', '머티리얼즈', '머티리얼', '로보틱스', '디스플레이', '반도체', '엔지니어링', '이엔씨', '콘덴서', '스마트', '마트', '신소재',
 ].sort((a, b) => b.length - a.length)
 
-// 일본 종목명(일본어 이름을 한글로 읽어 쓴 사명) 전용 규칙 — 국내 종목에는 쓰지 않는다. 앞쪽 그룹·지역 이름 뒤와 끝쪽 업종 단어 앞에서 줄을 나눈다(미쓰비시/상사, 도쿄/일렉트론, 신에츠/화학).
-// 국내 목록과 섞지 않는 이유는 국내 종목의 줄 나눔이 달라지지 않게 하려는 것이다.
+// 일본 종목명(일본어 이름을 한글로 읽어 쓴 사명) 전용 규칙 — 한국 종목에는 쓰지 않는다. 앞쪽 그룹·지역 이름 뒤와 끝쪽 업종 단어 앞에서 줄을 나눈다(미쓰비시/상사, 도쿄/일렉트론, 신에츠/화학).
+// 한국 목록과 섞지 않는 이유는 한국 종목의 줄 나눔이 달라지지 않게 하려는 것이다.
 export type LabelMarket = 'korea' | 'japan' | 'usa'
 const JAPAN_GROUP_PREFIXES = [
   '미쓰비시', '미쓰이', '스미토모', '도쿄', '동일본', '서일본', '일본', '도카이', '간사이', '주부', '후지', '닛산', '닛폰', '다이이치', '다이이찌', '다이와', '다이닛폰',
@@ -248,7 +248,7 @@ function splitCandidates(chars: string[], market: LabelMarket = 'korea') {
     const fixed = JAPAN_FIXED_SPLITS[fullName]
     if (fixed !== undefined) return { all: Array.from({ length: chars.length - 1 }, (_, k) => k + 1), atSpaces: [], atMeaning: [fixed], atSuffix: [] }
   }
-  // 미국 종목명은 한글 이름에 띄어쓰기가 없어서 뜻이 갈리는 자리를 usaLabelBreaks의 목록으로 정한다. 국내·일본 그룹명·업종 단어 목록은 쓰지 않는다.
+  // 미국 종목명은 한글 이름에 띄어쓰기가 없어서 뜻이 갈리는 자리를 usaLabelBreaks의 목록으로 정한다. 한국·일본 그룹명·업종 단어 목록은 쓰지 않는다.
   if (market === 'usa') {
     const fixed = USA_LABEL_SPLITS[chars.join('')]
     if (fixed !== undefined && fixed < chars.length) return { all: Array.from({ length: chars.length - 1 }, (_, k) => k + 1), atSpaces: [], atMeaning: [fixed], atSuffix: [] }
@@ -325,7 +325,7 @@ export function fitStockLabel({
   baseFont: number
   wantName: boolean
   wantRate: boolean
-  // 일본 종목은 일본 사명 전용, 미국 종목은 미국 이름 목록(usaLabelBreaks)으로 줄을 나눈다(기본은 국내).
+  // 일본 종목은 일본 사명 전용, 미국 종목은 미국 이름 목록(usaLabelBreaks)으로 줄을 나눈다(기본은 한국).
   market?: LabelMarket
 }): StockLabelFit {
   const innerHeight = height - 2

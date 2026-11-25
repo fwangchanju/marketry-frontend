@@ -16,10 +16,10 @@ import type { MarketQuery } from '@/types/api'
 export default function KoreaSummary() {
   // 시장 배지 드롭다운 — 서머리의 시장(KOREA·JAPAN·USA, 배지에는 K-STOCK·NIKKEI 225·S&P 500)은 주소의 market 값으로 정한다. 일본·미국은 특별 회원·관리자에게만 보인다.
   const location = useLocation()
-  const canSeeOverseasSummary = true
+  const canSeeSnapshotSummary = true
   const summaryMarket: MarketQuery = location.pathname.startsWith('/summary/korea/kospi') ? 'KOSPI' : location.pathname.startsWith('/summary/korea/kosdaq') ? 'KOSDAQ' : 'ALL_STOCK'
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, 특별 회원·관리자에게만 JAPAN·USA).
-  const summaryMenu = marketMenu('/summary', summaryMarket, canSeeOverseasSummary)
+  const summaryMenu = marketMenu('/summary', summaryMarket, canSeeSnapshotSummary)
   const navigate = useNavigate()
   const settings = useKoreaSettings({ allowChangeRateMode: true })
   const { excludedIds: excludedSectorIds } = settings.sectorExclusion

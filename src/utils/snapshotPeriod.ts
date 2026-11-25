@@ -23,6 +23,6 @@ export function calculatePeriodDetailed<T extends PeriodQuote & { totalMarketVal
   return { quotes, excluded: excluded.sort((a, b) => b.marketValue - a.marketValue) }
 }
 
-export function calculateJapanPeriod<T extends PeriodQuote>(start: readonly T[], end: readonly T[]): T[] {
+export function calculatePeriod<T extends PeriodQuote>(start: readonly T[], end: readonly T[]): T[] {
   return calculatePeriodDetailed(start, end).quotes
 }

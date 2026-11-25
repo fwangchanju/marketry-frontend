@@ -1,43 +1,45 @@
+import { useMarketStocks } from '@/markets/useMarketStocks'
 import StockTable, { type StockColumn, type StockRow, type StockTableEditor } from '@/components/StockTable'
 import { useSnapshotSectors } from '@/markets/snapshotSectors'
-import type { OverseasCategory } from '@/hooks/useOverseasClassificationData'
-import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
-import { useOverseasSheet } from '@/hooks/useOverseasSheet'
-import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
-import OverseasPublishControls from '@/components/OverseasPublishControls'
+import type { SnapshotCategory } from '@/markets/useSnapshotClassificationData'
+import { useSnapshotPublishedAt } from '@/markets/useSnapshotPublishedAt'
+import { useSnapshotSheet } from '@/markets/useSnapshotSheet'
+import { useSnapshotClassificationData } from '@/markets/useSnapshotClassificationData'
+import SnapshotPublishControls from '@/markets/SnapshotPublishControls'
 import { customMenu } from '@/utils/marketMenu'
 import { useMemo } from 'react'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession } from '@/utils/adminAccess'
-import { stockColumnWidthsForJapan,  } from '@/utils/stockTableColumns'
+import { stockColumnWidthsWithoutTiers,  } from '@/utils/stockTableColumns'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import client from '@/api/client'
 import { appAlert } from '@/utils/appDialogBus'
 import { toJoEokDecimal } from '@/utils/format'
 import { yahooSectorKo } from '@/utils/yahooSector'
-import { overseasMarketInfo } from '@/utils/markets'
+import { snapshotMarketInfo } from '@/utils/markets'
 
 import SheetScreen, { type SheetSlots } from '@/components/SheetScreen'
 import { SNAPSHOT_STOCK_SHEETS } from '@/markets/snapshotStockSheets'
 import { useMarketQuotes } from '@/markets/useMarketQuotes'
-import { overseasRoute, type OverseasMarket } from '@/utils/markets'
+import { snapshotRoute, type SnapshotMarket } from '@/utils/markets'
 
-type SheetQueries = ReturnType<typeof useOverseasClassificationData>
+type SheetQueries = ReturnType<typeof useSnapshotClassificationData>
 
 // 스냅샷 시장의 STOCK 데이터와 편집 동작을 공통 화면에 넘긴다.
-export default function SnapshotStock({ market }: { market: OverseasMarket }) {
+export default function SnapshotStock({ market }: { market: SnapshotMarket }) {
   const stockSheet = SNAPSHOT_STOCK_SHEETS[market]
-  const { routeSegment, badgeLabel } = overseasMarketInfo(market)
+  const { routeSegment, badgeLabel } = snapshotMarketInfo(market)
   const { data: session } = useSession()
   // MARKETRY 모드는 운영자가 제시하는 기준이라 모든 항목(종목명 한글·분류)이 수정 불가이고, 관리자는 내 기준 모드에서만 고친다.
-  const { sheet, canUseMine, selectSheet } = useOverseasSheet()
+  const { sheet, canUseMine, selectSheet } = useSnapshotSheet()
   const canEdit = isAdminSession(session) && sheet === 'MINE'
-  const publishedAt = useOverseasPublishedAt(market, sheet)
+  const publishedAt = useSnapshotPublishedAt(market, sheet)
   const quotesQuery = useMarketQuotes(market)
   const namesQuery = useQuery({ queryKey: [routeSegment, 'names'], queryFn: async () => (await client.get<Record<string, string>>(`/${routeSegment}/stock-names`)).data })
-  const data = useOverseasClassificationData(market, sheet)
+  const data = useSnapshotClassificationData(market, sheet)
   const { categories, classifications } = data
-  const queries = [namesQuery, classifications, categories, quotesQuery]
+  const stocks = useMarketStocks(market)
+  const queries = [stocks, namesQuery, classifications, categories, quotesQuery]
   const isLoading = queries.some(query => query.isLoading)
   const isError = queries.some(query => query.isError)
   return (
@@ -50,21 +52,22 @@ export default function SnapshotStock({ market }: { market: OverseasMarket }) {
       canEdit={canEdit}
       editItems={['bulk']}
       readOnlyNote={canUseMine ? null : `계산: ${stockSheet.unit.rateNote}`}
-      publishControls={sheet === 'MINE' ? <OverseasPublishControls market={market} /> : null}
+      publishControls={sheet === 'MINE' ? <SnapshotPublishControls market={market} /> : null}
       isCaptureReady={!isLoading}
       isMineEmpty={sheet === 'MINE' && !isLoading && !isError && (categories.data ?? []).length === 0}
-      mineSetupPath={overseasRoute('/sector', market)}
+      mineSetupPath={snapshotRoute('/sector', market)}
       panel={{ onlyTaxonomy: 'MARKETRY', snapshotTime: publishedAt, alsoTaxonomies: canUseMine ? ['MINE'] : undefined, withoutMiddle: true, onSelectTaxonomy: next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY') }}
     >
       {/* 모드를 바꾸면 선택·검색·필터·변경 내역을 새로 시작한다(모든 시장이 같다). */}
-      {slots => <SnapshotStockTable key={sheet} market={market} categories={categories.data} classifications={classifications.data} editBase={data.editBase} invalidateClassification={data.invalidate} names={namesQuery.data} quotes={quotesQuery.data?.quotes} canEdit={canEdit} slots={slots} />}
+      {slots => <SnapshotStockTable key={sheet} market={market} stockCodes={stocks.codes} categories={categories.data} classifications={classifications.data} editBase={data.editBase} invalidateClassification={data.invalidate} names={namesQuery.data} quotes={quotesQuery.data?.quotes} canEdit={canEdit} slots={slots} />}
     </SheetScreen>
   )
 }
 
-function SnapshotStockTable({ market, categories, classifications, editBase, invalidateClassification, names, quotes, canEdit, slots }: {
-  market: OverseasMarket
-  categories: readonly OverseasCategory[] | undefined
+function SnapshotStockTable({ market, stockCodes, categories, classifications, editBase, invalidateClassification, names, quotes, canEdit, slots }: {
+  market: SnapshotMarket
+  stockCodes: readonly string[]
+  categories: readonly SnapshotCategory[] | undefined
   classifications: SheetQueries['classifications']['data']
   editBase: string | null
   invalidateClassification: SheetQueries['invalidate']
@@ -73,28 +76,29 @@ function SnapshotStockTable({ market, categories, classifications, editBase, inv
   canEdit: boolean
   slots: SheetSlots
 }) {
-  const { stocks, unit, sectorColumnLabel } = SNAPSHOT_STOCK_SHEETS[market]
-  const { routeSegment } = overseasMarketInfo(market)
+  const { details, unit, sectorColumnLabel } = SNAPSHOT_STOCK_SHEETS[market]
+  const { routeSegment } = snapshotMarketInfo(market)
   const queryClient = useQueryClient()
   const saveName = useMutation({ mutationFn: async ({ code, name }: { code: string; name: string }) => { await client.put(`/admin/${routeSegment}-stock-names/${code}`, { name }) }, onSuccess: () => queryClient.invalidateQueries({ queryKey: [routeSegment, 'names'] }), meta: { failure: '종목명 (한글)을 저장하지 못했습니다. 다시 시도해 주세요.' } })
   const assignClassification = useMutation({ mutationFn: async ({ codes, categoryId }: { codes: string[]; categoryId: number }) => { await client.put(`${editBase}/assign`, { stockCodes: codes, categoryId }) }, onSuccess: invalidateClassification, meta: { failure: '종목의 업종을 바꾸지 못했습니다.' } })
   const assign = async (codes: string[], categoryId: number) => { await assignClassification.mutateAsync({ codes, categoryId }) }
-  const stockCodes = useMemo(() => stocks.map(stock => stock.code), [stocks])
   const { sectors, sectorStats } = useSnapshotSectors(categories, stockCodes, classifications, quotes)
   const rows = useMemo(() => {
     const marketValueByCode = new Map((quotes ?? []).map(quote => [quote.stockCode, quote.totalMarketValue]))
     // 분류 이름은 시장 안에서 하나뿐이라 가장 깊은 이름으로 업종을 찾는다.
     const idByName = new Map(sectors.map(sector => [sector.name, sector.id]))
-    return stocks.map((stock): StockRow => {
-      const value = classifications?.[stock.code]
+    const detailByCode = new Map(details.map(detail => [detail.code, detail]))
+    return stockCodes.map((code): StockRow => {
+      const detail = detailByCode.get(code)
+      const value = classifications?.[code]
       const path = [value?.sector, value?.industry, value?.subIndustry].filter((name): name is string => Boolean(name))
       return {
-        code: stock.code, name: stock.englishName || '-', alias: names?.[stock.code] ?? stock.name, marketValue: marketValueByCode.get(stock.code) ?? 0,
+        code, name: detail?.englishName || '-', alias: names?.[code] ?? detail?.name ?? code, marketValue: marketValueByCode.get(code) ?? 0,
         sectorId: idByName.get(path.at(-1) ?? '') ?? null, path: [path[0] ?? '-', path[1] ?? '-', path[2] ?? '-'], accent: false,
-        cells: { industry: yahooSectorKo(stock.sector) },
+        cells: { industry: yahooSectorKo(detail?.sector ?? '') },
       }
     })
-  }, [stocks, quotes, classifications, names, sectors])
+  }, [stockCodes, details, quotes, classifications, names, sectors])
   const columns = useMemo((): StockColumn[] => {
     const amount = (row: StockRow, rate: number) => toJoEokDecimal((row.marketValue ?? 0) / unit.perEok * rate)
     return [
@@ -130,5 +134,5 @@ function SnapshotStockTable({ market, categories, classifications, editBase, inv
       },
     },
   } : null
-  return <StockTable rows={rows} columns={columns} editor={editor} slots={slots} arrangeWidths={stockColumnWidthsForJapan} marketValueTime={null} />
+  return <StockTable rows={rows} columns={columns} editor={editor} slots={slots} arrangeWidths={stockColumnWidthsWithoutTiers} marketValueTime={null} />
 }

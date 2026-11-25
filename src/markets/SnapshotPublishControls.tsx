@@ -6,7 +6,7 @@ import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 import { CloudUploadIcon, HistoryIcon } from '@/components/icons/AppIcons'
-import { overseasMarketInfo, type OverseasMarket } from '@/utils/markets'
+import { snapshotMarketInfo, type SnapshotMarket } from '@/utils/markets'
 
 // 한국의 MARKETRY 업데이트·롤백 버튼(MarketryPublishControls)과 같은 모양의 회색 칩.
 const BUTTON_CLASS =
@@ -15,8 +15,8 @@ const BUTTON_CLASS =
 type Status = { hasDraft: boolean; canRollback: boolean; backupCreatedAt: string | null }
 
 // 일본·미국 설정창의 "MARKETRY 분류" 항목 — 내 기준(초안)을 MARKETRY(운영 분류)로 업데이트하고, 직전 업데이트 전으로 한 번 롤백한다.
-export default function OverseasPublishControls({ market }: { market: OverseasMarket }) {
-  const { routeSegment } = overseasMarketInfo(market)
+export default function SnapshotPublishControls({ market }: { market: SnapshotMarket }) {
+  const { routeSegment } = snapshotMarketInfo(market)
   const queryClient = useQueryClient()
   const base = `/admin/overseas-classification-drafts/${market}`
   const statusKey = ['overseas-draft', market, 'status'] as const

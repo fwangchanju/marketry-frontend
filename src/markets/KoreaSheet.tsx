@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { customMenu } from '@/utils/marketMenu'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { mineSheetReturnPath } from '@/utils/mineSheetReturn'
-import AdminSectorTable from '@/components/AdminSectorTable'
+import SectorTable from '@/components/SectorTable'
 import MarketryPublishControls from '@/components/MarketryPublishControls'
 import { MARKET_LABEL } from '@/utils/marketOptions'
 import ReadOnlyTaxonomySheet from '@/components/ReadOnlyTaxonomySheet'
@@ -174,7 +174,7 @@ export default function KoreaSheet() {
       ) : isReadOnlySheet ? (
         <ReadOnlyTaxonomySheet data={taxonomyMap} source={sheet === 'MARKETRY' ? 'MARKETRY' : 'KRX'} toolbarContainer={slots.toolbar} />
       ) : (
-        <AdminSectorTable
+        <SectorTable
           sectors={sectors ?? []}
           settingsActionsTarget={slots.history}
           toolbarContainer={slots.toolbar}

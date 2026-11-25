@@ -77,7 +77,7 @@
 | MARKETRY / 거래소 / 내 기준 선택 | `Taxonomy` (`TaxonomyKey`, `useTaxonomySelection`, `SettingsTaxonomySelector`) | **Mode** (설정창 제목) |
 | 분류 값 | `MARKETRY` · `KRX` · `MINE` · `NXT` | MARKETRY · 거래소 · 내 기준 |
 | 페이지 | `MapScreen` · `GraphPage` · `KoreaSheet` | Map · Graph · Custom (그래프 화면의 주소는 `/graph`) |
-| 일본 페이지 | `SnapshotMap` · `JapanGraphPage` · `JapanSectorPage` · `JapanStockPage` | 주소는 `/map/japan`·`/graph/japan`·`/sector/japan`·`/stock/japan`. 특별 회원과 관리자만 보며 메뉴 항목은 보라색이다. 조회는 `/api/japan/**`, 수정은 관리자만 `/api/admin/**`로 한다 |
+| 일본 페이지 | `SnapshotMap` · `SnapshotGraph` · `SnapshotSector` · `SnapshotStock` | 주소는 `/map/japan`·`/graph/japan`·`/sector/japan`·`/stock/japan`. 특별 회원과 관리자만 보며 메뉴 항목은 보라색이다. 조회는 `/api/japan/**`, 수정은 관리자만 `/api/admin/**`로 한다 |
 | 상단 영역의 메뉴 줄 | `NavSubBar` | 메뉴 줄 |
 | 상단 영역 메뉴(Home·Map·Graph·Sector·Stock·Admin)는 누르면 해당 페이지로 바로 이동한다. 하위 목록은 두지 않으며, 시장과 어드민 하위 화면은 좌상단 배지 목록에서 고른다 | `NavSubBar`의 메뉴 목록 | 메뉴 목록 |
 | **좌측 세로 메뉴**(화면 왼쪽 80px 줄, MAP·GRAPH·SUMMARY·SECTOR·STOCK·ADMIN 아이콘)의 맨 위, 첫 메뉴 위 55px 빈 자리 가운데에는 지금 보는 시장의 국기를 둔다(2026-11-19). 한국은 KOREA·KOSPI·KOSDAQ 모두 태극기, 일본은 일장기, 미국은 성조기이고 시장 화면(지도·그래프·서머리·섹터·종목)에서만 보인다. 높이는 메인 툴바 시장 배지와 같은 26.25px(너비 3:2, 39.38px)이고 윗선도 배지 윗선과 같다(메뉴 줄 위에서 8.75px). 안쪽에 `--ui-border` 1px 테두리를 두며, 눌러도 아무 일도 없다. 어드민·정보·프로필 화면에는 없다. 국기 아래와 첫 아이콘 칸 사이는 24px이다. 아이콘 칸은 높이 56px, 칸 사이 4px(중심 간격 60px)이고 SECTOR 앞만 60px 더 띄운다 | `NavSubBar`, `MarketFlagIcon`, `marketFlag.ts` | 좌측 세로 메뉴 |

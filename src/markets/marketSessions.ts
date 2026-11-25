@@ -1,7 +1,7 @@
 import { accentColor } from '@/utils/accentPalette'
 import { JAPAN_SESSION_GUIDE } from '@/utils/japanMarketSession'
 import { USA_SESSION_GUIDE } from '@/utils/usaMarketSession'
-import type { OverseasMarket } from '@/utils/markets'
+import type { SnapshotMarket } from '@/utils/markets'
 
 type SessionDefinition = {
   label: string
@@ -10,7 +10,7 @@ type SessionDefinition = {
 }
 
 // 시장마다 다른 세션 이름·시간표·색. 시장이 빠지면 빌드가 실패한다.
-export const MARKET_SESSIONS: Readonly<Record<OverseasMarket, SessionDefinition>> = {
+export const MARKET_SESSIONS: Readonly<Record<SnapshotMarket, SessionDefinition>> = {
   JAPAN: {
     label: '일본 증시 세션 안내',
     guide: JAPAN_SESSION_GUIDE,

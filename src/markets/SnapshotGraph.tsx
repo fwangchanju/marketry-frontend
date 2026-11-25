@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import GraphScreen from '@/components/GraphScreen'
-import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
-import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
+import { useSnapshotColorSettings } from '@/markets/useSnapshotColorSettings'
+import { useSnapshotPublishedAt } from '@/markets/useSnapshotPublishedAt'
 import { useSnapshotSectorExclusion } from '@/markets/useSnapshotSectorExclusion'
-import { useOverseasSheet } from '@/hooks/useOverseasSheet'
-import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
+import { useSnapshotSheet } from '@/markets/useSnapshotSheet'
+import { useSnapshotTierRange } from '@/markets/useSnapshotTierRange'
 import type { MarketIndexBar } from '@/markets/marketContract'
 import { snapshotMarketData } from '@/markets/snapshotMarketData'
 import { SNAPSHOT_MARKETS } from '@/markets/snapshotMarkets'
@@ -15,7 +15,7 @@ import { useSnapshotMarketSummary } from '@/markets/useSnapshotMarketSummary'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { graphIndexValue, intradayRateAt } from '@/utils/indexChange'
 import { marketMenu } from '@/utils/marketMenu'
-import { overseasRoute, type OverseasMarket } from '@/utils/markets'
+import { snapshotRoute, type SnapshotMarket } from '@/utils/markets'
 import { countVisibleItems } from '@/utils/sectorExclusion'
 import { subtractMinutesFromSnapshotTime } from '@/utils/snapshotTime'
 import { formatStockCountLabel } from '@/utils/stockCountLabel'
@@ -27,18 +27,18 @@ const CLOSE_ONLY_LOCK = {
 }
 
 // 스냅샷 시장의 PC GRAPH 데이터를 공통 화면에 넘긴다.
-export default function SnapshotGraph({ market }: { market: OverseasMarket }) {
+export default function SnapshotGraph({ market }: { market: SnapshotMarket }) {
   const navigate = useNavigate()
   const { index, intradayDelta, graphDepth, sheetMarket, tabStorage } = SNAPSHOT_MARKETS[market]
-  const { sheet, canUseMine, selectSheet } = useOverseasSheet()
+  const { sheet, canUseMine, selectSheet } = useSnapshotSheet()
   const source = useSnapshotMarketSummary(market, sheet)
   const { tree, treeOf, snapshotTimes, snapshotTime, rangeStart, isLoading, isIndexLoading, isError, fixed, settingPrefix, currencyUnit, totalCount, refetchAll } = source
-  const publishedAt = useOverseasPublishedAt(market, sheet)
+  const publishedAt = useSnapshotPublishedAt(market, sheet)
   const preferences = useSnapshotGraphPreferences(market, sheet)
   const { beforeMinutes } = preferences
-  const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
+  const tierRange = useSnapshotTierRange(settingPrefix, currencyUnit)
   const sectorExclusion = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers)
-  const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: sheetMarket })
+  const colorSettings = useSnapshotColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: sheetMarket })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   const showDelta = intradayDelta && rangeStart === null && preferences.graphMode === 'delta'
   // N분 전 시세가 저장돼 있을 때만 비교한다. 없으면 비교 막대가 비어 안내 문구를 보여 준다.
@@ -57,7 +57,7 @@ export default function SnapshotGraph({ market }: { market: OverseasMarket }) {
   const isAllLoading = isLoading || isIndexLoading || beforeQuotes.isLoading || indexNow.isLoading || indexBefore.isLoading
   const retrySource = { ...source, isError: isError || beforeQuotes.isError, refetchAll: () => Promise.all([refetchAll(), ...(beforeTime === null ? [] : [beforeQuotes.refetch()])]) }
   const marketData = snapshotMarketData(retrySource, sheet, resolveHeatmapColor(8, colorScale), isAllLoading)
-  const mapPath = overseasRoute('/map', market)
+  const mapPath = snapshotRoute('/map', market)
   return (
     <GraphScreen
       market={marketData}

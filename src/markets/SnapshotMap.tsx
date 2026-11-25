@@ -1,13 +1,13 @@
-import { overseasRoute } from '@/utils/markets'
-import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
-import { useOverseasSheet } from '@/hooks/useOverseasSheet'
-import { useOverseasColorSettings } from '@/hooks/useOverseasColorSettings'
+import { snapshotRoute } from '@/utils/markets'
+import { useSnapshotPublishedAt } from '@/markets/useSnapshotPublishedAt'
+import { useSnapshotSheet } from '@/markets/useSnapshotSheet'
+import { useSnapshotColorSettings } from '@/markets/useSnapshotColorSettings'
 import { useSnapshotSectorExclusion } from '@/markets/useSnapshotSectorExclusion'
 import { marketMenu } from '@/utils/marketMenu'
 import { useMemo } from 'react'
 import { useStockPopupOnHover } from '@/hooks/useStockChart'
 import { useTransientSetting } from '@/hooks/useTransientSetting'
-import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
+import { useSnapshotTierRange } from '@/markets/useSnapshotTierRange'
 import { useFilteredHeatmap } from '@/hooks/useFilteredHeatmap'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { mapTileMethod } from '@/utils/mapStretch'
@@ -19,21 +19,21 @@ import { snapshotMarketData } from '@/markets/snapshotMarketData'
 import { SNAPSHOT_MARKETS } from '@/markets/snapshotMarkets'
 import { useSnapshotMapPreferences } from '@/markets/useSnapshotMapPreferences'
 import { useSnapshotMarketSummary } from '@/markets/useSnapshotMarketSummary'
-import type { OverseasMarket } from '@/utils/markets'
+import type { SnapshotMarket } from '@/utils/markets'
 
 const STOCK_LABEL_MODES = ['off', 'nameOnly', 'rateOnly', 'both'] as const
 
 // 스냅샷 시장의 MAP 데이터를 공통 화면에 넘긴다.
-export default function SnapshotMap({ market }: { market: OverseasMarket }) {
+export default function SnapshotMap({ market }: { market: SnapshotMarket }) {
   const { mapDepth, mapDraftKeyMap, tabStorage, sheetMarket, fixed } = SNAPSHOT_MARKETS[market]
-  const { sheet, canUseMine, selectSheet } = useOverseasSheet()
+  const { sheet, canUseMine, selectSheet } = useSnapshotSheet()
   const source = useSnapshotMarketSummary(market, sheet, true)
   const { tree, snapshotTime, isLoading, isIndexLoading, isIndexFetching, settingPrefix, currencyUnit, totalCount } = source
   const { preferences, update, isLoadingDefaults } = useSnapshotMapPreferences(market, sheet)
-  const publishedAt = useOverseasPublishedAt(market, sheet)
-  const tierRange = useOverseasTierRange(settingPrefix, currencyUnit)
+  const publishedAt = useSnapshotPublishedAt(market, sheet)
+  const tierRange = useSnapshotTierRange(settingPrefix, currencyUnit)
   const sectorExclusion = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers)
-  const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: sheetMarket })
+  const colorSettings = useSnapshotColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: sheetMarket })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   // 공통 설정 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).
   // 시장(일본·미국)과 모드(MARKETRY·내 기준)마다 따로 기억한다. 한국 지도와 같은 방식이다. 종목 정보·종목 차트는 모드·시장과 상관없이 하나로 쓰고, 로그인한 사용자만 이 브라우저에 저장한다.
@@ -108,7 +108,7 @@ export default function SnapshotMap({ market }: { market: OverseasMarket }) {
         sectorExclusion,
       }}
       colors={{ colorScale, strongIndustryColor, legendSwatches, scaleSection: colorSettings.colorSectionProps, strongSection: colorSettings.strongSectionProps }}
-      routes={{ summary: overseasRoute('/summary', market), graph: overseasRoute('/graph', market) }}
+      routes={{ summary: snapshotRoute('/summary', market), graph: snapshotRoute('/graph', market) }}
       sheetMarket={sheetMarket}
       panel={{ draftKeyMap: sheet === 'MINE' ? mapDraftKeyMap : undefined, tabStorageName: tabStorage.map, onlyTaxonomy: 'MARKETRY', snapshotTime: publishedAt, alsoTaxonomies: canUseMine ? ['MINE'] : undefined, withoutMiddle: true, onSelectTaxonomy: next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY'), showPreferenceActions: sheet === 'MINE' }}
     />

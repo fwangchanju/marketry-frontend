@@ -4,12 +4,12 @@ import type { ReactNode } from 'react'
 import type { CurrencyUnit } from '@/utils/currencyUnit'
 import type { HeatmapSectorNode } from '@/types/api'
 import type { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
-import type { OverseasMarket } from '@/utils/markets'
+import type { SnapshotMarket } from '@/utils/markets'
 
-// 해외 시장 서머리(OverseasSummaryView)가 시장마다 다른 부분을 받는 모양. 공통 훅(useSnapshotMarketSummary)이 이 모양으로 돌려준다.
+// 스냅샷 시장 서머리(SnapshotSummary)가 시장마다 다른 부분을 받는 모양. 공통 훅(useSnapshotMarketSummary)이 이 모양으로 돌려준다.
 // 새 시장(대만 등)은 같은 모양의 훅 하나를 만들면 된다 — 화면 구성은 공통 화면이 한다.
-export interface OverseasSummarySource {
-  market: OverseasMarket
+export interface SnapshotSource {
+  market: SnapshotMarket
   // 툴바 배지 글자(시장 목록표의 배지 글자).
   label: string
   tree: HeatmapSectorNode[]

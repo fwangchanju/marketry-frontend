@@ -2,11 +2,11 @@ import type { ReactNode } from 'react'
 import MarketSessionChip from '@/components/MarketSessionChip'
 import japanStocks from '@/data/japanStocks.json'
 import { japanSessionAt } from '@/utils/japanMarketSession'
-import { isJapanMapCapture, japanMapManagedDefaults, JAPAN_MAP_DRAFT_KEY_MAP, JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE, type JapanMapPreferences } from '@/utils/japanMapSettings'
+import { isJapanMapCapture, japanMapManagedDefaults, JAPAN_MAP_DRAFT_KEY_MAP, JAPAN_MAP_FIXED, JAPAN_MAP_SETTING_PREFIX, JAPAN_REFRESH_HELP, JAPAN_SETTINGS_TAB_STORAGE, type SnapshotMapPreferences } from '@/utils/japanMapSettings'
 import { isUsaMapCapture, usaMapManagedDefaults, USA_MAP_DRAFT_KEY_MAP, USA_MAP_FIXED, USA_MAP_SETTING_PREFIX, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
 import { USA_SESSION, usaRefreshHelp } from '@/utils/usaMarketSession'
 import type { CurrencyUnit } from '@/utils/currencyUnit'
-import { overseasMarketInfo, type OverseasMarket } from '@/utils/markets'
+import { snapshotMarketInfo, type SnapshotMarket } from '@/utils/markets'
 
 type SnapshotMarketDefinition = {
   currencyUnit: CurrencyUnit
@@ -24,7 +24,7 @@ type SnapshotMarketDefinition = {
   tabStorage: { graph: string; map: string }
   // 지도 설정의 기본 업종 단계 수, 관리자 기본값, 저장 이름 바꿈표, 텔레그램 캡처 주소인지.
   mapDepth: number
-  mapDefaults: (profiles: Record<string, unknown> | undefined) => JapanMapPreferences
+  mapDefaults: (profiles: Record<string, unknown> | undefined) => SnapshotMapPreferences
   mapDraftKeyMap: Readonly<Record<string, string>>
   isMapCapture: () => boolean
   // 장 중에 전일 종가 그대로인 시세를 지도에서 빼는지.
@@ -36,7 +36,7 @@ type SnapshotMarketDefinition = {
 }
 
 // 스냅샷 목록으로 시세를 주는 시장마다 다른 값. 시장이 빠지면 빌드가 실패한다.
-export const SNAPSHOT_MARKETS: Readonly<Record<OverseasMarket, SnapshotMarketDefinition>> = {
+export const SNAPSHOT_MARKETS: Readonly<Record<SnapshotMarket, SnapshotMarketDefinition>> = {
   JAPAN: { currencyUnit: '엔', sheetMarket: 'japan', settingPrefix: JAPAN_MAP_SETTING_PREFIX, fixed: JAPAN_MAP_FIXED, bundledStocks: japanStocks, intradayDelta: true, graphDepth: 3, graphSettingPrefix: 'japan.graph.', tabStorage: JAPAN_SETTINGS_TAB_STORAGE, mapDepth: 3, mapDefaults: japanMapManagedDefaults, mapDraftKeyMap: JAPAN_MAP_DRAFT_KEY_MAP, isMapCapture: isJapanMapCapture, hidesStaleQuotes: true, index: { key: 'market-index:NIKKEI225', name: '닛케이', hasIntraday: true }, session: time => <MarketSessionChip market="JAPAN" session={japanSessionAt(time)} />, refreshHelp: () => JAPAN_REFRESH_HELP },
-  USA: { currencyUnit: '달러', sheetMarket: 'usa', settingPrefix: USA_MAP_SETTING_PREFIX, fixed: USA_MAP_FIXED, bundledStocks: null, intradayDelta: false, graphDepth: 2, graphSettingPrefix: 'usa.graph.', tabStorage: USA_SETTINGS_TAB_STORAGE, mapDepth: 2, mapDefaults: usaMapManagedDefaults, mapDraftKeyMap: USA_MAP_DRAFT_KEY_MAP, isMapCapture: isUsaMapCapture, hidesStaleQuotes: false, index: { key: 'market-index:SP500', name: overseasMarketInfo('USA').badgeLabel, hasIntraday: false }, session: () => <MarketSessionChip market="USA" session={USA_SESSION} />, refreshHelp: usaRefreshHelp },
+  USA: { currencyUnit: '달러', sheetMarket: 'usa', settingPrefix: USA_MAP_SETTING_PREFIX, fixed: USA_MAP_FIXED, bundledStocks: null, intradayDelta: false, graphDepth: 2, graphSettingPrefix: 'usa.graph.', tabStorage: USA_SETTINGS_TAB_STORAGE, mapDepth: 2, mapDefaults: usaMapManagedDefaults, mapDraftKeyMap: USA_MAP_DRAFT_KEY_MAP, isMapCapture: isUsaMapCapture, hidesStaleQuotes: false, index: { key: 'market-index:SP500', name: snapshotMarketInfo('USA').badgeLabel, hasIntraday: false }, session: () => <MarketSessionChip market="USA" session={USA_SESSION} />, refreshHelp: usaRefreshHelp },
 }

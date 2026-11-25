@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { computeStockColumnWidths, type StockColumnKey, type StockColumnWidths } from '@/utils/stockTableColumns'
 
-// 종목 표가 들어가는 영역의 너비로 국내 종목 표의 칸 폭(좌표)을 계산한다. 영역 너비가 바뀌면 다시 계산한다.
+// 종목 표가 들어가는 영역의 너비로 한국 종목 표의 칸 폭(좌표)을 계산한다. 영역 너비가 바뀌면 다시 계산한다.
 // pinned: 머리글 필터가 걸려 숨기지 않을 열(pinnedStockColumns).
 // 영역이 처음 그려질 때 없다가 나중에 생기거나 다른 요소로 바뀌어도 따라가도록, 렌더마다 지금 영역이 재던 요소와 같은지 확인한다
 // (처음 한 번만 재면 영역이 늦게 생기는 화면에서 기본 너비가 그대로 남아 칸이 비율대로 늘어난다).

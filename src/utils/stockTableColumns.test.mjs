@@ -5,7 +5,7 @@ import {
   computeStockColumnWidths,
   hiddenStockColumnsFor,
   pinnedStockColumns,
-  stockColumnWidthsForJapan,
+  stockColumnWidthsWithoutTiers,
   stockColumnWidthsTotal,
 } from './stockTableColumns.ts'
 
@@ -69,22 +69,21 @@ test('필터가 걸린 열이 많아 다 숨겨도 안 맞으면 숨길 수 있�
 test('일본·미국 표: 규모·마켓 묶음은 시가총액(₩), 거래소 분류는 섹터 칸과 같은 자리다', () => {
   for (const width of [1126, 1000, 900, 800, 650, 560]) {
     const korean = computeStockColumnWidths(width)
-    const japan = stockColumnWidthsForJapan(korean)
+    const japan = stockColumnWidthsWithoutTiers(korean)
     const group = (korean.sizeTier ?? 0) + (korean.market ?? 0)
     assert.equal(japan.totalMarketValueKrw ?? 0, group, `영역 ${width}px`)
     assert.equal(japan.industry, korean.industry, `영역 ${width}px 섹터`)
-    assert.equal(japan.overseasSubSector, undefined)
     assert.equal(stockColumnWidthsTotal(japan), stockColumnWidthsTotal(korean), `영역 ${width}px 합계`)
   }
 })
 
 test('일본·미국 표: 시가총액(₩)은 132이고, 규모·마켓이 함께 숨으면 같이 숨는다(중간에 줄어들지 않는다)', () => {
-  const full = stockColumnWidthsForJapan(computeStockColumnWidths(1126))
+  const full = stockColumnWidthsWithoutTiers(computeStockColumnWidths(1126))
   assert.equal(full.totalMarketValueKrw, 132)
   assert.equal(full.industry, 130)
   // 열이 숨는 모든 너비에서 시가총액(₩)은 132이거나 없다.
   for (let width = 1126; width >= 450; width -= 1) {
-    const krw = stockColumnWidthsForJapan(computeStockColumnWidths(width)).totalMarketValueKrw
+    const krw = stockColumnWidthsWithoutTiers(computeStockColumnWidths(width)).totalMarketValueKrw
     assert.ok(krw === 132 || krw === undefined, `영역 ${width}px: ${krw}`)
   }
 })
@@ -92,16 +91,16 @@ test('일본·미국 표: 시가총액(₩)은 132이고, 규모·마켓이 함�
 test('일본 표: 약칭이 숨으면 종목명 (영어)가 숨고 종목명 (한글)이 국내 종목명 칸을 가진다', () => {
   const korean = computeStockColumnWidths(900)
   assert.equal(korean.alias, undefined)
-  const japan = stockColumnWidthsForJapan(korean)
+  const japan = stockColumnWidthsWithoutTiers(korean)
   assert.equal(japan.stockName, undefined)
   assert.equal(japan.alias, korean.stockName)
   // 약칭이 보이는 넓은 창에서는 둘 다 보인다.
-  const wide = stockColumnWidthsForJapan(computeStockColumnWidths(1126))
+  const wide = stockColumnWidthsWithoutTiers(computeStockColumnWidths(1126))
   assert.ok(wide.stockName !== undefined && wide.alias !== undefined)
 })
 
 test('일본 표: 종목코드·시가총액(¥)은 국내와 함께 숨는다', () => {
-  assert.equal(stockColumnWidthsForJapan(computeStockColumnWidths(1040)).stockCode, undefined)
-  assert.equal(stockColumnWidthsForJapan(computeStockColumnWidths(540)).totalMarketValue, undefined)
-  assert.ok(stockColumnWidthsForJapan(computeStockColumnWidths(1126)).totalMarketValue !== undefined)
+  assert.equal(stockColumnWidthsWithoutTiers(computeStockColumnWidths(1040)).stockCode, undefined)
+  assert.equal(stockColumnWidthsWithoutTiers(computeStockColumnWidths(540)).totalMarketValue, undefined)
+  assert.ok(stockColumnWidthsWithoutTiers(computeStockColumnWidths(1126)).totalMarketValue !== undefined)
 })

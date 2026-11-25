@@ -1,6 +1,6 @@
 import SnapshotMobile from './markets/SnapshotMobile'
 import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react'
-import OverseasSummaryPage from './pages/OverseasSummaryPage'
+import ResponsiveSnapshotSummary from '@/markets/ResponsiveSnapshotSummary'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import KoreaMobile from './markets/KoreaMobile'
 import MobileSummaryPage from './pages/MobileSummaryPage'
@@ -10,7 +10,7 @@ import HoverHintLayer from './components/HoverHintLayer'
 import MobileNotice from './components/MobileNotice'
 import SearchMetadata from './components/SearchMetadata'
 import { marketRoute } from '@/utils/marketRoute'
-import { OVERSEAS_MARKETS, overseasRoute, type OverseasMarket } from '@/utils/markets'
+import { SNAPSHOT_MARKET_LIST, snapshotRoute, type SnapshotMarket } from '@/utils/markets'
 import { SECTOR_KOREA, STOCK_KOREA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
@@ -103,7 +103,7 @@ function AdminRouteGuard() {
 
 function ResponsiveSummaryPage() {
   const isNarrow = useIsNarrowScreen()
-  // 해외 서머리와 같게, MOBILE의 서머리 주소는 자기 화면(업종 지도)을 연다. 모바일 홈은 / 따로 있다.
+  // 일본·미국 서머리와 같게, MOBILE의 서머리 주소는 자기 화면(업종 지도)을 연다. 모바일 홈은 / 따로 있다.
   if (isNarrow) return <KoreaMobile mode="sector" />
   return <KoreaSummary />
 }
@@ -113,7 +113,7 @@ function ResponsiveGraphPage() {
   return isNarrow ? <KoreaMobile mode="graph" /> : <KoreaGraph />
 }
 
-function ResponsiveSnapshotGraph({ market }: { market: OverseasMarket }) {
+function ResponsiveSnapshotGraph({ market }: { market: SnapshotMarket }) {
   return useIsNarrowScreen() ? <SnapshotMobile key={market} market={market} mode="graph" /> : <SnapshotGraph key={market} market={market} />
 }
 
@@ -205,11 +205,11 @@ export default function App() {
           {/* 일본·미국 화면은 2026-11-16 공개로 바꿨다(사용자 결정). 로그인 여부와 무관하게 누구나 볼 수 있다. */}
           <Route>
             {/* 시장 목록표(markets.ts)에서 만드는 화면들. */}
-            {OVERSEAS_MARKETS.map(market => <Route key={`sector-${market.id}`} path={overseasRoute('/sector', market.id)} element={<SnapshotSector key={market.id} market={market.id} />} />)}
-            {OVERSEAS_MARKETS.map(market => <Route key={`stock-${market.id}`} path={overseasRoute('/stock', market.id)} element={<SnapshotStock key={market.id} market={market.id} />} />)}
-            {OVERSEAS_MARKETS.map(market => <Route key={`map-${market.id}`} path={overseasRoute('/map', market.id)} element={<SnapshotMap key={market.id} market={market.id} />} />)}
-            {OVERSEAS_MARKETS.map(market => <Route key={`graph-${market.id}`} path={overseasRoute('/graph', market.id)} element={<ResponsiveSnapshotGraph market={market.id} />} />)}
-            {OVERSEAS_MARKETS.map(market => <Route key={market.id} path={overseasRoute('/summary', market.id)} element={<OverseasSummaryPage market={market.id} />} />)}
+            {SNAPSHOT_MARKET_LIST.map(market => <Route key={`sector-${market.id}`} path={snapshotRoute('/sector', market.id)} element={<SnapshotSector key={market.id} market={market.id} />} />)}
+            {SNAPSHOT_MARKET_LIST.map(market => <Route key={`stock-${market.id}`} path={snapshotRoute('/stock', market.id)} element={<SnapshotStock key={market.id} market={market.id} />} />)}
+            {SNAPSHOT_MARKET_LIST.map(market => <Route key={`map-${market.id}`} path={snapshotRoute('/map', market.id)} element={<SnapshotMap key={market.id} market={market.id} />} />)}
+            {SNAPSHOT_MARKET_LIST.map(market => <Route key={`graph-${market.id}`} path={snapshotRoute('/graph', market.id)} element={<ResponsiveSnapshotGraph market={market.id} />} />)}
+            {SNAPSHOT_MARKET_LIST.map(market => <Route key={market.id} path={snapshotRoute('/summary', market.id)} element={<ResponsiveSnapshotSummary market={market.id} />} />)}
           </Route>
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}
           <Route path="/info" element={<Navigate to="/info/guide" replace />} />

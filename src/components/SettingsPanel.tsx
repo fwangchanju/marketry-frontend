@@ -172,7 +172,7 @@ const SettingsProfileContext = createContext<SettingsProfile | null>(null)
 // 저장 아이콘이 있는 설정창(저장해야 반영되는 설정)에서만 변경 점을 보여 준다. 일본 지도처럼 바꾸는 즉시 저장되는 화면은 저장하지 않은 변경이 없고,
 // 다른 화면에서 바꾼 임시값이 같은 이름의 항목에 점으로 새지 않게 한다.
 const SettingsDraftDotsContext = createContext(true)
-// 국내 설정 이름으로 적어 둔 항목의 변경 점을 다른 저장 이름(일본 지도 설정 등)으로 찾게 한다. 없으면 국내 설정 이름 그대로 본다.
+// 한국 설정 이름으로 적어 둔 항목의 변경 점을 다른 저장 이름(일본 지도 설정 등)으로 찾게 한다. 없으면 한국 설정 이름 그대로 본다.
 const SettingsDraftKeyMapContext = createContext<Readonly<Record<string, string>> | null>(null)
 
 // 저장하지 않은 변경이 있는 항목의 제목 오른쪽 위에 찍는 작은 점. 상단 저장 아이콘·분류 배지의 점과 같은 청록이고, 글자 옆이라 더 작다(4px).
@@ -1339,7 +1339,7 @@ function SettingsTaxonomySelector({
   // Mode 제목 줄 오른쪽에 둘 저장·되돌리기 아이콘(하단 배치일 때만 넘긴다).
   actions?: ReactNode
   snapshotTime?: string | null
-  // 이 분류만 고를 수 있는 화면 — 나머지 칸은 보이되 눌리지 않고, 국내 설정의 저장 안 한 변경 표시를 쓰지 않으며, 업데이트 시각 줄은 자리만 잡고 숨긴다.
+  // 이 분류만 고를 수 있는 화면 — 나머지 칸은 보이되 눌리지 않고, 한국 설정의 저장 안 한 변경 표시를 쓰지 않으며, 업데이트 시각 줄은 자리만 잡고 숨긴다.
   onlyTaxonomy?: TaxonomyKey
   // onlyTaxonomy 화면에서 추가로 고를 수 있는 분류(일본·미국 종목·섹터의 내 기준처럼 관리자에게만 여는 모드).
   alsoTaxonomies?: readonly TaxonomyKey[]
@@ -2501,7 +2501,7 @@ interface Props {
   customTabIcon?: SettingsSectionIconName
   plainTabIcon?: SettingsSectionIconName
   sectionOrder?: readonly SettingsPanelSectionId[]
-  // 국내 설정 이름으로 적은 항목·분류 칸의 저장 안 한 변경 점을 이 이름들로 찾는다(일본 지도 설정).
+  // 한국 설정 이름으로 적은 항목·분류 칸의 저장 안 한 변경 점을 이 이름들로 찾는다(일본 지도 설정).
   draftKeyMap?: Readonly<Record<string, string>>
   sectionIconOverrides?: Partial<Record<SettingsPanelSectionId, SettingsSectionIconName>>
   sectionLabelOverrides?: Partial<Record<SettingsPanelSectionId, string>>

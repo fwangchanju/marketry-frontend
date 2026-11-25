@@ -1,5 +1,5 @@
 import { getProtectedSectorHint } from '@/utils/protectedSector'
-import AdminSectorTable from '@/components/AdminSectorTable'
+import SectorTable from '@/components/SectorTable'
 import type { SectorItem } from '@/types/api'
 import type { SectorStats } from '@/utils/sectorOrder'
 import { useMemo, type ReactNode } from 'react'
@@ -106,7 +106,7 @@ export function SearchBar({ query, onChange, placeholder, ariaLabel, countLabel,
   )
 }
 
-// 업종 트리(대·중·소분류)를 내 기준 칸(`AdminSectorTable`)이 받는 형식으로 바꾼다. 번호는 경로 순서로 매기고,
+// 업종 트리(대·중·소분류)를 내 기준 칸(`SectorTable`)이 받는 형식으로 바꾼다. 번호는 경로 순서로 매기고,
 // 업종마다 하위 업종까지 포함한 시가총액 합·종목 수를 센다(MARKETRY·거래소 업종 표와 같은 계산).
 function buildReadOnlySectorTree(sectors: SectorRow[]): { items: SectorItem[]; stats: SectorStats } {
   const idByPath = new Map<string, number>()
@@ -146,7 +146,7 @@ function CategoryTable({ sectors, source, toolbarContainer }: { sectors: SectorR
   // 거래소 모드는 번호 배지를 거래소 색으로 맞춘다(index.css의 data-sector-profile).
   return (
     <div data-sector-profile={source === 'KRX' ? 'exchange' : undefined} className="flex min-h-0 flex-1 flex-col">
-      <AdminSectorTable sectors={tree.items} sectorStats={tree.stats} actions={null} currency="원" maxDepth={3} protectedHint={getProtectedSectorHint} toolbarContainer={toolbarContainer} />
+      <SectorTable sectors={tree.items} sectorStats={tree.stats} actions={null} currency="원" maxDepth={3} protectedHint={getProtectedSectorHint} toolbarContainer={toolbarContainer} />
     </div>
   )
 }

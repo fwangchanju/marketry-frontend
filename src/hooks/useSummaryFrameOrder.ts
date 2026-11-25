@@ -6,7 +6,7 @@ import { SUMMARY_FRAME_TITLES } from '@/utils/summaryFrames'
 const SUMMARY_FRAME_ORDER_KEY = 'marketry-home-frame-order'
 const DEFAULT_SUMMARY_FRAME_ORDER: string[] = [...SUMMARY_FRAME_TITLES]
 
-// 서머리 두 틀의 순서를 기억하고 끌어서 바꾸는 부분. 한국·해외 서머리가 같은 값과 같은 동작을 쓴다.
+// 서머리 두 틀의 순서를 기억하고 끌어서 바꾸는 부분. 한국·일본·미국 서머리가 같은 값과 같은 동작을 쓴다.
 export function useSummaryFrameOrder() {
   const frameSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

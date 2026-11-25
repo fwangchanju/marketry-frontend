@@ -1,26 +1,26 @@
-import type { MarketQuote as JapanQuote } from '@/markets/useMarketQuotes'
+import type { MarketQuote as TreeQuote } from '@/markets/useMarketQuotes'
 import type { HeatmapItem, HeatmapSectorNode } from '@/types/api'
 
-export type JapanStock = { code: string; name: string }
-export type JapanCategory = { id: number; parentId: number | null; name: string }
-export type JapanClassification = { sector: string | null; industry: string | null; subIndustry: string | null }
+export type TreeStock = { code: string; name: string }
+export type TreeCategory = { id: number; parentId: number | null; name: string }
+export type TreeClassification = { sector: string | null; industry: string | null; subIndustry: string | null }
 
-export function shouldFilterJapanQuotes(snapshotTime: string | null, today: string, rangeStart: string | null): boolean {
+export function shouldFilterStaleQuotes(snapshotTime: string | null, today: string, rangeStart: string | null): boolean {
   return rangeStart === null && snapshotTime?.slice(0, 10) === today
 }
 
-export function japanFilterQueryState(enabled: boolean, snapshotLoading: boolean, snapshotError: boolean, previousTime: string | null, previousLoading: boolean, previousError: boolean) {
+export function staleQuoteQueryState(enabled: boolean, snapshotLoading: boolean, snapshotError: boolean, previousTime: string | null, previousLoading: boolean, previousError: boolean) {
   return {
     isLoading: enabled && (snapshotLoading || (previousTime !== null && previousLoading)),
     isError: enabled && (snapshotError || (previousTime !== null && previousError)),
   }
 }
 
-export function findJapanCloseSnapshotTime(snapshotTimes: readonly string[], date: string): string | null {
+export function findCloseSnapshotTime(snapshotTimes: readonly string[], date: string): string | null {
   return snapshotTimes.find(time => time.slice(0, 10) === date && time.slice(11, 16) === '15:30') ?? null
 }
 
-export function excludePreviousCloseQuotes(quotes: readonly JapanQuote[], previous: readonly JapanQuote[]): JapanQuote[] {
+export function excludePreviousCloseQuotes(quotes: readonly TreeQuote[], previous: readonly TreeQuote[]): TreeQuote[] {
   const previousByCode = new Map(previous.filter(quote => quote.closeVerified === true).map(quote => [quote.stockCode, quote]))
   return quotes.filter(quote => {
     const close = previousByCode.get(quote.stockCode)
@@ -28,7 +28,7 @@ export function excludePreviousCloseQuotes(quotes: readonly JapanQuote[], previo
   })
 }
 
-function toItem(quote: JapanQuote, name: string, snapshotTime: string): HeatmapItem {
+function toItem(quote: TreeQuote, name: string, snapshotTime: string): HeatmapItem {
   return {
     stockCode: quote.stockCode,
     stockName: name,
@@ -43,12 +43,12 @@ function toItem(quote: JapanQuote, name: string, snapshotTime: string): HeatmapI
 }
 
 // 분류 목록과 종목 분류로 지도 트리를 만든다. 분류가 없거나 목록에 없는 값을 가진 종목은 미분류에 넣는다. 그 시각에 시세가 없는 종목은 지도에 그리지 않는다.
-export function buildJapanTree(
-  stocks: readonly JapanStock[],
-  categories: readonly JapanCategory[],
-  classifications: Readonly<Record<string, JapanClassification>>,
+export function buildSnapshotTree(
+  stocks: readonly TreeStock[],
+  categories: readonly TreeCategory[],
+  classifications: Readonly<Record<string, TreeClassification>>,
   names: Readonly<Record<string, string>>,
-  quotes: readonly JapanQuote[],
+  quotes: readonly TreeQuote[],
   snapshotTime: string,
 ): HeatmapSectorNode[] {
   const nodes = new Map<number, HeatmapSectorNode>(categories.map(category => [category.id, { sectorId: category.id, sectorName: category.name, totalMarketValue: 0, isExcluded: false, children: [], items: [] }]))

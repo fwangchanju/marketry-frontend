@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildJapanTree, excludePreviousCloseQuotes, findJapanCloseSnapshotTime, japanFilterQueryState, shouldFilterJapanQuotes } from './japanMap.ts'
+import { buildSnapshotTree, excludePreviousCloseQuotes, findCloseSnapshotTime, staleQuoteQueryState, shouldFilterStaleQuotes } from './snapshotTree.ts'
 
 const TIME = '2026-11-04T15:30:00'
 const stock = code => ({ code, name: code })
@@ -25,11 +25,11 @@ test('직전 거래일 종가가 확인되지 않은 종목은 비교 대상에�
 })
 
 test('직전 거래일 15시 30분 종가가 없으면 더 오래된 날짜를 대신 선택하지 않는다', () => {
-  assert.equal(findJapanCloseSnapshotTime([
+  assert.equal(findCloseSnapshotTime([
     '2026-11-05T15:30:00',
     '2026-11-09T15:30:00',
   ], '2026-11-06'), null)
-  assert.equal(findJapanCloseSnapshotTime([
+  assert.equal(findCloseSnapshotTime([
     '2026-11-06T15:25:00',
     '2026-11-06T15:30:00',
   ], '2026-11-06'), '2026-11-06T15:30:00')
@@ -41,20 +41,20 @@ test('전일과 당일이 모두 0%면 가격이 같아도 표시한다', () => 
 })
 
 test('당일 하루 지도에만 전일값 필터를 적용한다', () => {
-  assert.equal(shouldFilterJapanQuotes('2026-11-09T09:10:00', '2026-11-09', null), true)
-  assert.equal(shouldFilterJapanQuotes('2026-11-06T15:30:00', '2026-11-09', null), false)
-  assert.equal(shouldFilterJapanQuotes('2026-11-09T15:30:00', '2026-11-09', '2026-11-06T15:30:00'), false)
-  assert.equal(shouldFilterJapanQuotes(null, '2026-11-09', null), false)
+  assert.equal(shouldFilterStaleQuotes('2026-11-09T09:10:00', '2026-11-09', null), true)
+  assert.equal(shouldFilterStaleQuotes('2026-11-06T15:30:00', '2026-11-09', null), false)
+  assert.equal(shouldFilterStaleQuotes('2026-11-09T15:30:00', '2026-11-09', '2026-11-06T15:30:00'), false)
+  assert.equal(shouldFilterStaleQuotes(null, '2026-11-09', null), false)
 })
 
 test('전일 비교 조회 상태는 당일 필터가 켜졌을 때만 지도를 막는다', () => {
-  assert.deepEqual(japanFilterQueryState(false, true, true, '2026-11-06T15:30:00', true, true), { isLoading: false, isError: false })
-  assert.deepEqual(japanFilterQueryState(true, true, false, null, false, false), { isLoading: true, isError: false })
-  assert.deepEqual(japanFilterQueryState(true, false, false, '2026-11-06T15:30:00', false, true), { isLoading: false, isError: true })
+  assert.deepEqual(staleQuoteQueryState(false, true, true, '2026-11-06T15:30:00', true, true), { isLoading: false, isError: false })
+  assert.deepEqual(staleQuoteQueryState(true, true, false, null, false, false), { isLoading: true, isError: false })
+  assert.deepEqual(staleQuoteQueryState(true, false, false, '2026-11-06T15:30:00', false, true), { isLoading: false, isError: true })
 })
 
 test('분류 단계대로 종목을 넣고 시가총액을 위로 합친다', () => {
-  const tree = buildJapanTree([stock('8750'), stock('8766')], categories, {
+  const tree = buildSnapshotTree([stock('8750'), stock('8766')], categories, {
     8750: { sector: '금융', industry: '보험', subIndustry: '생명 보험' },
     8766: { sector: '금융', industry: '보험', subIndustry: null },
   }, { 8750: '다이이치' }, [quote('8750'), quote('8766')], TIME)
@@ -67,13 +67,13 @@ test('분류 단계대로 종목을 넣고 시가총액을 위로 합친다', ()
 })
 
 test('분류가 없거나 목록에 없는 종목은 미분류에 넣는다', () => {
-  const tree = buildJapanTree([stock('1111'), stock('2222')], categories, {
+  const tree = buildSnapshotTree([stock('1111'), stock('2222')], categories, {
     2222: { sector: '없는 분류', industry: null, subIndustry: null },
   }, {}, [quote('1111'), quote('2222')], TIME)
   assert.deepEqual(tree.find(node => node.sectorName === '미분류').items.map(item => item.stockCode), ['1111', '2222'])
 })
 
 test('그 시각에 시세가 없는 종목은 그리지 않는다', () => {
-  const tree = buildJapanTree([stock('1111'), stock('2222')], categories, {}, {}, [quote('1111')], TIME)
+  const tree = buildSnapshotTree([stock('1111'), stock('2222')], categories, {}, {}, [quote('1111')], TIME)
   assert.deepEqual(tree.find(node => node.sectorName === '미분류').items.map(item => item.stockCode), ['1111'])
 })

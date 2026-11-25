@@ -1,40 +1,40 @@
 import { SNAPSHOT_MAX_DEPTH, categoryPath, stocksUnder, useSnapshotSectors } from '@/markets/snapshotSectors'
 import { subSectorsBlockMessage } from '@/hooks/useSectorDeleteFlow'
-import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
-import { useOverseasSheet } from '@/hooks/useOverseasSheet'
-import { useOverseasClassificationData, type OverseasCategory } from '@/hooks/useOverseasClassificationData'
+import { useSnapshotPublishedAt } from '@/markets/useSnapshotPublishedAt'
+import { useSnapshotSheet } from '@/markets/useSnapshotSheet'
+import { useSnapshotClassificationData, type SnapshotCategory } from '@/markets/useSnapshotClassificationData'
 import { customMenu } from '@/utils/marketMenu'
-import { useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import client from '@/api/client'
-import AdminSectorTable from '@/components/AdminSectorTable'
+import SectorTable from '@/components/SectorTable'
 import { useSession } from '@/hooks/useSession'
 import { isAdminSession } from '@/utils/adminAccess'
 import { appAlert, appWarnConfirm } from '@/utils/appDialogBus'
 import type { SectorItem } from '@/types/api'
-import { overseasMarketInfo } from '@/utils/markets'
+import { snapshotMarketInfo } from '@/utils/markets'
 
 import SheetScreen from '@/components/SheetScreen'
-import { useListedStocks, useMarketQuotes } from '@/markets/useMarketQuotes'
+import { useMarketStocks } from '@/markets/useMarketStocks'
+import { useMarketQuotes } from '@/markets/useMarketQuotes'
 import { SNAPSHOT_MARKETS } from '@/markets/snapshotMarkets'
-import { overseasRoute, type OverseasMarket } from '@/utils/markets'
+import { snapshotRoute, type SnapshotMarket } from '@/utils/markets'
 
-type Category = OverseasCategory
+type Category = SnapshotCategory
 // 확인한 종목 수가 그사이 바뀌어 서버가 삭제를 멈추면 새 수로 다시 확인한다. 계속 바뀌면 이 횟수까지만 다시 묻는다.
 const MAX_CONFIRM_ATTEMPTS = 3
 const protectedHint = () => '삭제한 분류의 종목이 이 그룹으로 옮겨집니다.'
 // 스냅샷 시장의 SECTOR 데이터와 편집 동작을 공통 화면에 넘긴다.
-export default function SnapshotSector({ market }: { market: OverseasMarket }) {
-  const { bundledStocks, currencyUnit } = SNAPSHOT_MARKETS[market]
+export default function SnapshotSector({ market }: { market: SnapshotMarket }) {
+  const { currencyUnit } = SNAPSHOT_MARKETS[market]
   const { data: session } = useSession()
   // 분류 편집은 내 기준(초안)에서만 한다. MARKETRY 모드는 운영 분류를 읽기만 한다.
-  const { sheet, canUseMine, selectSheet } = useOverseasSheet()
-  const publishedAt = useOverseasPublishedAt(market, sheet)
+  const { sheet, canUseMine, selectSheet } = useSnapshotSheet()
+  const publishedAt = useSnapshotPublishedAt(market, sheet)
   const canEdit = isAdminSession(session) && sheet === 'MINE'
   const quotes = useMarketQuotes(market)
-  const listed = useListedStocks(market, bundledStocks === null)
-  const stockCodes = useMemo(() => bundledStocks?.map(stock => stock.code) ?? (listed.data ?? []).map(stock => stock.symbol), [bundledStocks, listed.data])
-  const { categories, classifications, editBase, invalidate } = useOverseasClassificationData(market, sheet)
+  const stocks = useMarketStocks(market)
+  const stockCodes = stocks.codes
+  const { categories, classifications, editBase, invalidate } = useSnapshotClassificationData(market, sheet)
   const endpoint = `${editBase}/categories`
   const depthOf = (parentId: number | null): number => (parentId === null ? -1 : sectors.find(item => item.id === parentId)?.depth ?? 0)
   const create = useMutation({ meta: { failure: '업종을 추가하지 못했습니다.' }, mutationFn: async ({ name, parentId }: { name: string; parentId: number | null }): Promise<SectorItem> => { const item = (await client.post<Category>(endpoint, { name, parentId })).data; return { ...item, depth: depthOf(item.parentId) + 1 } }, onSuccess: invalidate })
@@ -63,13 +63,13 @@ export default function SnapshotSector({ market }: { market: OverseasMarket }) {
     }
     void appAlert(`[${name}]\n삭제하지 못했습니다. 다시 시도해 주세요.`, { title: '삭제 실패' })
   }
-  const isLoading = categories.isLoading || classifications.isLoading || quotes.isLoading || listed.isLoading
-  const isError = categories.isError || classifications.isError || quotes.isError || listed.isError
-  const retry = () => { void categories.refetch(); void classifications.refetch(); void quotes.refetch(); if (bundledStocks === null) void listed.refetch() }
+  const isLoading = categories.isLoading || classifications.isLoading || quotes.isLoading || stocks.isLoading
+  const isError = categories.isError || classifications.isError || quotes.isError || stocks.isError
+  const retry = () => { void categories.refetch(); void classifications.refetch(); void quotes.refetch(); void stocks.refetch() }
   return (
     <SheetScreen
       page="SECTOR"
-      label={overseasMarketInfo(market).badgeLabel}
+      label={snapshotMarketInfo(market).badgeLabel}
       menu={customMenu('sector', market, true, sheet === 'MINE')}
       taxonomy={sheet}
       state={isLoading ? { status: 'loading' } : isError ? { status: 'error', retry } : { status: 'ready' }}
@@ -79,11 +79,11 @@ export default function SnapshotSector({ market }: { market: OverseasMarket }) {
       publishControls={null}
       isCaptureReady={!isLoading}
       isMineEmpty={sheet === 'MINE' && !isLoading && !isError && sectors.length === 0}
-      mineSetupPath={overseasRoute('/sector', market)}
+      mineSetupPath={snapshotRoute('/sector', market)}
       panel={{ onlyTaxonomy: 'MARKETRY', snapshotTime: publishedAt, alsoTaxonomies: canUseMine ? ['MINE'] : undefined, withoutMiddle: true, onSelectTaxonomy: next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY') }}
     >
       {slots => (
-        <AdminSectorTable
+        <SectorTable
           sectors={sectors}
           sectorStats={stats}
           toolbarContainer={slots.toolbar}
