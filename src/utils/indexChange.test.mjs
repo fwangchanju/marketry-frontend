@@ -8,28 +8,37 @@ const closes = [
   { date: '2026-11-06', close: 110 },
   { date: '2026-11-09', close: 99 },
 ]
+const days = ['2026-11-05', '2026-11-06', '2026-11-09', '2026-11-10']
 
 test('하루 보기는 바로 앞 거래일 종가 대비 등락률을 구한다', () => {
-  near(indexChangeRate(closes, '2026-11-06', '2026-11-06'), 10)
-  near(indexChangeRate(closes, '2026-11-09', '2026-11-09'), -10)
+  near(indexChangeRate(closes, days, '2026-11-06', '2026-11-06'), 10)
+  near(indexChangeRate(closes, days, '2026-11-09', '2026-11-09'), -10)
 })
 
 test('기간 보기는 시작일 앞 거래일 종가에서 종료일 종가까지의 누적 등락률을 구한다', () => {
-  near(indexChangeRate(closes, '2026-11-06', '2026-11-09'), -1)
+  near(indexChangeRate(closes, days, '2026-11-06', '2026-11-09'), -1)
 })
 
 test('주말과 휴장일은 건너뛰고 그 앞의 가장 가까운 종가를 기준으로 삼는다', () => {
-  near(indexChangeRate(closes, '2026-11-07', '2026-11-09'), -10)
+  near(indexChangeRate(closes, days, '2026-11-07', '2026-11-09'), -10)
 })
 
 test('기준 종가나 종료일 종가가 없으면 null이다', () => {
-  assert.equal(indexChangeRate(closes, '2026-11-05', '2026-11-05'), null)
-  assert.equal(indexChangeRate(closes, '2026-11-09', '2026-11-10'), null)
-  assert.equal(indexChangeRate([], '2026-11-09', '2026-11-09'), null)
+  assert.equal(indexChangeRate(closes, days, '2026-11-05', '2026-11-05'), null)
+  assert.equal(indexChangeRate(closes, days, '2026-11-09', '2026-11-10'), null)
+  assert.equal(indexChangeRate([], days, '2026-11-09', '2026-11-09'), null)
+})
+
+test('바로 앞 거래일의 종가가 없으면 더 앞 날짜로 대신하지 않는다', () => {
+  const gap = [{ date: '2026-11-20', close: 6910.39 }, { date: '2026-11-24', close: 7201.09 }]
+  const gapDays = ['2026-11-20', '2026-11-23', '2026-11-24']
+  assert.equal(indexChangeRate(gap, gapDays, '2026-11-24', '2026-11-24'), null)
+  assert.equal(indexChangeRate(gap, [], '2026-11-24', '2026-11-24'), null)
+  near(indexChangeRate([...gap, { date: '2026-11-23', close: 7237.17 }], gapDays, '2026-11-24', '2026-11-24'), (7201.09 / 7237.17 - 1) * 100)
 })
 
 test('기준 종가가 0이면 null이다', () => {
-  assert.equal(indexChangeRate([{ date: '2026-11-05', close: 0 }, { date: '2026-11-06', close: 10 }], '2026-11-06', '2026-11-06'), null)
+  assert.equal(indexChangeRate([{ date: '2026-11-05', close: 0 }, { date: '2026-11-06', close: 10 }], days, '2026-11-06', '2026-11-06'), null)
 })
 
 test('달력 날짜를 더하고 뺀다', () => {
