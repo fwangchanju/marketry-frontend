@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { isMobilePageZoomed, MOBILE_PAGE_SWIPE_SETTLE_MS, useDisableScreenZoom } from '@/hooks/useMobilePageSwipe'
+import { isMobilePageZoomed, MOBILE_PAGE_SWIPE_SETTLE_MS } from '@/hooks/useMobilePageSwipe'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import MobileTopBar from '@/components/MobileTopBar'
 import PhoneMapShell from '@/components/PhoneMapShell'
-import Popup, { type PopupContent, type PopupState } from '@/components/Popup'
+import Popup from '@/components/Popup'
+import { usePhoneMapInfoPopup } from '@/hooks/usePhoneMapInfoPopup'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
 import PathBar from '@/components/PathBar'
 import MapToolbar from '@/components/MapToolbar'
@@ -27,7 +28,7 @@ import { layoutOverviewLabel } from '@/utils/overviewLabel'
 import { useFontsVersion } from '@/utils/stockLabelFit'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { changeDirectionOf } from '@/utils/changeDirection'
-import { toJoEok, toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel, toVolume } from '@/utils/format'
+import { toPctSigned, toSnapshotDateLabel, toSnapshotTimeOnlyLabel } from '@/utils/format'
 import { calculateSectorLayoutWeights, MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 import { mapStretchFor, mapTileMethod } from '@/utils/mapStretch'
 import { limitDepth } from '@/hooks/useFilteredHeatmap'
@@ -238,8 +239,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const isGraph = mode === 'graph'
   const isStockMode = mode === 'stock'
   const isSectorMode = mode === 'sector'
-  // 업종 지도와 그룹 등락률은 화면 확대를 받지 않는다(사용자 정정). 종목 지도는 확대한 화면 안을 이동할 수 있다.
-  useDisableScreenZoom()
+  // 화면 확대 차단은 공통 셸(PhoneMapShell)이 zoomMode로 관리한다. 종목 지도는 확대한 화면 안을 이동할 수 있다.
   // 지도 화면에서도 지수를 미리 받아 둔다. 지도에서 그룹 등락률로 스와이프할 때 지수가 도착 뒤에야 조회되면
   // 미리보기와 전환 순간에 지수만 비어 보인다(2026-11-22 사용자 제보).
   const { data: marketSummary, isLoading: isMarketSummaryLoading, isFetching: isMarketSummaryFetching, refetch: refetchMarketSummary } = useMarketSummary()
@@ -300,8 +300,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const [graphDepth, setGraphDepth] = useLocalPersistedState<number>('mobile.graphDepth', 1)
   const [viewModeState, setViewMode] = useState<'sector' | 'stock'>('sector')
   const viewMode = isStockMode ? 'stock' : viewModeState
-  // 업종 지도에서 길게 누르면 PC에서 쓰는 것과 같은 Popup을 연다.
-  const [infoPopup, setInfoPopup] = useState<PopupState | null>(null)
+  // 업종·종목 칸 팝업은 해외 화면과 같은 공통 훅을 쓴다. 지도 경계는 이 페이지의 판을 기준으로 잡는다.
+  const { popup: infoPopup, close: closeInfoPopup, openStockPopup: openStockPopupBase, openSectorPopup: openSectorPopupBase } = usePhoneMapInfoPopup({ mapBoundsRef: pageContentRef })
   const [settingsOpen, setSettingsOpen] = useLocalPersistedState('settings-panel-open', false)
   // 터치 핸들러 안에서 최신 열림 상태를 읽기 위한 ref.
   const settingsOpenRef = useRef(settingsOpen)
@@ -496,45 +496,12 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     return [...stocks].sort((a, b) => b.totalMarketValue - a.totalMarketValue)
   }, [filteredRootNodes, selectedStocks, stockScope])
   const stockHeatmapItems = stockContextItems.slice(0, STOCK_MAP_COUNT)
-  // PC에서 쓰는 것과 같은 Popup을 눌린 칸에 띄운다. 눌린 칸의 화면 위치와 지도 경계를 함께 넘긴다.
-  // 같은 칸을 다시 길게 누르면 닫는다.
-  const openInfoPopup = (content: PopupContent, target: HTMLElement) => {
-    if (infoPopup?.targetKey === content.targetKey) {
-      setInfoPopup(null)
-      return
-    }
-    const rect = target.getBoundingClientRect()
-    const mapRect = (target.closest('[data-mobile-map-scale]') ?? pageContentRef.current)?.getBoundingClientRect()
-    setInfoPopup({
-      ...content,
-      anchorRect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
-      mapBounds: {
-        left: mapRect?.left ?? 0,
-        right: mapRect?.right ?? window.innerWidth,
-        top: mapRect?.top ?? 0,
-        bottom: mapRect?.bottom ?? window.innerHeight,
-      },
-    })
-  }
-  const openStockPopup = (stock: HeatmapItem, target: HTMLElement) => openInfoPopup({
-    title: stock.stockName,
-    rows: [
-      `등락률: ${toPctSigned(stock.changeRate, MOBILE_DECIMAL_PLACES)}`,
-      `현재가: ${toVolume(stock.currentPrice)}원`,
-      `시가총액: ${toJoEok(stock.totalMarketValue / 100_000_000)}원`,
-    ],
-    targetKey: `stock:${stock.stockCode}`,
-  }, target)
-  const openSectorPopup = (item: MobileSectorMapItem & Partial<MobileSectorItem>, target: HTMLElement) => openInfoPopup({
-    title: item.name,
-    rows: [
-      `시총 가중: ${toPctSigned(item.changeRate, MOBILE_DECIMAL_PLACES)}`,
-      ...(item.simpleAvg === undefined ? [] : [`동일 가중: ${item.simpleAvg === null ? '-' : toPctSigned(item.simpleAvg, MOBILE_DECIMAL_PLACES)}`]),
-      `등락 종목: ▲${item.advancers ?? 0} ▼${item.decliners ?? 0} ■${item.unchanged ?? 0}`,
-      `그룹 시총: ${toJoEok(item.marketValue / 100_000_000)}원`,
-    ],
-    targetKey: `sector:${item.key}`,
-  }, target)
+  // 종목·업종 데이터 구조는 한국만 다르므로 여기서 공통 훅이 받는 형태로 맞춘다(행 구성과 토글은 훅이 맡는다).
+  const openStockPopup = (stock: HeatmapItem, target: HTMLElement) => openStockPopupBase({
+    key: stock.stockCode, name: stock.stockName, changeRate: stock.changeRate,
+    currentPrice: stock.currentPrice, marketValue: stock.totalMarketValue,
+  }, target, MOBILE_DECIMAL_PLACES)
+  const openSectorPopup = (item: MobileSectorMapItem & Partial<MobileSectorItem>, target: HTMLElement) => openSectorPopupBase(item, target, MOBILE_DECIMAL_PLACES)
   const heading = viewMode === 'stock'
     ? `${stockCategoryName || stockScope?.sectorName || '전체 시장'} 주식 히트맵`
     : mid ? `${mid.sectorName} 소분류 업종 히트맵` : major ? `${major.sectorName} 중분류 업종 히트맵` : '국내 업종 히트맵'
@@ -609,14 +576,14 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   const historyNormalizedRef = useRef(false)
   const reduceToDepth = (target: number) => {
     if (isGraph && target === 0 && graphEntryOffset > 0) {
-      setMajorSelection(null); setMidSelection(null); setStockSelection(null); setGraphEntryOffset(0); setViewMode('sector'); setInfoPopup(null)
+      setMajorSelection(null); setMidSelection(null); setStockSelection(null); setGraphEntryOffset(0); setViewMode('sector'); closeInfoPopup()
       return
     }
     let current = depth
     if (current > target && selectedStocks) { setStockSelection(null); setViewMode('sector'); current -= 1 }
     if (current > target && mid) { setMidSelection(null); current -= 1 }
     if (current > target && major) { setMajorSelection(null); setViewMode('sector') }
-    setInfoPopup(null)
+    closeInfoPopup()
   }
   useEffect(() => {
     // 다른 페이지에 갔다가 뒤로가기로 돌아오면 쌓인 칸만 남고 화면은 처음 상태라, 칸을 걷어 내 기준 칸으로 돌아간다.
@@ -672,7 +639,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     setMidName(null)
     setSelectedStocks(null)
     setViewMode('sector')
-    setInfoPopup(null)
+    closeInfoPopup()
     setGraphEntryOffset(0)
     if (pathname.startsWith('/map/') || pathname.startsWith('/graph/')) {
       // 종목 지도에서 업종을 보던 중이어도 마켓을 바꾸면 그 마켓의 전체 종목 지도로 간다(업종 이름이 마켓마다 다를 수 있다).
@@ -872,6 +839,9 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
   if (isSectorMode || isGraph) {
     return (
       <PhoneMapShell
+        zoomMode="blocked"
+        infoPopup={infoPopup}
+        onCloseInfoPopup={closeInfoPopup}
         topBar={
         <MobileTopBar
           title={isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}
@@ -929,7 +899,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
-            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={() => setInfoPopup(null)} onLongPress={(stock, target) => openStockPopup(stock, target)} />
+            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={() => closeInfoPopup()} onLongPress={(stock, target) => openStockPopup(stock, target)} />
             : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={(item, target) => openSectorPopup(marketItems.find(sector => sector.key === item.key) ?? item, target)} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>}
         </div>
         </div>
@@ -941,7 +911,6 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           </div>
         </div>}
       </section>
-        <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={() => setInfoPopup(null)} phoneEnlarged />
         </div>}
         current="korea"
         boxSize={boxSizeMarketCapRatio}
@@ -980,14 +949,14 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
-            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={() => setInfoPopup(null)} onLongPress={(stock, target) => openStockPopup(stock, target)} />
+            : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={() => closeInfoPopup()} onLongPress={(stock, target) => openStockPopup(stock, target)} />
             : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p> : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={selectSector} onLongPress={(item, target) => openSectorPopup(marketItems.find(sector => sector.key === item.key) ?? item, target)} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>}
         </div>
         {pageSwipePreview && <div aria-hidden="true" inert className={`absolute inset-0 overflow-hidden ${pageSwipePreview.targetMode === 'stock' ? '' : 'p-1'}`} style={{ transform: swipePreviewFrameTransform, transition: swipeTransition, pointerEvents: 'none', willChange: 'transform' }}>
           {renderSwipePreview()}
         </div>}
       </section>
-      <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={() => setInfoPopup(null)} phoneEnlarged />
+      <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={() => closeInfoPopup()} phoneEnlarged />
 
       <section ref={settingsSectionRef} data-mobile-settings-panel role="region" aria-label="설정" className="relative z-10 mx-1 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
         <div className="relative h-[24px]">
@@ -1032,7 +1001,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
                 return <button key={option.key} type="button" role="radio" aria-checked={selected} onClick={() => {
                   if (selected) return
                   settingsModalProps.onSelectTaxonomy(option.key)
-                  setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); setInfoPopup(null)
+                  setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); closeInfoPopup()
                 }} className={`${SETTING_CHIP_CLASS} ${selected ? 'bg-brand-surface text-ui-on-dark' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>
               })}
             </div>
@@ -1045,7 +1014,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
           {isGraph && <SettingRow label="업종 단계">
             <div role="radiogroup" aria-label="업종 분류 단계" className="grid flex-1 grid-cols-3 gap-1.5">
               {[{ value: 1, label: '대분류' }, { value: 2, label: '중분류' }, { value: 3, label: '소분류' }].map(option => <button key={option.value} type="button" role="radio" aria-checked={Math.min(graphDepth, selectableDepth) === option.value} disabled={option.value > selectableDepth} onClick={() => {
-                setGraphDepth(option.value); setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); setInfoPopup(null)
+                setGraphDepth(option.value); setMajorName(null); setMidName(null); setSelectedStocks(null); setGraphEntryOffset(0); setViewMode('sector'); closeInfoPopup()
               }} className={`${SETTING_CHIP_CLASS} disabled:opacity-35 ${Math.min(graphDepth, selectableDepth) === option.value ? 'bg-brand-surface text-ui-on-dark' : 'bg-ui-control text-ui-white'}`}>{option.label}</button>)}
             </div>
           </SettingRow>}
