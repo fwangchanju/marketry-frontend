@@ -1,5 +1,6 @@
 import { useCallback, useState, type RefObject } from 'react'
 import { type PopupContent, type PopupState } from '@/components/Popup'
+import { currencySuffix, type CurrencyUnit } from '@/utils/currencyUnit'
 import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
 
 // 업종 지도·종목 지도 폰 팝업의 공통 상태. 한국과 해외가 같은 PC용 Popup을 같은 규칙으로 띄운다.
@@ -23,9 +24,13 @@ export interface PhoneMapPopupSector {
   unchanged?: number
 }
 
-export function usePhoneMapInfoPopup({ mapBoundsRef }: { mapBoundsRef?: RefObject<HTMLElement | null> } = {}) {
+export function usePhoneMapInfoPopup({ currencyUnit, mapBoundsRef }: {
+  // 기본값을 두지 않는다. 해외 화면이 빠뜨리면 금액에 원이 붙는다.
+  currencyUnit: CurrencyUnit
+  mapBoundsRef?: RefObject<HTMLElement | null>
+}) {
   const [popup, setPopup] = useState<PopupState | null>(null)
-  // 화면 이동으로 닫기는 공통 셸(PhoneMapShell)이 navigationKey로 처리한다.
+  // 화면 이동으로 닫기는 공통 셸(PhoneMapShell)이 스와이프 시작과 navigationKey로 처리한다.
   const close = useCallback(() => setPopup(null), [])
   const open = useCallback((content: PopupContent, target: HTMLElement) => {
     const rect = target.getBoundingClientRect()
@@ -42,12 +47,15 @@ export function usePhoneMapInfoPopup({ mapBoundsRef }: { mapBoundsRef?: RefObjec
     })
   }, [mapBoundsRef])
 
+  // 해외 금액은 종목 지도 팝업과 같은 표기(예: 153조 엔)를 쓰고, 한국 폰 팝업은 기존대로 원을 붙인다.
+  const marketValueText = (value: number) => `${toJoEok(value / 100_000_000)}${currencySuffix(currencyUnit) || '원'}`
+
   const openStockPopup = (stock: PhoneMapPopupStock, target: HTMLElement, decimalPlaces = 1) => open({
     title: stock.name,
     rows: [
       `등락률: ${toPctSigned(stock.changeRate, decimalPlaces)}`,
-      `현재가: ${toVolume(stock.currentPrice)}원`,
-      `시가총액: ${toJoEok(stock.marketValue / 100_000_000)}원`,
+      `현재가: ${toVolume(stock.currentPrice)}${currencyUnit}`,
+      `시가총액: ${marketValueText(stock.marketValue)}`,
     ],
     targetKey: `stock:${stock.key}`,
   }, target)
@@ -58,7 +66,7 @@ export function usePhoneMapInfoPopup({ mapBoundsRef }: { mapBoundsRef?: RefObjec
       `시총 가중: ${toPctSigned(sector.changeRate, decimalPlaces)}`,
       ...(sector.simpleAvg === undefined ? [] : [`동일 가중: ${sector.simpleAvg === null ? '-' : toPctSigned(sector.simpleAvg, decimalPlaces)}`]),
       `등락 종목: ▲${sector.advancers ?? 0} ▼${sector.decliners ?? 0} ■${sector.unchanged ?? 0}`,
-      `그룹 시총: ${toJoEok(sector.marketValue / 100_000_000)}원`,
+      `그룹 시총: ${marketValueText(sector.marketValue)}`,
     ],
     targetKey: `sector:${sector.key}`,
   }, target)

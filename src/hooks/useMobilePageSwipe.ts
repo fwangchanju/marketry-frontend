@@ -70,7 +70,7 @@ export function useDisableScreenZoom(enabled = true): void {
 }
 
 // 모바일 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
-export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void, allowPinchZoom = true) {
+export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void, allowPinchZoom = true, onSwipeStart?: () => void) {
   const zoomed = useIsMobilePageZoomed()
   const startRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
   const suppressClickRef = useRef(false)
@@ -96,6 +96,12 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     }, duration)
   }
   const onPointerDownCapture = (event: PointerEvent<HTMLElement>) => {
+    // 두 번째 손가락이 닿으면 확대 동작이다. 밀던 판을 되돌리고 페이지 전환을 받지 않는다.
+    if (!event.isPrimary) {
+      startRef.current = null
+      if (offset !== 0 && !settling) settle(0)
+      return
+    }
     if (isMobilePageZoomed() || settling || event.clientX <= EDGE_GUARD || event.clientX >= window.innerWidth - EDGE_GUARD) return
     // 확대된 지도 안의 한 손가락 드래그는 지도 이동이다. 화면 확대가 아니어도 페이지 전환을 받지 않는다.
     const map = (event.target as HTMLElement).closest<HTMLElement>('[data-mobile-map-scale]')
@@ -107,7 +113,9 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     const start = startRef.current
     if (!start || start.pointerId !== event.pointerId || settling) return
     const dx = event.clientX - start.x
-    if (Math.abs(dx) >= 4 && isHorizontal(dx, event.clientY - start.y)) setOffset(dx)
+    if (Math.abs(dx) < 4 || !isHorizontal(dx, event.clientY - start.y)) return
+    if (offset === 0) onSwipeStart?.()
+    setOffset(dx)
   }
   const onPointerUpCapture = (event: PointerEvent<HTMLElement>) => {
     const start = startRef.current
@@ -137,9 +145,10 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
   // 상단 페이지 이동 버튼도 손가락 스와이프와 같은 settle 경로로 다음 판을 밀어 준다.
   const next = () => {
     if (settling) return
+    onSwipeStart?.()
     settle(-window.innerWidth, onNext, 'next')
   }
-  if (!enabled) return { handlers: undefined, style: undefined, offset: 0, next: () => {} }
+  if (!enabled) return { handlers: undefined, style: undefined, offset: 0, active: false, next: () => {} }
   const style: CSSProperties = {
     // 1배에서는 세로 스크롤만 브라우저에 맡기고 가로 전환은 이 훅이 처리한다. 종목 지도는 pinch-zoom을 함께
     // 넣지 않으면 브라우저가 핀치 확대 자체를 받지 않는다(2026-11-25 실제 핀치 확인). 확대 후에는 한 손가락으로
@@ -149,5 +158,5 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     transform: offset === 0 ? undefined : `translateX(${offset}px)`,
     transition: settling ? `transform ${reducedMotion ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }
-  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset, next }
+  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset, active: offset !== 0 || settling, next }
 }

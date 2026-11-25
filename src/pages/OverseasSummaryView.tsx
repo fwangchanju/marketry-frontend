@@ -163,7 +163,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     return phoneDrillItems.map((item, index) => ({ ...item, layoutValue: weights[index] }))
   }, [phoneDrillItems, boxSizeMarketCapRatio])
   // 업종·종목 칸 팝업도 한국과 같은 공통 훅을 쓴다. 화면 이동으로 닫기는 공통 셸이 navigationKey로 맡는다.
-  const { popup: infoPopup, close: closeInfoPopup, openStockPopup, openSectorPopup } = usePhoneMapInfoPopup()
+  const { popup: infoPopup, close: closeInfoPopup, openStockPopup, openSectorPopup } = usePhoneMapInfoPopup({ currencyUnit })
   const openPhoneDrillPopup = (item: PhoneDrillItem, target: HTMLElement) => item.isStock
     ? openStockPopup({ key: item.key, name: item.name, changeRate: item.changeRate, currentPrice: item.currentPrice ?? 0, marketValue: item.marketValue }, target)
     : openSectorPopup(item, target)
