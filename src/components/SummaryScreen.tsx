@@ -1,4 +1,4 @@
-import { useMemo, useRef, type ReactNode } from 'react'
+import { useMemo, useRef, type ComponentProps } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
@@ -10,6 +10,7 @@ import NavSubBar from '@/components/NavSubBar'
 import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
 import RankBars from '@/components/RankBars'
 import ScreenshotModal from '@/components/ScreenshotModal'
+import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection } from '@/components/SettingsPanel'
 import Spinner from '@/components/Spinner'
 import { HiddenSummaryCaptureFrames, SortableSummaryScreenFrames } from '@/components/SummaryFrame'
 import SummaryToolbar from '@/components/SummaryToolbar'
@@ -20,9 +21,8 @@ import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
 import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
-import type { MarketScreenData } from '@/markets/marketContract'
+import type { MarketColors, MarketFilters, MarketScreenData } from '@/markets/marketContract'
 import { frameBadgeStyle } from '@/utils/frameBadge'
-import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
 import type { marketMenu } from '@/utils/marketMenu'
 import { buildRankChart } from '@/utils/rankChart'
 import { SUMMARY_CAPTURE_FRAME_WIDTH } from '@/utils/screenshotToPreview'
@@ -31,24 +31,28 @@ import { summarizeSector } from '@/utils/sectorAverage'
 import { GROUP_CHANGE_FRAME, MARKET_MAP_FRAME, frameCaptureOptionsFor } from '@/utils/summaryFrames'
 import type { TaxonomyKey } from '@/utils/taxonomyNames'
 
-type SettingsPanelControls = { isOpen: boolean; onOpenChange: (open: boolean) => void; isOnLeft: boolean; onToggleSide: () => void }
+type SettingsPanelProps = ComponentProps<typeof SettingsPanel>
+// 설정창에서 시장·모드마다 다른 값. 배치와 항목은 이 화면이 정한다.
+export type SummaryPanelProps = Omit<SettingsPanelProps, 'children' | 'pageLabel' | 'taxonomyAtBottom' | 'isOpen' | 'onOpenChange' | 'isOnLeft' | 'onToggleSide' | 'taxonomy'>
 
 // 모든 시장의 PC SUMMARY. 시장 이름을 보고 갈라지지 않고 넘겨받은 값만 그린다.
-export default function SummaryScreen({ market, menu, taxonomy, filters, colors, mapPath, onSelectIndex, settings }: {
+export default function SummaryScreen({ market, menu, taxonomy, filters, colors, mapPath, onSelectIndex, panel }: {
   market: MarketScreenData
   menu: ReturnType<typeof marketMenu>
   taxonomy: TaxonomyKey
-  filters: { excludedSectorIds: ReadonlySet<number>; excludedMarketValueTiers: Set<string> }
-  colors: { colorScale: ColorScaleConfig; strongIndustryColor: string; legendSwatches: React.ComponentProps<typeof ChangeRateBar>['swatches'] }
+  filters: MarketFilters
+  colors: MarketColors
   mapPath: string
   // 지수 막대를 누르면 여는 화면이 있는 시장만 준다.
   onSelectIndex: ((market: 'KOSPI' | 'KOSDAQ') => void) | null
-  settings: (controls: SettingsPanelControls) => ReactNode
+  panel: SummaryPanelProps
 }) {
   const navigate = useNavigate()
   const { tree, indexBars, state, period, isMineEmpty, features } = market
   const { colorScale, strongIndustryColor, legendSwatches } = colors
-  const { excludedSectorIds, excludedMarketValueTiers } = filters
+  const { valueRange, sectorExclusion } = filters
+  const excludedSectorIds = sectorExclusion.excludedIds
+  const excludedMarketValueTiers = valueRange.excluded
   const mainRef = useRef<HTMLDivElement>(null)
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
   const { target: screenshotTarget, isOpen: isShareOpen, open: openScreenshot, close: closeScreenshot, copy, copyLabel, isCopying } = useScreenshotShare()
@@ -111,7 +115,16 @@ export default function SummaryScreen({ market, menu, taxonomy, filters, colors,
           <DisclaimerFooter captureFullWidthAlign rightContent={<ChangeRateBar swatches={legendSwatches} />} />
         </div>
         <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-          {settings({ isOpen: isSettingsOpen, onOpenChange: setIsSettingsOpen, isOnLeft, onToggleSide: toggleSide })}
+          <SettingsPanel {...panel} taxonomy={taxonomy} pageLabel="Summary" taxonomyAtBottom isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide}>
+            <SettingsPanelGroup section="composition">
+              <SettingsMarketValueSection isCustom={false} tiers={valueRange.tiers} tierRangeMinIndex={valueRange.minIndex} tierRangeMaxIndex={valueRange.maxIndex} onChangeTierRange={valueRange.setRange} showDivider={false} currencyUnit={market.currencyUnit} />
+              <SettingsExcludeSection sectorFilterEnabled={sectorExclusion.enabled} onToggleSectorFilter={sectorExclusion.toggle} excludedSectors={sectorExclusion.rows} onRemoveExcludedSector={sectorExclusion.remove} suspendedStockCount={sectorExclusion.suspendedStockCount ?? undefined} />
+            </SettingsPanelGroup>
+            <SettingsPanelGroup section="colors">
+              <SettingsColorSection {...colors.scaleSection} />
+              <SettingsStrongIndustryColorSection {...colors.strongSection} />
+            </SettingsPanelGroup>
+          </SettingsPanel>
         </div>
       </div>
       {isShareOpen && (

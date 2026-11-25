@@ -1,6 +1,11 @@
-import type { ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
+import type ChangeRateBar from '@/components/ChangeRateBar'
+import type { SettingsColorSection, SettingsStrongIndustryColorSection } from '@/components/SettingsPanel'
 import type { CurrencyUnit } from '@/utils/currencyUnit'
-import type { HeatmapSectorNode } from '@/types/api'
+import type { HeatmapSectorNode, MarketValueTierItem } from '@/types/api'
+import type { ColorScaleConfig } from '@/utils/heatmapColorScale'
+import type { MarketValueExclusions } from '@/utils/marketValueTier'
+import type { ExcludedSectorRow } from '@/utils/overseasSectorExclusion'
 
 // 모든 시장이 화면에 넘겨야 하는 것. 화면은 이 모양만 알고 어느 시장인지, 시세가 어디서 오는지 묻지 않는다.
 // 필수 항목에 ?(생략 가능)를 붙이지 않는다 — 한 시장이라도 빠뜨리면 빌드가 실패해야 한다.
@@ -61,3 +66,17 @@ export interface MarketScreenData {
 
 // 화면이 쓰는 시장 목록의 모양. 시장이 하나라도 빠지면 빌드가 실패한다.
 export type MarketRegistry<T> = Readonly<Record<MarketId, T>>
+
+// 화면이 쓰는 설정값. 저장하는 곳과 이름은 시장마다 달라도 화면에 넘기는 모양은 같다.
+export interface MarketFilters {
+  valueRange: { tiers: MarketValueTierItem[]; minIndex: number; maxIndex: number; setRange: (min: number, max: number) => void; excluded: MarketValueExclusions }
+  sectorExclusion: { enabled: boolean; toggle: () => void; excludedIds: ReadonlySet<number>; rows: ExcludedSectorRow[]; remove: (sectorId: number) => void; suspendedStockCount: number | null }
+}
+
+export interface MarketColors {
+  colorScale: ColorScaleConfig
+  strongIndustryColor: string
+  legendSwatches: ComponentProps<typeof ChangeRateBar>['swatches']
+  scaleSection: ComponentProps<typeof SettingsColorSection>
+  strongSection: ComponentProps<typeof SettingsStrongIndustryColorSection>
+}

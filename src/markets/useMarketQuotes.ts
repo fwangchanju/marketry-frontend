@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import { overseasMarketInfo, type OverseasMarket } from '@/utils/markets'
-import type { IndexClose } from '@/utils/indexChange'
+import type { IndexClose, IntradayIndexQuote } from '@/utils/indexChange'
 import { calculatePeriodDetailed, type PeriodExcludedStock } from '@/utils/japanPeriod'
 
 // 스냅샷 목록으로 시세를 주는 시장의 조회. 시장마다 다른 것은 주소 조각뿐이다. 시세가 어느 출처에서 왔는지는 서버만 안다.
@@ -68,4 +68,15 @@ export function useMarketPeriodQuotes(market: OverseasMarket, startTime: string 
   // 기준가가 없어 뺀 종목(신규 상장 등) — 기간 보기 배지에 쓴다.
   const excluded: PeriodExcludedStock[] = detailed?.excluded ?? []
   return { data, excluded, isLoading: startTime !== null && (start.isLoading || end.isLoading), isError: startTime !== null && (start.isError || end.isError), refetch: () => Promise.all([start.refetch(), end.refetch()]) }
+}
+
+// 지수의 그날 장중 등락률(5분 단위). 장중 값을 저장하는 시장만 켠다.
+// 값이 없거나 조회가 실패하면 data가 비어 있고, 종가 기준 막대로만 그린다.
+export function useMarketIndexQuotes(market: OverseasMarket, date: string | null) {
+  const segment = segmentOf(market)
+  return useQuery({
+    enabled: date !== null,
+    queryKey: [segment, 'index-quotes', date],
+    queryFn: async () => (await client.get<IntradayIndexQuote[]>(`/${segment}/index-quotes`, { params: { date } })).data,
+  })
 }

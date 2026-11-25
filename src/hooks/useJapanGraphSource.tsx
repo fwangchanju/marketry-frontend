@@ -1,5 +1,5 @@
 import MarketSessionChip from '@/components/MarketSessionChip'
-import { useMarketIndexCloses, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
+import { useMarketIndexCloses, useMarketIndexQuotes, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
 import { useMemo } from 'react'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
@@ -15,7 +15,6 @@ import stocks from '@/data/japanStocks.json'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useJapanGraphPreferences } from '@/hooks/useJapanGraphPreferences'
-import { useJapanIndexQuotes } from '@/hooks/useJapanIndexQuotes'
 import type { HeatmapSectorNode } from '@/types/api'
 import { graphIndexValue, indexChangeRate, indexRange, intradayRateAt, shiftDate } from '@/utils/indexChange'
 import { JAPAN_GRAPH_DRAFT_KEY_MAP } from '@/utils/japanGraphSettings'
@@ -73,8 +72,8 @@ export function useJapanGraphSource(): OverseasGraphSource {
   // 시각이 없으면 조회를 끈다. 이때 data는 최신 시세 캐시일 수 있어 아래에서 쓰지 않는다.
   const beforeQuotes = useMarketQuotes('JAPAN', beforeTime, beforeTime !== null)
   // 장중 지수 — 하루 보기(기간이 아닌 보기)에서 지금 시각과 N분 전 시각의 닛케이 등락률을 쓴다. 기간 보기는 종가 기준 막대만 쓴다.
-  const indexQuotesNow = useJapanIndexQuotes(rangeStart === null && snapshotTime ? snapshotTime.slice(0, 10) : null)
-  const indexQuotesBefore = useJapanIndexQuotes(showDelta && beforeTime ? beforeTime.slice(0, 10) : null)
+  const indexQuotesNow = useMarketIndexQuotes('JAPAN', rangeStart === null && snapshotTime ? snapshotTime.slice(0, 10) : null)
+  const indexQuotesBefore = useMarketIndexQuotes('JAPAN', showDelta && beforeTime ? beforeTime.slice(0, 10) : null)
   const indexValue = graphIndexValue({
     showDelta,
     nowRate: rangeStart === null ? intradayRateAt(indexQuotesNow.data, snapshotTime) : null,

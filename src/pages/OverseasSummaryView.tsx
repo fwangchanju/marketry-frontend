@@ -16,7 +16,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
 import { SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
-import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
+import type { SettingsPanelSectionId } from '@/components/SettingsPanel'
 import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
 import { collectAtDepth } from '@/utils/sectorDepth'
@@ -301,23 +301,14 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
       market={marketData}
       menu={menu}
       taxonomy={sheet}
-      filters={{ excludedSectorIds: sectorExclusion.excludedSectorIds, excludedMarketValueTiers: tierRange.excludedMarketValueTiers }}
-      colors={{ colorScale, strongIndustryColor, legendSwatches }}
+      filters={{
+        valueRange: { ...tierRange, excluded: tierRange.excludedMarketValueTiers },
+        sectorExclusion: { enabled: sectorExclusion.enabled, toggle: sectorExclusion.toggle, excludedIds: sectorExclusion.excludedSectorIds, rows: buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers), remove: sectorExclusion.remove, suspendedStockCount: null },
+      }}
+      colors={{ colorScale, strongIndustryColor, legendSwatches, scaleSection: colorSettings.colorSectionProps, strongSection: colorSettings.strongSectionProps }}
       mapPath={overseasRoute('/map', market)}
       onSelectIndex={null}
-      settings={controls => (
-        <SettingsPanel pageLabel="Summary" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={formatStockCountLabel(shownCount, totalCount)} {...controls} sectionOrder={SECTION_ORDER}>
-          <SettingsPanelGroup section="composition">
-            <SettingsMarketValueSection isCustom={false} tiers={tierRange.tiers} tierRangeMinIndex={tierRange.minIndex} tierRangeMaxIndex={tierRange.maxIndex} onChangeTierRange={tierRange.setRange} showDivider={false} currencyUnit={currencyUnit} />
-            <SettingsExcludeSection sectorFilterEnabled={sectorExclusion.enabled} onToggleSectorFilter={sectorExclusion.toggle} excludedSectors={buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers)} onRemoveExcludedSector={sectorExclusion.remove} />
-          </SettingsPanelGroup>
-          <SettingsPanelGroup section="colors">
-            {/* 지도 화면과 같은 구성이다. 등락률 색상·강조 색상은 내 기준 모드에서만 고칠 수 있고(한국 내 기준과 같은 값을 공유), MARKETRY 모드에서는 잠근다. */}
-            <SettingsColorSection {...colorSettings.colorSectionProps} />
-            <SettingsStrongIndustryColorSection {...colorSettings.strongSectionProps} />
-          </SettingsPanelGroup>
-        </SettingsPanel>
-      )}
+      panel={{ tabStorageName: tabStorageName, onlyTaxonomy: 'MARKETRY', snapshotTime: publishedAt, alsoTaxonomies: canUseMine ? ['MINE'] : undefined, withoutMiddle: true, onSelectTaxonomy: next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY'), showPreferenceActions: sheet === 'MINE', stockCountLabel: formatStockCountLabel(shownCount, totalCount), sectionOrder: SECTION_ORDER }}
     />
   )
 }

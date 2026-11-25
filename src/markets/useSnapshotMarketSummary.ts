@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
-import { useOverseasPreviewIndex } from '@/hooks/useOverseasPreviewIndex'
+import { useSnapshotMarketIndex } from '@/markets/useSnapshotMarketIndex'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { SNAPSHOT_MARKETS } from '@/markets/snapshotMarkets'
@@ -38,7 +38,7 @@ export function useSnapshotMarketSummary(market: OverseasMarket): OverseasSummar
     if (!categories.data || !classifications.data || !shownQuotes || !snap || !stocks || !names.data) return []
     return buildJapanTree(stocks, categories.data, classifications.data, names.data, shownQuotes.quotes, snap)
   }, [categories.data, classifications.data, shownQuotes, names.data, stocks])
-  const index = useOverseasPreviewIndex(market, snapshotTime, liveSnapshotTime, rangeStart)
+  const index = useSnapshotMarketIndex(market, snapshotTime, liveSnapshotTime, rangeStart)
   const required = [quotes, categories, classifications, names, ...(bundledStocks === null ? [listed] : [])]
   return {
     market,

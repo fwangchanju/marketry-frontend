@@ -1,3 +1,4 @@
+import { closeChangeRate } from '@/utils/indexChange'
 import SummaryScreen from '@/components/SummaryScreen'
 import type { MarketIndexBar, MarketScreenData } from '@/markets/marketContract'
 import { SECTOR_KOREA } from '@/utils/customRoutes'
@@ -5,7 +6,6 @@ import { useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
-import SettingsPanel, { SettingsPanelGroup, SettingsMarketValueSection, SettingsExcludeSection, SettingsColorSection, SettingsStrongIndustryColorSection } from '@/components/SettingsPanel'
 import { getMarketIndexHistory } from '@/api/marketSummary'
 import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
@@ -91,9 +91,10 @@ export default function KoreaSummary() {
         const base = rows.find(row => row.market === overview.market && row.snapshotTime.slice(0, 10) === baseDate)
         if (!base) return []
         const baseValue = rangePreviousDay ? base.indexValue : base.indexValue - base.changeValue
-        if (baseValue <= 0) return []
+        const changeRate = closeChangeRate(baseValue, overview.indexValue)
+        if (changeRate === null) return []
         const changeValue = overview.indexValue - baseValue
-        return [{ date, market: overview.market, overview: { ...overview, changeValue, changeRate: changeValue / baseValue * 100 } }]
+        return [{ date, market: overview.market, overview: { ...overview, changeValue, changeRate } }]
       })
     },
     staleTime: 60_000,
@@ -182,22 +183,20 @@ export default function KoreaSummary() {
       market={marketData}
       menu={summaryMenu}
       taxonomy={settingsModalProps.taxonomy}
-      filters={{ excludedSectorIds, excludedMarketValueTiers }}
-      colors={{ colorScale, strongIndustryColor, legendSwatches: settingsModalProps.legendSwatches }}
+      filters={{
+        valueRange: { tiers: settingsModalProps.tiers, minIndex: settingsModalProps.tierRangeMinIndex, maxIndex: settingsModalProps.tierRangeMaxIndex, setRange: settingsModalProps.onChangeTierRange, excluded: excludedMarketValueTiers },
+        sectorExclusion: { enabled: settingsModalProps.sectorFilterEnabled, toggle: settingsModalProps.onToggleSectorFilter, excludedIds: excludedSectorIds, rows: settingsModalProps.excludedSectors, remove: settingsModalProps.onRemoveExcludedSector, suspendedStockCount: settingsModalProps.suspendedStockCount },
+      }}
+      colors={{
+        colorScale,
+        strongIndustryColor,
+        legendSwatches: settingsModalProps.legendSwatches,
+        scaleSection: { ...settingsModalProps, colorEditorProps: colorEditorPanelProps, fixed: settingsModalProps.taxonomy !== 'MINE' },
+        strongSection: { color: strongIndustryColor, onChange: onChangeStrongIndustryColor, fixed: settingsModalProps.taxonomy !== 'MINE' },
+      }}
       mapPath={marketRoute('/map', market)}
       onSelectIndex={handleSelectIndex}
-      settings={controls => (
-        <SettingsPanel pageLabel="Summary" tabStorageName="Home" {...settingsModalProps} {...controls} stockCountLabel={stockCountLabel} taxonomyAtBottom snapshotTime={data?.taxonomyUpdatedAt}>
-          <SettingsPanelGroup section="composition">
-            <SettingsMarketValueSection {...settingsModalProps} showDivider={false} />
-            <SettingsExcludeSection {...settingsModalProps} />
-          </SettingsPanelGroup>
-          <SettingsPanelGroup section="colors">
-            <SettingsColorSection {...settingsModalProps} colorEditorProps={colorEditorPanelProps} fixed={settingsModalProps.taxonomy !== 'MINE'} />
-            <SettingsStrongIndustryColorSection color={strongIndustryColor} onChange={onChangeStrongIndustryColor} fixed={settingsModalProps.taxonomy !== 'MINE'} />
-          </SettingsPanelGroup>
-        </SettingsPanel>
-      )}
+      panel={{ tabStorageName: 'Home', ...settingsModalProps, stockCountLabel, snapshotTime: data?.taxonomyUpdatedAt }}
     />
   )
 }
