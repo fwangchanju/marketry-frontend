@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { usePinToVisibleBottom } from '@/hooks/usePinToVisibleBottom'
+import { phoneViewport } from '@/utils/phoneViewport'
 import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 
 // 폰 지도 하단 설정 줄. 업종 지도 설정 줄(MobileMarketSummaryPage)과 같은 클래스·구조·열림 애니메이션·끌어서 여닫기를 쓴다.
@@ -45,6 +47,9 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
   const [layoutReady, setLayoutReady] = useState(false)
   const [height, setHeight] = useState(0)
   const [dragHeight, setDragHeight] = useState<number | null>(null)
+  // 화면을 확대해도 설정 줄은 같은 크기로 보이는 화면 아래에 둔다(2026-11-25 사용자 결정).
+  const sectionRef = useRef<HTMLElement>(null)
+  usePinToVisibleBottom(sectionRef)
   const contentRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<Drag | null>(null)
   const suppressClickRef = useRef(false)
@@ -84,7 +89,8 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
   const onHandleMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const drag = dragRef.current
     if (!drag) return
-    const delta = drag.y - event.clientY
+    // 확대한 화면에서는 손가락이 움직인 만큼(보이는 px) 열리도록 배율을 곱한다.
+    const delta = (drag.y - event.clientY) * phoneViewport().scale
     if (Math.abs(delta) > 5) drag.moved = true
     if (drag.moved) setDragHeight(Math.max(0, Math.min(drag.max, drag.start + delta)))
   }
@@ -92,7 +98,7 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
     const drag = dragRef.current
     if (!drag) return
     if (drag.moved) {
-      commitOpen(drag.start + drag.y - event.clientY > drag.max / 2, drag.max)
+      commitOpen(drag.start + (drag.y - event.clientY) * phoneViewport().scale > drag.max / 2, drag.max)
       suppressClickRef.current = true
     }
     dragRef.current = null
@@ -104,7 +110,7 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
   }
   const shownHeight = dragHeight ?? (open ? height : 0)
   return (
-    <section aria-label="설정" role="region" className="relative z-10 mx-1 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
+    <section ref={sectionRef} aria-label="설정" role="region" className="relative z-10 mx-1 shrink-0 rounded-t-[16px] rounded-b-none border-t border-ui-border bg-ui-panel shadow-[0_-6px_24px_rgba(0,0,0,0.25)]">
       <div className="relative h-[24px]">
         <button
           type="button"

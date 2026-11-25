@@ -2,6 +2,7 @@ import KindBadge from '@/components/KindBadge'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { appConfirm } from '@/utils/appDialogBus'
+import { phoneViewport } from '@/utils/phoneViewport'
 import { PHONE_POPUP_SCALE } from '@/utils/phonePopupScale'
 
 export interface PopupContent {
@@ -63,12 +64,11 @@ const POPUP_GAP = 2
 // 커서 이동 팝업과 마우스 사이의 간격(오른쪽·아래).
 const POINTER_GAP = 14
 const POPUP_MARGIN = 8
-// 폰 팝업은 보이는 화면 중앙에서 조금 위에 둔다(2026-11-25 사용자 결정). 화면 높이 비율이라 기기 크기에 따라 함께 조정된다.
-const PHONE_POPUP_LIFT_RATIO = 0.1
-// 폰 팝업은 종목·업종, 시장, 내용 길이, 화면 확대와 관계없이 늘 같은 크기다(2026-11-25 사용자 결정).
-// 높이는 줄이 가장 많은 업종 팝업(제목 + 5줄)에 맞춘 값이다. 아래 값에 PHONE_POPUP_SCALE을 곱한 크기로 보인다.
+// 폰 팝업의 윗변은 줄 수와 관계없이 보이는 화면 높이의 이 비율에서 시작한다(2026-11-25 사용자 결정). 줄이 많으면 아래로만 길어진다.
+const PHONE_POPUP_TOP_RATIO = 0.27
+// 폰 팝업의 너비는 종목·업종, 시장, 내용 길이, 화면 확대와 관계없이 늘 같다. 높이는 내용 줄 수를 따른다(2026-11-25 사용자 결정).
+// 이 값에 PHONE_POPUP_SCALE을 곱한 너비로 보인다.
 const PHONE_POPUP_WIDTH = 200
-const PHONE_POPUP_HEIGHT = 132
 const POPUP_BACKGROUND = 'var(--ui-popup)'
 
 interface PointerBounds {
@@ -97,35 +97,20 @@ function placeNearPointer(el: HTMLElement, point: { x: number; y: number }, boun
   el.style.visibility = 'visible'
 }
 
-// 폰에서 실제로 보이는 화면 영역. 두 손가락으로 화면을 확대·이동하면 window.innerWidth/innerHeight는 그대로지만
-// visualViewport의 크기와 시작점이 바뀐다. 팝업은 이 영역 안에 들어와야 보인다.
-// pageLeft/pageTop은 문서 좌표라 absolute로 붙이는 폰 팝업과 같은 기준을 쓴다. 없는 브라우저는 스크롤+오프셋으로 대신한다.
-function phoneViewport() {
-  const vv = window.visualViewport
-  return {
-    left: vv?.pageLeft ?? window.scrollX + (vv?.offsetLeft ?? 0),
-    top: vv?.pageTop ?? window.scrollY + (vv?.offsetTop ?? 0),
-    width: vv?.width ?? window.innerWidth,
-    height: vv?.height ?? window.innerHeight,
-    scale: vv?.scale ?? 1,
-  }
-}
-
-// 폰 팝업을 보이는 화면 중앙에서 조금 위에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
+// 폰 팝업을 가로 가운데, 정해진 윗변 위치에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
 // 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
 function placePhonePopup(el: HTMLElement) {
   const view = phoneViewport()
   const zoom = Math.max(view.scale, 0.1)
   // 화면에 실제로 보이는 px로 크기·위치를 정한 뒤 확대 배율로 나눈다. 여백도 같이 나눠야 확대할수록 자리가 줄지 않는다.
-  // 크기를 재지 않고 고정값을 써서 내용과 브라우저 측정 차이가 끼어들지 않는다.
+  // 너비는 고정값, 높이는 화면 확대·transform의 영향을 받지 않는 offsetHeight를 쓴다.
   const screenWidth = view.width * zoom
   const screenHeight = view.height * zoom
   const scale = Math.min(PHONE_POPUP_SCALE, (screenWidth - POPUP_MARGIN * 2) / PHONE_POPUP_WIDTH)
   const width = PHONE_POPUP_WIDTH * scale
-  const height = PHONE_POPUP_HEIGHT * scale
+  const height = el.offsetHeight * scale
   const left = (screenWidth - width) / 2
-  const centerTop = (screenHeight - height) / 2 - screenHeight * PHONE_POPUP_LIFT_RATIO
-  const top = Math.max(POPUP_MARGIN, Math.min(centerTop, screenHeight - height - POPUP_MARGIN))
+  const top = Math.max(POPUP_MARGIN, Math.min(screenHeight * PHONE_POPUP_TOP_RATIO, screenHeight - height - POPUP_MARGIN))
   el.style.transform = `scale(${scale / zoom})`
   el.style.left = `${view.left + left / zoom}px`
   el.style.top = `${view.top + top / zoom}px`
@@ -162,7 +147,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     const el = elRef.current
     if (!el) return
     if (phoneEnlarged) {
-      // 폰에서는 누린 칸 옆이 아니라 보이는 화면 중앙에서 10% 위에 띄운다.
+      // 폰에서는 누린 칸 옆이 아니라 가로 가운데, 정해진 윗변 위치에 띄운다.
       placePhonePopup(el)
       return
     }
@@ -211,7 +196,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     if (el) placePhonePopup(el)
   })
 
-  // 팝업이 열려 있는 동안 창 크기·화면 확대·화면 이동이 바뀌면 가운데·툴바 아래 자리를 다시 잡는다.
+  // 팝업이 열려 있는 동안 창 크기·화면 확대·화면 이동이 바뀌면 자리를 다시 잡는다.
   // popup 상태는 그대로라 위 레이아웃 효과가 다시 실행되지 않으므로 별도로 듣는다. PC 팝업은 예전 동작을 유지한다.
   useLayoutEffect(() => {
     if (!phoneEnlarged) return
@@ -259,7 +244,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible ${phoneEnlarged ? 'absolute z-[70] box-border cursor-pointer overflow-hidden' : 'fixed z-[9999] w-max break-words'} select-none border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        className={`invisible ${phoneEnlarged ? 'absolute z-[70] box-border cursor-pointer' : 'fixed z-[9999] w-max break-words'} select-none border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
         onPointerDown={phoneEnlarged ? () => { pressedRef.current = true } : undefined}
         onClickCapture={phoneEnlarged ? event => {
           const pressed = pressedRef.current
@@ -277,7 +262,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
           // 공통 배율을 그 위에 곱하면 PC(16·14px)보다 여전히 작으므로, 원래 크기로 되돌린 뒤 배율을 적용한다.
           // 브라우저의 글자 자동 확대도 끈다. 고정 크기 안에서 줄이 바뀌지 않아야 한다.
           ...(phoneEnlarged
-            ? { width: PHONE_POPUP_WIDTH, height: PHONE_POPUP_HEIGHT, fontSize: '16px', transformOrigin: 'top left', textSizeAdjust: '100%', WebkitTextSizeAdjust: '100%' }
+            ? { width: PHONE_POPUP_WIDTH, fontSize: '16px', transformOrigin: 'top left', textSizeAdjust: '100%', WebkitTextSizeAdjust: '100%' }
             : { maxWidth }),
         }}
       >
