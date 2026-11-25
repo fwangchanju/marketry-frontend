@@ -470,6 +470,7 @@ export default function MapPage() {
     return (
       <>
         <PhoneMapShell
+          zoomMode="pinch"
           onSwipe={direction => navigate(direction === 'next' ? marketRoute('/summary', market) : marketRoute('/graph', market))}
           toolbar={mapToolbarNode}
           topBar={<MobileTopBar title="종목 지도" titleTo={marketRoute('/summary', market)} titleLabel="업종 지도로 이동" />}

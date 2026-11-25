@@ -1,0 +1,73 @@
+import { useCallback, useState, type RefObject } from 'react'
+import { type PopupContent, type PopupState } from '@/components/Popup'
+import { toJoEok, toPctSigned, toVolume } from '@/utils/format'
+
+// 업종 지도·종목 지도 폰 팝업의 공통 상태. 한국과 해외가 같은 PC용 Popup을 같은 규칙으로 띄운다.
+// 칸 데이터가 조금 달라도 이 훅이 받는 값만 맞추면 행·토글·위치 계산은 한 곳에서 관리된다.
+export interface PhoneMapPopupStock {
+  key: string
+  name: string
+  changeRate: number
+  currentPrice: number
+  marketValue: number
+}
+
+export interface PhoneMapPopupSector {
+  key: string
+  name: string
+  changeRate: number
+  marketValue: number
+  simpleAvg?: number | null
+  advancers?: number
+  decliners?: number
+  unchanged?: number
+}
+
+export function usePhoneMapInfoPopup({ mapBoundsRef, locationKey }: { mapBoundsRef?: RefObject<HTMLElement | null>; locationKey?: string } = {}) {
+  const [popup, setPopup] = useState<PopupState | null>(null)
+  // 화면 이동(스와이프·뒤로가기) 뒤에는 팝업을 닫는다. 해외 화면은 주소 키로, 한국은 선택·전환에서 직접 닫는다.
+  const [lastLocationKey, setLastLocationKey] = useState(locationKey)
+  if (locationKey !== undefined && locationKey !== lastLocationKey) {
+    setLastLocationKey(locationKey)
+    setPopup(null)
+  }
+
+  const close = useCallback(() => setPopup(null), [])
+  const open = useCallback((content: PopupContent, target: HTMLElement) => {
+    const rect = target.getBoundingClientRect()
+    const bounds = (target.closest('[data-mobile-map-scale]') ?? mapBoundsRef?.current)?.getBoundingClientRect()
+    setPopup(current => current?.targetKey === content.targetKey ? null : {
+      ...content,
+      anchorRect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
+      mapBounds: {
+        left: bounds?.left ?? 0,
+        right: bounds?.right ?? window.innerWidth,
+        top: bounds?.top ?? 0,
+        bottom: bounds?.bottom ?? window.innerHeight,
+      },
+    })
+  }, [mapBoundsRef])
+
+  const openStockPopup = (stock: PhoneMapPopupStock, target: HTMLElement, decimalPlaces = 1) => open({
+    title: stock.name,
+    rows: [
+      `등락률: ${toPctSigned(stock.changeRate, decimalPlaces)}`,
+      `현재가: ${toVolume(stock.currentPrice)}원`,
+      `시가총액: ${toJoEok(stock.marketValue / 100_000_000)}원`,
+    ],
+    targetKey: `stock:${stock.key}`,
+  }, target)
+
+  const openSectorPopup = (sector: PhoneMapPopupSector, target: HTMLElement, decimalPlaces = 1) => open({
+    title: sector.name,
+    rows: [
+      `시총 가중: ${toPctSigned(sector.changeRate, decimalPlaces)}`,
+      ...(sector.simpleAvg === undefined ? [] : [`동일 가중: ${sector.simpleAvg === null ? '-' : toPctSigned(sector.simpleAvg, decimalPlaces)}`]),
+      `등락 종목: ▲${sector.advancers ?? 0} ▼${sector.decliners ?? 0} ■${sector.unchanged ?? 0}`,
+      `그룹 시총: ${toJoEok(sector.marketValue / 100_000_000)}원`,
+    ],
+    targetKey: `sector:${sector.key}`,
+  }, target)
+
+  return { popup, close, open, openStockPopup, openSectorPopup }
+}

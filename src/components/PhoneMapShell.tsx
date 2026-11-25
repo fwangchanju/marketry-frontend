@@ -2,7 +2,8 @@ import { cloneElement, isValidElement, useLayoutEffect, useState, type ReactNode
 import { PhoneToolbarContext } from '@/components/PhoneToolbarContext'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileMapSheet, { type MobileMapMarket } from '@/components/MobileMapSheet'
-import { useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
+import { useDisableScreenZoom, useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
+import Popup, { type PopupState } from '@/components/Popup'
 import { TOOLBAR_SIDE_GUTTER } from '@/utils/phonePathBar'
 
 // 폰 지도 공통 화면: 상단 줄 · 툴바 줄 · 가운데 판(세로 가운데 정렬, 설정 창이 열려도 판은 움직이지 않는다) · 하단 설정 줄.
@@ -13,7 +14,7 @@ const TOOLBAR_REFERENCE_WIDTH = 438
 // 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.
 const TOOLBAR_FIXED_SCALE = 0.863
 
-export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, onBeforeSwipeNavigate, nextPreview, previousPreview, allowPinchZoom = true }: {
+export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, onBeforeSwipeNavigate, nextPreview, previousPreview, zoomMode, infoPopup, onCloseInfoPopup }: {
   topBar?: ReactNode
   onSwipe?: (direction: 'next' | 'previous') => void
   // 주소가 바뀌기 직전에 해당 방향의 미리보기 판을 덮개로 남길지 정한다(종목 지도 도착 번쩍임 방지).
@@ -28,17 +29,23 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   // 넘기지 않으면 그 방향은 현재 판만 움직인다.
   nextPreview?: ReactNode
   previousPreview?: ReactNode
-  // 종목 지도는 화면 확대를 받지만 업종 지도·그룹 등락률은 막는다. 안쪽 판의 touch-action도 함께 정한다.
-  allowPinchZoom?: boolean
+  // 종목 지도는 화면 확대를 받지만 업종 지도·그룹 등락률은 막는다. 문서와 안쪽 판 설정을 여기서 함께 정한다.
+  // 기본값을 두지 않아 새 화면이 정책을 빠뜨리면 컴파일에서 막힌다.
+  zoomMode: 'pinch' | 'blocked'
+  // 업종 지도 폰 팝업 — 공통 훅이 만든 상태를 받아 여기서 한 번만 렌더한다.
+  infoPopup?: PopupState | null
+  onCloseInfoPopup?: () => void
 }) {
   const [scale, setScale] = useState(TOOLBAR_FIXED_SCALE)
+  const zoomBlocked = zoomMode === 'blocked'
+  useDisableScreenZoom(zoomBlocked)
 
   const swipe = useMobilePageSwipe(
     Boolean(onSwipe),
     () => onSwipe?.('next'),
     () => onSwipe?.('previous'),
     onBeforeSwipeNavigate,
-    allowPinchZoom
+    !zoomBlocked
   )
 
   // 화면을 읽지 않고 창 폭과 기준 폭으로만 배율을 정한다. 로딩 중 툴바 내용이 바뀌어도 재측정·재배치가 없다.
@@ -97,6 +104,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
         </div>
       </div>
       <MobileMapSheet current={current} boxSize={boxSize} onChangeBoxSize={onChangeBoxSize} />
+      {infoPopup && <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={onCloseInfoPopup ?? (() => {})} phoneEnlarged />}
     </div>
   )
 }

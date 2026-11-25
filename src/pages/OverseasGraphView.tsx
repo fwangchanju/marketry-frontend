@@ -16,7 +16,6 @@ import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { captureSwipeArrivalOverlay } from '@/utils/mobileSwipeArrivalOverlay'
 import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
-import { useDisableScreenZoom } from '@/hooks/useMobilePageSwipe'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
 import PathBar from '@/components/PathBar'
@@ -77,9 +76,8 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
   const mapPath = overseasRoute('/map', market)
   const summaryPath = overseasRoute('/summary', market)
   // 폰에서는 그래프 한 장을 5:8 판에 맞춰 보여 준다. 상단 줄·툴바 줄·하단 설정 줄은 세 시장이 같은 틀을 쓴다.
+  // 화면 확대 차단은 공통 셸(PhoneMapShell)이 zoomMode로 관리한다.
   const isPhoneMapFrame = useIsNarrowScreen()
-  // 폰 그룹 등락률에서는 화면 확대를 받지 않는다(한국·일본·미국 공통). PC는 그대로다.
-  useDisableScreenZoom(isPhoneMapFrame)
   const phoneFrameScale = window.innerWidth / SUMMARY_CAPTURE_FRAME_WIDTH
   const [storedMobileBoxSizeRatio, onChangeMobileBoxSizeRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
   const boxSizeMarketCapRatio = normalizeMobileBoxSizeRatio(storedMobileBoxSizeRatio)
@@ -315,7 +313,7 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     )
     return (
       <PhoneMapShell
-        allowPinchZoom={false}
+        zoomMode="blocked"
         onSwipe={direction => navigate(direction === 'next' ? mapPath : summaryPath)}
         onBeforeSwipeNavigate={direction => { if (direction === 'next') captureSwipeArrivalOverlay(mapPreviewRef.current) }}
         toolbar={graphToolbarNode}

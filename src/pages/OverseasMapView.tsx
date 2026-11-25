@@ -313,6 +313,7 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     return (
       <>
         <PhoneMapShell
+          zoomMode="pinch"
           onSwipe={direction => navigate(direction === 'next' ? summaryPath : graphPath)}
           toolbar={overseasToolbarNode}
           topBar={<MobileTopBar title="종목 지도" titleTo={summaryPath} titleLabel="업종 지도로 이동" />}
