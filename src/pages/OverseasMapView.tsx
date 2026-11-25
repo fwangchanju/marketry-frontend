@@ -3,6 +3,7 @@ import MobileTopBar from '@/components/MobileTopBar'
 import MobileSectorMap, { type MobileSectorMapItem } from '@/components/MobileSectorMap'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
+import PhoneSectorMapFrame from '@/components/PhoneSectorMapFrame'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
@@ -283,11 +284,9 @@ export default function OverseasMapView({ source }: { source: OverseasMapSource 
     <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">{isLoading ? '불러오는 중입니다.' : isError ? '데이터를 불러오지 못했습니다.' : '이 날짜에는 표시할 데이터가 없습니다.'}</div>
   )
   const sectorPreview = (
-    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
-      <div className="flex h-full min-h-0 flex-col bg-ui-background">
-        <MobileSectorMap items={sectorPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={preferences.decimalPlaces} />
-      </div>
-    </div>
+    <PhoneSectorMapFrame scale={phoneFrameScale} crumbs={[{ key: 'market', label: label, current: true }]}>
+      <MobileSectorMap items={sectorPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={preferences.decimalPlaces} />
+    </PhoneSectorMapFrame>
   )
   // 종목 지도에서 그룹 등락률 쪽(오른쪽 스와이프)으로 갈 때 왼쪽에서 따라올 미리보기. 한국 종목 지도와 같은 판·경로 줄을 쓴다.
   const graphPreviewItems: MobileGraphItem[] = sectorPreviewItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))

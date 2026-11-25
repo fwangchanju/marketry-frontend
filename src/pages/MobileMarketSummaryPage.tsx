@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import MobileTopBar from '@/components/MobileTopBar'
+import PhoneSectorMapFrame from '@/components/PhoneSectorMapFrame'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { usePhoneMapInfoPopup } from '@/hooks/usePhoneMapInfoPopup'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
@@ -344,7 +345,7 @@ export default function MobileMarketSummaryPage({ mode }: { mode: 'sector' | 'gr
     ...(mid && (!isGraph || graphEntryOffset < 2) ? [{ key: 'mid', label: mid.sectorName, go: selectedStocks ? () => { setSelectedStocks(null); setViewMode('sector') } : null }] : []),
     ...(stockCategoryName ? [{ key: 'stock', label: stockCategoryName, go: null }] : []),
   ]
-  // 종목 지도·그룹 등락률에서 쓰는 경로 줄이다. 업종 지도(PhoneMapShell 분기)에는 넣지 않는다.
+  // 업종 지도와 그룹 등락률이 같은 경로 줄을 쓴다.
   // 폰 판 안에서만 맨 앞 막대를 위 툴바 첫 배지 왼쪽에 맞춘다(세로는 그대로).
   const pathBarLeftShift = phonePathBarLeftShift(4)
   const pathNav = (
@@ -576,18 +577,25 @@ export default function MobileMarketSummaryPage({ mode }: { mode: 'sector' | 'gr
       : isLoading ? <div className="flex h-full items-center justify-center"><Spinner /></div>
         : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>
           : marketItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 업종이 없습니다.</p>
-            : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface p-1"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={() => undefined} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>
+            : <div className="relative flex h-full min-h-0 flex-col bg-ui-surface"><MobileSectorMap items={mapItems} colorScale={colorScale} onSelect={() => undefined} decimalPlaces={MOBILE_DECIMAL_PLACES} /></div>
 
-  // 스와이프 자체는 공통 셸이 맡는다. 종목 지도는 도착지와 같은 8px 판, 나머지는 이 화면과 같은 4px 판으로 그린다.
+  // 스와이프 자체는 공통 셸이 맡는다. 종목 지도는 도착지와 같은 8px 판, 업종 지도는 공통 업종 지도 판, 그룹 등락률은 이 화면과 같은 4px 판으로 그린다.
   const frameStyle = { width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${frameScale})`, transformOrigin: 'top left' } as const
   const swipePreview = (direction: 'next' | 'previous') => {
     const targetMode = swipeTarget(direction)
     if (targetMode === 'stock') return renderSwipePreview(targetMode)
+    if (targetMode === 'sector') {
+      return (
+        <PhoneSectorMapFrame scale={frameScale} crumbs={[{ key: 'market', label: marketLabel, current: true }]}>
+          {renderSwipePreview(targetMode)}
+        </PhoneSectorMapFrame>
+      )
+    }
     return (
       <div className="flex flex-col" style={frameStyle}>
         <div className="relative min-h-0 flex-1 overflow-hidden p-1">
           <div className="flex h-full flex-col">
-            {targetMode === 'graph' && renderPathNav()}
+            {renderPathNav()}
             <div className="min-h-0 flex-1">{renderSwipePreview(targetMode)}</div>
           </div>
         </div>
@@ -641,7 +649,7 @@ export default function MobileMarketSummaryPage({ mode }: { mode: 'sector' | 'gr
       >
         <div className="absolute inset-0 p-1">
         <div className="flex h-full flex-col">
-        {isGraph && renderPathNav()}
+        {(isGraph || !isLoading) && renderPathNav()}
         <div className="min-h-0 flex-1">
         {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetchHeatmap} /></div>

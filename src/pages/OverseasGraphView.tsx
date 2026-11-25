@@ -16,6 +16,7 @@ import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { captureSwipeArrivalOverlay } from '@/utils/mobileSwipeArrivalOverlay'
 import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
+import PhoneSectorMapFrame from '@/components/PhoneSectorMapFrame'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
 import PathBar from '@/components/PathBar'
@@ -281,11 +282,9 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     return source.map((item, index) => ({ ...item, layoutValue: weights[index] }))
   }, [exclusionTree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers, boxSizeMarketCapRatio])
   const summaryPreview = (
-    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
-      <div className="flex h-full min-h-0 flex-col bg-ui-background">
-        <MobileSectorMap items={summaryPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={1} />
-      </div>
-    </div>
+    <PhoneSectorMapFrame scale={phoneFrameScale} crumbs={[{ key: 'market', label: label, current: true }]}>
+      <MobileSectorMap items={summaryPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={1} />
+    </PhoneSectorMapFrame>
   )
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
