@@ -65,6 +65,10 @@ const POINTER_GAP = 14
 const POPUP_MARGIN = 8
 // 폰 팝업은 보이는 화면 중앙에서 조금 위에 둔다(2026-11-25 사용자 결정). 화면 높이 비율이라 기기 크기에 따라 함께 조정된다.
 const PHONE_POPUP_LIFT_RATIO = 0.1
+// 폰 팝업은 종목·업종, 시장, 내용 길이, 화면 확대와 관계없이 늘 같은 크기다(2026-11-25 사용자 결정).
+// 높이는 줄이 가장 많은 업종 팝업(제목 + 5줄)에 맞춘 값이다. 아래 값에 PHONE_POPUP_SCALE을 곱한 크기로 보인다.
+const PHONE_POPUP_WIDTH = 200
+const PHONE_POPUP_HEIGHT = 132
 const POPUP_BACKGROUND = 'var(--ui-popup)'
 
 interface PointerBounds {
@@ -111,18 +115,20 @@ function phoneViewport() {
 // 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
 function placePhonePopup(el: HTMLElement) {
   const view = phoneViewport()
-  // 화면을 확대하면 브라우저가 페이지 전체를 키우므로, 팝업 배율에서 그 배율을 나눠 보이는 크기를 일정하게 유지한다.
-  const scale = PHONE_POPUP_SCALE / Math.max(view.scale, 0.1)
-  el.style.transform = `scale(${scale})`
-  el.style.maxWidth = `${Math.max(1, (view.width - POPUP_MARGIN * 2) / scale)}px`
-  const { width, height } = el.getBoundingClientRect()
-  const minLeft = view.left + POPUP_MARGIN
-  const maxLeft = Math.max(minLeft, view.left + view.width - width - POPUP_MARGIN)
-  const minTop = view.top + POPUP_MARGIN
-  const maxTop = Math.max(minTop, view.top + view.height - height - POPUP_MARGIN)
-  el.style.left = `${Math.min(Math.max(view.left + (view.width - width) / 2, minLeft), maxLeft)}px`
-  const centerTop = view.top + (view.height - height) / 2 - view.height * PHONE_POPUP_LIFT_RATIO
-  el.style.top = `${Math.min(Math.max(centerTop, minTop), maxTop)}px`
+  const zoom = Math.max(view.scale, 0.1)
+  // 화면에 실제로 보이는 px로 크기·위치를 정한 뒤 확대 배율로 나눈다. 여백도 같이 나눠야 확대할수록 자리가 줄지 않는다.
+  // 크기를 재지 않고 고정값을 써서 내용과 브라우저 측정 차이가 끼어들지 않는다.
+  const screenWidth = view.width * zoom
+  const screenHeight = view.height * zoom
+  const scale = Math.min(PHONE_POPUP_SCALE, (screenWidth - POPUP_MARGIN * 2) / PHONE_POPUP_WIDTH)
+  const width = PHONE_POPUP_WIDTH * scale
+  const height = PHONE_POPUP_HEIGHT * scale
+  const left = (screenWidth - width) / 2
+  const centerTop = (screenHeight - height) / 2 - screenHeight * PHONE_POPUP_LIFT_RATIO
+  const top = Math.max(POPUP_MARGIN, Math.min(centerTop, screenHeight - height - POPUP_MARGIN))
+  el.style.transform = `scale(${scale / zoom})`
+  el.style.left = `${view.left + left / zoom}px`
+  el.style.top = `${view.top + top / zoom}px`
   el.style.visibility = 'visible'
 }
 
@@ -144,10 +150,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
   }, [popup])
   const minLeft = Math.max(POPUP_MARGIN, popup.mapBounds.left + POPUP_MARGIN)
   const maxRight = Math.min(window.innerWidth - POPUP_MARGIN, popup.mapBounds.right - POPUP_MARGIN)
-  // transform은 레이아웃 폭을 바꾸지 않고 그린 크기만 키운다. 지도 경계 안에 들어가도록
-  // 최대 폭은 배율로 나눠 둔다(아래 위치 계산은 getBoundingClientRect의 실제 그린 크기를 쓴다).
-  const scale = phoneEnlarged ? PHONE_POPUP_SCALE : 1
-  const maxWidth = Math.max(1, (maxRight - minLeft) / scale)
+  const maxWidth = Math.max(1, maxRight - minLeft)
   const minTop = Math.max(POPUP_MARGIN, popup.mapBounds.top + POPUP_MARGIN)
   const maxBottom = Math.min(window.innerHeight - POPUP_MARGIN, popup.mapBounds.bottom - POPUP_MARGIN)
   const pointer = popup.pointer
@@ -160,7 +163,6 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     if (!el) return
     if (phoneEnlarged) {
       // 폰에서는 누린 칸 옆이 아니라 보이는 화면 중앙에서 10% 위에 띄운다.
-      // transform(공통 배율)이 적용된 실제 그린 크기로 맞춘다(transformOrigin이 top left라 그대로 쓴다).
       placePhonePopup(el)
       return
     }
@@ -202,7 +204,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     el.style.visibility = 'visible'
   }, [popup, pointer, minLeft, maxRight, minTop, maxBottom, phoneEnlarged])
 
-  // React 렌더가 style을 다시 쓸 때 폰 배율·최대 폭이 되돌아가므로 매 렌더마다 다시 맞춘다.
+  // 렌더 사이에 화면 확대·이동이 바뀌었을 수 있어 매 렌더마다 다시 맞춘다.
   useLayoutEffect(() => {
     if (!phoneEnlarged) return
     const el = elRef.current
@@ -257,7 +259,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible ${phoneEnlarged ? 'absolute z-[70] cursor-pointer' : 'fixed z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        className={`invisible ${phoneEnlarged ? 'absolute z-[70] box-border cursor-pointer overflow-hidden' : 'fixed z-[9999] w-max break-words'} select-none border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
         onPointerDown={phoneEnlarged ? () => { pressedRef.current = true } : undefined}
         onClickCapture={phoneEnlarged ? event => {
           const pressed = pressedRef.current
@@ -270,24 +272,26 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
         // 폰에서는 팝업을 누르면 닫는다(길게 누르기 전의 모바일 동작 유지).
         onClick={phoneEnlarged ? onClose : undefined}
         style={{
-          maxWidth,
           backgroundColor: POPUP_BACKGROUND,
           // 폰은 루트 글자 크기가 80%라 rem 기반 text-base·text-sm이 12.8·11.2px로 줄어든다.
           // 공통 배율을 그 위에 곱하면 PC(16·14px)보다 여전히 작으므로, 원래 크기로 되돌린 뒤 배율을 적용한다.
-          ...(phoneEnlarged ? { fontSize: '16px', transformOrigin: 'top left' } : {}),
+          // 브라우저의 글자 자동 확대도 끈다. 고정 크기 안에서 줄이 바뀌지 않아야 한다.
+          ...(phoneEnlarged
+            ? { width: PHONE_POPUP_WIDTH, height: PHONE_POPUP_HEIGHT, fontSize: '16px', transformOrigin: 'top left', textSizeAdjust: '100%', WebkitTextSizeAdjust: '100%' }
+            : { maxWidth }),
         }}
       >
         <div className="flex items-center justify-between gap-3 font-bold">
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             <KindBadge kind={isSectorPopup ? '업종' : '종목'} />
-            <span>{popup.title}</span>
+            <span className={phoneEnlarged ? 'min-w-0 truncate' : undefined}>{popup.title}</span>
           </div>
           {excludeSector && (
             <button
               type="button"
               aria-label={`${excludeSector.name} 제외`}
               data-hint="업종 제외"
-              className="flex h-6 w-6 items-center justify-center rounded-md border-0 bg-ui-selection p-0 text-ui-surface outline-none transition-colors hover:bg-ui-control-hover"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-0 bg-ui-selection p-0 text-ui-surface outline-none transition-colors hover:bg-ui-control-hover"
               onClick={async () => {
                 // 확인 창이 뜨는 동안 우클릭 팝업은 먼저 닫는다(두 창이 겹쳐 보이지 않게).
                 onClose()
@@ -305,7 +309,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
               type="button"
               aria-label={`${chartStock.name} 차트`}
               data-hint="종목 차트"
-              className="flex h-6 w-6 items-center justify-center rounded-md border-0 bg-ui-selection p-0 text-ui-surface outline-none transition-colors hover:bg-ui-control-hover"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-0 bg-ui-selection p-0 text-ui-surface outline-none transition-colors hover:bg-ui-control-hover"
               onClick={() => {
                 onClose()
                 onOpenChart?.(chartStock)
@@ -317,7 +321,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
             </button>
           )}
         </div>
-        <div className="pl-1 text-sm tabular-nums" style={phoneEnlarged ? { fontSize: '14px' } : undefined}>
+        <div className={`pl-1 text-sm tabular-nums ${phoneEnlarged ? 'whitespace-nowrap' : ''}`} style={phoneEnlarged ? { fontSize: '14px' } : undefined}>
           {popup.rows.map((row, index) => (
             <div key={index}>{row}</div>
           ))}
