@@ -18,7 +18,7 @@ import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
 
 // 화면별로 코드를 나눠 받는다. 모바일 서머리·지도는 첫 화면이라 바로 번들에 두고,
 // PC 전용·관리자·글 페이지는 해당 주소를 열 때만 내려받는다.
-const MarketSummaryPage = lazy(() => import('./pages/MarketSummaryPage'))
+const KoreaSummary = lazy(() => import('./markets/KoreaSummary'))
 const MapPage = lazy(() => import('./pages/MapPage'))
 const GraphPage = lazy(() => import('./pages/GraphPage'))
 const CustomPage = lazy(() => import('./pages/CustomPage'))
@@ -108,7 +108,7 @@ function ResponsiveSummaryPage() {
   const isNarrow = useIsNarrowScreen()
   // 해외 서머리와 같게, 폰의 서머리 주소는 자기 화면(업종 지도)을 연다. 모바일 홈은 / 따로 있다.
   if (isNarrow) return <MobileMarketSummaryPage mode="sector" />
-  return <MarketSummaryPage />
+  return <KoreaSummary />
 }
 
 function ResponsiveGraphPage() {

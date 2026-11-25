@@ -16,23 +16,26 @@ export type MarketIndexBar =
 export type MarketDataState =
   | { status: 'loading' }
   | { status: 'error'; retry: () => void }
-  | { status: 'ready'; isRefreshing: boolean; refresh: () => void }
+  | { status: 'ready' }
 
 export interface MarketPeriod {
   snapshotTime: string | null
   liveSnapshotTime: string | null
-  selectedTime: string | null
+  // 지난 날짜나 기간을 보는 중인지.
+  isPast: boolean
   rangeStart: string | null
   excludedStocks: { stockCode: string; stockName: string }[]
-  select: (time: string | null) => void
-  selectRange: (start: string, end: string) => void
+  clear: () => void
+  // 날짜 고르기. 달력 모양은 같고 날짜 목록만 시장마다 다르다.
+  picker: ReactNode
 }
 
 // 나라마다 있고 없는 기능. 없으면 null을 넘긴다. 화면은 시장 이름이 아니라 이 값이 있는지만 본다.
 export interface MarketFeatures {
   subMarkets: { id: string; label: string }[] | null
-  afterHours: ReactNode | null
-  timeWindowFilter: ReactNode | null
+  afterHours: boolean
+  // 정해진 시간대에 종목을 거르는 동안의 안내.
+  timeWindowNotice: ReactNode | null
   exchangeTaxonomy: boolean
   intradayDelta: boolean
 }
@@ -41,15 +44,18 @@ export interface MarketScreenData {
   id: MarketId
   label: string
   currencyUnit: CurrencyUnit
+  // 장 상태(와 있으면 등락률 기준). 지난 날짜·기간에는 화면이 숨긴다.
   session: ReactNode
   tree: HeatmapSectorNode[]
-  totalStockCount: number
   // 빈 목록으로 빠져나가지 못하게 하나 이상을 요구한다.
   indexBars: [MarketIndexBar, ...MarketIndexBar[]]
   state: MarketDataState
+  // 상태와 관계없이 새로고침 칸이 쓰는 값.
+  refresh: { run: () => void; isRunning: boolean; help: string }
   period: MarketPeriod
   isMineEmpty: boolean
-  settingPrefix: string
+  // 내 기준을 만들러 가는 주소(그 시장의 SECTOR).
+  mineSetupPath: string
   features: MarketFeatures
 }
 

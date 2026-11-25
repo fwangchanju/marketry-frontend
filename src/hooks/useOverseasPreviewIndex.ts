@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+import type { MarketScreenData } from '@/markets/marketContract'
 import { useMarketIndexCloses } from '@/markets/useMarketQuotes'
 import { useJapanIndexQuotes } from '@/hooks/useJapanIndexQuotes'
 import type { OverseasMarket } from '@/utils/markets'
@@ -29,12 +31,18 @@ export function useOverseasPreviewIndex(market: OverseasMarket, snapshotTime: st
       })
     : usaDay && usaStartDay && usaCloses.data ? indexChangeRate(usaCloses.data, usaStartDay, usaDay) : null
 
+  const key = market === 'JAPAN' ? 'market-index:NIKKEI225' : 'market-index:SP500'
+  const name = market === 'JAPAN' ? NIKKEI_LABEL : overseasMarketInfo('USA').badgeLabel
+  // 값이 없어도 막대 자리를 이유와 함께 넘긴다(빠뜨린 것과 정말 없는 것을 구분한다).
+  const indexBars = useMemo<MarketScreenData['indexBars']>(
+    () => [value === null ? { key, name, value: null, reason: '이 날짜의 지수 종가가 없습니다.' } : { key, name, value }],
+    [key, name, value],
+  )
+  const used = market === 'JAPAN' ? [japanCloses, japanQuotes] : [usaCloses]
   return {
-    graphIndexItems: value === null ? [] : [{
-      key: market === 'JAPAN' ? 'market-index:NIKKEI225' : 'market-index:SP500',
-      name: market === 'JAPAN' ? NIKKEI_LABEL : overseasMarketInfo('USA').badgeLabel,
-      value,
-    }],
-    isFetching: japanCloses.isFetching || japanQuotes.isFetching || usaCloses.isFetching,
+    graphIndexItems: value === null ? [] : [{ key, name, value }],
+    indexBars,
+    isLoading: used.some(query => query.isLoading),
+    isFetching: used.some(query => query.isFetching),
   }
 }

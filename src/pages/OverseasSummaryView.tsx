@@ -1,3 +1,6 @@
+import SummaryScreen from '@/components/SummaryScreen'
+import SummaryToolbar from '@/components/SummaryToolbar'
+import type { MarketScreenData } from '@/markets/marketContract'
 import MarketDatePicker from '@/components/MarketDatePicker'
 import { useMemo, useRef, useState } from 'react'
 import { useOverseasPublishedAt } from '@/hooks/useOverseasPublishedAt'
@@ -7,44 +10,17 @@ import { useOverseasSectorExclusion } from '@/hooks/useOverseasSectorExclusion'
 import { buildExcludedSectorRows, countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { formatStockCountLabel } from '@/utils/stockCountLabel'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
-import DisclaimerFooter from '@/components/DisclaimerFooter'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
-import NavBar from '@/components/NavBar'
-import NavSubBar from '@/components/NavSubBar'
 import { marketMenu } from '@/utils/marketMenu'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
-import { frameBadgeStyle } from '@/utils/frameBadge'
-import { HiddenSummaryCaptureFrames, SortableSummaryScreenFrames } from '@/components/SummaryFrame'
-import { useSummaryFrameOrder } from '@/hooks/useSummaryFrameOrder'
-import { useScreenshotShare } from '@/hooks/useScreenshotShare'
-import { GROUP_CHANGE_FRAME, MARKET_MAP_FRAME, frameCaptureOptionsFor } from '@/utils/summaryFrames'
 import { SUMMARY_CAPTURE_FRAME_WIDTH, MAP_MOBILE_CAPTURE_FRAME_HEIGHT } from '@/utils/screenshotToPreview'
-import NavBarPageActions from '@/components/NavBarPageActions'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection, type SettingsPanelSectionId } from '@/components/SettingsPanel'
-import { useSettingsPanelSide } from '@/hooks/useSettingsPanelSide'
-import ScreenshotModal from '@/components/ScreenshotModal'
-import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
-import OverviewMap, { type OverviewMapItem } from '@/components/OverviewMap'
-import EmptyMessage, { EMPTY_DATA_MESSAGE } from '@/components/EmptyMessage'
-import RankBars from '@/components/RankBars'
-import ToolbarModeText from '@/components/ToolbarModeText'
-import { ClockIcon } from '@/components/icons/AppIcons'
-import AnimatedClockLabel from '@/components/AnimatedClockLabel'
 import Toolbar, { TOOLBAR_SESSION_SLOT_WIDTH } from '@/components/Toolbar'
-import ChangeRateBar from '@/components/ChangeRateBar'
-import TaxonomyBadge from '@/components/TaxonomyBadge'
-import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
-import ToolbarChip from '@/components/ToolbarChip'
-import ToolbarPinButton from '@/components/ToolbarPinButton'
-import RangeExcludedStocks from '@/components/RangeExcludedStocks'
-import { PageRefreshButton } from '@/components/NavBarPageActions'
-import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
-import { buildRankChart } from '@/utils/rankChart'
 import { collectAtDepth } from '@/utils/sectorDepth'
-import { summarizeSector } from '@/utils/sectorAverage'
+import { collectItems, summarizeSector } from '@/utils/sectorAverage'
 import { overseasRoute } from '@/utils/markets'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
@@ -91,7 +67,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const { sheet, canUseMine, selectSheet } = useOverseasSheet()
   // 시장마다 다른 부분(데이터 받기·날짜 선택 칩·장 상태 칩·갱신 안내·고정 색상·종목 수)은 source로 받고, 화면 구성은 모든 해외 시장이 같다.
   const {
-    market, label, tree, snapshotTime, liveSnapshotTime, selectedTime, rangeStart, select, selectRange, rangeExcludedStocks,
+    market, label, tree, snapshotTime, liveSnapshotTime, rangeStart, select, selectRange, rangeExcludedStocks,
     isLoading, isFetching, refetchAll, graphIndexItems, sessionChip, refreshHelp, fixed, tabStorageName, settingPrefix, currencyUnit, totalCount,
   } = source
   const publishedAt = useOverseasPublishedAt(market, sheet)
@@ -100,7 +76,6 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const sectorExclusion = useOverseasSectorExclusion(settingPrefix)
   const colorSettings = useOverseasColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: 'mine' })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
-  const badgeStyleProps = frameBadgeStyle(sheet, strongIndustryColor)
   const navigate = useNavigate()
   // 폰에서는 업종 지도 한 장을 5:8 판에 맞춰 보여 준다. 상단 줄·툴바 줄·하단 설정 줄은 세 시장이 같은 틀을 쓴다.
   const isPhoneMapFrame = useIsNarrowScreen()
@@ -109,8 +84,6 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const [storedMobileBoxSizeRatio, onChangeMobileBoxSizeRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
   const boxSizeMarketCapRatio = normalizeMobileBoxSizeRatio(storedMobileBoxSizeRatio)
   useCarriedBoxSize(onChangeMobileBoxSizeRatio)
-  // 업종을 누르면 같은 시장의 지도 화면에서 그 업종을 연다(PC 서머리의 기존 동작).
-  const handleSelectSector = (sectorName: string) => navigate(`${overseasRoute('/map', market)}?sector=${encodeURIComponent(sectorName)}`)
 
   // 폰에서는 한국처럼 주소를 그대로 두고 업종을 한 단계씩 연다. 단계는 기록에만 남겨 뒤로가기가 된다.
   const location = useLocation()
@@ -190,19 +163,13 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     navigate(location.pathname + location.search, { state: { phoneSectorPath: next } })
   }
 
-  // 업종 지도 항목과 그룹 등락률 막대 — 지도 화면과 같이 한 단계(대분류)만 쓴다.
-  const overview = useMemo(() => {
-    const items: OverviewMapItem[] = []
-    for (const { node, pathKey } of collectAtDepth(tree, 1, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, true, '')) {
-      const summary = summarizeSector(node, tierRange.excludedMarketValueTiers)
-      if (!summary) continue
-      items.push({ key: pathKey, name: node.sectorName, marketValue: summary.marketValue, changeRate: summary.weightedAvg, simpleAvg: summary.simpleAvg, advancers: summary.advancers, decliners: summary.decliners, unchanged: summary.unchanged })
-    }
-    const chart = buildRankChart(items.map(item => ({ key: item.key, sectorName: item.name, value: item.changeRate, isReference: false })))
-    return { items, chart }
-  }, [tree, tierRange.excludedMarketValueTiers, sectorExclusion.excludedSectorIds])
+  // 그룹 등락률 미리보기의 막대 — 한 단계(대분류)만 쓴다.
+  const majorSectors = useMemo(() => collectAtDepth(tree, 1, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers).flatMap(({ node, pathKey }) => {
+    const summary = summarizeSector(node, tierRange.excludedMarketValueTiers)
+    return summary ? [{ key: pathKey, name: node.sectorName, value: summary.weightedAvg }] : []
+  }), [tree, tierRange.excludedMarketValueTiers, sectorExclusion.excludedSectorIds])
   // 업종 지도에서 그룹 등락률로 스와이프·상단 버튼 이동할 때 따라올 미리보기.
-  const graphPreviewItems: MobileGraphItem[] = overview.items.map(item => ({ key: item.key, name: item.name, value: item.changeRate }))
+  const graphPreviewItems: MobileGraphItem[] = [...majorSectors]
   for (const index of graphIndexItems) graphPreviewItems.push({ ...index, reference: true })
   const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers])
   // 지도·그래프와 같은 목록(KOREA 아래 KOSPI·KOSDAQ, JAPAN, USA) — 일본·미국 서머리는 특별 회원·관리자만 열 수 있다.
@@ -210,69 +177,34 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const isPastSnapshot = rangeStart !== null || (snapshotTime !== null && liveSnapshotTime !== null && snapshotTime !== liveSnapshotTime)
   const holidayColor = resolveHeatmapColor(8, colorScale)
 
-  // 화면 캡처·전체화면 — 지도 화면과 같은 방식이다.
-  const screenshotRef = useRef<HTMLDivElement>(null)
   // 종목 지도로 넘어갈 때 덮개로 남길 미리보기 판.
   const mapPreviewRef = useRef<HTMLDivElement>(null)
-  const [isSettingsOpen, setIsSettingsOpen] = useLocalPersistedState('settings-panel-open', true)
-  const { isOnLeft, toggleSide, rowRef } = useSettingsPanelSide()
-  const { target: screenshotTarget, isOpen: isShareOpen, open: openScreenshot, close: closeScreenshot, copy, copyLabel, isCopying } = useScreenshotShare()
-  const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   const hasData = tree.length > 0
 
-  const toolbarContent = (
-    <>
-    <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-      <ToolbarModeText page="SUMMARY" label={label} showChevron menu={menu} />
-      <ToolbarChip bare tone={isPastSnapshot ? 'text-[var(--brand)]' : 'text-ui-white'}>
-        <MarketDatePicker market={market} snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={holidayColor} onSelect={select} onSelectRange={selectRange} />
-      </ToolbarChip>
-      {isPastSnapshot && (
-        <ToolbarChip bare>
-          <ToolbarPinButton pinned={isPastSnapshot} onUnpin={() => select(null)} />
-        </ToolbarChip>
-      )}
-      {rangeStart !== null && (
-        <ToolbarChip bare tone="text-ui-muted">
-          <RangeExcludedStocks excludedStocks={rangeExcludedStocks} />
-        </ToolbarChip>
-      )}
-      {!rangeStart && (selectedTime === null || selectedTime.slice(0, 10) === liveSnapshotTime?.slice(0, 10)) && (
-        <>
-          <ToolbarChip bare>
-            <PageRefreshButton cell onRefresh={refetchAll} isRefreshing={isFetching} helpText={refreshHelp} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}>
-              <AnimatedClockLabel snapshotTime={snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} />
-            </PageRefreshButton>
-          </ToolbarChip>
-          <span className="flex shrink-0" style={{ width: TOOLBAR_SESSION_SLOT_WIDTH }}>{sessionChip}</span>
-        </>
-      )}
-    </div>
-    {!isPhoneMapFrame && (
-      <div className={`${FONT_BAR_MODE_STATUS} flex min-w-0 items-center justify-end text-ui-muted`}>
-        <TaxonomyBadge taxonomy={sheet} strongIndustryColor={strongIndustryColor} />
-      </div>
-    )}
-    </>
-  )
-  // PC 화면과 폰 화면이 같은 툴바 원본을 쓴다(폰에서는 툴바 줄을 판 밖에 둔다).
-  const summaryToolbarNode = <Toolbar>{toolbarContent}</Toolbar>
-  // 서머리의 두 틀(제목·캡처 이름·내용) — 화면과 틀별 캡처판이 같은 내용을 쓴다.
-  const summaryFrames = [
-              { ...MARKET_MAP_FRAME, children: (
-                <div className="relative flex min-h-0 flex-1 flex-col">
-                  {hasData ? <OverviewMap items={overview.items} colorScale={colorScale} large decimalPlaces={1} onSelect={handleSelectSector} /> : isLoading ? <p className="text-ui-muted">불러오는 중</p> : <EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" />}
-                </div>
-              ) },
-              { ...GROUP_CHANGE_FRAME, children: (
-                <div className="relative flex min-h-0 flex-1 flex-col">
-                  {hasData ? <RankBars chart={overview.chart} highlightColor={strongIndustryColor} colorScale={colorScale} decimalPlaces={1} onSelectSector={handleSelectSector} /> : null}
-                </div>
-              ) },
-  ]
-  const { frameSensors, safeSummaryFrameOrder, handleFrameDragEnd, orderFrames } = useSummaryFrameOrder()
-  const orderedSummaryFrames = orderFrames(summaryFrames)
-  const fixedCaptureRef = useRef<HTMLDivElement>(null)
+  const { isLoading: isBaseLoading, isError, isIndexLoading, indexBars, intradayDelta } = source
+  const marketData: MarketScreenData = {
+    id: market,
+    label,
+    currencyUnit,
+    tree,
+    indexBars,
+    state: isBaseLoading || isIndexLoading ? { status: 'loading' } : isError ? { status: 'error', retry: () => { void refetchAll() } } : { status: 'ready' },
+    refresh: { run: () => { void refetchAll() }, isRunning: isFetching, help: refreshHelp },
+    session: <span className="flex shrink-0" style={{ width: TOOLBAR_SESSION_SLOT_WIDTH }}>{sessionChip}</span>,
+    period: {
+      snapshotTime,
+      liveSnapshotTime,
+      isPast: isPastSnapshot,
+      rangeStart,
+      excludedStocks: rangeExcludedStocks,
+      clear: () => select(null),
+      picker: <MarketDatePicker market={market} snapshotTime={snapshotTime} liveTime={liveSnapshotTime} rangeStart={rangeStart} holidayColor={holidayColor} onSelect={select} onSelectRange={selectRange} />,
+    },
+    isMineEmpty: sheet === 'MINE' && tree.every(node => collectItems(node).length === 0),
+    mineSetupPath: overseasRoute('/sector', market),
+    features: { subMarkets: null, afterHours: false, timeWindowNotice: null, exchangeTaxonomy: false, intradayDelta },
+  }
+  const summaryToolbarNode = <Toolbar><SummaryToolbar market={marketData} menu={menu} right={null} /></Toolbar>
   // 실제 그래프 판과 같은 4px 여백을 써서, 미는 동안 업종 지도와 그래프의 경로 줄이 같은 높이에 놓인다.
   const graphPreviewPathBarLeftShift = phonePathBarLeftShift(4)
   const graphPreview = (
@@ -365,22 +297,16 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     )
   }
   return (
-    <div className="flex h-screen min-h-0 select-none flex-col bg-ui-background">
-      <NavBar />
-      <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} />} />
-      <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
-        <div ref={screenshotRef} data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col">
-          {summaryToolbarNode}
-          <div className="flex min-h-0 flex-1">
-            {/* 캡처 복제본에서는 가로 스크롤 래퍼가 스크롤바 자리만큼 아래·오른쪽을 잘라 내서, 캡처 중에는 스크롤을 풀어 둔다. */}
-            <div className={`flex min-h-0 min-w-0 flex-1 bg-ui-background ${isShareOpen ? 'overflow-visible' : 'overflow-x-auto'}`}>
-              <SortableSummaryScreenFrames frames={orderedSummaryFrames} order={safeSummaryFrameOrder} sensors={frameSensors} onDragEnd={handleFrameDragEnd} {...badgeStyleProps} />
-            </div>
-          </div>
-          <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />
-        </div>
-        <div className={`flex shrink-0 pt-[4px] ${isOnLeft ? 'order-first' : ''}`}>
-        <SettingsPanel pageLabel="Summary" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={formatStockCountLabel(shownCount, totalCount)} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} isOnLeft={isOnLeft} onToggleSide={toggleSide} sectionOrder={SECTION_ORDER}>
+    <SummaryScreen
+      market={marketData}
+      menu={menu}
+      taxonomy={sheet}
+      filters={{ excludedSectorIds: sectorExclusion.excludedSectorIds, excludedMarketValueTiers: tierRange.excludedMarketValueTiers }}
+      colors={{ colorScale, strongIndustryColor, legendSwatches }}
+      mapPath={overseasRoute('/map', market)}
+      onSelectIndex={null}
+      settings={controls => (
+        <SettingsPanel pageLabel="Summary" tabStorageName={tabStorageName} taxonomyAtBottom taxonomy={sheet} onlyTaxonomy="MARKETRY" snapshotTime={publishedAt} alsoTaxonomies={canUseMine ? ['MINE'] : undefined} withoutMiddle onSelectTaxonomy={next => selectSheet(next === 'MINE' ? 'MINE' : 'MARKETRY')} showPreferenceActions={sheet === 'MINE'} stockCountLabel={formatStockCountLabel(shownCount, totalCount)} {...controls} sectionOrder={SECTION_ORDER}>
           <SettingsPanelGroup section="composition">
             <SettingsMarketValueSection isCustom={false} tiers={tierRange.tiers} tierRangeMinIndex={tierRange.minIndex} tierRangeMaxIndex={tierRange.maxIndex} onChangeTierRange={tierRange.setRange} showDivider={false} currencyUnit={currencyUnit} />
             <SettingsExcludeSection sectorFilterEnabled={sectorExclusion.enabled} onToggleSectorFilter={sectorExclusion.toggle} excludedSectors={buildExcludedSectorRows(tree, sectorExclusion.ids, tierRange.excludedMarketValueTiers)} onRemoveExcludedSector={sectorExclusion.remove} />
@@ -391,15 +317,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
             <SettingsStrongIndustryColorSection {...colorSettings.strongSectionProps} />
           </SettingsPanelGroup>
         </SettingsPanel>
-        </div>
-      </div>
-      {isShareOpen && (
-        <HiddenSummaryCaptureFrames captureRef={fixedCaptureRef} frameCount={summaryFrames.length} frames={orderedSummaryFrames} toolbar={<Toolbar className="summary-capture-toolbar">{toolbarContent}</Toolbar>} frameWidth={SUMMARY_CAPTURE_FRAME_WIDTH} {...badgeStyleProps} />
       )}
-      {isShareOpen && <ScreenshotModal onClose={closeScreenshot} onCopy={copy} copyLabel={copyLabel} isCopying={isCopying} screenshotTarget={screenshotTarget} captureReady={!isLoading}
-          fixedSummaryCaptureRef={fixedCaptureRef}
-          frameCaptureOptions={frameCaptureOptionsFor(safeSummaryFrameOrder)}
-        />}
-    </div>
+    />
   )
 }
