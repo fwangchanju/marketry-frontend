@@ -42,7 +42,7 @@ const LINE_COLOR = '#2a2a2a'
 const CROSSHAIR_COLOR = '#6b7280'
 const AXIS_TEXT_COLOR = '#b0b8c1'
 const VOLUME_PANE_HEIGHT = 110
-// 아래 날짜 축의 높이(라이브러리 기본 글자 크기 기준) — 출처 배지 자리를 거래량 칸 위쪽에 맞출 때 쓴다.
+// 아래 날짜 축의 높이(라이브러리 기본 글자 크기 기준).
 const TIME_AXIS_HEIGHT = 28
 // 마지막 봉과 오른쪽 가격축 사이에 비워 둘 봉 칸 수.
 const RIGHT_OFFSET_BARS = 5
@@ -115,8 +115,9 @@ function movingAverage(candles: StockDailyCandle[], days: number) {
   return points
 }
 
-function changeRate(current: StockDailyCandle, previous: StockDailyCandle | undefined): number | null {
-  return previous && previous.close !== 0 ? ((current.close - previous.close) / previous.close) * 100 : null
+// 앞 봉의 종가에 견준 등락률.
+function changeRate(price: number, previous: StockDailyCandle | undefined): number | null {
+  return previous && previous.close !== 0 ? ((price - previous.close) / previous.close) * 100 : null
 }
 
 // 날짜 뒤에 요일을 괄호로 붙인다(예: 2026-08-12 (수)).
@@ -154,6 +155,8 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   const hiddenAveragesRef = useRef(hiddenAverages)
   // 날짜 배지 자리 — 커서의 가로 위치와 차트 크기.
   const [hoverAt, setHoverAt] = useState<{ x: number; width: number; height: number } | null>(null)
+  // 거래량 칸의 위쪽 끝과 막대 바닥선 — 칸 높이가 화면 크기를 따라 바뀌므로 실제로 그려진 자리를 잰다.
+  const [volumeArea, setVolumeArea] = useState<{ top: number; base: number } | null>(null)
   // 오른쪽 가격축 위에 직접 그리는 배지 — 커서 가격(위·아래 칸)과 현재가. top은 차트 영역 위에서부터의 거리, left는 축 글자 시작 자리.
   const [priceBadges, setPriceBadges] = useState<{ textLeft: number; cursor: PriceBadge | null; last: PriceBadge | null }>({ textLeft: 0, cursor: null, last: null })
   const { data, isLoading, isError, refetch } = useQuery({
@@ -224,6 +227,8 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
     let cursorBadge: PriceBadge | null = null
     // 현재가 배지 자리는 화면을 끌거나 크기가 바뀌면 달라지므로 그때마다 다시 잰다.
     const placeBadges = () => {
+      const volumeTop = chart.paneSize(0).height + 1
+      setVolumeArea({ top: volumeTop, base: volumeTop + (volume.priceToCoordinate(0) ?? chart.paneSize(1).height) })
       const lastY = candles.priceToCoordinate(lastBar.close)
       setPriceBadges({
         textLeft: container.clientWidth - chart.priceScale('right').width() + PRICE_TEXT_INSET,
@@ -277,13 +282,11 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   if (!data || data.length === 0) return <div className="relative flex-1"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
 
   const latest = data[data.length - 1]
-  const latestRate = changeRate(latest, data[data.length - 2])
+  const latestRate = changeRate(latest.close, data[data.length - 2])
   const latestDiff = data.length > 1 ? latest.close - data[data.length - 2].close : 0
 
   const shownIndex = hoverIndex !== null && hoverIndex < bars.length ? hoverIndex : bars.length - 1
   const shownBar = bars[shownIndex]
-  const shownRate = shownBar ? changeRate(shownBar, bars[shownIndex - 1]) : null
-
   return (
     <div className="flex min-h-0 flex-1 flex-col tabular-nums" data-capture-ignore>
       {/* 차트를 넓게 보도록 종목명·현재가·등락률과 버튼을 한 줄에 모은다(2026-11-20 사용자 결정). */}
@@ -308,7 +311,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
                 type="button"
                 aria-pressed={interval === option.value}
                 onClick={() => setInterval(option.value)}
-                className={`cursor-pointer rounded-md border-0 px-2.5 py-1 text-xs font-semibold ${interval === option.value ? 'bg-[#e5e7eb] text-[#0a0a0a]' : 'bg-ui-panel text-ui-text hover:bg-ui-control'}`}
+                className={`cursor-pointer rounded-md border-0 px-2.5 py-1 text-xs font-semibold ${interval === option.value ? 'bg-ui-control text-ui-white' : 'bg-transparent text-ui-text hover:bg-ui-panel'}`}
               >
                 {option.label}
               </button>
@@ -343,20 +346,19 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             </button>
           )}
         </div>
-        {/* 셋째 줄: 마우스를 올린 날(없으면 가장 최근 날)의 값. 차트를 가리지 않게 상자 대신 줄로 보인다(2026-11-20 사용자 결정). */}
+        {/* 셋째 줄: 마우스를 올린 날(없으면 가장 최근 날)의 값. 차트를 가리지 않게 상자 대신 줄로 보인다(2026-11-20 사용자 결정). 가격은 화폐 단위 없이 앞 봉 종가 대비 등락률을 괄호로 붙인다(2026-11-26 사용자 결정). 날짜는 아래 축 배지와 겹쳐 뺐다. 폭이 좁은 MOBILE은 두 칸씩 두 줄이다. */}
         {shownBar && (
-          <div className="flex h-4 items-center gap-3 overflow-hidden whitespace-nowrap">
-            <span className="font-semibold text-ui-white">{dateWithWeekday(shownBar.date)}</span>
-            {shownRate !== null && <span><span className="mr-1 text-ui-muted">등락률</span><span className={changeClass(shownRate)}>{shownRate > 0 ? '+' : ''}{shownRate.toFixed(2)}%</span></span>}
-            {[
-              ['시가', priceText(market, shownBar.open)],
-              ['고가', priceText(market, shownBar.high)],
-              ['저가', priceText(market, shownBar.low)],
-            ].map(([label, value]) => (
-              <span key={label}><span className="mr-1 text-ui-muted">{label}</span><span className="text-ui-text">{value}</span></span>
-            ))}
-            <span><span className="mr-1 text-ui-muted">종가</span><span className={changeClass(shownRate)}>{priceText(market, shownBar.close)}</span></span>
-            <span><span className="mr-1 text-ui-muted">거래량</span><span className="text-ui-text">{shownBar.provisional && shownBar.volume === 0 ? '-' : shownBar.volume.toLocaleString('ko-KR')}</span>{shownBar.provisional && <span className="ml-1 text-ui-muted">(장중 임시)</span>}</span>
+          <div className="grid min-h-4 w-fit grid-cols-2 items-center gap-x-3 gap-y-1 whitespace-nowrap min-[769px]:flex">
+            {([['시가', shownBar.open], ['고가', shownBar.high], ['저가', shownBar.low], ['종가', shownBar.close]] as const).map(([label, value]) => {
+              const rate = changeRate(value, bars[shownIndex - 1])
+              return (
+                <span key={label}>
+                  <span className="mr-1 text-ui-muted">{label}</span>
+                  <span className="text-ui-text">{axisPriceText(market, value)}</span>
+                  {rate !== null && <span className={`ml-1 ${changeClass(rate)}`}>({rate > 0 ? '+' : ''}{rate.toFixed(2)}%)</span>}
+                </span>
+              )
+            })}
           </div>
         )}
       </div>
@@ -384,6 +386,20 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             {dateWithWeekday(shownBar.date)}
           </div>
         )}
+        {/* 거래량 — 거래량 칸 왼쪽 위에 고정한다. 마우스를 올린 날(없으면 가장 최근 날)의 값이다(2026-11-26 사용자 결정). */}
+        {shownBar && volumeArea && (
+          <div
+            data-chart-volume
+            className="pointer-events-none absolute left-3 z-10 text-xs leading-4 whitespace-nowrap"
+            style={{ top: volumeArea.top + 4 }}
+          >
+            <span className="mr-1 text-ui-muted">거래량</span>
+            {shownBar.provisional && shownBar.volume === 0
+              ? <span className="text-ui-muted">(집계 전)</span>
+              : <span className="text-ui-text">{shownBar.volume.toLocaleString('ko-KR')}</span>}
+            {shownBar.provisional && shownBar.volume > 0 && <span className="ml-1 text-ui-muted">(오늘 미포함)</span>}
+          </div>
+        )}
         {/* TradingView 출처 표시 — 차트 라이브러리 사용 조건이라 지우지 않는다. 기본 로고 대신 둥근 배지로 보이고, 누르면 TradingView에서 이 종목 차트를 연다(2026-11-20 사용자 결정). */}
         <a
           href={tradingViewUrl(market, stockCode)}
@@ -391,8 +407,8 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
           rel="noopener noreferrer"
           aria-label="TradingView에서 이 종목 차트 열기"
           data-hint="TradingView에서 이 종목 차트 열기"
-          // 거래량 칸의 왼쪽 위에 둔다(아래 시간축 높이 + 거래량 칸 높이 기준, 2026-11-20 사용자 결정).
-          style={{ bottom: TIME_AXIS_HEIGHT + VOLUME_PANE_HEIGHT - 40 }}
+          // 거래량 칸의 왼쪽 아래, 막대 바닥선 바로 위에 막대와 겹쳐 둔다(왼쪽 위는 거래량 글자 자리, 2026-11-26 사용자 결정).
+          style={volumeArea ? { top: volumeArea.base - 2, transform: 'translateY(-100%)' } : { bottom: TIME_AXIS_HEIGHT + 14 }}
           className="absolute left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-[#3a3a3a] bg-[#141414] text-ui-white hover:border-[#5a5a5a]"
         >
           <svg aria-hidden="true" width="24" height="13" viewBox="0 0 35 19" fill="currentColor">

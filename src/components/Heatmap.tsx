@@ -349,12 +349,12 @@ export default function Heatmap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomOutRequestDepth])
 
-  // 종목 박스를 누르거나 더블클릭해서 차트를 연다 — 설정한 방식과 같은 동작일 때만.
+  // 종목 박스를 누르거나 더블클릭해서 차트를 연다 — 설정한 방식과 같은 동작일 때만. 차트에는 약칭이 아니라 팝업과 같은 원래 이름을 보낸다.
   const openStockChartFromBox = (target: EventTarget, action: StockChartTrigger) => {
     if (stockChartTrigger !== action || !onOpenStockChart || stockMoveEnabled) return
     const box = (target as HTMLElement).closest<HTMLElement>('[data-stock-code]')
     if (!box?.dataset.stockCode) return
-    onOpenStockChart({ code: box.dataset.stockCode, name: box.dataset.stockName ?? box.dataset.stockCode })
+    onOpenStockChart({ code: box.dataset.stockCode, name: box.dataset.stockFullName ?? box.dataset.stockCode })
   }
 
   return (
