@@ -23,15 +23,9 @@ export interface PhoneMapPopupSector {
   unchanged?: number
 }
 
-export function usePhoneMapInfoPopup({ mapBoundsRef, locationKey }: { mapBoundsRef?: RefObject<HTMLElement | null>; locationKey?: string } = {}) {
+export function usePhoneMapInfoPopup({ mapBoundsRef }: { mapBoundsRef?: RefObject<HTMLElement | null> } = {}) {
   const [popup, setPopup] = useState<PopupState | null>(null)
-  // 화면 이동(스와이프·뒤로가기) 뒤에는 팝업을 닫는다. 해외 화면은 주소 키로, 한국은 선택·전환에서 직접 닫는다.
-  const [lastLocationKey, setLastLocationKey] = useState(locationKey)
-  if (locationKey !== undefined && locationKey !== lastLocationKey) {
-    setLastLocationKey(locationKey)
-    setPopup(null)
-  }
-
+  // 화면 이동으로 닫기는 공통 셸(PhoneMapShell)이 navigationKey로 처리한다.
   const close = useCallback(() => setPopup(null), [])
   const open = useCallback((content: PopupContent, target: HTMLElement) => {
     const rect = target.getBoundingClientRect()
