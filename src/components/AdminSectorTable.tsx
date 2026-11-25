@@ -4,10 +4,9 @@ import { createPortal } from 'react-dom'
 import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragMoveEvent, type DragOverEvent } from '@dnd-kit/core'
 import type { SectorItem } from '@/types/api'
 import { useCreateSector, useRenameSector, useReparentSector } from '@/hooks/useHeatmapCustom'
-import { useSectorDeleteFlow } from '@/hooks/useSectorDeleteFlow'
 import { sectorCollisionDetection } from '@/utils/dndCollision'
 import { toCount, toJoEokDecimal } from '@/utils/format'
-import { PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorDeleteMessage, getProtectedSectorHint, isProtectedSectorName, placeProtectedSectorsLast } from '@/utils/protectedSector'
+import { PROTECTED_SECTOR_TEXT_CLASS, getProtectedSectorDeleteMessage, isProtectedSectorName, placeProtectedSectorsLast } from '@/utils/protectedSector'
 import { EMPTY_SECTOR_STATS, sectorNamesByDepth, type SectorStats } from '@/utils/sectorOrder'
 import { appAlert, appConfirm } from '@/utils/appDialogBus'
 import { SearchBar, SortLabel, type SortDirection } from '@/components/ReadOnlyTaxonomySheet'
@@ -30,19 +29,26 @@ interface Props {
   onCountLabelChange?: (label: string | undefined) => void
   // 업종 번호별 시가총액 합·종목 수(지도 데이터의 전체 종목 기준) — 열의 기본 순서와 숫자 칸에 쓴다.
   sectorStats?: SectorStats
-  // 수정 권한이 없는 회원이 보는 화면이다. 끌기와 추가·이름 변경·삭제 아이콘을 숨긴다.
-  readOnly?: boolean
-  // 분류 단계 수(열 수). 기본은 대·중·소분류 세 단계다(일본·미국 모두 세 단계). 나라마다 단계가 달라지면 이 값으로 줄인다. 해외 분류(overseasActions)에서만 의미가 있다.
-  levels?: 2 | 3
-  // 해외 분류의 시가총액 화폐. 기본은 일본(엔)이고 미국은 달러다.
-  currency?: Exclude<CurrencyUnit, '원'>
-  overseasActions?: {
-    create: ReturnType<typeof useCreateSector>
-    rename: ReturnType<typeof useRenameSector>
-    reparent: ReturnType<typeof useReparentSector>
-    remove: (id: number, name: string) => void
-  }
+  // 업종을 고치는 동작. null이면 읽기 전용이라 끌기와 추가·이름 변경·삭제 아이콘을 숨긴다.
+  actions: SectorTableActions | null
+  // 시가총액 합의 화폐.
+  currency: CurrencyUnit
+  // 업종의 가장 깊은 단계(대분류=0). 예전에 만든 네 번째 단계가 있는 시장은 3이다.
+  maxDepth: number
+  // 보호 업종 이름에 올렸을 때의 설명.
+  protectedHint: (name: string) => string | undefined
 }
+
+// 시장마다 저장하는 곳이 다른 업종 편집 동작.
+export interface SectorTableActions {
+  create: ReturnType<typeof useCreateSector>['mutate']
+  rename: ReturnType<typeof useRenameSector>['mutate']
+  reparent: ReturnType<typeof useReparentSector>['mutate']
+  remove: (id: number, name: string) => void
+}
+
+const SECTOR_LEVELS = ['대분류', '중분류', '소분류'] as const
+const SECTOR_CURRENCY_SYMBOL: Record<CurrencyUnit, string> = { 원: '', 엔: ' (¥)', 달러: ' ($)' }
 
 // 업종 열의 정렬 기준 — 기본은 시가총액 합이 큰 순서이고, 아랫줄 머리글을 눌러 바꾼다(열마다 따로).
 type SectorSortKey = 'name' | 'marketValue' | 'stockCount'
@@ -56,10 +62,6 @@ const SECTOR_COLUMN_WIDTHS = ['40%', '35%', '25%'] as const
 // 두 칸이 보이면 업종명이 열 폭의 절반만 받아 말줄임표가 생기기 때문이다. 업종명 칸(절반)이 가장 긴 이름(실측 약 133px)보다 넉넉한 150px 이상이면 되는 폭이다.
 const SECTOR_COMPACT_BELOW_COLUMN_PX = 300
 const SECTOR_COMPACT_WIDTHS = ['100%'] as const
-
-// 섹터 깊이 상한(최상위=0) — 4단계(0~3)까지만 허용하고 5단계 섹터는 만들지 못하게 한다. 나중에 한 단계 더
-// 늘릴 때는 이 값만 바꾸면 추가 버튼과 드래그 이동 제한이 같이 따라간다.
-const MAX_SECTOR_DEPTH = 3
 
 // 업종 경로의 구분 표시 — 글자가 작은 '›' 대신 읽기 쉬운 '>'를 쓴다(금융 > 은행). 경로를 만들고 다시 나눌 때 같은 값을 쓴다.
 const SECTOR_PATH_SEPARATOR = ' > '
@@ -190,11 +192,8 @@ function DroppableSectorRow({
   )
 }
 
-export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, overseasActions, levels = 3, currency = '엔', readOnly = false }: Props) {
-  // 일본·미국 분류는 세 단계까지만 있다. 국내는 예전에 만든 네 번째 단계를 그대로 둔다.
-  const maxDepth = overseasActions ? levels - 1 : MAX_SECTOR_DEPTH
-  // 하위 업종을 더 만들 수 있는 가장 깊은 부모 단계. 해외 분류는 마지막에서 한 단계 위까지, 국내는 중분류까지다.
-  const addChildMaxParentDepth = overseasActions ? levels - 2 : ADD_CHILD_MAX_PARENT_DEPTH
+export default function AdminSectorTable({ sectors, settingsActionsTarget, toolbarContainer, onCountLabelChange, sectorStats = EMPTY_SECTOR_STATS, actions, currency, maxDepth, protectedHint }: Props) {
+  const readOnly = actions === null
   const [query, setQuery] = useState('')
   // 열 폭이 좁으면 시가총액 합·종목 수 칸을 숨긴다(SECTOR_COMPACT_BELOW_COLUMN_PX). 세 열이 같은 폭이라 표 전체 폭의 3분의 1로 잰다.
   const [isCompact, setIsCompact] = useState(false)
@@ -204,12 +203,12 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     sectorGridObserver.current?.disconnect()
     sectorGridObserver.current = null
     if (!element) return
-    const update = () => setIsCompact(element.clientWidth / levels < SECTOR_COMPACT_BELOW_COLUMN_PX)
+    const update = () => setIsCompact(element.clientWidth / SECTOR_LEVELS.length < SECTOR_COMPACT_BELOW_COLUMN_PX)
     const observer = new ResizeObserver(update)
     observer.observe(element)
     sectorGridObserver.current = observer
     update()
-  }, [levels])
+  }, [])
   const columnWidths = isCompact ? SECTOR_COMPACT_WIDTHS : SECTOR_COLUMN_WIDTHS
   const [sortByDepth, setSortByDepth] = useState<Record<number, SectorSort | undefined>>({})
   // 머리글 필터 목록의 보기 순서 — 가나다 순(기본) 또는 시가총액 합 순.
@@ -272,14 +271,6 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     else next.add(value)
     return { ...previous, [depth]: next }
   })
-  const domesticCreateSector = useCreateSector()
-  const domesticRenameSector = useRenameSector()
-  const { remove: domesticRemove } = useSectorDeleteFlow()
-  const domesticReparentSector = useReparentSector()
-  const createSector = overseasActions?.create ?? domesticCreateSector
-  const renameSector = overseasActions?.rename ?? domesticRenameSector
-  const remove = overseasActions?.remove ?? domesticRemove
-  const reparentSector = overseasActions?.reparent ?? domesticReparentSector
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const hasChildren = (id: number) => sectors.some(c => c.parentId === id)
@@ -304,8 +295,8 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
       !isDescendant(candidate, moved.id) &&
       candidate.id !== moved.parentId &&
       // 소분류(깊이 2) 이하에는 더 넣지 않는다 — 옮긴 뒤 가장 깊은 업종도 소분류(깊이 2)를 넘지 않아야 한다.
-      candidate.depth <= addChildMaxParentDepth &&
-      candidate.depth + 1 + subtreeHeight <= addChildMaxParentDepth + 1,
+      candidate.depth <= ADD_CHILD_MAX_PARENT_DEPTH &&
+      candidate.depth + 1 + subtreeHeight <= ADD_CHILD_MAX_PARENT_DEPTH + 1,
     )
   }
 
@@ -335,9 +326,9 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
   }
   const applyHistoryAction = (action: SectorHistoryAction, direction: 'before' | 'after') => {
     if (action.type === 'reparent') {
-      reparentSector.mutate({ id: action.sectorId, parentId: direction === 'before' ? action.fromParentId : action.toParentId }, { onSuccess: () => triggerHighlight(action.sectorId) })
+      actions?.reparent({ id: action.sectorId, parentId: direction === 'before' ? action.fromParentId : action.toParentId }, { onSuccess: () => triggerHighlight(action.sectorId) })
     } else {
-      renameSector.mutate({ id: action.sectorId, name: direction === 'before' ? action.before : action.after }, { onSuccess: () => triggerHighlight(action.sectorId) })
+      actions?.rename({ id: action.sectorId, name: direction === 'before' ? action.before : action.after }, { onSuccess: () => triggerHighlight(action.sectorId) })
     }
   }
   // 맨 위(다음 차례)부터 고른 항목까지 순서대로 처리한다 — 한 단계만 하려면 인덱스가 맨 끝이다.
@@ -396,7 +387,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     const trimmed = newName.trim()
     if (!trimmed) return
     // 서버가 거절하거나 실패하면(안내창이 뜬다) 입력했던 이름을 칸에 되돌려 다시 입력하지 않게 한다.
-    createSector.mutate({ name: trimmed, parentId: null }, {
+    actions?.create({ name: trimmed, parentId: null }, {
       onSuccess: created => triggerHighlight(created.id),
       onError: () => setNewName(trimmed),
     })
@@ -408,7 +399,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     if (parent && parent.depth >= maxDepth) return
     const trimmed = (childNameByParent[parentId] ?? '').trim()
     if (!trimmed) return
-    createSector.mutate({ name: trimmed, parentId }, {
+    actions?.create({ name: trimmed, parentId }, {
       onSuccess: created => {
         markRecentChange(created.id, '신규')
         triggerHighlight(created.id)
@@ -436,7 +427,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
     const trimmed = renameValue.trim()
     setRenamingId(null)
     if (!trimmed || trimmed === sector.name) return
-    renameSector.mutate({ id: sector.id, name: trimmed }, {
+    actions?.rename({ id: sector.id, name: trimmed }, {
       onSuccess: () => {
         triggerHighlight(sector.id)
         pushHistory({ type: 'rename', sectorId: sector.id, before: sector.name, after: trimmed })
@@ -586,7 +577,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
 
   const moveByDrag = async (dragged: SectorItem, target: SectorItem | null) => {
     if (!await appConfirm(moveMessage(dragged.name, target), { title: '업종 이동' })) return
-    reparentSector.mutate({ id: dragged.id, parentId: target ? target.id : null }, {
+    actions?.reparent({ id: dragged.id, parentId: target ? target.id : null }, {
       onSuccess: () => {
         // 보낸 업종(target)을 선택한 상태로 만들어 그 하위 목록이 열리게 하고, 새로 들어온 업종에 표시를 남긴다. 최상위로 올렸다면 그 업종 자신을 선택한다.
         const chain: SectorItem[] = []
@@ -730,7 +721,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                   >{itemNumber}</DraggableNumberBadge>
                   <button
                     type="button"
-                    data-hint={isProtectedSector(sector) ? (overseasActions ? '삭제한 분류의 종목이 이 그룹으로 옮겨집니다.' : getProtectedSectorHint(sector.name)) : undefined}
+                    data-hint={isProtectedSector(sector) ? protectedHint(sector.name) : undefined}
                     aria-expanded={expandable ? (sector.depth === 0 ? selectedMajorId === sector.id : selectedMiddleId === sector.id) : undefined}
                     className={`truncate border-0 bg-transparent p-0 text-left text-sm ${isProtectedSector(sector) ? PROTECTED_SECTOR_TEXT_CLASS : 'text-ui-white'}`}
                   >
@@ -754,7 +745,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                             void appAlert(`[${sector.name}]\n${getProtectedSectorDeleteMessage(sector.name)}`, { title: '삭제 불가' })
                             return
                           }
-                          remove(sector.id, sector.name)
+                          actions?.remove(sector.id, sector.name)
                         }}
                         className="flex h-6 w-6 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-[#BC2F2F] outline-none hover:brightness-110 focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#BC2F2F]"
                       >
@@ -773,7 +764,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
             </span>
           )}
         </td>
-        {!isCompact && <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toJoEokDecimal((stat?.marketValue ?? 0) / 100_000_000)}{overseasActions ? currencySuffix(currency) : ''}</td>}
+        {!isCompact && <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toJoEokDecimal((stat?.marketValue ?? 0) / 100_000_000)}{currencySuffix(currency)}</td>}
         {!isCompact && <td className={`py-0.5 pr-3 text-right text-sm text-ui-muted ${rowBgClass}`}>{toCount(stat?.stockCount ?? 0)}</td>}
       </DroppableSectorRow>
     )
@@ -831,11 +822,11 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
           />,
           toolbarContainer,
         )}
-        <div ref={sectorGridRef} className={`relative grid min-h-0 flex-1 ${levels === 2 ? 'grid-cols-2' : 'grid-cols-3'} overflow-hidden border border-ui-border select-none [&_input]:select-text`}>
-          {(['대분류', '중분류', '소분류'] as const).slice(0, levels).map((label, index) => (
+        <div ref={sectorGridRef} className={`relative grid min-h-0 flex-1 grid-cols-3 overflow-hidden border border-ui-border select-none [&_input]:select-text`}>
+          {SECTOR_LEVELS.map((label, index) => (
             <div key={label} className="flex min-h-0 min-w-0 flex-col">
               {(() => {
-                const headerClass = `flex shrink-0 flex-col bg-[var(--ui-panel)] text-sm font-bold shadow-[inset_0_-1px_0_var(--ui-border)] ${index < levels - 1 ? 'border-r border-ui-white/20' : ''}`
+                const headerClass = `flex shrink-0 flex-col bg-[var(--ui-panel)] text-sm font-bold shadow-[inset_0_-1px_0_var(--ui-border)] ${index < SECTOR_LEVELS.length - 1 ? 'border-r border-ui-white/20' : ''}`
                 const depth = index
                 const excluded = excludedByDepth[depth] ?? new Set<string>()
                 const { key: sortKey, direction: sortDirection } = sortByDepth[depth] ?? DEFAULT_SECTOR_SORT
@@ -884,7 +875,7 @@ export default function AdminSectorTable({ sectors, settingsActionsTarget, toolb
                 // 아랫줄 — MARKETRY·거래소 업종 표와 같은 업종 / 시가총액 합 / 종목 수 정렬 머리글.
                 const bottomRow = (
                   <div className="flex border-t border-ui-border text-ui-white" style={{ height: HEADER_HALF_PX }}>
-                    {([['name', '업종'], ['marketValue', overseasActions ? `시가총액 합 (${currency === '달러' ? '$' : '¥'})` : '시가총액 합'], ['stockCount', '종목 수']] as const).slice(0, columnWidths.length).map(([key, text], cell) => (
+                    {([['name', '업종'], ['marketValue', `시가총액 합${SECTOR_CURRENCY_SYMBOL[currency]}`], ['stockCount', '종목 수']] as const).slice(0, columnWidths.length).map(([key, text], cell) => (
                       <div key={key} className="flex items-center justify-center whitespace-nowrap" style={{ width: columnWidths[cell] }}>
                         <SortLabel label={text} active={sortKey === key && !(isSearching && depth > 0)} direction={sortDirection} onClick={() => toggleSort(depth, key)} />
                       </div>

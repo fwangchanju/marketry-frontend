@@ -11,7 +11,7 @@ import MobileNotice from './components/MobileNotice'
 import SearchMetadata from './components/SearchMetadata'
 import { marketRoute } from '@/utils/marketRoute'
 import { OVERSEAS_MARKETS, overseasRoute, type OverseasMarket } from '@/utils/markets'
-import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
+import { SECTOR_KOREA, STOCK_KOREA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
 import { isAdminSession } from './utils/adminAccess'
@@ -24,11 +24,9 @@ const KoreaMap = lazy(() => import('./markets/KoreaMap'))
 const SnapshotMap = lazy(() => import('./markets/SnapshotMap'))
 const KoreaGraph = lazy(() => import('./markets/KoreaGraph'))
 const SnapshotGraph = lazy(() => import('./markets/SnapshotGraph'))
-const CustomPage = lazy(() => import('./pages/CustomPage'))
-const JapanStockPage = lazy(() => import('./pages/JapanStockPage'))
-const JapanSectorPage = lazy(() => import('./pages/JapanSectorPage'))
-const UsaSectorPage = lazy(() => import('./pages/UsaSectorPage'))
-const UsaStockPage = lazy(() => import('./pages/UsaStockPage'))
+const KoreaSheet = lazy(() => import('./markets/KoreaSheet'))
+const SnapshotStock = lazy(() => import('./markets/SnapshotStock'))
+const SnapshotSector = lazy(() => import('./markets/SnapshotSector'))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
 const SourcePage = lazy(() => import('./pages/SourcePage'))
@@ -201,16 +199,14 @@ export default function App() {
           <Route path="/graph/kosdaq" element={<RedirectKeepingQuery to="/graph/korea/kosdaq" />} />
           <Route path="/graph/korea" element={<ResponsiveGraphPage />} />
           {/* 섹터·스톡 화면의 주소. 구글에 등록돼 있던 옛 주소 /custom/sector만 새 주소로 이동시킨다(뒤의 ?sheet=MINE 같은 값도 유지). 일본은 비공개 화면이라 옛 주소가 없다. */}
-          <Route path={SECTOR_KOREA} element={<CustomPage />} />
-          <Route path={STOCK_KOREA} element={<CustomPage />} />
+          <Route path={SECTOR_KOREA} element={<KoreaSheet />} />
+          <Route path={STOCK_KOREA} element={<KoreaSheet />} />
           <Route path="/custom/sector" element={<LegacyCustomRedirect />} />
           {/* 일본·미국 화면은 2026-11-16 공개로 바꿨다(사용자 결정). 로그인 여부와 무관하게 누구나 볼 수 있다. */}
           <Route>
-            <Route path={STOCK_JAPAN} element={<JapanStockPage />} />
-            <Route path={SECTOR_JAPAN} element={<JapanSectorPage />} />
-            <Route path={SECTOR_USA} element={<UsaSectorPage />} />
-            <Route path={STOCK_USA} element={<UsaStockPage />} />
-            {/* 해외 시장의 서머리 — 시장 목록표(markets.ts)에서 만든다. 지도·그래프·섹터·주식은 시장별 화면이라 아래에 따로 둔다(2단계에서 공통 화면으로 합칠 예정). */}
+            {/* 시장 목록표(markets.ts)에서 만드는 화면들. */}
+            {OVERSEAS_MARKETS.map(market => <Route key={`sector-${market.id}`} path={overseasRoute('/sector', market.id)} element={<SnapshotSector key={market.id} market={market.id} />} />)}
+            {OVERSEAS_MARKETS.map(market => <Route key={`stock-${market.id}`} path={overseasRoute('/stock', market.id)} element={<SnapshotStock key={market.id} market={market.id} />} />)}
             {OVERSEAS_MARKETS.map(market => <Route key={`map-${market.id}`} path={overseasRoute('/map', market.id)} element={<SnapshotMap key={market.id} market={market.id} />} />)}
             {OVERSEAS_MARKETS.map(market => <Route key={`graph-${market.id}`} path={overseasRoute('/graph', market.id)} element={<ResponsiveSnapshotGraph market={market.id} />} />)}
             {OVERSEAS_MARKETS.map(market => <Route key={market.id} path={overseasRoute('/summary', market.id)} element={<OverseasSummaryPage market={market.id} />} />)}

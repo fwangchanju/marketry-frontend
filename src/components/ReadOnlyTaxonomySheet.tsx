@@ -1,3 +1,4 @@
+import { getProtectedSectorHint } from '@/utils/protectedSector'
 import { readSettingStorage, writeSettingStorage } from '@/utils/settingsStorageGate'
 import MainAreaLoading from '@/components/MainAreaLoading'
 import AdminSectorTable from '@/components/AdminSectorTable'
@@ -252,7 +253,7 @@ function CategoryTable({ sectors, source, onCountLabelChange, toolbarContainer }
   // 거래소 모드는 번호 배지를 거래소 색으로 맞춘다(index.css의 data-sector-profile).
   return (
     <div data-sector-profile={source === 'KRX' ? 'exchange' : undefined} className="flex min-h-0 flex-1 flex-col">
-      <AdminSectorTable sectors={tree.items} sectorStats={tree.stats} readOnly onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
+      <AdminSectorTable sectors={tree.items} sectorStats={tree.stats} actions={null} currency="원" maxDepth={3} protectedHint={getProtectedSectorHint} onCountLabelChange={onCountLabelChange} toolbarContainer={toolbarContainer} />
     </div>
   )
 }

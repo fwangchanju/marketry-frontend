@@ -15,16 +15,19 @@ function confirmDelete(preview: SectorDeletePreview) {
   return appWarnConfirm(`[${preview.sectorName}]\n삭제하시겠습니까?${moveNote}`, { title: '업종 삭제' })
 }
 
+// 하위 업종이 많아도 한 줄에 들어가게 앞의 3개만 적는다.
+export function subSectorsBlockMessage(name: string, subNames: readonly string[]) {
+  const list = `${subNames.slice(0, 3).map(sub => `[${sub}]`).join(' ')}${subNames.length > 3 ? ` 외 ${subNames.length - 3}개` : ''}`
+  return `[${name}]\n하위 업종이 있어 삭제할 수 없습니다.\n하위 업종 ${list}`
+}
+
 function alertBlocked(preview: SectorDeletePreview) {
   if (preview.blockReason === 'PROTECTED') {
     appAlert(`[${preview.sectorName}]\n${getProtectedSectorDeleteMessage(preview.sectorName)}`, { title: '삭제 불가' })
     return
   }
   if (preview.blockReason === 'HAS_SUB_SECTORS') {
-    // 하위 업종이 많아도 한 줄에 들어가게 앞의 3개만 적는다.
-    const names = preview.subSectorNames
-    const list = `${names.slice(0, 3).map(name => `[${name}]`).join(' ')}${names.length > 3 ? ` 외 ${names.length - 3}개` : ''}`
-    appAlert(`[${preview.sectorName}]\n하위 업종이 있어 삭제할 수 없습니다.\n하위 업종 ${list}`, { title: '삭제 불가' })
+    appAlert(subSectorsBlockMessage(preview.sectorName, preview.subSectorNames), { title: '삭제 불가' })
     return
   }
   appAlert(`[${preview.sectorName}]\n삭제할 수 없습니다.`, { title: '삭제 불가' })
