@@ -566,6 +566,8 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
     setSelectedStocks(selected)
     setViewMode('stock')
   }
+  // 업종 경로·보기 모드·스와이프 시작을 셸에 알린다. 팝업 닫기는 셸이 이 신호로 한 곳에서 처리한다.
+  const popupNavigationKey = `${majorName ?? ''}|${midName ?? ''}|${stockSelection ? 'stock' : ''}|${viewMode}|${pageSwipePreview ? 'swipe' : ''}`
 
   // 들어간 단계 = 브라우저 기록 한 칸(PC 지도 화면과 같은 방식). 대분류·중분류·종목으로 한 단계 들어갈 때마다 칸을 쌓아서
   // 뒤로가기가 사이트를 떠나지 않고 한 단계씩 위로 올라가게 한다. 전체 화면에서 한 번 더 누르면 원래대로 이전 페이지로 나간다.
@@ -842,6 +844,7 @@ export default function MobileMarketSummaryPage({ mode = 'stock' }: { mode?: 'st
         zoomMode="blocked"
         infoPopup={infoPopup}
         onCloseInfoPopup={closeInfoPopup}
+        navigationKey={popupNavigationKey}
         topBar={
         <MobileTopBar
           title={isGraph ? '그룹 등락률' : isSectorMode ? '업종 지도' : '종목 지도'}

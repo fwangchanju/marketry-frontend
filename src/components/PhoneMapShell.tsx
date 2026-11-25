@@ -14,9 +14,11 @@ const TOOLBAR_REFERENCE_WIDTH = 438
 // 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.
 const TOOLBAR_FIXED_SCALE = 0.863
 
-export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, onBeforeSwipeNavigate, nextPreview, previousPreview, zoomMode, infoPopup, onCloseInfoPopup }: {
+export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, onBeforeSwipeNavigate, nextPreview, previousPreview, zoomMode, infoPopup, onCloseInfoPopup, navigationKey }: {
   topBar?: ReactNode
   onSwipe?: (direction: 'next' | 'previous') => void
+  // 화면 위치(업종 경로·스와이프 포함)가 바뀌면 팝업을 여기서 닫는다. 페이지마다 닫기 호출을 넣지 않는다.
+  navigationKey?: string
   // 주소가 바뀌기 직전에 해당 방향의 미리보기 판을 덮개로 남길지 정한다(종목 지도 도착 번쩍임 방지).
   onBeforeSwipeNavigate?: (direction: 'next' | 'previous') => void
   frameHeight: number
@@ -40,11 +42,21 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   const zoomBlocked = zoomMode === 'blocked'
   useDisableScreenZoom(zoomBlocked)
 
+  // 화면이 바뀌는 신호는 셸이 받아 팝업을 먼저 닫는다. 하위 업종 진입(주소 유지)과 스와이프 모두 여기를 거친다.
+  const [lastNavigationKey, setLastNavigationKey] = useState(navigationKey)
+  if (navigationKey !== lastNavigationKey) {
+    setLastNavigationKey(navigationKey)
+    onCloseInfoPopup?.()
+  }
+
   const swipe = useMobilePageSwipe(
     Boolean(onSwipe),
     () => onSwipe?.('next'),
     () => onSwipe?.('previous'),
-    onBeforeSwipeNavigate,
+    direction => {
+      onCloseInfoPopup?.()
+      onBeforeSwipeNavigate?.(direction)
+    },
     !zoomBlocked
   )
 

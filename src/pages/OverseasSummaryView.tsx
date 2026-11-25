@@ -162,8 +162,8 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     const weights = calculateSectorLayoutWeights(phoneDrillItems, boxSizeMarketCapRatio)
     return phoneDrillItems.map((item, index) => ({ ...item, layoutValue: weights[index] }))
   }, [phoneDrillItems, boxSizeMarketCapRatio])
-  // 업종·종목 칸 팝업도 한국과 같은 공통 훅을 쓴다. 같은 칸 재길게누름·화면 이동 닫기는 훅이 맡는다.
-  const { popup: infoPopup, close: closeInfoPopup, openStockPopup, openSectorPopup } = usePhoneMapInfoPopup({ locationKey: location.key })
+  // 업종·종목 칸 팝업도 한국과 같은 공통 훅을 쓴다. 화면 이동으로 닫기는 공통 셸이 navigationKey로 맡는다.
+  const { popup: infoPopup, close: closeInfoPopup, openStockPopup, openSectorPopup } = usePhoneMapInfoPopup()
   const openPhoneDrillPopup = (item: PhoneDrillItem, target: HTMLElement) => item.isStock
     ? openStockPopup({ key: item.key, name: item.name, changeRate: item.changeRate, currentPrice: item.currentPrice ?? 0, marketValue: item.marketValue }, target)
     : openSectorPopup(item, target)
@@ -325,6 +325,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
         zoomMode="blocked"
         infoPopup={infoPopup}
         onCloseInfoPopup={closeInfoPopup}
+        navigationKey={`${location.key}|${phoneSectorPath.join('>')}`}
         onSwipe={direction => navigate(direction === 'next' ? graphPath : mapPath)}
         onBeforeSwipeNavigate={direction => { if (direction === 'previous') captureSwipeArrivalOverlay(mapPreviewRef.current) }}
         toolbar={summaryToolbarNode}
