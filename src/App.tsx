@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react'
 import OverseasSummaryPage from './pages/OverseasSummaryPage'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
-import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
+import KoreaMobile from './markets/KoreaMobile'
 import MobileSummaryPage from './pages/MobileSummaryPage'
 import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
@@ -18,7 +18,7 @@ import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
 
 // 화면별로 코드를 나눠 받는다. 모바일 서머리·지도는 첫 화면이라 바로 번들에 두고,
 // PC 전용·관리자·글 페이지는 해당 주소를 열 때만 내려받는다.
-const MarketSummaryPage = lazy(() => import('./pages/MarketSummaryPage'))
+const KoreaSummary = lazy(() => import('./markets/KoreaSummary'))
 const MapPage = lazy(() => import('./pages/MapPage'))
 const GraphPage = lazy(() => import('./pages/GraphPage'))
 const CustomPage = lazy(() => import('./pages/CustomPage'))
@@ -106,17 +106,17 @@ function AdminRouteGuard() {
 
 function ResponsiveSummaryPage() {
   const isNarrow = useIsNarrowScreen()
-  // 해외 서머리와 같게, 폰의 서머리 주소는 자기 화면(업종 지도)을 연다. 모바일 홈은 / 따로 있다.
-  if (isNarrow) return <MobileMarketSummaryPage mode="sector" />
-  return <MarketSummaryPage />
+  // 해외 서머리와 같게, MOBILE의 서머리 주소는 자기 화면(업종 지도)을 연다. 모바일 홈은 / 따로 있다.
+  if (isNarrow) return <KoreaMobile mode="sector" />
+  return <KoreaSummary />
 }
 
 function ResponsiveGraphPage() {
   const isNarrow = useIsNarrowScreen()
-  return isNarrow ? <MobileMarketSummaryPage mode="graph" /> : <GraphPage />
+  return isNarrow ? <KoreaMobile mode="graph" /> : <GraphPage />
 }
 
-// 폰에서도 PC 지도 페이지를 쓴다. MapPage가 폰 화면이면 모바일 판(캡처 프레임)만 화면 폭에 맞춰 보여 준다(실험, 2026-11-21).
+// MOBILE에서도 PC 지도 페이지를 쓴다. MapPage가 MOBILE 화면이면 모바일 판(캡처 프레임)만 화면 폭에 맞춰 보여 준다(실험, 2026-11-21).
 function ResponsiveMapPage() {
   return <MapPage />
 }
@@ -132,21 +132,21 @@ function RedirectKeepingQuery({ to }: { to: string }) {
   return <Navigate to={{ pathname: to, search, hash }} replace />
 }
 
-// PC 첫 화면은 지도, 폰 첫 화면은 모바일 홈(메뉴)이다.
+// PC 첫 화면은 지도, MOBILE 첫 화면은 모바일 홈(메뉴)이다.
 function ResponsiveHomePage() {
   const isNarrow = useIsNarrowScreen()
   if (isNarrow) return <MobileSummaryPage />
   return <Navigate to="/map/korea" replace />
 }
 
-// 폰용 지도·그래프 화면은 한국만 있다. 일본·미국 지도·그래프는 PC 화면뿐이라 폰에서는 안내만 보여 준다(2026-11-19).
-// 옛 주소(/map/kospi·/map/kosdaq 등)는 한국 주소로 옮겨 가므로 폰에서도 열어 둔다.
+// MOBILE용 지도·그래프 화면은 한국만 있다. 일본·미국 지도·그래프는 PC 화면뿐이라 MOBILE에서는 안내만 보여 준다(2026-11-19).
+// 옛 주소(/map/kospi·/map/kosdaq 등)는 한국 주소로 옮겨 가므로 MOBILE에서도 열어 둔다.
 function isMobileKoreaPath(pathname: string, base: '/map' | '/graph') {
   return pathname === base || pathname === `${base}/korea` || pathname.startsWith(`${base}/korea/`) || pathname === `${base}/kospi` || pathname === `${base}/kosdaq`
 }
 
 function isMobileMarketPath(pathname: string) {
-  // 첫 화면(/)은 모바일 홈이라 폰 화면 판정보다 먼저 열어 둔다.
+  // 첫 화면(/)은 모바일 홈이라 MOBILE 화면 판정보다 먼저 열어 둔다.
   return (
     pathname === '/' ||
     pathname === '/home' ||

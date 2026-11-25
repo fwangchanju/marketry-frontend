@@ -1,16 +1,15 @@
+import { useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { getSnapshotDays } from '@/api/heatmap'
 import { heatmapKeys } from '@/hooks/queryKeys'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import ToolbarPopup from '@/components/ToolbarPopup'
-import { usePhoneToolbar } from '@/components/PhoneToolbarContext'
+import { useMobileToolbar } from '@/components/MobileToolbarContext'
 import { IconCornerDownRight } from '@tabler/icons-react'
 import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
 import { useKoreanCalendarHolidays } from '@/hooks/useKoreanCalendarHolidays'
-import { useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
-import { useUsaSnapshotTimes } from '@/hooks/useUsaQuotes'
 import { isJapanMarketClosed } from '@/utils/japanMarketCalendar'
 import { getKstDate } from '@/utils/tradingWindow'
 import Spinner from '@/components/Spinner'
@@ -27,8 +26,8 @@ const isOverseasMarket = (market: CalendarMarket) => market === 'JAPAN' || marke
 
 // 해외 시장의 스냅샷 시각 목록. 두 훅을 모두 부르고 해당 시장 것만 켠다(훅은 조건부로 부를 수 없다).
 function useOverseasSnapshotTimes(market: CalendarMarket, enabled = true) {
-  const japan = useJapanSnapshotTimes(market === 'JAPAN' && enabled)
-  const usa = useUsaSnapshotTimes(market === 'USA' && enabled)
+  const japan = useMarketSnapshotTimes('JAPAN', market === 'JAPAN' && enabled)
+  const usa = useMarketSnapshotTimes('USA', market === 'USA' && enabled)
   return market === 'USA' ? usa : japan
 }
 
@@ -427,7 +426,7 @@ const YTD_BUTTON_CLASS =
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.
 // "기간"을 켜면 이어진 두 달이 나란히 뜨고(이전·다음 달 버튼은 두 달을 함께 움직인다), 첫 번째로 누른 날이 시작, 두 번째가 종료다.
 export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSnapshotTime, onSelectSnapshotTime, onSelectRange, rangeStartTime, isPast, children, holidayColor }: Props) {
-  const { isPhone } = usePhoneToolbar()
+  const { isMobile } = useMobileToolbar()
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
@@ -475,9 +474,9 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       setDraftStart(null)
       setDraftEnd(null)
     }
-    // 폰은 한 달만 보이므로 지금 보는 달을 그대로 연다. PC는 두 달을 보이므로 왼쪽 달(오른쪽은 그 다음 달)을 기준으로 잡는다.
+    // MOBILE은 한 달만 보이므로 지금 보는 달을 그대로 연다. PC는 두 달을 보이므로 왼쪽 달(오른쪽은 그 다음 달)을 기준으로 잡는다.
     const endMonth = toShownMonth(selectedStart?.date ?? viewedSnapshotTime ?? anchorDate ?? new Date().toISOString())
-    if (isPhone) {
+    if (isMobile) {
       const latestMonth = liveDate === null ? null : toShownMonth(liveDate)
       setRangeLeftMonth(latestMonth !== null && toMonthKey(endMonth) > toMonthKey(latestMonth) ? latestMonth : endMonth)
       return
@@ -513,7 +512,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     } else {
       setDraftDay(null)
       const anchorMonth = toShownMonth(anchorDate ?? new Date().toISOString())
-      if (isPhone) {
+      if (isMobile) {
         const latestMonth = liveDate === null ? null : toShownMonth(liveDate)
         setRangeLeftMonth(latestMonth !== null && toMonthKey(anchorMonth) > toMonthKey(latestMonth) ? latestMonth : anchorMonth)
       } else {
@@ -538,13 +537,13 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
     : displayDayDate !== null && displayDayGap !== undefined ? `${displayDayGap} 거래일 전` : null
   // 두 모드가 같은 두 달의 요청을 공유하고, 로딩·오류 표시는 두 달 위에 하나만 둔다.
   const rangeLeftDays = useCalendarDays(market, toMonthKey(rangeLeftMonth), { enabled: isOpen, retry: 1 })
-  const rangeRightDays = useCalendarDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen && !isPhone, retry: 1 })
-  const isCalendarLoading = rangeLeftDays.isLoading || (!isPhone && rangeRightDays.isLoading)
-  const isCalendarError = !isCalendarLoading && (rangeLeftDays.isError || (!isPhone && rangeRightDays.isError))
+  const rangeRightDays = useCalendarDays(market, toMonthKey(addMonths(rangeLeftMonth, 1)), { enabled: isOpen && !isMobile, retry: 1 })
+  const isCalendarLoading = rangeLeftDays.isLoading || (!isMobile && rangeRightDays.isLoading)
+  const isCalendarError = !isCalendarLoading && (rangeLeftDays.isError || (!isMobile && rangeRightDays.isError))
   // 오류 화면의 "다시 시도"는 실패한 달만 다시 받는다.
   const retryRange = () => {
     if (rangeLeftDays.isError) void rangeLeftDays.refetch()
-    if (!isPhone && rangeRightDays.isError) void rangeRightDays.refetch()
+    if (!isMobile && rangeRightDays.isError) void rangeRightDays.refetch()
   }
   // 실시간 지도가 있는 달보다 뒤로는 갈 수 없다.
   const isMonthWithinLive = (month: ShownMonth) => liveDate === null || toMonthKey(month) <= liveDate.slice(0, 7)
@@ -618,10 +617,10 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
       const snapshotTime = liveMonthDays?.find(day => day.date === liveDate)?.snapshotTime ?? liveSnapshotTime
       if (snapshotTime === null) return
       setDraftEnd({ date: liveDate, snapshotTime })
-      setRangeLeftMonth(isPhone ? toShownMonth(liveDate) : addMonths(toShownMonth(liveDate), -1))
+      setRangeLeftMonth(isMobile ? toShownMonth(liveDate) : addMonths(toShownMonth(liveDate), -1))
     } else {
       setDraftDay({ date: liveDate, snapshotTime: null })
-      setRangeLeftMonth(isPhone ? toShownMonth(liveDate) : addMonths(toShownMonth(liveDate), -1))
+      setRangeLeftMonth(isMobile ? toShownMonth(liveDate) : addMonths(toShownMonth(liveDate), -1))
     }
   }
 
@@ -686,9 +685,9 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           triggerRef={rootRef}
           popupRef={popupRef}
           ariaLabel="날짜 선택 달력"
-          className={`${isPhone ? 'w-64' : 'w-[32.125rem]'} rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl`}
+          className={`${isMobile ? 'w-64' : 'w-[32.125rem]'} rounded-md border border-ui-border bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl`}
         >
-          {/* 위쪽 줄: 왼쪽에 하루/기간 스위치와 선택 날짜, 오른쪽 끝에 거래일 배지(폰만). 최근 버튼은 달력 6주 행의 마지막 칸으로 옮겼다. */}
+          {/* 위쪽 줄: 왼쪽에 하루/기간 스위치와 선택 날짜, 오른쪽 끝에 거래일 배지(MOBILE만). 최근 버튼은 달력 6주 행의 마지막 칸으로 옮겼다. */}
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-ui-border pb-2 text-[13px]">
             <span className="flex min-w-0 items-center gap-3">
               {onSelectRange && (
@@ -707,7 +706,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   ))}
                 </span>
               )}
-              {isPhone ? null : isRangeCalendar ? (
+              {isMobile ? null : isRangeCalendar ? (
             <span className="flex min-w-0 items-center gap-1">
               {draftStart && (
                 <span className="flex min-w-0 items-center gap-1.5">
@@ -741,7 +740,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
             </span>
               )}
             </span>
-            {isPhone && tradingDayBadge !== null && (
+            {isMobile && tradingDayBadge !== null && (
               <span className="inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text">{tradingDayBadge}</span>
             )}
           </div>
@@ -758,7 +757,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                     )}
                   </div>
                 )}
-                {isPhone ? (
+                {isMobile ? (
                   <MonthGrid
                     market={market}
                     holidayColor={holidayColor}
@@ -842,7 +841,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                     )}
                   </div>
                 )}
-                {isPhone ? (
+                {isMobile ? (
                   <MonthGrid
                     market={market}
                     holidayColor={holidayColor}
@@ -899,7 +898,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   </>
                 )}
               </div>
-              <div className={`mt-1 flex ${isPhone ? 'w-60' : 'w-[31rem]'} items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]`}>
+              <div className={`mt-1 flex ${isMobile ? 'w-60' : 'w-[31rem]'} items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]`}>
                 <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={YTD_BUTTON_CLASS}>
                   YTD
                 </button>

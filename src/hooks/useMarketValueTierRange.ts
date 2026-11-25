@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
+import { valueRangeExclusions, valueRangeIndexes } from '@/utils/marketValueRange'
 import { usePageSetting } from './usePageSetting'
 import { useIsLoggedIn } from './useSession'
 import { useCustomPreferences } from './useCustomPreferences'
 import { settingDefaultsFor } from '@/utils/settingDefaults'
 import { useMarketValueTiers } from './useMarketValueTiers'
-import { defaultExcludedTierLabels, marketValueSliderSteps } from '@/utils/marketValueTier'
+import { defaultExcludedTierLabels, marketValueSliderSteps, type MarketValueExclusions } from '@/utils/marketValueTier'
 import { profileSettingKey, type SettingsProfile } from '@/utils/settingsSchema'
 
 const MIN_INDEX_KEY = 'heatmap.tierRangeMinIndex'
@@ -47,19 +48,15 @@ export function useMarketValueTierRange(enabled: boolean, profile: SettingsProfi
   const legacyMaxIndex = storedMaxIndex !== -1 ? storedMaxIndex : (defaultRange?.max ?? -1)
   const minValue = storedMinValue >= 0 ? storedMinValue : (baseTiers[legacyMinIndex]?.thresholdValue ?? 0)
   const maxValue = storedMaxValue !== -1 ? storedMaxValue : (baseTiers[legacyMaxIndex + 1]?.thresholdValue ?? null)
-  const minIndex = tiers.findLastIndex(tier => tier.thresholdValue <= minValue)
-  const maxIndex = Math.max(minIndex, tiers.findLastIndex(tier => maxValue === null || tier.thresholdValue < maxValue))
+  const { minIndex, maxIndex } = valueRangeIndexes(tiers, minValue, maxValue)
   const setMinIndex = (index: number) => setMinValue(tiers[index].thresholdValue)
   const setMaxIndex = (index: number) => setMaxValue(tiers[index + 1]?.thresholdValue ?? null)
 
   const excludedMarketValueTiers = useMemo(
     () =>
       enabled && tiers.length > 0 && minIndex !== -1
-        ? Object.assign(new Set<string>(), { marketValueRange: {
-            min: tiers[minIndex].thresholdValue,
-            max: tiers[maxIndex + 1]?.thresholdValue ?? null,
-          } })
-        : new Set<string>(),
+        ? valueRangeExclusions(tiers, minIndex, maxIndex)
+        : (new Set<string>() as MarketValueExclusions),
     [enabled, tiers, minIndex, maxIndex],
   )
 

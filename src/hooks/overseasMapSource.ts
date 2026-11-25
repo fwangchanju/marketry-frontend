@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import type { FilteredHeatmapSectorNode } from '@/hooks/useFilteredHeatmap'
 import type { HeatmapSectorNode } from '@/types/api'
 import type { CurrencyUnit } from '@/utils/currencyUnit'
@@ -27,8 +27,7 @@ export interface OverseasMapSource {
   refetchAll: () => Promise<unknown>
   preferences: JapanMapPreferences
   update: (changes: Partial<JapanMapPreferences>) => void
-  // 시장마다 다른 날짜 선택 칩과 장 상태 칩.
-  DatePicker: ComponentType<{ snapshotTime: string | null; liveTime: string | null; rangeStart: string | null; holidayColor: string; onSelect: (pick: string | null) => void; onSelectRange: (start: string, end: string) => void }>
+  // 시장마다 다른 장 상태 칩.
   sessionChip: ReactNode
   refreshHelp: string
   currencyUnit: CurrencyUnit

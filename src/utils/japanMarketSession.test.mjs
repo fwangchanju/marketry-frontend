@@ -29,7 +29,7 @@ test('한국과 일본 세션은 서로의 이름과 부품을 쓰지 않는다'
     const source = read(path)
     for (const name of ['오전 장', '점심 휴장', '오후 장', '장 마감', 'japanMarket', 'JapanSession']) assert.equal(source.includes(name), false, `${path}: ${name}`)
   }
-  for (const path of ['./japanMarketSession.ts', '../components/JapanSessionChip.tsx', '../pages/JapanMapPage.tsx', '../pages/OverseasMapView.tsx', '../hooks/useJapanMapSource.tsx']) {
+  for (const path of ['./japanMarketSession.ts', '../pages/JapanMapPage.tsx', '../pages/OverseasMapView.tsx', '../hooks/useJapanMapSource.tsx']) {
     const source = read(path)
     for (const name of ['프리 마켓', '메인 마켓', '애프터 마켓', "'마켓 종료'", 'ToolbarControls', 'tradingWindow', 'useTradingSession']) assert.equal(source.includes(name), false, `${path}: ${name}`)
   }

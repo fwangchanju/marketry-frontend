@@ -1,12 +1,12 @@
 import { cloneElement, isValidElement, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { PhoneToolbarContext } from '@/components/PhoneToolbarContext'
+import { MobileToolbarContext } from '@/components/MobileToolbarContext'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileMapSheet, { type MobileMapMarket } from '@/components/MobileMapSheet'
 import { useDisableScreenZoom, useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
 import Popup, { type PopupState } from '@/components/Popup'
-import { TOOLBAR_SIDE_GUTTER } from '@/utils/phonePathBar'
+import { TOOLBAR_SIDE_GUTTER } from '@/utils/mobilePathBar'
 
-// 폰 지도 공통 화면: 상단 줄 · 툴바 줄 · 가운데 판(세로 가운데 정렬, 설정 창이 열려도 판은 움직이지 않는다) · 하단 설정 줄.
+// MOBILE 지도 공통 화면: 상단 줄 · 툴바 줄 · 가운데 판(세로 가운데 정렬, 설정 창이 열려도 판은 움직이지 않는다) · 하단 설정 줄.
 // 종목·업종·그래프 화면이 같은 틀을 쓴다. 툴바는 판 밖에 두고, 화면 폭에 맞춰 판 가로폭까지 키운다.
 const TOOLBAR_BASE_HEIGHT = 28
 // 툴바 슬롯을 한국 기준으로 고정했으므로 세 시장의 자연 폭은 모두 이 값이다. 화면을 읽지 않고 이 상수로 배율을 계산한다.
@@ -14,7 +14,7 @@ const TOOLBAR_REFERENCE_WIDTH = 438
 // 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.
 const TOOLBAR_FIXED_SCALE = 0.863
 
-export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, onBeforeSwipeNavigate, nextPreview, previousPreview, zoomMode, infoPopup, onCloseInfoPopup, navigationKey }: {
+export default function MobileMapShell({ topBar, frameHeight, frame, toolbar, current, boxSize, onChangeBoxSize, onSwipe, onBeforeSwipeNavigate, nextPreview, previousPreview, zoomMode, infoPopup, onCloseInfoPopup, navigationKey }: {
   topBar?: ReactNode
   onSwipe?: (direction: 'next' | 'previous') => void
   // 화면 위치(시장·업종 경로·보기 모드)가 바뀌면 팝업을 여기서 닫는다. 스와이프와 상단 이동은 셸이 시작 시점을 직접 안다. 페이지마다 닫기 호출을 넣지 않는다.
@@ -35,7 +35,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
   // 종목 지도는 화면 확대를 받지만 업종 지도·그룹 등락률은 막는다. 문서와 안쪽 판 설정을 여기서 함께 정한다.
   // 기본값을 두지 않아 새 화면이 정책을 빠뜨리면 컴파일에서 막힌다.
   zoomMode: 'pinch' | 'blocked'
-  // 업종 지도 폰 팝업 — 공통 훅이 만든 상태를 받아 여기서 한 번만 렌더한다.
+  // 업종 지도 MOBILE 팝업 — 공통 훅이 만든 상태를 받아 여기서 한 번만 렌더한다.
   infoPopup?: PopupState | null
   onCloseInfoPopup?: () => void
 }) {
@@ -88,11 +88,11 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
     <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
       {topBarNode}
       <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch overflow-hidden bg-ui-background">
-        <div data-phone-toolbar-slot className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
+        <div data-mobile-toolbar-slot className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
           <div className="origin-top-left" style={{ transform: `translateX(${TOOLBAR_SIDE_GUTTER}px) scale(${scale})` }}>
-            <PhoneToolbarContext.Provider value={{ isPhone: true, scale }}>
+            <MobileToolbarContext.Provider value={{ isMobile: true, scale }}>
               <div className="w-max">{toolbar}</div>
-            </PhoneToolbarContext.Provider>
+            </MobileToolbarContext.Provider>
           </div>
         </div>
         <div className="relative w-full shrink-0 overflow-hidden" style={{ height: `${frameHeight}px` }}>
@@ -118,7 +118,7 @@ export default function PhoneMapShell({ topBar, frameHeight, frame, toolbar, cur
         </div>
       </div>
       <MobileMapSheet current={current} boxSize={boxSize} onChangeBoxSize={onChangeBoxSize} />
-      {infoPopup && <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={onCloseInfoPopup ?? (() => {})} phoneEnlarged />}
+      {infoPopup && <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={onCloseInfoPopup ?? (() => {})} mobileEnlarged />}
     </div>
   )
 }

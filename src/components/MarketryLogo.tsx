@@ -14,7 +14,7 @@ interface Props {
 // 원본 PNG는 보관하고 슬로건 영역만 가린다. SVG 텍스트가 로고와 같은 비율로 확대·축소된다.
 // 슬로건 색은 로고의 MARKETRY 글자(원본 PNG의 약 var(--ui-white))와 같게 맞춘다.
 // horizontalClean·stacked의 MARKETRY 글자는 원본 PNG의 회색 외곽선을 걷어낸 흰색 글자의 윤곽을 벡터 경로로 만든 것(marketryWordmarkPath.ts, 원본의 510·25 위치 1170×190 영역)을 쓴다.
-// 예전에는 SVG 필터로 그 자리에서 만들었는데 일부 폰 브라우저에서 글자가 사라졌고, 흰색 PNG 이미지로 바꾼 뒤에도 폰이 이미지를 회색으로 어둡게 보여서, 옆의 슬로건 글자처럼 벡터로 그린다(필터·이미지 없음).
+// 예전에는 SVG 필터로 그 자리에서 만들었는데 일부 MOBILE 브라우저에서 글자가 사라졌고, 흰색 PNG 이미지로 바꾼 뒤에도 MOBILE이 이미지를 회색으로 어둡게 보여서, 옆의 슬로건 글자처럼 벡터로 그린다(필터·이미지 없음).
 export default function MarketryLogo({ className, layout = 'horizontal' }: Props) {
   const clipId = useId()
 

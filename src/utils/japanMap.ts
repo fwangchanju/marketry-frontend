@@ -1,4 +1,4 @@
-import type { JapanQuote } from '@/hooks/useJapanQuotes'
+import type { MarketQuote as JapanQuote } from '@/markets/useMarketQuotes'
 import type { HeatmapItem, HeatmapSectorNode } from '@/types/api'
 
 export type JapanStock = { code: string; name: string }

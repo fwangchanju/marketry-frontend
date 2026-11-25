@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { valueRangeAt, valueRangeExclusions, valueRangeIndexes } from '@/utils/marketValueRange'
 import { usePageSetting } from './usePageSetting'
 import { overseasMarketValueSteps } from '@/utils/overseasMarketValue'
 import type { MarketValueExclusions } from '@/utils/marketValueTier'
@@ -12,15 +13,17 @@ export function useOverseasTierRange(settingPrefix: string, unit: CurrencyUnit) 
   const tiers = useMemo(() => overseasMarketValueSteps(unit), [unit])
   const [minValue, setMinValue] = usePageSetting<number>(`${settingPrefix}tierRangeMinValue`, 0)
   const [maxValue, setMaxValue] = usePageSetting<number | null>(`${settingPrefix}tierRangeMaxValue`, null)
-  const minIndex = Math.max(0, tiers.findLastIndex(tier => tier.thresholdValue <= minValue))
-  const maxIndex = Math.max(minIndex, tiers.findLastIndex(tier => maxValue === null || tier.thresholdValue < maxValue))
+  const found = valueRangeIndexes(tiers, minValue, maxValue)
+  const minIndex = Math.max(0, found.minIndex)
+  const maxIndex = Math.max(minIndex, found.maxIndex)
   const setRange = (min: number, max: number) => {
-    setMinValue(tiers[min].thresholdValue)
-    setMaxValue(tiers[max + 1]?.thresholdValue ?? null)
+    const range = valueRangeAt(tiers, min, max)
+    setMinValue(range.min)
+    setMaxValue(range.max)
   }
   const excludedMarketValueTiers = useMemo<MarketValueExclusions>(() => {
     if (tiers.length === 0 || (minIndex === 0 && maxIndex === tiers.length - 1)) return NO_EXCLUSIONS
-    return Object.assign(new Set<string>(), { marketValueRange: { min: tiers[minIndex].thresholdValue, max: tiers[maxIndex + 1]?.thresholdValue ?? null } })
+    return valueRangeExclusions(tiers, minIndex, maxIndex)
   }, [tiers, minIndex, maxIndex])
   return { tiers, minIndex, maxIndex, setRange, excludedMarketValueTiers }
 }

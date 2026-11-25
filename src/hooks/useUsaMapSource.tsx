@@ -1,17 +1,16 @@
+import MarketSessionChip from '@/components/MarketSessionChip'
+import { useListedStocks, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
 import { useMemo } from 'react'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
 import { overseasSettingKey } from '@/utils/overseasSettingKey'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import UsaDatePicker from '@/components/UsaDatePicker'
-import UsaSessionChip from '@/components/UsaSessionChip'
 import type { OverseasMapSource } from '@/hooks/overseasMapSource'
 import { flattenAllItems } from '@/hooks/useFilteredHeatmap'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaMapPreferences } from '@/hooks/useUsaMapPreferences'
-import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
-import { useOverseasPreviewIndex } from '@/hooks/useOverseasPreviewIndex'
+import { useSnapshotMarketIndex } from '@/markets/useSnapshotMarketIndex'
 import { buildJapanTree } from '@/utils/japanMap'
 import { overseasMarketInfo } from '@/utils/markets'
 import { USA_MAP_DRAFT_KEY_MAP, USA_MAP_FIXED, USA_MAP_SETTING_PREFIX, USA_SETTINGS_TAB_STORAGE } from '@/utils/usaMapSettings'
@@ -23,13 +22,13 @@ export function useUsaMapSource(): OverseasMapSource {
   // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
   const { sheet } = useOverseasSheet()
   const { categories, classifications } = useOverseasClassificationData('USA', sheet)
-  const stocks = useUsaStocks()
-  const snapshotTimes = useUsaSnapshotTimes()
+  const stocks = useListedStocks('USA')
+  const snapshotTimes = useMarketSnapshotTimes('USA')
   const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('USA', snapshotTimes.data)
-  const quotes = useUsaQuotes(selectedTime)
-  const periodQuotes = useUsaPeriodQuotes(rangeStart, selectedTime)
+  const quotes = useMarketQuotes('USA', selectedTime)
+  const periodQuotes = useMarketPeriodQuotes('USA', rangeStart, selectedTime)
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
-  const liveQuotes = useUsaQuotes()
+  const liveQuotes = useMarketQuotes('USA')
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const treeStocks = useMemo(() => (stocks.data ?? []).map(stock => ({ code: stock.symbol, name: stock.name })), [stocks.data])
   // 박스 라벨은 일본 지도처럼 한글 종목명을 쓴다. 한글 이름이 아직 없는 종목은 티커로 대신한다.
@@ -42,7 +41,7 @@ export function useUsaMapSource(): OverseasMapSource {
   const refetchAll = () => Promise.all([quotes.refetch(), snapshotTimes.refetch(), categories.refetch(), classifications.refetch(), stocks.refetch(), koreanNames.refetch(), ...(rangeStart ? [periodQuotes.refetch()] : [])])
   const isLoading = isPeriodResolving || isLoadingDefaults || categories.isLoading || classifications.isLoading || stocks.isLoading || koreanNames.isLoading || quotes.isLoading || periodQuotes.isLoading
   const isError = categories.isError || classifications.isError || stocks.isError || koreanNames.isError || quotes.isError || periodQuotes.isError
-  const { graphIndexItems, isFetching: isIndexFetching } = useOverseasPreviewIndex('USA', snapshotTime, liveQuotes.data?.snapshotTime ?? null, rangeStart)
+  const { graphIndexItems, isFetching: isIndexFetching } = useSnapshotMarketIndex('USA', snapshotTime, liveQuotes.data?.snapshotTime ?? null, rangeStart)
   return {
     market: 'USA',
     label: overseasMarketInfo('USA').badgeLabel,
@@ -61,8 +60,7 @@ export function useUsaMapSource(): OverseasMapSource {
     refetchAll,
     preferences,
     update,
-    DatePicker: UsaDatePicker,
-    sessionChip: <UsaSessionChip session={USA_SESSION} />,
+    sessionChip: <MarketSessionChip market="USA" session={USA_SESSION} />,
     refreshHelp: usaRefreshHelp(snapshotTime),
     currencyUnit: '달러',
     chart: { market: 'usa' },

@@ -1,3 +1,5 @@
+import MarketSessionChip from '@/components/MarketSessionChip'
+import { useMarketIndexCloses, useMarketIndexQuotes, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
 import { useMemo } from 'react'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
@@ -7,17 +9,12 @@ import { countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import JapanDatePicker from '@/components/JapanDatePicker'
-import JapanSessionChip from '@/components/JapanSessionChip'
 import type { RankColumnItem } from '@/components/RankColumns'
 import { SettingsAverageModeSection, SettingsBeforeMinutesSection, SettingsGraphDepthSection } from '@/components/SettingsPanel'
 import stocks from '@/data/japanStocks.json'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useJapanGraphPreferences } from '@/hooks/useJapanGraphPreferences'
-import { useJapanIndexCloses } from '@/hooks/useJapanIndexCloses'
-import { useJapanIndexQuotes } from '@/hooks/useJapanIndexQuotes'
-import { useJapanPeriodQuotes, useJapanQuotes, useJapanSnapshotTimes } from '@/hooks/useJapanQuotes'
 import type { HeatmapSectorNode } from '@/types/api'
 import { graphIndexValue, indexChangeRate, indexRange, intradayRateAt, shiftDate } from '@/utils/indexChange'
 import { JAPAN_GRAPH_DRAFT_KEY_MAP } from '@/utils/japanGraphSettings'
@@ -47,18 +44,18 @@ export function useJapanGraphSource(): OverseasGraphSource {
   const { sheet } = useOverseasSheet()
   const { categories, classifications } = useOverseasClassificationData('JAPAN', sheet)
   const names = useQuery({ queryKey: ['japan', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/japan/stock-names')).data })
-  const snapshotTimes = useJapanSnapshotTimes()
+  const snapshotTimes = useMarketSnapshotTimes('JAPAN')
   const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('JAPAN', snapshotTimes.data)
-  const quotes = useJapanQuotes(selectedTime)
-  const liveQuotes = useJapanQuotes()
-  const periodQuotes = useJapanPeriodQuotes(rangeStart, selectedTime)
+  const quotes = useMarketQuotes('JAPAN', selectedTime)
+  const liveQuotes = useMarketQuotes('JAPAN')
+  const periodQuotes = useMarketPeriodQuotes('JAPAN', rangeStart, selectedTime)
   // 기준가가 없어 기간에서 뺀 종목 — 제외 종목 배지에 이름과 함께 보인다.
   const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: names.data?.[stock.stockCode] ?? stock.stockCode }))
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
   // 종가 기준 지수 막대는 기간과 지난 날짜 보기에 쓴다. 오늘 화면은 종가가 아직 저장되지 않아 이 값이 없고, 장중 지수(아래)가 대신한다.
   const indexSpan = indexRange(rangeStart, snapshotTime, liveQuotes.data?.snapshotTime ?? null)
-  const indexCloses = useJapanIndexCloses(indexSpan ? shiftDate(indexSpan.startDate, -INDEX_LOOKBACK_DAYS) : null, indexSpan?.endDate ?? null)
+  const indexCloses = useMarketIndexCloses('JAPAN', indexSpan ? shiftDate(indexSpan.startDate, -INDEX_LOOKBACK_DAYS) : null, indexSpan?.endDate ?? null)
   const indexRate = indexSpan && indexCloses.data ? indexChangeRate(indexCloses.data, indexSpan.startDate, indexSpan.endDate) : null
   const { preferences, update } = useJapanGraphPreferences()
   // 시가총액 범위는 지도와 같은 저장 값을 쓴다(국내도 같은 분류의 지도·그래프가 값을 공유한다).
@@ -73,10 +70,10 @@ export function useJapanGraphSource(): OverseasGraphSource {
     return snapshotTimes.data?.find(time => time.slice(0, 16) === target) ?? null
   }, [showDelta, snapshotTime, snapshotTimes.data, preferences.beforeMinutes])
   // 시각이 없으면 조회를 끈다. 이때 data는 최신 시세 캐시일 수 있어 아래에서 쓰지 않는다.
-  const beforeQuotes = useJapanQuotes(beforeTime, beforeTime !== null)
+  const beforeQuotes = useMarketQuotes('JAPAN', beforeTime, beforeTime !== null)
   // 장중 지수 — 하루 보기(기간이 아닌 보기)에서 지금 시각과 N분 전 시각의 닛케이 등락률을 쓴다. 기간 보기는 종가 기준 막대만 쓴다.
-  const indexQuotesNow = useJapanIndexQuotes(rangeStart === null && snapshotTime ? snapshotTime.slice(0, 10) : null)
-  const indexQuotesBefore = useJapanIndexQuotes(showDelta && beforeTime ? beforeTime.slice(0, 10) : null)
+  const indexQuotesNow = useMarketIndexQuotes('JAPAN', rangeStart === null && snapshotTime ? snapshotTime.slice(0, 10) : null)
+  const indexQuotesBefore = useMarketIndexQuotes('JAPAN', showDelta && beforeTime ? beforeTime.slice(0, 10) : null)
   const indexValue = graphIndexValue({
     showDelta,
     nowRate: rangeStart === null ? intradayRateAt(indexQuotesNow.data, snapshotTime) : null,
@@ -140,8 +137,7 @@ export function useJapanGraphSource(): OverseasGraphSource {
     isError,
     isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || names.isFetching || indexCloses.isFetching || indexQuotesNow.isFetching || indexQuotesBefore.isFetching,
     refetchAll,
-    DatePicker: JapanDatePicker,
-    sessionChip: <JapanSessionChip session={session} />,
+    sessionChip: <MarketSessionChip market="JAPAN" session={session} />,
     refreshHelp: JAPAN_REFRESH_HELP,
     fixed: JAPAN_MAP_FIXED,
     draftKeyMap: sheet === 'MINE' ? JAPAN_GRAPH_DRAFT_KEY_MAP : undefined,

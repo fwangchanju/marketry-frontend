@@ -1,3 +1,5 @@
+import MarketSessionChip from '@/components/MarketSessionChip'
+import { useListedStocks, useMarketIndexCloses, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
 import { useMemo } from 'react'
 import { useOverseasSheet } from '@/hooks/useOverseasSheet'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
@@ -7,15 +9,11 @@ import { countVisibleItems } from '@/utils/overseasSectorExclusion'
 import { useOverseasTierRange } from '@/hooks/useOverseasTierRange'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import UsaDatePicker from '@/components/UsaDatePicker'
-import UsaSessionChip from '@/components/UsaSessionChip'
 import type { RankColumnItem } from '@/components/RankColumns'
 import { SettingsAverageModeSection, SettingsBeforeMinutesSection, SettingsGraphDepthSection } from '@/components/SettingsPanel'
 import type { OverseasGraphSource } from '@/hooks/overseasGraphSource'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useUsaGraphPreferences } from '@/hooks/useUsaGraphPreferences'
-import { useUsaIndexCloses } from '@/hooks/useUsaIndexCloses'
-import { useUsaPeriodQuotes, useUsaQuotes, useUsaSnapshotTimes, useUsaStocks } from '@/hooks/useUsaQuotes'
 import type { HeatmapSectorNode } from '@/types/api'
 import { indexChangeRate, shiftDate } from '@/utils/indexChange'
 import { buildJapanTree } from '@/utils/japanMap'
@@ -38,16 +36,16 @@ export function useUsaGraphSource(): OverseasGraphSource {
   // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
   const { sheet } = useOverseasSheet()
   const { categories, classifications } = useOverseasClassificationData('USA', sheet)
-  const stocks = useUsaStocks()
-  const snapshotTimes = useUsaSnapshotTimes()
+  const stocks = useListedStocks('USA')
+  const snapshotTimes = useMarketSnapshotTimes('USA')
   const { selectedTime, rangeStart, isResolving: isPeriodResolving, select, selectRange } = useCrossMarketPeriod('USA', snapshotTimes.data)
-  const quotes = useUsaQuotes(selectedTime)
+  const quotes = useMarketQuotes('USA', selectedTime)
   const koreanNames = useQuery({ queryKey: ['usa', 'names'], queryFn: async () => (await client.get<Record<string, string>>('/usa/stock-names')).data })
-  const periodQuotes = useUsaPeriodQuotes(rangeStart, selectedTime)
+  const periodQuotes = useMarketPeriodQuotes('USA', rangeStart, selectedTime)
   // 기준가가 없어 기간에서 뺀 종목 — 제외 종목 배지에 이름과 함께 보인다.
   const rangeExcludedStocks = periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: koreanNames.data?.[stock.stockCode] ?? stock.stockCode }))
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
-  const liveQuotes = useUsaQuotes()
+  const liveQuotes = useMarketQuotes('USA')
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const treeStocks = useMemo(() => (stocks.data ?? []).map(stock => ({ code: stock.symbol, name: stock.name })), [stocks.data])
   // 일본과 같게 /usa/stock-names의 한글 이름을 트리에 넘긴다. 없으면 종목 목록의 이름으로 폴백한다.
@@ -56,7 +54,7 @@ export function useUsaGraphSource(): OverseasGraphSource {
   // 미국은 저장된 시세가 모두 종가라서 가장 최근 날도 막대를 만든다.
   const day = snapshotTime ? snapshotTime.slice(0, 10) : null
   const startDay = rangeStart ? rangeStart.slice(0, 10) : day
-  const indexCloses = useUsaIndexCloses(startDay ? shiftDate(startDay, -INDEX_LOOKBACK_DAYS) : null, day)
+  const indexCloses = useMarketIndexCloses('USA', startDay ? shiftDate(startDay, -INDEX_LOOKBACK_DAYS) : null, day)
   const indexRate = day && startDay && indexCloses.data ? indexChangeRate(indexCloses.data, startDay, day) : null
   const { preferences, update } = useUsaGraphPreferences()
   const tierRange = useOverseasTierRange(overseasSettingKey(USA_MAP_SETTING_PREFIX, sheet), '달러')
@@ -102,8 +100,7 @@ export function useUsaGraphSource(): OverseasGraphSource {
     isError,
     isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || stocks.isFetching || indexCloses.isFetching,
     refetchAll,
-    DatePicker: UsaDatePicker,
-    sessionChip: <UsaSessionChip session={USA_SESSION} />,
+    sessionChip: <MarketSessionChip market="USA" session={USA_SESSION} />,
     refreshHelp: usaRefreshHelp(snapshotTime),
     fixed: USA_MAP_FIXED,
     draftKeyMap: sheet === 'MINE' ? USA_GRAPH_DRAFT_KEY_MAP : undefined,

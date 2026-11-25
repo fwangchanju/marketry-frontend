@@ -1,10 +1,11 @@
-import type { ComponentType, ReactNode } from 'react'
+import type { MarketScreenData } from '@/markets/marketContract'
+import type { ReactNode } from 'react'
 import type { CurrencyUnit } from '@/utils/currencyUnit'
 import type { HeatmapSectorNode } from '@/types/api'
 import type { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
 import type { OverseasMarket } from '@/utils/markets'
 
-// 해외 시장 서머리(OverseasSummaryView)가 시장마다 다른 부분을 받는 모양. 시장별 훅(useJapanSummarySource·useUsaSummarySource)이 이 모양으로 돌려준다.
+// 해외 시장 서머리(OverseasSummaryView)가 시장마다 다른 부분을 받는 모양. 공통 훅(useSnapshotMarketSummary)이 이 모양으로 돌려준다.
 // 새 시장(대만 등)은 같은 모양의 훅 하나를 만들면 된다 — 화면 구성은 공통 화면이 한다.
 export interface OverseasSummarySource {
   market: OverseasMarket
@@ -13,17 +14,19 @@ export interface OverseasSummarySource {
   tree: HeatmapSectorNode[]
   snapshotTime: string | null
   liveSnapshotTime: string | null
-  selectedTime: string | null
   rangeStart: string | null
   select: (pick: string | null) => void
   selectRange: (start: string, end: string) => void
   rangeExcludedStocks: { stockCode: string; stockName: string }[]
   isLoading: boolean
+  isError: boolean
+  isIndexLoading: boolean
+  isIndexFetching: boolean
   isFetching: boolean
   // 그룹 등락률 스와이프 미리보기에 넣을 지수 막대(일본 닛케이·미국 S&P500). 한국의 코스피·코스닥과 같은 역할이다.
   graphIndexItems: { key: string; name: string; value: number }[]
+  indexBars: MarketScreenData['indexBars']
   refetchAll: () => Promise<unknown>
-  DatePicker: ComponentType<{ snapshotTime: string | null; liveTime: string | null; rangeStart: string | null; holidayColor: string; onSelect: (pick: string | null) => void; onSelectRange: (start: string, end: string) => void }>
   // 장 상태 칩(시세가 아직 없으면 null).
   sessionChip: ReactNode
   refreshHelp: string
@@ -33,7 +36,7 @@ export interface OverseasSummarySource {
   // 종목 구성 탭의 시가총액 범위(지도·그래프와 같은 저장 값)와 금액 단위.
   settingPrefix: string
   currencyUnit: CurrencyUnit
-  // 설정창의 "n/m종목"의 n과 m.
-  shownCount: number
+  intradayDelta: boolean
+  // 설정창의 "n/m종목"의 m.
   totalCount: number
 }

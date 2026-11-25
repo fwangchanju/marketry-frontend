@@ -42,7 +42,7 @@ export default function OverviewMap({
   onLongPress?: (item: OverviewMapItem) => void
   // false면 마우스를 올려도 말풍선을 띄우지 않는다(모바일은 길게 누르는 카드로 대신한다).
   hoverPopup?: boolean
-  // 박스가 큰 PC 서머리는 글자를 더 키운다(최대 34px). 폰은 기존 크기(최대 28px)를 쓴다.
+  // 박스가 큰 PC 서머리는 글자를 더 키운다(최대 34px). MOBILE은 기존 크기(최대 28px)를 쓴다.
   large?: boolean
   decimalPlaces?: number
   zoomable?: boolean
