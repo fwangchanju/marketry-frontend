@@ -1,5 +1,5 @@
 import KindBadge from '@/components/KindBadge'
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { appConfirm } from '@/utils/appDialogBus'
 import { PHONE_POPUP_SCALE } from '@/utils/phonePopupScale'
@@ -63,6 +63,8 @@ const POPUP_GAP = 2
 // 커서 이동 팝업과 마우스 사이의 간격(오른쪽·아래).
 const POINTER_GAP = 14
 const POPUP_MARGIN = 8
+// 폰 팝업은 보이는 화면 중앙에서 조금 위에 둔다(2026-11-25 사용자 결정). 화면 높이 비율이라 기기 크기에 따라 함께 조정된다.
+const PHONE_POPUP_LIFT_RATIO = 0.1
 const POPUP_BACKGROUND = 'var(--ui-popup)'
 
 interface PointerBounds {
@@ -105,7 +107,7 @@ function phoneViewport() {
   }
 }
 
-// 폰 팝업을 보이는 화면의 정중앙에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
+// 폰 팝업을 보이는 화면 중앙에서 조금 위에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
 // 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
 function placePhonePopup(el: HTMLElement) {
   const view = phoneViewport()
@@ -119,7 +121,8 @@ function placePhonePopup(el: HTMLElement) {
   const minTop = view.top + POPUP_MARGIN
   const maxTop = Math.max(minTop, view.top + view.height - height - POPUP_MARGIN)
   el.style.left = `${Math.min(Math.max(view.left + (view.width - width) / 2, minLeft), maxLeft)}px`
-  el.style.top = `${Math.min(Math.max(view.top + (view.height - height) / 2, minTop), maxTop)}px`
+  const centerTop = view.top + (view.height - height) / 2 - view.height * PHONE_POPUP_LIFT_RATIO
+  el.style.top = `${Math.min(Math.max(centerTop, minTop), maxTop)}px`
   el.style.visibility = 'visible'
 }
 
@@ -133,6 +136,24 @@ interface PopupBodyProps {
 
 function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged }: PopupBodyProps) {
   const elRef = useRef<HTMLDivElement>(null)
+  // 폰 팝업은 길게 누르는 동안(손가락을 떼기 전에) 열린다. 떼는 순간의 클릭이 팝업에 닿아 바로
+  // 닫히지 않게, 첫 pointerup까지 클릭을 받지 않는다. PC·툴바·캡처 팝업에는 영향이 없다.
+  const [awaitingRelease, setAwaitingRelease] = useState(phoneEnlarged)
+  const releaseTimerRef = useRef(0)
+  useEffect(() => {
+    if (!phoneEnlarged) return
+    const release = () => {
+      window.clearTimeout(releaseTimerRef.current)
+      releaseTimerRef.current = window.setTimeout(() => setAwaitingRelease(false), 0)
+    }
+    window.addEventListener('pointerup', release, { once: true })
+    window.addEventListener('pointercancel', release, { once: true })
+    return () => {
+      window.clearTimeout(releaseTimerRef.current)
+      window.removeEventListener('pointerup', release)
+      window.removeEventListener('pointercancel', release)
+    }
+  }, [phoneEnlarged])
   const minLeft = Math.max(POPUP_MARGIN, popup.mapBounds.left + POPUP_MARGIN)
   const maxRight = Math.min(window.innerWidth - POPUP_MARGIN, popup.mapBounds.right - POPUP_MARGIN)
   // transform은 레이아웃 폭을 바꾸지 않고 그린 크기만 키운다. 지도 경계 안에 들어가도록
@@ -150,7 +171,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
     const el = elRef.current
     if (!el) return
     if (phoneEnlarged) {
-      // 폰에서는 누린 칸 옆이 아니라 보이는 화면 정중앙에 띄운다.
+      // 폰에서는 누린 칸 옆이 아니라 보이는 화면 중앙에서 10% 위에 띄운다.
       // transform(공통 배율)이 적용된 실제 그린 크기로 맞춘다(transformOrigin이 top left라 그대로 쓴다).
       placePhonePopup(el)
       return
@@ -248,7 +269,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, phoneEnlarged
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible ${phoneEnlarged ? 'absolute z-[70] cursor-pointer' : 'fixed z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        className={`invisible ${phoneEnlarged ? 'absolute z-[70] cursor-pointer' : 'fixed z-[9999]'} w-max select-none break-words border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip || awaitingRelease ? 'pointer-events-none' : ''}`}
         // 폰에서는 팝업을 누르면 닫는다(길게 누르기 전의 모바일 동작 유지).
         onClick={phoneEnlarged ? onClose : undefined}
         style={{
