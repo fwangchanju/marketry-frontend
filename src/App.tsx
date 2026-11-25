@@ -1,3 +1,4 @@
+import SnapshotMobile from './markets/SnapshotMobile'
 import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react'
 import OverseasSummaryPage from './pages/OverseasSummaryPage'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
@@ -9,7 +10,7 @@ import HoverHintLayer from './components/HoverHintLayer'
 import MobileNotice from './components/MobileNotice'
 import SearchMetadata from './components/SearchMetadata'
 import { marketRoute } from '@/utils/marketRoute'
-import { OVERSEAS_MARKETS, overseasRoute } from '@/utils/markets'
+import { OVERSEAS_MARKETS, overseasRoute, type OverseasMarket } from '@/utils/markets'
 import { SECTOR_JAPAN, SECTOR_KOREA, SECTOR_USA, STOCK_JAPAN, STOCK_KOREA, STOCK_USA, isCustomPagePath, legacyCustomTarget } from '@/utils/customRoutes'
 import { useIsNarrowScreen } from './hooks/useIsNarrowScreen'
 import { useSession } from './hooks/useSession'
@@ -20,15 +21,14 @@ import { metricPageFromPath, reportClientMetric } from './utils/clientMetrics'
 // PC 전용·관리자·글 페이지는 해당 주소를 열 때만 내려받는다.
 const KoreaSummary = lazy(() => import('./markets/KoreaSummary'))
 const MapPage = lazy(() => import('./pages/MapPage'))
-const GraphPage = lazy(() => import('./pages/GraphPage'))
+const KoreaGraph = lazy(() => import('./markets/KoreaGraph'))
+const SnapshotGraph = lazy(() => import('./markets/SnapshotGraph'))
 const CustomPage = lazy(() => import('./pages/CustomPage'))
 const JapanStockPage = lazy(() => import('./pages/JapanStockPage'))
 const JapanSectorPage = lazy(() => import('./pages/JapanSectorPage'))
 const UsaSectorPage = lazy(() => import('./pages/UsaSectorPage'))
 const UsaStockPage = lazy(() => import('./pages/UsaStockPage'))
 const JapanMapPage = lazy(() => import('./pages/JapanMapPage'))
-const JapanGraphPage = lazy(() => import('./pages/JapanGraphPage'))
-const UsaGraphPage = lazy(() => import('./pages/UsaGraphPage'))
 const UsaMapPage = lazy(() => import('./pages/UsaMapPage'))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
@@ -113,7 +113,11 @@ function ResponsiveSummaryPage() {
 
 function ResponsiveGraphPage() {
   const isNarrow = useIsNarrowScreen()
-  return isNarrow ? <KoreaMobile mode="graph" /> : <GraphPage />
+  return isNarrow ? <KoreaMobile mode="graph" /> : <KoreaGraph />
+}
+
+function ResponsiveSnapshotGraph({ market }: { market: OverseasMarket }) {
+  return useIsNarrowScreen() ? <SnapshotMobile key={market} market={market} mode="graph" /> : <SnapshotGraph key={market} market={market} />
 }
 
 // MOBILE에서도 PC 지도 페이지를 쓴다. MapPage가 MOBILE 화면이면 모바일 판(캡처 프레임)만 화면 폭에 맞춰 보여 준다(실험, 2026-11-21).
@@ -213,10 +217,9 @@ export default function App() {
             <Route path={SECTOR_USA} element={<UsaSectorPage />} />
             <Route path={STOCK_USA} element={<UsaStockPage />} />
             {/* 해외 시장의 서머리 — 시장 목록표(markets.ts)에서 만든다. 지도·그래프·섹터·주식은 시장별 화면이라 아래에 따로 둔다(2단계에서 공통 화면으로 합칠 예정). */}
+            {OVERSEAS_MARKETS.map(market => <Route key={`graph-${market.id}`} path={overseasRoute('/graph', market.id)} element={<ResponsiveSnapshotGraph market={market.id} />} />)}
             {OVERSEAS_MARKETS.map(market => <Route key={market.id} path={overseasRoute('/summary', market.id)} element={<OverseasSummaryPage market={market.id} />} />)}
             <Route path="/map/japan" element={<JapanMapPage />} />
-            <Route path="/graph/japan" element={<JapanGraphPage />} />
-            <Route path="/graph/usa" element={<UsaGraphPage />} />
             <Route path="/map/usa" element={<UsaMapPage />} />
           </Route>
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}

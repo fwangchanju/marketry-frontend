@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
@@ -7,7 +7,7 @@ import { useSnapshotMarketIndex } from '@/markets/useSnapshotMarketIndex'
 import type { OverseasSheet } from '@/hooks/useOverseasSheet'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { SNAPSHOT_MARKETS } from '@/markets/snapshotMarkets'
-import { useListedStocks, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
+import { useListedStocks, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes, type MarketQuoteSnapshot } from '@/markets/useMarketQuotes'
 import { buildJapanTree } from '@/utils/japanMap'
 import { overseasMarketInfo, type OverseasMarket } from '@/utils/markets'
 import { overseasSettingKey } from '@/utils/overseasSettingKey'
@@ -32,17 +32,19 @@ export function useSnapshotMarketSummary(market: OverseasMarket, sheet: Overseas
   const shownQuotes = rangeStart ? periodQuotes.data : quotes.data
   const snapshotTime = quotes.data?.snapshotTime ?? null
   const liveSnapshotTime = liveQuotes.data?.snapshotTime ?? null
-  const tree = useMemo(() => {
-    const snap = shownQuotes?.snapshotTime ?? null
-    if (!categories.data || !classifications.data || !shownQuotes || !snap || !stocks || !names.data) return []
-    return buildJapanTree(stocks, categories.data, classifications.data, names.data, shownQuotes.quotes, snap)
-  }, [categories.data, classifications.data, shownQuotes, names.data, stocks])
+  const treeOf = useCallback((snapshot: MarketQuoteSnapshot | undefined) => {
+    if (!categories.data || !classifications.data || !snapshot?.snapshotTime || !stocks || !names.data) return []
+    return buildJapanTree(stocks, categories.data, classifications.data, names.data, snapshot.quotes, snapshot.snapshotTime)
+  }, [categories.data, classifications.data, names.data, stocks])
+  const tree = useMemo(() => treeOf(shownQuotes), [treeOf, shownQuotes])
   const index = useSnapshotMarketIndex(market, snapshotTime, liveSnapshotTime, rangeStart)
   const required = [quotes, categories, classifications, names, ...(bundledStocks === null ? [listed] : [])]
   return {
     market,
     label: badgeLabel,
     tree,
+    treeOf,
+    snapshotTimes: times.data,
     snapshotTime,
     liveSnapshotTime,
     rangeStart,

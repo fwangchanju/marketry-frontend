@@ -80,3 +80,21 @@ export interface MarketColors {
   scaleSection: ComponentProps<typeof SettingsColorSection>
   strongSection: ComponentProps<typeof SettingsStrongIndustryColorSection>
 }
+
+// 그래프가 쓰는 값. 막대는 화면이 계산하고, 시장은 지금·N분 전 자료와 설정만 넘긴다.
+export interface MarketGraph {
+  depth: number
+  setDepth: (depth: number) => void
+  selectableDepth: number
+  useSimpleAverage: boolean
+  setUseSimpleAverage: (useSimple: boolean) => void
+  beforeMinutes: number
+  setBeforeMinutes: (minutes: number) => void
+  // "N분 전 대비"를 보는 중인지와, 그때의 N분 전 자료·지수 차이.
+  showDelta: boolean
+  toggleDelta: () => void
+  beforeNodes: HeatmapSectorNode[]
+  deltaIndexBars: MarketIndexBar[]
+  // "N분 전 대비"를 아예 쓸 수 없는 시장의 이유. 쓸 수 있으면 null이다.
+  deltaLock: { average: ReactNode; before: ReactNode } | null
+}

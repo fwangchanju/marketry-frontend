@@ -1,3 +1,4 @@
+import type { MarketQuoteSnapshot } from '@/markets/useMarketQuotes'
 import type { MarketScreenData } from '@/markets/marketContract'
 import type { ReactNode } from 'react'
 import type { CurrencyUnit } from '@/utils/currencyUnit'
@@ -12,6 +13,9 @@ export interface OverseasSummarySource {
   // 툴바 배지 글자(시장 목록표의 배지 글자).
   label: string
   tree: HeatmapSectorNode[]
+  // 다른 시각의 시세로 같은 분류 트리를 만든다(N분 전 대비).
+  treeOf: (snapshot: MarketQuoteSnapshot | undefined) => HeatmapSectorNode[]
+  snapshotTimes: string[] | undefined
   snapshotTime: string | null
   liveSnapshotTime: string | null
   rangeStart: string | null
