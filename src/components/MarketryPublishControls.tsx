@@ -8,6 +8,7 @@ import {
   type MarketryPublication,
 } from '@/api/marketryPublish'
 import { heatmapKeys } from '@/hooks/queryKeys'
+import type { ClassificationMarket } from '@/utils/markets'
 import Spinner from '@/components/Spinner'
 import { useMainAreaRect } from '@/hooks/useMainAreaRect'
 import { appAlert, appWarnConfirm, appWarnConfirmWithInput } from '@/utils/appDialogBus'
@@ -56,7 +57,12 @@ function createPublicationLabel(now: Date) {
 }
 
 // 관리자 전용 — 내 분류를 MARKETRY로 올리고, 이전 버전으로 되돌린다. 다른 사용자의 데이터는 건드리지 않는다.
-export default function MarketryPublishControls() {
+export default function MarketryPublishControls({ market = 'KOREA', onChanged }: {
+  // 어느 시장의 MARKETRY를 올리고 되돌리는지. 기본은 한국이다.
+  market?: ClassificationMarket
+  // 올리거나 되돌린 뒤 그 시장 화면의 자료를 다시 받게 한다. 없으면 한국 지도 자료를 다시 받는다.
+  onChanged?: () => Promise<unknown>
+} = {}) {
   const queryClient = useQueryClient()
   // 올리거나 되돌리는 중이면 true.
   const [isBusy, setIsBusy] = useState(false)
@@ -74,7 +80,7 @@ export default function MarketryPublishControls() {
     return () => window.removeEventListener('mousedown', close)
   }, [isVersionsOpen])
 
-  const refreshMaps = () => queryClient.invalidateQueries({ queryKey: heatmapKeys.all })
+  const refreshMaps = () => (onChanged ? onChanged() : queryClient.invalidateQueries({ queryKey: heatmapKeys.all }))
 
   const handlePublish = async () => {
     const { confirmed, value: memo } = await appWarnConfirmWithInput(
@@ -85,7 +91,7 @@ export default function MarketryPublishControls() {
     setIsBusy(true)
     try {
       // 메모를 적었으면 그것을 버전 이름으로 올리고, 비워 두었으면 예전처럼 "MARKETRY 시각"으로 올린다.
-      const published = await publishMarketry(memo || createPublicationLabel(new Date()))
+      const published = await publishMarketry(memo || createPublicationLabel(new Date()), market)
       setVersions(null)
       await refreshMaps()
       appAlert(`${versionHeadLines(published)}\n[MARKETRY] 모드가 업데이트되었습니다.`, { title: '업데이트 완료' })
@@ -104,7 +110,7 @@ export default function MarketryPublishControls() {
     setIsVersionsOpen(true)
     if (versions !== null) return
     try {
-      setVersions((await getMarketryPublications()).slice(0, ROLLBACK_VERSION_COUNT))
+      setVersions((await getMarketryPublications(market)).slice(0, ROLLBACK_VERSION_COUNT))
     } catch {
       setIsVersionsOpen(false)
       appAlert('이전 버전 목록을 불러오지 못했습니다.', { title: '불러오기 실패' })
@@ -116,7 +122,7 @@ export default function MarketryPublishControls() {
     if (!confirmed) return
     setIsBusy(true)
     try {
-      await restoreMarketryPublication(version.id)
+      await restoreMarketryPublication(version.id, market)
       setIsVersionsOpen(false)
       await refreshMaps()
       appAlert(`${versionHeadLines(version)}\nMARKETRY 롤백이 완료되었습니다.`, { title: '롤백 완료' })

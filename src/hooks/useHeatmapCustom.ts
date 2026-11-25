@@ -18,6 +18,7 @@ import {
   updateStockAlias,
   bulkAssignStockSector,
   getStockSectors,
+  getStockAssignments,
   createCustomScaleThreshold,
   updateCustomScaleThreshold,
   deleteCustomScaleThreshold,
@@ -25,13 +26,16 @@ import {
 import { customHeatmapKeys, heatmapKeys } from './queryKeys'
 import { STATIC_REFERENCE_CACHE, INFREQUENT_DATA_CACHE } from './cacheConfig'
 import type { StockSectorListItem } from '@/types/api'
+import type { ClassificationMarket } from '@/utils/markets'
 
 interface StockSectorListResponse {
   snapshotTime: string | null
   items: StockSectorListItem[]
 }
 
-export function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQueryClient>) {
+// 내 기준 지도·그래프 데이터를 다시 받게 한다. 한국은 지도 응답을, 일본·미국은 종목 배정 목록을 다시 받는다.
+export function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQueryClient>, market: ClassificationMarket = 'KOREA') {
+  if (market !== 'KOREA') return queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockAssignments(market) })
   return queryClient.invalidateQueries({
     queryKey: heatmapKeys.all,
     predicate: ({ queryKey }) =>
@@ -39,144 +43,146 @@ export function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQuery
   })
 }
 
-export function useCustomSectors(options?: { enabled?: boolean }) {
+export function useCustomSectors(options?: { enabled?: boolean; market?: ClassificationMarket }) {
+  const market = options?.market ?? 'KOREA'
   return useQuery({
-    queryKey: customHeatmapKeys.sectors(),
-    queryFn: getSectors,
+    queryKey: customHeatmapKeys.sectors(market),
+    queryFn: () => getSectors(market),
     enabled: options?.enabled ?? true,
     ...INFREQUENT_DATA_CACHE,
   })
 }
 
-export function useResetCustomClassification() {
+export function useResetCustomClassification(market: ClassificationMarket = 'KOREA') {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: resetCustomClassification,
+    mutationFn: () => resetCustomClassification(market),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() })
-      invalidateCustomTaxonomy(queryClient)
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors(market) })
+      if (market === 'KOREA') queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() })
+      invalidateCustomTaxonomy(queryClient, market)
     },
     meta: { skipGlobalError: true },
   })
 }
 
-export function useSectorDeletePreview() {
+export function useSectorDeletePreview(market: ClassificationMarket = 'KOREA') {
   return useMutation({
-    mutationFn: (id: number) => getSectorDeletePreview(id),
+    mutationFn: (id: number) => getSectorDeletePreview(id, market),
     meta: { skipGlobalError: true },
   })
 }
 
-export function useCreateSector(options?: { skipGlobalError?: boolean; deferInvalidation?: boolean }) {
+export function useCreateSector(options?: { skipGlobalError?: boolean; deferInvalidation?: boolean; market?: ClassificationMarket }) {
   const queryClient = useQueryClient()
+  const market = options?.market ?? 'KOREA'
   return useMutation({
     meta: { failure: '업종을 추가하지 못했습니다.', skipGlobalError: options?.skipGlobalError },
-    mutationFn: ({ name, parentId }: { name: string; parentId: number | null }) => createSector(name, parentId),
+    mutationFn: ({ name, parentId }: { name: string; parentId: number | null }) => createSector(name, parentId, market),
     onSuccess: () => {
       if (options?.deferInvalidation) return
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
-      invalidateCustomTaxonomy(queryClient)
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors(market) })
+      invalidateCustomTaxonomy(queryClient, market)
     },
     onError: () => {
-      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
+      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors(market) })
     },
   })
 }
 
-export function useRenameSector() {
+export function useRenameSector(market: ClassificationMarket = 'KOREA') {
   const queryClient = useQueryClient()
   return useMutation({
     meta: { failure: '업종명을 바꾸지 못했습니다.' },
-    mutationFn: ({ id, name }: { id: number; name: string }) => renameSector(id, name),
+    mutationFn: ({ id, name }: { id: number; name: string }) => renameSector(id, name, market),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
-      invalidateCustomTaxonomy(queryClient)
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors(market) })
+      invalidateCustomTaxonomy(queryClient, market)
     },
   })
 }
 
-export function useReparentSector() {
+export function useReparentSector(market: ClassificationMarket = 'KOREA') {
   const queryClient = useQueryClient()
   return useMutation({
     meta: { failure: '업종을 옮기지 못했습니다.' },
-    mutationFn: ({ id, parentId }: { id: number; parentId: number | null }) => reparentSector(id, parentId),
+    mutationFn: ({ id, parentId }: { id: number; parentId: number | null }) => reparentSector(id, parentId, market),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
-      invalidateCustomTaxonomy(queryClient)
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors(market) })
+      invalidateCustomTaxonomy(queryClient, market)
     },
   })
 }
 
-export function useDeleteSector() {
+export function useDeleteSector(market: ClassificationMarket = 'KOREA') {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, expectedMoveCount }: { id: number; expectedMoveCount: number }) => deleteSector(id, expectedMoveCount),
+    mutationFn: ({ id, expectedMoveCount }: { id: number; expectedMoveCount: number }) => deleteSector(id, expectedMoveCount, market),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors(market) })
       // 담겨 있던 종목이 미분류로 옮겨지므로 종목 표의 분류도 다시 받는다.
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() })
-      invalidateCustomTaxonomy(queryClient)
+      if (market === 'KOREA') queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() })
+      invalidateCustomTaxonomy(queryClient, market)
     },
     meta: { skipGlobalError: true },
   })
 }
 
-export function useSnapshots() {
+export function useSnapshots(market: ClassificationMarket = 'KOREA') {
   return useQuery({
-    queryKey: customHeatmapKeys.snapshots(),
-    queryFn: getSnapshots,
+    queryKey: customHeatmapKeys.snapshots(market),
+    queryFn: () => getSnapshots(market),
     ...STATIC_REFERENCE_CACHE,
   })
 }
 
-export function useCurrentSnapshot() {
+export function useCurrentSnapshot(market: ClassificationMarket = 'KOREA') {
   return useQuery({
-    queryKey: customHeatmapKeys.currentSnapshot(),
-    queryFn: getCurrentSnapshot,
+    queryKey: customHeatmapKeys.currentSnapshot(market),
+    queryFn: () => getCurrentSnapshot(market),
     ...STATIC_REFERENCE_CACHE,
   })
 }
 
-export function useSaveSnapshot() {
+export function useSaveSnapshot(market: ClassificationMarket = 'KOREA') {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (label: string) => saveSnapshot(label),
+    mutationFn: (label: string) => saveSnapshot(label, market),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.snapshots() })
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.currentSnapshot() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.snapshots(market) })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.currentSnapshot(market) })
     },
   })
 }
 
-export function useOverwriteSnapshot() {
+export function useOverwriteSnapshot(market: ClassificationMarket = 'KOREA') {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, label }: { id: number; label: string }) => overwriteSnapshot(id, label),
+    mutationFn: ({ id, label }: { id: number; label: string }) => overwriteSnapshot(id, label, market),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.snapshots() })
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.currentSnapshot() })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.snapshots(market) })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.currentSnapshot(market) })
     },
   })
 }
 
-export function useRestoreSnapshot() {
+export function useRestoreSnapshot(market: ClassificationMarket = 'KOREA') {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => restoreSnapshot(id),
+    mutationFn: (id: number) => restoreSnapshot(id, market),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() })
-      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.currentSnapshot() })
-      invalidateCustomTaxonomy(queryClient)
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors(market) })
+      queryClient.invalidateQueries({ queryKey: customHeatmapKeys.currentSnapshot(market) })
+      invalidateCustomTaxonomy(queryClient, market)
     },
   })
 }
 
-export function useDeleteSnapshot() {
+export function useDeleteSnapshot(market: ClassificationMarket = 'KOREA') {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => deleteSnapshot(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customHeatmapKeys.snapshots() }),
+    mutationFn: (id: number) => deleteSnapshot(id, market),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: customHeatmapKeys.snapshots(market) }),
   })
 }
 
@@ -185,39 +191,46 @@ export function useDeleteSnapshot() {
 // 재조회(invalidate)를 하면 필터링 중이던 목록에서 방금 바꾼 종목이 새 섹터 기준으로 곧장
 // 걸러져 사라져버리는 문제가 있었다 — 목록 자체(필터링된 종목 집합)를 다시 계산하는 건 필터 조건을
 // 바꾸거나 명시적으로 새로고침할 때만 일어나야 한다.
-function patchStockSectorId(queryClient: ReturnType<typeof useQueryClient>, stockCodes: string[], sectorId: number, deferInvalidation = false) {
+function patchStockSectorId(queryClient: ReturnType<typeof useQueryClient>, stockCodes: string[], sectorId: number, market: ClassificationMarket, deferInvalidation = false) {
   const stockCodeSet = new Set(stockCodes)
+  if (market !== 'KOREA') {
+    queryClient.setQueryData<Record<string, number>>(customHeatmapKeys.stockAssignments(market), old =>
+      old ? { ...old, ...Object.fromEntries(stockCodes.map(code => [code, sectorId])) } : old,
+    )
+    return
+  }
   queryClient.setQueryData<StockSectorListResponse>(customHeatmapKeys.stockSectors(), old =>
     old
       ? { ...old, items: old.items.map(item => (stockCodeSet.has(item.stockCode) ? { ...item, sectorId } : item)) }
       : old,
   )
-  if (!deferInvalidation) invalidateCustomTaxonomy(queryClient)
+  if (!deferInvalidation) invalidateCustomTaxonomy(queryClient, market)
 }
 
-export function useAssignStockSector() {
+export function useAssignStockSector(market: ClassificationMarket = 'KOREA') {
   const queryClient = useQueryClient()
   return useMutation({
     meta: { failure: '종목의 업종을 바꾸지 못했습니다.' },
     mutationFn: ({ stockCode, sectorId }: { stockCode: string; sectorId: number }) =>
-      assignStockSector(stockCode, sectorId),
-    onSuccess: (_data, { stockCode, sectorId }) => patchStockSectorId(queryClient, [stockCode], sectorId),
+      assignStockSector(stockCode, sectorId, market),
+    onSuccess: (_data, { stockCode, sectorId }) => patchStockSectorId(queryClient, [stockCode], sectorId, market),
   })
 }
 
-export function useBulkAssignStockSector(options?: { skipGlobalError?: boolean; deferInvalidation?: boolean }) {
+export function useBulkAssignStockSector(options?: { skipGlobalError?: boolean; deferInvalidation?: boolean; market?: ClassificationMarket }) {
   const queryClient = useQueryClient()
+  const market = options?.market ?? 'KOREA'
   return useMutation({
     meta: { failure: '종목의 업종을 바꾸지 못했습니다.', skipGlobalError: options?.skipGlobalError },
     mutationFn: ({ stockCodes, sectorId }: { stockCodes: string[]; sectorId: number }) =>
-      bulkAssignStockSector(stockCodes, sectorId),
+      bulkAssignStockSector(stockCodes, sectorId, market),
     onSuccess: (data, { stockCodes, sectorId }) => {
       const failed = new Set(data.failedStockCodes)
-      patchStockSectorId(queryClient, stockCodes.filter(code => !failed.has(code)), sectorId, options?.deferInvalidation)
+      patchStockSectorId(queryClient, stockCodes.filter(code => !failed.has(code)), sectorId, market, options?.deferInvalidation)
     },
     // 응답을 못 받은 요청도 서버에는 적용됐을 수 있으므로 실제 값을 다시 받는다.
     onError: () => {
-      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() })
+      if (!options?.deferInvalidation) return queryClient.invalidateQueries({ queryKey: market === 'KOREA' ? customHeatmapKeys.stockSectors() : customHeatmapKeys.stockAssignments(market) })
     },
   })
 }
@@ -229,6 +242,16 @@ export function useUpdateStockAlias() {
     mutationFn: ({ stockCode, alias }: { stockCode: string; alias: string | null }) =>
       updateStockAlias(stockCode, alias),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() }),
+  })
+}
+
+// 종목마다 배정된 업종 번호 — 일본·미국 내 기준 표가 쓴다.
+export function useStockAssignments(market: ClassificationMarket, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: customHeatmapKeys.stockAssignments(market),
+    queryFn: () => getStockAssignments(market),
+    enabled: options?.enabled ?? true,
+    ...STATIC_REFERENCE_CACHE,
   })
 }
 

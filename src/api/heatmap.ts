@@ -1,3 +1,5 @@
+import { marketParams } from './custom'
+import type { ClassificationMarket } from '@/utils/markets'
 import client from './client'
 import {
   HeatmapResponseSchema,
@@ -78,8 +80,8 @@ export const getHeatmapScale = () =>
 
 // 종목 단위 대신 섹터 단위로 제외한다 — 상태(is_excluded)는 market_map_category에 저장되고,
 // 마켓맵 응답의 각 섹터 노드에 isExcluded로 같이 내려온다.
-export const registerExcludedSector = (sectorId: number) =>
-  client.post(`/map/excluded-sectors/${sectorId}`)
+export const registerExcludedSector = (sectorId: number, market: ClassificationMarket = 'KOREA') =>
+  client.post(`/map/excluded-sectors/${sectorId}`, undefined, { params: marketParams(market) })
 
-export const unregisterExcludedSector = (sectorId: number) =>
-  client.delete(`/map/excluded-sectors/${sectorId}`)
+export const unregisterExcludedSector = (sectorId: number, market: ClassificationMarket = 'KOREA') =>
+  client.delete(`/map/excluded-sectors/${sectorId}`, { params: marketParams(market) })

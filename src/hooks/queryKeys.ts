@@ -1,3 +1,4 @@
+import type { ClassificationMarket } from '@/utils/markets'
 import type { ChangeRateMode } from '@/api/heatmap'
 import type { TaxonomySource } from '@/utils/taxonomyNames'
 import type { MarketQuery } from '@/types/api'
@@ -45,13 +46,17 @@ export const authKeys = {
   session: () => [...authKeys.all, 'session'] as const,
 }
 
+const marketKey = (market: ClassificationMarket) => (market === 'KOREA' ? [] : [market])
+
 export const customHeatmapKeys = {
   all: ['custom-heatmap'] as const,
-  sectors: () => [...customHeatmapKeys.all, 'sectors'] as const,
+  // 한국 키는 시장을 붙이지 않아 지금 캐시와 같다. 일본·미국은 시장을 붙여 나눈다.
+  sectors: (market: ClassificationMarket = 'KOREA') => [...customHeatmapKeys.all, 'sectors', ...marketKey(market)] as const,
   sectorDeletePreview: (id: number) => [...customHeatmapKeys.all, 'sector-delete-preview', id] as const,
-  snapshots: () => [...customHeatmapKeys.all, 'snapshots'] as const,
-  currentSnapshot: () => [...customHeatmapKeys.all, 'current-snapshot'] as const,
+  snapshots: (market: ClassificationMarket = 'KOREA') => [...customHeatmapKeys.all, 'snapshots', ...marketKey(market)] as const,
+  currentSnapshot: (market: ClassificationMarket = 'KOREA') => [...customHeatmapKeys.all, 'current-snapshot', ...marketKey(market)] as const,
   stockSectors: () => [...customHeatmapKeys.all, 'stock-sectors'] as const,
+  stockAssignments: (market: ClassificationMarket) => [...customHeatmapKeys.all, 'stock-assignments', market] as const,
   scale: () => [...customHeatmapKeys.all, 'scale'] as const,
   valueTiers: () => [...customHeatmapKeys.all, 'value-tiers'] as const,
 }
