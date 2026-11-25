@@ -1,7 +1,8 @@
-import OverseasSummaryView from '@/pages/OverseasSummaryView'
-import { useSnapshotMarketSummary } from '@/markets/useSnapshotMarketSummary'
+import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
+import SnapshotMobile from '@/markets/SnapshotMobile'
+import SnapshotSummary from '@/markets/SnapshotSummary'
 import type { OverseasMarket } from '@/utils/markets'
 
 export default function OverseasSummaryPage({ market }: { market: OverseasMarket }) {
-  return <OverseasSummaryView source={useSnapshotMarketSummary(market)} />
+  return useIsNarrowScreen() ? <SnapshotMobile key={market} market={market} mode="sector" /> : <SnapshotSummary key={market} market={market} />
 }

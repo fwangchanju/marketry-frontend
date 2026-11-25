@@ -13,7 +13,7 @@ import ScreenshotModal from '@/components/ScreenshotModal'
 import SettingsPanel, { SettingsColorSection, SettingsExcludeSection, SettingsMarketValueSection, SettingsPanelGroup, SettingsStrongIndustryColorSection } from '@/components/SettingsPanel'
 import Spinner from '@/components/Spinner'
 import { HiddenSummaryCaptureFrames, SortableSummaryScreenFrames } from '@/components/SummaryFrame'
-import SummaryToolbar from '@/components/SummaryToolbar'
+import MarketToolbarContent from '@/components/MarketToolbarContent'
 import TaxonomyBadge from '@/components/TaxonomyBadge'
 import Toolbar from '@/components/Toolbar'
 import { useLocalPersistedState } from '@/hooks/useLocalPersistedState'
@@ -84,7 +84,7 @@ export default function SummaryScreen({ market, menu, taxonomy, filters, colors,
   ])
   const mineGuide = <EmptyLogoMessage message={EMPTY_MINE_MESSAGE}><CustomPageBadgeLink to={market.mineSetupPath} /></EmptyLogoMessage>
   const captureFrames = frames.map(frame => ({ ...frame, children: isMineEmpty ? mineGuide : frame.children }))
-  const toolbar = <SummaryToolbar market={market} menu={menu} right={<TaxonomyBadge taxonomy={taxonomy} strongIndustryColor={strongIndustryColor} />} />
+  const toolbar = <MarketToolbarContent page="SUMMARY" market={market} menu={menu} right={<TaxonomyBadge taxonomy={taxonomy} strongIndustryColor={strongIndustryColor} />} />
 
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">

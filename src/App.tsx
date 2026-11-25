@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react'
 import OverseasSummaryPage from './pages/OverseasSummaryPage'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
-import MobileMarketSummaryPage from './pages/MobileMarketSummaryPage'
+import KoreaMobile from './markets/KoreaMobile'
 import MobileSummaryPage from './pages/MobileSummaryPage'
 import LoginGateProvider from './components/LoginGateProvider'
 import AppDialogHost from './components/AppDialogHost'
@@ -107,13 +107,13 @@ function AdminRouteGuard() {
 function ResponsiveSummaryPage() {
   const isNarrow = useIsNarrowScreen()
   // 해외 서머리와 같게, 폰의 서머리 주소는 자기 화면(업종 지도)을 연다. 모바일 홈은 / 따로 있다.
-  if (isNarrow) return <MobileMarketSummaryPage mode="sector" />
+  if (isNarrow) return <KoreaMobile mode="sector" />
   return <KoreaSummary />
 }
 
 function ResponsiveGraphPage() {
   const isNarrow = useIsNarrowScreen()
-  return isNarrow ? <MobileMarketSummaryPage mode="graph" /> : <GraphPage />
+  return isNarrow ? <KoreaMobile mode="graph" /> : <GraphPage />
 }
 
 // 폰에서도 PC 지도 페이지를 쓴다. MapPage가 폰 화면이면 모바일 판(캡처 프레임)만 화면 폭에 맞춰 보여 준다(실험, 2026-11-21).

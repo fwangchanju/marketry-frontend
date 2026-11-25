@@ -21,6 +21,7 @@ export interface OverseasSummarySource {
   isLoading: boolean
   isError: boolean
   isIndexLoading: boolean
+  isIndexFetching: boolean
   isFetching: boolean
   // 그룹 등락률 스와이프 미리보기에 넣을 지수 막대(일본 닛케이·미국 S&P500). 한국의 코스피·코스닥과 같은 역할이다.
   graphIndexItems: { key: string; name: string; value: number }[]

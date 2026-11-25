@@ -22,7 +22,7 @@ test('캡처창 선택지는 틀 순서와 같은 셀렉터 규칙으로 만든�
 
 test('SUMMARY 화면은 틀 제목과 캡처 이름을 직접 적지 않는다', () => {
   const srcDir = join(dirname(fileURLToPath(import.meta.url)), '..')
-  for (const name of ['components/SummaryScreen.tsx', 'markets/KoreaSummary.tsx', 'pages/OverseasSummaryView.tsx']) {
+  for (const name of ['components/SummaryScreen.tsx', 'markets/KoreaSummary.tsx', 'markets/SnapshotSummary.tsx']) {
     const source = readFileSync(join(srcDir, name), 'utf8')
     assert.ok(!source.includes("title: '업종 지도'"), `${name}에서 제목을 직접 적지 않는다`)
     assert.ok(!source.includes("captureId: 'market-map'"), `${name}에서 캡처 이름을 직접 적지 않는다`)
@@ -33,8 +33,8 @@ test('SUMMARY 화면은 틀 제목과 캡처 이름을 직접 적지 않는다',
   }
 })
 
-test('SUMMARY 공통 화면은 시장 이름으로 갈라지지 않는다', () => {
-  for (const name of ['../components/SummaryScreen.tsx', '../components/SummaryToolbar.tsx']) {
+test('공통 화면은 시장 이름으로 갈라지지 않는다', () => {
+  for (const name of ['../components/SummaryScreen.tsx', '../components/MarketToolbarContent.tsx', '../components/MobileMarketScreen.tsx', '../components/MobileStockHeatmap.tsx']) {
     const source = readFileSync(new URL(name, import.meta.url), 'utf8')
     for (const word of ["'KOREA'", "'JAPAN'", "'USA'", 'Overseas', 'overseas', 'Japan', 'Usa', 'Korea', '/korea', '/japan', '/usa']) assert.equal(source.includes(word), false, `${name}: ${word}`)
   }

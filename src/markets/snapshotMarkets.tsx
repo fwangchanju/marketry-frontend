@@ -10,6 +10,8 @@ import { overseasMarketInfo, type OverseasMarket } from '@/utils/markets'
 
 type SnapshotMarketDefinition = {
   currencyUnit: CurrencyUnit
+  // MOBILE 하단 설정 줄과 차트가 쓰는 시장 이름.
+  sheetMarket: 'japan' | 'usa'
   // 저장된 설정의 이름 앞부분. 바꾸면 저장값이 사라진다.
   settingPrefix: string
   fixed: { colorScale: (typeof JAPAN_MAP_FIXED)['colorScale']; strongIndustryColor: string }
@@ -24,6 +26,6 @@ type SnapshotMarketDefinition = {
 
 // 스냅샷 목록으로 시세를 주는 시장마다 다른 값. 시장이 빠지면 빌드가 실패한다.
 export const SNAPSHOT_MARKETS: Readonly<Record<OverseasMarket, SnapshotMarketDefinition>> = {
-  JAPAN: { currencyUnit: '엔', settingPrefix: JAPAN_MAP_SETTING_PREFIX, fixed: JAPAN_MAP_FIXED, bundledStocks: japanStocks, intradayDelta: true, index: { key: 'market-index:NIKKEI225', name: '닛케이', hasIntraday: true }, session: time => <MarketSessionChip market="JAPAN" session={japanSessionAt(time)} />, refreshHelp: () => JAPAN_REFRESH_HELP },
-  USA: { currencyUnit: '달러', settingPrefix: USA_MAP_SETTING_PREFIX, fixed: USA_MAP_FIXED, bundledStocks: null, intradayDelta: false, index: { key: 'market-index:SP500', name: overseasMarketInfo('USA').badgeLabel, hasIntraday: false }, session: () => <MarketSessionChip market="USA" session={USA_SESSION} />, refreshHelp: usaRefreshHelp },
+  JAPAN: { currencyUnit: '엔', sheetMarket: 'japan', settingPrefix: JAPAN_MAP_SETTING_PREFIX, fixed: JAPAN_MAP_FIXED, bundledStocks: japanStocks, intradayDelta: true, index: { key: 'market-index:NIKKEI225', name: '닛케이', hasIntraday: true }, session: time => <MarketSessionChip market="JAPAN" session={japanSessionAt(time)} />, refreshHelp: () => JAPAN_REFRESH_HELP },
+  USA: { currencyUnit: '달러', sheetMarket: 'usa', settingPrefix: USA_MAP_SETTING_PREFIX, fixed: USA_MAP_FIXED, bundledStocks: null, intradayDelta: false, index: { key: 'market-index:SP500', name: overseasMarketInfo('USA').badgeLabel, hasIntraday: false }, session: () => <MarketSessionChip market="USA" session={USA_SESSION} />, refreshHelp: usaRefreshHelp },
 }

@@ -4,7 +4,7 @@ import client from '@/api/client'
 import { useCrossMarketPeriod } from '@/hooks/useCrossMarketPeriod'
 import { useOverseasClassificationData } from '@/hooks/useOverseasClassificationData'
 import { useSnapshotMarketIndex } from '@/markets/useSnapshotMarketIndex'
-import { useOverseasSheet } from '@/hooks/useOverseasSheet'
+import type { OverseasSheet } from '@/hooks/useOverseasSheet'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { SNAPSHOT_MARKETS } from '@/markets/snapshotMarkets'
 import { useListedStocks, useMarketPeriodQuotes, useMarketQuotes, useMarketSnapshotTimes } from '@/markets/useMarketQuotes'
@@ -13,11 +13,10 @@ import { overseasMarketInfo, type OverseasMarket } from '@/utils/markets'
 import { overseasSettingKey } from '@/utils/overseasSettingKey'
 
 // 스냅샷 목록으로 시세를 주는 시장의 SUMMARY 데이터. 시장마다 다른 값은 SNAPSHOT_MARKETS에서만 온다.
-export function useSnapshotMarketSummary(market: OverseasMarket): OverseasSummarySource {
+export function useSnapshotMarketSummary(market: OverseasMarket, sheet: OverseasSheet): OverseasSummarySource {
   const { currencyUnit, settingPrefix, fixed, bundledStocks, intradayDelta, session, refreshHelp } = SNAPSHOT_MARKETS[market]
   const { routeSegment, badgeLabel } = overseasMarketInfo(market)
   // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
-  const { sheet } = useOverseasSheet()
   const { categories, classifications } = useOverseasClassificationData(market, sheet)
   const names = useQuery({ queryKey: [routeSegment, 'names'], queryFn: async () => (await client.get<Record<string, string>>(`/${routeSegment}/stock-names`)).data })
   const listed = useListedStocks(market, bundledStocks === null)
@@ -53,6 +52,7 @@ export function useSnapshotMarketSummary(market: OverseasMarket): OverseasSummar
     isLoading: isResolving || required.some(query => query.isLoading) || periodQuotes.isLoading,
     isError: required.some(query => query.isError) || times.isError || periodQuotes.isError,
     isIndexLoading: index.isLoading,
+    isIndexFetching: index.isFetching,
     isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || index.isFetching,
     graphIndexItems: index.graphIndexItems,
     indexBars: index.indexBars,
