@@ -49,7 +49,7 @@ export function useSnapshotMarketSummary(market: SnapshotMarket, sheet: Snapshot
     return buildSnapshotTree(stocks, categories.data, classifications.data, names.data, snapshot.quotes, snapshot.snapshotTime)
   }, [categories.data, classifications.data, names.data, stocks])
   const tree = useMemo(() => treeOf(shownQuotes), [treeOf, shownQuotes])
-  const index = useSnapshotMarketIndex(market, snapshotTime, liveSnapshotTime, rangeStart)
+  const index = useSnapshotMarketIndex(market, snapshotTime, liveSnapshotTime, rangeStart, times.data)
   const required = [quotes, categories, classifications, names, listed]
   return {
     market,
@@ -65,7 +65,7 @@ export function useSnapshotMarketSummary(market: SnapshotMarket, sheet: Snapshot
     rangeExcludedStocks: periodQuotes.excluded.map(stock => ({ stockCode: stock.stockCode, stockName: names.data?.[stock.stockCode] ?? stock.stockCode })),
     isLoading: isResolving || required.some(query => query.isLoading) || periodQuotes.isLoading || staleState.isLoading,
     isError: required.some(query => query.isError) || times.isError || periodQuotes.isError || staleState.isError,
-    isIndexLoading: index.isLoading,
+    isIndexLoading: index.isLoading || times.isLoading,
     isIndexFetching: index.isFetching,
     isFetching: quotes.isFetching || categories.isFetching || classifications.isFetching || index.isFetching,
     graphIndexItems: index.graphIndexItems,

@@ -15,14 +15,15 @@ export function closeChangeRate(base: number | null | undefined, end: number | n
 }
 
 // 시작일 바로 앞 거래일의 종가를 기준으로 종료일 종가까지의 등락률(%)을 구한다. 하루 보기는 시작일과 종료일이 같다.
+// 바로 앞 거래일(tradingDays)의 종가가 빠져 있으면 더 앞 날짜로 대신하지 않는다. 이틀 치가 하루 등락률처럼 보이기 때문이다(2026-11-24 S&P 500).
 // 기준 종가나 종료일 종가가 없으면 null이다. 값이 없는 날을 0으로 그리면 틀린 막대가 되므로 막대를 만들지 않는다.
-export function indexChangeRate(closes: readonly IndexClose[], startDate: string, endDate: string): number | null {
-  const end = closes.find(entry => entry.date === endDate)
-  let base: IndexClose | null = null
-  for (const entry of closes) {
-    if (entry.date < startDate && (base === null || entry.date > base.date)) base = entry
+export function indexChangeRate(closes: readonly IndexClose[], tradingDays: readonly string[], startDate: string, endDate: string): number | null {
+  let baseDate: string | null = null
+  for (const day of tradingDays) {
+    if (day < startDate && (baseDate === null || day > baseDate)) baseDate = day
   }
-  return closeChangeRate(base?.close, end?.close)
+  const closeOn = (date: string | null) => closes.find(entry => entry.date === date)?.close
+  return closeChangeRate(closeOn(baseDate), closeOn(endDate))
 }
 
 // 그래프가 지수 막대를 그릴 구간. 기간 보기는 시작일~종료일, 지난 날짜 보기는 그날 하루다.

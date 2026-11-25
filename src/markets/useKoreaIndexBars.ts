@@ -73,8 +73,9 @@ export function useKoreaIndexBars({ market, pinnedSnapshotTime, rangeStartTime, 
   const indexBars = useMemo(() => {
     const barOf = (indexMarket: 'KOSPI' | 'KOSDAQ', name: string): MarketIndexBar => {
       const key = `market-index:${indexMarket}`
+      // 그날의 지수가 없으면 더 앞 날짜 값으로 대신하지 않는다.
       const historicalIndex = pinnedSnapshotTime !== undefined
-        ? (historicalIndexData ?? []).filter(candidate => candidate.market === indexMarket).sort((a, b) => a.date.localeCompare(b.date)).at(-1)
+        ? historicalIndexData?.find(candidate => candidate.market === indexMarket && candidate.date === indexEndDate)
         : undefined
       const value = pinnedSnapshotTime !== undefined
         ? historicalIndex?.overview.changeRate
@@ -86,7 +87,7 @@ export function useKoreaIndexBars({ market, pinnedSnapshotTime, rangeStartTime, 
     const kospi = barOf('KOSPI', '코스피')
     const kosdaq = barOf('KOSDAQ', '코스닥')
     return (market === 'KOSPI' ? [kospi] : market === 'KOSDAQ' ? [kosdaq] : [kospi, kosdaq]) as MarketScreenData['indexBars']
-  }, [marketSummary, historicalIndexData, pinnedSnapshotTime, isLatestDailyView, market])
+  }, [marketSummary, historicalIndexData, indexEndDate, pinnedSnapshotTime, isLatestDailyView, market])
   return {
     indexBars,
     isLoading: (isLatestDailyView && isMarketSummaryLoading) || (pinnedSnapshotTime !== undefined && isHistoricalIndexLoading),
