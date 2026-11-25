@@ -16,9 +16,12 @@ import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import { captureSwipeArrivalOverlay } from '@/utils/mobileSwipeArrivalOverlay'
 import { toDisplayGroup } from '@/utils/mobileMapHeatmap'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
+import PhonePathStockChart from '@/components/PhonePathStockChart'
+import { useStockChart } from '@/hooks/useStockChart'
+import PhoneSectorMapFrame from '@/components/PhoneSectorMapFrame'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
-import PathBar from '@/components/PathBar'
+import PathBar, { type PathCrumb } from '@/components/PathBar'
 import MobileTopBar from '@/components/MobileTopBar'
 import MobileGraphBars, { type MobileGraphItem } from '@/components/MobileGraphBars'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
@@ -188,13 +191,16 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     return items
   }, [mobileGraphNodes, mobileGraphPath, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers, chart.rankedItems])
   // 잎 업종에 들어가면 그 업종의 종목을 국내의 종목 등락률 그래프와 같은 방식으로 보여 준다.
+  const { chartStock, openChart, closeChart } = useStockChart()
   const leafGraphItems = useMemo<MobileGraphItem[]>(() => {
     if (!selectedLeaf) return []
     // collectAllItems는 items·children만 쓰므로 필터 타입으로 좁혀도 안전하다.
     return [...collectAllItems(selectedLeaf as FilteredHeatmapSectorNode)]
       .sort((a, b) => b.totalMarketValue - a.totalMarketValue)
-      .map(stock => ({ key: stock.stockCode, name: stock.alias ?? stock.stockName, value: stock.changeRate }))
-  }, [selectedLeaf])
+      .map(stock => ({ key: stock.stockCode, name: stock.alias ?? stock.stockName, value: stock.changeRate,
+        // 종목 막대를 누르면 종목 지도와 같은 차트를 연다.
+        onSelect: () => openChart({ code: stock.stockCode, name: stock.stockName, sectorPath: [...mobileGraphPath, selectedLeaf.sectorName] }) }))
+  }, [selectedLeaf, mobileGraphPath, openChart])
   const shownGraphItems = selectedLeaf ? leafGraphItems : mobileGraphItems
   // 그룹 등락률에서 종목 지도로 스와이프·상단 버튼 이동할 때 따라올 미리보기. 종목 지도와 같은 트리·필터로 그린다.
   const { filteredRootNodes: mapPreviewNodes } = useFilteredHeatmap(exclusionTree, sectorExclusion.excludedSectorIds as Set<number>, tierRange.excludedMarketValueTiers, PREVIEW_FILTERS)
@@ -281,11 +287,9 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     return source.map((item, index) => ({ ...item, layoutValue: weights[index] }))
   }, [exclusionTree, sectorExclusion.excludedSectorIds, tierRange.excludedMarketValueTiers, boxSizeMarketCapRatio])
   const summaryPreview = (
-    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
-      <div className="flex h-full min-h-0 flex-col bg-ui-background">
-        <MobileSectorMap items={summaryPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={1} />
-      </div>
-    </div>
+    <PhoneSectorMapFrame scale={phoneFrameScale} crumbs={[{ key: 'market', label: label, current: true }]}>
+      <MobileSectorMap items={summaryPreviewItems} colorScale={colorScale} onSelect={() => {}} decimalPlaces={1} />
+    </PhoneSectorMapFrame>
   )
   if (isPhoneMapFrame) {
     const marketKey: MobileMapMarket = market === 'JAPAN' ? 'japan' : 'usa'
@@ -294,24 +298,26 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
     // 맨 앞 막대의 가로 위치를 위 툴바 첫 배지 왼쪽 끝에 맞춘다(세로는 그대로).
     const pathBarLeftShift = phonePathBarLeftShift(4)
     const graphNames = selectedLeaf ? [...mobileGraphPath, selectedLeaf.sectorName] : mobileGraphPath
+    const phonePathCrumbs: PathCrumb[] = [
+      mobileGraphPath.length === 0 && !selectedLeaf
+        ? { key: 'market', label, current: true }
+        : { key: 'market', label, onClick: () => reduceToDepth(0) },
+      ...graphNames.map((name, index) => index === graphNames.length - 1
+        ? { key: `${name}-${index}`, label: name, current: true }
+        : { key: `${name}-${index}`, label: name, onClick: () => reduceToDepth(index + 1) }),
+    ]
     const pathNav = (
       <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${pathBarLeftShift}px)` }}>
         <PathBar
           variant="phone"
           currentAria="location"
           accentColor={strongIndustryColor}
-          crumbs={[
-            mobileGraphPath.length === 0 && !selectedLeaf
-              ? { key: 'market', label, current: true }
-              : { key: 'market', label, onClick: () => reduceToDepth(0) },
-            ...graphNames.map((name, index) => index === graphNames.length - 1
-              ? { key: `${name}-${index}`, label: name, current: true }
-              : { key: `${name}-${index}`, label: name, onClick: () => reduceToDepth(index + 1) }),
-          ]}
+          crumbs={phonePathCrumbs}
         />
       </header>
     )
     return (
+      <>
       <PhoneMapShell
         zoomMode="blocked"
         onSwipe={direction => navigate(direction === 'next' ? mapPath : summaryPath)}
@@ -338,6 +344,8 @@ export default function OverseasGraphView({ source }: { source: OverseasGraphSou
         boxSize={boxSizeMarketCapRatio}
         onChangeBoxSize={onChangeMobileBoxSizeRatio}
       />
+        <PhonePathStockChart chartStock={chartStock} crumbs={phonePathCrumbs} market={marketKey} closeChart={closeChart} />
+      </>
     )
   }
   return (

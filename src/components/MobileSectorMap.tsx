@@ -26,7 +26,7 @@ export default function MobileSectorMap({
 }: {
   items: MobileSectorMapItem[]
   colorScale: ColorScaleConfig
-  onSelect: (name: string) => void
+  onSelect: (name: string, item: MobileSectorMapItem) => void
   onLongPress?: (item: MobileSectorMapItem, target: HTMLElement) => void
   decimalPlaces?: number
   zoomable?: boolean
@@ -139,7 +139,7 @@ export default function MobileSectorMap({
           const label = labels.get(item.key) ?? { lines: [], nameSize: 12, rateSize: null }
           const press = bindLongPress(onLongPress ? target => onLongPress(item, target) : undefined)
           return (
-            <button key={item.key} type="button" aria-label={`${item.name} ${rateText}`} onClick={() => { if (!consumeClick()) onSelect(item.name) }} onPointerDown={event => press.onPointerDown(event)} onPointerMove={press.onPointerMove} onPointerUp={press.onPointerUp} onPointerCancel={press.onPointerCancel} onContextMenu={press.onContextMenu} onPointerLeave={press.onPointerLeave} className="overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight select-none [-webkit-touch-callout:none]" style={{ left: x, top: y, width, height, backgroundColor: background, color: '#fff', '--heatmap-base-color': background } as React.CSSProperties}>
+            <button key={item.key} type="button" aria-label={`${item.name} ${rateText}`} onClick={() => { if (!consumeClick()) onSelect(item.name, item) }} onPointerDown={event => press.onPointerDown(event)} onPointerMove={press.onPointerMove} onPointerUp={press.onPointerUp} onPointerCancel={press.onPointerCancel} onContextMenu={press.onContextMenu} onPointerLeave={press.onPointerLeave} className="overview-map-box absolute flex flex-col items-center justify-center overflow-hidden border-0 p-0.5 text-center leading-tight select-none [-webkit-touch-callout:none]" style={{ left: x, top: y, width, height, backgroundColor: background, color: '#fff', '--heatmap-base-color': background } as React.CSSProperties}>
               <span aria-hidden="true" className="pointer-events-none flex flex-col items-center justify-center overflow-hidden p-0.5 text-center leading-tight">
                 {label.lines.length > 0 && <span className="max-w-full overflow-hidden font-medium" style={{ fontSize: label.nameSize / zoom.scale }}>{label.lines.map((line, index) => <span key={index} className="block whitespace-nowrap">{line}</span>)}</span>}
                 {label.rateSize !== null && <span className="tabular-nums" style={{ fontSize: label.rateSize / zoom.scale }}>{rateText}</span>}

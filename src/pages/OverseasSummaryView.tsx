@@ -48,9 +48,13 @@ import { overseasRoute } from '@/utils/markets'
 import type { OverseasSummarySource } from '@/hooks/overseasSummarySource'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { usePhoneMapInfoPopup } from '@/hooks/usePhoneMapInfoPopup'
+import PhonePathStockChart from '@/components/PhonePathStockChart'
+import { chartSectorPath } from '@/utils/chartSectorPath'
+import { useStockChart } from '@/hooks/useStockChart'
+import PhoneSectorMapFrame from '@/components/PhoneSectorMapFrame'
 import PhoneMapShell from '@/components/PhoneMapShell'
 import { PHONE_PATH_CANVAS_ZOOM, phonePathBarLeftShift } from '@/utils/phonePathBar'
-import PathBar from '@/components/PathBar'
+import PathBar, { type PathCrumb } from '@/components/PathBar'
 import MobileTopBar from '@/components/MobileTopBar'
 import type { MobileMapMarket } from '@/components/MobileMapSheet'
 import Spinner, { MOBILE_LOADING_SIZE_CLASS } from '@/components/Spinner'
@@ -167,9 +171,19 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const openPhoneDrillPopup = (item: PhoneDrillItem, target: HTMLElement) => item.isStock
     ? openStockPopup({ key: item.key, name: item.name, changeRate: item.changeRate, currentPrice: item.currentPrice ?? 0, marketValue: item.marketValue }, target)
     : openSectorPopup(item, target)
-  const handlePhoneSectorSelect = (name: string) => {
+  const { chartStock, openChart, closeChart } = useStockChart()
+  // 업종을 한 단계 열 때마다 기록이 한 칸 쌓이므로, 앞 단계로 돌아갈 때는 그만큼 되돌아간다.
+  const phonePathCrumbs: PathCrumb[] = [label, ...phoneSectorPath].map((name, index) => {
+    const back = phoneSectorPath.length - index
+    return back === 0 ? { key: `${name}-${index}`, label: name, current: true } : { key: `${name}-${index}`, label: name, onClick: () => navigate(-back) }
+  })
+  const handlePhoneSectorSelect = (name: string, item: MobileSectorMapItem) => {
     closeInfoPopup()
-    if (phoneShowingStocks) return
+    // 마지막 단계의 칸은 종목이다. 누르면 종목 지도와 같은 차트를 연다.
+    if (phoneShowingStocks) {
+      openChart({ code: item.key, name, sectorPath: chartSectorPath(phonePathCrumbs) })
+      return
+    }
     const next = [...phoneSectorPath, name]
     setPhoneSectorPath(next)
     navigate(location.pathname + location.search, { state: { phoneSectorPath: next } })
@@ -258,10 +272,10 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
   const { frameSensors, safeSummaryFrameOrder, handleFrameDragEnd, orderFrames } = useSummaryFrameOrder()
   const orderedSummaryFrames = orderFrames(summaryFrames)
   const fixedCaptureRef = useRef<HTMLDivElement>(null)
-  // 미리보기 판은 실제 그래프 판보다 여백이 4px 더 넓다. 같은 막대가 전환 후에도 툴바 첫 배지 왼쪽에 오도록 가로만 맞춘다.
-  const graphPreviewPathBarLeftShift = phonePathBarLeftShift(8)
+  // 실제 그래프 판과 같은 4px 여백을 써서, 미는 동안 업종 지도와 그래프의 경로 줄이 같은 높이에 놓인다.
+  const graphPreviewPathBarLeftShift = phonePathBarLeftShift(4)
   const graphPreview = (
-    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '8px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
+    <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
       <section aria-label="업종 등락률 그래프" className="flex h-full flex-col bg-ui-background p-1">
         {hasData && <div style={{ zoom: PHONE_PATH_CANVAS_ZOOM }}>
           <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${graphPreviewPathBarLeftShift}px)` }}>
@@ -321,6 +335,7 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
     const mapPath = overseasRoute('/map', market)
     const graphPath = overseasRoute('/graph', market)
     return (
+      <>
       <PhoneMapShell
         zoomMode="blocked"
         infoPopup={infoPopup}
@@ -334,20 +349,18 @@ export default function OverseasSummaryView({ source }: { source: OverseasSummar
         nextPreview={graphPreview}
         previousPreview={mapPreview}
         frame={
-          <div style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, padding: '4px', boxSizing: 'border-box', transform: `scale(${phoneFrameScale})`, transformOrigin: 'top left' }} className="relative bg-ui-background">
-            <div className="flex h-full flex-col bg-ui-background">
-              {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div> : hasData ? (
-                <div className="flex min-h-0 flex-1 flex-col p-1">
-                  {phoneDrillMapItems.length ? <MobileSectorMap items={phoneDrillMapItems} colorScale={colorScale} decimalPlaces={1} onSelect={handlePhoneSectorSelect} onLongPress={(item, target) => openPhoneDrillPopup(phoneDrillMapItems.find(drill => drill.key === item.key) ?? item, target)} /> : <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
-                </div>
-              ) : <div className="flex flex-1 items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
-            </div>
-          </div>
+          <PhoneSectorMapFrame scale={phoneFrameScale} crumbs={!isLoading && hasData ? phonePathCrumbs : null} accentColor={strongIndustryColor}>
+            {isLoading ? <div className="flex flex-1 items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
+              : hasData && phoneDrillMapItems.length ? <MobileSectorMap items={phoneDrillMapItems} colorScale={colorScale} decimalPlaces={1} onSelect={handlePhoneSectorSelect} onLongPress={(item, target) => openPhoneDrillPopup(phoneDrillMapItems.find(drill => drill.key === item.key) ?? item, target)} />
+                : <div className="flex h-full items-center justify-center text-[14px] text-ui-muted">이 날짜에는 표시할 데이터가 없습니다.</div>}
+          </PhoneSectorMapFrame>
         }
         current={marketKey}
         boxSize={boxSizeMarketCapRatio}
         onChangeBoxSize={onChangeMobileBoxSizeRatio}
       />
+        <PhonePathStockChart chartStock={chartStock} crumbs={phonePathCrumbs} market={marketKey} closeChart={closeChart} />
+      </>
     )
   }
   return (
