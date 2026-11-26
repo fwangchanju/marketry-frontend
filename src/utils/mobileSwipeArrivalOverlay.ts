@@ -22,6 +22,40 @@ export function releaseSwipeArrivalOverlay() {
   overlay.releaseTimer = window.setTimeout(() => overlay.node.remove(), FADE_MS + 20)
 }
 
+// 위아래 밀기(나라 이동)는 미리보기 판이 없다. 판이 밀려 나간 자리를 빈 판으로 덮어 두고, 새 나라 화면이 다 그려지면
+// 한 번에 걷는다. 그 사이 이전 나라 판이 제자리로 돌아와 비치거나 짧은 로딩원·중간 단계 그림이 끼는 것을 막는다(2026-11-27 사용자 요청).
+// 준비가 오래 걸리면(COUNTRY_HOLD_MS) 덮개를 걷어 화면의 로딩원을 보인다. 운영에서 새 나라 화면은 보통 0.2~0.4초에 준비되므로,
+// 이보다 짧게 잡으면 로딩원이 잠깐 비쳤다 사라지는 깜빡임이 다시 생긴다.
+const COUNTRY_HOLD_MS = 1000
+
+export function holdCountrySwipeArrival(area: HTMLElement | null, market: string, needsMapLayout: boolean) {
+  releaseSwipeArrivalOverlay()
+  if (!area) return
+  const rect = area.getBoundingClientRect()
+  if (!rect.width || !rect.height) return
+  const node = document.createElement('div')
+  node.setAttribute('aria-hidden', 'true')
+  node.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;z-index:9999;pointer-events:none;background:var(--ui-background);transition:opacity ${FADE_MS}ms linear`
+  document.body.appendChild(node)
+  const overlay: Overlay = { node, releaseTimer: null, safetyTimer: null, rafId: null }
+  overlay.safetyTimer = window.setTimeout(() => releaseSwipeArrivalOverlay(), COUNTRY_HOLD_MS)
+  active = overlay
+  const releaseWhenReady = () => {
+    if (active !== overlay) return
+    const frame = document.querySelector<HTMLElement>(`[data-mobile-shell-frame="${market}"]`)
+    const ready = frame !== null
+      && frame.querySelector('[role="status"]') === null
+      && (frame.textContent ?? '').trim() !== ''
+      && (!needsMapLayout || frame.querySelector('[data-heatmap-layout-ready="true"]') !== null)
+    if (ready) {
+      releaseSwipeArrivalOverlay()
+      return
+    }
+    overlay.rafId = requestAnimationFrame(releaseWhenReady)
+  }
+  overlay.rafId = requestAnimationFrame(releaseWhenReady)
+}
+
 // 스와이프가 확정됐을 때, 화면에 보이는 미리보기 판의 모양 그대로 덮개를 만든다.
 export function captureSwipeArrivalOverlay(element: HTMLElement | null) {
   releaseSwipeArrivalOverlay()
