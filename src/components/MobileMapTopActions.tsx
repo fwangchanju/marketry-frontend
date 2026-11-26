@@ -120,7 +120,7 @@ const GUIDE_ROWS: { title: string; text: string; icon: React.ReactNode }[] = [
   },
   {
     title: '길게 누르기',
-    text: 'SECTOR 상세정보 보기',
+    text: '업종·종목 상세정보 보기',
     icon: <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="20" cy="20" r="6" fill="currentColor" stroke="none" /><circle cx="20" cy="20" r="13" strokeDasharray="4 4" /></svg>,
   },
 ]
@@ -129,9 +129,10 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
   const [hideForDays, setHideForDays] = useState(false)
   const close = () => onClose(hideForDays)
   return createPortal(
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 px-4" onClick={close}>
-      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[360px] rounded-xl bg-ui-panel p-4 text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
-        <h2 className="mb-3 mt-1 flex items-center gap-2 text-[16px] font-bold"><span className="text-ui-text"><GuideIcon /></span>사용 방법</h2>
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4" onClick={close}>
+      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[320px] rounded-xl bg-ui-panel px-4 pb-2 text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
+        {/* 머리줄은 창 위 끝과 첫 구분선 사이에 중간 정렬한다(2026-11-27 사용자 결정, 글자 16→18px). */}
+        <h2 className="m-0 flex h-[56px] items-center gap-2 text-[18px] font-bold"><span className="text-ui-text [&>svg]:h-[24px] [&>svg]:w-[24px]"><GuideIcon /></span>사용 방법</h2>
         <ul className="m-0 list-none p-0">
           {GUIDE_ROWS.map(row => (
             <li key={row.title} className="flex items-center gap-3 border-t border-ui-border py-2.5">
@@ -143,13 +144,14 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
             </li>
           ))}
         </ul>
-        {/* 닫기는 엄지가 닿는 아래에 둔다(2026-11-27 사용자 결정 — 위쪽 ✕는 폰에서 누르기 불편). */}
-        <div className="mt-1 flex items-center justify-between gap-3 border-t border-ui-border pt-3">
-          <label className="flex min-h-[40px] items-center gap-2 text-[14px] text-ui-muted">
+        {/* 닫기는 엄지가 닿는 아래에 둔다(2026-11-27 사용자 결정 — 위쪽 ✕는 폰에서 누르기 불편).
+            구분선 아래 높이와 닫기 배지는 캘린더 팝업 아래 줄(구분선~바닥 약 43px, 적용 배지 약 50×25px 청록)에 맞춘다(같은 날 사용자 결정). */}
+        <div className="mt-1 flex h-[37px] items-center justify-between gap-3 border-t border-ui-border pt-2">
+          <label className="flex h-full items-center gap-2 text-[14px] text-ui-muted">
             <input type="checkbox" className="thin-check" checked={hideForDays} onChange={event => setHideForDays(event.target.checked)} />
             하루 동안 보지 않기
           </label>
-          <button type="button" onClick={close} className="h-[40px] shrink-0 border-0 bg-transparent px-3 text-[14px] font-semibold text-ui-white">닫기</button>
+          <button type="button" onClick={close} className="h-[25px] shrink-0 rounded border-0 bg-brand-surface px-[11px] text-center text-[14px] font-normal leading-none text-ui-white">닫기</button>
         </div>
       </div>
     </div>,
