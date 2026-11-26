@@ -7,7 +7,6 @@ import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import ToolbarPopup from '@/components/ToolbarPopup'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
 import { IconCornerDownRight } from '@tabler/icons-react'
-import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
 import { useKoreanCalendarHolidays } from '@/hooks/useKoreanCalendarHolidays'
 import { isJapanMarketClosed } from '@/utils/japanMarketCalendar'
@@ -675,7 +674,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
         onClick={toggleOpen}
         className={`toolbar-badge-control flex h-6 items-center gap-1 border-0 px-1.5 font-medium text-inherit outline-none transition-colors hover:bg-ui-control focus-visible:bg-ui-control ${isOpen ? 'bg-ui-control' : 'bg-transparent'}`}
       >
-        <CalendarIcon strokeWidth={2.2} className={`h-[15px] w-[15px] shrink-0 ${isOpen ? FILLED_ICON_CLASS : ''}`} aria-hidden />
+        <CalendarIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
         {/* 날짜 글자(기간이면 "~ 종료일"까지)도 버튼 안에 둬서 칩 어디를 눌러도 달력이 열린다. */}
         {children}
       </button>
@@ -691,7 +690,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-ui-border pb-2 text-[13px]">
             <span className="flex min-w-0 items-center gap-3">
               {onSelectRange && (
-                <span role="radiogroup" aria-label="선택 방식" className="inline-flex h-5 items-center overflow-hidden rounded">
+                <span role="radiogroup" aria-label="선택 방식" className="inline-flex h-5 items-center gap-1">
                   {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
                     <button
                       key={label}
@@ -699,7 +698,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                       role="radio"
                       aria-checked={isRangeMode === rangeValue}
                       onClick={() => switchMode(rangeValue)}
-                      className={`flex h-5 items-center border-0 px-2 text-[13px] font-normal leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-text hover:bg-ui-control-hover'}`}
+                      className={`flex h-5 items-center rounded border-0 px-2 text-[0.8125rem] font-normal leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-text hover:bg-ui-control-hover'}`}
                     >
                       {label}
                     </button>
@@ -721,7 +720,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   <span className="truncate text-ui-white">{toSnapshotDateLabel(draftEnd.snapshotTime)}</span>
                 </span>
               )}
-              {tradingDayBadge !== null && <span className="ml-1 inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text">{tradingDayBadge}</span>}
+              {tradingDayBadge !== null && <span className="ml-1 inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[0.8125rem] font-normal leading-none text-ui-text">{tradingDayBadge}</span>}
             </span>
               ) : (
             <span className="flex items-center gap-1.5">
@@ -736,12 +735,12 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   <span className="text-ui-muted">{viewedDayLabel}</span>
                 </>
               )}
-              {tradingDayBadge !== null && <span className="ml-0.5 inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text">{tradingDayBadge}</span>}
+              {tradingDayBadge !== null && <span className="ml-0.5 inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[0.8125rem] font-normal leading-none text-ui-text">{tradingDayBadge}</span>}
             </span>
               )}
             </span>
             {isMobile && tradingDayBadge !== null && (
-              <span className="inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text">{tradingDayBadge}</span>
+              <span className="inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[0.8125rem] font-normal leading-none text-ui-text">{tradingDayBadge}</span>
             )}
           </div>
           {isRangeCalendar ? (

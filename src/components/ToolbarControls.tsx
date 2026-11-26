@@ -84,11 +84,14 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           ariaLabel="시장 시간대 안내"
           className="w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
+          <div role="presentation" className="mb-1 border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">SESSION</div>
           {SESSION_GUIDE.map(row => (
             <div key={row.session} className={`flex items-center justify-between gap-4 px-2 py-1 ${row.session === '마켓 종료' ? 'hidden' : ''}`}>
               <span className="flex items-center">
                 <span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[row.session] }} />
-                {row.session}
+                <span className="inline-block w-[6em]">{row.session}</span>
+                {/* 가운데 영문 칸은 일본·미국 세션 안내와 같은 폭(8em)이다. */}
+                <span className="inline-block w-[8em] text-xs text-ui-muted">{KOREA_SESSION_TERM[row.session] ?? ''}</span>
               </span>
               {/* 범위는 한 문자열로 붙여 쓰고, 값 칸 폭은 11ch로 고정해 '그 외'도 물결표 위치에 가운데 정렬한다. */}
               {row.range.includes('~') ? (
@@ -103,6 +106,9 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
     </span>
   )
 }
+
+// 한국 세션 안내의 가운데 영문 칸(일본·미국과 같은 자리).
+const KOREA_SESSION_TERM: Record<string, string> = { '프리 마켓': 'PRE MARKET', '메인 마켓': 'MAIN MARKET', '애프터 마켓': 'AFTER MARKET', '마켓 종료': 'CLOSED' }
 
 const CHANGE_RATE_OPTIONS = [
   { value: 'close' as const, label: '종가', titlePrefix: '메인 마켓 ', descriptionBefore: '전일 종가', descriptionAfter: '당일 종가' },
