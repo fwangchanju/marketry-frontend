@@ -1,7 +1,7 @@
 import { useLayoutEffect, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { TOOLBAR_SIDE_GUTTER } from '@/utils/mobilePathBar'
-import { MOBILE_PANEL_CLASS, MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { MOBILE_PANEL_CLASS, MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_STRETCH_CLASS, MOBILE_POPUP_TOUCH_VARS, MOBILE_POPUP_Z_CLASS, mobilePopupMinWidth, mobilePopupTopAboveToolbar } from '@/utils/mobilePopupScale'
 import { useMobileToolbar } from './MobileToolbarContext'
 import { useSwallowOutsideTap } from '@/utils/swallowNextClick'
 
@@ -10,7 +10,7 @@ const POPUP_FIXED_SCALE = MOBILE_POPUP_SCALE
 
 // 툴바 버튼 아래에 열리는 팝업 공통 부품.
 // PC는 예전처럼 트리거 기준 absolute로 그대로 열고, MOBILE 프레임에서는 document.body로 옮겨
-// 지도 길게 누르기 팝업과 같은 자리(가로 가운데, 세로 가운데가 화면 높이 55%)에 띄운다 — 툴바 바로 아래는 엄지가 닿기 어렵다(2026-11-27 사용자 결정).
+// 가로 가운데, 아래 끝은 툴바 줄 바로 위에 띄운다 — 엄지와 가깝고 작은 팝업도 높이 뜨지 않는다(2026-11-27 사용자 결정, 전에는 화면 높이 55% 가운데 맞춤).
 // 툴바 배율과 팝업 배율은 분리되어 있다.
 type Props = {
   open: boolean
@@ -34,11 +34,13 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
     const trigger = triggerRef.current
     const popup = popupRef.current
     if (!trigger || !popup) return
+    // MOBILE 팝업 규칙 2번: 화면 폭의 60%보다 좁으면 넓힌다(재기 전에 넣어야 넓어진 크기로 자리를 잡는다).
+    popup.style.minWidth = `${mobilePopupMinWidth(window.innerWidth)}px`
     // transform이 적용된 실제 화면 크기를 쓴다. offsetWidth(정수 반올림)에 배율을 곱하면
     // 서브픽셀 오차로 오른쪽 끝이 여백 1px을 넘을 수 있다.
     const { width: visualWidth, height: visualHeight } = popup.getBoundingClientRect()
     popup.style.left = `${Math.max(TOOLBAR_SIDE_GUTTER, (window.innerWidth - visualWidth) / 2)}px`
-    popup.style.top = `${mobilePopupTop(window.innerHeight, visualHeight)}px`
+    popup.style.top = `${mobilePopupTopAboveToolbar(window.innerHeight, visualHeight)}px`
     popup.style.visibility = 'visible'
   })
 
@@ -61,7 +63,7 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
       ref={popupRef}
       role="dialog"
       aria-label={ariaLabel}
-      className={`${MOBILE_POPUP_Z_CLASS} ${className} ${MOBILE_PANEL_CLASS}`}
+      className={`${MOBILE_POPUP_Z_CLASS} ${className} ${MOBILE_PANEL_CLASS} ${MOBILE_POPUP_STRETCH_CLASS}`}
       style={{
         position: 'fixed',
         left: TOOLBAR_SIDE_GUTTER,
@@ -69,6 +71,7 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
         transform: `scale(${POPUP_FIXED_SCALE})`,
         transformOrigin: 'top left',
         visibility: 'hidden',
+        ...MOBILE_POPUP_TOUCH_VARS,
       } as CSSProperties}
     >
       {children}
