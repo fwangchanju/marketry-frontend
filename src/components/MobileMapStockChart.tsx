@@ -26,7 +26,7 @@ export default function MobileMapStockChart({
   return (
     <div role="dialog" aria-modal="true" aria-label="종목 차트" data-mobile-stock-chart className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-ui-background">
       <MobileTopBar
-        title="종목 차트"
+        title="CHART"
         right={
           <button
             type="button"
