@@ -96,20 +96,20 @@ function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number;
   )
 }
 
-// 동작 이름은 좌우·상하처럼 한자어로 맞춘다(2026-11-27 사용자 결정). 설명은 한 줄로 끝나게 짧게 쓴다.
+// 동작 이름은 왼쪽·오른쪽, 위·아래처럼 한글로 맞춘다(2026-11-27 사용자 결정). 설명은 한 줄로 끝나게 짧게 쓴다.
 const GUIDE_ROWS: { title: string; text: string; icon: React.ReactNode }[] = [
   {
-    title: '좌우로 밀기',
+    title: '왼쪽·오른쪽으로 밀기',
     text: '종목 지도 · 업종 지도 · 그룹 등락률 페이지 이동',
     icon: <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12h32M10 6l-6 6 6 6M30 6l6 6-6 6" /></svg>,
   },
   {
-    title: '상하로 밀기',
+    title: '위·아래로 밀기',
     text: '한국 · 일본 · 미국 나라 이동',
     icon: <svg viewBox="0 0 24 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v32M6 10l6-6 6 6M6 30l6 6 6-6" /></svg>,
   },
   {
-    title: '두 손가락으로 벌리기',
+    title: '두 손가락으로 확대·축소',
     text: '종목 지도 확대',
     icon: <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 32l10-10M32 8L22 18M8 32v-8M8 32h8M32 8v8M32 8h-8" /></svg>,
   },
