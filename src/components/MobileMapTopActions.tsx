@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
-import { CheckIcon } from '@/components/icons/AppIcons'
+import PopupHeader, { PopupListDot } from '@/components/PopupHeader'
+import { POPUP_ROW_IDLE_CLASS, POPUP_ROW_SELECTED_CLASS } from '@/components/popupHeaderStyle'
 import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 import { swallowNextClick } from '@/utils/swallowNextClick'
 import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
@@ -15,7 +16,7 @@ const BOX_OPTIONS: { value: number; label: string }[] = [
   { value: 0, label: '동일 크기' },
 ]
 // 박스 크기 줄 — BASIS 팝업 줄과 같은 모양. 손가락을 누른 채 밀면 손가락 밑 줄에 바탕이 따라가고, 손을 뗀 줄이 선택된다(useTouchSlideSelect).
-const ROW_CLASS = '-mx-2 flex items-center rounded-none border-0 bg-transparent px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent] data-[touch-active]:bg-ui-white/10'
+const ROW_CLASS = '-mx-2 flex items-center rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent]'
 const ICON_BUTTON_CLASS = 'flex h-[44px] w-[40px] items-center justify-center border-0 bg-transparent p-0 text-ui-text disabled:opacity-30'
 
 // 사용 방법 창은 처음 들어오면 자동으로 한 번 뜬다. "하루 동안 보지 않기"를 고르고 닫으면 그동안 띄우지 않는다(이 브라우저에만 저장, 2026-11-27 사용자 결정 7일→하루).
@@ -90,13 +91,13 @@ function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number;
   return createPortal(
     <>
     <div aria-hidden="true" className={MOBILE_POPUP_BACKDROP_CLASS} />
-    {/* 툴바 팝업(BASIS)과 같은 양식: 1.3배, 둥근 패널, 사방 8px, 머리줄과 구분선, 줄 맨 앞 V 체크(2026-11-27 사용자 지시). 이 창은 툴바 팝업 부품 밖이라 같은 값을 직접 쓴다. */}
+    {/* 툴바 팝업(BASIS)과 같은 양식: 1.3배, 둥근 패널, 사방 8px, 머리줄과 구분선, 줄 앞 점, 고른 줄은 청록 바탕(2026-11-27 사용자 지시). 이 창은 툴바 팝업 부품 밖이라 같은 값을 직접 쓴다. */}
     <div ref={popupRef} role="dialog" aria-label="박스 크기" className={`fixed ${MOBILE_POPUP_Z_CLASS} w-max rounded-[9px] bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-2xl`} style={{ left: 0, top: 0, transform: `scale(${MOBILE_POPUP_SCALE})`, transformOrigin: 'top left', visibility: 'hidden' }}>
-      <div role="presentation" className="mb-1 border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">BOX SIZE</div>
+      <PopupHeader>BOX SIZE</PopupHeader>
       <div role="radiogroup" aria-label="박스 크기" className="flex flex-col" {...slideSelect}>
         {BOX_OPTIONS.map(option => (
-          <button key={option.value} type="button" data-slide-item role="radio" aria-checked={normalized === option.value} onClick={() => { onChange(option.value); onClose() }} className={ROW_CLASS}>
-            <CheckIcon aria-hidden="true" className={`mr-2 h-3.5 w-3.5 shrink-0 ${normalized === option.value ? '' : 'invisible'}`} />
+          <button key={option.value} type="button" data-slide-item role="radio" aria-checked={normalized === option.value} onClick={() => { onChange(option.value); onClose() }} className={`${ROW_CLASS} ${normalized === option.value ? POPUP_ROW_SELECTED_CLASS : POPUP_ROW_IDLE_CLASS}`}>
+            <PopupListDot />
             <span>{option.label}</span>
           </button>
         ))}
@@ -136,12 +137,16 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
   const close = () => onClose(hideForDays)
   return createPortal(
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4" onClick={close}>
-      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[320px] rounded-xl bg-ui-panel px-4 pb-2 text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
-        {/* 머리줄은 창 위 끝과 첫 구분선 사이에 중간 정렬한다(2026-11-27 사용자 결정, 글자 16→18px). */}
-        <h2 className="m-0 flex h-[56px] items-center gap-2 text-[18px] font-bold"><span className="text-ui-text [&>svg]:h-[24px] [&>svg]:w-[24px]"><GuideIcon /></span>HOW TO USE</h2>
+      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[320px] rounded-xl bg-ui-panel px-[calc(1rem*1.3)] pb-2 text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
+        {/* 머리줄은 툴바 팝업과 같은 공통 부품(PopupHeader)을 쓴다(2026-11-27 사용자 지시, 글자 크기까지 맞춤). 이 창은 배율 없이 그려지므로
+            머리줄 묶음에만 MOBILE 팝업 배율(zoom 1.3)을 줘서 글자·높이·구분선·여백이 BASIS·BOX SIZE와 똑같이 보이게 한다.
+            -mx-4는 창의 좌우 여백을 상쇄해 구분선이 다른 팝업처럼 창 끝에서 8px 안쪽에서 끊기게 하고, 창 좌우 여백은 머리줄 글자 시작 위치에 맞춘다. */}
+        <div className="-mx-4 px-2 pt-2" style={{ zoom: MOBILE_POPUP_SCALE }}>
+          <PopupHeader>HOW TO USE</PopupHeader>
+        </div>
         <ul className="m-0 list-none p-0">
           {GUIDE_ROWS.map(row => (
-            <li key={row.title} className="flex items-center gap-3 border-t border-ui-border py-2.5">
+            <li key={row.title} className="flex items-center gap-3 py-2.5">
               <span aria-hidden="true" className="flex h-[36px] w-[36px] shrink-0 items-center justify-center text-ui-muted [&>svg]:max-h-[30px] [&>svg]:max-w-[30px]">{row.icon}</span>
               <span>
                 <span className="block text-[14px] font-semibold">{row.title}</span>
@@ -152,7 +157,8 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
         </ul>
         {/* 닫기는 엄지가 닿는 아래에 둔다(2026-11-27 사용자 결정 — 위쪽 ✕는 폰에서 누르기 불편).
             구분선 아래 높이와 닫기 배지는 캘린더 팝업 아래 줄(구분선~바닥 약 43px, 적용 배지 약 50×25px 청록)에 맞춘다(같은 날 사용자 결정). */}
-        <div className="mt-1 flex h-[37px] items-center justify-between gap-3 border-t border-ui-border pt-2">
+        {/* 아래 구분선도 머리줄 구분선처럼 창 끝에서 8px(배율 반영) 안쪽에서 끊는다. 안쪽 글자 위치는 그대로(2026-11-27 사용자 지시). */}
+        <div className="mx-[calc(-0.5rem*1.3)] mt-1 flex h-[37px] items-center justify-between gap-3 border-t border-ui-border px-[calc(0.5rem*1.3)] pt-2">
           <label className="flex h-full items-center gap-2 text-[14px] text-ui-muted">
             <input type="checkbox" className="thin-check" checked={hideForDays} onChange={event => setHideForDays(event.target.checked)} />
             하루 동안 보지 않기

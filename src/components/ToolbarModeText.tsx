@@ -4,6 +4,8 @@ import { ChevronDownIcon } from '@/components/icons/AppIcons'
 import { dropdownPanelClass } from '@/components/dropdownStyle'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
 import ToolbarPopup from '@/components/ToolbarPopup'
+import PopupHeader, { PopupListDot } from '@/components/PopupHeader'
+import { POPUP_ROW_IDLE_CLASS, POPUP_ROW_SELECTED_CLASS } from '@/components/popupHeaderStyle'
 import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 
 export interface ToolbarModeMenuItem {
@@ -14,6 +16,21 @@ export interface ToolbarModeMenuItem {
   indent?: boolean
   // 특별 회원 전용 항목(보라 글자)
   special?: boolean
+}
+
+// 시장 이름 한 줄. 하위 단계(KOSPI·KOSDAQ)는 윗줄 KOREA에 맞춘다: ▸는 KO 가운데, 글자는 R 시작 위치. 숨긴 KO로 폭을 잡아 글꼴이 달라도 맞는다.
+function MarketMenuLabel({ item }: { item: ToolbarModeMenuItem }) {
+  return (
+    <>
+      {item.indent && (
+        <span aria-hidden="true" className="relative inline-block">
+          <span className="invisible">KO</span>
+          <span className="absolute inset-0 text-center">▸</span>
+        </span>
+      )}
+      {item.label}
+    </>
+  )
 }
 
 // 툴바 맨 왼쪽에 지금 보는 화면을 페이지 제목처럼 보여 준다 — 서브 청록색 박스 안에 큰 제목(NIKKEI·K-STOCK·STATS 등)을 둔다.
@@ -113,9 +130,32 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
         triggerRef={rootRef}
         popupRef={popupRef}
         ariaLabel="시장 목록"
-        className="w-[110px]"
+        className={isMobile ? 'w-max' : 'w-[110px]'}
         gapPx={6}
       >
+        {isMobile ? (
+          // MOBILE은 화면 가운데 1.3배로 뜨는 툴바 팝업이라 BASIS·BOX SIZE와 같은 공통 양식을 쓴다: MARKET 머리줄, 사방 8px, 줄 앞 점, 지금 시장은 줄 전체 청록 바탕(2026-11-27 사용자 결정).
+          // PC는 배지 아래로 펼쳐지는 드롭다운 메뉴라 아래 PC 모양(지금 시장 청록 바탕)을 그대로 둔다.
+          <div className={`w-max p-2 text-sm font-normal tracking-normal ${dropdownPanelClass(isMobile)}`}>
+            <PopupHeader>MARKET</PopupHeader>
+            <div role="listbox" aria-label="시장 목록" className="flex flex-col" {...slideSelect}>
+              {menu.map(item => (
+                <button
+                  key={item.to}
+                  type="button"
+                  data-slide-item
+                  role="option"
+                  aria-selected={item.active}
+                  onClick={() => { setIsOpen(false); if (!item.active) navigate(item.to) }}
+                  className={`font-roboto-latin -mx-2 flex items-center whitespace-nowrap rounded-none border-0 px-4 py-1 text-left text-sm font-medium transition-colors [-webkit-tap-highlight-color:transparent] ${item.active ? `${POPUP_ROW_SELECTED_CLASS} text-ui-white` : `${POPUP_ROW_IDLE_CLASS} ${item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}`}
+                >
+                  <PopupListDot />
+                  <MarketMenuLabel item={item} />
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
         <div
           role="listbox"
           aria-label="시장 목록"
@@ -134,17 +174,11 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
               onClick={() => { setIsOpen(false); if (!item.active) navigate(item.to) }}
               className={`font-roboto-latin flex h-[30px] w-full items-center whitespace-nowrap rounded-none border-0 pl-[9px] pr-3 text-left text-sm font-medium transition-colors [-webkit-tap-highlight-color:transparent] ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : `bg-transparent hover:bg-ui-white/10 data-[touch-active]:bg-ui-white/10 ${item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}`}
             >
-              {/* 하위 단계(KOSPI·KOSDAQ)는 윗줄 KOREA에 맞춘다: ▸는 KO 가운데, 글자는 R 시작 위치. 숨긴 KO로 폭을 잡아 글꼴이 달라도 맞는다. */}
-              {item.indent && (
-                <span aria-hidden="true" className="relative inline-block">
-                  <span className="invisible">KO</span>
-                  <span className="absolute inset-0 text-center">▸</span>
-                </span>
-              )}
-              {item.label}
+              <MarketMenuLabel item={item} />
             </button>
           ))}
         </div>
+        )}
       </ToolbarPopup>
       )}
     </div>
