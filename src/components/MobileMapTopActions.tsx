@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_TOUCH_VARS, MOBILE_POPUP_Z_CLASS, mobilePopupMinWidth, mobilePopupTopAboveToolbar } from '@/utils/mobilePopupScale'
+import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_TOUCH_VARS, MOBILE_POPUP_Z_CLASS, mobilePopupMinWidth, mobilePopupTopBelowHeader } from '@/utils/mobilePopupScale'
 import PopupHeader, { PopupListDot } from '@/components/PopupHeader'
 import { popupBadgeClass } from '@/components/popupBadgeStyle'
 import { POPUP_ROW_IDLE_CLASS, POPUP_ROW_SELECTED_CLASS } from '@/components/popupHeaderStyle'
@@ -65,17 +65,17 @@ function GuideIcon() {
   )
 }
 
-// 박스 크기 창 — 툴바 팝업과 같은 자리(가로 가운데, 세로 가운데 화면 높이 75%, 툴바 줄 아래로는 내려가지 않음)에 뜬다. 바깥을 누르면 닫힌다.
+// 박스 크기 창 — 상단 아이콘에서 열므로 MOBILE 팝업 규칙 4번대로 상단 줄 바로 아래, 가로 가운데에 뜬다. 바깥을 누르면 닫힌다.
 function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number; onChange: (value: number) => void; onClose: () => void; triggerRef: React.RefObject<HTMLButtonElement | null> }) {
   const popupRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const popup = popupRef.current
     if (!popup) return
-    // MOBILE 팝업 규칙 2번: 화면 폭의 60%보다 좁으면 넓힌다.
-    popup.style.minWidth = `${mobilePopupMinWidth(window.innerWidth)}px`
-    const { width, height } = popup.getBoundingClientRect()
+    // MOBILE 팝업 규칙 2번: 보이는 폭 240px보다 좁으면 넓힌다.
+    popup.style.minWidth = `${mobilePopupMinWidth()}px`
+    const { width } = popup.getBoundingClientRect()
     popup.style.left = `${(window.innerWidth - width) / 2}px`
-    popup.style.top = `${mobilePopupTopAboveToolbar(window.innerHeight, height)}px`
+    popup.style.top = `${mobilePopupTopBelowHeader(triggerRef.current)}px`
     popup.style.visibility = 'visible'
   })
   useEffect(() => {
