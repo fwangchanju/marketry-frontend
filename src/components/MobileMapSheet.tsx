@@ -3,21 +3,17 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { usePinToVisibleBottom } from '@/hooks/usePinToVisibleBottom'
 import { mobileViewport } from '@/utils/mobileViewport'
 import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
+import { MOBILE_MARKET_OPTIONS, mobileMarketPath, type MobileMapMarket } from '@/utils/mobileMarketRoutes'
 
 // MOBILE 지도 하단 설정 줄. 업종 지도 설정 줄(MobileMarketSummaryPage)과 같은 클래스·구조·열림 애니메이션·끌어서 여닫기를 쓴다.
 // 마켓은 한국·일본·미국 세 가지이며 누르면 해당 지도로 이동한다. 박스 크기는 지도 설정 값과 연결된다.
-export type MobileMapMarket = 'korea' | 'japan' | 'usa'
+export type { MobileMapMarket }
 
 const SETTING_CHIP_CLASS = 'h-[32px] rounded-[4px] border-0 px-1 text-[13px] font-medium'
 const CHIP_ON = 'bg-brand-surface text-ui-on-dark'
 const CHIP_OFF = 'bg-ui-control text-ui-white'
 const SETTINGS_BAR_HEIGHT = 24
 
-const MARKET_OPTIONS: { key: MobileMapMarket; label: string; path: string; graphPath: string; summaryPath: string }[] = [
-  { key: 'korea', label: '한국', path: '/map/korea', graphPath: '/graph/korea', summaryPath: '/summary/korea' },
-  { key: 'japan', label: '일본', path: '/map/japan', graphPath: '/graph/japan', summaryPath: '/summary/japan' },
-  { key: 'usa', label: '미국', path: '/map/usa', graphPath: '/graph/usa', summaryPath: '/summary/usa' },
-]
 const BOX_OPTIONS: { value: number; label: string }[] = [
   { value: 100, label: '시총 비례' },
   { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형' },
@@ -56,9 +52,6 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
   const normalizedBox = normalizeMobileBoxSizeRatio(boxSize)
   const navigate = useNavigate()
   const location = useLocation()
-  // 업종 지도에서 마켓을 바꾸면 같은 종류의 지도로 간다(종목 지도는 종목 지도로, 그룹 등락률은 그룹 등락률로 유지).
-  const isSectorMap = location.pathname.startsWith('/summary/')
-  const isGraph = location.pathname.startsWith('/graph/')
   // 처음 그릴 때는 열림 애니메이션을 재생하지 않도록, 첫 그리기 뒤에 전환을 켠다(업종 지도와 같다).
   useEffect(() => {
     const frame = requestAnimationFrame(() => setLayoutReady(true))
@@ -130,8 +123,8 @@ export default function MobileMapSheet({ current, boxSize, onChangeBoxSize }: { 
         <div ref={attachContent} inert={!open && dragHeight === null} className="max-h-[calc(40dvh-24px)] [@media(max-height:500px)]:max-h-[calc(60dvh-24px)] overflow-y-auto px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
           <SettingRow label="마켓">
             <div role="radiogroup" aria-label="마켓 선택" className="grid flex-1 grid-cols-3 gap-1.5">
-              {MARKET_OPTIONS.map(option => (
-                <button key={option.key} type="button" role="radio" aria-checked={current === option.key} onClick={() => navigate(isSectorMap ? option.summaryPath : isGraph ? option.graphPath : option.path, { state: { mobileBoxSize: boxSize } })} className={`${SETTING_CHIP_CLASS} ${current === option.key ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
+              {MOBILE_MARKET_OPTIONS.map(option => (
+                <button key={option.key} type="button" role="radio" aria-checked={current === option.key} onClick={() => navigate(mobileMarketPath(option.key, location.pathname), { state: { mobileBoxSize: boxSize } })} className={`${SETTING_CHIP_CLASS} ${current === option.key ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
               ))}
             </div>
           </SettingRow>
