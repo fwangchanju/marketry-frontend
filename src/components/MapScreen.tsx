@@ -333,7 +333,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
   // 지도를 그릴 수 없을 때의 안내. 판과 같은 좌표계에 그려 다른 MOBILE 화면과 같은 크기로 보이게 한다.
   const mobileStatusFrame = (
     <div className="flex items-center justify-center bg-ui-background" style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, transform: `scale(${mobileFrameScale})`, transformOrigin: 'top left' }}>
-      {isLoading ? <Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} />
+      {isLoading ? <Spinner delayReveal showElapsed className={MOBILE_LOADING_SIZE_CLASS} />
         : isError ? <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retry} />
           : <p className="text-[28px] text-ui-muted">{isMineEmpty ? EMPTY_MINE_MESSAGE : totalItemCount === 0 ? EMPTY_DATA_MESSAGE : EMPTY_FILTER_MESSAGE}</p>}
     </div>
@@ -439,7 +439,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
               )}
               {/* 로딩·오류 원은 모든 페이지 공통 자리(MainAreaLoading, 메인 영역 기준)에 둔다. */}
               {isLoading ? (
-                <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
+                <MainAreaLoading><Spinner delayReveal showElapsed /></MainAreaLoading>
               ) : isError ? (
                 <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retry} /></MainAreaLoading>
               ) : visibleItems.length === 0 ? (

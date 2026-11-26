@@ -98,7 +98,7 @@ export default function SummaryScreen({ market, menu, taxonomy, filters, colors,
           <div className="relative flex min-h-0 flex-1">
             {features.timeWindowNotice}
             {state.status === 'loading' ? (
-              <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
+              <MainAreaLoading><Spinner delayReveal showElapsed /></MainAreaLoading>
             ) : state.status === 'error' ? (
               <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={state.retry} /></MainAreaLoading>
             ) : isMineEmpty ? mineGuide : overview.items.length === 0 ? (

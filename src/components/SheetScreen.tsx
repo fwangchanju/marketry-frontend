@@ -101,7 +101,7 @@ export default function SheetScreen({ page, label, menu, taxonomy, state, canEdi
                   style={!isStock && taxonomy === 'MINE' ? { '--brand': mineStrongColor, '--brand-surface': `color-mix(in srgb, ${mineStrongColor} 60%, #0a0a0a)`, '--brand-surface-hover': 'color-mix(in srgb, var(--brand-surface) 80%, var(--brand))' } as CSSProperties : undefined}
                 >
                   {/* 자료를 기다리는 동안에는 본문 자리에 로딩 원만 보여 주고 툴바와 설정창은 그대로 둔다. */}
-                  {state.status === 'loading' ? <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
+                  {state.status === 'loading' ? <MainAreaLoading><Spinner delayReveal showElapsed /></MainAreaLoading>
                     : state.status === 'error' ? <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={state.retry} /></MainAreaLoading>
                       : children({ toolbar, history, bulk, excel, reset, setCountLabel })}
                 </div>
