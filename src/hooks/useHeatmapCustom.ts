@@ -35,7 +35,11 @@ interface StockSectorListResponse {
 
 // 내 기준 지도·그래프 데이터를 다시 받게 한다. 한국은 지도 응답을, 일본·미국은 종목 배정 목록을 다시 받는다.
 export function invalidateCustomTaxonomy(queryClient: ReturnType<typeof useQueryClient>, market: ClassificationMarket = 'KOREA') {
-  if (market !== 'KOREA') return queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockAssignments(market) })
+  if (market !== 'KOREA') {
+    // 설정창 맨 아래 내 기준 수정 시각도 다시 받는다.
+    void queryClient.invalidateQueries({ queryKey: ['overseas-time', market] })
+    return queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockAssignments(market) })
+  }
   return queryClient.invalidateQueries({
     queryKey: heatmapKeys.all,
     predicate: ({ queryKey }) =>

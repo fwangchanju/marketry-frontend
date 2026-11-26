@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildUploadPlan, ClassificationUploadError } from './classificationUpload.ts'
+import { buildUploadPlan, ClassificationUploadError, normalizeStockCode } from './classificationUpload.ts'
 
 const sector = (id, name, parentId, depth) => ({ id, name, parentId, depth })
 const sectors = [sector(1, '임의소비재', null, 0), sector(2, '콘텐츠', 1, 1), sector(3, '금융', null, 0), sector(4, '은행', 3, 1)]
@@ -63,4 +63,11 @@ test('거래 정지 줄은 서버가 자동 배정하니 건너뛰고 변경 수
   assert.equal(plan.changedCount, 1)
   assert.deepEqual(plan.newSectors, [['금융', '증권']])
   assert.deepEqual(plan.assignments.map(group => group.stockCodes), [['000004']])
+})
+
+test('종목코드는 한국만 앞을 0으로 채운다', () => {
+  assert.equal(normalizeStockCode(5930), '005930')
+  assert.equal(normalizeStockCode('7203', false), '7203')
+  assert.equal(normalizeStockCode('285A', false), '285A')
+  assert.equal(normalizeStockCode(' AAPL ', false), 'AAPL')
 })

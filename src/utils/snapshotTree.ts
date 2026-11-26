@@ -2,7 +2,7 @@ import type { MarketQuote as TreeQuote } from '@/markets/useMarketQuotes'
 import type { HeatmapItem, HeatmapSectorNode } from '@/types/api'
 
 export type TreeStock = { code: string; name: string }
-export type TreeCategory = { id: number; parentId: number | null; name: string }
+export type TreeCategory = { id: number; parentId: number | null; name: string; stableKey?: string | null; legacyId?: number | null; excluded?: boolean }
 export type TreeClassification = { sector: string | null; industry: string | null; subIndustry: string | null }
 
 export function shouldFilterStaleQuotes(snapshotTime: string | null, today: string, rangeStart: string | null): boolean {
@@ -51,7 +51,7 @@ export function buildSnapshotTree(
   quotes: readonly TreeQuote[],
   snapshotTime: string,
 ): HeatmapSectorNode[] {
-  const nodes = new Map<number, HeatmapSectorNode>(categories.map(category => [category.id, { sectorId: category.id, sectorName: category.name, totalMarketValue: 0, isExcluded: false, children: [], items: [] }]))
+  const nodes = new Map<number, HeatmapSectorNode>(categories.map(category => [category.id, { sectorId: category.id, stableKey: category.stableKey ?? null, legacySectorId: category.legacyId ?? null, sectorName: category.name, totalMarketValue: 0, isExcluded: category.excluded ?? false, children: [], items: [] }]))
   const roots: HeatmapSectorNode[] = []
   for (const category of categories) {
     const node = nodes.get(category.id)
