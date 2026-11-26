@@ -10,6 +10,8 @@ export const SNAPSHOT_MARKET_LIST = [
 ] as const
 
 export type SnapshotMarket = (typeof SNAPSHOT_MARKET_LIST)[number]['id']
+// 회원 분류(내 기준·MARKETRY 업데이트)를 나누는 시장 — 한국과 스냅샷 시장.
+export type ClassificationMarket = 'KOREA' | SnapshotMarket
 export type SnapshotMarketInfo = (typeof SNAPSHOT_MARKET_LIST)[number]
 
 // 스냅샷 시장 화면의 주소 앞 조각. 시장 이름이 뒤에 붙는다(/map/japan, /summary/usa, /sector/japan …).

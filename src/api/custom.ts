@@ -1,3 +1,4 @@
+import type { ClassificationMarket } from '@/utils/markets'
 import client from './client'
 import {
   SectorItemSchema,
@@ -24,55 +25,64 @@ const classificationUploadResponseSchema = z.object({
 })
 
 // 로그인 사용자 전용(GET /api/custom/**).
+// market을 주지 않으면 한국이다. 한국 요청에는 시장을 붙이지 않아 지금 요청과 똑같다.
+export const marketParams = (market: ClassificationMarket) => (market === 'KOREA' ? {} : { market })
 
-export const getSectors = () => client.get('/custom/sectors').then(r => sectorListResponseSchema.parse(r.data))
+export const getSectors = (market: ClassificationMarket = 'KOREA') => client.get('/custom/sectors', { params: marketParams(market) }).then(r => sectorListResponseSchema.parse(r.data))
 
-export const resetCustomClassification = () => client.delete('/custom/sectors')
+export const resetCustomClassification = (market: ClassificationMarket = 'KOREA') => client.delete('/custom/sectors', { params: marketParams(market) })
 
-export const createSector = (name: string, parentId: number | null) =>
-  client.post('/custom/sectors', { name, parentId }).then(r => SectorItemSchema.parse(r.data))
+export const createSector = (name: string, parentId: number | null, market: ClassificationMarket = 'KOREA') =>
+  client.post('/custom/sectors', { name, parentId }, { params: marketParams(market) }).then(r => SectorItemSchema.parse(r.data))
 
-export const renameSector = (id: number, name: string) => client.patch(`/custom/sectors/${id}/name`, { name })
+export const renameSector = (id: number, name: string, market: ClassificationMarket = 'KOREA') =>
+  client.patch(`/custom/sectors/${id}/name`, { name }, { params: marketParams(market) })
 
 // parentId가 null이면 최상위(루트)로 이동.
-export const reparentSector = (id: number, parentId: number | null) =>
-  client.patch(`/custom/sectors/${id}/parent`, { parentId })
+export const reparentSector = (id: number, parentId: number | null, market: ClassificationMarket = 'KOREA') =>
+  client.patch(`/custom/sectors/${id}/parent`, { parentId }, { params: marketParams(market) })
 
-export const getSectorDeletePreview = (id: number) =>
-  client.get(`/custom/sectors/${id}/delete-preview`).then(r => SectorDeletePreviewSchema.parse(r.data))
+export const getSectorDeletePreview = (id: number, market: ClassificationMarket = 'KOREA') =>
+  client.get(`/custom/sectors/${id}/delete-preview`, { params: marketParams(market) }).then(r => SectorDeletePreviewSchema.parse(r.data))
 
 // expectedMoveCount는 미리보기에서 확인한 이동 종목 수다 — 지금 수와 다르면 서버가 삭제하지 않고 409로 다시 확인하게 한다.
-export const deleteSector = (id: number, expectedMoveCount: number) =>
-  client.delete(`/custom/sectors/${id}`, { params: { expectedMoveCount } })
+export const deleteSector = (id: number, expectedMoveCount: number, market: ClassificationMarket = 'KOREA') =>
+  client.delete(`/custom/sectors/${id}`, { params: { expectedMoveCount, ...marketParams(market) } })
 
-export const getSnapshots = () => client.get('/custom/snapshots').then(r => snapshotListResponseSchema.parse(r.data))
+export const getSnapshots = (market: ClassificationMarket = 'KOREA') => client.get('/custom/snapshots', { params: marketParams(market) }).then(r => snapshotListResponseSchema.parse(r.data))
 
-export const getCurrentSnapshot = () =>
-  client.get('/custom/snapshots/current').then(r => SnapshotItemSchema.nullable().parse(r.data))
+export const getCurrentSnapshot = (market: ClassificationMarket = 'KOREA') =>
+  client.get('/custom/snapshots/current', { params: marketParams(market) }).then(r => SnapshotItemSchema.nullable().parse(r.data))
 
-export const saveSnapshot = (label: string) =>
-  client.post('/custom/snapshots', { label }).then(r => SnapshotItemSchema.parse(r.data))
+export const saveSnapshot = (label: string, market: ClassificationMarket = 'KOREA') =>
+  client.post('/custom/snapshots', { label }, { params: marketParams(market) }).then(r => SnapshotItemSchema.parse(r.data))
 
-export const overwriteSnapshot = (id: number, label: string) =>
-  client.patch(`/custom/snapshots/${id}`, { label }).then(r => SnapshotItemSchema.parse(r.data))
+export const overwriteSnapshot = (id: number, label: string, market: ClassificationMarket = 'KOREA') =>
+  client.patch(`/custom/snapshots/${id}`, { label }, { params: marketParams(market) }).then(r => SnapshotItemSchema.parse(r.data))
 
-export const restoreSnapshot = (id: number) => client.post(`/custom/snapshots/${id}/restore`)
+export const restoreSnapshot = (id: number, market: ClassificationMarket = 'KOREA') =>
+  client.post(`/custom/snapshots/${id}/restore`, undefined, { params: marketParams(market) })
 
-export const deleteSnapshot = (id: number) => client.delete(`/custom/snapshots/${id}`)
+export const deleteSnapshot = (id: number, market: ClassificationMarket = 'KOREA') =>
+  client.delete(`/custom/snapshots/${id}`, { params: marketParams(market) })
 
-export const assignStockSector = (stockCode: string, sectorId: number) =>
-  client.put(`/custom/stock-sectors/${stockCode}`, { sectorId })
+export const assignStockSector = (stockCode: string, sectorId: number, market: ClassificationMarket = 'KOREA') =>
+  client.put(`/custom/stock-sectors/${stockCode}`, { sectorId }, { params: marketParams(market) })
 
 export const updateStockAlias = (stockCode: string, alias: string | null) =>
   client.patch(`/custom/stock-sectors/${stockCode}/alias`, { alias })
 
-export const bulkAssignStockSector = (stockCodes: string[], sectorId: number) =>
+export const bulkAssignStockSector = (stockCodes: string[], sectorId: number, market: ClassificationMarket = 'KOREA') =>
   client
-    .patch('/custom/stock-sectors/bulk', { stockCodes, sectorId })
+    .patch('/custom/stock-sectors/bulk', { stockCodes, sectorId }, { params: marketParams(market) })
     .then(r => BulkAssignResponseSchema.parse(r.data))
 
-export const uploadClassification = (assignments: { path: string[]; stockCodes: string[] }[]) =>
-  client.post('/custom/stock-sectors/upload', { assignments }).then(r => classificationUploadResponseSchema.parse(r.data))
+export const uploadClassification = (assignments: { path: string[]; stockCodes: string[] }[], market: ClassificationMarket = 'KOREA') =>
+  client.post('/custom/stock-sectors/upload', { assignments }, { params: marketParams(market) }).then(r => classificationUploadResponseSchema.parse(r.data))
+
+// 종목마다 배정된 업종 번호(일본·미국 내 기준 표가 쓴다). 종목 이름·시세는 시장별로 따로 받는다.
+export const getStockAssignments = (market: ClassificationMarket) =>
+  client.get('/custom/stock-sectors/assignments', { params: marketParams(market) }).then(r => z.record(z.string(), z.number()).parse(r.data))
 
 export const getStockSectors = () =>
   client.get('/custom/stock-sectors').then(r => stockSectorListResponseSchema.parse(r.data))

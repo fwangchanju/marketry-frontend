@@ -13,12 +13,15 @@ import { customHeatmapKeys } from '@/hooks/queryKeys'
 import { DownloadIcon, UploadIcon } from '@/components/icons/AppIcons'
 import { isAxiosError } from 'axios'
 import { uploadClassification } from '@/api/custom'
+import type { ClassificationMarket } from '@/utils/markets'
 
 import type { StockHistoryAction, StockRow } from '@/components/StockTable'
 import { createPortal } from 'react-dom'
 
 // 한국 내 기준의 엑셀(간편 업종 분류)과 초기화. 설정창 자리에 그린다.
-export default function KoreaStockFiles({ items, sectors, rows, excelContainer, resetContainer, pushHistory, clearHistory }: {
+export default function KoreaStockFiles({ market = 'KOREA', items, sectors, rows, excelContainer, resetContainer, pushHistory, clearHistory }: {
+  // 어느 시장의 내 기준인지. 기본은 한국이다.
+  market?: ClassificationMarket
   items: readonly StockSectorListItem[]
   sectors: SectorItem[]
   // 지금 화면에 필터·정렬이 적용된 종목.
@@ -29,7 +32,7 @@ export default function KoreaStockFiles({ items, sectors, rows, excelContainer, 
   clearHistory: () => void
 }) {
   const queryClient = useQueryClient()
-  const resetCustomClassificationMutation = useResetCustomClassification()
+  const resetCustomClassificationMutation = useResetCustomClassification(market)
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isApplyingUpload, setIsApplyingUpload] = useState(false)
@@ -71,7 +74,7 @@ export default function KoreaStockFiles({ items, sectors, rows, excelContainer, 
       const before = new Map(items.map(item => [item.stockCode, item.sectorId]))
       uploadAttempted = true
       requestPending = true
-      const result = await uploadClassification(plan.assignments)
+      const result = await uploadClassification(plan.assignments, market)
       requestPending = false
       createdCount = result.createdSectorCount
       failed.push(...result.failedStockCodes)
@@ -99,9 +102,9 @@ export default function KoreaStockFiles({ items, sectors, rows, excelContainer, 
       }
     } finally {
       const refreshes: Promise<void>[] = []
-      if (uploadAttempted) refreshes.push(queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors() }))
-      if (uploadAttempted) refreshes.push(queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() }))
-      if (uploadAttempted) refreshes.push(invalidateCustomTaxonomy(queryClient))
+      if (uploadAttempted) refreshes.push(queryClient.invalidateQueries({ queryKey: customHeatmapKeys.sectors(market) }))
+      if (uploadAttempted && market === 'KOREA') refreshes.push(queryClient.invalidateQueries({ queryKey: customHeatmapKeys.stockSectors() }))
+      if (uploadAttempted) refreshes.push(invalidateCustomTaxonomy(queryClient, market))
       await Promise.all(refreshes)
       setIsApplyingUpload(false)
       setIsUploading(false)

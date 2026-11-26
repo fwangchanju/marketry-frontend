@@ -1,3 +1,5 @@
+import { marketParams } from './custom'
+import type { ClassificationMarket } from '@/utils/markets'
 import client from './client'
 import { z } from 'zod'
 
@@ -10,11 +12,11 @@ const MarketryPublicationSchema = z.object({
 })
 export type MarketryPublication = z.infer<typeof MarketryPublicationSchema>
 
-export const publishMarketry = (label: string) =>
-  client.post('/admin/marketry/publications', { label }).then(r => MarketryPublicationSchema.parse(r.data))
+export const publishMarketry = (label: string, market: ClassificationMarket = 'KOREA') =>
+  client.post('/admin/marketry/publications', { label }, { params: marketParams(market) }).then(r => MarketryPublicationSchema.parse(r.data))
 
-export const getMarketryPublications = () =>
-  client.get('/admin/marketry/publications').then(r => z.array(MarketryPublicationSchema).parse(r.data))
+export const getMarketryPublications = (market: ClassificationMarket = 'KOREA') =>
+  client.get('/admin/marketry/publications', { params: marketParams(market) }).then(r => z.array(MarketryPublicationSchema).parse(r.data))
 
-export const restoreMarketryPublication = (publicationId: number) =>
-  client.post(`/admin/marketry/publications/${publicationId}/restore`)
+export const restoreMarketryPublication = (publicationId: number, market: ClassificationMarket = 'KOREA') =>
+  client.post(`/admin/marketry/publications/${publicationId}/restore`, undefined, { params: marketParams(market) })
