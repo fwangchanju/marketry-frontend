@@ -88,7 +88,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           {SESSION_GUIDE.map(row => (
             <div key={row.session} className={`flex items-center justify-between gap-4 px-2 py-1 ${row.session === '마켓 종료' ? 'hidden' : ''}`}>
               <span className="flex items-center">
-                <span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[row.session] }} />
+                <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[row.session] }} />
                 <span className="inline-block w-[6em]">{row.session}</span>
                 {/* 가운데 영문 칸은 일본·미국 세션 안내와 같은 폭(8em)이다. */}
                 <span className="inline-block w-[8em] text-xs text-ui-muted">{KOREA_SESSION_TERM[row.session] ?? ''}</span>
@@ -168,6 +168,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
           gapPx={6}
           className={`w-max overflow-hidden ${dropdownPanelClass(isMobile)} text-sm font-normal tracking-normal`}
         >
+          <div role="presentation" className="border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">등락률 기준</div>
           <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col">
             {options.map(option => (
               <button
@@ -192,8 +193,10 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
                 <span className="shrink-0 text-ui-white">
                   {option.titlePrefix}<span className="text-[var(--sub-purple)]">{option.label}</span>
                 </span>
-                <span className="w-[18ch] shrink-0 whitespace-nowrap text-right">
-                  {option.descriptionBefore} <span className="text-ui-muted">대비</span> {option.descriptionAfter}
+                <span className="shrink-0 whitespace-nowrap">
+                  <span className="inline-block w-[5em] text-right">{option.descriptionBefore}</span>
+                  <span className="inline-block w-[2.5em] text-center text-xs text-ui-muted">대비</span>
+                  <span className="inline-block w-[5em] text-left">{option.descriptionAfter}</span>
                 </span>
               </button>
             ))}
