@@ -95,7 +95,7 @@ function placeNearPointer(el: HTMLElement, point: { x: number; y: number }, boun
   el.style.visibility = 'visible'
 }
 
-// MOBILE 팝업을 가로 가운데, 정해진 윗변 위치에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
+// MOBILE 팝업을 가로 가운데, 정해진 중심선 위치에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
 // 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
 function placeMobilePopup(el: HTMLElement) {
   const view = mobileViewport()
@@ -108,7 +108,7 @@ function placeMobilePopup(el: HTMLElement) {
   const width = MOBILE_POPUP_WIDTH * scale
   const height = el.offsetHeight * scale
   const left = (screenWidth - width) / 2
-  // 윗변은 툴바 팝업과 같은 높이(mobilePopupTop)에 둔다.
+  // 세로 위치는 툴바 팝업과 같은 중심선(mobilePopupTop)에 맞춘다.
   const top = mobilePopupTop(screenHeight, height)
   el.style.transform = `scale(${scale / zoom})`
   el.style.left = `${view.left + left / zoom}px`
@@ -146,7 +146,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, mobileEnlarge
     const el = elRef.current
     if (!el) return
     if (mobileEnlarged) {
-      // MOBILE에서는 누린 칸 옆이 아니라 가로 가운데, 정해진 윗변 위치에 띄운다.
+      // MOBILE에서는 누른 칸 옆이 아니라 가로 가운데, 정해진 중심선 위치에 띄운다.
       placeMobilePopup(el)
       return
     }
