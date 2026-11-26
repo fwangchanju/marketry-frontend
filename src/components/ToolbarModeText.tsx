@@ -4,6 +4,7 @@ import { ChevronDownIcon } from '@/components/icons/AppIcons'
 import { dropdownPanelClass } from '@/components/dropdownStyle'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
 import ToolbarPopup from '@/components/ToolbarPopup'
+import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 
 export interface ToolbarModeMenuItem {
   label: string
@@ -22,6 +23,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
   const { isMobile } = useMobileToolbar()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
+  const slideSelect = useTouchSlideSelect()
   const rootRef = useRef<HTMLDivElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<number | null>(null)
@@ -120,15 +122,17 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
           className={`w-[110px] overflow-hidden text-sm font-normal tracking-normal ${dropdownPanelClass(isMobile)}`}
           onPointerEnter={handlePopupPointerEnter}
           onPointerLeave={handlePopupPointerLeave}
+          {...slideSelect}
         >
           {menu.map(item => (
             <button
               key={item.to}
               type="button"
+              data-slide-item
               role="option"
               aria-selected={item.active}
               onClick={() => { setIsOpen(false); if (!item.active) navigate(item.to) }}
-              className={`font-roboto-latin flex h-[30px] w-full items-center whitespace-nowrap rounded-none border-0 pl-[9px] pr-3 text-left text-sm font-medium transition-colors ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : `bg-transparent hover:bg-ui-white/10 ${item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}`}
+              className={`font-roboto-latin flex h-[30px] w-full items-center whitespace-nowrap rounded-none border-0 pl-[9px] pr-3 text-left text-sm font-medium transition-colors [-webkit-tap-highlight-color:transparent] ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : `bg-transparent hover:bg-ui-white/10 data-[touch-active]:bg-ui-white/10 ${item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}`}
             >
               {/* 하위 단계(KOSPI·KOSDAQ)는 윗줄 KOREA에 맞춘다: ▸는 KO 가운데, 글자는 R 시작 위치. 숨긴 KO로 폭을 잡아 글꼴이 달라도 맞는다. */}
               {item.indent && (

@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { CheckIcon } from '@/components/icons/AppIcons'
+import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 import { swallowNextClick } from '@/utils/swallowNextClick'
 import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 
@@ -8,14 +10,12 @@ import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/u
 // 하단 설정 줄을 없애면서(2026-11-27 사용자 결정) 박스 크기만 이리로 옮겼다. 마켓은 위아래 밀기와 툴바 시장 배지로 바꾼다.
 
 const BOX_OPTIONS: { value: number; label: string }[] = [
-  { value: 100, label: '시총 비례' },
-  { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형' },
-  { value: 0, label: '동일' },
+  { value: 100, label: '시가총액 비례' },
+  { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형 조정' },
+  { value: 0, label: '동일 크기' },
 ]
-// 옛 하단 설정 줄의 선택 칩과 같은 모양이다.
-const CHIP_CLASS = 'h-[36px] rounded-[4px] border-0 px-3 text-[14px] font-medium'
-const CHIP_ON = 'bg-brand-surface text-ui-on-dark'
-const CHIP_OFF = 'bg-ui-control text-ui-white'
+// 박스 크기 줄 — BASIS 팝업 줄과 같은 모양. 손가락을 누른 채 밀면 손가락 밑 줄에 바탕이 따라가고, 손을 뗀 줄이 선택된다(useTouchSlideSelect).
+const ROW_CLASS = '-mx-2 flex items-center rounded-none border-0 bg-transparent px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent] data-[touch-active]:bg-ui-white/10'
 const ICON_BUTTON_CLASS = 'flex h-[44px] w-[40px] items-center justify-center border-0 bg-transparent p-0 text-ui-text disabled:opacity-30'
 
 // 사용 방법 창은 처음 들어오면 자동으로 한 번 뜬다. "하루 동안 보지 않기"를 고르고 닫으면 그동안 띄우지 않는다(이 브라우저에만 저장, 2026-11-27 사용자 결정 7일→하루).
@@ -41,9 +41,10 @@ function hideGuideForDays() {
   }
 }
 
+// 상단 두 아이콘의 선 굵기 1.4(2026-11-27 사용자 지시로 1.8에서 가늘게).
 function BoxSizeIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-[22px] w-[22px]">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-[22px] w-[22px]">
       <rect x="3" y="3" width="10" height="11" rx="1" />
       <rect x="15" y="3" width="6" height="6" rx="1" />
       <rect x="15" y="11" width="6" height="10" rx="1" />
@@ -54,7 +55,7 @@ function BoxSizeIcon() {
 
 function GuideIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-[22px] w-[22px]">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="h-[22px] w-[22px]">
       <circle cx="12" cy="12" r="9" />
       <path d="M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1V14" />
       <circle cx="12" cy="17" r="0.6" fill="currentColor" />
@@ -85,14 +86,19 @@ function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number;
     return () => document.removeEventListener('pointerdown', onDown, true)
   }, [onClose, triggerRef])
   const normalized = normalizeMobileBoxSizeRatio(value)
+  const slideSelect = useTouchSlideSelect()
   return createPortal(
     <>
     <div aria-hidden="true" className={MOBILE_POPUP_BACKDROP_CLASS} />
-    <div ref={popupRef} role="dialog" aria-label="박스 크기" className={`fixed ${MOBILE_POPUP_Z_CLASS} rounded-xl bg-ui-panel p-3 text-ui-white shadow-2xl`} style={{ left: 0, top: 0, visibility: 'hidden' }}>
-      <h3 className="mb-2 text-[13px] font-semibold leading-tight">박스 크기</h3>
-      <div role="radiogroup" aria-label="박스 크기" className="flex gap-1.5">
+    {/* 툴바 팝업(BASIS)과 같은 양식: 1.3배, 둥근 패널, 사방 8px, 머리줄과 구분선, 줄 맨 앞 V 체크(2026-11-27 사용자 지시). 이 창은 툴바 팝업 부품 밖이라 같은 값을 직접 쓴다. */}
+    <div ref={popupRef} role="dialog" aria-label="박스 크기" className={`fixed ${MOBILE_POPUP_Z_CLASS} w-max rounded-[9px] bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-2xl`} style={{ left: 0, top: 0, transform: `scale(${MOBILE_POPUP_SCALE})`, transformOrigin: 'top left', visibility: 'hidden' }}>
+      <div role="presentation" className="mb-1 border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">BOX SIZE</div>
+      <div role="radiogroup" aria-label="박스 크기" className="flex flex-col" {...slideSelect}>
         {BOX_OPTIONS.map(option => (
-          <button key={option.value} type="button" role="radio" aria-checked={normalized === option.value} onClick={() => { onChange(option.value); onClose() }} className={`${CHIP_CLASS} ${normalized === option.value ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
+          <button key={option.value} type="button" data-slide-item role="radio" aria-checked={normalized === option.value} onClick={() => { onChange(option.value); onClose() }} className={ROW_CLASS}>
+            <CheckIcon aria-hidden="true" className={`mr-2 h-3.5 w-3.5 shrink-0 ${normalized === option.value ? '' : 'invisible'}`} />
+            <span>{option.label}</span>
+          </button>
         ))}
       </div>
     </div>

@@ -9,6 +9,7 @@ import ToolbarPopup from '@/components/ToolbarPopup'
 import { dropdownPanelClass } from '@/components/dropdownStyle'
 import { CheckIcon } from '@/components/icons/AppIcons'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
+import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
 // 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·합산·별도 토글의 선택 칸에도 쓴다).
@@ -123,6 +124,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
   onChange: (basis: ChangeRateChoice) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const slideSelect = useTouchSlideSelect()
   const { isMobile } = useMobileToolbar()
   const rootRef = useRef<HTMLSpanElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
@@ -171,11 +173,12 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
         >
           {/* 세션 팝업과 같은 툴바 팝업 양식: 사방 8px 여백, 머리줄·항목 글자는 왼쪽 16px에서 시작. 항목 줄만 -mx-2로 양 끝까지 늘려 올림 바탕을 줄 전체로 깐다. 선택은 바탕 없이 V 체크로만 표시한다(2026-11-27 사용자 결정). */}
           <div role="presentation" className="mb-1 border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">BASIS</div>
-          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col">
+          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col" {...slideSelect}>
             {options.map(option => (
               <button
                 key={option.value}
                 type="button"
+                data-slide-item
                 role="radio"
                 aria-checked={basis === option.value}
                 aria-disabled={option.locked}
@@ -184,7 +187,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   onChange(option.value)
                   setIsOpen(false)
                 }}
-                className={`-mx-2 flex items-center justify-between gap-4 rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors ${
+                className={`-mx-2 flex items-center justify-between gap-4 rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent] data-[touch-active]:bg-ui-white/10 ${
                   basis === option.value
                     ? 'bg-transparent hover:bg-ui-white/10'
                     : option.locked
