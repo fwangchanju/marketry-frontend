@@ -3,12 +3,13 @@ import type { CSSProperties } from 'react'
 // MOBILE 팝업 규칙 3가지 — PC 팝업이 원본이고 MOBILE은 이 세 값만 거쳐 자동으로 바뀐다(2026-11-27 사용자 결정, docs/ui-areas.md "MOBILE 팝업 규칙").
 //   1. 크기: PC 팝업을 1.3배로 그린다.
 //   2. 폭: 화면 폭의 60%보다 좁으면 넓힌다.
-//   3. 누르는 칸: 배지·날짜 칸이 보이는 크기 34px보다 작으면 키운다.
+//   3. 누르는 칸: 배지·날짜 칸이 보이는 크기 28px보다 작으면 키운다.
+//   4. 위치: 툴바에서 여는 팝업은 가운데를 화면 높이 75%에 맞추고, 툴바 줄은 가리지 않는다.
 // 툴바 줄 팝업(`ToolbarPopup`)·박스 크기 창·HOW TO USE가 같은 값을 쓰고, 지도 팝업(`Popup`)은 1번 배율만 쓴다.
 // 지도 팝업은 화면을 확대·축소하면 visualViewport.scale로 나눠 보이는 크기를 이 값으로 유지한다.
 export const MOBILE_POPUP_SCALE = 1.3
 export const MOBILE_POPUP_MIN_WIDTH_RATIO = 0.6
-export const MOBILE_POPUP_TOUCH_MIN_PX = 34
+export const MOBILE_POPUP_TOUCH_MIN_PX = 28
 
 // 2번 — 팝업에 줄 최소 폭(배율 적용 전 CSS 값). 팝업 바로 아래 칸도 이 폭까지 늘어나게 한다(MOBILE_POPUP_STRETCH_CLASS).
 export function mobilePopupMinWidth(viewportWidth: number): number {
@@ -32,12 +33,14 @@ export function mobilePopupTop(screenHeight: number, popupHeight: number): numbe
   return Math.max(MOBILE_POPUP_MARGIN, Math.min(screenHeight * MOBILE_POPUP_CENTER_RATIO - popupHeight / 2, screenHeight - popupHeight - MOBILE_POPUP_MARGIN))
 }
 
-// 툴바에서 여는 팝업(툴바 팝업·박스 크기 창)의 윗변 — 팝업 아래 끝을 툴바 줄 바로 위(8px)에 붙인다. 엄지와 가깝고 작은 팝업도 높이 뜨지 않는다(2026-11-27 사용자 결정).
-// 툴바 줄이 없는 화면이면 위 가운데 맞춤 규칙을 쓴다. 지도 길게 누르기 팝업과 HOW TO USE는 고르는 창이 아니라 위 규칙 그대로 둔다.
+// 4번 — 툴바에서 여는 팝업(툴바 팝업·박스 크기 창)의 윗변. 가운데를 화면 높이 75%에 맞추고, 아래 끝이 툴바 줄 위 8px보다 내려가면 툴바 위에 붙인다.
+// 작은 팝업은 툴바에서 조금 떠 있고, 키 큰 캘린더는 툴바 바로 위에 붙는다(2026-11-27 사용자 결정). 툴바 줄이 없는 화면이면 화면 아래를 한계로 쓴다.
+// 지도 길게 누르기 팝업과 HOW TO USE는 고르는 창이 아니라 위 mobilePopupTop(가운데 55%) 그대로 둔다.
+export const MOBILE_TOOLBAR_POPUP_CENTER_RATIO = 0.75
 export function mobilePopupTopAboveToolbar(screenHeight: number, popupHeight: number): number {
-  const toolbarTop = document.querySelector('[data-mobile-toolbar-slot]')?.getBoundingClientRect().top
-  if (toolbarTop === undefined) return mobilePopupTop(screenHeight, popupHeight)
-  return Math.max(MOBILE_POPUP_MARGIN, toolbarTop - MOBILE_POPUP_MARGIN - popupHeight)
+  const toolbarTop = document.querySelector('[data-mobile-toolbar-slot]')?.getBoundingClientRect().top ?? screenHeight
+  const lowestTop = toolbarTop - MOBILE_POPUP_MARGIN - popupHeight
+  return Math.max(MOBILE_POPUP_MARGIN, Math.min(screenHeight * MOBILE_TOOLBAR_POPUP_CENTER_RATIO - popupHeight / 2, lowestTop))
 }
 
 // MOBILE 팝업 양식(2026-11-27 사용자 결정): 외곽선 없는 둥근 패널 + 뒤 화면을 어둡게 해서 경계를 만든다.

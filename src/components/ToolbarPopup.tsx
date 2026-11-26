@@ -10,7 +10,7 @@ const POPUP_FIXED_SCALE = MOBILE_POPUP_SCALE
 
 // 툴바 버튼 아래에 열리는 팝업 공통 부품.
 // PC는 예전처럼 트리거 기준 absolute로 그대로 열고, MOBILE 프레임에서는 document.body로 옮겨
-// 가로 가운데, 아래 끝은 툴바 줄 바로 위에 띄운다 — 엄지와 가깝고 작은 팝업도 높이 뜨지 않는다(2026-11-27 사용자 결정, 전에는 화면 높이 55% 가운데 맞춤).
+// 가로 가운데, 세로 가운데는 화면 높이 75%이고 아래 끝이 툴바 줄 위 8px보다 내려가지 않게 띄운다(2026-11-27 사용자 결정, mobilePopupTopAboveToolbar).
 // 툴바 배율과 팝업 배율은 분리되어 있다.
 type Props = {
   open: boolean
