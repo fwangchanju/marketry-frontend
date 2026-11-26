@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { useNavigate } from 'react-router-dom'
-import MobileTopBar from '@/components/MobileTopBar'
 import MobilePathStockChart from '@/components/MobilePathStockChart'
 import { chartSectorPath } from '@/utils/chartSectorPath'
 import { useStockChart } from '@/hooks/useStockChart'
@@ -30,7 +29,7 @@ import type Heatmap from '@/components/Heatmap'
 import MarketToolbarContent from '@/components/MarketToolbarContent'
 import MobileStockHeatmap from '@/components/MobileStockHeatmap'
 import Toolbar from '@/components/Toolbar'
-import type { MobileMapMarket } from '@/components/MobileMapSheet'
+import type { MobileMapMarket } from '@/utils/mobileMarketRoutes'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
 import type { MarketColors, MarketScreenData } from '@/markets/marketContract'
 import type { marketMenu } from '@/utils/marketMenu'
@@ -335,9 +334,6 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
   if (isGraph && !major && !mid && viewMode === 'sector') graphItems.push(...referenceItems.map(item => onSelectIndex ? { ...item, onSelect: () => onSelectIndex(item.key) } : item))
   const swipeGraphItems: MobileGraphItem[] = [...mapItems.map(item => ({ key: item.key, name: item.name, value: item.changeRate })), ...referenceItems]
 
-  // 상단 제목을 누를 때마다 종목 지도 → 업종 지도 → 그룹 등락률 → 종목 지도로 이동한다(마켓은 유지).
-  const titleTo = isGraph ? routes.map : routes.graph
-  const titleLabel = !isGraph ? '그룹 등락률로 이동' : '종목 지도로 이동'
   // 왼쪽으로 밀면 업종 지도 → 그룹 등락률 → 종목 지도, 오른쪽으로 밀면 그 반대다.
   const swipeTarget = (direction: 'next' | 'previous'): 'stock' | 'sector' | 'graph' => isGraph
     ? (direction === 'next' ? 'stock' : 'sector')
@@ -406,7 +402,8 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
         onBeforeSwipeNavigate={direction => { if (swipeTarget(direction) === 'stock') captureSwipeArrivalOverlay(swipePreviewCanvasRef.current) }}
         nextPreview={() => swipePreview('next')}
         previousPreview={() => swipePreview('previous')}
-        topBar={<MobileTopBar title={isGraph ? '그룹 등락률' : '업종 지도'} titleTo={titleTo} titleLabel={titleLabel} />}
+        pageTitle={isGraph ? '그룹 등락률' : '업종 지도'}
+        boxSizeDisabled={isGraph}
         toolbar={
           <Toolbar><MarketToolbarContent page={isGraph ? 'GRAPH' : 'SUMMARY'} market={market} menu={isGraph ? menus.graph : menus.summary} right={null} /></Toolbar>
         }

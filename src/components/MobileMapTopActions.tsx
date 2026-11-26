@@ -1,0 +1,173 @@
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { CloseIcon } from '@/components/icons/AppIcons'
+import { mobilePopupTop } from '@/utils/mobilePopupScale'
+import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
+
+// MOBILE 지도 상단 줄 오른쪽 아이콘 두 개 — 박스 크기와 사용 방법.
+// 하단 설정 줄을 없애면서(2026-11-27 사용자 결정) 박스 크기만 이리로 옮겼다. 마켓은 위아래 밀기와 툴바 시장 배지로 바꾼다.
+
+const BOX_OPTIONS: { value: number; label: string }[] = [
+  { value: 100, label: '시총 비례' },
+  { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형' },
+  { value: 0, label: '동일' },
+]
+// 옛 하단 설정 줄의 선택 칩과 같은 모양이다.
+const CHIP_CLASS = 'h-[36px] rounded-[4px] border-0 px-3 text-[14px] font-medium'
+const CHIP_ON = 'bg-brand-surface text-ui-on-dark'
+const CHIP_OFF = 'bg-ui-control text-ui-white'
+const ICON_BUTTON_CLASS = 'flex h-[44px] w-[40px] items-center justify-center border-0 bg-transparent p-0 text-ui-text disabled:opacity-30'
+
+// 사용 방법 창은 처음 들어오면 자동으로 한 번 뜬다. "7일 동안 보지 않기"를 고르고 닫으면 그동안 띄우지 않는다(이 브라우저에만 저장).
+const GUIDE_HIDDEN_UNTIL_KEY = 'marketry:mobile-map-guide-hidden-until'
+const GUIDE_HIDE_DAYS = 7
+// 한 번 열어 본 뒤에는 페이지를 넘길 때마다 다시 띄우지 않는다(새로 고침 전까지).
+const guideMemory = { autoShown: false }
+
+function guideHidden(): boolean {
+  try {
+    const until = Number(window.localStorage.getItem(GUIDE_HIDDEN_UNTIL_KEY) ?? 0)
+    return Number.isFinite(until) && until > Date.now()
+  } catch {
+    return false
+  }
+}
+
+function hideGuideForDays() {
+  try {
+    window.localStorage.setItem(GUIDE_HIDDEN_UNTIL_KEY, String(Date.now() + GUIDE_HIDE_DAYS * 24 * 60 * 60 * 1000))
+  } catch {
+    // 저장이 막힌 브라우저에서는 이번 방문 동안만 닫힌다.
+  }
+}
+
+function BoxSizeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-[22px] w-[22px]">
+      <rect x="3" y="3" width="10" height="11" rx="1" />
+      <rect x="15" y="3" width="6" height="6" rx="1" />
+      <rect x="15" y="11" width="6" height="10" rx="1" />
+      <rect x="3" y="16" width="10" height="5" rx="1" />
+    </svg>
+  )
+}
+
+function GuideIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-[22px] w-[22px]">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1V14" />
+      <circle cx="12" cy="17" r="0.6" fill="currentColor" />
+    </svg>
+  )
+}
+
+// 박스 크기 창 — 지도 팝업·툴바 팝업과 같은 자리(가로 가운데, 윗변 화면 높이 38%)에 뜬다. 바깥을 누르면 닫힌다.
+function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number; onChange: (value: number) => void; onClose: () => void; triggerRef: React.RefObject<HTMLButtonElement | null> }) {
+  const popupRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const popup = popupRef.current
+    if (!popup) return
+    const { width, height } = popup.getBoundingClientRect()
+    popup.style.left = `${(window.innerWidth - width) / 2}px`
+    popup.style.top = `${mobilePopupTop(window.innerHeight, height)}px`
+    popup.style.visibility = 'visible'
+  })
+  useEffect(() => {
+    const onDown = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (popupRef.current?.contains(target) || triggerRef.current?.contains(target)) return
+      onClose()
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    return () => document.removeEventListener('pointerdown', onDown, true)
+  }, [onClose, triggerRef])
+  const normalized = normalizeMobileBoxSizeRatio(value)
+  return createPortal(
+    <div ref={popupRef} role="dialog" aria-label="박스 크기" className="fixed z-[80] rounded-md border border-ui-border bg-ui-panel p-3 text-ui-white shadow-xl" style={{ left: 0, top: 0, visibility: 'hidden' }}>
+      <h3 className="mb-2 text-[13px] font-semibold leading-tight">박스 크기</h3>
+      <div role="radiogroup" aria-label="박스 크기" className="flex gap-1.5">
+        {BOX_OPTIONS.map(option => (
+          <button key={option.value} type="button" role="radio" aria-checked={normalized === option.value} onClick={() => { onChange(option.value); onClose() }} className={`${CHIP_CLASS} ${normalized === option.value ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
+        ))}
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+const GUIDE_ROWS: { title: string; text: string; icon: React.ReactNode }[] = [
+  {
+    title: '좌우로 밀기',
+    text: '종목 지도 · 업종 지도 · 그룹 등락률 페이지 이동',
+    icon: <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12h32M10 6l-6 6 6 6M30 6l6 6-6 6" /></svg>,
+  },
+  {
+    title: '위아래로 밀기',
+    text: '한국 · 일본 · 미국 나라 이동',
+    icon: <svg viewBox="0 0 24 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v32M6 10l6-6 6 6M6 30l6 6 6-6" /></svg>,
+  },
+  {
+    title: '두 손가락으로 벌리기',
+    text: '종목 지도 확대 (확대 중에는 밀어도 페이지가 넘어가지 않음)',
+    icon: <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 32l10-10M32 8L22 18M8 32v-8M8 32h8M32 8v8M32 8h-8" /></svg>,
+  },
+  {
+    title: '길게 누르기',
+    text: '업종 지도에서 업종 정보 보기',
+    icon: <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="20" cy="20" r="6" fill="currentColor" stroke="none" /><circle cx="20" cy="20" r="13" strokeDasharray="4 4" /></svg>,
+  },
+]
+
+function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
+  const [hideForDays, setHideForDays] = useState(false)
+  const close = () => onClose(hideForDays)
+  return createPortal(
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 px-4" onClick={close}>
+      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[360px] rounded-xl bg-ui-panel p-4 text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-[16px] font-bold">사용 방법</h2>
+          <button type="button" aria-label="닫기" onClick={close} className="-mr-2 flex h-[40px] w-[40px] items-center justify-center border-0 bg-transparent p-0 text-ui-muted">
+            <CloseIcon aria-hidden="true" className="h-5 w-5" />
+          </button>
+        </div>
+        <ul className="m-0 list-none p-0">
+          {GUIDE_ROWS.map(row => (
+            <li key={row.title} className="flex items-center gap-3 border-t border-ui-border py-2.5">
+              <span aria-hidden="true" className="flex h-[36px] w-[36px] shrink-0 items-center justify-center text-ui-muted [&>svg]:max-h-[30px] [&>svg]:max-w-[30px]">{row.icon}</span>
+              <span>
+                <span className="block text-[14px] font-semibold">{row.title}</span>
+                <span className="mt-0.5 block text-[12px] leading-snug text-ui-muted">{row.text}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <label className="mt-1 flex min-h-[40px] items-center gap-2 border-t border-ui-border pt-2 text-[13px] text-ui-muted">
+          <input type="checkbox" className="thin-check" checked={hideForDays} onChange={event => setHideForDays(event.target.checked)} />
+          {GUIDE_HIDE_DAYS}일 동안 보지 않기
+        </label>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+export default function MobileMapTopActions({ boxSize, onChangeBoxSize, boxSizeDisabled }: { boxSize: number; onChangeBoxSize: (value: number) => void; boxSizeDisabled: boolean }) {
+  const [boxOpen, setBoxOpen] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(() => !guideMemory.autoShown && guideHidden() === false)
+  useEffect(() => { if (guideOpen) guideMemory.autoShown = true }, [guideOpen])
+  const boxButtonRef = useRef<HTMLButtonElement>(null)
+  return (
+    <div className="flex items-center">
+      {/* 그룹 등락률에는 박스가 없어 흐리게 막는다(2026-11-27 사용자 결정). */}
+      <button ref={boxButtonRef} type="button" aria-label="박스 크기" aria-expanded={boxOpen} disabled={boxSizeDisabled} onClick={() => setBoxOpen(open => !open)} className={ICON_BUTTON_CLASS}>
+        <BoxSizeIcon />
+      </button>
+      <button type="button" aria-label="사용 방법" onClick={() => setGuideOpen(true)} className={ICON_BUTTON_CLASS}>
+        <GuideIcon />
+      </button>
+      {boxOpen && !boxSizeDisabled && <BoxSizePopup value={boxSize} onChange={onChangeBoxSize} onClose={() => setBoxOpen(false)} triggerRef={boxButtonRef} />}
+      {guideOpen && <GuideDialog onClose={hideForDays => { if (hideForDays) hideGuideForDays(); setGuideOpen(false) }} />}
+    </div>
+  )
+}

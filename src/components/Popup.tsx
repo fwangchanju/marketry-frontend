@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { appConfirm } from '@/utils/appDialogBus'
 import { mobileViewport } from '@/utils/mobileViewport'
-import { MOBILE_POPUP_SCALE } from '@/utils/mobilePopupScale'
+import { MOBILE_POPUP_SCALE, mobilePopupTop } from '@/utils/mobilePopupScale'
 
 export interface PopupContent {
   title: string
@@ -64,8 +64,6 @@ const POPUP_GAP = 2
 // 커서 이동 팝업과 마우스 사이의 간격(오른쪽·아래).
 const POINTER_GAP = 14
 const POPUP_MARGIN = 8
-// MOBILE 팝업의 윗변은 줄 수와 관계없이 보이는 화면 높이의 이 비율에서 시작한다(2026-11-25 사용자 결정). 줄이 많으면 아래로만 길어진다.
-const MOBILE_POPUP_TOP_RATIO = 0.27
 // MOBILE 팝업의 너비는 종목·업종, 시장, 내용 길이, 화면 확대와 관계없이 늘 같다. 높이는 내용 줄 수를 따른다(2026-11-25 사용자 결정).
 // 이 값에 MOBILE_POPUP_SCALE을 곱한 너비로 보인다.
 const MOBILE_POPUP_WIDTH = 200
@@ -110,7 +108,8 @@ function placeMobilePopup(el: HTMLElement) {
   const width = MOBILE_POPUP_WIDTH * scale
   const height = el.offsetHeight * scale
   const left = (screenWidth - width) / 2
-  const top = Math.max(POPUP_MARGIN, Math.min(screenHeight * MOBILE_POPUP_TOP_RATIO, screenHeight - height - POPUP_MARGIN))
+  // 윗변은 툴바 팝업과 같은 높이(mobilePopupTop)에 둔다.
+  const top = mobilePopupTop(screenHeight, height)
   el.style.transform = `scale(${scale / zoom})`
   el.style.left = `${view.left + left / zoom}px`
   el.style.top = `${view.top + top / zoom}px`
