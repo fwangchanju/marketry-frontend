@@ -34,8 +34,8 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
     const trigger = triggerRef.current
     const popup = popupRef.current
     if (!trigger || !popup) return
-    // MOBILE 팝업 규칙 2번: 화면 폭의 60%보다 좁으면 넓힌다(재기 전에 넣어야 넓어진 크기로 자리를 잡는다).
-    popup.style.minWidth = `${mobilePopupMinWidth(window.innerWidth)}px`
+    // MOBILE 팝업 규칙 2번: 보이는 폭 240px보다 좁으면 넓힌다(재기 전에 넣어야 넓어진 크기로 자리를 잡는다).
+    popup.style.minWidth = `${mobilePopupMinWidth()}px`
     // transform이 적용된 실제 화면 크기를 쓴다. offsetWidth(정수 반올림)에 배율을 곱하면
     // 서브픽셀 오차로 오른쪽 끝이 여백 1px을 넘을 수 있다.
     const { width: visualWidth, height: visualHeight } = popup.getBoundingClientRect()

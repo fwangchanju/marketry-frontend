@@ -2,18 +2,19 @@ import type { CSSProperties } from 'react'
 
 // MOBILE 팝업 규칙 3가지 — PC 팝업이 원본이고 MOBILE은 이 세 값만 거쳐 자동으로 바뀐다(2026-11-27 사용자 결정, docs/ui-areas.md "MOBILE 팝업 규칙").
 //   1. 크기: PC 팝업을 1.3배로 그린다.
-//   2. 폭: 화면 폭의 60%보다 좁으면 넓힌다.
+//   2. 폭: 보이는 폭 240px보다 좁으면 넓힌다.
 //   3. 누르는 칸: 배지·날짜 칸이 보이는 크기 28px보다 작으면 키운다.
-//   4. 위치: 툴바에서 여는 팝업은 가운데를 화면 높이 75%에 맞추고, 툴바 줄은 가리지 않는다.
+//   4. 위치: 팝업은 누른 버튼 쪽에 뜬다. 툴바 버튼이면 가운데를 화면 높이 75%에 맞추고 툴바 줄은 가리지 않는다. 상단 아이콘이면 상단 줄 바로 아래.
 // 툴바 줄 팝업(`ToolbarPopup`)·박스 크기 창·HOW TO USE가 같은 값을 쓰고, 지도 팝업(`Popup`)은 1번 배율만 쓴다.
 // 지도 팝업은 화면을 확대·축소하면 visualViewport.scale로 나눠 보이는 크기를 이 값으로 유지한다.
 export const MOBILE_POPUP_SCALE = 1.3
-export const MOBILE_POPUP_MIN_WIDTH_RATIO = 0.6
+export const MOBILE_POPUP_MIN_WIDTH_PX = 240
 export const MOBILE_POPUP_TOUCH_MIN_PX = 28
 
 // 2번 — 팝업에 줄 최소 폭(배율 적용 전 CSS 값). 팝업 바로 아래 칸도 이 폭까지 늘어나게 한다(MOBILE_POPUP_STRETCH_CLASS).
-export function mobilePopupMinWidth(viewportWidth: number): number {
-  return (viewportWidth * MOBILE_POPUP_MIN_WIDTH_RATIO) / MOBILE_POPUP_SCALE
+// 화면 폭 비율(60%)로 했더니 넓은 MOBILE 화면(창을 좁힌 PC·펼친 폴더블)에서 캘린더 틀만 넓어지고 날짜 칸은 왼쪽에 남아서 고정 폭으로 바꿨다(2026-11-27).
+export function mobilePopupMinWidth(): number {
+  return MOBILE_POPUP_MIN_WIDTH_PX / MOBILE_POPUP_SCALE
 }
 export const MOBILE_POPUP_STRETCH_CLASS = '[&>*]:min-w-full'
 
@@ -41,6 +42,12 @@ export function mobilePopupTopAboveToolbar(screenHeight: number, popupHeight: nu
   const toolbarTop = document.querySelector('[data-mobile-toolbar-slot]')?.getBoundingClientRect().top ?? screenHeight
   const lowestTop = toolbarTop - MOBILE_POPUP_MARGIN - popupHeight
   return Math.max(MOBILE_POPUP_MARGIN, Math.min(screenHeight * MOBILE_TOOLBAR_POPUP_CENTER_RATIO - popupHeight / 2, lowestTop))
+}
+
+// 4번 — 상단 줄 아이콘(박스 크기 등)에서 여는 팝업의 윗변. 누른 버튼이 든 상단 줄 바로 아래(8px)에 띄운다(2026-11-27 사용자 결정).
+export function mobilePopupTopBelowHeader(trigger: HTMLElement | null): number {
+  const headerBottom = trigger?.closest('header')?.getBoundingClientRect().bottom
+  return (headerBottom ?? 0) + MOBILE_POPUP_MARGIN
 }
 
 // MOBILE 팝업 양식(2026-11-27 사용자 결정): 외곽선 없는 둥근 패널 + 뒤 화면을 어둡게 해서 경계를 만든다.
