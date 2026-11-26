@@ -17,14 +17,28 @@ interface Props {
   errorMessage?: string
   onRetry?: () => void
   message?: string
+  // 페이지를 열 때의 로딩원만 켠다 — LOADING_REVEAL_DELAY_MS 동안 숨겨 짧은 로딩의 깜빡임을 없앤다.
+  delayReveal?: boolean
   // 관리자 메인처럼 불러오는 작업이 없는 정적 표시.
   still?: boolean
   stillContent?: ReactNode
 }
 
-export default function Spinner({ className, showElapsed = false, centerContent = false, showLogo = false, errorMessage, onRetry, message, still = false, stillContent }: Props) {
+// 페이지를 열 때의 로딩원(delayReveal)은 이 시간 동안 자리만 잡고 숨긴다. 금방 끝나는 로딩에서 원이 잠깐 비쳤다 사라지는 깜빡임을 없앤다
+// (2026-11-27 사용자 결정 0.5초, 운영 PC 실측 0.14~0.39초). 버튼으로 시작하는 작업(캡처·게시·엑셀·달력·텔레그램·되돌리기)은
+// 누른 반응이 바로 보여야 하므로 쓰지 않는다(같은 날 사용자 결정). 오류·정지 표시는 바로 보인다. 경과 초는 처음부터 센다.
+export const LOADING_REVEAL_DELAY_MS = 500
+
+export default function Spinner({ className, showElapsed = false, centerContent = false, showLogo = false, errorMessage, onRetry, message, still = false, stillContent, delayReveal = false }: Props) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const isLoading = !still && !errorMessage
+  const delaysReveal = isLoading && showElapsed && delayReveal
+  const [revealed, setRevealed] = useState(!delaysReveal)
+  useEffect(() => {
+    if (!delaysReveal) return
+    const timer = window.setTimeout(() => setRevealed(true), LOADING_REVEAL_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [delaysReveal])
 
   useEffect(() => {
     if (!isLoading || (!showElapsed && !showLogo)) return
@@ -46,7 +60,7 @@ export default function Spinner({ className, showElapsed = false, centerContent 
     <div
       role={still ? undefined : errorMessage ? 'alert' : 'status'}
       aria-label={still ? 'MARKETRY' : errorMessage ?? message ?? (showElapsed ? '데이터를 불러오는 중입니다.' : '설정 처리 중')}
-      className={`@container relative ${sizeClass}`}
+      className={`@container relative ${sizeClass} ${delaysReveal && !revealed ? 'invisible' : ''}`}
     >
       {/* 회전하는 사각 경계가 부모의 스크롤 영역을 늘리지 않도록 링만 고정 영역 안에서 자른다. */}
       <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-full">

@@ -280,7 +280,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
     for (const [days, line] of averageLinesRef.current) line.applyOptions({ visible: !hiddenAverages.includes(days) })
   }, [hiddenAverages])
 
-  if (isLoading) return <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
+  if (isLoading) return <MainAreaLoading><Spinner delayReveal showElapsed /></MainAreaLoading>
   if (isError) return <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={() => { void refetch() }} /></MainAreaLoading>
   if (!data || data.length === 0) return <div className="relative flex-1"><EmptyMessage message={EMPTY_DATA_MESSAGE} topClass="top-0" /></div>
 

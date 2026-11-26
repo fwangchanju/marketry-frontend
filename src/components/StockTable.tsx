@@ -429,7 +429,7 @@ export default function StockTable({ rows, columns, editor, slots, arrangeWidths
             </thead>
             <tbody>
               {isPending ? (
-                <tr><td colSpan={tableColSpan} className="p-8"><div className="flex h-[min(32rem,60vh)] items-center justify-center"><Spinner showElapsed /></div></td></tr>
+                <tr><td colSpan={tableColSpan} className="p-8"><div className="flex h-[min(32rem,60vh)] items-center justify-center"><Spinner delayReveal showElapsed /></div></td></tr>
               ) : (
                 <>
                   {spacer(paddingTop)}

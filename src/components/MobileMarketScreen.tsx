@@ -421,7 +421,7 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
         <div className="flex h-full flex-col">
         {!isLoading && !isError && renderPathNav()}
         <div className="min-h-0 flex-1">
-        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
+        {isLoading ? <div className="flex h-full items-center justify-center"><Spinner delayReveal showElapsed className={MOBILE_LOADING_SIZE_CLASS} /></div>
           : isError ? <div className="flex h-full items-center justify-center"><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={refetch} /></div>
             : isGraph ? <MobileGraphBars items={graphItems} colorScale={colorScale} highlightColor={strongIndustryColor} />
             : viewMode === 'stock' ? stockHeatmapItems.length === 0 ? <p className="flex h-full items-center justify-center text-sm text-ui-muted">표시할 종목이 없습니다.</p> : <MobileStockHeatmap stocks={stockHeatmapItems} boxSizeRatio={boxSizeMarketCapRatio} colorScale={colorScale} decimalPlaces={MOBILE_DECIMAL_PLACES} onSelect={openStockChart} onLongPress={(stock, target) => openStockPopup(stock, target)} />
