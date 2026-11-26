@@ -1,8 +1,9 @@
 import { useLayoutEffect, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { TOOLBAR_SIDE_GUTTER } from '@/utils/mobilePathBar'
-import { MOBILE_POPUP_SCALE, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { MOBILE_PANEL_CLASS, MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
 import { useMobileToolbar } from './MobileToolbarContext'
+import { useSwallowOutsideTap } from '@/utils/swallowNextClick'
 
 // 화면 폭 393px(가용 381px)에 5종 모두 들어간다.
 const POPUP_FIXED_SCALE = MOBILE_POPUP_SCALE
@@ -23,6 +24,8 @@ type Props = {
 
 export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, className, children, gapPx = 4 }: Props) {
   const { isMobile } = useMobileToolbar()
+  // MOBILE에서 바깥을 눌러 닫을 때 그 누름이 아래 화면까지 눌리지 않게 한다.
+  useSwallowOutsideTap(open && isMobile, [popupRef, triggerRef])
 
   // 팝업이 열려 있는 동안 레이아웃이 바뀔 수 있어 매 렌더마다 트리거를 다시 측정한다.
   // 상태를 두면 effect 안의 setState로 연쇄 렌더가 생기므로 DOM 스타일을 직접 갱신한다.
@@ -49,13 +52,16 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
     )
   }
 
-  // z-[70] — MOBILE 지도 프레임이 z-[60] stacking context라 그 안의 헤더보다 위에 그려져야 한다.
+  // MOBILE 지도 프레임·툴바 줄(z-[70])보다 위에 뒤 화면 막(z-[71])과 팝업(z-[72])을 그린다.
+  // 막은 바깥 누름을 받아 아래 화면이 눌리지 않게 하고, 각 팝업은 지금처럼 바깥 누름에서 스스로 닫힌다.
   return createPortal(
+    <>
+    <div aria-hidden="true" className={MOBILE_POPUP_BACKDROP_CLASS} />
     <div
       ref={popupRef}
       role="dialog"
       aria-label={ariaLabel}
-      className={`z-[70] ${className}`}
+      className={`${MOBILE_POPUP_Z_CLASS} ${className} ${MOBILE_PANEL_CLASS}`}
       style={{
         position: 'fixed',
         left: TOOLBAR_SIDE_GUTTER,
@@ -66,7 +72,8 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
       } as CSSProperties}
     >
       {children}
-    </div>,
+    </div>
+    </>,
     document.body,
   )
 }

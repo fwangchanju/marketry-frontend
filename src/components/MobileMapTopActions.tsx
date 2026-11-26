@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CloseIcon } from '@/components/icons/AppIcons'
-import { mobilePopupTop } from '@/utils/mobilePopupScale'
+import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { swallowNextClick } from '@/utils/swallowNextClick'
 import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 
 // MOBILE 지도 상단 줄 오른쪽 아이콘 두 개 — 박스 크기와 사용 방법.
@@ -18,9 +18,9 @@ const CHIP_ON = 'bg-brand-surface text-ui-on-dark'
 const CHIP_OFF = 'bg-ui-control text-ui-white'
 const ICON_BUTTON_CLASS = 'flex h-[44px] w-[40px] items-center justify-center border-0 bg-transparent p-0 text-ui-text disabled:opacity-30'
 
-// 사용 방법 창은 처음 들어오면 자동으로 한 번 뜬다. "7일 동안 보지 않기"를 고르고 닫으면 그동안 띄우지 않는다(이 브라우저에만 저장).
+// 사용 방법 창은 처음 들어오면 자동으로 한 번 뜬다. "하루 동안 보지 않기"를 고르고 닫으면 그동안 띄우지 않는다(이 브라우저에만 저장, 2026-11-27 사용자 결정 7일→하루).
 const GUIDE_HIDDEN_UNTIL_KEY = 'marketry:mobile-map-guide-hidden-until'
-const GUIDE_HIDE_DAYS = 7
+const GUIDE_HIDE_DAYS = 1
 // 한 번 열어 본 뒤에는 페이지를 넘길 때마다 다시 띄우지 않는다(새로 고침 전까지).
 const guideMemory = { autoShown: false }
 
@@ -77,6 +77,8 @@ function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number;
     const onDown = (event: PointerEvent) => {
       const target = event.target as Node
       if (popupRef.current?.contains(target) || triggerRef.current?.contains(target)) return
+      // 바깥 누름은 창만 닫고 아래 화면은 누르지 않는다.
+      swallowNextClick()
       onClose()
     }
     document.addEventListener('pointerdown', onDown, true)
@@ -84,14 +86,17 @@ function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number;
   }, [onClose, triggerRef])
   const normalized = normalizeMobileBoxSizeRatio(value)
   return createPortal(
-    <div ref={popupRef} role="dialog" aria-label="박스 크기" className="fixed z-[80] rounded-md border border-ui-border bg-ui-panel p-3 text-ui-white shadow-xl" style={{ left: 0, top: 0, visibility: 'hidden' }}>
+    <>
+    <div aria-hidden="true" className={MOBILE_POPUP_BACKDROP_CLASS} />
+    <div ref={popupRef} role="dialog" aria-label="박스 크기" className={`fixed ${MOBILE_POPUP_Z_CLASS} rounded-xl bg-ui-panel p-3 text-ui-white shadow-2xl`} style={{ left: 0, top: 0, visibility: 'hidden' }}>
       <h3 className="mb-2 text-[13px] font-semibold leading-tight">박스 크기</h3>
       <div role="radiogroup" aria-label="박스 크기" className="flex gap-1.5">
         {BOX_OPTIONS.map(option => (
           <button key={option.value} type="button" role="radio" aria-checked={normalized === option.value} onClick={() => { onChange(option.value); onClose() }} className={`${CHIP_CLASS} ${normalized === option.value ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
         ))}
       </div>
-    </div>,
+    </div>
+    </>,
     document.body,
   )
 }
@@ -100,22 +105,27 @@ function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number;
 const GUIDE_ROWS: { title: string; text: string; icon: React.ReactNode }[] = [
   {
     title: '왼쪽·오른쪽으로 밀기',
-    text: '종목 지도 · 업종 지도 · 그룹 등락률 페이지 이동',
+    text: 'MAP · SECTOR · GRAPH 페이지 이동',
     icon: <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12h32M10 6l-6 6 6 6M30 6l6 6-6 6" /></svg>,
   },
   {
-    title: '위·아래로 밀기',
-    text: '한국 · 일본 · 미국 나라 이동',
-    icon: <svg viewBox="0 0 24 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v32M6 10l6-6 6 6M6 30l6 6 6-6" /></svg>,
+    title: '위로 밀기',
+    text: '한국 · 일본 · 미국 국가 변경',
+    icon: <svg viewBox="0 0 24 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 36V4M6 10l6-6 6 6" /></svg>,
+  },
+  {
+    title: '아래로 밀기',
+    text: '새로고침',
+    icon: <svg viewBox="0 0 24 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v32M6 30l6 6 6-6" /></svg>,
   },
   {
     title: '두 손가락으로 확대·축소',
-    text: '종목 지도 확대',
+    text: 'MAP 확대',
     icon: <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 32l10-10M32 8L22 18M8 32v-8M8 32h8M32 8v8M32 8h-8" /></svg>,
   },
   {
     title: '길게 누르기',
-    text: '업종 지도에서 업종 정보 보기',
+    text: 'SECTOR 상세정보 보기',
     icon: <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="20" cy="20" r="6" fill="currentColor" stroke="none" /><circle cx="20" cy="20" r="13" strokeDasharray="4 4" /></svg>,
   },
 ]
@@ -126,12 +136,7 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
   return createPortal(
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 px-4" onClick={close}>
       <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[360px] rounded-xl bg-ui-panel p-4 text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-[16px] font-bold">사용 방법</h2>
-          <button type="button" aria-label="닫기" onClick={close} className="-mr-2 flex h-[40px] w-[40px] items-center justify-center border-0 bg-transparent p-0 text-ui-muted">
-            <CloseIcon aria-hidden="true" className="h-5 w-5" />
-          </button>
-        </div>
+        <h2 className="mb-3 mt-1 flex items-center gap-2 text-[16px] font-bold"><span className="text-ui-text"><GuideIcon /></span>사용 방법</h2>
         <ul className="m-0 list-none p-0">
           {GUIDE_ROWS.map(row => (
             <li key={row.title} className="flex items-center gap-3 border-t border-ui-border py-2.5">
@@ -143,10 +148,14 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
             </li>
           ))}
         </ul>
-        <label className="mt-1 flex min-h-[40px] items-center gap-2 border-t border-ui-border pt-2 text-[13px] text-ui-muted">
-          <input type="checkbox" className="thin-check" checked={hideForDays} onChange={event => setHideForDays(event.target.checked)} />
-          {GUIDE_HIDE_DAYS}일 동안 보지 않기
-        </label>
+        {/* 닫기는 엄지가 닿는 아래에 둔다(2026-11-27 사용자 결정 — 위쪽 ✕는 폰에서 누르기 불편). */}
+        <div className="mt-1 flex items-center justify-between gap-3 border-t border-ui-border pt-3">
+          <label className="flex min-h-[40px] items-center gap-2 text-[14px] text-ui-muted">
+            <input type="checkbox" className="thin-check" checked={hideForDays} onChange={event => setHideForDays(event.target.checked)} />
+            하루 동안 보지 않기
+          </label>
+          <button type="button" onClick={close} className="h-[40px] shrink-0 border-0 bg-transparent px-3 text-[14px] font-semibold text-ui-white">닫기</button>
+        </div>
       </div>
     </div>,
     document.body,

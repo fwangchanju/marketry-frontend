@@ -3,7 +3,8 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { appConfirm } from '@/utils/appDialogBus'
 import { mobileViewport } from '@/utils/mobileViewport'
-import { MOBILE_POPUP_SCALE, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { swallowNextClick } from '@/utils/swallowNextClick'
 
 export interface PopupContent {
   title: string
@@ -126,6 +127,17 @@ interface PopupBodyProps {
 
 function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, mobileEnlarged }: PopupBodyProps) {
   const elRef = useRef<HTMLDivElement>(null)
+  // MOBILE 팝업이 떠 있을 때 바깥을 누르면 팝업만 닫고, 그 누름이 아래 업종·종목까지 눌려 이동하지 않게 한다(2026-11-27 사용자 제보).
+  useEffect(() => {
+    if (!mobileEnlarged) return
+    const onDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && elRef.current?.contains(event.target)) return
+      swallowNextClick()
+      onClose()
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    return () => document.removeEventListener('pointerdown', onDown, true)
+  }, [mobileEnlarged, onClose])
   // MOBILE 팝업은 길게 누르는 동안(손가락을 떼기 전에) 열린다. 떼는 순간의 클릭이 팝업에 닿아 바로 닫히지 않게,
   // 팝업 위에서 누르기 시작한 클릭만 받는다. 시간으로 막으면 클릭이 늦게 올 때 뚫린다(2026-11-25 재현).
   const pressedRef = useRef(false)
@@ -240,10 +252,12 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, mobileEnlarge
 
   return (
     <>
+      {/* MOBILE은 외곽선 없이 둥근 크림색 카드 + 뒤 화면 어둡게(툴바 팝업과 같은 막, 2026-11-27 사용자 결정). PC는 그대로. */}
+      {mobileEnlarged && <div aria-hidden="true" className={MOBILE_POPUP_BACKDROP_CLASS} />}
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible ${mobileEnlarged ? 'absolute z-[70] box-border cursor-pointer' : 'fixed z-[9999] w-max break-words'} select-none border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        className={`invisible ${mobileEnlarged ? `absolute ${MOBILE_POPUP_Z_CLASS} box-border cursor-pointer rounded-[9px] border-0 shadow-2xl` : 'fixed z-[9999] w-max break-words border border-[var(--ui-popup-border)] shadow-lg'} select-none px-2 py-1 text-left text-base text-ui-background ${popup.tooltip ? 'pointer-events-none' : ''}`}
         onPointerDown={mobileEnlarged ? () => { pressedRef.current = true } : undefined}
         onClickCapture={mobileEnlarged ? event => {
           const pressed = pressedRef.current
