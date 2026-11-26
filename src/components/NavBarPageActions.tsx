@@ -84,18 +84,20 @@ export function PageRefreshButton({
   return (
     <span className="inline-flex shrink-0">
       {cell && children ? (
-        // 시각 칩 전체가 새로고침 버튼이다 — 평소에는 시계·시각 글자가 보이고, 커서를 올리거나 키보드 포커스가 오면 글자가 사라진 자리(칩 한가운데, 시 분 사이 콜론 자리)에
-        // 청록 새로고침 아이콘이 나타난다. 갱신하는 동안에는 글자 대신 아이콘이 돌아간다. 자리를 글자가 계속 차지(invisible)해서 칩 폭은 변하지 않는다.
+        // 시각 칩 전체가 새로고침 버튼이다 — 평소에는 시계·시각 글자가 보이고, 갱신하는 동안에만 글자 자리(칩 한가운데)에 청록 새로고침 아이콘이 돈다.
+        // 예전에는 커서를 올리거나 포커스가 오면 아이콘을 미리 보였는데, 폰에서 누른 뒤 "올린 상태"가 남아 회전이 끝나도 시각으로 돌아오지 않아
+        // PC·MOBILE 모두 뺐다(2026-11-27 사용자 결정). 누를 수 있다는 안내는 마우스를 올리면 뜨는 설명(data-hint)이 맡는다.
+        // 자리를 글자가 계속 차지(invisible)해서 칩 폭은 변하지 않는다.
         <button
           type="button"
           aria-label="스냅샷 새로고침"
           aria-busy={showRefreshing}
           data-hint={helpText}
-          className={`${CELL_TIME_CLASS} group/refresh relative cursor-pointer border-0 outline-none focus-visible:bg-[var(--ui-control)] ${showRefreshing ? 'cursor-default' : ''} nav-refresh-button ${className}`}
+          className={`${CELL_TIME_CLASS} relative cursor-pointer border-0 outline-none focus-visible:bg-[var(--ui-control)] ${showRefreshing ? 'cursor-default' : ''} nav-refresh-button ${className}`}
           onClick={handleRefresh}
         >
-          <span aria-hidden={showRefreshing || undefined} className={`flex items-center gap-1 ${showRefreshing ? 'invisible' : 'group-hover/refresh:invisible group-focus-visible/refresh:invisible'}`}>{children}</span>
-          <span aria-hidden="true" className={`absolute inset-0 flex items-center justify-center text-[var(--brand)] ${showRefreshing ? '' : 'invisible group-hover/refresh:visible group-focus-visible/refresh:visible'}`}>
+          <span aria-hidden={showRefreshing || undefined} className={`flex items-center gap-1 ${showRefreshing ? 'invisible' : ''}`}>{children}</span>
+          <span aria-hidden="true" className={`absolute inset-0 flex items-center justify-center text-[var(--brand)] ${showRefreshing ? '' : 'invisible'}`}>
             <RefreshIcon aria-hidden="true" strokeWidth={2.2} className={`h-[15px] w-[15px] shrink-0 ${showRefreshing ? 'animate-spin' : ''}`} />
           </span>
         </button>

@@ -114,11 +114,6 @@ const GUIDE_ROWS: { title: string; text: string; icon: React.ReactNode }[] = [
     icon: <svg viewBox="0 0 24 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 36V4M6 10l6-6 6 6" /></svg>,
   },
   {
-    title: '아래로 밀기',
-    text: '새로고침',
-    icon: <svg viewBox="0 0 24 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v32M6 30l6 6 6-6" /></svg>,
-  },
-  {
     title: '두 손가락으로 확대·축소',
     text: 'MAP 확대',
     icon: <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 32l10-10M32 8L22 18M8 32v-8M8 32h8M32 8v8M32 8h-8" /></svg>,
