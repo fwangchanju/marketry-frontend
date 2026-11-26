@@ -51,7 +51,8 @@ export default function MarketSessionChip({ market, session }: { market: Snapsho
           {guide.map(row => (
             <div key={row.session} className="flex items-center justify-between gap-4 px-2 py-1">
               <span className="flex items-center">
-                <SessionDot color={dotColors[row.session]} gapClass="mr-2" />
+                {/* 원은 그대로 두고 자리만 14px로 넓혀, 등락률 기준 팝업의 V 체크 자리와 이름 시작 위치를 맞춘다(2026-11-27 사용자 결정). */}
+                <span aria-hidden="true" className="mr-2 flex w-3.5 shrink-0 justify-center"><SessionDot color={dotColors[row.session]} gapClass="" /></span>
                 <span className={row.term ? 'inline-block w-[6em]' : undefined}>{row.session}</span>
                 {row.term && <SessionTerm term={row.term} />}
               </span>
