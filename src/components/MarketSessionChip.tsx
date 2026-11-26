@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarPopup from '@/components/ToolbarPopup'
+import PopupHeader from '@/components/PopupHeader'
 
 // 증시 세션 칩 — 눌러서 시간표를 안내한다. 세션 이름·시간표·색은 시장 정의(marketSessions)에서 받는다.
 // 원과 글자 사이 여백: 배지는 4px, 팝업은 글자가 커서 8px로 넓힌다(2026-11-27 사용자 제보).
@@ -47,12 +48,11 @@ export default function MarketSessionChip({ market, session }: { market: Snapsho
       </ToolbarChip>
       {isOpen && (
         <ToolbarPopup open={isOpen} triggerRef={rootRef} popupRef={popupRef} ariaLabel={label} className="w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl">
-          <div role="presentation" className="mb-1 border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">SESSION</div>
+          <PopupHeader>SESSION</PopupHeader>
           {guide.map(row => (
             <div key={row.session} className="flex items-center justify-between gap-4 px-2 py-1">
               <span className="flex items-center">
-                {/* 원은 그대로 두고 자리만 14px로 넓혀, 등락률 기준 팝업의 V 체크 자리와 이름 시작 위치를 맞춘다(2026-11-27 사용자 결정). */}
-                <span aria-hidden="true" className="mr-2 flex w-3.5 shrink-0 justify-center"><SessionDot color={dotColors[row.session]} gapClass="" /></span>
+                <SessionDot color={dotColors[row.session]} gapClass="mr-2" />
                 <span className={row.term ? 'inline-block w-[6em]' : undefined}>{row.session}</span>
                 {row.term && <SessionTerm term={row.term} />}
               </span>

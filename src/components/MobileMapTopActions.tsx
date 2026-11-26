@@ -1,6 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
+import PopupHeader, { PopupListDot } from '@/components/PopupHeader'
+import { popupBadgeClass } from '@/components/popupBadgeStyle'
+import { POPUP_ROW_IDLE_CLASS, POPUP_ROW_SELECTED_CLASS } from '@/components/popupHeaderStyle'
+import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 import { swallowNextClick } from '@/utils/swallowNextClick'
 import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/utils/sectorLayoutWeights'
 
@@ -8,14 +12,12 @@ import { MOBILE_BALANCED_BOX_SIZE_RATIO, normalizeMobileBoxSizeRatio } from '@/u
 // 하단 설정 줄을 없애면서(2026-11-27 사용자 결정) 박스 크기만 이리로 옮겼다. 마켓은 위아래 밀기와 툴바 시장 배지로 바꾼다.
 
 const BOX_OPTIONS: { value: number; label: string }[] = [
-  { value: 100, label: '시총 비례' },
-  { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형' },
-  { value: 0, label: '동일' },
+  { value: 100, label: '시가총액 비례' },
+  { value: MOBILE_BALANCED_BOX_SIZE_RATIO, label: '균형 조정' },
+  { value: 0, label: '동일 크기' },
 ]
-// 옛 하단 설정 줄의 선택 칩과 같은 모양이다.
-const CHIP_CLASS = 'h-[36px] rounded-[4px] border-0 px-3 text-[14px] font-medium'
-const CHIP_ON = 'bg-brand-surface text-ui-on-dark'
-const CHIP_OFF = 'bg-ui-control text-ui-white'
+// 박스 크기 줄 — BASIS 팝업 줄과 같은 모양. 손가락을 누른 채 밀면 손가락 밑 줄에 바탕이 따라가고, 손을 뗀 줄이 선택된다(useTouchSlideSelect).
+const ROW_CLASS = '-mx-2 flex items-center rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent]'
 const ICON_BUTTON_CLASS = 'flex h-[44px] w-[40px] items-center justify-center border-0 bg-transparent p-0 text-ui-text disabled:opacity-30'
 
 // 사용 방법 창은 처음 들어오면 자동으로 한 번 뜬다. "하루 동안 보지 않기"를 고르고 닫으면 그동안 띄우지 않는다(이 브라우저에만 저장, 2026-11-27 사용자 결정 7일→하루).
@@ -41,9 +43,10 @@ function hideGuideForDays() {
   }
 }
 
+// 상단 두 아이콘의 선 굵기 1.4(2026-11-27 사용자 지시로 1.8에서 가늘게).
 function BoxSizeIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-[22px] w-[22px]">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-[22px] w-[22px]">
       <rect x="3" y="3" width="10" height="11" rx="1" />
       <rect x="15" y="3" width="6" height="6" rx="1" />
       <rect x="15" y="11" width="6" height="10" rx="1" />
@@ -54,7 +57,7 @@ function BoxSizeIcon() {
 
 function GuideIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-[22px] w-[22px]">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="h-[22px] w-[22px]">
       <circle cx="12" cy="12" r="9" />
       <path d="M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1V14" />
       <circle cx="12" cy="17" r="0.6" fill="currentColor" />
@@ -85,14 +88,19 @@ function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number;
     return () => document.removeEventListener('pointerdown', onDown, true)
   }, [onClose, triggerRef])
   const normalized = normalizeMobileBoxSizeRatio(value)
+  const slideSelect = useTouchSlideSelect()
   return createPortal(
     <>
     <div aria-hidden="true" className={MOBILE_POPUP_BACKDROP_CLASS} />
-    <div ref={popupRef} role="dialog" aria-label="박스 크기" className={`fixed ${MOBILE_POPUP_Z_CLASS} rounded-xl bg-ui-panel p-3 text-ui-white shadow-2xl`} style={{ left: 0, top: 0, visibility: 'hidden' }}>
-      <h3 className="mb-2 text-[13px] font-semibold leading-tight">박스 크기</h3>
-      <div role="radiogroup" aria-label="박스 크기" className="flex gap-1.5">
+    {/* 툴바 팝업(BASIS)과 같은 양식: 1.3배, 둥근 패널, 사방 8px, 머리줄과 구분선, 줄 앞 점, 고른 줄은 청록 바탕(2026-11-27 사용자 지시). 이 창은 툴바 팝업 부품 밖이라 같은 값을 직접 쓴다. */}
+    <div ref={popupRef} role="dialog" aria-label="박스 크기" className={`fixed ${MOBILE_POPUP_Z_CLASS} w-max rounded-[9px] bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-2xl`} style={{ left: 0, top: 0, transform: `scale(${MOBILE_POPUP_SCALE})`, transformOrigin: 'top left', visibility: 'hidden' }}>
+      <PopupHeader>BOX SIZE</PopupHeader>
+      <div role="radiogroup" aria-label="박스 크기" className="flex flex-col" {...slideSelect}>
         {BOX_OPTIONS.map(option => (
-          <button key={option.value} type="button" role="radio" aria-checked={normalized === option.value} onClick={() => { onChange(option.value); onClose() }} className={`${CHIP_CLASS} ${normalized === option.value ? CHIP_ON : CHIP_OFF}`}>{option.label}</button>
+          <button key={option.value} type="button" data-slide-item role="radio" aria-checked={normalized === option.value} onClick={() => { onChange(option.value); onClose() }} className={`${ROW_CLASS} ${normalized === option.value ? POPUP_ROW_SELECTED_CLASS : POPUP_ROW_IDLE_CLASS}`}>
+            <PopupListDot />
+            <span>{option.label}</span>
+          </button>
         ))}
       </div>
     </div>
@@ -130,12 +138,16 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
   const close = () => onClose(hideForDays)
   return createPortal(
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4" onClick={close}>
-      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[320px] rounded-xl bg-ui-panel px-4 pb-2 text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
-        {/* 머리줄은 창 위 끝과 첫 구분선 사이에 중간 정렬한다(2026-11-27 사용자 결정, 글자 16→18px). */}
-        <h2 className="m-0 flex h-[56px] items-center gap-2 text-[18px] font-bold"><span className="text-ui-text [&>svg]:h-[24px] [&>svg]:w-[24px]"><GuideIcon /></span>HOW TO USE</h2>
+      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[320px] rounded-xl bg-ui-panel px-[calc(1rem*1.3)] pb-[calc(0.5rem*1.3)] text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
+        {/* 머리줄은 툴바 팝업과 같은 공통 부품(PopupHeader)을 쓴다(2026-11-27 사용자 지시, 글자 크기까지 맞춤). 이 창은 배율 없이 그려지므로
+            머리줄 묶음에만 MOBILE 팝업 배율(zoom 1.3)을 줘서 글자·높이·구분선·여백이 BASIS·BOX SIZE와 똑같이 보이게 한다.
+            -mx-4는 창의 좌우 여백을 상쇄해 구분선이 다른 팝업처럼 창 끝에서 8px 안쪽에서 끊기게 하고, 창 좌우 여백은 머리줄 글자 시작 위치에 맞춘다. */}
+        <div className="-mx-4 px-2 pt-2" style={{ zoom: MOBILE_POPUP_SCALE }}>
+          <PopupHeader>HOW TO USE</PopupHeader>
+        </div>
         <ul className="m-0 list-none p-0">
           {GUIDE_ROWS.map(row => (
-            <li key={row.title} className="flex items-center gap-3 border-t border-ui-border py-2.5">
+            <li key={row.title} className="flex items-center gap-3 py-2.5">
               <span aria-hidden="true" className="flex h-[36px] w-[36px] shrink-0 items-center justify-center text-ui-muted [&>svg]:max-h-[30px] [&>svg]:max-w-[30px]">{row.icon}</span>
               <span>
                 <span className="block text-[14px] font-semibold">{row.title}</span>
@@ -145,13 +157,15 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
           ))}
         </ul>
         {/* 닫기는 엄지가 닿는 아래에 둔다(2026-11-27 사용자 결정 — 위쪽 ✕는 폰에서 누르기 불편).
-            구분선 아래 높이와 닫기 배지는 캘린더 팝업 아래 줄(구분선~바닥 약 43px, 적용 배지 약 50×25px 청록)에 맞춘다(같은 날 사용자 결정). */}
-        <div className="mt-1 flex h-[37px] items-center justify-between gap-3 border-t border-ui-border pt-2">
-          <label className="flex h-full items-center gap-2 text-[14px] text-ui-muted">
+            구분선 아래 높이와 닫기 배지는 캘린더 팝업 아래 줄에 맞춘다(같은 날 사용자 결정). 닫기는 팝업 배지 공통 양식(popupBadgeClass)을 쓰고,
+            이 창은 배율 없이 그려지므로 배지에만 MOBILE 팝업 배율(zoom 1.3)을 줘서 캘린더 적용 배지와 같은 크기로 보이게 한다. 위아래 여백도 배율을 반영한 8px. */}
+        {/* 아래 구분선도 머리줄 구분선처럼 창 끝에서 8px(배율 반영) 안쪽에서 끊는다. 안쪽 글자 위치는 그대로(2026-11-27 사용자 지시). */}
+        <div className="mx-[calc(-0.5rem*1.3)] mt-1 flex items-center justify-between gap-3 border-t border-ui-border px-[calc(0.5rem*1.3)] pt-[calc(0.5rem*1.3)]">
+          <label className="flex items-center gap-2 text-[14px] text-ui-muted">
             <input type="checkbox" className="thin-check" checked={hideForDays} onChange={event => setHideForDays(event.target.checked)} />
             하루 동안 보지 않기
           </label>
-          <button type="button" onClick={close} className="h-[25px] shrink-0 rounded border-0 bg-brand-surface px-[11px] text-center text-[14px] font-normal leading-none text-ui-white">닫기</button>
+          <button type="button" onClick={close} style={{ zoom: MOBILE_POPUP_SCALE }} className={`${popupBadgeClass('action', true)} bg-brand-surface text-ui-white`}>닫기</button>
         </div>
       </div>
     </div>,

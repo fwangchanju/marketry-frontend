@@ -6,9 +6,11 @@ import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarPopup from '@/components/ToolbarPopup'
+import PopupHeader, { PopupListDot } from '@/components/PopupHeader'
+import { POPUP_ROW_IDLE_CLASS, POPUP_ROW_SELECTED_CLASS } from '@/components/popupHeaderStyle'
 import { dropdownPanelClass } from '@/components/dropdownStyle'
-import { CheckIcon } from '@/components/icons/AppIcons'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
+import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
 // 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·합산·별도 토글의 선택 칸에도 쓴다).
@@ -85,7 +87,7 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           ariaLabel="시장 시간대 안내"
           className="w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
-          <div role="presentation" className="mb-1 border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">SESSION</div>
+          <PopupHeader>SESSION</PopupHeader>
           {SESSION_GUIDE.map(row => (
             <div key={row.session} className={`flex items-center justify-between gap-4 px-2 py-1 ${row.session === '마켓 종료' ? 'hidden' : ''}`}>
               <span className="flex items-center">
@@ -123,6 +125,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
   onChange: (basis: ChangeRateChoice) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const slideSelect = useTouchSlideSelect()
   const { isMobile } = useMobileToolbar()
   const rootRef = useRef<HTMLSpanElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
@@ -169,13 +172,14 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
           gapPx={6}
           className={`w-max overflow-hidden ${dropdownPanelClass(isMobile)} p-2 text-sm font-normal tracking-normal`}
         >
-          {/* 세션 팝업과 같은 툴바 팝업 양식: 사방 8px 여백, 머리줄·항목 글자는 왼쪽 16px에서 시작. 항목 줄만 -mx-2로 양 끝까지 늘려 올림 바탕을 줄 전체로 깐다. 선택은 바탕 없이 V 체크로만 표시한다(2026-11-27 사용자 결정). */}
-          <div role="presentation" className="mb-1 border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">BASIS</div>
-          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col">
+          {/* 세션 팝업과 같은 툴바 팝업 양식: 사방 8px 여백, 머리줄·항목 글자는 왼쪽 16px에서 시작. 항목 줄만 -mx-2로 양 끝까지 늘려 선택·올림 바탕을 줄 전체로 깐다. 줄 앞에는 회색 점(2026-11-27 사용자 결정). */}
+          <PopupHeader>BASIS</PopupHeader>
+          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col" {...slideSelect}>
             {options.map(option => (
               <button
                 key={option.value}
                 type="button"
+                data-slide-item
                 role="radio"
                 aria-checked={basis === option.value}
                 aria-disabled={option.locked}
@@ -184,17 +188,17 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   onChange(option.value)
                   setIsOpen(false)
                 }}
-                className={`-mx-2 flex items-center justify-between gap-4 rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors ${
+                className={`-mx-2 flex items-center justify-between gap-4 rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent] ${
                   basis === option.value
-                    ? 'bg-transparent hover:bg-ui-white/10'
+                    ? POPUP_ROW_SELECTED_CLASS
                     : option.locked
                       ? 'bg-transparent cursor-not-allowed opacity-35'
-                      : 'bg-transparent hover:bg-ui-white/10'
+                      : POPUP_ROW_IDLE_CLASS
                 }`}
               >
-                {/* 세션 팝업의 원 아이콘 자리에 선택 체크를 둔다. 고르지 않은 줄은 같은 폭을 비워 글자 시작선을 맞춘다(2026-11-27 사용자 지시). */}
+                {/* 세션 팝업의 원 자리에 회색 점을 찍어 이름 시작 위치를 맞춘다. 선택은 줄 바탕으로 보인다(2026-11-27 사용자 결정). */}
                 <span className="flex shrink-0 items-center text-ui-white">
-                  <CheckIcon aria-hidden="true" className={`mr-2 h-3.5 w-3.5 shrink-0 ${basis === option.value ? '' : 'invisible'}`} />
+                  <PopupListDot />
                   <span>{option.titlePrefix}<span className="text-[var(--sub-purple)]">{option.label}</span></span>
                 </span>
                 <span className="shrink-0 whitespace-nowrap">

@@ -5,6 +5,7 @@ import { getSnapshotDays } from '@/api/heatmap'
 import { heatmapKeys } from '@/hooks/queryKeys'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import ToolbarPopup from '@/components/ToolbarPopup'
+import { popupBadgeClass } from '@/components/popupBadgeStyle'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
 import { IconCornerDownRight } from '@tabler/icons-react'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
@@ -411,15 +412,11 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
 // 달력의 로딩·오류 원 크기 — 한 달 달력(너비 240px, 높이 약 248px) 안에 들어가는 가장 큰 크기다. 안의 크기는 모두 원 너비에 대한 비율이라 메인 영역과 같은 모양이다.
 const CALENDAR_SPINNER_CLASS = 'h-[14.5rem] w-[14.5rem]'
 
-const APPLY_BUTTON_CLASS =
-  'shrink-0 rounded border-0 bg-brand-surface px-2.5 py-1 text-center text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-surface'
-
-const RESET_BUTTON_CLASS =
-  'shrink-0 rounded border-0 bg-ui-control px-2.5 py-1 text-center text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
-
+// 팝업 배지 공통 양식(popupBadgeClass)의 색만 여기서 붙인다. 크기·글자는 공통 양식이 PC·MOBILE에 맞춰 정한다.
+const APPLY_BUTTON_COLOR = 'bg-brand-surface text-ui-white hover:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-surface'
+const RESET_BUTTON_COLOR = 'bg-ui-control text-ui-white hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
 // 거래일 배지와 같은 모양의 YTD 버튼 — 누르면 연초~최근일 날짜만 고른다.
-const YTD_BUTTON_CLASS =
-  'inline-flex h-5 shrink-0 items-center rounded border-0 bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
+const YTD_BUTTON_COLOR = 'bg-ui-control text-ui-text hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
 
 // 달력 아이콘을 누르면 아래로 달력 창이 뜬다. 데이터가 있는 날짜(종가 지도가 있는 날과 오늘)만 누를 수 있다.
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.
@@ -690,7 +687,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-ui-border pb-2 text-[13px]">
             <span className="flex min-w-0 items-center gap-3">
               {onSelectRange && (
-                <span role="radiogroup" aria-label="선택 방식" className="inline-flex h-5 items-center gap-1">
+                <span role="radiogroup" aria-label="선택 방식" className="inline-flex items-center gap-1">
                   {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
                     <button
                       key={label}
@@ -698,7 +695,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                       role="radio"
                       aria-checked={isRangeMode === rangeValue}
                       onClick={() => switchMode(rangeValue)}
-                      className={`flex h-5 items-center rounded border-0 px-2 text-[0.8125rem] font-normal leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-text hover:bg-ui-control-hover'}`}
+                      className={`${popupBadgeClass('switch', isMobile)} ${isRangeMode === rangeValue ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-text hover:bg-ui-control-hover'}`}
                     >
                       {label}
                     </button>
@@ -740,7 +737,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
               )}
             </span>
             {isMobile && tradingDayBadge !== null && (
-              <span className="inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[0.8125rem] font-normal leading-none text-ui-text">{tradingDayBadge}</span>
+              <span className={`${popupBadgeClass('tag', isMobile)} bg-ui-control text-ui-text`}>{tradingDayBadge}</span>
             )}
           </div>
           {isRangeCalendar ? (
@@ -815,14 +812,14 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 )}
               </div>
               <div className="mt-1 flex min-w-0 items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]">
-                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={YTD_BUTTON_CLASS}>
+                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={`${popupBadgeClass('tag', isMobile)} ${YTD_BUTTON_COLOR}`}>
                   YTD
                 </button>
                 <span className="flex shrink-0 items-center gap-1.5">
-                  <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
+                  <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={`${popupBadgeClass('action', isMobile)} ${RESET_BUTTON_COLOR}`}>
                     선택 해제
                   </button>
-                  <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={APPLY_BUTTON_CLASS}>
+                  <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={`${popupBadgeClass('action', isMobile)} ${APPLY_BUTTON_COLOR}`}>
                     적용
                   </button>
                 </span>
@@ -898,10 +895,10 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 )}
               </div>
               <div className={`mt-1 flex ${isMobile ? 'w-60' : 'w-[31rem]'} items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]`}>
-                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={YTD_BUTTON_CLASS}>
+                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={`${popupBadgeClass('tag', isMobile)} ${YTD_BUTTON_COLOR}`}>
                   YTD
                 </button>
-                <button type="button" disabled={draftDay === null} onClick={applyDay} className={APPLY_BUTTON_CLASS}>
+                <button type="button" disabled={draftDay === null} onClick={applyDay} className={`${popupBadgeClass('action', isMobile)} ${APPLY_BUTTON_COLOR}`}>
                   적용
                 </button>
               </div>

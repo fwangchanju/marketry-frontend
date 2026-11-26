@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ToolbarPopup from '@/components/ToolbarPopup'
+import PopupHeader from '@/components/PopupHeader'
+import { CountLabelWithBadge } from '@/components/KindBadge'
 import type { ExcludedStock } from '@/utils/rangeChangeRate'
 
 // 제외된 종목 팝업에 이름을 적는 최대 종목 수.
@@ -20,7 +22,7 @@ function MinusCircleIcon({ className }: { className?: string }) {
   )
 }
 
-// 기간 등락률을 볼 때 날짜 칩 옆에 따로 붙는 "⊖ 제외 종목" 칩 내용. 기간(시작일 ~ 종료일)은 날짜 칩 하나가 맡는다.
+// 기간 등락률을 볼 때 날짜 칩 옆에 따로 붙는 ⊖ 아이콘 버튼(제외 종목). 기간(시작일 ~ 종료일)은 날짜 칩 하나가 맡는다.
 // 시작일의 기준가(= 그 전 거래일 종가)와 종료일의 종가/현재가 설명은 상단이 길어지지 않게 종목 팝업에서 보여 주고,
 // 거래일 수는 달력 맨 위 가운데에 보인다. 빼기 원 아이콘(제외 종목 버튼)을 누르면 제외 종목 이름 목록이 그 버튼 왼쪽에 맞춰 팝업으로 뜬다.
 // 기간을 보는 동안에는 제외 종목이 없어도 칩을 항상 보여 준다. 없으면 팝업에 "제외된 종목이 없습니다."라고 적는다.
@@ -55,35 +57,39 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
       {(
         // 팝업은 이 버튼을 기준으로 놓아서, 팝업의 왼쪽 끝이 버튼의 왼쪽 끝과 맞는다.
         <span className="relative flex items-center font-normal text-ui-muted">
-          {/* 아이콘과 "제외 종목" 글자가 한 버튼이라 칩 어디를 눌러도 팝업이 열린다(개수는 팝업 제목에 있다). */}
+          {/* 핀처럼 아이콘만 둔다(2026-11-27 사용자 지시, 예전 "⊖ 제외 종목" 글자 삭제). 개수와 설명은 팝업에 있다. 크기는 핀 아이콘과 같은 20px. */}
           <button
             type="button"
             aria-label="제외 종목"
             aria-haspopup="dialog"
             aria-expanded={isPopupOpen}
             onClick={() => setIsOpen(open => !open)}
-            className="toolbar-badge-control flex h-6 items-center gap-1 border-0 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[var(--ui-control-hover)] focus-visible:bg-[var(--ui-control-hover)]"
+            className="toolbar-badge-control flex h-6 items-center border-0 bg-transparent px-1.5 text-inherit transition-colors hover:bg-[var(--ui-control-hover)] focus-visible:bg-[var(--ui-control-hover)]"
           >
-            <MinusCircleIcon className="h-[15px] w-[15px] shrink-0" />
-            <span>제외 종목</span>
+            <MinusCircleIcon className="h-[20px] w-[20px] shrink-0" />
           </button>
           <ToolbarPopup
             open={isPopupOpen}
             triggerRef={rootRef}
             popupRef={popupRef}
             ariaLabel="제외 종목"
-            className="w-60 whitespace-normal rounded-md border border-ui-border bg-[var(--ui-panel)] p-3 text-sm font-normal tracking-normal text-ui-white shadow-xl"
+            className="w-60 whitespace-normal rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
           >
-            <p className="font-semibold">제외 종목 ({excludedStocks.length})</p>
-            <p className="mt-1 text-xs font-medium leading-relaxed text-ui-text">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>
+            {/* 툴바 팝업 머리줄 공통 양식(PopupHeader): 사방 8px, 영문 머리줄과 구분선, 글자는 왼쪽 16px에서 시작, 아래 구분선도 머리줄 구분선과 같은 길이(2026-11-27 사용자 지시). */}
+            <PopupHeader>EXCLUDED</PopupHeader>
+            <p className="mt-1 px-2 text-xs font-medium leading-relaxed text-ui-text">시작일 데이터가 없어 기간 등락률을 계산하지 못한 종목입니다. 대체로 신규 상장입니다.</p>
             {!hasExcluded && (
-              <p className="mt-2 border-t border-ui-border pt-2 text-xs font-medium text-ui-text">제외된 종목이 없습니다.</p>
+              <p className="mt-2 border-t border-ui-border px-2 pt-2 text-xs font-medium text-ui-text">제외된 종목이 없습니다.</p>
             )}
             {hasExcluded && (
-              <div className="mt-2 border-t border-ui-border pt-2">
-                {/* 목록은 시가총액이 큰 10종목까지만 적는다. 10종목이 넘으면 제목에 "10 종목"이라고 밝힌다. */}
-                <p className="mb-1 text-xs font-medium text-ui-text">{excludedStocks.length > MAX_LISTED_STOCKS ? `시가총액 순 ${MAX_LISTED_STOCKS} 종목` : '시가총액 순'}</p>
-                <ul className="space-y-1">
+              <div className="mt-2 border-t border-ui-border px-2 pt-2">
+                {/* 목록은 시가총액이 큰 10종목까지만 적는다. 개수는 설정창 맨 위와 같은 "적은 수/전체 [종목]" 표기로 이 줄 오른쪽에 둔다(2026-11-27 사용자 지시, 머리줄에서 옮김). */}
+                <p className="mb-1 flex items-center justify-between gap-2 text-xs font-medium text-ui-text">
+                  <span>시가총액 순</span>
+                  <CountLabelWithBadge label={`${Math.min(excludedStocks.length, MAX_LISTED_STOCKS)}/${excludedStocks.length}종목`} />
+                </p>
+                {/* 종목 줄은 "시가총액 순" 아래에 8px 들여 쓴다(2026-11-27 사용자 지시). */}
+                <ul className="space-y-1 pl-2">
                   {excludedStocks.slice(0, MAX_LISTED_STOCKS).map(stock => (
                     <li key={stock.stockCode} className="flex items-center justify-between gap-2">
                       <span className="min-w-0 truncate" data-hint={stock.stockName}>{stock.stockName}</span>

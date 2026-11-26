@@ -4,6 +4,9 @@ import { ChevronDownIcon } from '@/components/icons/AppIcons'
 import { dropdownPanelClass } from '@/components/dropdownStyle'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
 import ToolbarPopup from '@/components/ToolbarPopup'
+import PopupHeader, { PopupListDot } from '@/components/PopupHeader'
+import { POPUP_ROW_IDLE_CLASS, POPUP_ROW_SELECTED_CLASS } from '@/components/popupHeaderStyle'
+import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 
 export interface ToolbarModeMenuItem {
   label: string
@@ -15,6 +18,21 @@ export interface ToolbarModeMenuItem {
   special?: boolean
 }
 
+// 시장 이름 한 줄. 하위 단계(KOSPI·KOSDAQ)는 윗줄 KOREA에 맞춘다: ▸는 KO 가운데, 글자는 R 시작 위치. 숨긴 KO로 폭을 잡아 글꼴이 달라도 맞는다.
+function MarketMenuLabel({ item }: { item: ToolbarModeMenuItem }) {
+  return (
+    <>
+      {item.indent && (
+        <span aria-hidden="true" className="relative inline-block">
+          <span className="invisible">KO</span>
+          <span className="absolute inset-0 text-center">▸</span>
+        </span>
+      )}
+      {item.label}
+    </>
+  )
+}
+
 // 툴바 맨 왼쪽에 지금 보는 화면을 페이지 제목처럼 보여 준다 — 서브 청록색 박스 안에 큰 제목(NIKKEI·K-STOCK·STATS 등)을 둔다.
 // 박스 너비는 110px로 고정해서 어느 페이지든 같다(2026-11-15 105px에서 5px 키움).
 // 제목 글자는 박스 전체가 아니라 꺽쇠 자리를 뺀 왼쪽 칸의 가운데에 둔다. showChevron을 주면(시장·글 페이지를 고르는 배지) 오른쪽 끝에 아래 꺽쇠를 고정하고, 주지 않아도(PROFILE) 같은 자리를 비워 글자 위치가 모든 배지에서 같다. menu를 주면 배지에 마우스를 올리면 그 아래에 시장 목록이 열리고, 마우스가 배지·목록 밖으로 나가면 잠시 뒤 닫힌다(2026-11-18, 클릭으로 열던 방식을 바꿨다). 마우스가 없는 터치 화면은 누르면 열고, 키보드는 Enter·Space로 열고 Esc로 닫는다.
@@ -22,6 +40,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
   const { isMobile } = useMobileToolbar()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
+  const slideSelect = useTouchSlideSelect()
   const rootRef = useRef<HTMLDivElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<number | null>(null)
@@ -111,36 +130,55 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
         triggerRef={rootRef}
         popupRef={popupRef}
         ariaLabel="시장 목록"
-        className="w-[110px]"
+        className={isMobile ? 'w-max' : 'w-[110px]'}
         gapPx={6}
       >
+        {isMobile ? (
+          // MOBILE은 화면 가운데 1.3배로 뜨는 툴바 팝업이라 BASIS·BOX SIZE와 같은 공통 양식을 쓴다: MARKET 머리줄, 사방 8px, 줄 앞 점, 지금 시장은 줄 전체 청록 바탕(2026-11-27 사용자 결정).
+          // PC는 배지 아래로 펼쳐지는 드롭다운 메뉴라 아래 PC 모양(지금 시장 청록 바탕)을 그대로 둔다.
+          <div className={`w-max p-2 text-sm font-normal tracking-normal ${dropdownPanelClass(isMobile)}`}>
+            <PopupHeader>MARKET</PopupHeader>
+            <div role="listbox" aria-label="시장 목록" className="flex flex-col" {...slideSelect}>
+              {menu.map(item => (
+                <button
+                  key={item.to}
+                  type="button"
+                  data-slide-item
+                  role="option"
+                  aria-selected={item.active}
+                  onClick={() => { setIsOpen(false); if (!item.active) navigate(item.to) }}
+                  className={`font-roboto-latin -mx-2 flex items-center whitespace-nowrap rounded-none border-0 px-4 py-1 text-left text-sm font-medium transition-colors [-webkit-tap-highlight-color:transparent] ${item.active ? `${POPUP_ROW_SELECTED_CLASS} text-ui-white` : `${POPUP_ROW_IDLE_CLASS} ${item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}`}
+                >
+                  <PopupListDot />
+                  <MarketMenuLabel item={item} />
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
         <div
           role="listbox"
           aria-label="시장 목록"
           className={`w-[110px] overflow-hidden text-sm font-normal tracking-normal ${dropdownPanelClass(isMobile)}`}
           onPointerEnter={handlePopupPointerEnter}
           onPointerLeave={handlePopupPointerLeave}
+          {...slideSelect}
         >
           {menu.map(item => (
             <button
               key={item.to}
               type="button"
+              data-slide-item
               role="option"
               aria-selected={item.active}
               onClick={() => { setIsOpen(false); if (!item.active) navigate(item.to) }}
-              className={`font-roboto-latin flex h-[30px] w-full items-center whitespace-nowrap rounded-none border-0 pl-[9px] pr-3 text-left text-sm font-medium transition-colors ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : `bg-transparent hover:bg-ui-white/10 ${item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}`}
+              className={`font-roboto-latin flex h-[30px] w-full items-center whitespace-nowrap rounded-none border-0 pl-[9px] pr-3 text-left text-sm font-medium transition-colors [-webkit-tap-highlight-color:transparent] ${item.active ? 'bg-[var(--brand-surface)] text-ui-white' : `bg-transparent hover:bg-ui-white/10 data-[touch-active]:bg-ui-white/10 ${item.special ? 'text-[var(--sub-purple)]' : 'text-ui-white'}`}`}
             >
-              {/* 하위 단계(KOSPI·KOSDAQ)는 윗줄 KOREA에 맞춘다: ▸는 KO 가운데, 글자는 R 시작 위치. 숨긴 KO로 폭을 잡아 글꼴이 달라도 맞는다. */}
-              {item.indent && (
-                <span aria-hidden="true" className="relative inline-block">
-                  <span className="invisible">KO</span>
-                  <span className="absolute inset-0 text-center">▸</span>
-                </span>
-              )}
-              {item.label}
+              <MarketMenuLabel item={item} />
             </button>
           ))}
         </div>
+        )}
       </ToolbarPopup>
       )}
     </div>
