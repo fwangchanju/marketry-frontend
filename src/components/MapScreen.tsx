@@ -369,7 +369,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
           zoomMode="pinch"
           onSwipe={direction => navigate(direction === 'next' ? routes.summary : routes.graph)}
           toolbar={mapToolbarNode}
-          pageTitle="종목 지도"
+          pageTitle="MAP"
           frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * mobileFrameScale}
           frame={mobileFrameNode || mobileStatusFrame}
           nextPreview={sectorPreview}

@@ -402,7 +402,7 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
         onBeforeSwipeNavigate={direction => { if (swipeTarget(direction) === 'stock') captureSwipeArrivalOverlay(swipePreviewCanvasRef.current) }}
         nextPreview={() => swipePreview('next')}
         previousPreview={() => swipePreview('previous')}
-        pageTitle={isGraph ? '그룹 등락률' : '업종 지도'}
+        pageTitle={isGraph ? 'GRAPH' : 'SECTOR'}
         boxSizeDisabled={isGraph}
         toolbar={
           <Toolbar><MarketToolbarContent page={isGraph ? 'GRAPH' : 'SUMMARY'} market={market} menu={isGraph ? menus.graph : menus.summary} right={null} /></Toolbar>

@@ -10,13 +10,15 @@ import { adjacentMobileMarket, MOBILE_MARKET_BADGE, mobileMarketPath, type Mobil
 import MarketFlagIcon from '@/components/MarketFlagIcon'
 import { holdCountrySwipeArrival } from '@/utils/mobileSwipeArrivalOverlay'
 
-// MOBILE 지도 공통 화면: 상단 줄(가운데 페이지 이름, 오른쪽 박스 크기·사용 방법) · 툴바 줄 · 가운데 판(세로 가운데 정렬).
+// MOBILE 지도 공통 화면: 상단 줄(가운데 페이지 이름, 오른쪽 박스 크기·사용 방법) · 가운데 판 · 맨 아래 툴바 줄.
 // 종목·업종·그래프 화면이 같은 틀을 쓴다. 툴바는 판 밖에 두고, 화면 폭에 맞춰 판 가로폭까지 키운다.
 // 하단 설정 줄은 없앴다(2026-11-27 사용자 결정) — 페이지·나라는 밀어서 바꾸고 박스 크기는 상단 줄로 옮겼다.
 // 툴바 줄 높이. 배지는 MOBILE에서만 위아래로 조금 키운다(index.css의 [data-mobile-toolbar-slot] 규칙, 가로·글자는 PC와 같다).
-const TOOLBAR_BASE_HEIGHT = 34
-// 상단 줄 높이(MobileTopBar centered).
+const TOOLBAR_BASE_HEIGHT = 41
+// 상단 줄 높이(MobileTopBar).
 const TOP_BAR_HEIGHT = 52
+// 화면 맨 아래 툴바 줄과 화면 끝 사이 여백(아이폰 홈 막대 자리는 따로 더한다).
+const TOOLBAR_BOTTOM_GAP = 8
 // 툴바 슬롯을 한국 기준으로 고정했으므로 세 시장의 자연 폭은 모두 이 값이다. 화면을 읽지 않고 이 상수로 배율을 계산한다.
 const TOOLBAR_REFERENCE_WIDTH = 438
 // 툴바 배지 크기는 시장의 배지 개수와 무관하게 한국 기준으로 고정한다. 좁은 화면에서만 넘치지 않게 줄인다.
@@ -98,21 +100,16 @@ export default function MobileMapShell({ pageTitle, boxSizeDisabled = false, fra
     return () => window.removeEventListener('resize', fit)
   }, [])
 
-  // 상단 줄과 툴바 줄을 뺀 자리에서 툴바와 판을 한 묶음으로 가운데에 둔다. 경로 줄은 페이지 내용 안에 있어 따로 빼지 않는다.
+  // 툴바 줄은 화면 맨 아래에 붙이고(엄지 쪽, 2026-11-27 사용자 결정), 판은 상단 줄과 툴바 줄 사이 남는 자리의 가운데에 둔다.
+  // 경로 줄은 페이지 내용 안에 있어 따로 빼지 않는다.
   const rowHeight = TOOLBAR_BASE_HEIGHT * scale
-  const frameTop = Math.max(0, (window.innerHeight - TOP_BAR_HEIGHT - rowHeight - frameHeight) / 2)
+  const frameTop = Math.max(0, (window.innerHeight - TOP_BAR_HEIGHT - rowHeight - TOOLBAR_BOTTOM_GAP - frameHeight) / 2)
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-ui-background">
-      <MobileTopBar centered title={pageTitle} right={<MobileMapTopActions boxSize={boxSize} onChangeBoxSize={onChangeBoxSize} boxSizeDisabled={boxSizeDisabled} />} />
+      <MobileTopBar title={pageTitle} right={<MobileMapTopActions boxSize={boxSize} onChangeBoxSize={onChangeBoxSize} boxSizeDisabled={boxSizeDisabled} />} />
       <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch overflow-hidden bg-ui-background">
-        <div data-mobile-toolbar-slot className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: `${frameTop}px` }}>
-          <div className="origin-top-left" style={{ transform: `translateX(${TOOLBAR_SIDE_GUTTER}px) scale(${scale})` }}>
-            <MobileToolbarContext.Provider value={{ isMobile: true, scale }}>
-              <div className="w-max">{toolbar}</div>
-            </MobileToolbarContext.Provider>
-          </div>
-        </div>
-        <div className="relative w-full shrink-0 overflow-hidden" style={{ height: `${frameHeight}px` }}>
+        {/* 화면 높이가 모자라면(주소창이 큰 폰 브라우저) 툴바 줄이 밀려 나가지 않도록 판 쪽이 줄어들어 아래가 잘린다. */}
+        <div className="relative min-h-0 w-full shrink overflow-hidden" style={{ height: `${frameHeight}px`, marginTop: `${frameTop}px` }}>
           <div ref={setSwipeFrame} data-mobile-shell-frame={current} className="relative h-full w-full" style={swipe.style} {...swipe.handlers}>
             {frame}
             {nextPreview && (
@@ -138,6 +135,13 @@ export default function MobileMapShell({ pageTitle, boxSizeDisabled = false, fra
                 <CountryPane direction="previous" market={adjacentMobileMarket(current, 'previous')} visible={Math.min(Math.max(swipe.verticalOffset, 0), frameHeight)} height={frameHeight} transition={swipe.style?.transition} />
               </>
             )}
+          </div>
+        </div>
+        <div data-mobile-toolbar-slot className="relative z-[70] w-full shrink-0" style={{ height: `${rowHeight}px`, marginTop: 'auto', marginBottom: `calc(${TOOLBAR_BOTTOM_GAP}px + env(safe-area-inset-bottom))` }}>
+          <div className="origin-top-left" style={{ transform: `translateX(${TOOLBAR_SIDE_GUTTER}px) scale(${scale})` }}>
+            <MobileToolbarContext.Provider value={{ isMobile: true, scale }}>
+              <div className="w-max">{toolbar}</div>
+            </MobileToolbarContext.Provider>
           </div>
         </div>
       </div>

@@ -18,7 +18,7 @@ import { copyDataUrlToClipboard, screenshotElementToClipboard } from '@/utils/sc
 import { INFO_MENU_ITEMS, infoMenu } from '@/utils/marketMenu'
 
 // 공개 문서도 다른 화면과 같은 헤더·계정·메뉴·툴바·하단 정보줄을 쓴다.
-export default function DocumentPageLayout({ title, heading, children, panelIcon = 'document', panelDescription = 'MARKETRY 서비스 안내 문서입니다.', mobileTitleTo, mobileTitleLabel, mobileTitleClick }: { title: string; heading: ReactNode; children: ReactNode; panelIcon?: SettingsSectionIconName; panelDescription?: string; mobileTitleTo?: string; mobileTitleLabel?: string; mobileTitleClick?: () => void }) {
+export default function DocumentPageLayout({ title, heading, children, panelIcon = 'document', panelDescription = 'MARKETRY 서비스 안내 문서입니다.' }: { title: string; heading: ReactNode; children: ReactNode; panelIcon?: SettingsSectionIconName; panelDescription?: string }) {
   const isNarrow = useIsNarrowScreen()
   // 가이드·약관 등 글 페이지는 배지에 꺽쇠를 두고 누르면 다른 글 페이지로 가는 목록을 연다.
   const isInfoTitle = INFO_MENU_ITEMS.some(item => item.label === title)
@@ -42,7 +42,7 @@ export default function DocumentPageLayout({ title, heading, children, panelIcon
     }
   }
   // 좁은 화면은 설정창·고정 상단바가 없는 모바일 틀을 쓴다(훅은 모두 위에서 호출해 순서를 지킨다).
-  if (isNarrow) return <MobileDocumentShell title={title} heading={heading} titleTo={mobileTitleTo} titleLabel={mobileTitleLabel} onTitleClick={mobileTitleClick}>{children}</MobileDocumentShell>
+  if (isNarrow) return <MobileDocumentShell title={title} heading={heading}>{children}</MobileDocumentShell>
   const copyLabel = copyStatus === 'copying' ? 'Copying' : copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Failed' : 'Copy'
 
   return (
