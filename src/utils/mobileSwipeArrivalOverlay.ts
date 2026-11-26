@@ -28,7 +28,8 @@ export function releaseSwipeArrivalOverlay() {
 // 이보다 짧게 잡으면 로딩원이 잠깐 비쳤다 사라지는 깜빡임이 다시 생긴다.
 const COUNTRY_HOLD_MS = 1000
 
-export function holdCountrySwipeArrival(area: HTMLElement | null, market: string, needsMapLayout: boolean) {
+// content: 다 올라온 다음 판(국기·시장 이름)을 그대로 덮개에 옮겨, 새 화면이 준비될 때까지 같은 모습이 이어지게 한다.
+export function holdCountrySwipeArrival(area: HTMLElement | null, market: string, needsMapLayout: boolean, content?: HTMLElement | null) {
   releaseSwipeArrivalOverlay()
   if (!area) return
   const rect = area.getBoundingClientRect()
@@ -36,6 +37,15 @@ export function holdCountrySwipeArrival(area: HTMLElement | null, market: string
   const node = document.createElement('div')
   node.setAttribute('aria-hidden', 'true')
   node.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;z-index:9999;pointer-events:none;background:var(--ui-background);transition:opacity ${FADE_MS}ms linear`
+  if (content) {
+    const clone = content.cloneNode(true) as HTMLElement
+    clone.style.position = 'absolute'
+    clone.style.inset = '0'
+    clone.style.top = '0'
+    clone.style.bottom = '0'
+    clone.style.transform = 'none'
+    node.appendChild(clone)
+  }
   document.body.appendChild(node)
   const overlay: Overlay = { node, releaseTimer: null, safetyTimer: null, rafId: null }
   overlay.safetyTimer = window.setTimeout(() => releaseSwipeArrivalOverlay(), COUNTRY_HOLD_MS)
