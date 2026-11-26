@@ -1293,6 +1293,13 @@ body :where(input[type='checkbox'], input[type='radio'], input[type='range'], in
     height: calc(1.5rem + 2.25px);
   }
 
+  /* MOBILE 지도 툴바 줄에서만 배지를 위아래로 조금 키운다(누르기 쉽게, 2026-11-27 사용자 결정). 가로 폭·글자 크기는 PC와 같다.
+     텔레그램 캡처는 이 칸 밖(캡처 판)에서 그리고 높이를 따로 고정하므로 영향이 없다. */
+  [data-mobile-toolbar-slot] .main-toolbar .toolbar-badge,
+  [data-mobile-toolbar-slot] .main-toolbar .toolbar-badge-control {
+    height: calc(1.5rem + 8.25px);
+  }
+
   /* 하이라이트는 마우스가 올라가는 순간 즉시 켜지고(아래 :hover의 transition: none), 벗어날 때만 짧게 사라진다.
      올라갈 때도 서서히 켜지게 하면(0.15초) 마우스를 빠르게 움직일 때 색이 늦게 따라오는 것처럼 보인다. */
   .heatmap-stock {

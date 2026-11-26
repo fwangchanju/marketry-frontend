@@ -3,7 +3,6 @@ import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { useSettled } from '@/hooks/useSettled'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
-import MobileTopBar from '@/components/MobileTopBar'
 import MobileSectorMapFrame from '@/components/MobileSectorMapFrame'
 import MobileMapShell from '@/components/MobileMapShell'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
@@ -57,7 +56,7 @@ import { limitDepth, flattenAllItems } from '@/hooks/useFilteredHeatmap'
 import type { HeatmapSectorNode, HeatmapItem } from '@/types/api'
 import MarketToolbarContent from '@/components/MarketToolbarContent'
 import Toolbar from '@/components/Toolbar'
-import type { MobileMapMarket } from '@/components/MobileMapSheet'
+import type { MobileMapMarket } from '@/utils/mobileMarketRoutes'
 import type { MarketColors, MarketFilters, MarketMap, MarketScreenData } from '@/markets/marketContract'
 import type { marketMenu } from '@/utils/marketMenu'
 import type { TaxonomyKey } from '@/utils/taxonomyNames'
@@ -370,7 +369,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
           zoomMode="pinch"
           onSwipe={direction => navigate(direction === 'next' ? routes.summary : routes.graph)}
           toolbar={mapToolbarNode}
-          topBar={<MobileTopBar title="종목 지도" titleTo={routes.summary} titleLabel="업종 지도로 이동" />}
+          pageTitle="종목 지도"
           frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * mobileFrameScale}
           frame={mobileFrameNode || mobileStatusFrame}
           nextPreview={sectorPreview}

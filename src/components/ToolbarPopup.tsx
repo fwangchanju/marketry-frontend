@@ -1,7 +1,7 @@
 import { useLayoutEffect, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { TOOLBAR_SIDE_GUTTER } from '@/utils/mobilePathBar'
-import { MOBILE_POPUP_SCALE } from '@/utils/mobilePopupScale'
+import { MOBILE_POPUP_SCALE, mobilePopupTop } from '@/utils/mobilePopupScale'
 import { useMobileToolbar } from './MobileToolbarContext'
 
 // 화면 폭 393px(가용 381px)에 5종 모두 들어간다.
@@ -9,7 +9,8 @@ const POPUP_FIXED_SCALE = MOBILE_POPUP_SCALE
 
 // 툴바 버튼 아래에 열리는 팝업 공통 부품.
 // PC는 예전처럼 트리거 기준 absolute로 그대로 열고, MOBILE 프레임에서는 document.body로 옮겨
-// 화면 가로 안쪽으로 클램프한다. 툴바 배율과 팝업 배율은 분리되어 있다.
+// 지도 길게 누르기 팝업과 같은 자리(가로 가운데, 윗변 화면 높이 38%)에 띄운다 — 툴바 바로 아래는 엄지가 닿기 어렵다(2026-11-27 사용자 결정).
+// 툴바 배율과 팝업 배율은 분리되어 있다.
 type Props = {
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
@@ -30,13 +31,11 @@ export default function ToolbarPopup({ open, triggerRef, popupRef, ariaLabel, cl
     const trigger = triggerRef.current
     const popup = popupRef.current
     if (!trigger || !popup) return
-    const triggerRect = trigger.getBoundingClientRect()
-    // transform이 적용된 실제 화면 폭을 쓴다. offsetWidth(정수 반올림)에 배율을 곱하면
+    // transform이 적용된 실제 화면 크기를 쓴다. offsetWidth(정수 반올림)에 배율을 곱하면
     // 서브픽셀 오차로 오른쪽 끝이 여백 1px을 넘을 수 있다.
-    const visualWidth = popup.getBoundingClientRect().width
-    const maxLeft = Math.max(TOOLBAR_SIDE_GUTTER, window.innerWidth - TOOLBAR_SIDE_GUTTER - visualWidth)
-    popup.style.left = `${Math.min(Math.max(triggerRect.left, TOOLBAR_SIDE_GUTTER), maxLeft)}px`
-    popup.style.top = `${triggerRect.bottom + gapPx * POPUP_FIXED_SCALE}px`
+    const { width: visualWidth, height: visualHeight } = popup.getBoundingClientRect()
+    popup.style.left = `${Math.max(TOOLBAR_SIDE_GUTTER, (window.innerWidth - visualWidth) / 2)}px`
+    popup.style.top = `${mobilePopupTop(window.innerHeight, visualHeight)}px`
     popup.style.visibility = 'visible'
   })
 
