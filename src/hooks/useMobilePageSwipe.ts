@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react'
 
 // 브라우저 가장자리 뒤로가기 제스처와 겹치지 않게, 좌우 이 폭 안에서 시작한 슬라이드는 무시한다(지도 화면과 같은 값).
 const EDGE_GUARD = 24
@@ -69,14 +69,45 @@ export function useDisableScreenZoom(enabled = true): void {
   }, [enabled])
 }
 
-// 모바일 페이지의 좌우 슬라이드 이동. 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous로 간다.
-export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void, allowPinchZoom = true, onSwipeStart?: () => void) {
+// 손가락 아래에서 판 안쪽으로 스크롤되는 영역(그룹 등락률 막대 목록 등). 이 영역이 끝에 닿지 않았으면 위아래 밀기는 스크롤에 맡긴다.
+function findVerticalScroller(target: EventTarget | null, root: HTMLElement): HTMLElement | null {
+  let node = target instanceof Element ? target : null
+  while (node && node !== root) {
+    if (node instanceof HTMLElement && node.scrollHeight > node.clientHeight + 1) {
+      const overflowY = window.getComputedStyle(node).overflowY
+      if (overflowY === 'auto' || overflowY === 'scroll') return node
+    }
+    node = node.parentElement
+  }
+  return null
+}
+
+// 위아래 밀기로 넘어갈 수 있는지 — 안쪽 스크롤 영역이 있으면 미는 방향의 끝에 닿아 있을 때만.
+// 손가락을 위로 밀면(dy < 0) 내용은 아래쪽으로 스크롤되므로 맨 아래에 닿아 있어야 한다.
+function scrollerAtEdge(scroller: HTMLElement | null, dy: number): boolean {
+  if (!scroller) return true
+  return dy < 0 ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 : scroller.scrollTop <= 0
+}
+
+// 모바일 페이지의 슬라이드 이동. 좌우: 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous(페이지 이동).
+// 위아래(vertical을 넘길 때만, element는 이벤트를 붙일 판): 위로 밀면 next, 아래로 밀면 previous(나라 이동, 2026-11-27 사용자 결정). 미리보기 판 없이 지금 판만 밀려 나간다.
+export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void, allowPinchZoom = true, onSwipeStart?: () => void, vertical?: { element: HTMLElement | null; onSwipe: (direction: 'next' | 'previous') => void }) {
+  const element = vertical?.element ?? null
+  const onVerticalSwipe = vertical?.onSwipe
   const zoomed = useIsMobilePageZoomed()
   const startRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
   const suppressClickRef = useRef(false)
   const timerRef = useRef<number | null>(null)
   const [offset, setOffset] = useState(0)
+  const [verticalOffset, setVerticalOffset] = useState(0)
+  // 위아래 전환 중에는 좌우 미리보기 판(종목 전체를 그리는 무거운 판)을 그리지 않는다.
+  const [verticalSettling, setVerticalSettling] = useState(false)
   const [settling, setSettling] = useState(false)
+  // 위아래 밀기는 브라우저의 세로 스크롤·당겨서 새로고침을 막아야 해서(touchmove 취소) 판에 직접 붙인 터치 이벤트로 받는다.
+  // React의 터치 이벤트는 취소할 수 없는 방식으로 붙는다. 최신 값은 ref로 읽는다.
+  const latestRef = useRef({ settling, onVerticalSwipe, onSwipeStart })
+  useEffect(() => { latestRef.current = { settling, onVerticalSwipe, onSwipeStart } })
+  const verticalEnabled = enabled && Boolean(onVerticalSwipe)
   // 애니메이션을 줄이기 설정에서는 타이머와 CSS 전환이 함께 0이 돼야 한다. 타이머만 0이면 페이지가 바뀐 뒤 판이 계속 움직인다.
   const [reducedMotion, setReducedMotion] = useState(false)
   useEffect(() => () => { if (timerRef.current !== null) window.clearTimeout(timerRef.current) }, [])
@@ -95,6 +126,89 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
       then?.()
     }, duration)
   }
+  // 위아래 전환. 다른 나라도 같은 화면 부품을 쓰면 판이 그대로 남으므로, 넘어간 뒤 제자리로 돌려 새 나라의 로딩 화면이 보이게 한다.
+  const settleVertical = useCallback((target: number, then?: () => void) => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    setReducedMotion(reduced)
+    setSettling(true)
+    setVerticalSettling(true)
+    setVerticalOffset(target)
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null
+      then?.()
+      setSettling(false)
+      setVerticalSettling(false)
+      setVerticalOffset(0)
+    }, reduced ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS)
+  }, [])
+  useEffect(() => {
+    if (!verticalEnabled || !element) return
+    let gesture: { id: number; x: number; y: number; vertical: boolean; scroller: HTMLElement | null } | null = null
+    let lastDy = 0
+    const onTouchStart = (event: TouchEvent) => {
+      gesture = null
+      if (event.touches.length !== 1 || latestRef.current.settling || isMobilePageZoomed()) return
+      const touch = event.touches[0]
+      if (touch.clientX <= EDGE_GUARD || touch.clientX >= window.innerWidth - EDGE_GUARD) return
+      // 확대된 지도 안의 한 손가락 드래그는 지도 이동이다(좌우 밀기와 같은 판정).
+      const map = (event.target as HTMLElement).closest<HTMLElement>('[data-mobile-map-scale]')
+      if (map && Number(map.dataset.mobileMapScale) > 1.05) return
+      gesture = { id: touch.identifier, x: touch.clientX, y: touch.clientY, vertical: false, scroller: findVerticalScroller(event.target, element) }
+    }
+    const onTouchMove = (event: TouchEvent) => {
+      const current = gesture
+      if (!current) return
+      const touch = Array.from(event.touches).find(item => item.identifier === current.id)
+      // 두 번째 손가락이 닿으면 확대 동작이다. 밀던 판을 되돌린다.
+      if (!touch || event.touches.length !== 1) {
+        gesture = null
+        if (current.vertical) settleVertical(0)
+        return
+      }
+      const dx = touch.clientX - current.x
+      const dy = touch.clientY - current.y
+      if (!current.vertical) {
+        if (Math.abs(dy) <= Math.abs(dx)) {
+          // 좌우 밀기 쪽으로 기울면 페이지 이동(포인터 처리)에 맡기고 손을 뗀다.
+          if (Math.abs(dx) >= 4) gesture = null
+          return
+        }
+        // 안쪽 스크롤이 끝에 닿지 않았으면 이번 밀기는 스크롤이다.
+        if (!scrollerAtEdge(current.scroller, dy)) { gesture = null; return }
+        // 정하기 전 작은 움직임에도 취소해 둬야 브라우저가 먼저 스크롤·새로고침을 시작하지 않는다.
+        if (event.cancelable) event.preventDefault()
+        if (Math.abs(dy) < 8 || Math.abs(dy) < Math.abs(dx) * 1.1) return
+        current.vertical = true
+        latestRef.current.onSwipeStart?.()
+      }
+      if (event.cancelable) event.preventDefault()
+      lastDy = dy
+      setVerticalOffset(dy)
+    }
+    const onTouchEnd = (event: TouchEvent) => {
+      const current = gesture
+      if (!current || Array.from(event.changedTouches).every(item => item.identifier !== current.id)) return
+      gesture = null
+      if (!current.vertical) return
+      const height = element.clientHeight || window.innerHeight
+      const moved = event.type === 'touchend' && Math.abs(lastDy) >= Math.max(24, height * 0.08)
+      if (!moved) { settleVertical(0); return }
+      const direction = lastDy < 0 ? 'next' : 'previous'
+      suppressClickRef.current = true
+      window.setTimeout(() => { suppressClickRef.current = false }, 0)
+      settleVertical(lastDy < 0 ? -height : height, () => latestRef.current.onVerticalSwipe?.(direction))
+    }
+    element.addEventListener('touchstart', onTouchStart, { passive: true })
+    element.addEventListener('touchmove', onTouchMove, { passive: false })
+    element.addEventListener('touchend', onTouchEnd)
+    element.addEventListener('touchcancel', onTouchEnd)
+    return () => {
+      element.removeEventListener('touchstart', onTouchStart)
+      element.removeEventListener('touchmove', onTouchMove)
+      element.removeEventListener('touchend', onTouchEnd)
+      element.removeEventListener('touchcancel', onTouchEnd)
+    }
+  }, [element, settleVertical, verticalEnabled])
   const onPointerDownCapture = (event: PointerEvent<HTMLElement>) => {
     // 두 번째 손가락이 닿으면 확대 동작이다. 밀던 판을 되돌리고 페이지 전환을 받지 않는다.
     if (!event.isPrimary) {
@@ -155,8 +269,8 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     // 보이는 화면을 이동할 수 있게 auto로 바꾼다. 업종 지도·그룹 등락률은 확대 상태여도 auto로 풀지 않는다 —
     // 종목 지도에서 확대한 채 넘어오면 안쪽 판이 다시 확대를 허용하는 구멍이 된다.
     touchAction: allowPinchZoom ? (zoomed ? 'auto' : 'pan-y pinch-zoom') : 'pan-y',
-    transform: offset === 0 ? undefined : `translateX(${offset}px)`,
+    transform: offset !== 0 ? `translateX(${offset}px)` : verticalOffset !== 0 ? `translateY(${verticalOffset}px)` : undefined,
     transition: settling ? `transform ${reducedMotion ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }
-  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset, active: offset !== 0 || settling, next }
+  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset, active: offset !== 0 || (settling && !verticalSettling), next }
 }

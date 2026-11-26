@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from 'react-router-dom'
 import { cloneElement, isValidElement, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { MobileToolbarContext } from '@/components/MobileToolbarContext'
 import MobileTopBar from '@/components/MobileTopBar'
@@ -5,6 +6,7 @@ import MobileMapSheet, { type MobileMapMarket } from '@/components/MobileMapShee
 import { useDisableScreenZoom, useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
 import Popup, { type PopupState } from '@/components/Popup'
 import { TOOLBAR_SIDE_GUTTER } from '@/utils/mobilePathBar'
+import { adjacentMobileMarket, mobileMarketPath } from '@/utils/mobileMarketRoutes'
 
 // MOBILE 지도 공통 화면: 상단 줄 · 툴바 줄 · 가운데 판(세로 가운데 정렬, 설정 창이 열려도 판은 움직이지 않는다) · 하단 설정 줄.
 // 종목·업종·그래프 화면이 같은 틀을 쓴다. 툴바는 판 밖에 두고, 화면 폭에 맞춰 판 가로폭까지 키운다.
@@ -51,6 +53,10 @@ export default function MobileMapShell({ topBar, frameHeight, frame, toolbar, cu
     onCloseInfoPopup?.()
   }, [navigationKey, onCloseInfoPopup])
 
+  // 위아래 밀기는 나라 이동이다(위로 밀면 한국 → 일본 → 미국 → 한국). 보던 페이지 종류와 박스 크기는 그대로 가져간다.
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [swipeFrame, setSwipeFrame] = useState<HTMLDivElement | null>(null)
   const swipe = useMobilePageSwipe(
     Boolean(onSwipe),
     () => onSwipe?.('next'),
@@ -58,7 +64,8 @@ export default function MobileMapShell({ topBar, frameHeight, frame, toolbar, cu
     onBeforeSwipeNavigate,
     !zoomBlocked,
     // 팝업은 판과 함께 움직이지 않으므로 넘어간 뒤가 아니라 밀기 시작할 때 닫는다.
-    onCloseInfoPopup
+    onCloseInfoPopup,
+    { element: swipeFrame, onSwipe: direction => navigate(mobileMarketPath(adjacentMobileMarket(current, direction), location.pathname), { state: { mobileBoxSize: boxSize } }) }
   )
   const renderPreview = (preview: ReactNode | (() => ReactNode)) => typeof preview === 'function' ? (swipe.active ? preview() : null) : preview
 
@@ -96,7 +103,7 @@ export default function MobileMapShell({ topBar, frameHeight, frame, toolbar, cu
           </div>
         </div>
         <div className="relative w-full shrink-0 overflow-hidden" style={{ height: `${frameHeight}px` }}>
-          <div className="relative h-full w-full" style={swipe.style} {...swipe.handlers}>
+          <div ref={setSwipeFrame} className="relative h-full w-full" style={swipe.style} {...swipe.handlers}>
             {frame}
             {nextPreview && (
               <div
