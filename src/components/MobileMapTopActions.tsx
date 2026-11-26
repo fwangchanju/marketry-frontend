@@ -65,7 +65,7 @@ function GuideIcon() {
   )
 }
 
-// 박스 크기 창 — 툴바 팝업과 같은 자리(가로 가운데, 아래 끝은 툴바 줄 바로 위)에 뜬다. 바깥을 누르면 닫힌다.
+// 박스 크기 창 — 툴바 팝업과 같은 자리(가로 가운데, 세로 가운데 화면 높이 75%, 툴바 줄 아래로는 내려가지 않음)에 뜬다. 바깥을 누르면 닫힌다.
 function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number; onChange: (value: number) => void; onClose: () => void; triggerRef: React.RefObject<HTMLButtonElement | null> }) {
   const popupRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
