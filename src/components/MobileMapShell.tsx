@@ -6,7 +6,8 @@ import MobileMapSheet, { type MobileMapMarket } from '@/components/MobileMapShee
 import { useDisableScreenZoom, useMobilePageSwipe } from '@/hooks/useMobilePageSwipe'
 import Popup, { type PopupState } from '@/components/Popup'
 import { TOOLBAR_SIDE_GUTTER } from '@/utils/mobilePathBar'
-import { adjacentMobileMarket, mobileMarketPath } from '@/utils/mobileMarketRoutes'
+import { adjacentMobileMarket, MOBILE_MARKET_BADGE, mobileMarketPath } from '@/utils/mobileMarketRoutes'
+import MarketFlagIcon from '@/components/MarketFlagIcon'
 import { holdCountrySwipeArrival } from '@/utils/mobileSwipeArrivalOverlay'
 
 // MOBILE 지도 공통 화면: 상단 줄 · 툴바 줄 · 가운데 판(세로 가운데 정렬, 설정 창이 열려도 판은 움직이지 않는다) · 하단 설정 줄.
@@ -71,7 +72,8 @@ export default function MobileMapShell({ topBar, frameHeight, frame, toolbar, cu
       onSwipe: direction => {
         const target = adjacentMobileMarket(current, direction)
         // 밀려 나간 판 자리를 새 나라 화면이 다 그려질 때까지 빈 판으로 덮는다. 종목 지도는 지도 배치가 잡힐 때까지 기다린다.
-        holdCountrySwipeArrival(swipeFrame?.parentElement ?? null, target, location.pathname.startsWith('/map/'))
+        const pane = swipeFrame?.querySelector<HTMLElement>(`[data-country-pane="${direction}"]`) ?? null
+        holdCountrySwipeArrival(swipeFrame?.parentElement ?? null, target, location.pathname.startsWith('/map/'), pane)
         navigate(mobileMarketPath(target, location.pathname), { state: { mobileBoxSize: boxSize } })
       },
     }
@@ -130,11 +132,43 @@ export default function MobileMapShell({ topBar, frameHeight, frame, toolbar, cu
                 {renderPreview(previousPreview)}
               </div>
             )}
+            {/* 위아래로 미는 동안 따라오는 다음·이전 나라 판 — 국기와 시장 이름만 보인다(2026-11-27 사용자 결정). 위로 밀면 아래 판, 아래로 밀면 위 판. */}
+            {swipe.verticalOffset !== 0 && (
+              <>
+                <CountryPane direction="next" market={adjacentMobileMarket(current, 'next')} visible={Math.min(Math.max(-swipe.verticalOffset, 0), frameHeight)} height={frameHeight} transition={swipe.style?.transition} />
+                <CountryPane direction="previous" market={adjacentMobileMarket(current, 'previous')} visible={Math.min(Math.max(swipe.verticalOffset, 0), frameHeight)} height={frameHeight} transition={swipe.style?.transition} />
+              </>
+            )}
           </div>
         </div>
       </div>
       <MobileMapSheet current={current} boxSize={boxSize} onChangeBoxSize={onChangeBoxSize} />
       {infoPopup && <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={onCloseInfoPopup ?? (() => {})} mobileEnlarged />}
+    </div>
+  )
+}
+
+// 국기와 시장 이름 묶음은 판에서 화면에 드러난 부분의 가운데에 둔다. 조금만 밀어도 둘이 같이 보이고, 다 올라오면 판 한가운데에 온다.
+// 손을 뗀 뒤 판이 미끄러지는 동안에는 판과 같은 전환으로 따라 움직인다.
+const COUNTRY_BADGE_HALF_HEIGHT = 50
+
+function CountryPane({ direction, market, visible, height, transition }: { direction: 'next' | 'previous'; market: MobileMapMarket; visible: number; height: number; transition?: string }) {
+  const badge = MOBILE_MARKET_BADGE[market]
+  const center = Math.max(visible / 2, Math.min(COUNTRY_BADGE_HALF_HEIGHT, visible - COUNTRY_BADGE_HALF_HEIGHT))
+  const top = direction === 'next' ? center : height - center
+  return (
+    <div
+      aria-hidden="true"
+      data-country-pane={direction}
+      className={`pointer-events-none absolute left-0 h-full w-full bg-ui-background ${direction === 'next' ? 'top-full' : 'bottom-full'}`}
+    >
+      <div
+        className="absolute left-0 flex w-full -translate-y-1/2 flex-col items-center gap-5"
+        style={{ top: `${top}px`, transition: transition?.replace('transform', 'top') }}
+      >
+        <MarketFlagIcon flag={badge.flag} className="!h-[40px]" />
+        <span className="text-[22px] font-bold leading-none text-ui-muted">{badge.label}</span>
+      </div>
     </div>
   )
 }

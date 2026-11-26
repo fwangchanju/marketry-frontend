@@ -262,7 +262,7 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     onSwipeStart?.()
     settle(-window.innerWidth, onNext, 'next')
   }
-  if (!enabled) return { handlers: undefined, style: undefined, offset: 0, active: false, next: () => {} }
+  if (!enabled) return { handlers: undefined, style: undefined, offset: 0, verticalOffset: 0, active: false, next: () => {} }
   const style: CSSProperties = {
     // 1배에서는 세로 스크롤만 브라우저에 맡기고 가로 전환은 이 훅이 처리한다. 종목 지도는 pinch-zoom을 함께
     // 넣지 않으면 브라우저가 핀치 확대 자체를 받지 않는다(2026-11-25 실제 핀치 확인). 확대 후에는 한 손가락으로
@@ -272,5 +272,5 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
     transform: offset !== 0 ? `translateX(${offset}px)` : verticalOffset !== 0 ? `translateY(${verticalOffset}px)` : undefined,
     transition: settling ? `transform ${reducedMotion ? 0 : MOBILE_PAGE_SWIPE_SETTLE_MS}ms cubic-bezier(0.2, 0.7, 0.2, 1)` : undefined,
   }
-  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset, active: offset !== 0 || (settling && !verticalSettling), next }
+  return { handlers: { onPointerDownCapture, onPointerMoveCapture, onPointerUpCapture, onPointerCancelCapture, onClickCapture }, style, offset, verticalOffset, active: offset !== 0 || (settling && !verticalSettling), next }
 }
