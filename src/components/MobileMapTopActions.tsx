@@ -62,7 +62,7 @@ function GuideIcon() {
   )
 }
 
-// 박스 크기 창 — 지도 팝업·툴바 팝업과 같은 자리(가로 가운데, 윗변 화면 높이 38%)에 뜬다. 바깥을 누르면 닫힌다.
+// 박스 크기 창 — 지도 팝업·툴바 팝업과 같은 자리(가로 가운데, 세로 가운데가 화면 높이 55%)에 뜬다. 바깥을 누르면 닫힌다.
 function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number; onChange: (value: number) => void; onClose: () => void; triggerRef: React.RefObject<HTMLButtonElement | null> }) {
   const popupRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -96,6 +96,7 @@ function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number;
   )
 }
 
+// 동작 이름은 좌우·상하처럼 한자어로 맞춘다(2026-11-27 사용자 결정). 설명은 한 줄로 끝나게 짧게 쓴다.
 const GUIDE_ROWS: { title: string; text: string; icon: React.ReactNode }[] = [
   {
     title: '좌우로 밀기',
@@ -103,13 +104,13 @@ const GUIDE_ROWS: { title: string; text: string; icon: React.ReactNode }[] = [
     icon: <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12h32M10 6l-6 6 6 6M30 6l6 6-6 6" /></svg>,
   },
   {
-    title: '위아래로 밀기',
+    title: '상하로 밀기',
     text: '한국 · 일본 · 미국 나라 이동',
     icon: <svg viewBox="0 0 24 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v32M6 10l6-6 6 6M6 30l6 6 6-6" /></svg>,
   },
   {
     title: '두 손가락으로 벌리기',
-    text: '종목 지도 확대 (확대 중에는 밀어도 페이지가 넘어가지 않음)',
+    text: '종목 지도 확대',
     icon: <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 32l10-10M32 8L22 18M8 32v-8M8 32h8M32 8v8M32 8h-8" /></svg>,
   },
   {
