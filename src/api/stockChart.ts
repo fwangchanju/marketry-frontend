@@ -9,8 +9,11 @@ const StockDailyCandleSchema = z.object({
   low: z.number(),
   close: z.number(),
   volume: z.number(),
-  // 아직 일봉이 저장되지 않은 날(장중)의 임시 봉 — 5분 시세로 만들어 시가·고가·저가가 실제와 다를 수 있고 거래량은 0이다.
+  // 아직 확정되지 않은 날(장중)의 임시 봉 — 한국은 5분 시세로 만들어 시가·고가·저가가 실제와 다를 수 있고 거래량은 0이다.
+  // 일본은 장중에 받은 야후 일봉이라 시가·고가·저가가 실제와 같고 그때까지의 거래량이 있다.
   provisional: z.boolean().optional(),
+  // 화면이 묶음 봉을 만들 때만 붙인다 — 오늘 거래량이 아직 없어(한국 임시 봉) 합에서 빠졌는지.
+  todayVolumeMissing: z.boolean().optional(),
 })
 export type StockDailyCandle = z.infer<typeof StockDailyCandleSchema>
 

@@ -92,13 +92,16 @@ function groupCandles(candles: StockDailyCandle[], interval: Interval): StockDai
     const last = grouped[grouped.length - 1]
     if (key !== currentKey || !last) {
       currentKey = key
-      grouped.push({ ...candle })
+      grouped.push({ ...candle, todayVolumeMissing: candle.provisional === true && candle.volume === 0 })
     } else {
       last.high = Math.max(last.high, candle.high)
       last.low = Math.min(last.low, candle.low)
       last.close = candle.close
       last.volume += candle.volume
-      if (candle.provisional) last.provisional = true
+      if (candle.provisional) {
+        last.provisional = true
+        if (candle.volume === 0) last.todayVolumeMissing = true
+      }
     }
   }
   return grouped
@@ -397,7 +400,8 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             {shownBar.provisional && shownBar.volume === 0
               ? <span className="text-ui-muted">(집계 전)</span>
               : <span className="text-ui-text">{shownBar.volume.toLocaleString('ko-KR')}</span>}
-            {shownBar.provisional && shownBar.volume > 0 && <span className="ml-1 text-ui-muted">(오늘 미포함)</span>}
+            {/* 한국 임시 봉은 오늘 거래량이 없어 주봉·월봉 합에서 빠진다. 일본은 장중에도 그때까지의 거래량이 와서 따로 적지 않는다(시각은 툴바에 있다). */}
+            {shownBar.provisional && shownBar.volume > 0 && shownBar.todayVolumeMissing && <span className="ml-1 text-ui-muted">(오늘 미포함)</span>}
           </div>
         )}
         {/* TradingView 출처 표시 — 차트 라이브러리 사용 조건이라 지우지 않는다. 기본 로고 대신 둥근 배지로 보이고, 누르면 TradingView에서 이 종목 차트를 연다(2026-11-20 사용자 결정). */}
