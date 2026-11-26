@@ -7,6 +7,7 @@ import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarPopup from '@/components/ToolbarPopup'
 import { dropdownPanelClass } from '@/components/dropdownStyle'
+import { CheckIcon } from '@/components/icons/AppIcons'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
@@ -166,9 +167,10 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
           popupRef={popupRef}
           ariaLabel="등락률 기준 선택"
           gapPx={6}
-          className={`w-max overflow-hidden ${dropdownPanelClass(isMobile)} text-sm font-normal tracking-normal`}
+          className={`w-max overflow-hidden ${dropdownPanelClass(isMobile)} p-2 text-sm font-normal tracking-normal`}
         >
-          <div role="presentation" className="border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">등락률 기준</div>
+          {/* 세션 팝업과 같은 툴바 팝업 양식: 사방 8px 여백, 머리줄·항목 글자는 왼쪽 16px에서 시작. 항목 줄만 -mx-2로 양 끝까지 늘려 올림 바탕을 줄 전체로 깐다. 선택은 바탕 없이 V 체크로만 표시한다(2026-11-27 사용자 결정). */}
+          <div role="presentation" className="mb-1 border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">BASIS</div>
           <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col">
             {options.map(option => (
               <button
@@ -182,16 +184,18 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   onChange(option.value)
                   setIsOpen(false)
                 }}
-                className={`flex w-full items-center justify-between gap-4 rounded-none border-0 px-3 py-1 text-left text-ui-white transition-colors ${
+                className={`-mx-2 flex items-center justify-between gap-4 rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors ${
                   basis === option.value
-                    ? 'bg-[var(--brand-surface)]'
+                    ? 'bg-transparent hover:bg-ui-white/10'
                     : option.locked
                       ? 'bg-transparent cursor-not-allowed opacity-35'
                       : 'bg-transparent hover:bg-ui-white/10'
                 }`}
               >
-                <span className="shrink-0 text-ui-white">
-                  {option.titlePrefix}<span className="text-[var(--sub-purple)]">{option.label}</span>
+                {/* 세션 팝업의 원 아이콘 자리에 선택 체크를 둔다. 고르지 않은 줄은 같은 폭을 비워 글자 시작선을 맞춘다(2026-11-27 사용자 지시). */}
+                <span className="flex shrink-0 items-center text-ui-white">
+                  <CheckIcon aria-hidden="true" className={`mr-2 h-3.5 w-3.5 shrink-0 ${basis === option.value ? '' : 'invisible'}`} />
+                  <span>{option.titlePrefix}<span className="text-[var(--sub-purple)]">{option.label}</span></span>
                 </span>
                 <span className="shrink-0 whitespace-nowrap">
                   <span className="inline-block w-[5em] text-right">{option.descriptionBefore}</span>

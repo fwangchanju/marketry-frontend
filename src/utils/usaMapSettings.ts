@@ -61,7 +61,7 @@ export const USA_MAP_DRAFT_KEY_MAP: Readonly<Record<string, string>> = {
 // 기억 이름은 한국 화면과 같이 맞춘다(지도 Map, 그래프 Graph, 종목 Stock, 섹터 Sector).
 export const USA_SETTINGS_TAB_STORAGE = { map: 'Map', graph: 'Graph', stock: 'Stock', sector: 'Sector' } as const
 
-// 미국 화면의 Basis는 MARKETRY만 제공해서 다른 분류를 고를 수 없다. 공통 선택 영역에 넘기는 빈 동작이다.
+// 미국 화면의 Mode는 MARKETRY만 제공해서 다른 분류를 고를 수 없다. 공통 선택 영역에 넘기는 빈 동작이다.
 export const NO_TAXONOMY_CHANGE = () => {}
 
 // 관리자가 기본값 화면에서 정한 미국 지도 기본값(서버의 관리 기본값 usa)을 코드 기본값 위에 얹는다. 값 이름이 일본 지도와 같아 같은 검사를 쓴다.

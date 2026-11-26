@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
 
-const BASIS_TOP_ANCHOR = '[data-settings-side-toggle-top-anchor]'
-const BASIS_BADGE_TOP_ANCHOR = '[data-settings-side-toggle-bottom-anchor]'
+const MODE_TOP_ANCHOR = '[data-settings-side-toggle-top-anchor]'
+const MODE_BADGE_TOP_ANCHOR = '[data-settings-side-toggle-bottom-anchor]'
 const FALLBACK_BOTTOM_GAP_PX = 66
 const FALLBACK_HEIGHT_PX = 45
 
@@ -16,8 +16,8 @@ export default function SettingsPanelSideToggle({ isOnLeft, onToggleSide, panelN
 
     const align = () => {
       const panelBounds = panel.getBoundingClientRect()
-      const topLine = panel.querySelector<HTMLElement>(BASIS_TOP_ANCHOR)?.getBoundingClientRect()
-      const badgeTopLine = panel.querySelector<HTMLElement>(BASIS_BADGE_TOP_ANCHOR)?.getBoundingClientRect()
+      const topLine = panel.querySelector<HTMLElement>(MODE_TOP_ANCHOR)?.getBoundingClientRect()
+      const badgeTopLine = panel.querySelector<HTMLElement>(MODE_BADGE_TOP_ANCHOR)?.getBoundingClientRect()
 
       if (topLine && badgeTopLine) {
         button.style.top = `${Math.round(topLine.top - panelBounds.top)}px`
