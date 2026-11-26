@@ -8,6 +8,17 @@ import ToolbarPopup from '@/components/ToolbarPopup'
 // 증시 세션 칩 — 눌러서 시간표를 안내한다. 세션 이름·시간표·색은 시장 정의(marketSessions)에서 받는다.
 const SessionDot = ({ color }: { color: string }) => <span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
 
+
+// 가운데 설명(일본 "한자 한글읽기" 예: 前場 젠바, 미국 영문 약어 예: PRE)에서 앞 칸 폭을 맞춰, 뒤의 한글 읽기가 모든 행에서 같은 자리에서 시작하게 한다.
+function SessionTerm({ term }: { term: string }) {
+  const [kanji, ...reading] = term.split(' ')
+  return (
+    <span className="ml-1.5 inline-block w-[8em] text-xs text-ui-muted">
+      {kanji}{reading.length > 0 ? ` ${reading.join(' ')}` : ''}
+    </span>
+  )
+}
+
 export default function MarketSessionChip({ market, session }: { market: SnapshotMarket; session: string }) {
   const { label, guide, dotColors } = MARKET_SESSIONS[market]
   const [isOpen, setIsOpen] = useState(false)
@@ -33,12 +44,13 @@ export default function MarketSessionChip({ market, session }: { market: Snapsho
       </ToolbarChip>
       {isOpen && (
         <ToolbarPopup open={isOpen} triggerRef={rootRef} popupRef={popupRef} ariaLabel={label} className="w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl">
+          <div role="presentation" className="mb-1 border-b border-ui-border px-2 py-1.5 text-[0.8125rem] font-semibold leading-none text-ui-muted">SESSION</div>
           {guide.map(row => (
             <div key={row.session} className="flex items-center justify-between gap-4 px-2 py-1">
               <span className="flex items-center">
                 <SessionDot color={dotColors[row.session]} />
-                {row.session}
-                {row.term && <span className="ml-1.5 text-xs text-ui-muted">{row.term}</span>}
+                <span className={row.term ? 'inline-block w-[6em]' : undefined}>{row.session}</span>
+                {row.term && <SessionTerm term={row.term} />}
               </span>
               <span className="w-[11ch] shrink-0 text-center font-normal tabular-nums">{row.range}</span>
             </div>

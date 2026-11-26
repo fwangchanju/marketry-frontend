@@ -132,7 +132,7 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4" onClick={close}>
       <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[320px] rounded-xl bg-ui-panel px-4 pb-2 text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
         {/* 머리줄은 창 위 끝과 첫 구분선 사이에 중간 정렬한다(2026-11-27 사용자 결정, 글자 16→18px). */}
-        <h2 className="m-0 flex h-[56px] items-center gap-2 text-[18px] font-bold"><span className="text-ui-text [&>svg]:h-[24px] [&>svg]:w-[24px]"><GuideIcon /></span>사용 방법</h2>
+        <h2 className="m-0 flex h-[56px] items-center gap-2 text-[18px] font-bold"><span className="text-ui-text [&>svg]:h-[24px] [&>svg]:w-[24px]"><GuideIcon /></span>HOW TO USE</h2>
         <ul className="m-0 list-none p-0">
           {GUIDE_ROWS.map(row => (
             <li key={row.title} className="flex items-center gap-3 border-t border-ui-border py-2.5">
