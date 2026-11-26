@@ -6,6 +6,7 @@ import { heatmapKeys } from '@/hooks/queryKeys'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import ToolbarPopup from '@/components/ToolbarPopup'
 import { popupBadgeClass } from '@/components/popupBadgeStyle'
+import { MOBILE_TOUCH_MIN_HEIGHT_CLASS, MOBILE_TOUCH_MIN_SIZE_CLASS } from '@/utils/mobilePopupScale'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
 import { IconCornerDownRight } from '@tabler/icons-react'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
@@ -299,7 +300,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
               const hasBand = bandStart !== null && bandEnd !== null && bandStart < bandEnd && date >= bandStart && date <= bandEnd
               const bandShape = date === bandStart ? 'left-1/2 right-0' : date === bandEnd ? 'left-0 right-1/2' : `inset-x-0 ${weekday === 0 || day === 1 ? 'rounded-l-full' : ''} ${weekday === 6 || day === daysInMonth ? 'rounded-r-full' : ''}`
               return (
-                <div key={date} className="relative my-0.5 flex h-7 items-center justify-center">
+                <div key={date} className={`relative my-0.5 flex h-7 items-center justify-center ${MOBILE_TOUCH_MIN_HEIGHT_CLASS}`}>
                   {hasBand && <span aria-hidden="true" className={`absolute inset-y-0 bg-ui-control ${bandShape}`} />}
                   <button
                     type="button"
@@ -309,7 +310,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                     onClick={() => onPick(date, closingTimeByDate.get(date))}
                     onMouseEnter={() => { if (selectable !== false) onHoverDate?.(date) }}
                     onMouseLeave={() => onHoverDate?.(null)}
-                    className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 ${isToday ? 'border-brand' : 'border-transparent'} ${
+                    className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 ${MOBILE_TOUCH_MIN_SIZE_CLASS} ${isToday ? 'border-brand' : 'border-transparent'} ${
                       selected
                         ? 'bg-brand-surface font-semibold text-ui-white'
                         : isToday
@@ -695,7 +696,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                       role="radio"
                       aria-checked={isRangeMode === rangeValue}
                       onClick={() => switchMode(rangeValue)}
-                      className={`${popupBadgeClass('switch', isMobile)} ${isRangeMode === rangeValue ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-text hover:bg-ui-control-hover'}`}
+                      className={`${popupBadgeClass('switch')} ${isRangeMode === rangeValue ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-text hover:bg-ui-control-hover'}`}
                     >
                       {label}
                     </button>
@@ -737,7 +738,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
               )}
             </span>
             {isMobile && tradingDayBadge !== null && (
-              <span className={`${popupBadgeClass('tag', isMobile)} bg-ui-control text-ui-text`}>{tradingDayBadge}</span>
+              <span className={`${popupBadgeClass('tag')} bg-ui-control text-ui-text`}>{tradingDayBadge}</span>
             )}
           </div>
           {isRangeCalendar ? (
@@ -812,14 +813,14 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 )}
               </div>
               <div className="mt-1 flex min-w-0 items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]">
-                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={`${popupBadgeClass('tag', isMobile)} ${YTD_BUTTON_COLOR}`}>
+                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={`${popupBadgeClass('tag')} ${YTD_BUTTON_COLOR}`}>
                   YTD
                 </button>
                 <span className="flex shrink-0 items-center gap-1.5">
-                  <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={`${popupBadgeClass('action', isMobile)} ${RESET_BUTTON_COLOR}`}>
+                  <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={`${popupBadgeClass('action')} ${RESET_BUTTON_COLOR}`}>
                     선택 해제
                   </button>
-                  <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={`${popupBadgeClass('action', isMobile)} ${APPLY_BUTTON_COLOR}`}>
+                  <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={`${popupBadgeClass('action')} ${APPLY_BUTTON_COLOR}`}>
                     적용
                   </button>
                 </span>
@@ -895,10 +896,10 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 )}
               </div>
               <div className={`mt-1 flex ${isMobile ? 'w-60' : 'w-[31rem]'} items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]`}>
-                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={`${popupBadgeClass('tag', isMobile)} ${YTD_BUTTON_COLOR}`}>
+                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={`${popupBadgeClass('tag')} ${YTD_BUTTON_COLOR}`}>
                   YTD
                 </button>
-                <button type="button" disabled={draftDay === null} onClick={applyDay} className={`${popupBadgeClass('action', isMobile)} ${APPLY_BUTTON_COLOR}`}>
+                <button type="button" disabled={draftDay === null} onClick={applyDay} className={`${popupBadgeClass('action')} ${APPLY_BUTTON_COLOR}`}>
                   적용
                 </button>
               </div>

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_TOUCH_VARS, MOBILE_POPUP_Z_CLASS, mobilePopupMinWidth, mobilePopupTopAboveToolbar } from '@/utils/mobilePopupScale'
 import PopupHeader, { PopupListDot } from '@/components/PopupHeader'
 import { popupBadgeClass } from '@/components/popupBadgeStyle'
 import { POPUP_ROW_IDLE_CLASS, POPUP_ROW_SELECTED_CLASS } from '@/components/popupHeaderStyle'
@@ -65,15 +65,17 @@ function GuideIcon() {
   )
 }
 
-// 박스 크기 창 — 지도 팝업·툴바 팝업과 같은 자리(가로 가운데, 세로 가운데가 화면 높이 55%)에 뜬다. 바깥을 누르면 닫힌다.
+// 박스 크기 창 — 툴바 팝업과 같은 자리(가로 가운데, 아래 끝은 툴바 줄 바로 위)에 뜬다. 바깥을 누르면 닫힌다.
 function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number; onChange: (value: number) => void; onClose: () => void; triggerRef: React.RefObject<HTMLButtonElement | null> }) {
   const popupRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const popup = popupRef.current
     if (!popup) return
+    // MOBILE 팝업 규칙 2번: 화면 폭의 60%보다 좁으면 넓힌다.
+    popup.style.minWidth = `${mobilePopupMinWidth(window.innerWidth)}px`
     const { width, height } = popup.getBoundingClientRect()
     popup.style.left = `${(window.innerWidth - width) / 2}px`
-    popup.style.top = `${mobilePopupTop(window.innerHeight, height)}px`
+    popup.style.top = `${mobilePopupTopAboveToolbar(window.innerHeight, height)}px`
     popup.style.visibility = 'visible'
   })
   useEffect(() => {
@@ -93,7 +95,7 @@ function BoxSizePopup({ value, onChange, onClose, triggerRef }: { value: number;
     <>
     <div aria-hidden="true" className={MOBILE_POPUP_BACKDROP_CLASS} />
     {/* 툴바 팝업(BASIS)과 같은 양식: 1.3배, 둥근 패널, 사방 8px, 머리줄과 구분선, 줄 앞 점, 고른 줄은 청록 바탕(2026-11-27 사용자 지시). 이 창은 툴바 팝업 부품 밖이라 같은 값을 직접 쓴다. */}
-    <div ref={popupRef} role="dialog" aria-label="박스 크기" className={`fixed ${MOBILE_POPUP_Z_CLASS} w-max rounded-[9px] bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-2xl`} style={{ left: 0, top: 0, transform: `scale(${MOBILE_POPUP_SCALE})`, transformOrigin: 'top left', visibility: 'hidden' }}>
+    <div ref={popupRef} role="dialog" aria-label="박스 크기" className={`fixed ${MOBILE_POPUP_Z_CLASS} w-max rounded-[9px] bg-ui-panel p-2 text-sm font-normal tracking-normal text-ui-white shadow-2xl`} style={{ left: 0, top: 0, transform: `scale(${MOBILE_POPUP_SCALE})`, transformOrigin: 'top left', visibility: 'hidden', ...MOBILE_POPUP_TOUCH_VARS }}>
       <PopupHeader>BOX SIZE</PopupHeader>
       <div role="radiogroup" aria-label="박스 크기" className="flex flex-col" {...slideSelect}>
         {BOX_OPTIONS.map(option => (
@@ -138,7 +140,7 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
   const close = () => onClose(hideForDays)
   return createPortal(
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4" onClick={close}>
-      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[320px] rounded-xl bg-ui-panel px-[calc(1rem*1.3)] pb-[calc(0.5rem*1.3)] text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label="사용 방법" style={MOBILE_POPUP_TOUCH_VARS} className="w-full max-w-[320px] rounded-xl bg-ui-panel px-[calc(1rem*1.3)] pb-[calc(0.5rem*1.3)] text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
         {/* 머리줄은 툴바 팝업과 같은 공통 부품(PopupHeader)을 쓴다(2026-11-27 사용자 지시, 글자 크기까지 맞춤). 이 창은 배율 없이 그려지므로
             머리줄 묶음에만 MOBILE 팝업 배율(zoom 1.3)을 줘서 글자·높이·구분선·여백이 BASIS·BOX SIZE와 똑같이 보이게 한다.
             -mx-4는 창의 좌우 여백을 상쇄해 구분선이 다른 팝업처럼 창 끝에서 8px 안쪽에서 끊기게 하고, 창 좌우 여백은 머리줄 글자 시작 위치에 맞춘다. */}
@@ -165,7 +167,7 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
             <input type="checkbox" className="thin-check" checked={hideForDays} onChange={event => setHideForDays(event.target.checked)} />
             하루 동안 보지 않기
           </label>
-          <button type="button" onClick={close} style={{ zoom: MOBILE_POPUP_SCALE }} className={`${popupBadgeClass('action', true)} bg-brand-surface text-ui-white`}>닫기</button>
+          <button type="button" onClick={close} style={{ zoom: MOBILE_POPUP_SCALE }} className={`${popupBadgeClass('action')} bg-brand-surface text-ui-white`}>닫기</button>
         </div>
       </div>
     </div>,

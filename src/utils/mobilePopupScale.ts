@@ -1,9 +1,25 @@
-// MOBILE 팝업 전용 배율. 툴바는 화면 폭에 맞춰 작게 그리지만, 그 아래에 열리는 팝업은
-// 읽기 쉽도록 툴바 축소(0.863)를 빼고 원본 CSS 크기의 1.5배로 그린다(2026-11-27 사용자 지시로 1.3에서 시험 중, 393px 폭에서 BASIS·SESSION이 화면을 조금 넘는다).
-// 툴바 줄 팝업(`ToolbarPopup`)과 지도 팝업(`Popup`)이 같은 값을 쓴다.
-// 바꿀 때는 이 값만 조절하면 두 팝업의 배율과 위치 보정·클램프가 함께 따라온다.
+import type { CSSProperties } from 'react'
+
+// MOBILE 팝업 규칙 3가지 — PC 팝업이 원본이고 MOBILE은 이 세 값만 거쳐 자동으로 바뀐다(2026-11-27 사용자 결정, docs/ui-areas.md "MOBILE 팝업 규칙").
+//   1. 크기: PC 팝업을 1.3배로 그린다.
+//   2. 폭: 화면 폭의 60%보다 좁으면 넓힌다.
+//   3. 누르는 칸: 배지·날짜 칸이 보이는 크기 34px보다 작으면 키운다.
+// 툴바 줄 팝업(`ToolbarPopup`)·박스 크기 창·HOW TO USE가 같은 값을 쓰고, 지도 팝업(`Popup`)은 1번 배율만 쓴다.
 // 지도 팝업은 화면을 확대·축소하면 visualViewport.scale로 나눠 보이는 크기를 이 값으로 유지한다.
-export const MOBILE_POPUP_SCALE = 1.5
+export const MOBILE_POPUP_SCALE = 1.3
+export const MOBILE_POPUP_MIN_WIDTH_RATIO = 0.6
+export const MOBILE_POPUP_TOUCH_MIN_PX = 34
+
+// 2번 — 팝업에 줄 최소 폭(배율 적용 전 CSS 값). 팝업 바로 아래 칸도 이 폭까지 늘어나게 한다(MOBILE_POPUP_STRETCH_CLASS).
+export function mobilePopupMinWidth(viewportWidth: number): number {
+  return (viewportWidth * MOBILE_POPUP_MIN_WIDTH_RATIO) / MOBILE_POPUP_SCALE
+}
+export const MOBILE_POPUP_STRETCH_CLASS = '[&>*]:min-w-full'
+
+// 3번 — 팝업 틀에 이 CSS 변수를 두고, 누르는 칸은 MOBILE_TOUCH_MIN_CLASS로 최소 크기를 받는다. PC 팝업에는 변수가 없어 0이 되므로 PC는 바뀌지 않는다.
+export const MOBILE_POPUP_TOUCH_VARS = { '--mobile-popup-touch-min': `${MOBILE_POPUP_TOUCH_MIN_PX / MOBILE_POPUP_SCALE}px` } as CSSProperties
+export const MOBILE_TOUCH_MIN_HEIGHT_CLASS = 'min-h-[var(--mobile-popup-touch-min,0px)]'
+export const MOBILE_TOUCH_MIN_SIZE_CLASS = 'min-h-[var(--mobile-popup-touch-min,0px)] min-w-[var(--mobile-popup-touch-min,0px)]'
 
 // MOBILE 팝업의 세로 위치 — 팝업의 세로 가운데를 보이는 화면 높이의 이 비율에 맞춘다. 지도 팝업(종목·업종 길게 누르기)과 툴바 팝업
 // (마켓·캘린더·세션 등), 상단 박스 크기 창이 같은 중심선에 뜬다. 윗변을 맞추면(11/27 38%) 길이가 다른 팝업의 가운데·아래 끝이 제각각이라
@@ -14,6 +30,14 @@ export const MOBILE_POPUP_MARGIN = 8
 // 보이는 화면 높이와 팝업 높이(화면에 보이는 px)로 윗변 위치를 정한다.
 export function mobilePopupTop(screenHeight: number, popupHeight: number): number {
   return Math.max(MOBILE_POPUP_MARGIN, Math.min(screenHeight * MOBILE_POPUP_CENTER_RATIO - popupHeight / 2, screenHeight - popupHeight - MOBILE_POPUP_MARGIN))
+}
+
+// 툴바에서 여는 팝업(툴바 팝업·박스 크기 창)의 윗변 — 팝업 아래 끝을 툴바 줄 바로 위(8px)에 붙인다. 엄지와 가깝고 작은 팝업도 높이 뜨지 않는다(2026-11-27 사용자 결정).
+// 툴바 줄이 없는 화면이면 위 가운데 맞춤 규칙을 쓴다. 지도 길게 누르기 팝업과 HOW TO USE는 고르는 창이 아니라 위 규칙 그대로 둔다.
+export function mobilePopupTopAboveToolbar(screenHeight: number, popupHeight: number): number {
+  const toolbarTop = document.querySelector('[data-mobile-toolbar-slot]')?.getBoundingClientRect().top
+  if (toolbarTop === undefined) return mobilePopupTop(screenHeight, popupHeight)
+  return Math.max(MOBILE_POPUP_MARGIN, toolbarTop - MOBILE_POPUP_MARGIN - popupHeight)
 }
 
 // MOBILE 팝업 양식(2026-11-27 사용자 결정): 외곽선 없는 둥근 패널 + 뒤 화면을 어둡게 해서 경계를 만든다.
