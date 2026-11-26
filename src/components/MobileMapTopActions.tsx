@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
 import PopupHeader, { PopupListDot } from '@/components/PopupHeader'
+import { popupBadgeClass } from '@/components/popupBadgeStyle'
 import { POPUP_ROW_IDLE_CLASS, POPUP_ROW_SELECTED_CLASS } from '@/components/popupHeaderStyle'
 import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 import { swallowNextClick } from '@/utils/swallowNextClick'
@@ -137,7 +138,7 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
   const close = () => onClose(hideForDays)
   return createPortal(
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4" onClick={close}>
-      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[320px] rounded-xl bg-ui-panel px-[calc(1rem*1.3)] pb-2 text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label="사용 방법" className="w-full max-w-[320px] rounded-xl bg-ui-panel px-[calc(1rem*1.3)] pb-[calc(0.5rem*1.3)] text-ui-white shadow-2xl" onClick={event => event.stopPropagation()}>
         {/* 머리줄은 툴바 팝업과 같은 공통 부품(PopupHeader)을 쓴다(2026-11-27 사용자 지시, 글자 크기까지 맞춤). 이 창은 배율 없이 그려지므로
             머리줄 묶음에만 MOBILE 팝업 배율(zoom 1.3)을 줘서 글자·높이·구분선·여백이 BASIS·BOX SIZE와 똑같이 보이게 한다.
             -mx-4는 창의 좌우 여백을 상쇄해 구분선이 다른 팝업처럼 창 끝에서 8px 안쪽에서 끊기게 하고, 창 좌우 여백은 머리줄 글자 시작 위치에 맞춘다. */}
@@ -156,14 +157,15 @@ function GuideDialog({ onClose }: { onClose: (hideForDays: boolean) => void }) {
           ))}
         </ul>
         {/* 닫기는 엄지가 닿는 아래에 둔다(2026-11-27 사용자 결정 — 위쪽 ✕는 폰에서 누르기 불편).
-            구분선 아래 높이와 닫기 배지는 캘린더 팝업 아래 줄(구분선~바닥 약 43px, 적용 배지 약 50×25px 청록)에 맞춘다(같은 날 사용자 결정). */}
+            구분선 아래 높이와 닫기 배지는 캘린더 팝업 아래 줄에 맞춘다(같은 날 사용자 결정). 닫기는 팝업 배지 공통 양식(popupBadgeClass)을 쓰고,
+            이 창은 배율 없이 그려지므로 배지에만 MOBILE 팝업 배율(zoom 1.3)을 줘서 캘린더 적용 배지와 같은 크기로 보이게 한다. 위아래 여백도 배율을 반영한 8px. */}
         {/* 아래 구분선도 머리줄 구분선처럼 창 끝에서 8px(배율 반영) 안쪽에서 끊는다. 안쪽 글자 위치는 그대로(2026-11-27 사용자 지시). */}
-        <div className="mx-[calc(-0.5rem*1.3)] mt-1 flex h-[37px] items-center justify-between gap-3 border-t border-ui-border px-[calc(0.5rem*1.3)] pt-2">
-          <label className="flex h-full items-center gap-2 text-[14px] text-ui-muted">
+        <div className="mx-[calc(-0.5rem*1.3)] mt-1 flex items-center justify-between gap-3 border-t border-ui-border px-[calc(0.5rem*1.3)] pt-[calc(0.5rem*1.3)]">
+          <label className="flex items-center gap-2 text-[14px] text-ui-muted">
             <input type="checkbox" className="thin-check" checked={hideForDays} onChange={event => setHideForDays(event.target.checked)} />
             하루 동안 보지 않기
           </label>
-          <button type="button" onClick={close} className="h-[25px] shrink-0 rounded border-0 bg-brand-surface px-[11px] text-center text-[14px] font-normal leading-none text-ui-white">닫기</button>
+          <button type="button" onClick={close} style={{ zoom: MOBILE_POPUP_SCALE }} className={`${popupBadgeClass('action', true)} bg-brand-surface text-ui-white`}>닫기</button>
         </div>
       </div>
     </div>,
