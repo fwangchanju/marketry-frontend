@@ -7,6 +7,7 @@ import { useDisableScreenZoom, useMobilePageSwipe } from '@/hooks/useMobilePageS
 import Popup, { type PopupState } from '@/components/Popup'
 import { TOOLBAR_SIDE_GUTTER } from '@/utils/mobilePathBar'
 import { adjacentMobileMarket, mobileMarketPath } from '@/utils/mobileMarketRoutes'
+import { holdCountrySwipeArrival } from '@/utils/mobileSwipeArrivalOverlay'
 
 // MOBILE 지도 공통 화면: 상단 줄 · 툴바 줄 · 가운데 판(세로 가운데 정렬, 설정 창이 열려도 판은 움직이지 않는다) · 하단 설정 줄.
 // 종목·업종·그래프 화면이 같은 틀을 쓴다. 툴바는 판 밖에 두고, 화면 폭에 맞춰 판 가로폭까지 키운다.
@@ -65,7 +66,15 @@ export default function MobileMapShell({ topBar, frameHeight, frame, toolbar, cu
     !zoomBlocked,
     // 팝업은 판과 함께 움직이지 않으므로 넘어간 뒤가 아니라 밀기 시작할 때 닫는다.
     onCloseInfoPopup,
-    { element: swipeFrame, onSwipe: direction => navigate(mobileMarketPath(adjacentMobileMarket(current, direction), location.pathname), { state: { mobileBoxSize: boxSize } }) }
+    {
+      element: swipeFrame,
+      onSwipe: direction => {
+        const target = adjacentMobileMarket(current, direction)
+        // 밀려 나간 판 자리를 새 나라 화면이 다 그려질 때까지 빈 판으로 덮는다. 종목 지도는 지도 배치가 잡힐 때까지 기다린다.
+        holdCountrySwipeArrival(swipeFrame?.parentElement ?? null, target, location.pathname.startsWith('/map/'))
+        navigate(mobileMarketPath(target, location.pathname), { state: { mobileBoxSize: boxSize } })
+      },
+    }
   )
   const renderPreview = (preview: ReactNode | (() => ReactNode)) => typeof preview === 'function' ? (swipe.active ? preview() : null) : preview
 
@@ -103,7 +112,7 @@ export default function MobileMapShell({ topBar, frameHeight, frame, toolbar, cu
           </div>
         </div>
         <div className="relative w-full shrink-0 overflow-hidden" style={{ height: `${frameHeight}px` }}>
-          <div ref={setSwipeFrame} className="relative h-full w-full" style={swipe.style} {...swipe.handlers}>
+          <div ref={setSwipeFrame} data-mobile-shell-frame={current} className="relative h-full w-full" style={swipe.style} {...swipe.handlers}>
             {frame}
             {nextPreview && (
               <div
