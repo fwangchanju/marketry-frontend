@@ -78,7 +78,11 @@ export default function MobileMapShell({ pageTitle, boxSizeDisabled = false, fra
     onCloseInfoPopup,
     {
       element: swipeFrame,
+      minPreviousDistance: frameHeight * REFRESH_PULL_RATIO,
       onSwipe: direction => {
+        // 아래로 밀기는 새로고침이다 — 폰 브라우저 주소줄이 숨어 새로고침 버튼이 안 보일 때를 위해(2026-11-27 사용자 결정).
+        if (direction === 'previous') { window.location.reload(); return }
+        // 위로 밀기는 국가 변경이다. 한국 → 일본 → 미국 → 한국으로 돌아가므로 한 방향으로 세 나라를 모두 간다.
         const target = adjacentMobileMarket(current, direction)
         // 밀려 나간 판 자리를 새 나라 화면이 다 그려질 때까지 빈 판으로 덮는다. 종목 지도는 지도 배치가 잡힐 때까지 기다린다.
         const pane = swipeFrame?.querySelector<HTMLElement>(`[data-country-pane="${direction}"]`) ?? null
@@ -132,7 +136,7 @@ export default function MobileMapShell({ pageTitle, boxSizeDisabled = false, fra
             {swipe.verticalOffset !== 0 && (
               <>
                 <CountryPane direction="next" market={adjacentMobileMarket(current, 'next')} visible={Math.min(Math.max(-swipe.verticalOffset, 0), frameHeight)} height={frameHeight} transition={swipe.style?.transition} />
-                <CountryPane direction="previous" market={adjacentMobileMarket(current, 'previous')} visible={Math.min(Math.max(swipe.verticalOffset, 0), frameHeight)} height={frameHeight} transition={swipe.style?.transition} />
+                <RefreshPane visible={Math.min(Math.max(swipe.verticalOffset, 0), frameHeight)} height={frameHeight} transition={swipe.style?.transition} ready={swipe.verticalOffset >= frameHeight * REFRESH_PULL_RATIO} />
               </>
             )}
           </div>
@@ -146,6 +150,25 @@ export default function MobileMapShell({ pageTitle, boxSizeDisabled = false, fra
         </div>
       </div>
       {infoPopup && <Popup popup={infoPopup} onExcludeSector={() => {}} onClose={onCloseInfoPopup ?? (() => {})} mobileEnlarged />}
+    </div>
+  )
+}
+
+// 아래로 밀어 새로고침하려면 판 높이의 이만큼 당겨야 한다(덜 당기면 제자리로 돌아간다).
+const REFRESH_PULL_RATIO = 0.25
+
+// 아래로 밀 때 위에서 내려오는 새로고침 판. 충분히 당기면 "놓으면 새로고침"으로 바뀐다.
+function RefreshPane({ visible, height, transition, ready }: { visible: number; height: number; transition?: string; ready: boolean }) {
+  const center = Math.max(visible / 2, Math.min(COUNTRY_BADGE_HALF_HEIGHT, visible - COUNTRY_BADGE_HALF_HEIGHT))
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute bottom-full left-0 h-full w-full bg-ui-background">
+      <div className="absolute left-0 flex w-full -translate-y-1/2 flex-col items-center gap-5" style={{ top: `${height - center}px`, transition: transition?.replace('transform', 'top') }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`h-[40px] w-[40px] text-ui-muted transition-transform duration-200 ${ready ? 'rotate-180' : ''}`}>
+          <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+          <path d="M20 4v7h-7" />
+        </svg>
+        <span className="text-[22px] font-bold leading-none text-ui-muted">{ready ? '놓으면 새로고침' : '당겨서 새로고침'}</span>
+      </div>
     </div>
   )
 }

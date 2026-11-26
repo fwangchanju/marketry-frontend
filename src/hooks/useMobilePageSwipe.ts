@@ -90,10 +90,12 @@ function scrollerAtEdge(scroller: HTMLElement | null, dy: number): boolean {
 }
 
 // 모바일 페이지의 슬라이드 이동. 좌우: 왼쪽으로 밀면 next, 오른쪽으로 밀면 previous(페이지 이동).
-// 위아래(vertical을 넘길 때만, element는 이벤트를 붙일 판): 위로 밀면 next, 아래로 밀면 previous(나라 이동, 2026-11-27 사용자 결정). 미리보기 판 없이 지금 판만 밀려 나간다.
-export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void, allowPinchZoom = true, onSwipeStart?: () => void, vertical?: { element: HTMLElement | null; onSwipe: (direction: 'next' | 'previous') => void }) {
+// 위아래(vertical을 넘길 때만, element는 이벤트를 붙일 판): 위로 밀면 next(국가 변경), 아래로 밀면 previous(새로고침) — 2026-11-27 사용자 결정. 미리보기 판 없이 지금 판만 밀려 나간다.
+export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevious: () => void, onBeforeNavigate?: (direction: 'next' | 'previous') => void, allowPinchZoom = true, onSwipeStart?: () => void, vertical?: { element: HTMLElement | null; onSwipe: (direction: 'next' | 'previous') => void; minPreviousDistance?: number }) {
   const element = vertical?.element ?? null
   const onVerticalSwipe = vertical?.onSwipe
+  // 아래로 밀기(previous)는 새로고침이라, 실수로 넘어가지 않게 더 길게 당겨야 동작하게 할 수 있다.
+  const minPreviousDistance = vertical?.minPreviousDistance ?? 0
   const zoomed = useIsMobilePageZoomed()
   const startRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
   const suppressClickRef = useRef(false)
@@ -191,7 +193,7 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
       gesture = null
       if (!current.vertical) return
       const height = element.clientHeight || window.innerHeight
-      const moved = event.type === 'touchend' && Math.abs(lastDy) >= Math.max(24, height * 0.08)
+      const moved = event.type === 'touchend' && Math.abs(lastDy) >= Math.max(24, height * 0.08, lastDy > 0 ? minPreviousDistance : 0)
       if (!moved) { settleVertical(0); return }
       const direction = lastDy < 0 ? 'next' : 'previous'
       suppressClickRef.current = true
@@ -208,7 +210,7 @@ export function useMobilePageSwipe(enabled: boolean, onNext: () => void, onPrevi
       element.removeEventListener('touchend', onTouchEnd)
       element.removeEventListener('touchcancel', onTouchEnd)
     }
-  }, [element, settleVertical, verticalEnabled])
+  }, [element, minPreviousDistance, settleVertical, verticalEnabled])
   const onPointerDownCapture = (event: PointerEvent<HTMLElement>) => {
     // 두 번째 손가락이 닿으면 확대 동작이다. 밀던 판을 되돌리고 페이지 전환을 받지 않는다.
     if (!event.isPrimary) {
