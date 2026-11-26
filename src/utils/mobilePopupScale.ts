@@ -18,8 +18,8 @@ export function mobilePopupTop(screenHeight: number, popupHeight: number): numbe
 
 // MOBILE 팝업 양식(2026-11-27 사용자 결정): 외곽선 없는 둥근 패널 + 뒤 화면을 어둡게 해서 경계를 만든다.
 // 고르는 팝업(툴바 팝업·박스 크기 창)은 어두운 패널, 읽는 카드(종목·업종 길게 누르기)는 크림색을 그대로 둔다.
-// 사용 방법 창은 오래 읽는 창이라 60%, 금방 고르고 닫는 팝업은 지도가 덜 가려지게 40%로 어둡게 한다.
+// 뒤 화면은 사용 방법 창과 같은 60%로 모든 MOBILE 팝업을 통일한다(40% → 55% → 60%, 2026-11-27 사용자 결정).
 // 1.3배로 키워 그리는 팝업이라 모서리는 9px(화면에서 약 12px, 사용 방법 창과 같음)로 둔다.
-export const MOBILE_POPUP_BACKDROP_CLASS = 'fixed inset-0 z-[71] bg-black/40'
+export const MOBILE_POPUP_BACKDROP_CLASS = 'fixed inset-0 z-[71] bg-black/60'
 export const MOBILE_POPUP_Z_CLASS = 'z-[72]'
 export const MOBILE_PANEL_CLASS = '!rounded-[9px] !border-0 !bg-ui-panel !shadow-2xl'

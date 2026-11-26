@@ -6,6 +6,11 @@ export const DROPDOWN_GAP_PX = 4
 
 // 창 틀: 바탕·테두리·모서리·그림자·글자색. 위아래 안쪽 여백은 두지 않으므로 넘침 처리(`overflow-hidden` 또는 `overflow-y-auto`)는 쓰는 쪽에서 붙인다.
 export const DROPDOWN_PANEL_CLASS = 'rounded-md border border-ui-border bg-[var(--ui-panel)] text-ui-white shadow-xl'
+// MOBILE 툴바 팝업 안의 창 틀 — 외곽선 없는 둥근 패널(바깥 팝업 틀이 그림자와 뒤 화면 막을 맡는다, 2026-11-27 사용자 결정).
+export const MOBILE_DROPDOWN_PANEL_CLASS = 'rounded-[9px] bg-[var(--ui-panel)] text-ui-white'
+export function dropdownPanelClass(isMobile: boolean): string {
+  return isMobile ? MOBILE_DROPDOWN_PANEL_CLASS : DROPDOWN_PANEL_CLASS
+}
 
 // 항목: 창 끝까지 닿는 직각 줄, 좌우 12px, 올리거나 포커스가 오면 흰색 10%.
 export const DROPDOWN_ITEM_CLASS = 'rounded-none border-0 px-3 transition-colors hover:bg-ui-white/10 focus-visible:bg-ui-white/10'

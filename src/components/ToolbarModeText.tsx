@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDownIcon } from '@/components/icons/AppIcons'
-import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
+import { dropdownPanelClass } from '@/components/dropdownStyle'
+import { useMobileToolbar } from '@/components/MobileToolbarContext'
 import ToolbarPopup from '@/components/ToolbarPopup'
 
 export interface ToolbarModeMenuItem {
@@ -18,6 +19,7 @@ export interface ToolbarModeMenuItem {
 // 박스 너비는 110px로 고정해서 어느 페이지든 같다(2026-11-15 105px에서 5px 키움).
 // 제목 글자는 박스 전체가 아니라 꺽쇠 자리를 뺀 왼쪽 칸의 가운데에 둔다. showChevron을 주면(시장·글 페이지를 고르는 배지) 오른쪽 끝에 아래 꺽쇠를 고정하고, 주지 않아도(PROFILE) 같은 자리를 비워 글자 위치가 모든 배지에서 같다. menu를 주면 배지에 마우스를 올리면 그 아래에 시장 목록이 열리고, 마우스가 배지·목록 밖으로 나가면 잠시 뒤 닫힌다(2026-11-18, 클릭으로 열던 방식을 바꿨다). 마우스가 없는 터치 화면은 누르면 열고, 키보드는 Enter·Space로 열고 Esc로 닫는다.
 export default function ToolbarModeText({ page, label, showChevron = false, menu }: { page: string; label: string; showChevron?: boolean; menu?: ToolbarModeMenuItem[] }) {
+  const { isMobile } = useMobileToolbar()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -115,7 +117,7 @@ export default function ToolbarModeText({ page, label, showChevron = false, menu
         <div
           role="listbox"
           aria-label="시장 목록"
-          className={`w-[110px] overflow-hidden text-sm font-normal tracking-normal ${DROPDOWN_PANEL_CLASS}`}
+          className={`w-[110px] overflow-hidden text-sm font-normal tracking-normal ${dropdownPanelClass(isMobile)}`}
           onPointerEnter={handlePopupPointerEnter}
           onPointerLeave={handlePopupPointerLeave}
         >

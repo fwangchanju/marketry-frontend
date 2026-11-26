@@ -6,7 +6,8 @@ import { useTradingSession } from '@/hooks/useTradingSession'
 import { FONT_BAR_TIME } from '@/components/FontStyle'
 import ToolbarChip from '@/components/ToolbarChip'
 import ToolbarPopup from '@/components/ToolbarPopup'
-import { DROPDOWN_PANEL_CLASS } from '@/components/dropdownStyle'
+import { dropdownPanelClass } from '@/components/dropdownStyle'
+import { useMobileToolbar } from '@/components/MobileToolbarContext'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
 // 애프터 마켓은 서브 퍼플, 마켓 종료은 연회색이다(애프터 색은 종가·합산·별도 토글의 선택 칸에도 쓴다).
@@ -115,6 +116,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
   onChange: (basis: ChangeRateChoice) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const { isMobile } = useMobileToolbar()
   const rootRef = useRef<HTMLSpanElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const options = CHANGE_RATE_OPTIONS.map(option => ({ ...option, locked: option.value === 'afterHours' && !selectable }))
@@ -158,7 +160,7 @@ function ChangeRateModeSelector({ basis, selectable, onChange }: {
           popupRef={popupRef}
           ariaLabel="등락률 기준 선택"
           gapPx={6}
-          className={`w-max overflow-hidden ${DROPDOWN_PANEL_CLASS} text-sm font-normal tracking-normal`}
+          className={`w-max overflow-hidden ${dropdownPanelClass(isMobile)} text-sm font-normal tracking-normal`}
         >
           <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col">
             {options.map(option => (
