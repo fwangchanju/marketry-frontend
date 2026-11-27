@@ -32,7 +32,7 @@ export default function SnapshotMap({ market }: { market: SnapshotMarket }) {
   const { preferences, update, isLoadingDefaults } = useSnapshotMapPreferences(market, sheet)
   const publishedAt = useSnapshotPublishedAt(market, sheet)
   const tierRange = useSnapshotTierRange(settingPrefix, currencyUnit)
-  const sectorExclusion = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers)
+  const sectorExclusion = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers, sheet === 'MINE' ? market : null)
   const colorSettings = useSnapshotColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: sheetMarket })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   // 공통 설정 탭의 값은 저장하지 않고 이 화면 메모리에만 둔다(한국 지도와 같다).

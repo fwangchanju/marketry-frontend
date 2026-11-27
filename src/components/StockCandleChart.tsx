@@ -55,7 +55,11 @@ const BADGE_HEIGHT = 22
 // 숨긴 이동평균선(일수 목록)의 처음 값 — 모두 보인다. 매 렌더 새 배열을 넘기지 않게 상수로 둔다.
 const NO_HIDDEN_AVERAGES: number[] = []
 
-type PriceBadge = { top: number; text: string; color: string }
+type PriceBadge = { top: number; text: string; color: string; sub?: string }
+// 가격축 글자와 현재가·커서 배지 글자가 같은 크기로 보이도록 둘 다 이 값(px)을 쓴다.
+const AXIS_FONT_SIZE = 12
+// 거래량 칸 축은 천 단위를 K로 줄여 쓴다(40,000,000 → 40,000K). 숫자가 길면 축이 넓어져 가격 글자 오른쪽이 비어 보인다.
+const volumeAxisText = (amount: number) => `${Math.round(amount / 1000).toLocaleString('ko-KR')}K`
 const INTERVALS: { value: Interval; label: string }[] = [
   { value: 'day', label: '일봉' },
   { value: 'week', label: '주봉' },
@@ -177,6 +181,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       layout: {
         background: { type: ColorType.Solid, color: 'rgba(0, 0, 0, 0)' },
         textColor: AXIS_TEXT_COLOR,
+        fontSize: AXIS_FONT_SIZE,
         // 축·날짜 배지 글자를 사이트 글꼴로 그린다. 기본 글꼴(윈도우에서는 Trebuchet 등)은 한글 요일이 섞이면 글자가 배지 아래로 처진다.
         fontFamily: getComputedStyle(document.body).fontFamily,
         panes: { separatorColor: LINE_COLOR },
@@ -217,7 +222,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       averageLines.set(average.days, line)
     }
     // 거래량은 봉과 겹치지 않게 아래 칸(두 번째 판)에 회색 막대로 그린다.
-    const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'custom', minMove: 1, formatter: (amount: number) => Math.round(amount).toLocaleString('ko-KR') }, color: VOLUME_COLOR, priceLineVisible: false, lastValueVisible: false }, 1)
+    const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'custom', minMove: 1, formatter: volumeAxisText }, color: VOLUME_COLOR, priceLineVisible: false, lastValueVisible: false }, 1)
     // 임시 봉은 거래량이 없어서 막대를 비워 둔다(주봉·월봉은 확정된 날의 거래량 합을 그대로 보인다).
     volume.setData(bars.map(({ date, volume: amount, provisional }) => (provisional && amount === 0 ? { time: date as Time } : { time: date as Time, value: amount })))
     chart.panes()[1]?.setHeight(VOLUME_PANE_HEIGHT)
@@ -225,8 +230,11 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
     if (visible !== null && bars.length > visible) chart.timeScale().setVisibleLogicalRange({ from: bars.length - visible, to: bars.length + RIGHT_OFFSET_BARS })
     else chart.timeScale().fitContent()
     const indexByDate = new Map(bars.map((bar, index) => [bar.date, index]))
-    const volumeFormat = (amount: number) => Math.round(amount).toLocaleString('ko-KR')
+    const volumeFormat = volumeAxisText
     const lastBar = bars[bars.length - 1]
+    // 현재가 배지 둘째 줄의 등락률 — 위 정보 줄과 같은 값(마지막 일봉의 전일 종가 대비)이다.
+    const lastRate = data && data.length > 0 ? changeRate(data[data.length - 1].close, data[data.length - 2]) : null
+    const lastRateText = lastRate === null ? undefined : `${lastRate > 0 ? '+' : ''}${lastRate.toFixed(2)}%`
     let cursorBadge: PriceBadge | null = null
     // 현재가 배지 자리는 화면을 끌거나 크기가 바뀌면 달라지므로 그때마다 다시 잰다.
     const placeBadges = () => {
@@ -236,7 +244,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       setPriceBadges({
         textLeft: container.clientWidth - chart.priceScale('right').width() + PRICE_TEXT_INSET,
         cursor: cursorBadge,
-        last: lastY === null ? null : { top: lastY, text: axisPriceText(market, lastBar.close), color: lastBar.close >= lastBar.open ? UP_COLOR : DOWN_COLOR },
+        last: lastY === null ? null : { top: lastY, text: axisPriceText(market, lastBar.close), sub: lastRateText, color: lastBar.close >= lastBar.open ? UP_COLOR : DOWN_COLOR },
       })
     }
     let frame = 0
@@ -272,7 +280,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       setPriceBadges({ textLeft: 0, cursor: null, last: null })
       chart.remove()
     }
-  }, [bars, interval, market])
+  }, [bars, data, interval, market])
 
   // 이동평균선을 켜고 끌 때는 차트를 다시 만들지 않고 선만 숨긴다.
   useEffect(() => {
@@ -291,7 +299,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   const shownIndex = hoverIndex !== null && hoverIndex < bars.length ? hoverIndex : bars.length - 1
   const shownBar = bars[shownIndex]
   return (
-    <div className="flex min-h-0 flex-1 flex-col tabular-nums" data-capture-ignore>
+    <div className="flex min-h-0 flex-1 flex-col tabular-nums">
       {/* 차트를 넓게 보도록 종목명·현재가·등락률과 버튼을 한 줄에 모은다(2026-11-20 사용자 결정). */}
       {/* 첫 줄: 종목명·현재가·등락률, 둘째 줄: 일봉·주봉·월봉과 그 오른쪽에 이동평균선 표시(2026-11-20 사용자 결정). */}
       <div className="flex shrink-0 flex-col gap-1.5 px-3 pb-2 pt-1.5 text-xs">
@@ -371,10 +379,11 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
           <div
             key={order === 0 ? 'last' : 'cursor'}
             aria-hidden="true"
-            className="pointer-events-none absolute z-10 flex items-center whitespace-nowrap text-xs leading-none text-ui-white"
-            style={{ left: priceBadges.textLeft - BADGE_PADDING_X, top: badge.top - BADGE_HEIGHT / 2, height: BADGE_HEIGHT, paddingLeft: BADGE_PADDING_X, paddingRight: BADGE_PADDING_X, backgroundColor: badge.color }}
+            className="pointer-events-none absolute z-10 flex flex-col whitespace-nowrap leading-none text-ui-white"
+            style={{ fontSize: AXIS_FONT_SIZE, left: priceBadges.textLeft - BADGE_PADDING_X, top: badge.top - BADGE_HEIGHT / 2, height: badge.sub ? BADGE_HEIGHT * 2 - 4 : BADGE_HEIGHT, paddingLeft: BADGE_PADDING_X, paddingRight: BADGE_PADDING_X, backgroundColor: badge.color }}
           >
-            {badge.text}
+            <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT }}>{badge.text}</span>
+            {badge.sub && <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT - 4 }}>{badge.sub}</span>}
           </div>
         ))}
         {hoverAt && shownBar && hoverIndex !== null && (

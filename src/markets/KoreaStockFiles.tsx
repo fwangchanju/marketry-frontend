@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import type { SectorItem, StockSectorListItem } from '@/types/api'
+import type { SectorItem } from '@/types/api'
 import { toCount } from '@/utils/format'
 import { appAlert, appConfirm, appWarnConfirm } from '@/utils/appDialogBus'
 import { ClassificationUploadError, buildUploadPlan, readClassificationFile } from '@/utils/classificationUpload'
@@ -16,13 +16,20 @@ import { uploadClassification } from '@/api/custom'
 import type { ClassificationMarket } from '@/utils/markets'
 
 import type { StockHistoryAction, StockRow } from '@/components/StockTable'
+import type { ExportLine } from '@/markets/stockFileLines'
 import { createPortal } from 'react-dom'
 
-// 한국 내 기준의 엑셀(간편 업종 분류)과 초기화. 설정창 자리에 그린다.
-export default function KoreaStockFiles({ market = 'KOREA', items, sectors, rows, excelContainer, resetContainer, pushHistory, clearHistory }: {
+// 엑셀 파일 이름 끝에 붙는 시장 이름 — 시장마다 받은 파일이 구분되도록 한다.
+const EXCEL_MARKET_NAME: Record<ClassificationMarket, string> = { KOREA: '한국', JAPAN: '일본', USA: '미국' }
+
+// 내 기준의 엑셀(간편 업종 분류)과 초기화. 설정창 자리에 그린다. 시장마다 다른 것은 종목 칸(exportLine)뿐이다.
+export default function KoreaStockFiles({ market = 'KOREA', sectorIdByCode, exportLine, sectors, rows, excelContainer, resetContainer, pushHistory, clearHistory }: {
   // 어느 시장의 내 기준인지. 기본은 한국이다.
   market?: ClassificationMarket
-  items: readonly StockSectorListItem[]
+  // 분류할 수 있는 종목과 지금 업종(없으면 null).
+  sectorIdByCode: ReadonlyMap<string, number | null>
+  // 엑셀 한 줄 — 시장마다 종목 칸이 다르다. 대·중·소분류 칸은 공통이다.
+  exportLine: (row: StockRow) => ExportLine
   sectors: SectorItem[]
   // 지금 화면에 필터·정렬이 적용된 종목.
   rows: readonly StockRow[]
@@ -47,12 +54,12 @@ export default function KoreaStockFiles({ market = 'KOREA', items, sectors, rows
     let requestPending = false
     let uploadAttempted = false
     try {
-      const fileRows = await readClassificationFile(file)
+      const fileRows = await readClassificationFile(file, market === 'KOREA')
       if (fileRows.length === 0) {
         appAlert('읽을 수 있는 줄이 없습니다.\n열 이름이 종목코드·대분류·중분류·소분류인지 확인해 주세요.', { title: '적용 실패' })
         return
       }
-      const plan = buildUploadPlan(fileRows, sectors, new Map(items.map(item => [item.stockCode, item.sectorId])))
+      const plan = buildUploadPlan(fileRows, sectors, new Map(sectorIdByCode))
       // 창이 길어지지 않게 개수만 한 줄씩 적는다 — 건너뛰는 종목은 비어 있음·대분류 없음·목록에 없는 코드를 합친 수다.
       const skippedCount = plan.blankCount + plan.invalidCount + plan.unknownCodes.length + plan.autoAssignedCount
       if (plan.changedCount === 0) {
@@ -71,7 +78,7 @@ export default function KoreaStockFiles({ market = 'KOREA', items, sectors, rows
 
       applying = true
       setIsApplyingUpload(true)
-      const before = new Map(items.map(item => [item.stockCode, item.sectorId]))
+      const before = sectorIdByCode
       uploadAttempted = true
       requestPending = true
       const result = await uploadClassification(plan.assignments, market)
@@ -133,20 +140,12 @@ export default function KoreaStockFiles({ market = 'KOREA', items, sectors, rows
     }
     setIsExporting(true)
     try {
-      const filename = `[MARKETRY-업종분류] ${fileTimestamp()}.xlsx`
-      const lines = rows.map(row => ({
-        종목코드: row.code,
-        종목명: row.name,
-        '규모': row.cells.sizeTier ?? '',
-        마켓: row.cells.market ?? '',
-        '거래소 분류': row.cells.industry || '-',
-        '대분류': row.path[0],
-        '중분류': row.path[1],
-        '소분류': row.path[2],
-      }))
+      const filename = `[MARKETRY-${EXCEL_MARKET_NAME[market]} 업종] ${fileTimestamp()}.xlsx`
+      const lines = rows.map(row => ({ ...exportLine(row).cells, '대분류': row.path[0], '중분류': row.path[1], '소분류': row.path[2] }))
+      const first = exportLine(rows[0])
       await exportRowsToExcel(filename, '업종 분류', lines, {
-        alignByHeader: { 종목코드: 'center', '규모': 'center', 마켓: 'center' },
-        fixedWidths: { 종목코드: 15, 종목명: 30, '규모': 15, 마켓: 10, '거래소 분류': 20, 대분류: 20, 중분류: 20, 소분류: 20 },
+        alignByHeader: first.align,
+        fixedWidths: { ...first.widths, 대분류: 20, 중분류: 20, 소분류: 20 },
         // 업로드로 바꾸는 대·중·소분류만 수정할 수 있고 나머지 열은 잠근다.
         editableHeaders: ['대분류', '중분류', '소분류'],
       })
@@ -157,7 +156,7 @@ export default function KoreaStockFiles({ market = 'KOREA', items, sectors, rows
     }
   }
 
-  const hasCustomClassification = sectors.length > 0 || items.some(item => item.sectorId != null)
+  const hasCustomClassification = sectors.length > 0 || [...sectorIdByCode.values()].some(sectorId => sectorId != null)
   return (
     <>
       {isApplyingUpload && (

@@ -24,7 +24,7 @@ export default function SnapshotMobile({ market, mode }: { market: SnapshotMarke
   const source = useSnapshotMarketSummary(market, sheet)
   const { tree, isLoading, isIndexLoading, isIndexFetching, fixed, settingPrefix, currencyUnit } = source
   const tierRange = useSnapshotTierRange(settingPrefix, currencyUnit)
-  const { excludedIds: excludedSectorIds } = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers)
+  const { excludedIds: excludedSectorIds } = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers, sheet === 'MINE' ? market : null)
   const { colorScale, strongIndustryColor } = useSnapshotColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: 'mine' })
   const { filteredRootNodes } = useFilteredHeatmap(tree, excludedSectorIds, tierRange.excludedMarketValueTiers, FILTERS)
   const groups = useMemo(() => filteredRootNodes.map(toDisplayGroup), [filteredRootNodes])

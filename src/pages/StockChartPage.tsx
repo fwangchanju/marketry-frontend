@@ -1,10 +1,8 @@
+import { useIsFetching, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
-import DisclaimerFooter from '@/components/DisclaimerFooter'
 import MapStockChart from '@/components/MapStockChart'
 import MobileMapStockChart from '@/components/MobileMapStockChart'
-import NavBar from '@/components/NavBar'
-import NavSubBar from '@/components/NavSubBar'
-import Toolbar from '@/components/Toolbar'
+import PcPageFrame from '@/components/PcPageFrame'
 import ToolbarModeText from '@/components/ToolbarModeText'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
 import { CHART_MARKETS, defaultMapPath, type ChartRouteState } from '@/utils/chartRoute'
@@ -20,6 +18,8 @@ export default function StockChartPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const isNarrow = useIsNarrowScreen()
+  const queryClient = useQueryClient()
+  const isFetching = useIsFetching({ queryKey: ['stock-daily-candles'] })
   const market = CHART_MARKETS.find(item => item === marketParam) as MobileMapMarket | undefined
   if (!market || !code) return <Navigate to="/summary/korea" replace />
 
@@ -51,31 +51,20 @@ export default function StockChartPage() {
     )
   }
   return (
-    <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background text-ui-white">
-      <NavBar />
-      <NavSubBar />
-      <div className="flex min-h-0 flex-1">
-        {/* 다른 화면과 같은 본문 줄(main-settings-row) — 왼쪽 메뉴 자리만큼 비우고 좌우 4px 여백을 둔다. 이 화면은 설정창이 없다. */}
-        <div className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background">
-        <main data-main-area className="relative mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
-          <Toolbar>
-            <ToolbarModeText page="CHART" label={marketLabel} />
-          </Toolbar>
-          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
-            <MapStockChart
-              chartStock={chartStock}
-              marketLabel={marketLabel}
-              levelLabels={LEVEL_LABELS}
-              market={market}
-              closeChart={closeChart}
-              onGoToRoot={goToRoot}
-              onEnterSector={goToSector}
-            />
-          </div>
-          <DisclaimerFooter />
-        </main>
-        </div>
-      </div>
-    </div>
+    <PcPageFrame
+      toolbar={<ToolbarModeText page="CHART" label={marketLabel} />}
+      onRefresh={() => queryClient.invalidateQueries({ queryKey: ['stock-daily-candles'] })}
+      isRefreshing={isFetching > 0}
+    >
+      <MapStockChart
+        chartStock={chartStock}
+        marketLabel={marketLabel}
+        levelLabels={LEVEL_LABELS}
+        market={market}
+        closeChart={closeChart}
+        onGoToRoot={goToRoot}
+        onEnterSector={goToSector}
+      />
+    </PcPageFrame>
   )
 }

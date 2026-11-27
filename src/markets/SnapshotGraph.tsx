@@ -37,7 +37,7 @@ export default function SnapshotGraph({ market }: { market: SnapshotMarket }) {
   const preferences = useSnapshotGraphPreferences(market, sheet)
   const { beforeMinutes } = preferences
   const tierRange = useSnapshotTierRange(settingPrefix, currencyUnit)
-  const sectorExclusion = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers)
+  const sectorExclusion = useSnapshotSectorExclusion(settingPrefix, tree, tierRange.excludedMarketValueTiers, sheet === 'MINE' ? market : null)
   const colorSettings = useSnapshotColorSettings({ isMine: sheet === 'MINE', fixed, participantScope: sheetMarket })
   const { colorScale, strongIndustryColor, legendSwatches } = colorSettings
   const showDelta = intradayDelta && rangeStart === null && preferences.graphMode === 'delta'
