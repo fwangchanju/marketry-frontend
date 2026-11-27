@@ -28,17 +28,14 @@ export default function MobileGraphBars({ items, colorScale, highlightColor }: {
           if ('hiddenCount' in item && item.hiddenCount !== undefined) return <div key={item.key} className={`flex min-h-[48px] ${rowCap} flex-1 items-center gap-2 text-[28px] text-ui-muted`}><span className="w-[200px] shrink-0 pr-2 text-right font-bold">외 {item.hiddenCount}개</span><span aria-hidden="true">⋮</span></div>
           if (!('name' in item)) return null
           const content = <>
-            {/* 이름 배지 — PC 그래프의 호버(흰 35%)와 같은 색을 손가락으로 누르는 동안 보여 준다. */}
-            <span className="flex w-[200px] shrink-0 justify-end pr-2 font-bold" style={{ color: item.reference ? `color-mix(in srgb, ${highlightColor} var(--ui-data-text-mix), var(--ui-on-light))` : 'var(--ui-white)' }}><span className="max-w-full truncate px-1 group-active:bg-ui-white/35">{item.name}</span></span>
+            {/* 이름 배지 — 업종으로 들어가는 곳은 이 글자 부분뿐이다(줄 전체를 누르면 스크롤하다 잘못 들어가서). PC 그래프의 호버(흰 35%)와 같은 색을 손가락으로 누르는 동안 보여 준다. */}
+            <span className="flex w-[200px] shrink-0 items-center justify-end self-stretch pr-2 font-bold" style={{ color: item.reference ? `color-mix(in srgb, ${highlightColor} var(--ui-data-text-mix), var(--ui-on-light))` : 'var(--ui-white)' }}>{item.onSelect ? <button type="button" onClick={item.onSelect} className="h-full max-w-full truncate border-0 bg-transparent px-1 active:bg-ui-white/35">{item.name}</button> : <span className="max-w-full truncate px-1">{item.name}</span>}</span>
             <span className="relative min-w-0 flex-1">
               <span className="block h-[40px] rounded-sm border border-ui-control" style={{ width: `${Math.abs(item.value) / max * 100}%`, backgroundColor: item.reference ? highlightColor : resolveHeatmapColor(item.value, colorScale) }} />
               <span className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap pl-1 font-bold tabular-nums" style={{ left: `${Math.abs(item.value) / max * 100}%`, color: `color-mix(in srgb, ${resolveHeatmapExtremeColor(item.value, colorScale)} var(--ui-data-text-mix), var(--ui-on-light))` }}>{item.value > 0 ? '+' : ''}{item.value.toFixed(1)}%</span>
             </span>
           </>
-          const className = `group flex min-h-[48px] ${rowCap} flex-1 w-full items-center gap-2 pr-[144px] text-left text-[28px]`
-          return item.onSelect
-            ? <button key={item.key} type="button" onClick={item.onSelect} className={`${className} border-0 bg-transparent`}>{content}</button>
-            : <div key={item.key} className={className}>{content}</div>
+          return <div key={item.key} className={`flex min-h-[48px] ${rowCap} flex-1 w-full items-center gap-2 pr-[144px] text-left text-[28px]`}>{content}</div>
         })}
       </div>
     </div>
