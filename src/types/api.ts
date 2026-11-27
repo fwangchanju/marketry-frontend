@@ -100,6 +100,8 @@ export type HeatmapItem = z.infer<typeof HeatmapItemSchema>
 export interface HeatmapSectorNode {
   sectorId: number
   stableKey?: string | null
+  // 일본·미국 MARKETRY 업종의 옛 번호(새 자리로 옮기기 전 번호). 브라우저에 저장된 옛 제외 목록을 옮길 때만 쓴다.
+  legacySectorId?: number | null
   sectorName: string
   totalMarketValue: number
   isExcluded: boolean
@@ -161,6 +163,8 @@ export const SectorItemSchema = z.object({
   name: z.string(),
   parentId: z.number().nullable(),
   depth: z.number(),
+  // 업종 제외 여부 — 일본·미국 내 기준 화면만 쓴다(한국은 지도 응답의 값을 쓴다).
+  excluded: z.boolean().optional(),
 })
 export type SectorItem = z.infer<typeof SectorItemSchema>
 

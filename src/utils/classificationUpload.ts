@@ -17,13 +17,14 @@ const AUTO_ASSIGNED_SECTOR_NAME = '거래 정지'
 
 const normalizeName = (value: unknown) => String(value ?? '').trim()
 
-// 엑셀이 "005930"을 숫자 5930으로 바꿔 저장한 경우를 위해 6자리 미만 숫자는 앞을 0으로 채운다.
-const normalizeStockCode = (value: unknown) => {
+// 한국 종목코드는 엑셀이 "005930"을 숫자 5930으로 바꿔 저장한 경우를 위해 6자리 미만 숫자는 앞을 0으로 채운다.
+// 일본 종목코드(7203 같은 네 자리)는 원래 짧으므로 채우지 않는다.
+export const normalizeStockCode = (value: unknown, padsKoreanCode = true) => {
   const text = normalizeName(value)
-  return /^\d{1,5}$/.test(text) ? text.padStart(6, '0') : text
+  return padsKoreanCode && /^\d{1,5}$/.test(text) ? text.padStart(6, '0') : text
 }
 
-export async function readClassificationFile(file: File): Promise<UploadRow[]> {
+export async function readClassificationFile(file: File, padsKoreanCode = true): Promise<UploadRow[]> {
   const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' })
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   if (!sheet) return []
@@ -34,7 +35,7 @@ export async function readClassificationFile(file: File): Promise<UploadRow[]> {
       const lastFilled = names.reduce((last, name, index) => (name ? index : last), -1)
       const path = names.slice(0, lastFilled + 1)
       return {
-        stockCode: normalizeStockCode(record['종목코드']),
+        stockCode: normalizeStockCode(record['종목코드'], padsKoreanCode),
         path,
         invalid: path.some(name => !name),
       }

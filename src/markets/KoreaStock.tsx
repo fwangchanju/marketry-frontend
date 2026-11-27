@@ -6,6 +6,7 @@ import { useAssignStockSector, useBulkAssignStockSector, useUpdateStockAlias } f
 import { useMarketValueTiers } from '@/hooks/useMarketValueTiers'
 import { useSession } from '@/hooks/useSession'
 import KoreaStockFiles from '@/markets/KoreaStockFiles'
+import { koreaExportLine } from '@/markets/stockFileLines'
 import type { HeatmapResponse, SectorItem, StockSectorListItem } from '@/types/api'
 import { isAdminSession } from '@/utils/adminAccess'
 import { findAliasConflict } from '@/utils/aliasConflict'
@@ -98,6 +99,7 @@ export function KoreaMineStock({ items, sectors, sectorStats, snapshotTime, slot
       }
     })
   }, [items, sectors, isAdmin])
+  const sectorIdByCode = useMemo(() => new Map(items.map(item => [item.stockCode, item.sectorId])), [items])
   const editor: StockTableEditor = {
     sectors,
     sectorStats,
@@ -126,7 +128,7 @@ export function KoreaMineStock({ items, sectors, sectorStats, snapshotTime, slot
       editor={editor}
       slots={slots}
       marketValueTime={snapshotTime}
-      extras={context => <KoreaStockFiles items={items} sectors={sectors} excelContainer={slots.excel} resetContainer={slots.reset} {...context} />}
+      extras={context => <KoreaStockFiles sectorIdByCode={sectorIdByCode} exportLine={koreaExportLine} sectors={sectors} excelContainer={slots.excel} resetContainer={slots.reset} {...context} />}
     />
   )
 }
