@@ -1,7 +1,7 @@
 import type { SnapshotSheet } from '@/markets/useSnapshotSheet'
 import type { MarketScreenData } from '@/markets/marketContract'
 import MarketDatePicker from '@/components/MarketDatePicker'
-import { ChangeRateModeSelector } from '@/components/ToolbarControls'
+import { MarketSessionGroup } from '@/components/ToolbarControls'
 
 import { collectItems } from '@/utils/sectorAverage'
 import { snapshotRoute } from '@/utils/markets'
@@ -20,7 +20,7 @@ export function snapshotMarketData(source: SnapshotSource, sheet: SnapshotSheet,
     indexBars,
     state: isLoading ? { status: 'loading' } : isError ? { status: 'error', retry: () => { void refetchAll() } } : { status: 'ready' },
     refresh: { run: () => { void refetchAll() }, isRunning: isFetching, help: refreshHelp },
-    session: basis.visible ? <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">{sessionChip}<ChangeRateModeSelector basis={basis.choice} selectable onChange={basis.onChange} /></div> : sessionChip,
+    session: <MarketSessionGroup session={sessionChip} basis={{ visible: basis.visible, choice: basis.choice, selectable: true, onChange: basis.onChange }} />,
     period: {
       snapshotTime,
       liveSnapshotTime,
