@@ -6,7 +6,7 @@ export const SNAPSHOT_MARKET_LIST = [
   // dateHint: 날짜 배지에 마우스를 올렸을 때의 안내(저장 날짜가 현지 거래일인 시장만).
   // 배지 글자: 툴바 맨 왼쪽 시장 배지에 쓴다. 목록 이름: 배지를 눌렀을 때 열리는 시장 목록에 쓴다(KOREA·JAPAN·USA).
   { id: 'JAPAN', routeSegment: 'japan', badgeLabel: 'NIKKEI 225', menuLabel: 'JAPAN', dateHint: undefined },
-  { id: 'USA', routeSegment: 'usa', badgeLabel: 'S&P 500', menuLabel: 'USA', dateHint: '미국 거래일 기준입니다.' },
+  { id: 'USA', routeSegment: 'usa', badgeLabel: 'S&P 500', menuLabel: 'USA', dateHint: undefined },
 ] as const
 
 export type SnapshotMarket = (typeof SNAPSHOT_MARKET_LIST)[number]['id']

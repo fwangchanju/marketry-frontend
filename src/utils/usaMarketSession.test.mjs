@@ -14,9 +14,8 @@ test('서머타임이 바뀌는 날도 그날의 현지 마감으로 계산한�
   assert.deepEqual(usaCloseInKst('2026-11-02'), { time: '06:00', nextDay: true })
 })
 
-test('새로고침 안내는 한국 시간 마감을 첫 줄에 두고, 날짜가 없으면 그 줄을 뺀다', () => {
-  assert.equal(usaRefreshHelp('2026-11-13T16:00:00').split('\n')[0], '한국 시간으로 다음 날 06:00에 마감됩니다.')
-  assert.equal(usaRefreshHelp(null).split('\n')[0], '하루 한 번 갱신됩니다.')
+test('새로고침 안내는 5분 갱신만 알리고 한국 시간 마감·하루 한 번 문구가 없다', () => {
+  assert.equal(usaRefreshHelp(), '5분마다 갱신됩니다.')
 })
 
 test('세션 안내는 한국 칩과 같은 세 시간대 이름을 쓴다', () => {
