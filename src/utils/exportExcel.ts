@@ -12,6 +12,8 @@ export interface ExcelExportOptions {
 }
 
 // 엑셀 글꼴 — 윈도우 엑셀의 "맑은 고딕".
+// 잠긴 칸 바탕색(머리글 D9D9D9보다 훨씬 연한 회색).
+const LOCKED_CELL_COLOR = 'FFF2F2F2'
 const FONT_NAME = '맑은 고딕'
 
 // 글자 폭을 열 너비로 바꾼다 — 한글·한자 같은 넓은 글자는 2칸, 그 밖은 1칸으로 센다.
@@ -62,6 +64,8 @@ export async function exportRowsToExcel(
       if (typeof cell.value === 'number') cell.numFmt = '#,##0'
       else cell.numFmt = '@'
       if (isEditable) cell.protection = { locked: false }
+      // 시트를 잠글 때는 잠긴 칸에 연한 회색을 깐다. 수정할 칸은 흰색으로 남아 붙여넣기로 서식이 덮여도 구별이 유지된다(잠긴 칸은 붙여넣을 수 없다).
+      else if (editableHeaders.length > 0) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LOCKED_CELL_COLOR } }
     })
   })
 

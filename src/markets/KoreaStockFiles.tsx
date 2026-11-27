@@ -140,7 +140,7 @@ export default function KoreaStockFiles({ market = 'KOREA', sectorIdByCode, expo
     }
     setIsExporting(true)
     try {
-      const filename = `[MARKETRY-업종분류-${EXCEL_MARKET_NAME[market]}] ${fileTimestamp()}.xlsx`
+      const filename = `[MARKETRY-${EXCEL_MARKET_NAME[market]} 업종] ${fileTimestamp()}.xlsx`
       const lines = rows.map(row => ({ ...exportLine(row).cells, '대분류': row.path[0], '중분류': row.path[1], '소분류': row.path[2] }))
       const first = exportLine(rows[0])
       await exportRowsToExcel(filename, '업종 분류', lines, {
