@@ -20,7 +20,7 @@ export function useHeatmap(
     enabled: options?.enabled ?? true,
     ...MARKET_DATA_CACHE,
     // 지난 날짜의 지도는 바뀌지 않으니 1분마다 다시 받지 않는다.
-    ...(snapshotTime ? { refetchInterval: false } : {}),
+    ...(snapshotTime ? { refetchInterval: false, refetchOnWindowFocus: false } : {}),
   })
 }
 
