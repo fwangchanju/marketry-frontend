@@ -49,10 +49,12 @@ export default function SnapshotGraph({ market }: { market: SnapshotMarket }) {
   }, [showDelta, snapshotTime, snapshotTimes, beforeMinutes])
   const beforeQuotes = useMarketQuotes(market, beforeTime, beforeTime !== null)
   const beforeNodes = useMemo(() => (beforeTime === null ? [] : treeOf(beforeQuotes.data)), [beforeTime, treeOf, beforeQuotes.data])
-  const indexNow = useMarketIndexQuotes(market, showDelta && snapshotTime ? snapshotTime.slice(0, 10) : null)
-  const indexBefore = useMarketIndexQuotes(market, showDelta && beforeTime ? beforeTime.slice(0, 10) : null)
+  // 장중 지수를 저장하는 시장만 지수 막대를 비교한다. 저장하지 않는 시장(미국)은 조회하지 않는다.
+  const indexIntraday = showDelta && index.hasIntraday
+  const indexNow = useMarketIndexQuotes(market, indexIntraday && snapshotTime ? snapshotTime.slice(0, 10) : null)
+  const indexBefore = useMarketIndexQuotes(market, indexIntraday && beforeTime ? beforeTime.slice(0, 10) : null)
   const deltaValue = showDelta ? graphIndexValue({ showDelta: true, nowRate: intradayRateAt(indexNow.data, snapshotTime), beforeRate: intradayRateAt(indexBefore.data, beforeTime), dailyRate: null }) : null
-  const deltaIndexBars = useMemo<MarketIndexBar[]>(() => [deltaValue === null ? { key: index.key, name: index.name, value: null, reason: '비교할 지수 값이 없습니다.' } : { key: index.key, name: index.name, value: deltaValue }], [index, deltaValue])
+  const deltaIndexBars = useMemo<MarketIndexBar[]>(() => [deltaValue === null ? { key: index.key, name: index.name, value: null, reason: index.hasIntraday ? '비교할 지수 값이 없습니다.' : '장중 지수는 저장하지 않아 비교할 수 없습니다.' } : { key: index.key, name: index.name, value: deltaValue }], [index, deltaValue])
   const shownCount = useMemo(() => countVisibleItems(tree, sectorExclusion.excludedIds, tierRange.excludedMarketValueTiers), [tree, sectorExclusion.excludedIds, tierRange.excludedMarketValueTiers])
   const isAllLoading = isLoading || isIndexLoading || beforeQuotes.isLoading || indexNow.isLoading || indexBefore.isLoading
   const retrySource = { ...source, isError: isError || beforeQuotes.isError, refetchAll: () => Promise.all([refetchAll(), ...(beforeTime === null ? [] : [beforeQuotes.refetch()])]) }
