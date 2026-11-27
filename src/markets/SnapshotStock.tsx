@@ -107,7 +107,7 @@ function SnapshotStockTable({ market, stockCodes, categories, classifications, e
       { key: 'alias', header: '종목명 (한글)', align: 'left', text: row => row.alias ?? '-', sort: 'text', isNameEdit: true },
       { key: 'totalMarketValue', header: `시가총액 (${unit.symbol})`, align: 'right', text: row => `${amount(row, 1)} ${unit.suffix}`, sort: 'marketValue' },
       { key: 'totalMarketValueKrw', header: '시가총액 (₩)', align: 'right', text: row => `${amount(row, unit.krwRate)} 원`, sort: 'marketValue' },
-      { key: 'industry', header: sectorColumnLabel, align: 'left', text: row => row.cells.industry || '-', sort: 'text', cellHint: true, filter: { key: 'industry' } },
+      { key: 'industry', header: sectorColumnLabel, align: 'left', text: row => row.cells.industry || '-', sort: 'text', filter: { key: 'industry' } },
     ]
   }, [unit, sectorColumnLabel])
   const editor: StockTableEditor | null = canEdit ? {
