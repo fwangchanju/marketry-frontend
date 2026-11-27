@@ -1,15 +1,22 @@
-// 뉴욕 증시 세션. 이름은 한국 증시 세션 칩과 같다. 미국 화면은 마감 값만 하루 한 번 저장하므로 지금 보이는 세션은 늘 '마켓 종료'이고,
-// 안내창의 시간표만 한국 칩처럼 보여 준다(세션을 실제로 따라가지는 않는다).
-// 시각은 모두 뉴욕 현지 기준이고, 저장된 시각(snapshotTime)도 현지 마감 16:00이다.
+// 뉴욕 증시 세션. 이름은 한국 증시 세션 칩과 같다. 시각은 모두 뉴욕 현지 기준이고, 저장된 시각(snapshotTime)도 현지 시각이다.
+// 장중 5분 시세가 쌓이므로 보고 있는 시각이 어느 세션인지 따라간다. 16:00 줄은 종가를 저장한 줄이라 '마켓 종료'다.
 export type UsaSession = '프리 마켓' | '메인 마켓' | '애프터 마켓' | '마켓 종료'
-
-export const USA_SESSION: UsaSession = '마켓 종료'
 
 export const USA_SESSION_GUIDE: readonly { session: UsaSession; term: string; range: string }[] = [
   { session: '프리 마켓', term: 'PRE MARKET', range: '04:00~09:30' },
   { session: '메인 마켓', term: 'MAIN MARKET', range: '09:30~16:00' },
   { session: '애프터 마켓', term: 'AFTER MARKET', range: '16:00~20:00' },
 ]
+
+// 그 시각이 어느 세션인지. 16:00 종가 줄과 프리 마켓 전(04:00 앞)은 '마켓 종료'이고, 16:00보다 뒤는 20:00 뒤에도 다음 프리 마켓까지 '애프터 마켓'이다
+// (한국 칩이 합산·별도 선택지가 보이는 동안 애프터 마켓을 유지하는 것과 같다). 조기 마감일(13:00)은 시각표를 따로 두지 않아 메인 마켓으로 보인다.
+export function usaSessionAt(snapshotTime: string): UsaSession {
+  const clock = snapshotTime.slice(11, 16)
+  if (clock >= '04:00' && clock < '09:30') return '프리 마켓'
+  if (clock >= '09:30' && clock < '16:00') return '메인 마켓'
+  if (clock > '16:00') return '애프터 마켓'
+  return '마켓 종료'
+}
 
 const pad = (value: number) => String(value).padStart(2, '0')
 

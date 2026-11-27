@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { USA_SESSION_GUIDE, usaCloseInKst, usaRefreshHelp } from './usaMarketSession.ts'
+import { USA_SESSION_GUIDE, usaCloseInKst, usaRefreshHelp, usaSessionAt } from './usaMarketSession.ts'
 
 test('현지 마감은 겨울에 한국 06:00, 서머타임에 05:00이고 모두 다음 날이다', () => {
   assert.deepEqual(usaCloseInKst('2026-11-13'), { time: '06:00', nextDay: true })
@@ -21,4 +21,16 @@ test('새로고침 안내는 한국 시간 마감을 첫 줄에 두고, 날짜�
 
 test('세션 안내는 한국 칩과 같은 세 시간대 이름을 쓴다', () => {
   assert.deepEqual(USA_SESSION_GUIDE.map(row => row.session), ['프리 마켓', '메인 마켓', '애프터 마켓'])
+})
+
+test('보는 시각이 어느 세션인지 따라가고 16:00 종가 줄은 마켓 종료다', () => {
+  const at = clock => usaSessionAt(`2026-11-27T${clock}:00`)
+  assert.equal(at('04:00'), '프리 마켓')
+  assert.equal(at('09:25'), '프리 마켓')
+  assert.equal(at('09:30'), '메인 마켓')
+  assert.equal(at('15:55'), '메인 마켓')
+  assert.equal(at('16:00'), '마켓 종료')
+  assert.equal(at('16:05'), '애프터 마켓')
+  assert.equal(at('20:00'), '애프터 마켓')
+  assert.equal(at('03:55'), '마켓 종료')
 })
