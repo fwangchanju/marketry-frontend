@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { useNavigate } from 'react-router-dom'
-import MobilePathStockChart from '@/components/MobilePathStockChart'
 import { chartSectorPath } from '@/utils/chartSectorPath'
-import { useStockChart } from '@/hooks/useStockChart'
+import { useOpenStockChart } from '@/utils/chartRoute'
 import MobileSectorMapFrame from '@/components/MobileSectorMapFrame'
 import MobileMapShell from '@/components/MobileMapShell'
 import { useMobileMapInfoPopup } from '@/hooks/useMobileMapInfoPopup'
@@ -105,6 +104,23 @@ export interface MobileMarketData {
 }
 
 // 모든 시장의 MOBILE 업종 지도(sector)와 그룹 등락률(graph). 시장 이름을 보고 갈라지지 않는다.
+// MOBILE 업종 지도·그룹 등락률의 단계(대분류·중분류·종목 선택과 보기 모드)를 기록 칸에 적어 두는 모양.
+interface SavedMobileView {
+  majorSelection: { scope: string; name: string } | null
+  midSelection: { scope: string; name: string } | null
+  stockSelection: { scope: string; key: string; categoryName: string } | null
+  graphEntryOffset: number
+  viewMode: 'sector' | 'stock'
+  depth: number
+}
+function readSavedMobileView(): SavedMobileView | null {
+  if (typeof window === 'undefined') return null
+  const saved: unknown = window.history.state?.mobileMapView
+  if (!saved || typeof saved !== 'object') return null
+  const view = saved as SavedMobileView
+  return typeof view.depth === 'number' && (view.viewMode === 'sector' || view.viewMode === 'stock') && view.depth > 0 ? view : null
+}
+
 export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'graph'; data: MobileMarketData }) {
   const { market, scope, filteredNodes, excludedTiers, selectableDepth, isIndexPending, mapPreview, routes, menus, sheetMarket, chartMarket, onSelectIndex } = data
   const { colorScale, strongIndustryColor } = data.colors
@@ -116,13 +132,15 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
   const pageContentRef = useRef<HTMLElement>(null)
   // 종목 지도로 넘어갈 때 덮개로 남길 미리보기 판.
   const swipePreviewCanvasRef = useRef<HTMLDivElement>(null)
-  const [majorSelection, setMajorSelection] = useState<{ scope: string; name: string } | null>(null)
-  const [midSelection, setMidSelection] = useState<{ scope: string; name: string } | null>(null)
-  const [stockSelection, setStockSelection] = useState<{ scope: string; key: string; categoryName: string } | null>(null)
-  const [graphEntryOffset, setGraphEntryOffset] = useState(0)
+  // 종목 차트 화면 등 다른 화면에 갔다가 뒤로가기로 돌아오면, 그 기록 칸에 적어 둔 단계(mobileMapView)로 다시 연다(2026-11-27).
+  const [savedView] = useState(readSavedMobileView)
+  const [majorSelection, setMajorSelection] = useState<{ scope: string; name: string } | null>(savedView?.majorSelection ?? null)
+  const [midSelection, setMidSelection] = useState<{ scope: string; name: string } | null>(savedView?.midSelection ?? null)
+  const [stockSelection, setStockSelection] = useState<{ scope: string; key: string; categoryName: string } | null>(savedView?.stockSelection ?? null)
+  const [graphEntryOffset, setGraphEntryOffset] = useState(savedView?.graphEntryOffset ?? 0)
   // 모바일 화면 설정은 저장 버튼 없이 이 브라우저에 바로 기억한다. 분류 모드와 상관없이 공통이다(화면 취향은 브라우저 저장, 2026-10-03 결정).
   const [graphDepth] = useLocalPersistedState<number>('mobile.graphDepth', 1)
-  const [viewMode, setViewMode] = useState<'sector' | 'stock'>('sector')
+  const [viewMode, setViewMode] = useState<'sector' | 'stock'>(savedView?.viewMode ?? 'sector')
   const { popup: infoPopup, close: closeInfoPopup, openStockPopup: openStockPopupBase, openSectorPopup: openSectorPopupBase } = useMobileMapInfoPopup({ currencyUnit, mapBoundsRef: pageContentRef })
   // 박스 크기는 PC 설정과 따로 두고, MOBILE의 기본은 시총 비례(100)다. 동일 0 · 균형 50 · 시총 비례 100.
   const [storedBoxSizeMarketCapRatio, onChangeBoxSizeMarketCapRatio] = useLocalPersistedState<number>('mobile.boxSizeMarketCapRatio', 100)
@@ -202,10 +220,10 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
     ? { key: crumb.key, label: crumb.label, onClick: crumb.go }
     : { key: crumb.key, label: crumb.label, current: true })
   // 종목 단계에서 누르면 종목 지도와 같은 차트를 연다.
-  const { chartStock, openChart, closeChart } = useStockChart()
+  const openChartPage = useOpenStockChart()
   const openStockChart = (stock: HeatmapItem) => {
     closeInfoPopup()
-    openChart({ code: stock.stockCode, name: stock.stockName, sectorPath: chartSectorPath(mobilePathCrumbs) })
+    openChartPage(chartMarket, { code: stock.stockCode, name: stock.stockName }, { sectorPath: chartSectorPath(mobilePathCrumbs), marketLabel })
   }
   const pathNav = (
     <header className="shrink-0 bg-ui-background px-3 py-0" style={{ transform: `translateX(-${pathBarLeftShift}px)` }}>
@@ -261,9 +279,10 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
   // 들어간 단계 = 브라우저 기록 한 칸(PC 지도 화면과 같은 방식). 대분류·중분류·종목으로 한 단계 들어갈 때마다 칸을 쌓아서
   // 뒤로가기가 사이트를 떠나지 않고 한 단계씩 위로 올라가게 한다. 전체 화면에서 한 번 더 누르면 원래대로 이전 페이지로 나간다.
   const depth = Math.max(0, (major ? 1 : 0) + (mid ? 1 : 0) + (selectedStocks ? 1 : 0) - (isGraph ? graphEntryOffset : 0))
-  const historyDepthRef = useRef(0) // 지금 브라우저 기록 위치가 가리키는 깊이
+  // 돌아와 단계를 다시 연 경우는 기록 칸이 이미 그 깊이만큼 쌓여 있다.
+  const historyDepthRef = useRef(savedView?.depth ?? 0) // 지금 브라우저 기록 위치가 가리키는 깊이
   const historyConsumingRef = useRef(false) // 코드가 일으킨 history.go()의 popstate는 무시한다
-  const historyLocationRef = useRef('') // 칸을 쌓은 주소(시장이 바뀌어 주소가 달라졌으면 go()로 정리하지 않는다)
+  const historyLocationRef = useRef(savedView ? window.location.pathname + window.location.search : '') // 칸을 쌓은 주소(시장이 바뀌어 주소가 달라졌으면 go()로 정리하지 않는다)
   const historyNormalizedRef = useRef(false)
   const reduceToDepth = (target: number) => {
     if (isGraph && target === 0 && graphEntryOffset > 0) {
@@ -276,15 +295,17 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
     if (current > target && major) { setMajorSelection(null); setViewMode('sector') }
   }
   useEffect(() => {
-    // 다른 페이지에 갔다가 뒤로가기로 돌아오면 쌓인 칸만 남고 화면은 처음 상태라, 칸을 걷어 내 기준 칸으로 돌아간다.
+    // 다른 페이지에 갔다가 뒤로가기로 돌아왔는데 칸에 적어 둔 단계가 없으면(예전 기록) 화면은 처음 상태라, 칸을 걷어 내 기준 칸으로 돌아간다.
+    // 단계가 적혀 있으면 그 단계로 이미 다시 열었으므로 칸을 그대로 둔다.
     if (historyNormalizedRef.current) return
     historyNormalizedRef.current = true
+    if (savedView) return
     const stacked = window.history.state?.mobileMapDepth
     if (typeof stacked === 'number' && stacked > 0) {
       historyConsumingRef.current = true
       window.history.go(-stacked)
     }
-  }, [])
+  }, [savedView])
   useEffect(() => {
     if (depth > historyDepthRef.current) {
       for (let k = historyDepthRef.current + 1; k <= depth; k++) window.history.pushState({ ...(window.history.state ?? {}), mobileMapDepth: k }, '')
@@ -299,6 +320,11 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
       }
     }
   }, [depth])
+  // 지금 단계를 지금 기록 칸에 적어 둔다 — 다른 화면에 갔다가 돌아오면 이 값으로 다시 연다(위 칸 쌓기 다음에 실행돼 맨 위 칸에 적힌다).
+  useEffect(() => {
+    const view: SavedMobileView = { majorSelection, midSelection, stockSelection, graphEntryOffset, viewMode, depth }
+    window.history.replaceState({ ...(window.history.state ?? {}), mobileMapView: view }, '')
+  }, [majorSelection, midSelection, stockSelection, graphEntryOffset, viewMode, depth])
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       if (historyConsumingRef.current) {
@@ -432,7 +458,6 @@ export default function MobileMarketScreen({ mode, data }: { mode: 'sector' | 'g
         boxSize={boxSizeMarketCapRatio}
         onChangeBoxSize={onChangeBoxSizeMarketCapRatio}
       />
-        <MobilePathStockChart chartStock={chartStock} crumbs={mobilePathCrumbs} market={chartMarket} closeChart={closeChart} />
       </>
   )
 }
