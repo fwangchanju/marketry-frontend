@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { ChangeRateChoice } from '@/api/heatmap'
 import { accentColor } from '@/utils/accentPalette'
 import { type TradingSession } from '@/utils/tradingWindow'
@@ -45,7 +45,7 @@ const SESSION_GUIDE: { session: TradingSession; range: string }[] = [
 
 // 시장 시간대 칩 — 눌러서 시간대별 시간 범위를 안내하는 팝업을 칩 아래에 연다(달력 팝업과 같은 색·테두리).
 // 바깥을 누르거나 Esc를 누르면 닫힌다.
-function TradingSessionChip({ session: sessionOverride }: { session?: TradingSession }) {
+export function TradingSessionChip({ session: sessionOverride }: { session?: TradingSession }) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
@@ -202,17 +202,16 @@ export function ChangeRateModeSelector({ basis, selectable, onChange }: {
 }
 
 // 등락률 기준을 단일 버튼으로 통합하고, 눌렀을 때 설명과 함께 세 선택지를 안내한다.
-export function ChangeRateModeToggle({ basis, visible, selectable, onChange }: {
-  basis: ChangeRateChoice
-  visible: boolean
-  selectable: boolean
-  onChange: (basis: ChangeRateChoice) => void
+// 툴바의 시간대 칩 묶음 — 한국·일본·미국이 모두 이 묶음을 쓴다. 시간대 칩 하나가 기본이고, 등락률 기준(BASIS) 배지는 그 시장이 쓰고(basis가 있고) 지금 보여야 할 때만 4px 간격으로 붙는다.
+// 일본처럼 BASIS가 없는 시장은 basis를 null로 넘기면 시간대 칩만 보인다. 간격·정렬을 바꿀 일이 있으면 여기 한 곳만 고친다.
+export function MarketSessionGroup({ session, basis }: {
+  session: ReactNode
+  basis: { visible: boolean; choice: ChangeRateChoice; selectable: boolean; onChange: (basis: ChangeRateChoice) => void } | null
 }) {
   return (
     <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-      {/* 종가 지도는 정규장이 끝난 시점의 지도라서, 지금이 애프터 마켓이어도 시간대 글자는 "마켓 종료"로 둔다. */}
-      <TradingSessionChip session={basis === 'close' ? '마켓 종료' : undefined} />
-      {visible && <ChangeRateModeSelector basis={basis} selectable={selectable} onChange={onChange} />}
+      {session}
+      {basis?.visible && <ChangeRateModeSelector basis={basis.choice} selectable={basis.selectable} onChange={basis.onChange} />}
     </div>
   )
 }

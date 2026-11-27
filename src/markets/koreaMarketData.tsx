@@ -3,7 +3,7 @@ import { SECTOR_KOREA } from '@/utils/customRoutes'
 import { SNAPSHOT_REFRESH_HELP } from '@/components/NavBarPageActions'
 import NxtOnlyNotice from '@/components/NxtOnlyNotice'
 import SnapshotDatePicker from '@/components/SnapshotDatePicker'
-import { ChangeRateModeToggle } from '@/components/ToolbarControls'
+import { MarketSessionGroup, TradingSessionChip } from '@/components/ToolbarControls'
 import { useKoreaSettings } from '@/markets/useKoreaSettings'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotDateLabel } from '@/utils/format'
 import { resolveHeatmapColor } from '@/utils/heatmapColorScale'
@@ -26,7 +26,8 @@ export function koreaMarketData(settings: KoreaSettings, indexBars: MarketScreen
     indexBars,
     state: isLoading ? { status: 'loading' } : isError ? { status: 'error', retry: refetchHeatmap } : { status: 'ready' },
     refresh: { run: refetchHeatmap, isRunning: isRefetchingHeatmap, help: SNAPSHOT_REFRESH_HELP },
-    session: <ChangeRateModeToggle basis={changeRateChoice} visible={isAfterHoursControlsVisible} selectable={isAfterHoursSelectable} onChange={onChangeChangeRateMode} />,
+    // 종가 지도는 정규장이 끝난 시점의 지도라서, 지금이 애프터 마켓이어도 시간대 글자는 "마켓 종료"로 둔다.
+    session: <MarketSessionGroup session={<TradingSessionChip session={changeRateChoice === 'close' ? '마켓 종료' : undefined} />} basis={{ visible: isAfterHoursControlsVisible, choice: changeRateChoice, selectable: isAfterHoursSelectable, onChange: onChangeChangeRateMode }} />,
     period: {
       snapshotTime: data?.snapshotTime ?? null,
       liveSnapshotTime,
