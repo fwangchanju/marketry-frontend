@@ -11,7 +11,9 @@ const INDEX_LOOKBACK_DAYS = 14
 export function useSnapshotMarketIndex(market: SnapshotMarket, snapshotTime: string | null, liveSnapshotTime: string | null, rangeStart: string | null, snapshotTimes: readonly string[] | undefined) {
   const { key, name, hasIntraday } = SNAPSHOT_MARKETS[market].index
   const day = snapshotTime?.slice(0, 10) ?? null
-  const span = hasIntraday ? indexRange(rangeStart, snapshotTime, liveSnapshotTime) : day === null ? null : { startDate: rangeStart?.slice(0, 10) ?? day, endDate: day }
+  // 하루에 시세가 여러 개인 시장은 오늘 화면이 아직 종가 전이면 구간이 없다(indexRange). 그래도 그날 16:00 종가 줄처럼 장중 지수 값이 없는 시각은 종가 기준 값으로 대신하도록 그날 하루 구간을 둔다.
+  const dayOnly = day === null ? null : { startDate: rangeStart?.slice(0, 10) ?? day, endDate: day }
+  const span = hasIntraday ? (indexRange(rangeStart, snapshotTime, liveSnapshotTime) ?? (rangeStart === null ? dayOnly : null)) : dayOnly
   const tradingDays = useMemo(() => snapshotTimes?.map(time => time.slice(0, 10)), [snapshotTimes])
   const closes = useMarketIndexCloses(market, span ? shiftDate(span.startDate, -INDEX_LOOKBACK_DAYS) : null, span?.endDate ?? null)
   const intraday = useMarketIndexQuotes(market, hasIntraday && rangeStart === null ? day : null)
