@@ -20,7 +20,7 @@ export function snapshotMarketData(source: SnapshotSource, sheet: SnapshotSheet,
     indexBars,
     state: isLoading ? { status: 'loading' } : isError ? { status: 'error', retry: () => { void refetchAll() } } : { status: 'ready' },
     refresh: { run: () => { void refetchAll() }, isRunning: isFetching, help: refreshHelp },
-    session: basis.visible ? <>{sessionChip}<ChangeRateModeSelector basis={basis.choice} selectable onChange={basis.onChange} /></> : sessionChip,
+    session: basis.visible ? <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">{sessionChip}<ChangeRateModeSelector basis={basis.choice} selectable onChange={basis.onChange} /></div> : sessionChip,
     period: {
       snapshotTime,
       liveSnapshotTime,
