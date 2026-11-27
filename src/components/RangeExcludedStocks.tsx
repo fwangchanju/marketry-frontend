@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import ToolbarPopup from '@/components/ToolbarPopup'
 import PopupHeader from '@/components/PopupHeader'
-import { CountLabelWithBadge } from '@/components/KindBadge'
+import { DROPDOWN_SCROLL_CLASS, DROPDOWN_SNAP_ITEM_CLASS } from '@/components/dropdownStyle'
 import type { ExcludedStock } from '@/utils/rangeChangeRate'
 
-// 제외된 종목 팝업에 이름을 적는 최대 종목 수.
-const MAX_LISTED_STOCKS = 10
+// 제외 종목 목록에서 한 번에 보이는 줄 수와 한 줄 높이(rem, h-6). 넘치면 스크롤한다(팝업 크기는 예전 10줄 그대로).
+const VISIBLE_ROWS = 10
+const ROW_REM = 1.5
 
 interface Props {
   // 기준일 지도에 없어서 계산에서 뺀 종목.
@@ -83,15 +84,14 @@ export default function RangeExcludedStocks({ excludedStocks }: Props) {
             )}
             {hasExcluded && (
               <div className="mt-2 border-t border-ui-border px-2 pt-2">
-                {/* 목록은 시가총액이 큰 10종목까지만 적는다. 개수는 설정창 맨 위와 같은 "적은 수/전체 [종목]" 표기로 이 줄 오른쪽에 둔다(2026-11-27 사용자 지시, 머리줄에서 옮김). */}
-                <p className="mb-1 flex items-center justify-between gap-2 text-xs font-medium text-ui-text">
-                  <span>시가총액 순</span>
-                  <CountLabelWithBadge label={`${Math.min(excludedStocks.length, MAX_LISTED_STOCKS)}/${excludedStocks.length}종목`} />
-                </p>
-                {/* 종목 줄은 "시가총액 순" 아래에 8px 들여 쓴다(2026-11-27 사용자 지시). */}
-                <ul className="space-y-1 pl-2">
-                  {excludedStocks.slice(0, MAX_LISTED_STOCKS).map(stock => (
-                    <li key={stock.stockCode} className="flex items-center justify-between gap-2">
+                {/* 제외된 종목 전부를 시가총액 순으로 적고, 개수는 "시가총액 순 (n)"으로 둔다. 10줄이 넘으면 스크롤한다(2026-11-27 사용자 지시, 예전 상위 10종목·10/74 [종목] 표기를 바꿈). */}
+                <p className="mb-1 text-xs font-medium text-ui-text">시가총액 순 ({excludedStocks.length})</p>
+                {/* 스크롤 목록은 다른 필터 팝업과 같은 드롭다운 공통 스크롤 규칙을 쓴다: 팝업 좌우 끝까지 닿고(-mx-4 = 팝업 여백 8 + 이 칸 여백 8),
+                    줄 단위로 멈추며(snap), 보이는 높이는 줄 높이의 정수배(최대 10줄), 스크롤바는 오른쪽 끝에 자기 자리를 둔다(dropdown-scroll-list).
+                    종목명은 "시가총액 순" 아래에 8px 들여 쓴다(2026-11-27 사용자 지시). */}
+                <ul className={`dropdown-scroll-list -mx-4 m-0 list-none p-0 ${DROPDOWN_SCROLL_CLASS}`} style={{ maxHeight: `${VISIBLE_ROWS * ROW_REM}rem` }}>
+                  {excludedStocks.map(stock => (
+                    <li key={stock.stockCode} className={`flex h-6 items-center justify-between gap-2 pl-6 pr-4 ${DROPDOWN_SNAP_ITEM_CLASS}`}>
                       <span className="min-w-0 truncate" data-hint={stock.stockName}>{stock.stockName}</span>
                       {/* 종목코드는 숫자와 영문이 섞여 있어(예: 0035S0) 글자 폭이 같은 고정폭 글꼴로 써야 코드마다 너비가 같다. */}
                       <span className="shrink-0 font-mono text-xs text-ui-muted">{stock.stockCode}</span>
