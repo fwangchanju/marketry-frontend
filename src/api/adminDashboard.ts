@@ -9,6 +9,8 @@ const AdminDashboardMetricsSchema = z.object({
   pages: z.array(z.object({ page: z.string(), pageLoads: z.number(), averageLoadMs: z.number(), clientErrors: z.number() })),
   mobileCaptures: z.number(),
   averageMobileCaptureMs: z.number(),
+  pcCaptures: z.number(),
+  averagePcCaptureMs: z.number(),
 })
 
 export function getAdminDashboardMetrics(days: number, signal?: AbortSignal) {

@@ -26,3 +26,20 @@ export function resolveSnapshotOnOrBefore(days: readonly SnapshotDayLike[], date
 export function snapshotTimesAsDays(times: readonly string[]): SnapshotDayLike[] {
   return times.map(time => ({ date: time.slice(0, 10), snapshotTime: time }))
 }
+
+// 하루에 시세가 여러 개인 시장(미국: 프리마켓·정규장·애프터마켓 5분 시세)에서 종가 줄만 고른다(2026-11-27).
+// 종가 줄(예: 미국 16:00)이 있는 날은 그 줄만 남기고, 아직 종가가 없는 날(오늘 장중)은 그대로 둔다. closeClock이 없는 시장(일본)은 그대로다.
+// 날짜를 고르면 "그날의 종가 지도"가 열리게 하려는 것이다.
+export function keepCloseRows(times: readonly string[], closeClock: string | null): string[] {
+  if (closeClock === null) return [...times]
+  const closeDates = new Set(times.filter(time => time.slice(11, 16) === closeClock).map(time => time.slice(0, 10)))
+  return times.filter(time => !closeDates.has(time.slice(0, 10)) || time.slice(11, 16) === closeClock)
+}
+
+// 가장 최근 종가 줄의 시각. 없으면 null이다(텔레그램 종가 지도가 이 줄로 그린다).
+export function latestCloseTime(times: readonly string[], closeClock: string): string | null {
+  for (let index = times.length - 1; index >= 0; index--) {
+    if (times[index].slice(11, 16) === closeClock) return times[index]
+  }
+  return null
+}

@@ -3,7 +3,6 @@ import { revealMobileCapture } from '@/utils/revealMobileCapture'
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { useSettled } from '@/hooks/useSettled'
 import { useIsNarrowScreen } from '@/hooks/useIsNarrowScreen'
-import MobileTopBar from '@/components/MobileTopBar'
 import MobileSectorMapFrame from '@/components/MobileSectorMapFrame'
 import MobileMapShell from '@/components/MobileMapShell'
 import { useCarriedBoxSize } from '@/hooks/useCarriedBoxSize'
@@ -38,8 +37,6 @@ import ChangeRateBar from '@/components/ChangeRateBar'
 import DisclaimerFooter from '@/components/DisclaimerFooter'
 import EmptyMessage, { CustomPageBadgeLink, EmptyLogoMessage, EMPTY_DATA_MESSAGE, EMPTY_FILTER_MESSAGE, EMPTY_MINE_MESSAGE } from '@/components/EmptyMessage'
 import Spinner, { MOBILE_LOADING_SIZE_CLASS } from '@/components/Spinner'
-import MapStockChart from '@/components/MapStockChart'
-import MobileMapStockChart from '@/components/MobileMapStockChart'
 import { MapChangeFilterSections, MapExperimentSections } from '@/components/MapSettingsSections'
 import { useMapStockChart } from '@/hooks/useStockChart'
 import NavBarPageActions from '@/components/NavBarPageActions'
@@ -57,7 +54,7 @@ import { limitDepth, flattenAllItems } from '@/hooks/useFilteredHeatmap'
 import type { HeatmapSectorNode, HeatmapItem } from '@/types/api'
 import MarketToolbarContent from '@/components/MarketToolbarContent'
 import Toolbar from '@/components/Toolbar'
-import type { MobileMapMarket } from '@/components/MobileMapSheet'
+import type { MobileMapMarket } from '@/utils/mobileMarketRoutes'
 import type { MarketColors, MarketFilters, MarketMap, MarketScreenData } from '@/markets/marketContract'
 import type { marketMenu } from '@/utils/marketMenu'
 import type { TaxonomyKey } from '@/utils/taxonomyNames'
@@ -145,7 +142,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
   const navigate = useNavigate()
   const { isNativeFullscreen, handleToggleNativeFullscreen } = useNativeFullscreen()
   // 종목 박스의 차트 아이콘·클릭·더블 클릭으로 지도 자리에 그 종목의 차트를 보여 준다(툴바·면책 줄은 그대로). 뒤로가기도 차트에서 지도로 돌아온다.
-  const { chartStock, closeChart, stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ stockPopupOnHover, sectorNodes: filteredRootNodes })
+  const { stockChartTrigger, setStockChartTrigger, openStockChart } = useMapStockChart({ stockPopupOnHover, sectorNodes: filteredRootNodes, market: sheetMarket, marketLabel: label })
   const [isMobileScreenshotSelected, setIsMobileScreenshotSelected] = useState(false)
   // 공통 설정 탭의 설정은 어디에도 저장하지 않는다. 종목 이동의 켜기 상태와 옮긴 결과(stockMoveState)도 이 화면의 메모리에만 둔다.
   const [stockMoveEnabled, setStockMoveEnabled] = useState(false)
@@ -333,7 +330,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
   // 지도를 그릴 수 없을 때의 안내. 판과 같은 좌표계에 그려 다른 MOBILE 화면과 같은 크기로 보이게 한다.
   const mobileStatusFrame = (
     <div className="flex items-center justify-center bg-ui-background" style={{ width: `${SUMMARY_CAPTURE_FRAME_WIDTH}px`, height: `${MAP_MOBILE_CAPTURE_FRAME_HEIGHT}px`, transform: `scale(${mobileFrameScale})`, transformOrigin: 'top left' }}>
-      {isLoading ? <Spinner showElapsed className={MOBILE_LOADING_SIZE_CLASS} />
+      {isLoading ? <Spinner delayReveal showElapsed className={MOBILE_LOADING_SIZE_CLASS} />
         : isError ? <Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retry} />
           : <p className="text-[28px] text-ui-muted">{isMineEmpty ? EMPTY_MINE_MESSAGE : totalItemCount === 0 ? EMPTY_DATA_MESSAGE : EMPTY_FILTER_MESSAGE}</p>}
     </div>
@@ -370,7 +367,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
           zoomMode="pinch"
           onSwipe={direction => navigate(direction === 'next' ? routes.summary : routes.graph)}
           toolbar={mapToolbarNode}
-          topBar={<MobileTopBar title="종목 지도" titleTo={routes.summary} titleLabel="업종 지도로 이동" />}
+          pageTitle="MAP"
           frameHeight={MAP_MOBILE_CAPTURE_FRAME_HEIGHT * mobileFrameScale}
           frame={mobileFrameNode || mobileStatusFrame}
           nextPreview={sectorPreview}
@@ -379,17 +376,6 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
           boxSize={mobileBoxSizeRatio}
           onChangeBoxSize={onChangeMobileBoxSizeRatio}
         />
-        {chartStock !== null && (
-          <MobileMapStockChart
-            chartStock={chartStock}
-            marketLabel={label}
-            levelLabels={LEVEL_LABELS}
-            market={sheetMarket}
-            closeChart={closeChart}
-            onGoToRoot={() => goToDepth(0)}
-            onEnterSector={enterSector}
-          />
-        )}
       </>
     )
   }
@@ -420,10 +406,6 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
             <div className="flex min-h-0 flex-1">
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">
               {features.timeWindowNotice}
-              {chartStock !== null ? (
-                <MapStockChart chartStock={chartStock} marketLabel={label} levelLabels={LEVEL_LABELS} market={sheetMarket} closeChart={closeChart} onGoToRoot={() => handleGoToDepth(0)} onEnterSector={enterSector} />
-              ) : (
-              <>
               {path.length > 0 && (
                 // 이름마다 "그 단계로만" 이동하는 링크다 — 줄 전체를 눌러 전체로 가던 동작은 없앴다. 지금 보고 있는 마지막 이름은 현재 위치 표시다.
                 <PathBar
@@ -439,7 +421,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
               )}
               {/* 로딩·오류 원은 모든 페이지 공통 자리(MainAreaLoading, 메인 영역 기준)에 둔다. */}
               {isLoading ? (
-                <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
+                <MainAreaLoading><Spinner delayReveal showElapsed /></MainAreaLoading>
               ) : isError ? (
                 <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={retry} /></MainAreaLoading>
               ) : visibleItems.length === 0 ? (
@@ -489,8 +471,6 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
                     onZoomOutComplete={handleZoomOutComplete}
                   />
                 </div>
-              )}
-              </>
               )}
               {/* 등락률 색상 범례 — 지도 우하단에 오른쪽 끝에 붙여 둔다. 이 줄만큼 지도 아래쪽이 올라온다. 로딩·오류·빈 화면에서도 면책 문구와 함께 맨 아래에 그대로 둔다. */}
               <DisclaimerFooter rightContent={<ChangeRateBar swatches={legendSwatches} />} />

@@ -5,9 +5,10 @@ import { getSnapshotDays } from '@/api/heatmap'
 import { heatmapKeys } from '@/hooks/queryKeys'
 import { CalendarIcon, ChevronDownIcon } from '@/components/icons/AppIcons'
 import ToolbarPopup from '@/components/ToolbarPopup'
+import { popupBadgeClass } from '@/components/popupBadgeStyle'
+import { MOBILE_TOUCH_MIN_HEIGHT_CLASS, MOBILE_TOUCH_MIN_SIZE_CLASS } from '@/utils/mobilePopupScale'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
 import { IconCornerDownRight } from '@tabler/icons-react'
-import { FILLED_ICON_CLASS } from '@/components/NavBarPageActions'
 import { useSnapshotDays, useTradingDayGap } from '@/hooks/useHeatmap'
 import { useKoreanCalendarHolidays } from '@/hooks/useKoreanCalendarHolidays'
 import { isJapanMarketClosed } from '@/utils/japanMarketCalendar'
@@ -15,6 +16,8 @@ import { getKstDate } from '@/utils/tradingWindow'
 import Spinner from '@/components/Spinner'
 import { toSnapshotDateLabel } from '@/utils/format'
 import type { MarketQuery } from '@/types/api'
+import { keepCloseRows } from '@/utils/snapshotPick'
+import { SNAPSHOT_CLOSE_CLOCK } from '@/utils/snapshotCloseClock'
 
 type CalendarMarket = MarketQuery | 'JAPAN' | 'USA'
 
@@ -67,7 +70,8 @@ function useCalendarDays(market: CalendarMarket, month: string, options?: { enab
   const korea = useSnapshotDays(isSnapshotMarket(market) ? 'KOSPI' : (market as MarketQuery), month, { ...options, enabled: !isSnapshotMarket(market) && (options?.enabled ?? true) })
   const japan = useSnapshotTimes(market, options?.enabled ?? true)
   if (!isSnapshotMarket(market)) return korea
-  const byDate = new Map((japan.data ?? []).filter(time => time.startsWith(month)).map(time => [time.slice(0, 10), time]))
+  // 날짜마다 그날의 마지막 시세(미국은 종가 줄이 있으면 그 줄)를 쓴다.
+  const byDate = new Map(keepCloseRows((japan.data ?? []).filter(time => time.startsWith(month)), market === 'USA' ? SNAPSHOT_CLOSE_CLOCK.USA : null).map(time => [time.slice(0, 10), time]))
   return { ...japan, data: japan.data === undefined ? undefined : [...byDate].map(([date, snapshotTime]) => ({ date, snapshotTime })) }
 }
 
@@ -299,7 +303,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
               const hasBand = bandStart !== null && bandEnd !== null && bandStart < bandEnd && date >= bandStart && date <= bandEnd
               const bandShape = date === bandStart ? 'left-1/2 right-0' : date === bandEnd ? 'left-0 right-1/2' : `inset-x-0 ${weekday === 0 || day === 1 ? 'rounded-l-full' : ''} ${weekday === 6 || day === daysInMonth ? 'rounded-r-full' : ''}`
               return (
-                <div key={date} className="relative my-0.5 flex h-7 items-center justify-center">
+                <div key={date} className={`relative my-0.5 flex h-7 items-center justify-center ${MOBILE_TOUCH_MIN_HEIGHT_CLASS}`}>
                   {hasBand && <span aria-hidden="true" className={`absolute inset-y-0 bg-ui-control ${bandShape}`} />}
                   <button
                     type="button"
@@ -309,7 +313,7 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
                     onClick={() => onPick(date, closingTimeByDate.get(date))}
                     onMouseEnter={() => { if (selectable !== false) onHoverDate?.(date) }}
                     onMouseLeave={() => onHoverDate?.(null)}
-                    className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 ${isToday ? 'border-brand' : 'border-transparent'} ${
+                    className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 ${MOBILE_TOUCH_MIN_SIZE_CLASS} ${isToday ? 'border-brand' : 'border-transparent'} ${
                       selected
                         ? 'bg-brand-surface font-semibold text-ui-white'
                         : isToday
@@ -412,15 +416,11 @@ function MonthGrid({ market, holidayColor, month, onMoveMonth, onSetMonth, isMon
 // 달력의 로딩·오류 원 크기 — 한 달 달력(너비 240px, 높이 약 248px) 안에 들어가는 가장 큰 크기다. 안의 크기는 모두 원 너비에 대한 비율이라 메인 영역과 같은 모양이다.
 const CALENDAR_SPINNER_CLASS = 'h-[14.5rem] w-[14.5rem]'
 
-const APPLY_BUTTON_CLASS =
-  'shrink-0 rounded border-0 bg-brand-surface px-2.5 py-1 text-center text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-surface'
-
-const RESET_BUTTON_CLASS =
-  'shrink-0 rounded border-0 bg-ui-control px-2.5 py-1 text-center text-[13px] font-normal leading-none text-ui-white transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
-
+// 팝업 배지 공통 양식(popupBadgeClass)의 색만 여기서 붙인다. 크기·글자는 공통 양식이 PC·MOBILE에 맞춰 정한다.
+const APPLY_BUTTON_COLOR = 'bg-brand-surface text-ui-white hover:bg-brand-surface-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-surface'
+const RESET_BUTTON_COLOR = 'bg-ui-control text-ui-white hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
 // 거래일 배지와 같은 모양의 YTD 버튼 — 누르면 연초~최근일 날짜만 고른다.
-const YTD_BUTTON_CLASS =
-  'inline-flex h-5 shrink-0 items-center rounded border-0 bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text transition-colors hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
+const YTD_BUTTON_COLOR = 'bg-ui-control text-ui-text hover:bg-ui-control-hover disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-ui-control'
 
 // 달력 아이콘을 누르면 아래로 달력 창이 뜬다. 데이터가 있는 날짜(종가 지도가 있는 날과 오늘)만 누를 수 있다.
 // 날짜를 골라도 대기 상태로만 두고 "적용"을 눌러야 지도가 바뀐다.
@@ -675,7 +675,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
         onClick={toggleOpen}
         className={`toolbar-badge-control flex h-6 items-center gap-1 border-0 px-1.5 font-medium text-inherit outline-none transition-colors hover:bg-ui-control focus-visible:bg-ui-control ${isOpen ? 'bg-ui-control' : 'bg-transparent'}`}
       >
-        <CalendarIcon strokeWidth={2.2} className={`h-[15px] w-[15px] shrink-0 ${isOpen ? FILLED_ICON_CLASS : ''}`} aria-hidden />
+        <CalendarIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />
         {/* 날짜 글자(기간이면 "~ 종료일"까지)도 버튼 안에 둬서 칩 어디를 눌러도 달력이 열린다. */}
         {children}
       </button>
@@ -691,7 +691,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
           <div className="mb-2 flex items-center justify-between gap-3 border-b border-ui-border pb-2 text-[13px]">
             <span className="flex min-w-0 items-center gap-3">
               {onSelectRange && (
-                <span role="radiogroup" aria-label="선택 방식" className="inline-flex h-5 items-center overflow-hidden rounded">
+                <span role="radiogroup" aria-label="선택 방식" className="inline-flex items-center gap-1">
                   {([['하루', false], ['기간', true]] as const).map(([label, rangeValue]) => (
                     <button
                       key={label}
@@ -699,7 +699,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                       role="radio"
                       aria-checked={isRangeMode === rangeValue}
                       onClick={() => switchMode(rangeValue)}
-                      className={`flex h-5 items-center border-0 px-2 text-[13px] font-normal leading-none transition-colors ${isRangeMode === rangeValue ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-text hover:bg-ui-control-hover'}`}
+                      className={`${popupBadgeClass('switch')} ${isRangeMode === rangeValue ? 'bg-brand-surface text-ui-white' : 'bg-ui-control text-ui-text hover:bg-ui-control-hover'}`}
                     >
                       {label}
                     </button>
@@ -721,7 +721,7 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   <span className="truncate text-ui-white">{toSnapshotDateLabel(draftEnd.snapshotTime)}</span>
                 </span>
               )}
-              {tradingDayBadge !== null && <span className="ml-1 inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text">{tradingDayBadge}</span>}
+              {tradingDayBadge !== null && <span className="ml-1 inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[0.8125rem] font-normal leading-none text-ui-text">{tradingDayBadge}</span>}
             </span>
               ) : (
             <span className="flex items-center gap-1.5">
@@ -736,12 +736,12 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                   <span className="text-ui-muted">{viewedDayLabel}</span>
                 </>
               )}
-              {tradingDayBadge !== null && <span className="ml-0.5 inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text">{tradingDayBadge}</span>}
+              {tradingDayBadge !== null && <span className="ml-0.5 inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[0.8125rem] font-normal leading-none text-ui-text">{tradingDayBadge}</span>}
             </span>
               )}
             </span>
             {isMobile && tradingDayBadge !== null && (
-              <span className="inline-flex h-5 shrink-0 items-center rounded bg-ui-control px-1.5 text-[13px] font-normal leading-none text-ui-text">{tradingDayBadge}</span>
+              <span className={`${popupBadgeClass('tag')} bg-ui-control text-ui-text`}>{tradingDayBadge}</span>
             )}
           </div>
           {isRangeCalendar ? (
@@ -816,14 +816,14 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 )}
               </div>
               <div className="mt-1 flex min-w-0 items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]">
-                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={YTD_BUTTON_CLASS}>
+                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={`${popupBadgeClass('tag')} ${YTD_BUTTON_COLOR}`}>
                   YTD
                 </button>
                 <span className="flex shrink-0 items-center gap-1.5">
-                  <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={RESET_BUTTON_CLASS}>
+                  <button type="button" disabled={draftStart === null && draftEnd === null} onClick={resetRange} className={`${popupBadgeClass('action')} ${RESET_BUTTON_COLOR}`}>
                     선택 해제
                   </button>
-                  <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={APPLY_BUTTON_CLASS}>
+                  <button type="button" disabled={draftStart === null || draftEnd === null} onClick={applyRange} className={`${popupBadgeClass('action')} ${APPLY_BUTTON_COLOR}`}>
                     적용
                   </button>
                 </span>
@@ -899,10 +899,10 @@ export default function SnapshotDatePicker({ market, viewedSnapshotTime, liveSna
                 )}
               </div>
               <div className={`mt-1 flex ${isMobile ? 'w-60' : 'w-[31rem]'} items-center justify-between gap-2 border-t border-ui-border pt-2 text-[13px]`}>
-                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={YTD_BUTTON_CLASS}>
+                <button type="button" aria-label="YTD 기간 선택" onClick={pickYtd} disabled={ytdStart === null} className={`${popupBadgeClass('tag')} ${YTD_BUTTON_COLOR}`}>
                   YTD
                 </button>
-                <button type="button" disabled={draftDay === null} onClick={applyDay} className={APPLY_BUTTON_CLASS}>
+                <button type="button" disabled={draftDay === null} onClick={applyDay} className={`${popupBadgeClass('action')} ${APPLY_BUTTON_COLOR}`}>
                   적용
                 </button>
               </div>

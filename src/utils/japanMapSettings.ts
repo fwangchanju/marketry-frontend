@@ -130,5 +130,5 @@ export const JAPAN_REFRESH_HELP = '5분마다 갱신됩니다.\n시세는 약 20
 // 기억 이름은 한국 화면과 같이 맞춘다(지도 Map, 그래프 Graph, 종목 Stock, 섹터 Sector). 그래서 한·미·일을 옮겨도 같은 화면의 고른 탭이 유지된다.
 export const JAPAN_SETTINGS_TAB_STORAGE = { map: 'Map', graph: 'Graph', stock: 'Stock', sector: 'Sector' } as const
 
-// 일본 화면의 Basis는 MARKETRY만 제공해서 다른 분류를 고를 수 없다. 공통 선택 영역에 넘기는 빈 동작이다.
+// 일본 화면의 Mode는 MARKETRY만 제공해서 다른 분류를 고를 수 없다. 공통 선택 영역에 넘기는 빈 동작이다.
 export const NO_TAXONOMY_CHANGE = () => {}

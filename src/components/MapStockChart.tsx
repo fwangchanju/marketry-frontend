@@ -2,7 +2,7 @@ import StockCandleChart from '@/components/StockCandleChart'
 import StockChartView from '@/components/StockChartView'
 import type { ChartStock } from '@/hooks/useStockChart'
 
-// 지도 페이지(한국·일본·미국)가 지도 자리에 띄우는 종목 차트 — 경로 줄(이름을 누르면 그 분류의 지도로)과 일봉 차트.
+// 종목 차트 화면(CHART)의 본문 — 경로 줄(이름을 누르면 그 분류의 지도로)과 일봉 차트. 한국·일본·미국 공통.
 
 export default function MapStockChart({
   chartStock,

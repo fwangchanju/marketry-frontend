@@ -5,10 +5,10 @@ export type UsaSession = '프리 마켓' | '메인 마켓' | '애프터 마켓' 
 
 export const USA_SESSION: UsaSession = '마켓 종료'
 
-export const USA_SESSION_GUIDE: readonly { session: UsaSession; range: string }[] = [
-  { session: '프리 마켓', range: '04:00~09:30' },
-  { session: '메인 마켓', range: '09:30~16:00' },
-  { session: '애프터 마켓', range: '16:00~20:00' },
+export const USA_SESSION_GUIDE: readonly { session: UsaSession; term: string; range: string }[] = [
+  { session: '프리 마켓', term: 'PRE MARKET', range: '04:00~09:30' },
+  { session: '메인 마켓', term: 'MAIN MARKET', range: '09:30~16:00' },
+  { session: '애프터 마켓', term: 'AFTER MARKET', range: '16:00~20:00' },
 ]
 
 const pad = (value: number) => String(value).padStart(2, '0')

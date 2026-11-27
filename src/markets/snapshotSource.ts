@@ -5,6 +5,7 @@ import type { CurrencyUnit } from '@/utils/currencyUnit'
 import type { HeatmapSectorNode } from '@/types/api'
 import type { JAPAN_MAP_FIXED } from '@/utils/japanMapSettings'
 import type { SnapshotMarket } from '@/utils/markets'
+import type { ChangeRateChoice } from '@/api/heatmap'
 
 // 스냅샷 시장 서머리(SnapshotSummary)가 시장마다 다른 부분을 받는 모양. 공통 훅(useSnapshotMarketSummary)이 이 모양으로 돌려준다.
 // 새 시장(대만 등)은 같은 모양의 훅 하나를 만들면 된다 — 화면 구성은 공통 화면이 한다.
@@ -34,6 +35,8 @@ export interface SnapshotSource {
   // 장 상태 칩(시세가 아직 없으면 null).
   sessionChip: ReactNode
   refreshHelp: string
+  // 애프터마켓 등락률 기준(종가·합산·별도, 미국). 고를 수 없는 시장이나 시간대면 visible이 false다.
+  basis: { choice: ChangeRateChoice; visible: boolean; onChange: (choice: ChangeRateChoice) => void; isCloseView: boolean }
   // 설정 화면이 없는 고정 값(색상).
   fixed: { colorScale: (typeof JAPAN_MAP_FIXED)['colorScale']; strongIndustryColor: string }
   tabStorageName: string

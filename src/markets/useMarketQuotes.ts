@@ -3,6 +3,7 @@ import client from '@/api/client'
 import { snapshotMarketInfo, type SnapshotMarket } from '@/utils/markets'
 import type { IndexClose, IntradayIndexQuote } from '@/utils/indexChange'
 import { calculatePeriodDetailed, type PeriodExcludedStock } from '@/utils/snapshotPeriod'
+import { INFREQUENT_DATA_CACHE, MARKET_DATA_CACHE } from '@/hooks/cacheConfig'
 
 // 스냅샷 목록으로 시세를 주는 시장의 조회. 시장마다 다른 것은 주소 조각뿐이다. 시세가 어느 출처에서 왔는지는 서버만 안다.
 export type MarketQuote = { stockCode: string; currentPrice: number; lastPrice: number; changeRate: number; totalMarketValue: number; closeVerified?: boolean | null }
@@ -18,6 +19,8 @@ export function useMarketQuotes(market: SnapshotMarket, snapshotTime: string | n
     enabled,
     queryKey: [segment, 'quotes', snapshotTime],
     queryFn: async () => (await client.get<MarketQuoteSnapshot>(`/${segment}/quotes`, { params: snapshotTime ? { snapshotTime } : undefined })).data,
+    // 최신 시세는 장중에 5분마다 새로 저장되므로 1분마다 다시 받는다(2026-11-27, 일본·미국 공통). 지난 시각의 시세는 바뀌지 않아 그대로 둔다.
+    ...(snapshotTime === null ? MARKET_DATA_CACHE : {}),
   })
 }
 
@@ -27,6 +30,8 @@ export function useMarketSnapshotTimes(market: SnapshotMarket, enabled = true) {
     queryKey: [segment, 'quotes', 'snapshots'],
     enabled,
     queryFn: async () => (await client.get<string[]>(`/${segment}/quotes/snapshots`)).data,
+    // 새 5분 시세가 쌓이면 달력·종가 줄 목록에도 따라온다.
+    ...INFREQUENT_DATA_CACHE,
   })
 }
 
@@ -46,6 +51,8 @@ export function useListedStocks(market: SnapshotMarket, enabled = true) {
     queryKey: [segment, 'stocks'],
     enabled,
     queryFn: async () => (await client.get<ListedStock[]>(`/${segment}/stocks`)).data,
+    // 종목 목록은 하루에 한 번 정도만 바뀌어 페이지를 옮길 때마다 다시 받지 않는다(2026-11-27).
+    ...INFREQUENT_DATA_CACHE,
   })
 }
 
@@ -56,6 +63,7 @@ export function useMarketIndexCloses(market: SnapshotMarket, from: string | null
     enabled: from !== null && to !== null,
     queryKey: [segment, 'index-closes', from, to],
     queryFn: async () => (await client.get<IndexClose[]>(`/${segment}/index-closes`, { params: { from, to } })).data,
+    ...INFREQUENT_DATA_CACHE,
   })
 }
 
@@ -78,5 +86,7 @@ export function useMarketIndexQuotes(market: SnapshotMarket, date: string | null
     enabled: date !== null,
     queryKey: [segment, 'index-quotes', date],
     queryFn: async () => (await client.get<IntradayIndexQuote[]>(`/${segment}/index-quotes`, { params: { date } })).data,
+    // 장중 지수는 5분마다 새로 저장되므로 최신 시세와 같이 1분마다 확인한다.
+    ...MARKET_DATA_CACHE,
   })
 }

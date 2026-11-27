@@ -1,6 +1,9 @@
 export const MARKET_DATA_CACHE = {
   staleTime: 60_000,
   refetchInterval: 60_000,
+  // 다른 창을 보다 돌아오면 1분이 지난 시세는 바로 새로 받는다(2026-11-27 사용자 결정, 한국·일본·미국 공통). 앱 전체 기본은 꺼져 있다.
+  // 뒤에 가려진 탭은 주기 갱신을 멈추므로, 돌아왔을 때 옛 시세를 보지 않게 하려는 것이다.
+  refetchOnWindowFocus: true,
 } as const
 
 // 하루 한 번(고정 시각) 갱신되거나, 외부 요인으로 가끔 바뀌는 데이터용.

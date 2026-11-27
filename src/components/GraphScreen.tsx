@@ -102,7 +102,7 @@ export default function GraphScreen({ market, graph, menu, taxonomy, filters, co
               {features.timeWindowNotice}
               <div className="flex min-h-0 w-full flex-1 flex-col pt-4 pb-[19.5px]">
                 {state.status === 'loading' ? (
-                  <MainAreaLoading><Spinner showElapsed /></MainAreaLoading>
+                  <MainAreaLoading><Spinner delayReveal showElapsed /></MainAreaLoading>
                 ) : state.status === 'error' ? (
                   <MainAreaLoading><Spinner errorMessage="데이터를 불러오지 못했습니다." onRetry={state.retry} /></MainAreaLoading>
                 ) : period.snapshotTime === null ? (

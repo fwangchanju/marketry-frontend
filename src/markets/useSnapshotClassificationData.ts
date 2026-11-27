@@ -6,6 +6,7 @@ import { customHeatmapKeys } from '@/hooks/queryKeys'
 import type { SnapshotSheet } from '@/markets/useSnapshotSheet'
 import type { SectorItem } from '@/types/api'
 import { snapshotMarketInfo, type SnapshotMarket } from '@/utils/markets'
+import { INFREQUENT_DATA_CACHE } from '@/hooks/cacheConfig'
 
 // stableKey·legacyId는 MARKETRY를 새 자리로 옮긴 뒤에만 온다. excluded는 내 기준 업종의 제외 여부다.
 export type SnapshotCategory = { id: number; parentId: number | null; name: string; stableKey?: string | null; legacyId?: number | null; excluded?: boolean }
@@ -33,8 +34,8 @@ export function useSnapshotClassificationData(market: SnapshotMarket, sheet: Sna
   const isMine = sheet === 'MINE'
   const sectors = useCustomSectors({ market, enabled: isMine })
   const assignments = useStockAssignments(market, { enabled: isMine })
-  const publicCategories = useQuery({ queryKey: [routeSegment, 'categories'], enabled: !isMine, queryFn: async () => (await client.get<SnapshotCategory[]>(`/${routeSegment}/categories`)).data })
-  const publicClassifications = useQuery({ queryKey: [routeSegment, 'classifications'], enabled: !isMine, queryFn: async () => (await client.get<Record<string, SnapshotClassification>>(`/${routeSegment}/classifications`)).data })
+  const publicCategories = useQuery({ queryKey: [routeSegment, 'categories'], enabled: !isMine, queryFn: async () => (await client.get<SnapshotCategory[]>(`/${routeSegment}/categories`)).data, ...INFREQUENT_DATA_CACHE })
+  const publicClassifications = useQuery({ queryKey: [routeSegment, 'classifications'], enabled: !isMine, queryFn: async () => (await client.get<Record<string, SnapshotClassification>>(`/${routeSegment}/classifications`)).data, ...INFREQUENT_DATA_CACHE })
   const mineCategories = useMemo(() => sectors.data?.map((sector): SnapshotCategory => ({ id: sector.id, parentId: sector.parentId, name: sector.name, excluded: sector.excluded ?? false })), [sectors.data])
   const mineClassifications = useMemo(() => (sectors.data && assignments.data ? toClassifications(sectors.data, assignments.data) : undefined), [sectors.data, assignments.data])
   const categories = isMine

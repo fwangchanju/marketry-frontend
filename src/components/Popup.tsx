@@ -3,7 +3,8 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { appConfirm } from '@/utils/appDialogBus'
 import { mobileViewport } from '@/utils/mobileViewport'
-import { MOBILE_POPUP_SCALE } from '@/utils/mobilePopupScale'
+import { MOBILE_POPUP_BACKDROP_CLASS, MOBILE_POPUP_SCALE, MOBILE_POPUP_Z_CLASS, mobilePopupTop } from '@/utils/mobilePopupScale'
+import { swallowNextClick } from '@/utils/swallowNextClick'
 
 export interface PopupContent {
   title: string
@@ -64,8 +65,6 @@ const POPUP_GAP = 2
 // 커서 이동 팝업과 마우스 사이의 간격(오른쪽·아래).
 const POINTER_GAP = 14
 const POPUP_MARGIN = 8
-// MOBILE 팝업의 윗변은 줄 수와 관계없이 보이는 화면 높이의 이 비율에서 시작한다(2026-11-25 사용자 결정). 줄이 많으면 아래로만 길어진다.
-const MOBILE_POPUP_TOP_RATIO = 0.27
 // MOBILE 팝업의 너비는 종목·업종, 시장, 내용 길이, 화면 확대와 관계없이 늘 같다. 높이는 내용 줄 수를 따른다(2026-11-25 사용자 결정).
 // 이 값에 MOBILE_POPUP_SCALE을 곱한 너비로 보인다.
 const MOBILE_POPUP_WIDTH = 200
@@ -97,7 +96,7 @@ function placeNearPointer(el: HTMLElement, point: { x: number; y: number }, boun
   el.style.visibility = 'visible'
 }
 
-// MOBILE 팝업을 가로 가운데, 정해진 윗변 위치에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
+// MOBILE 팝업을 가로 가운데, 정해진 중심선 위치에 다시 놓는다. 창 크기와 화면 확대·이동이 바뀌어도 같은 자리를
 // 유지하도록 열 때의 값이 아니라 지금 화면을 매번 읽는다.
 function placeMobilePopup(el: HTMLElement) {
   const view = mobileViewport()
@@ -110,7 +109,8 @@ function placeMobilePopup(el: HTMLElement) {
   const width = MOBILE_POPUP_WIDTH * scale
   const height = el.offsetHeight * scale
   const left = (screenWidth - width) / 2
-  const top = Math.max(POPUP_MARGIN, Math.min(screenHeight * MOBILE_POPUP_TOP_RATIO, screenHeight - height - POPUP_MARGIN))
+  // 세로 위치는 툴바 팝업과 같은 중심선(mobilePopupTop)에 맞춘다.
+  const top = mobilePopupTop(screenHeight, height)
   el.style.transform = `scale(${scale / zoom})`
   el.style.left = `${view.left + left / zoom}px`
   el.style.top = `${view.top + top / zoom}px`
@@ -127,6 +127,17 @@ interface PopupBodyProps {
 
 function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, mobileEnlarged }: PopupBodyProps) {
   const elRef = useRef<HTMLDivElement>(null)
+  // MOBILE 팝업이 떠 있을 때 바깥을 누르면 팝업만 닫고, 그 누름이 아래 업종·종목까지 눌려 이동하지 않게 한다(2026-11-27 사용자 제보).
+  useEffect(() => {
+    if (!mobileEnlarged) return
+    const onDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && elRef.current?.contains(event.target)) return
+      swallowNextClick()
+      onClose()
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    return () => document.removeEventListener('pointerdown', onDown, true)
+  }, [mobileEnlarged, onClose])
   // MOBILE 팝업은 길게 누르는 동안(손가락을 떼기 전에) 열린다. 떼는 순간의 클릭이 팝업에 닿아 바로 닫히지 않게,
   // 팝업 위에서 누르기 시작한 클릭만 받는다. 시간으로 막으면 클릭이 늦게 올 때 뚫린다(2026-11-25 재현).
   const pressedRef = useRef(false)
@@ -147,7 +158,7 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, mobileEnlarge
     const el = elRef.current
     if (!el) return
     if (mobileEnlarged) {
-      // MOBILE에서는 누린 칸 옆이 아니라 가로 가운데, 정해진 윗변 위치에 띄운다.
+      // MOBILE에서는 누른 칸 옆이 아니라 가로 가운데, 정해진 중심선 위치에 띄운다.
       placeMobilePopup(el)
       return
     }
@@ -241,10 +252,12 @@ function PopupBody({ popup, onExcludeSector, onOpenChart, onClose, mobileEnlarge
 
   return (
     <>
+      {/* MOBILE은 외곽선 없이 둥근 크림색 카드 + 뒤 화면 어둡게(툴바 팝업과 같은 막, 2026-11-27 사용자 결정). PC는 그대로. */}
+      {mobileEnlarged && <div aria-hidden="true" className={MOBILE_POPUP_BACKDROP_CLASS} />}
       <div
         ref={elRef}
         data-heatmap-popup
-        className={`invisible ${mobileEnlarged ? 'absolute z-[70] box-border cursor-pointer' : 'fixed z-[9999] w-max break-words'} select-none border border-[var(--ui-popup-border)] px-2 py-1 text-left text-base text-ui-background shadow-lg ${popup.tooltip ? 'pointer-events-none' : ''}`}
+        className={`invisible ${mobileEnlarged ? `absolute ${MOBILE_POPUP_Z_CLASS} box-border cursor-pointer rounded-[9px] border-0 shadow-2xl` : 'fixed z-[9999] w-max break-words border border-[var(--ui-popup-border)] shadow-lg'} select-none px-2 py-1 text-left text-base text-ui-background ${popup.tooltip ? 'pointer-events-none' : ''}`}
         onPointerDown={mobileEnlarged ? () => { pressedRef.current = true } : undefined}
         onClickCapture={mobileEnlarged ? event => {
           const pressed = pressedRef.current
