@@ -11,15 +11,16 @@ import { FONT_BAR_MODE_STATUS } from '@/components/FontStyle'
 import { REFRESH_BUTTON_SPIN_MS } from '@/utils/uiFeedback'
 import type { MarketScreenData } from '@/markets/marketContract'
 import type { marketMenu } from '@/utils/marketMenu'
+import { CHART_MARKET_OF } from '@/utils/chartRoute'
 
 // 툴바 내용 — PC와 MOBILE, 화면과 캡처, 모든 시장이 같은 것을 쓴다. 오른쪽(분류 배지)은 있을 때만 그린다.
 export default function MarketToolbarContent({ page, market, menu, right }: {
   page: 'SUMMARY' | 'GRAPH' | 'MAP'
-  market: Pick<MarketScreenData, 'label' | 'period' | 'session' | 'refresh'>
+  market: Pick<MarketScreenData, 'id' | 'label' | 'period' | 'session' | 'refresh'>
   menu: ReturnType<typeof marketMenu>
   right: ReactNode | null
 }) {
-  const { label, period, session, refresh } = market
+  const { id, label, period, session, refresh } = market
   return (
     <>
       <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
@@ -32,7 +33,7 @@ export default function MarketToolbarContent({ page, market, menu, right }: {
         )}
         {period.rangeStart !== null && (
           <ToolbarChip bare tone="text-ui-muted">
-            <RangeExcludedStocks excludedStocks={period.excludedStocks} />
+            <RangeExcludedStocks excludedStocks={period.excludedStocks} chartMarket={CHART_MARKET_OF[id]} />
           </ToolbarChip>
         )}
         {!period.isPast && (

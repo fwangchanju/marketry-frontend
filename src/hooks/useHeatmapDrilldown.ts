@@ -19,8 +19,16 @@ function findPathToSector<T extends HeatmapSectorNode>(
   return null
 }
 
+function readHistoryHeatmapPath(): string[] {
+  if (typeof window === 'undefined' || !window.location.pathname.startsWith('/map')) return []
+  const saved: unknown = window.history.state?.heatmapPath
+  return Array.isArray(saved) && saved.every(name => typeof name === 'string') ? saved : []
+}
+
 export function useHeatmapDrilldown<T extends HeatmapSectorNode>(rootNodes: T[]) {
-  const [path, setPath] = useState<string[]>([])
+  // 다른 화면(종목 차트 등)에 갔다가 뒤로가기로 돌아오면, 그 기록 칸에 적어 둔 업종 경로(heatmapPath)로 다시 연다(2026-11-27).
+  // 처음 들어온 지도 칸에는 경로가 없어서 전체 화면으로 시작한다.
+  const [path, setPath] = useState<string[]>(readHistoryHeatmapPath)
 
   let currentNode: T | null = null
   let currentSiblings = rootNodes

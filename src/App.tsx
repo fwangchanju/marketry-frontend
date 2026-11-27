@@ -32,6 +32,7 @@ const TermsPage = lazy(() => import('./pages/TermsPage'))
 const SourcePage = lazy(() => import('./pages/SourcePage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
 const GuidePage = lazy(() => import('./pages/GuidePage'))
+const StockChartPage = lazy(() => import('./pages/StockChartPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
@@ -120,7 +121,8 @@ function ResponsiveSnapshotGraph({ market }: { market: SnapshotMarket }) {
 // 모바일(폭 768px 이하, 769px 미만)에서는 서머리·지도(모바일 요약 화면)와 글 페이지만 열고, 그 밖의 PC 전용 화면은 안내만 보여 준다.
 // 글 페이지(/info 아래의 가이드·개인정보처리방침·데이터·약관·문의)는 모바일 틀(MobileDocumentShell)이 있어 모바일에서도 열린다.
 function isMobileOpenPath(pathname: string) {
-  return pathname === '/info' || pathname.startsWith('/info/')
+  // 종목 차트 화면(/chart/…)은 MOBILE 지도에서도 여는 화면이라 MOBILE에서 연다.
+  return pathname === '/info' || pathname.startsWith('/info/') || pathname.startsWith('/chart/')
 }
 
 function RedirectKeepingQuery({ to }: { to: string }) {
@@ -212,6 +214,8 @@ export default function App() {
             {SNAPSHOT_MARKET_LIST.map(market => <Route key={market.id} path={snapshotRoute('/summary', market.id)} element={<ResponsiveSnapshotSummary market={market.id} />} />)}
           </Route>
           {/* Google OAuth 동의 화면에 등록하는 공개 페이지 — 로그인 여부와 무관하게 누구나 볼 수 있다. */}
+          {/* 종목 차트 화면(/chart/korea/005930 등) — 지도·제외 종목 팝업에서 종목 차트를 열면 이 화면으로 온다. 누구나 볼 수 있다. */}
+          <Route path="/chart/:market/:code" element={<StockChartPage />} />
           <Route path="/info" element={<Navigate to="/info/guide" replace />} />
           <Route path="/info/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/info/terms" element={<TermsPage />} />

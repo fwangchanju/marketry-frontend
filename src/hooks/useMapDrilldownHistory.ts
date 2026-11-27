@@ -25,10 +25,11 @@ export function useMapDrilldownHistory({
   // 들어가면 그 단계 수만큼), 브라우저 뒤로가기(⌘[, 트랙패드 스와이프, 마우스 뒤로가기 버튼)를 연달아
   // 눌러도 칸이 있는 만큼 계속 한 단계씩 올라간다. 전체 화면에서 더 누르면 원래대로 사이트 이전 페이지로
   // 나간다. 앞으로가기(⌘])는 들어갔던 단계로 다시 내려간다. 각 칸은 그 시점의 경로(heatmapPath)를 가진다.
-  const historyDepthRef = useRef(0) // 지금 브라우저 기록 위치가 가리키는 깊이
+  // 뒤로가기로 돌아와 기록 칸의 경로로 다시 열린 지도는 처음부터 그 깊이에 있다(useHeatmapDrilldown이 heatmapPath로 시작). 그 아래 칸들은 기록에 이미 있다.
+  const historyDepthRef = useRef(path.length) // 지금 브라우저 기록 위치가 가리키는 깊이
   const historyConsumingRef = useRef(false) // 코드가 일으킨 history.go()의 popstate는 무시한다
-  const historyPathnameRef = useRef('') // 기록 칸을 쌓은 주소 — 다른 주소로 이동했으면 go()로 정리하지 않는다
-  const prevPathLengthRef = useRef(0)
+  const historyPathnameRef = useRef(path.length > 0 ? window.location.pathname : '') // 기록 칸을 쌓은 주소 — 다른 주소로 이동했으면 go()로 정리하지 않는다
+  const prevPathLengthRef = useRef(path.length)
   // 다른 페이지(그룹)에서 업종을 눌러 들어온 칸 — 그 칸이 곧 기준 칸이다. 기준 칸의 깊이(평소 0, 그룹에서 중분류로 들어오면 2)보다 얕은 단계는 기록 칸이 없다.
   const entryFromOtherPageRef = useRef(false)
   const baseDepthRef = useRef(0)
