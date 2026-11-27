@@ -119,7 +119,7 @@ const CHANGE_RATE_OPTIONS = [
   { value: 'afterHours' as const, label: '별도', titlePrefix: '애프터 마켓 ', descriptionBefore: '당일 종가', descriptionAfter: '현재가' },
 ]
 
-function ChangeRateModeSelector({ basis, selectable, onChange }: {
+export function ChangeRateModeSelector({ basis, selectable, onChange }: {
   basis: ChangeRateChoice
   selectable: boolean
   onChange: (basis: ChangeRateChoice) => void

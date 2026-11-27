@@ -11,20 +11,21 @@ import PopupHeader from '@/components/PopupHeader'
 const SessionDot = ({ color, gapClass = 'mr-1' }: { color: string; gapClass?: string }) => <span aria-hidden="true" className={`${gapClass} inline-block h-2 w-2 rounded-full`} style={{ backgroundColor: color }} />
 
 
-// 가운데 설명(일본 "한자 한글읽기" 예: 前場 젠바, 미국 영문 약어 예: PRE)에서 앞 칸 폭을 맞춰, 뒤의 한글 읽기가 모든 행에서 같은 자리에서 시작하게 한다.
-function SessionTerm({ term }: { term: string }) {
+// 가운데 설명 — 일본은 "한자 한글읽기"(예: 前場 젠바)를 두 칸으로 나눠 한글 읽기가 모든 행에서 같은 자리에서 시작하게 하고, 이름 칸과 6px 띄운다.
+// 미국 영문(예: PRE MARKET)은 한국 세션 팝업처럼 한 줄 글자로 이름 칸 바로 뒤에서 시작한다(2026-11-27 사용자 지시).
+function SessionTerm({ term, hasReading }: { term: string; hasReading: boolean }) {
+  if (hasReading === false) return <span className="inline-block w-[8em] text-xs text-ui-muted">{term}</span>
   const [kanji, ...reading] = term.split(' ')
   return (
     <span className="ml-1.5 inline-block w-[8em] text-xs text-ui-muted">
-      {reading.length > 0
-        ? <><span className="inline-block w-[3.5em]">{kanji}</span>{reading.join(' ')}</>
-        : kanji}
+      <span className="inline-block w-[3.5em]">{kanji}</span>
+      {reading.join(' ')}
     </span>
   )
 }
 
 export default function MarketSessionChip({ market, session }: { market: SnapshotMarket; session: string }) {
-  const { label, guide, dotColors } = MARKET_SESSIONS[market]
+  const { label, guide, dotColors, termHasReading } = MARKET_SESSIONS[market]
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
@@ -54,7 +55,7 @@ export default function MarketSessionChip({ market, session }: { market: Snapsho
               <span className="flex items-center">
                 <SessionDot color={dotColors[row.session]} gapClass="mr-2" />
                 <span className={row.term ? 'inline-block w-[6em]' : undefined}>{row.session}</span>
-                {row.term && <SessionTerm term={row.term} />}
+                {row.term && <SessionTerm term={row.term} hasReading={termHasReading} />}
               </span>
               <span className="w-[11ch] shrink-0 text-center font-normal tabular-nums">{row.range}</span>
             </div>
