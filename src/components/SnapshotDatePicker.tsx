@@ -16,6 +16,8 @@ import { getKstDate } from '@/utils/tradingWindow'
 import Spinner from '@/components/Spinner'
 import { toSnapshotDateLabel } from '@/utils/format'
 import type { MarketQuery } from '@/types/api'
+import { keepCloseRows } from '@/utils/snapshotPick'
+import { SNAPSHOT_CLOSE_CLOCK } from '@/utils/snapshotCloseClock'
 
 type CalendarMarket = MarketQuery | 'JAPAN' | 'USA'
 
@@ -68,7 +70,8 @@ function useCalendarDays(market: CalendarMarket, month: string, options?: { enab
   const korea = useSnapshotDays(isSnapshotMarket(market) ? 'KOSPI' : (market as MarketQuery), month, { ...options, enabled: !isSnapshotMarket(market) && (options?.enabled ?? true) })
   const japan = useSnapshotTimes(market, options?.enabled ?? true)
   if (!isSnapshotMarket(market)) return korea
-  const byDate = new Map((japan.data ?? []).filter(time => time.startsWith(month)).map(time => [time.slice(0, 10), time]))
+  // 날짜마다 그날의 마지막 시세(미국은 종가 줄이 있으면 그 줄)를 쓴다.
+  const byDate = new Map(keepCloseRows((japan.data ?? []).filter(time => time.startsWith(month)), market === 'USA' ? SNAPSHOT_CLOSE_CLOCK.USA : null).map(time => [time.slice(0, 10), time]))
   return { ...japan, data: japan.data === undefined ? undefined : [...byDate].map(([date, snapshotTime]) => ({ date, snapshotTime })) }
 }
 
