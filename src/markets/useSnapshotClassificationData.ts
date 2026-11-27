@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import client from '@/api/client'
 import type { SnapshotSheet } from '@/markets/useSnapshotSheet'
 import { snapshotMarketInfo, type SnapshotMarket } from '@/utils/markets'
+import { INFREQUENT_DATA_CACHE } from '@/hooks/cacheConfig'
 
 export type SnapshotCategory = { id: number; parentId: number | null; name: string }
 export type SnapshotClassification = { sector: string | null; industry: string | null; subIndustry: string | null }
@@ -16,8 +17,8 @@ export function useSnapshotClassificationData(market: SnapshotMarket, sheet: Sna
   const draftBase = `/admin/overseas-classification-drafts/${market}`
   const draftKey = ['overseas-draft', market] as const
   const draft = useQuery({ queryKey: draftKey, enabled: isDraft, queryFn: async () => (await client.get<DraftView>(draftBase)).data })
-  const publicCategories = useQuery({ queryKey: [routeSegment, 'categories'], enabled: !isDraft, queryFn: async () => (await client.get<SnapshotCategory[]>(`/${routeSegment}/categories`)).data })
-  const publicClassifications = useQuery({ queryKey: [routeSegment, 'classifications'], enabled: !isDraft, queryFn: async () => (await client.get<Record<string, SnapshotClassification>>(`/${routeSegment}/classifications`)).data })
+  const publicCategories = useQuery({ queryKey: [routeSegment, 'categories'], enabled: !isDraft, queryFn: async () => (await client.get<SnapshotCategory[]>(`/${routeSegment}/categories`)).data, ...INFREQUENT_DATA_CACHE })
+  const publicClassifications = useQuery({ queryKey: [routeSegment, 'classifications'], enabled: !isDraft, queryFn: async () => (await client.get<Record<string, SnapshotClassification>>(`/${routeSegment}/classifications`)).data, ...INFREQUENT_DATA_CACHE })
   const categories = isDraft
     ? { data: draft.data?.categories, isLoading: draft.isLoading, isError: draft.isError, isFetching: draft.isFetching, refetch: draft.refetch }
     : { data: publicCategories.data, isLoading: publicCategories.isLoading, isError: publicCategories.isError, isFetching: publicCategories.isFetching, refetch: publicCategories.refetch }

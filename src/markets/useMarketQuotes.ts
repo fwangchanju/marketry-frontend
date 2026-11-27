@@ -51,6 +51,8 @@ export function useListedStocks(market: SnapshotMarket, enabled = true) {
     queryKey: [segment, 'stocks'],
     enabled,
     queryFn: async () => (await client.get<ListedStock[]>(`/${segment}/stocks`)).data,
+    // 종목 목록은 하루에 한 번 정도만 바뀌어 페이지를 옮길 때마다 다시 받지 않는다(2026-11-27).
+    ...INFREQUENT_DATA_CACHE,
   })
 }
 
@@ -61,6 +63,7 @@ export function useMarketIndexCloses(market: SnapshotMarket, from: string | null
     enabled: from !== null && to !== null,
     queryKey: [segment, 'index-closes', from, to],
     queryFn: async () => (await client.get<IndexClose[]>(`/${segment}/index-closes`, { params: { from, to } })).data,
+    ...INFREQUENT_DATA_CACHE,
   })
 }
 
@@ -83,5 +86,7 @@ export function useMarketIndexQuotes(market: SnapshotMarket, date: string | null
     enabled: date !== null,
     queryKey: [segment, 'index-quotes', date],
     queryFn: async () => (await client.get<IntradayIndexQuote[]>(`/${segment}/index-quotes`, { params: { date } })).data,
+    // 장중 지수는 5분마다 새로 저장되므로 최신 시세와 같이 1분마다 확인한다.
+    ...MARKET_DATA_CACHE,
   })
 }
