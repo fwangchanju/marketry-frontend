@@ -28,13 +28,7 @@ export function usaCloseInKst(date: string): { time: string; nextDay: boolean } 
   return { time: `${pad((utcHour + 9) % 24)}:00`, nextDay: utcHour + 9 >= 24 }
 }
 
-// 새로고침 칸에 마우스를 올리면 보이는 안내. 현지 마감이 한국 시간으로 몇 시인지 먼저 알린다.
-export function usaRefreshHelp(snapshotTime: string | null): string {
-  const kst = snapshotTime ? usaCloseInKst(snapshotTime.slice(0, 10)) : null
-  const lines = [
-    ...(kst ? [`한국 시간으로 ${kst.nextDay ? '다음 날 ' : ''}${kst.time}에 마감됩니다.`] : []),
-    '하루 한 번 갱신됩니다.',
-    '마감 후 10분쯤 뒤에 반영됩니다.',
-  ]
-  return lines.join('\n')
+// 새로고침 칸에 마우스를 올리면 보이는 안내.
+export function usaRefreshHelp(): string {
+  return '5분마다 갱신됩니다.'
 }
