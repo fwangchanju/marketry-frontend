@@ -19,6 +19,9 @@ import type { StockHistoryAction, StockRow } from '@/components/StockTable'
 import type { ExportLine } from '@/markets/stockFileLines'
 import { createPortal } from 'react-dom'
 
+// 엑셀 파일 이름 끝에 붙는 시장 이름 — 시장마다 받은 파일이 구분되도록 한다.
+const EXCEL_MARKET_NAME: Record<ClassificationMarket, string> = { KOREA: '한국', JAPAN: '일본', USA: '미국' }
+
 // 내 기준의 엑셀(간편 업종 분류)과 초기화. 설정창 자리에 그린다. 시장마다 다른 것은 종목 칸(exportLine)뿐이다.
 export default function KoreaStockFiles({ market = 'KOREA', sectorIdByCode, exportLine, sectors, rows, excelContainer, resetContainer, pushHistory, clearHistory }: {
   // 어느 시장의 내 기준인지. 기본은 한국이다.
@@ -137,7 +140,7 @@ export default function KoreaStockFiles({ market = 'KOREA', sectorIdByCode, expo
     }
     setIsExporting(true)
     try {
-      const filename = `[MARKETRY-업종분류] ${fileTimestamp()}.xlsx`
+      const filename = `[MARKETRY-업종분류-${EXCEL_MARKET_NAME[market]}] ${fileTimestamp()}.xlsx`
       const lines = rows.map(row => ({ ...exportLine(row).cells, '대분류': row.path[0], '중분류': row.path[1], '소분류': row.path[2] }))
       const first = exportLine(rows[0])
       await exportRowsToExcel(filename, '업종 분류', lines, {
