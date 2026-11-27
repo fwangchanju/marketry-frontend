@@ -10,6 +10,7 @@ import PopupHeader, { PopupListDot } from '@/components/PopupHeader'
 import { POPUP_ROW_IDLE_CLASS, POPUP_ROW_SELECTED_CLASS } from '@/components/popupHeaderStyle'
 import { dropdownPanelClass } from '@/components/dropdownStyle'
 import { useMobileToolbar } from '@/components/MobileToolbarContext'
+import { SessionGuideTable } from '@/components/MarketSessionChip'
 import { useTouchSlideSelect } from '@/hooks/useTouchSlideSelect'
 
 // 시간대 표시 점의 색 — 프리 마켓은 서브 옐로, 메인 마켓은 메인 청록,
@@ -88,22 +89,8 @@ function TradingSessionChip({ session: sessionOverride }: { session?: TradingSes
           className="w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl"
         >
           <PopupHeader>SESSION</PopupHeader>
-          {SESSION_GUIDE.map(row => (
-            <div key={row.session} className={`flex items-center justify-between gap-4 px-2 py-1 ${row.session === '마켓 종료' ? 'hidden' : ''}`}>
-              <span className="flex items-center">
-                <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: SESSION_DOT_COLOR[row.session] }} />
-                <span className="inline-block w-[6em]">{row.session}</span>
-                {/* 가운데 영문 칸은 일본·미국 세션 안내와 같은 폭(8em)이다. */}
-                <span className="inline-block w-[8em] text-xs text-ui-muted">{KOREA_SESSION_TERM[row.session] ?? ''}</span>
-              </span>
-              {/* 범위는 한 문자열로 붙여 쓰고, 값 칸 폭은 11ch로 고정해 '그 외'도 물결표 위치에 가운데 정렬한다. */}
-              {row.range.includes('~') ? (
-                <span className="w-[11ch] shrink-0 text-center font-normal tabular-nums">{row.range}</span>
-              ) : (
-                <span className="w-[11ch] shrink-0 text-center font-normal">{row.range}</span>
-              )}
-            </div>
-          ))}
+          {/* 일본·미국과 같은 공통 표를 쓴다. 마켓 종료 줄은 안내하지 않는다. */}
+          <SessionGuideTable rows={SESSION_GUIDE.filter(row => row.session !== '마켓 종료').map(row => ({ ...row, term: KOREA_SESSION_TERM[row.session] }))} dotColors={SESSION_DOT_COLOR} termHasReading={false} />
         </ToolbarPopup>
       )}
     </span>
@@ -174,7 +161,8 @@ export function ChangeRateModeSelector({ basis, selectable, onChange }: {
         >
           {/* 세션 팝업과 같은 툴바 팝업 양식: 사방 8px 여백, 머리줄·항목 글자는 왼쪽 16px에서 시작. 항목 줄만 -mx-2로 양 끝까지 늘려 선택·올림 바탕을 줄 전체로 깐다. 줄 앞에는 회색 점(2026-11-27 사용자 결정). */}
           <PopupHeader>BASIS</PopupHeader>
-          <div role="radiogroup" aria-label="등락률 기준" className="flex flex-col" {...slideSelect}>
+          {/* 이름·설명 두 칸의 너비는 글자 길이에 맞춰 자동으로 정해진다(세션 팝업과 같은 방식). */}
+          <div role="radiogroup" aria-label="등락률 기준" className="-mx-2 grid grid-cols-[auto_auto] gap-x-2" {...slideSelect}>
             {options.map(option => (
               <button
                 key={option.value}
@@ -188,7 +176,7 @@ export function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   onChange(option.value)
                   setIsOpen(false)
                 }}
-                className={`-mx-2 flex items-center justify-between gap-4 rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent] ${
+                className={`col-span-2 grid grid-cols-subgrid items-center rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent] ${
                   basis === option.value
                     ? POPUP_ROW_SELECTED_CLASS
                     : option.locked
@@ -201,10 +189,10 @@ export function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   <PopupListDot />
                   <span>{option.titlePrefix}<span className="text-[var(--sub-purple)]">{option.label}</span></span>
                 </span>
-                <span className="shrink-0 whitespace-nowrap">
-                  <span className="inline-block w-[5em] text-right">{option.descriptionBefore}</span>
-                  <span className="inline-block w-[2.5em] text-center text-xs text-ui-muted">대비</span>
-                  <span className="inline-block w-[5em] text-left">{option.descriptionAfter}</span>
+                <span className="whitespace-nowrap text-xs text-ui-muted">
+                  {option.descriptionBefore}
+                  <span className="mx-1">대비</span>
+                  {option.descriptionAfter}
                 </span>
               </button>
             ))}
