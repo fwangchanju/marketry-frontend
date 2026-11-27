@@ -27,7 +27,7 @@ function SessionTerm({ term, hasReading }: { term: string; hasReading: boolean }
 // 세션 안내 표 — 한국·일본·미국 세션 팝업이 함께 쓴다. 이름·설명·시간 세 칸의 너비는 그 표의 가장 긴 글자에 맞춰 자동으로 정해진다(시장마다 칸 너비를 따로 두지 않는다).
 export function SessionGuideTable({ rows, dotColors, termHasReading }: { rows: readonly { session: string; term?: string; range: string }[]; dotColors: Readonly<Record<string, string>>; termHasReading: boolean }) {
   return (
-    <div className="grid grid-cols-[auto_auto_auto] items-center gap-x-2">
+    <div className="grid grid-cols-[auto_auto_auto] items-center gap-x-3">
       {rows.map(row => (
         <div key={row.session} className="col-span-3 grid grid-cols-subgrid items-center px-2 py-1">
           <span className="flex items-center">

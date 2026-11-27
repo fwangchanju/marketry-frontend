@@ -1,7 +1,7 @@
 import { domToPng, type Options as ScreenshotOptions } from 'modern-screenshot'
 import { fontCssFor } from './captureFonts'
 import { shareScreenshotOptions } from './screenshotScale'
-import { reportClientMetric } from './clientMetrics'
+import { metricPageFromPath, reportClientMetric } from './clientMetrics'
 import { withScreenshotSandbox } from './screenshotSandbox'
 
 type CloneCaptureOptions = {
@@ -47,7 +47,11 @@ export async function screenshotElementToDataUrl(el: HTMLElement, regionSelector
   const fontCss = await fontCssFor(mobileFrame && toolbar ? [mobileFrame, toolbar] : el)
   const captureOptions = fontCss ? { ...options, font: { cssText: fontCss } } : options
   const dataUrl = await withScreenshotSandbox(el.ownerDocument, sandbox => domToPng(el, yieldDuringCapture({ ...captureOptions, sandbox } as ScreenshotOptions & { sandbox: HTMLIFrameElement })))
-  if (regionSelector !== '[data-map-mobile-capture-frame]') return dataUrl
+  if (regionSelector !== '[data-map-mobile-capture-frame]') {
+    const page = metricPageFromPath(window.location.pathname)
+    if (page) reportClientMetric(page, 'PC_CAPTURE', performance.now() - captureStartedAt)
+    return dataUrl
+  }
 
   reportClientMetric('MAP', 'MAP_MOBILE_CAPTURE', performance.now() - captureStartedAt)
   return dataUrl

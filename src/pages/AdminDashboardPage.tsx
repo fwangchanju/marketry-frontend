@@ -32,8 +32,10 @@ type Period = (typeof PERIOD_OPTIONS)[number]
 const DASHBOARD_CARD_MIN_HEIGHT = 280
 const DASHBOARD_GRID_GAP = 12
 // 접속 빈도 구간의 막대 색 — 자주 올수록 진한 청록이고, 한 번도 안 온 회원은 흐린 회색이다.
-const VISITOR_SOURCE_LABELS = { NAVER: '네이버', GOOGLE: '구글', DIRECT: '주소 입력', OTHER: '기타' } as const
-const DASHBOARD_PAGE_LABELS: Record<string, string> = { HOME: 'Home', MAP: 'Map', GRAPH: 'Graph', CUSTOM: 'Custom' }
+const VISITOR_SOURCE_LABELS = { DIRECT: '주소 입력', GOOGLE: '구글', NAVER: '네이버', OTHER: '기타' } as const
+const VISITOR_SOURCE_ORDER = ['DIRECT', 'GOOGLE', 'NAVER', 'OTHER']
+const DASHBOARD_PAGE_ORDER = ['HOME', 'MAP', 'GRAPH', 'CUSTOM', 'CHART']
+const DASHBOARD_PAGE_LABELS: Record<string, string> = { HOME: 'SUMMARY', MAP: 'MAP', GRAPH: 'GRAPH', CUSTOM: 'SECTOR·STOCK', CHART: 'CHART' }
 const FREQUENCY_BAR_CLASSES = ['bg-ui-muted', 'bg-[var(--brand)]/35', 'bg-[var(--brand)]/50', 'bg-[var(--brand)]/85', 'bg-[var(--brand)]']
 
 // 관리자 전용 대시보드 — 회원 명단(/admin/member)과 떨어뜨려 회원 이용 현황을 작은 차트 여러 개로 모아 본다(서머리 화면의 틀처럼 한 칸에 차트 하나).
@@ -203,6 +205,25 @@ export default function AdminDashboardPage() {
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
                   </ChartFrame>
+                  <ChartFrame title="유입 경로" note="비회원 유입 경로">
+                    {visitorSources.isError ? (
+                      <DashboardMetricError />
+                    ) : visitorSources.data ? (
+                      <HorizontalBarsChart
+                        ariaLabel="유입 경로 분포"
+                        labelWidth={64}
+                        rows={[...visitorSources.data].sort((a, b) => VISITOR_SOURCE_ORDER.indexOf(a.source) - VISITOR_SOURCE_ORDER.indexOf(b.source)).map(row => ({
+                          key: row.source,
+                          label: VISITOR_SOURCE_LABELS[row.source],
+                          count: row.visitors,
+                          barClass: 'bg-[var(--brand)]',
+                          textClass: 'text-ui-text',
+                        }))}
+                      />
+                    ) : (
+                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
+                    )}
+                  </ChartFrame>
                   <ChartFrame title="신규 가입" note="가입 회원 수">
                     {signups.isError ? (
                       <DashboardMetricError />
@@ -225,25 +246,6 @@ export default function AdminDashboardPage() {
                           <span className="text-xs text-ui-muted">방문자를 세기 시작한 {countedDays.length}일 기준</span>
                         </div>
                       )
-                    ) : (
-                      <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
-                    )}
-                  </ChartFrame>
-                  <ChartFrame title="유입 경로" note="비회원 유입 경로">
-                    {visitorSources.isError ? (
-                      <DashboardMetricError />
-                    ) : visitorSources.data ? (
-                      <HorizontalBarsChart
-                        ariaLabel="유입 경로 분포"
-                        labelWidth={64}
-                        rows={visitorSources.data.map(row => ({
-                          key: row.source,
-                          label: VISITOR_SOURCE_LABELS[row.source],
-                          count: row.visitors,
-                          barClass: 'bg-[var(--brand)]',
-                          textClass: 'text-ui-text',
-                        }))}
-                      />
                     ) : (
                       <p role="status" className="m-0 text-sm text-ui-text">불러오는 중입니다.</p>
                     )}
@@ -302,15 +304,20 @@ export default function AdminDashboardPage() {
                     {dashboardMetrics.isError ? <DashboardMetricError /> : dashboardMetrics.data ? (
                       <div className="w-full self-center px-1">
                         <div className="grid grid-cols-3 gap-x-3 border-b border-ui-border pb-1 text-[10px] text-ui-muted"><span>화면</span><span className="text-center">첫 렌더링 평균</span><span className="text-right">오류</span></div>
-                        {dashboardMetrics.data.pages.length ? [...dashboardMetrics.data.pages].sort((a, b) => b.clientErrors - a.clientErrors || a.page.localeCompare(b.page)).map(row => (
+                        {dashboardMetrics.data.pages.length ? [...dashboardMetrics.data.pages].sort((a, b) => DASHBOARD_PAGE_ORDER.indexOf(a.page) - DASHBOARD_PAGE_ORDER.indexOf(b.page)).map(row => (
                           <div key={row.page} className="grid grid-cols-3 items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
                             <span>{DASHBOARD_PAGE_LABELS[row.page] ?? row.page}</span>
                             <span className="text-center tabular-nums">{row.pageLoads ? `${row.averageLoadMs} ms` : '—'}</span>
                             <span className="text-right tabular-nums">{formatCount(row.clientErrors)}</span>
                           </div>
                         )) : <p className="m-0 py-3 text-center text-xs text-ui-muted">화면 지표를 수집하는 중입니다.</p>}
-                        <div className="mt-3 grid grid-cols-3 items-center gap-x-3 text-xs text-ui-text">
-                          <span>모바일 지도 캡처 평균</span>
+                        <div className="grid grid-cols-3 items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
+                          <span>PC SCREENSHOT</span>
+                          <span className="text-center tabular-nums">{dashboardMetrics.data.pcCaptures ? `${dashboardMetrics.data.averagePcCaptureMs} ms` : '—'}</span>
+                          <span className="text-right tabular-nums">{dashboardMetrics.data.pcCaptures ? `${formatCount(dashboardMetrics.data.pcCaptures)}회` : '기록 대기'}</span>
+                        </div>
+                        <div className="grid grid-cols-3 items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
+                          <span>MOBILE SCREENSHOT</span>
                           <span className="text-center tabular-nums">{dashboardMetrics.data.mobileCaptures ? `${dashboardMetrics.data.averageMobileCaptureMs} ms` : '—'}</span>
                           <span className="text-right tabular-nums">{dashboardMetrics.data.mobileCaptures ? `${formatCount(dashboardMetrics.data.mobileCaptures)}회` : '기록 대기'}</span>
                         </div>

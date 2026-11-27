@@ -46,11 +46,11 @@ export function infoMenu(current: string) {
 // 어드민 화면의 목록. 상단 메뉴의 Admin 항목과 같은 다섯 개다.
 export function adminMenu(current: 'MEMBER' | 'STATS' | 'MESSAGE' | 'DEFAULT' | 'BANNER') {
   const items: { label: 'MEMBER' | 'STATS' | 'MESSAGE' | 'DEFAULT' | 'BANNER'; to: string }[] = [
-    { label: 'MEMBER', to: '/admin/member' },
     { label: 'STATS', to: '/admin/stats' },
-    { label: 'MESSAGE', to: '/admin/message' },
-    { label: 'DEFAULT', to: '/admin/default' },
+    { label: 'MEMBER', to: '/admin/member' },
     { label: 'BANNER', to: '/admin/banner' },
+    { label: 'DEFAULT', to: '/admin/default' },
+    { label: 'MESSAGE', to: '/admin/message' },
   ]
   return items.map(item => ({ ...item, active: item.label === current }))
 }
