@@ -16,6 +16,7 @@ import { latestCloseTime } from '@/utils/snapshotPick'
 import { applyAfterHoursBasis, isAfterHoursBasisVisible } from '@/utils/afterHoursBasis'
 import { useTransientSetting } from '@/hooks/useTransientSetting'
 import type { ChangeRateChoice } from '@/api/heatmap'
+import { INFREQUENT_DATA_CACHE } from '@/hooks/cacheConfig'
 
 // 스냅샷 목록으로 시세를 주는 시장의 SUMMARY 데이터. 시장마다 다른 값은 SNAPSHOT_MARKETS에서만 온다.
 export function useSnapshotMarketSummary(market: SnapshotMarket, sheet: SnapshotSheet, hideStaleQuotes = false): SnapshotSource {
@@ -23,7 +24,7 @@ export function useSnapshotMarketSummary(market: SnapshotMarket, sheet: Snapshot
   const { routeSegment, badgeLabel } = snapshotMarketInfo(market)
   // 내 기준 모드(관리자)는 MARKETRY에 올리기 전 사본 분류로 그린다.
   const { categories, classifications } = useSnapshotClassificationData(market, sheet)
-  const names = useQuery({ queryKey: [routeSegment, 'names'], queryFn: async () => (await client.get<Record<string, string>>(`/${routeSegment}/stock-names`)).data })
+  const names = useQuery({ queryKey: [routeSegment, 'names'], queryFn: async () => (await client.get<Record<string, string>>(`/${routeSegment}/stock-names`)).data, ...INFREQUENT_DATA_CACHE })
   const listed = useMarketStocks(market)
   // 이름표에 없는 종목은 번들 목록이면 그 이름, 서버 목록이면 티커로 보인다.
   const stocks = listed.stocks

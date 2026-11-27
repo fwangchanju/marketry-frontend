@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useNumberTween } from '@/hooks/useNumberTween'
-import { FLASH_HOLD_MS } from '@/components/numberEffectTiming'
 import { MARKET_MAP_SNAPSHOT_PLACEHOLDER_ISO, toSnapshotTimeOnlyLabel } from '@/utils/format'
 
-const CLOCK_TWEEN_MS = 1000
+// 5분 단위로 바뀌어 숫자가 5칸만 지나가므로 2.5초에 걸쳐 올려 눈에 띄게 한다(2026-11-27 사용자 지시, 예전 1초).
+const CLOCK_TWEEN_MS = 2500
+const CLOCK_FLASH_AFTER_MS = 500
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
@@ -28,7 +29,8 @@ function ClockLabel({ snapshotTime, icon }: { snapshotTime: string | null; icon?
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 값이 바뀐 순간에만 켜고 타이머로 끄는 일회성 시각 효과라 렌더 중에 계산할 수 없다
     setIsFlashing(true)
     window.clearTimeout(flashTimer.current)
-    flashTimer.current = window.setTimeout(() => setIsFlashing(false), FLASH_HOLD_MS)
+    // 숫자가 다 올라간 뒤 0.5초 더 켜 둔다(숫자 움직임 시간을 늘려도 청록색이 먼저 꺼지지 않게).
+    flashTimer.current = window.setTimeout(() => setIsFlashing(false), CLOCK_TWEEN_MS + CLOCK_FLASH_AFTER_MS)
   }, [shownTime])
   useEffect(() => () => window.clearTimeout(flashTimer.current), [])
   const label = shown === null

@@ -14,13 +14,31 @@ const SessionDot = ({ color, gapClass = 'mr-1' }: { color: string; gapClass?: st
 // 가운데 설명 — 일본은 "한자 한글읽기"(예: 前場 젠바)를 두 칸으로 나눠 한글 읽기가 모든 행에서 같은 자리에서 시작하게 하고, 이름 칸과 6px 띄운다.
 // 미국 영문(예: PRE MARKET)은 한국 세션 팝업처럼 한 줄 글자로 이름 칸 바로 뒤에서 시작한다(2026-11-27 사용자 지시).
 function SessionTerm({ term, hasReading }: { term: string; hasReading: boolean }) {
-  if (hasReading === false) return <span className="inline-block w-[8em] text-xs text-ui-muted">{term}</span>
+  if (hasReading === false) return <span className="text-xs text-ui-muted">{term}</span>
   const [kanji, ...reading] = term.split(' ')
   return (
-    <span className="ml-1.5 inline-block w-[8em] text-xs text-ui-muted">
+    <span className="text-xs text-ui-muted">
       <span className="inline-block w-[3.5em]">{kanji}</span>
       {reading.join(' ')}
     </span>
+  )
+}
+
+// 세션 안내 표 — 한국·일본·미국 세션 팝업이 함께 쓴다. 이름·설명·시간 세 칸의 너비는 그 표의 가장 긴 글자에 맞춰 자동으로 정해진다(시장마다 칸 너비를 따로 두지 않는다).
+export function SessionGuideTable({ rows, dotColors, termHasReading }: { rows: readonly { session: string; term?: string; range: string }[]; dotColors: Readonly<Record<string, string>>; termHasReading: boolean }) {
+  return (
+    <div className="grid grid-cols-[auto_auto_auto] items-center gap-x-2">
+      {rows.map(row => (
+        <div key={row.session} className="col-span-3 grid grid-cols-subgrid items-center px-2 py-1">
+          <span className="flex items-center">
+            <SessionDot color={dotColors[row.session]} gapClass="mr-2" />
+            {row.session}
+          </span>
+          <span>{row.term && <SessionTerm term={row.term} hasReading={termHasReading} />}</span>
+          <span className="text-center font-normal tabular-nums">{row.range}</span>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -50,16 +68,7 @@ export default function MarketSessionChip({ market, session }: { market: Snapsho
       {isOpen && (
         <ToolbarPopup open={isOpen} triggerRef={rootRef} popupRef={popupRef} ariaLabel={label} className="w-max rounded-md border border-ui-border bg-[var(--ui-panel)] p-2 text-sm font-normal tracking-normal text-ui-white shadow-xl">
           <PopupHeader>SESSION</PopupHeader>
-          {guide.map(row => (
-            <div key={row.session} className="flex items-center justify-between gap-4 px-2 py-1">
-              <span className="flex items-center">
-                <SessionDot color={dotColors[row.session]} gapClass="mr-2" />
-                <span className={row.term ? 'inline-block w-[6em]' : undefined}>{row.session}</span>
-                {row.term && <SessionTerm term={row.term} hasReading={termHasReading} />}
-              </span>
-              <span className="w-[11ch] shrink-0 text-center font-normal tabular-nums">{row.range}</span>
-            </div>
-          ))}
+          <SessionGuideTable rows={guide} dotColors={dotColors} termHasReading={termHasReading} />
         </ToolbarPopup>
       )}
     </span>
