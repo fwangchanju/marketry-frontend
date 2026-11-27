@@ -34,7 +34,7 @@ const DASHBOARD_GRID_GAP = 12
 // 접속 빈도 구간의 막대 색 — 자주 올수록 진한 청록이고, 한 번도 안 온 회원은 흐린 회색이다.
 const VISITOR_SOURCE_LABELS = { DIRECT: '주소 입력', GOOGLE: '구글', NAVER: '네이버', OTHER: '기타' } as const
 const VISITOR_SOURCE_ORDER = ['DIRECT', 'GOOGLE', 'NAVER', 'OTHER']
-const DASHBOARD_PAGE_ORDER = ['HOME', 'MAP', 'GRAPH', 'CUSTOM', 'CHART']
+const DASHBOARD_PAGE_ORDER = ['MAP', 'GRAPH', 'HOME', 'CUSTOM', 'CHART']
 const DASHBOARD_PAGE_LABELS: Record<string, string> = { HOME: 'SUMMARY', MAP: 'MAP', GRAPH: 'GRAPH', CUSTOM: 'SECTOR·STOCK', CHART: 'CHART' }
 const FREQUENCY_BAR_CLASSES = ['bg-ui-muted', 'bg-[var(--brand)]/35', 'bg-[var(--brand)]/50', 'bg-[var(--brand)]/85', 'bg-[var(--brand)]']
 
@@ -304,6 +304,16 @@ export default function AdminDashboardPage() {
                     {dashboardMetrics.isError ? <DashboardMetricError /> : dashboardMetrics.data ? (
                       <div className="w-full self-center px-1">
                         <div className="grid grid-cols-3 gap-x-3 border-b border-ui-border pb-1 text-[10px] text-ui-muted"><span>화면</span><span className="text-center">첫 렌더링 평균</span><span className="text-right">오류</span></div>
+                        <div className="grid grid-cols-3 items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
+                          <span>SCREENSHOT PC</span>
+                          <span className="text-center tabular-nums">{dashboardMetrics.data.pcCaptures ? `${dashboardMetrics.data.averagePcCaptureMs} ms` : '—'}</span>
+                          <span className="text-right tabular-nums">{dashboardMetrics.data.pcCaptures ? `${formatCount(dashboardMetrics.data.pcCaptures)}회` : '기록 대기'}</span>
+                        </div>
+                        <div className="grid grid-cols-3 items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
+                          <span>SCREENSHOT MOBILE</span>
+                          <span className="text-center tabular-nums">{dashboardMetrics.data.mobileCaptures ? `${dashboardMetrics.data.averageMobileCaptureMs} ms` : '—'}</span>
+                          <span className="text-right tabular-nums">{dashboardMetrics.data.mobileCaptures ? `${formatCount(dashboardMetrics.data.mobileCaptures)}회` : '기록 대기'}</span>
+                        </div>
                         {dashboardMetrics.data.pages.length ? [...dashboardMetrics.data.pages].sort((a, b) => DASHBOARD_PAGE_ORDER.indexOf(a.page) - DASHBOARD_PAGE_ORDER.indexOf(b.page)).map(row => (
                           <div key={row.page} className="grid grid-cols-3 items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
                             <span>{DASHBOARD_PAGE_LABELS[row.page] ?? row.page}</span>
@@ -311,16 +321,6 @@ export default function AdminDashboardPage() {
                             <span className="text-right tabular-nums">{formatCount(row.clientErrors)}</span>
                           </div>
                         )) : <p className="m-0 py-3 text-center text-xs text-ui-muted">화면 지표를 수집하는 중입니다.</p>}
-                        <div className="grid grid-cols-3 items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
-                          <span>PC SCREENSHOT</span>
-                          <span className="text-center tabular-nums">{dashboardMetrics.data.pcCaptures ? `${dashboardMetrics.data.averagePcCaptureMs} ms` : '—'}</span>
-                          <span className="text-right tabular-nums">{dashboardMetrics.data.pcCaptures ? `${formatCount(dashboardMetrics.data.pcCaptures)}회` : '기록 대기'}</span>
-                        </div>
-                        <div className="grid grid-cols-3 items-center gap-x-3 border-b border-ui-border/50 py-1.5 text-xs text-ui-text">
-                          <span>MOBILE SCREENSHOT</span>
-                          <span className="text-center tabular-nums">{dashboardMetrics.data.mobileCaptures ? `${dashboardMetrics.data.averageMobileCaptureMs} ms` : '—'}</span>
-                          <span className="text-right tabular-nums">{dashboardMetrics.data.mobileCaptures ? `${formatCount(dashboardMetrics.data.mobileCaptures)}회` : '기록 대기'}</span>
-                        </div>
                       </div>
                     ) : <DashboardMetricLoading />}
                   </ChartFrame>
