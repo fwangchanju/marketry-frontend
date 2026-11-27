@@ -161,8 +161,7 @@ export function ChangeRateModeSelector({ basis, selectable, onChange }: {
         >
           {/* 세션 팝업과 같은 툴바 팝업 양식: 사방 8px 여백, 머리줄·항목 글자는 왼쪽 16px에서 시작. 항목 줄만 -mx-2로 양 끝까지 늘려 선택·올림 바탕을 줄 전체로 깐다. 줄 앞에는 회색 점(2026-11-27 사용자 결정). */}
           <PopupHeader>BASIS</PopupHeader>
-          {/* 이름·설명 두 칸의 너비는 글자 길이에 맞춰 자동으로 정해진다(세션 팝업과 같은 방식). */}
-          <div role="radiogroup" aria-label="등락률 기준" className="-mx-2 grid grid-cols-[auto_auto] gap-x-2" {...slideSelect}>
+          <div role="radiogroup" aria-label="등락률 기준" className="-mx-2 grid grid-cols-[auto_auto_auto_auto] gap-x-4" {...slideSelect}>
             {options.map(option => (
               <button
                 key={option.value}
@@ -176,7 +175,7 @@ export function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   onChange(option.value)
                   setIsOpen(false)
                 }}
-                className={`col-span-2 grid grid-cols-subgrid items-center rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent] ${
+                className={`col-span-4 grid grid-cols-subgrid items-center rounded-none border-0 px-4 py-1 text-left text-ui-white transition-colors [-webkit-tap-highlight-color:transparent] ${
                   basis === option.value
                     ? POPUP_ROW_SELECTED_CLASS
                     : option.locked
@@ -189,11 +188,10 @@ export function ChangeRateModeSelector({ basis, selectable, onChange }: {
                   <PopupListDot />
                   <span>{option.titlePrefix}<span className="text-[var(--sub-purple)]">{option.label}</span></span>
                 </span>
-                <span className="whitespace-nowrap text-xs text-ui-muted">
-                  {option.descriptionBefore}
-                  <span className="mx-1">대비</span>
-                  {option.descriptionAfter}
-                </span>
+                {/* 기준 전·대비·기준 후도 글자 길이에 맞춘다. 칸 사이는 16px이고 "대비" 양옆만 -mx-3으로 4px까지 좁힌다. */}
+                <span className="whitespace-nowrap text-right">{option.descriptionBefore}</span>
+                <span className="-mx-3 text-center text-xs text-ui-muted">대비</span>
+                <span className="whitespace-nowrap text-left">{option.descriptionAfter}</span>
               </button>
             ))}
           </div>
