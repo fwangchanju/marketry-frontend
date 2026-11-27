@@ -12,6 +12,7 @@ import { useMarketPeriodQuotes, useMarketPreviousTradingDay, useMarketQuotes, us
 import { buildSnapshotTree, excludePreviousCloseQuotes, findCloseSnapshotTime, staleQuoteQueryState, shouldFilterStaleQuotes } from '@/utils/snapshotTree'
 import { snapshotMarketInfo, type SnapshotMarket } from '@/utils/markets'
 import { snapshotSettingKey } from '@/utils/snapshotSettingKey'
+import { latestCloseTime } from '@/utils/snapshotPick'
 
 // 스냅샷 목록으로 시세를 주는 시장의 SUMMARY 데이터. 시장마다 다른 값은 SNAPSHOT_MARKETS에서만 온다.
 export function useSnapshotMarketSummary(market: SnapshotMarket, sheet: SnapshotSheet, hideStaleQuotes = false): SnapshotSource {
@@ -26,7 +27,10 @@ export function useSnapshotMarketSummary(market: SnapshotMarket, sheet: Snapshot
   // 날짜·기간은 지도·그래프와 같은 저장소를 쓴다(다른 화면에서 고른 기간이 이어진다).
   const times = useMarketSnapshotTimes(market)
   const { selectedTime, rangeStart, isResolving, select, selectRange } = useCrossMarketPeriod(market, times.data)
-  const quotes = useMarketQuotes(market, selectedTime)
+  // 텔레그램 종가 지도(?capture=mobile&basis=close)는 장 마감 뒤 애프터마켓 시세가 쌓여 있어도 그날 종가 줄로 그린다. 종가 줄 목록을 받을 때까지 기다린다.
+  const wantsCloseRow = SNAPSHOT_MARKETS[market].closeClock !== null && isCloseCapture()
+  const captureCloseTime = wantsCloseRow && times.data ? latestCloseTime(times.data, SNAPSHOT_MARKETS[market].closeClock as string) : null
+  const quotes = useMarketQuotes(market, selectedTime ?? captureCloseTime, !(wantsCloseRow && times.data === undefined))
   const liveQuotes = useMarketQuotes(market, null)
   const periodQuotes = useMarketPeriodQuotes(market, rangeStart, selectedTime)
   // 기간이면 기간 등락률 시세를, 아니면 고른 날짜(없으면 최신)의 시세를 쓴다.
@@ -80,4 +84,10 @@ export function useSnapshotMarketSummary(market: SnapshotMarket, sheet: Snapshot
     currencyUnit,
     totalCount: stocks?.length ?? 0,
   }
+}
+
+// 렌더러(텔레그램 발송)가 ?capture=mobile&basis=close 로 열었는지.
+function isCloseCapture(): boolean {
+  const params = new URLSearchParams(window.location.search)
+  return params.get('capture') === 'mobile' && params.get('basis') === 'close'
 }

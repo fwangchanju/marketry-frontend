@@ -1,4 +1,5 @@
-import { resolveSnapshotOnOrBefore, snapshotTimesAsDays } from '@/utils/snapshotPick'
+import { keepCloseRows, resolveSnapshotOnOrBefore, snapshotTimesAsDays } from '@/utils/snapshotPick'
+import { SNAPSHOT_CLOSE_CLOCK } from '@/utils/snapshotCloseClock'
 import { useSnapshotSelection, type SnapshotPick } from './useSnapshotSelection'
 import type { SnapshotMarket } from '@/utils/markets'
 
@@ -12,7 +13,7 @@ export function useCrossMarketPeriod(market: SnapshotMarket, times: readonly str
     if (pick === null) return null
     if (pick.market === market) return pick.snapshotTime
     if (times === undefined) return undefined
-    return resolveSnapshotOnOrBefore(snapshotTimesAsDays(times), pick.snapshotTime.slice(0, 10)) ?? null
+    return resolveSnapshotOnOrBefore(snapshotTimesAsDays(keepCloseRows(times, SNAPSHOT_CLOSE_CLOCK[market])), pick.snapshotTime.slice(0, 10)) ?? null
   }
 
   const pinnedTime = resolve(pinned)
