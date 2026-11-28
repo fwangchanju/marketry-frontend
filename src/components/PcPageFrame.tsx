@@ -8,15 +8,13 @@ import Toolbar from '@/components/Toolbar'
 import { useNativeFullscreen } from '@/hooks/useNativeFullscreen'
 import { useScreenshotShare } from '@/hooks/useScreenshotShare'
 
-// PC 화면의 공통 틀 — 상단바·메뉴 줄·오른쪽 버튼 묶음(새로고침·스크린샷·전체 화면)·툴바 줄·본문·하단 안내를 한곳에서 만든다.
+// PC 화면의 공통 틀 — 상단바·메뉴 줄·오른쪽 버튼 묶음(스크린샷·전체 화면)·툴바 줄·본문·하단 안내를 한곳에서 만든다.
 // 새 PC 화면은 이 틀에 toolbar와 본문만 넣는다. 그러면 오른쪽 버튼 묶음이 기본으로 따라오고, 화면마다 빠뜨릴 수 없다.
-// 이 화면에 없는 기능만 끈다: 새로고침이 없으면 onRefresh를 넘기지 않고, 스크린샷을 찍을 수 없으면 noScreenshot을 켠다.
+// 이 화면에 없는 기능만 끈다: 스크린샷을 찍을 수 없으면 noScreenshot을 켠다.
 // 설정창이 있는 화면(MAP·GRAPH 등)은 설정 버튼과 설정창 배치가 따로 있어 아직 이 틀을 쓰지 않는다.
-export default function PcPageFrame({ toolbar, children, onRefresh, isRefreshing = false, noScreenshot = false, noFooter = false }: {
+export default function PcPageFrame({ toolbar, children, noScreenshot = false, noFooter = false }: {
   toolbar: ReactNode
   children: ReactNode
-  onRefresh?: () => void | Promise<unknown>
-  isRefreshing?: boolean
   noScreenshot?: boolean
   noFooter?: boolean
 }) {
@@ -29,9 +27,6 @@ export default function PcPageFrame({ toolbar, children, onRefresh, isRefreshing
       <NavSubBar
         actions={
           <NavBarPageActions
-            onRefresh={onRefresh ?? (() => undefined)}
-            isRefreshing={isRefreshing}
-            showRefresh={onRefresh !== undefined}
             onOpenShare={noScreenshot ? undefined : () => open(mainRef.current)}
             isScreenshotOpen={isOpen}
             isNativeFullscreen={isNativeFullscreen}

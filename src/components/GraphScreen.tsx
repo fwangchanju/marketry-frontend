@@ -92,7 +92,7 @@ export default function GraphScreen({ market, graph, menu, taxonomy, filters, co
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
       <NavBar />
-      <NavSubBar actions={<NavBarPageActions onRefresh={market.refresh.run} isRefreshing={market.refresh.isRunning} showRefresh={false} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} />} />
+      <NavSubBar actions={<NavBarPageActions onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} />} />
       <div className="flex min-h-0 flex-1">
         {/* 스크린샷은 메인 영역만 찍어 설정창을 제외한다. */}
         <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white">

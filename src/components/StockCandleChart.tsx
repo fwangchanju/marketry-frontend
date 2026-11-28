@@ -58,8 +58,17 @@ const NO_HIDDEN_AVERAGES: number[] = []
 type PriceBadge = { top: number; text: string; color: string; sub?: string }
 // 가격축 글자와 현재가·커서 배지 글자가 같은 크기로 보이도록 둘 다 이 값(px)을 쓴다.
 const AXIS_FONT_SIZE = 12
+// 오른쪽 축(가격·거래량 공통) — 글자는 오른쪽 끝에 붙이고, 글자 크기는 차트 너비에 맞춘 축 너비 안에 가장 긴 숫자가 들어가는 크기로 정한다(2026-11-28 사용자 요청).
+const AXIS_WIDTH_RATIO = 0.22
+const AXIS_MIN_WIDTH = 64
+const AXIS_MAX_WIDTH = 104
+const AXIS_SIDE_PADDING = 28
+const AXIS_MIN_FONT = 9
+const AXIS_MAX_FONT = 14
+// 축 바탕색 — 공통 색 기준(--ui-surface, #1a1a1a)이라 야간·주간 모드를 따라간다. 차트 바탕(--ui-background)보다 한 단계 밝다.
+const AXIS_BACKGROUND = 'var(--ui-surface)'
 // 거래량 칸 축은 천 단위를 K로 줄여 쓴다(40,000,000 → 40,000K). 숫자가 길면 축이 넓어져 가격 글자 오른쪽이 비어 보인다.
-const volumeAxisText = (amount: number) => `${Math.round(amount / 1000).toLocaleString('ko-KR')}K`
+const volumeAxisText = (amount: number) => (Math.round(amount / 1000) === 0 ? '0' : `${Math.round(amount / 1000).toLocaleString('ko-KR')}K`)
 const INTERVALS: { value: Interval; label: string }[] = [
   { value: 'day', label: '일봉' },
   { value: 'week', label: '주봉' },
@@ -164,8 +173,10 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   const [hoverAt, setHoverAt] = useState<{ x: number; width: number; height: number } | null>(null)
   // 거래량 칸의 위쪽 끝과 막대 바닥선 — 칸 높이가 화면 크기를 따라 바뀌므로 실제로 그려진 자리를 잰다.
   const [volumeArea, setVolumeArea] = useState<{ top: number; base: number } | null>(null)
+  // 아래 날짜 축 눈금 글자의 실제 세로 중심(컨테이너 위에서부터 px) — 날짜 배지 글자의 중심을 여기에 맞춘다.
+  const [timeLabelCenter, setTimeLabelCenter] = useState<number | null>(null)
   // 오른쪽 가격축 위에 직접 그리는 배지 — 커서 가격(위·아래 칸)과 현재가. top은 차트 영역 위에서부터의 거리, left는 축 글자 시작 자리.
-  const [priceBadges, setPriceBadges] = useState<{ textLeft: number; cursor: PriceBadge | null; last: PriceBadge | null }>({ textLeft: 0, cursor: null, last: null })
+  const [priceBadges, setPriceBadges] = useState<{ textLeft: number; axisWidth: number; fontSize: number; textWidth: number; labelRight: number | null; cursor: PriceBadge | null; last: PriceBadge | null }>({ textLeft: 0, axisWidth: 0, fontSize: AXIS_FONT_SIZE, textWidth: 0, labelRight: null, cursor: null, last: null })
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['stock-daily-candles', market, stockCode, CANDLE_DAYS],
     queryFn: ({ signal }) => DAILY_CANDLE_LOADERS[market](stockCode, CANDLE_DAYS, signal),
@@ -204,7 +215,39 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       // 가격 표시는 시리즈마다 따로 정한다(전체에 걸면 거래량 칸까지 소수점이 붙는다).
       localization: { locale: 'ko-KR', timeFormatter: (time: Time) => dateWithWeekday(timeToDate(time)) },
     })
-    const priceFormat = { type: 'custom' as const, minMove: market === 'usa' ? 0.01 : 1, formatter: (price: number) => axisPriceText(market, price) }
+    // 축 글자를 오른쪽 끝에 붙이려고 앞을 공백으로 채워 가장 긴 숫자와 폭을 맞춘다. 글자 크기는 축 너비에 맞춘다.
+    const measure = document.createElement('canvas').getContext('2d')
+    const fontFamily = getComputedStyle(document.body).fontFamily
+    const textWidth = (text: string, size: number) => {
+      if (!measure) return text.length * size * 0.6
+      measure.font = `${size}px ${fontFamily}`
+      return measure.measureText(text).width
+    }
+    const widestTexts = [axisPriceText(market, Math.max(...bars.map(bar => bar.high))), volumeAxisText(Math.max(...bars.map(bar => bar.volume)) * 1.05)]
+    let axisFont = AXIS_FONT_SIZE
+    const widestWidth = () => Math.max(...widestTexts.map(text => textWidth(text, axisFont)))
+    // 앞을 폭이 큰 공백부터 차례로 채워 오른쪽 끝을 맞춘다. 공백 개수가 많으면 글자 폭 오차가 쌓여서 큰 것(전각·반각)부터 쓰고, 남는 폭만 보통·얇은 공백으로 채운다.
+    const PAD_CHARS = ['\u2003', '\u2002', ' ', '\u200A']
+    const rightAligned = (text: string) => {
+      let rest = widestWidth() - textWidth(text, axisFont)
+      let pad = ''
+      for (const char of PAD_CHARS) {
+        const width = textWidth(char, axisFont)
+        if (width < 0.3) continue
+        const count = char === '\u200A' ? Math.max(0, Math.round(rest / width)) : Math.max(0, Math.floor(rest / width))
+        pad += char.repeat(Math.min(count, 12))
+        rest -= count * width
+      }
+      return pad + text
+    }
+    const fitFont = () => {
+      const target = Math.min(AXIS_MAX_WIDTH, Math.max(AXIS_MIN_WIDTH, container.clientWidth * AXIS_WIDTH_RATIO))
+      const base = Math.max(...widestTexts.map(text => textWidth(text, 10)))
+      return Math.min(AXIS_MAX_FONT, Math.max(AXIS_MIN_FONT, Math.floor((10 * (target - AXIS_SIDE_PADDING)) / base)))
+    }
+    axisFont = fitFont()
+    chart.applyOptions({ layout: { fontSize: axisFont } })
+    const priceFormat = { type: 'custom' as const, minMove: market === 'usa' ? 0.01 : 1, formatter: (price: number) => rightAligned(axisPriceText(market, price)) }
     const candles = chart.addSeries(CandlestickSeries, {
       priceFormat,
       lastValueVisible: false,
@@ -222,7 +265,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       averageLines.set(average.days, line)
     }
     // 거래량은 봉과 겹치지 않게 아래 칸(두 번째 판)에 회색 막대로 그린다.
-    const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'custom', minMove: 1, formatter: volumeAxisText }, color: VOLUME_COLOR, priceLineVisible: false, lastValueVisible: false }, 1)
+    const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'custom', minMove: 1, formatter: (amount: number) => rightAligned(volumeAxisText(amount)) }, color: VOLUME_COLOR, priceLineVisible: false, lastValueVisible: false }, 1)
     // 임시 봉은 거래량이 없어서 막대를 비워 둔다(주봉·월봉은 확정된 날의 거래량 합을 그대로 보인다).
     volume.setData(bars.map(({ date, volume: amount, provisional }) => (provisional && amount === 0 ? { time: date as Time } : { time: date as Time, value: amount })))
     chart.panes()[1]?.setHeight(VOLUME_PANE_HEIGHT)
@@ -236,13 +279,76 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
     const lastRate = data && data.length > 0 ? changeRate(data[data.length - 1].close, data[data.length - 2]) : null
     const lastRateText = lastRate === null ? undefined : `${lastRate > 0 ? '+' : ''}${lastRate.toFixed(2)}%`
     let cursorBadge: PriceBadge | null = null
+    // 라이브러리가 그린 축 숫자의 실제 오른쪽 끝과 날짜 눈금 글자의 세로 중심 — 직접 그리는 배지들을 그 자리에 맞춘다. 글자 크기·축 너비가 바뀔 때만 다시 잰다.
+    let labelRight: number | null = null
+    let timeLabelAt: number | null = null
+    let labelKey = ''
+    const measureAxisLabels = (axisWidth: number) => {
+      const key = `${axisWidth}|${axisFont}|${container.clientWidth}`
+      if (key === labelKey) return
+      labelKey = key
+      try {
+        const shot = chart.takeScreenshot()
+        const ctx = shot.getContext('2d')
+        if (!ctx) return
+        const scale = shot.width / container.clientWidth
+        const startX = Math.floor((container.clientWidth - axisWidth) * scale)
+        const height = Math.max(1, Math.floor(chart.paneSize(0).height * scale))
+        const { data, width } = ctx.getImageData(startX, 0, shot.width - startX, height)
+        let maxX = -1
+        for (let y = 0; y < height; y += 1) {
+          for (let x = width - 1; x > maxX; x -= 1) {
+            const at = (y * width + x) * 4
+            if (data[at + 3] > 100 && data[at] + data[at + 1] + data[at + 2] > 300) {
+              maxX = x
+              break
+            }
+          }
+        }
+        labelRight = maxX < 0 ? null : (startX + maxX + 1) / scale
+        // 날짜 축은 아래쪽 TIME_AXIS_HEIGHT 만큼이다. 그 안에서 글자가 그려진 줄만 골라 가운데를 잰다.
+        const timeHeight = Math.max(1, Math.floor((chart.timeScale().height() || TIME_AXIS_HEIGHT) * scale))
+        const timeTop = shot.height - timeHeight
+        const timePixels = ctx.getImageData(0, timeTop, shot.width, timeHeight).data
+        let firstRow = -1
+        let lastRow = -1
+        for (let y = 0; y < timeHeight; y += 1) {
+          let bright = 0
+          for (let x = 0; x < shot.width; x += 1) {
+            const at = (y * shot.width + x) * 4
+            if (timePixels[at + 3] > 100 && timePixels[at] + timePixels[at + 1] + timePixels[at + 2] > 380) bright += 1
+          }
+          if (bright >= 3) {
+            if (firstRow < 0) firstRow = y
+            lastRow = y
+          }
+        }
+        timeLabelAt = firstRow < 0 ? null : (timeTop + (firstRow + lastRow + 1) / 2) / scale
+      } catch {
+        labelRight = null
+        timeLabelAt = null
+      }
+    }
     // 현재가 배지 자리는 화면을 끌거나 크기가 바뀌면 달라지므로 그때마다 다시 잰다.
     const placeBadges = () => {
       const volumeTop = chart.paneSize(0).height + 1
       setVolumeArea({ top: volumeTop, base: volumeTop + (volume.priceToCoordinate(0) ?? chart.paneSize(1).height) })
       const lastY = candles.priceToCoordinate(lastBar.close)
+      const nextFont = fitFont()
+      if (nextFont !== axisFont) {
+        axisFont = nextFont
+        chart.applyOptions({ layout: { fontSize: axisFont } })
+        schedulePlace()
+      }
+      const axisWidth = chart.priceScale('right').width()
+      measureAxisLabels(axisWidth)
+      setTimeLabelCenter(timeLabelAt)
       setPriceBadges({
-        textLeft: container.clientWidth - chart.priceScale('right').width() + PRICE_TEXT_INSET,
+        labelRight,
+        textLeft: container.clientWidth - axisWidth + PRICE_TEXT_INSET,
+        axisWidth,
+        fontSize: axisFont,
+        textWidth: widestWidth(),
         cursor: cursorBadge,
         last: lastY === null ? null : { top: lastY, text: axisPriceText(market, lastBar.close), sub: lastRateText, color: lastBar.close >= lastBar.open ? UP_COLOR : DOWN_COLOR },
       })
@@ -277,7 +383,8 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       resizeObserver.disconnect()
       setHoverIndex(null)
       setHoverAt(null)
-      setPriceBadges({ textLeft: 0, cursor: null, last: null })
+      setTimeLabelCenter(null)
+      setPriceBadges({ textLeft: 0, axisWidth: 0, fontSize: AXIS_FONT_SIZE, textWidth: 0, labelRight: null, cursor: null, last: null })
       chart.remove()
     }
   }, [bars, data, interval, market])
@@ -374,25 +481,29 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
         )}
       </div>
       <div className="relative min-h-0 flex-1 border-t border-[#2a2a2a]">
+        {priceBadges.axisWidth > 0 && <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0" style={{ width: priceBadges.axisWidth, backgroundColor: AXIS_BACKGROUND }} />}
         <div ref={containerRef} className="absolute inset-0" />
         {[priceBadges.last, priceBadges.cursor].map((badge, order) => badge && (
           <div
             key={order === 0 ? 'last' : 'cursor'}
             aria-hidden="true"
-            className="pointer-events-none absolute z-10 flex flex-col whitespace-nowrap leading-none text-ui-white"
-            style={{ fontSize: AXIS_FONT_SIZE, left: priceBadges.textLeft - BADGE_PADDING_X, top: badge.top - BADGE_HEIGHT / 2, height: badge.sub ? BADGE_HEIGHT * 2 - 4 : BADGE_HEIGHT, paddingLeft: BADGE_PADDING_X, paddingRight: BADGE_PADDING_X, backgroundColor: badge.color }}
+            className="pointer-events-none absolute z-10 flex flex-col items-end whitespace-nowrap leading-none text-ui-white"
+            style={{ fontSize: priceBadges.fontSize, left: priceBadges.textLeft - PRICE_TEXT_INSET, width: priceBadges.axisWidth, top: badge.top - BADGE_HEIGHT / 2, height: badge.sub ? BADGE_HEIGHT * 2 : BADGE_HEIGHT, paddingLeft: 0, paddingRight: Math.max(BADGE_PADDING_X, priceBadges.labelRight === null ? priceBadges.axisWidth - PRICE_TEXT_INSET - priceBadges.textWidth : priceBadges.textLeft - PRICE_TEXT_INSET + priceBadges.axisWidth - priceBadges.labelRight), backgroundColor: badge.color }}
           >
-            <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT }}>{badge.text}</span>
-            {badge.sub && <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT - 4 }}>{badge.sub}</span>}
+            <span className="flex shrink-0 items-center font-medium" style={{ height: BADGE_HEIGHT }}>{badge.text}</span>
+            {badge.sub && <span className="flex shrink-0 items-center font-medium" style={{ height: BADGE_HEIGHT - 4 }}>{badge.sub}</span>}
           </div>
         ))}
         {hoverAt && shownBar && hoverIndex !== null && (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute z-10 flex h-[22px] -translate-x-1/2 items-center justify-center whitespace-nowrap bg-[#3a3a3a] px-1.5 text-xs leading-none text-ui-white"
+            className="pointer-events-none absolute z-10 flex -translate-x-1/2 items-center justify-center whitespace-nowrap bg-[#3a3a3a] px-1.5 leading-none text-ui-white"
             style={{
               left: Math.min(Math.max(hoverAt.x, 70), hoverAt.width - 70),
-              top: hoverAt.height - TIME_AXIS_HEIGHT + 3,
+              // 배지 높이는 22px로 통일하고, 중심만 뒤의 날짜 눈금 글자 중심에 놓는다.
+              top: (timeLabelCenter ?? hoverAt.height - TIME_AXIS_HEIGHT / 2) - BADGE_HEIGHT / 2,
+              height: BADGE_HEIGHT,
+              fontSize: priceBadges.fontSize,
             }}
           >
             {dateWithWeekday(shownBar.date)}

@@ -240,9 +240,6 @@ export default function ProfilePage() {
       <NavSubBar
         actions={
           <NavBarPageActions
-            onRefresh={() => undefined}
-            isRefreshing={false}
-            showRefresh={false}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
             onToggleSettings={() => setIsSettingsOpen(open => !open)}

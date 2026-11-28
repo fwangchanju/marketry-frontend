@@ -284,11 +284,8 @@ export default function AdminMessagePage() {
       <NavSubBar
         actions={
           <NavBarPageActions
-            onRefresh={() => void setting.refetch()}
-            isRefreshing={setting.isFetching}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
-            showRefresh={false}
             onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
             isSettingsOpen={isSettingsOpen}
             onOpenShare={() => setIsShareOpen(true)}
