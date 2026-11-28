@@ -89,7 +89,7 @@ export default function SummaryScreen({ market, menu, taxonomy, filters, colors,
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
       <NavBar />
-      <NavSubBar actions={<NavBarPageActions onRefresh={() => {}} isRefreshing={false} showRefresh={false} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onOpenShare={() => openScreenshot(mainRef.current)} isScreenshotOpen={isShareOpen} />} />
+      <NavSubBar actions={<NavBarPageActions onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} onOpenShare={() => openScreenshot(mainRef.current)} isScreenshotOpen={isShareOpen} />} />
       <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 flex-1 overflow-hidden bg-ui-background text-ui-white">
         {/* 스크린샷 대상 — 메인 영역 전체(툴바부터 맨 아래 줄까지)다. */}
         <div ref={mainRef} data-main-area className="mt-[4px] flex min-h-0 min-w-0 flex-1 flex-col bg-ui-background">

@@ -1,4 +1,3 @@
-import { useIsFetching, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import MapStockChart from '@/components/MapStockChart'
 import MobileMapStockChart from '@/components/MobileMapStockChart'
@@ -18,8 +17,6 @@ export default function StockChartPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const isNarrow = useIsNarrowScreen()
-  const queryClient = useQueryClient()
-  const isFetching = useIsFetching({ queryKey: ['stock-daily-candles'] })
   const market = CHART_MARKETS.find(item => item === marketParam) as MobileMapMarket | undefined
   if (!market || !code) return <Navigate to="/summary/korea" replace />
 
@@ -53,8 +50,6 @@ export default function StockChartPage() {
   return (
     <PcPageFrame
       toolbar={<ToolbarModeText page="CHART" label={marketLabel} />}
-      onRefresh={() => queryClient.invalidateQueries({ queryKey: ['stock-daily-candles'] })}
-      isRefreshing={isFetching > 0}
     >
       <MapStockChart
         chartStock={chartStock}

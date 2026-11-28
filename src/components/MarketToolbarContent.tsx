@@ -39,7 +39,7 @@ export default function MarketToolbarContent({ page, market, menu, right }: {
         {!period.isPast && (
           <>
             <ToolbarChip bare tone="text-ui-white">
-              <PageRefreshButton cell onRefresh={refresh.run} isRefreshing={refresh.isRunning} helpText={refresh.help} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}>
+              <PageRefreshButton onRefresh={refresh.run} isRefreshing={refresh.isRunning} helpText={refresh.help} minSpinDurationMs={REFRESH_BUTTON_SPIN_MS}>
                 <AnimatedClockLabel snapshotTime={period.snapshotTime} icon={<ClockIcon strokeWidth={2.2} className="h-[15px] w-[15px] shrink-0" aria-hidden />} />
               </PageRefreshButton>
             </ToolbarChip>

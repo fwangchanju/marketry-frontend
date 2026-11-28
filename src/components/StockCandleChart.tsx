@@ -488,10 +488,10 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             key={order === 0 ? 'last' : 'cursor'}
             aria-hidden="true"
             className="pointer-events-none absolute z-10 flex flex-col items-end whitespace-nowrap leading-none text-ui-white"
-            style={{ fontSize: priceBadges.fontSize, left: priceBadges.textLeft - PRICE_TEXT_INSET, width: priceBadges.axisWidth, top: badge.top - BADGE_HEIGHT / 2, height: badge.sub ? BADGE_HEIGHT * 2 - 4 : BADGE_HEIGHT, paddingLeft: 0, paddingRight: Math.max(BADGE_PADDING_X, priceBadges.labelRight === null ? priceBadges.axisWidth - PRICE_TEXT_INSET - priceBadges.textWidth : priceBadges.textLeft - PRICE_TEXT_INSET + priceBadges.axisWidth - priceBadges.labelRight), backgroundColor: badge.color }}
+            style={{ fontSize: priceBadges.fontSize, left: priceBadges.textLeft - PRICE_TEXT_INSET, width: priceBadges.axisWidth, top: badge.top - BADGE_HEIGHT / 2, height: badge.sub ? BADGE_HEIGHT * 2 : BADGE_HEIGHT, paddingLeft: 0, paddingRight: Math.max(BADGE_PADDING_X, priceBadges.labelRight === null ? priceBadges.axisWidth - PRICE_TEXT_INSET - priceBadges.textWidth : priceBadges.textLeft - PRICE_TEXT_INSET + priceBadges.axisWidth - priceBadges.labelRight), backgroundColor: badge.color }}
           >
-            <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT }}>{badge.text}</span>
-            {badge.sub && <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT - 4 }}>{badge.sub}</span>}
+            <span className="flex shrink-0 items-center font-medium" style={{ height: BADGE_HEIGHT }}>{badge.text}</span>
+            {badge.sub && <span className="flex shrink-0 items-center font-medium" style={{ height: BADGE_HEIGHT - 4 }}>{badge.sub}</span>}
           </div>
         ))}
         {hoverAt && shownBar && hoverIndex !== null && (
@@ -500,9 +500,9 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             className="pointer-events-none absolute z-10 flex -translate-x-1/2 items-center justify-center whitespace-nowrap bg-[#3a3a3a] px-1.5 leading-none text-ui-white"
             style={{
               left: Math.min(Math.max(hoverAt.x, 70), hoverAt.width - 70),
-              // 배지 글자 크기와 상자 높이를 뒤의 날짜 눈금 글자에 맞추고, 그 중심을 실제 눈금 글자 중심에 놓는다.
-              top: (timeLabelCenter ?? hoverAt.height - TIME_AXIS_HEIGHT / 2) - priceBadges.fontSize / 2,
-              height: priceBadges.fontSize,
+              // 배지 높이는 22px로 통일하고, 중심만 뒤의 날짜 눈금 글자 중심에 놓는다.
+              top: (timeLabelCenter ?? hoverAt.height - TIME_AXIS_HEIGHT / 2) - BADGE_HEIGHT / 2,
+              height: BADGE_HEIGHT,
               fontSize: priceBadges.fontSize,
             }}
           >

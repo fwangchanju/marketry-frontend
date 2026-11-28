@@ -78,7 +78,7 @@ export default function SheetScreen({ page, label, menu, taxonomy, state, canEdi
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background" style={{ '--mine-accent': mineStrongColor } as CSSProperties}>
       <NavBar />
-      <NavSubBar actions={<NavBarPageActions onRefresh={() => undefined} isRefreshing={false} showRefresh={false} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} />} />
+      <NavSubBar actions={<NavBarPageActions onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} />} />
       <div className="flex min-h-0 flex-1">
         {/* 캡처는 [툴바+본문] 열만 찍는다 — 설정창은 넣지 않는다. */}
         <div ref={rowRef} className="main-settings-row relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden bg-ui-background text-ui-white">

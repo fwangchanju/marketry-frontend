@@ -51,9 +51,6 @@ export default function DocumentPageLayout({ title, heading, children, panelIcon
       <NavSubBar
         actions={
           <NavBarPageActions
-            onRefresh={() => undefined}
-            isRefreshing={false}
-            showRefresh={false}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
             onToggleSettings={() => setIsSettingsOpen(open => !open)}

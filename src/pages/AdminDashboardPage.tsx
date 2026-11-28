@@ -142,11 +142,8 @@ export default function AdminDashboardPage() {
       <NavSubBar
         actions={
           <NavBarPageActions
-            onRefresh={() => undefined}
-            isRefreshing={false}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
-            showRefresh={false}
             onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
             isSettingsOpen={isSettingsOpen}
             onOpenShare={() => setIsShareOpen(true)}

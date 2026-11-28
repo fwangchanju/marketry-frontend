@@ -690,11 +690,8 @@ export default function AdminBannerPage() {
       <NavSubBar
         actions={
           <NavBarPageActions
-            onRefresh={() => { void campaigns.refetch() }}
-            isRefreshing={campaigns.isFetching}
             isNativeFullscreen={isNativeFullscreen}
             onToggleFullscreen={handleToggleNativeFullscreen}
-            showRefresh={false}
             onToggleSettings={() => setIsSettingsOpen(previous => !previous)}
             isSettingsOpen={isSettingsOpen}
             onOpenShare={() => setIsShareOpen(true)}

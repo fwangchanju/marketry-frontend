@@ -381,7 +381,7 @@ export default function MapScreen({ market, map, menu, taxonomy, filters, colors
   }
   return (
     <div className="flex h-screen select-none flex-col overflow-hidden bg-ui-background">
-      <NavBar actions={<NavBarPageActions onRefresh={market.refresh.run} isRefreshing={market.refresh.isRunning} onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} showRefresh={false} />} />
+      <NavBar actions={<NavBarPageActions onToggleSettings={() => setIsSettingsOpen(open => !open)} isSettingsOpen={isSettingsOpen} onOpenShare={() => openScreenshot(screenshotRef.current)} isScreenshotOpen={isShareOpen} isNativeFullscreen={isNativeFullscreen} onToggleFullscreen={handleToggleNativeFullscreen} />} />
       <div className="flex min-h-0 flex-1">
         {/* 메뉴 줄을 화면 왼쪽 세로 줄로 뺀다. 오른쪽 버튼 묶음은 위쪽 상단 영역에 둔다. */}
         <NavSubBar
