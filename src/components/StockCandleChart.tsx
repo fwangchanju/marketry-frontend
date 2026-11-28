@@ -173,7 +173,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   const [hoverAt, setHoverAt] = useState<{ x: number; width: number; height: number } | null>(null)
   // 거래량 칸의 위쪽 끝과 막대 바닥선 — 칸 높이가 화면 크기를 따라 바뀌므로 실제로 그려진 자리를 잰다.
   const [volumeArea, setVolumeArea] = useState<{ top: number; base: number } | null>(null)
-  // 아래 날짜 축의 실제 높이 — 축 글자 크기에 따라 달라지므로 잰다. 날짜 배지가 이 높이를 그대로 채워 뒤의 날짜 눈금 글자와 같은 높이에 놓인다.
+  // 아래 날짜 축의 실제 높이 — 축 글자 크기에 따라 달라지므로 잰다. 날짜 배지의 중심선을 이 축의 가운데(날짜 눈금 글자의 중심선)에 맞춘다.
   const [timeAxisHeight, setTimeAxisHeight] = useState(TIME_AXIS_HEIGHT)
   // 오른쪽 가격축 위에 직접 그리는 배지 — 커서 가격(위·아래 칸)과 현재가. top은 차트 영역 위에서부터의 거리, left는 축 글자 시작 자리.
   const [priceBadges, setPriceBadges] = useState<{ textLeft: number; axisWidth: number; fontSize: number; textWidth: number; labelRight: number | null; cursor: PriceBadge | null; last: PriceBadge | null }>({ textLeft: 0, axisWidth: 0, fontSize: AXIS_FONT_SIZE, textWidth: 0, labelRight: null, cursor: null, last: null })
@@ -479,8 +479,9 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             className="pointer-events-none absolute z-10 flex -translate-x-1/2 items-center justify-center whitespace-nowrap bg-[#3a3a3a] px-1.5 leading-none text-ui-white"
             style={{
               left: Math.min(Math.max(hoverAt.x, 70), hoverAt.width - 70),
-              top: hoverAt.height - timeAxisHeight,
-              height: timeAxisHeight,
+              // 배지 크기(높이 22px)는 그대로 두고, 중심선만 뒤의 날짜 눈금 글자(날짜 축의 가운데)에 맞춘다.
+              top: hoverAt.height - timeAxisHeight / 2 - BADGE_HEIGHT / 2,
+              height: BADGE_HEIGHT,
               fontSize: priceBadges.fontSize,
             }}
           >
