@@ -173,8 +173,8 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   const [hoverAt, setHoverAt] = useState<{ x: number; width: number; height: number } | null>(null)
   // 거래량 칸의 위쪽 끝과 막대 바닥선 — 칸 높이가 화면 크기를 따라 바뀌므로 실제로 그려진 자리를 잰다.
   const [volumeArea, setVolumeArea] = useState<{ top: number; base: number } | null>(null)
-  // 아래 날짜 축의 실제 높이 — 축 글자 크기에 따라 달라지므로 잰다. 날짜 배지의 중심선을 이 축의 가운데(날짜 눈금 글자의 중심선)에 맞춘다.
-  const [timeAxisHeight, setTimeAxisHeight] = useState(TIME_AXIS_HEIGHT)
+  // 아래 날짜 축 눈금 글자의 실제 세로 중심(컨테이너 위에서부터 px) — 날짜 배지 글자의 중심을 여기에 맞춘다.
+  const [timeLabelCenter, setTimeLabelCenter] = useState<number | null>(null)
   // 오른쪽 가격축 위에 직접 그리는 배지 — 커서 가격(위·아래 칸)과 현재가. top은 차트 영역 위에서부터의 거리, left는 축 글자 시작 자리.
   const [priceBadges, setPriceBadges] = useState<{ textLeft: number; axisWidth: number; fontSize: number; textWidth: number; labelRight: number | null; cursor: PriceBadge | null; last: PriceBadge | null }>({ textLeft: 0, axisWidth: 0, fontSize: AXIS_FONT_SIZE, textWidth: 0, labelRight: null, cursor: null, last: null })
   const { data, isLoading, isError, refetch } = useQuery({
@@ -279,10 +279,11 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
     const lastRate = data && data.length > 0 ? changeRate(data[data.length - 1].close, data[data.length - 2]) : null
     const lastRateText = lastRate === null ? undefined : `${lastRate > 0 ? '+' : ''}${lastRate.toFixed(2)}%`
     let cursorBadge: PriceBadge | null = null
-    // 라이브러리가 그린 축 숫자의 실제 오른쪽 끝(컨테이너 왼쪽부터 px) — 직접 그리는 배지 글자를 그 끝에 맞춘다. 글자 크기·축 너비가 바뀔 때만 다시 잰다.
+    // 라이브러리가 그린 축 숫자의 실제 오른쪽 끝과 날짜 눈금 글자의 세로 중심 — 직접 그리는 배지들을 그 자리에 맞춘다. 글자 크기·축 너비가 바뀔 때만 다시 잰다.
     let labelRight: number | null = null
+    let timeLabelAt: number | null = null
     let labelKey = ''
-    const measureLabelRight = (axisWidth: number) => {
+    const measureAxisLabels = (axisWidth: number) => {
       const key = `${axisWidth}|${axisFont}|${container.clientWidth}`
       if (key === labelKey) return
       labelKey = key
@@ -305,8 +306,27 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
           }
         }
         labelRight = maxX < 0 ? null : (startX + maxX + 1) / scale
+        // 날짜 축은 아래쪽 TIME_AXIS_HEIGHT 만큼이다. 그 안에서 글자가 그려진 줄만 골라 가운데를 잰다.
+        const timeHeight = Math.max(1, Math.floor((chart.timeScale().height() || TIME_AXIS_HEIGHT) * scale))
+        const timeTop = shot.height - timeHeight
+        const timePixels = ctx.getImageData(0, timeTop, shot.width, timeHeight).data
+        let firstRow = -1
+        let lastRow = -1
+        for (let y = 0; y < timeHeight; y += 1) {
+          let bright = 0
+          for (let x = 0; x < shot.width; x += 1) {
+            const at = (y * shot.width + x) * 4
+            if (timePixels[at + 3] > 100 && timePixels[at] + timePixels[at + 1] + timePixels[at + 2] > 380) bright += 1
+          }
+          if (bright >= 3) {
+            if (firstRow < 0) firstRow = y
+            lastRow = y
+          }
+        }
+        timeLabelAt = firstRow < 0 ? null : (timeTop + (firstRow + lastRow + 1) / 2) / scale
       } catch {
         labelRight = null
+        timeLabelAt = null
       }
     }
     // 현재가 배지 자리는 화면을 끌거나 크기가 바뀌면 달라지므로 그때마다 다시 잰다.
@@ -321,8 +341,8 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
         schedulePlace()
       }
       const axisWidth = chart.priceScale('right').width()
-      setTimeAxisHeight(chart.timeScale().height() || TIME_AXIS_HEIGHT)
-      measureLabelRight(axisWidth)
+      measureAxisLabels(axisWidth)
+      setTimeLabelCenter(timeLabelAt)
       setPriceBadges({
         labelRight,
         textLeft: container.clientWidth - axisWidth + PRICE_TEXT_INSET,
@@ -363,6 +383,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       resizeObserver.disconnect()
       setHoverIndex(null)
       setHoverAt(null)
+      setTimeLabelCenter(null)
       setPriceBadges({ textLeft: 0, axisWidth: 0, fontSize: AXIS_FONT_SIZE, textWidth: 0, labelRight: null, cursor: null, last: null })
       chart.remove()
     }
@@ -479,9 +500,9 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             className="pointer-events-none absolute z-10 flex -translate-x-1/2 items-center justify-center whitespace-nowrap bg-[#3a3a3a] px-1.5 leading-none text-ui-white"
             style={{
               left: Math.min(Math.max(hoverAt.x, 70), hoverAt.width - 70),
-              // 배지 크기(높이 22px)는 그대로 두고, 중심선만 뒤의 날짜 눈금 글자(날짜 축의 가운데)에 맞춘다.
-              top: hoverAt.height - timeAxisHeight / 2 - BADGE_HEIGHT / 2,
-              height: BADGE_HEIGHT,
+              // 배지 글자 크기와 상자 높이를 뒤의 날짜 눈금 글자에 맞추고, 그 중심을 실제 눈금 글자 중심에 놓는다.
+              top: (timeLabelCenter ?? hoverAt.height - TIME_AXIS_HEIGHT / 2) - priceBadges.fontSize / 2,
+              height: priceBadges.fontSize,
               fontSize: priceBadges.fontSize,
             }}
           >
