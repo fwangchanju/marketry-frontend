@@ -423,7 +423,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             key={order === 0 ? 'last' : 'cursor'}
             aria-hidden="true"
             className="pointer-events-none absolute z-10 flex flex-col items-end whitespace-nowrap leading-none text-ui-white"
-            style={{ fontSize: priceBadges.fontSize, left: priceBadges.textLeft - BADGE_PADDING_X, width: priceBadges.textWidth + BADGE_PADDING_X * 2, top: badge.top - BADGE_HEIGHT / 2, height: badge.sub ? BADGE_HEIGHT * 2 - 4 : BADGE_HEIGHT, paddingLeft: BADGE_PADDING_X, paddingRight: BADGE_PADDING_X, backgroundColor: badge.color }}
+            style={{ fontSize: priceBadges.fontSize, left: priceBadges.textLeft - PRICE_TEXT_INSET, width: priceBadges.axisWidth, top: badge.top - BADGE_HEIGHT / 2, height: badge.sub ? BADGE_HEIGHT * 2 - 4 : BADGE_HEIGHT, paddingLeft: 0, paddingRight: Math.max(BADGE_PADDING_X, priceBadges.axisWidth - PRICE_TEXT_INSET - priceBadges.textWidth), backgroundColor: badge.color }}
           >
             <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT }}>{badge.text}</span>
             {badge.sub && <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT - 4 }}>{badge.sub}</span>}
