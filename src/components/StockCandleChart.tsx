@@ -174,7 +174,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
   // 거래량 칸의 위쪽 끝과 막대 바닥선 — 칸 높이가 화면 크기를 따라 바뀌므로 실제로 그려진 자리를 잰다.
   const [volumeArea, setVolumeArea] = useState<{ top: number; base: number } | null>(null)
   // 오른쪽 가격축 위에 직접 그리는 배지 — 커서 가격(위·아래 칸)과 현재가. top은 차트 영역 위에서부터의 거리, left는 축 글자 시작 자리.
-  const [priceBadges, setPriceBadges] = useState<{ textLeft: number; axisWidth: number; fontSize: number; textWidth: number; cursor: PriceBadge | null; last: PriceBadge | null }>({ textLeft: 0, axisWidth: 0, fontSize: AXIS_FONT_SIZE, textWidth: 0, cursor: null, last: null })
+  const [priceBadges, setPriceBadges] = useState<{ textLeft: number; axisWidth: number; fontSize: number; textWidth: number; labelRight: number | null; cursor: PriceBadge | null; last: PriceBadge | null }>({ textLeft: 0, axisWidth: 0, fontSize: AXIS_FONT_SIZE, textWidth: 0, labelRight: null, cursor: null, last: null })
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['stock-daily-candles', market, stockCode, CANDLE_DAYS],
     queryFn: ({ signal }) => DAILY_CANDLE_LOADERS[market](stockCode, CANDLE_DAYS, signal),
@@ -224,10 +224,19 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
     const widestTexts = [axisPriceText(market, Math.max(...bars.map(bar => bar.high))), volumeAxisText(Math.max(...bars.map(bar => bar.volume)) * 1.05)]
     let axisFont = AXIS_FONT_SIZE
     const widestWidth = () => Math.max(...widestTexts.map(text => textWidth(text, axisFont)))
+    // 앞을 폭이 큰 공백부터 차례로 채워 오른쪽 끝을 맞춘다. 공백 개수가 많으면 글자 폭 오차가 쌓여서 큰 것(전각·반각)부터 쓰고, 남는 폭만 보통·얇은 공백으로 채운다.
+    const PAD_CHARS = ['\u2003', '\u2002', ' ', '\u200A']
     const rightAligned = (text: string) => {
-      const space = textWidth(' ', axisFont)
-      const gap = widestWidth() - textWidth(text, axisFont)
-      return space > 0 && gap > space / 2 ? ' '.repeat(Math.round(gap / space)) + text : text
+      let rest = widestWidth() - textWidth(text, axisFont)
+      let pad = ''
+      for (const char of PAD_CHARS) {
+        const width = textWidth(char, axisFont)
+        if (width < 0.3) continue
+        const count = char === '\u200A' ? Math.max(0, Math.round(rest / width)) : Math.max(0, Math.floor(rest / width))
+        pad += char.repeat(Math.min(count, 12))
+        rest -= count * width
+      }
+      return pad + text
     }
     const fitFont = () => {
       const target = Math.min(AXIS_MAX_WIDTH, Math.max(AXIS_MIN_WIDTH, container.clientWidth * AXIS_WIDTH_RATIO))
@@ -268,6 +277,36 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
     const lastRate = data && data.length > 0 ? changeRate(data[data.length - 1].close, data[data.length - 2]) : null
     const lastRateText = lastRate === null ? undefined : `${lastRate > 0 ? '+' : ''}${lastRate.toFixed(2)}%`
     let cursorBadge: PriceBadge | null = null
+    // 라이브러리가 그린 축 숫자의 실제 오른쪽 끝(컨테이너 왼쪽부터 px) — 직접 그리는 배지 글자를 그 끝에 맞춘다. 글자 크기·축 너비가 바뀔 때만 다시 잰다.
+    let labelRight: number | null = null
+    let labelKey = ''
+    const measureLabelRight = (axisWidth: number) => {
+      const key = `${axisWidth}|${axisFont}|${container.clientWidth}`
+      if (key === labelKey) return
+      labelKey = key
+      try {
+        const shot = chart.takeScreenshot()
+        const ctx = shot.getContext('2d')
+        if (!ctx) return
+        const scale = shot.width / container.clientWidth
+        const startX = Math.floor((container.clientWidth - axisWidth) * scale)
+        const height = Math.max(1, Math.floor(chart.paneSize(0).height * scale))
+        const { data, width } = ctx.getImageData(startX, 0, shot.width - startX, height)
+        let maxX = -1
+        for (let y = 0; y < height; y += 1) {
+          for (let x = width - 1; x > maxX; x -= 1) {
+            const at = (y * width + x) * 4
+            if (data[at + 3] > 100 && data[at] + data[at + 1] + data[at + 2] > 300) {
+              maxX = x
+              break
+            }
+          }
+        }
+        labelRight = maxX < 0 ? null : (startX + maxX + 1) / scale
+      } catch {
+        labelRight = null
+      }
+    }
     // 현재가 배지 자리는 화면을 끌거나 크기가 바뀌면 달라지므로 그때마다 다시 잰다.
     const placeBadges = () => {
       const volumeTop = chart.paneSize(0).height + 1
@@ -280,7 +319,9 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
         schedulePlace()
       }
       const axisWidth = chart.priceScale('right').width()
+      measureLabelRight(axisWidth)
       setPriceBadges({
+        labelRight,
         textLeft: container.clientWidth - axisWidth + PRICE_TEXT_INSET,
         axisWidth,
         fontSize: axisFont,
@@ -319,7 +360,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
       resizeObserver.disconnect()
       setHoverIndex(null)
       setHoverAt(null)
-      setPriceBadges({ textLeft: 0, axisWidth: 0, fontSize: AXIS_FONT_SIZE, textWidth: 0, cursor: null, last: null })
+      setPriceBadges({ textLeft: 0, axisWidth: 0, fontSize: AXIS_FONT_SIZE, textWidth: 0, labelRight: null, cursor: null, last: null })
       chart.remove()
     }
   }, [bars, data, interval, market])
@@ -423,7 +464,7 @@ export default function StockCandleChart({ stockCode, stockName, market }: Props
             key={order === 0 ? 'last' : 'cursor'}
             aria-hidden="true"
             className="pointer-events-none absolute z-10 flex flex-col items-end whitespace-nowrap leading-none text-ui-white"
-            style={{ fontSize: priceBadges.fontSize, left: priceBadges.textLeft - PRICE_TEXT_INSET, width: priceBadges.axisWidth, top: badge.top - BADGE_HEIGHT / 2, height: badge.sub ? BADGE_HEIGHT * 2 - 4 : BADGE_HEIGHT, paddingLeft: 0, paddingRight: Math.max(BADGE_PADDING_X, priceBadges.axisWidth - PRICE_TEXT_INSET - priceBadges.textWidth), backgroundColor: badge.color }}
+            style={{ fontSize: priceBadges.fontSize, left: priceBadges.textLeft - PRICE_TEXT_INSET, width: priceBadges.axisWidth, top: badge.top - BADGE_HEIGHT / 2, height: badge.sub ? BADGE_HEIGHT * 2 - 4 : BADGE_HEIGHT, paddingLeft: 0, paddingRight: Math.max(BADGE_PADDING_X, priceBadges.labelRight === null ? priceBadges.axisWidth - PRICE_TEXT_INSET - priceBadges.textWidth : priceBadges.textLeft - PRICE_TEXT_INSET + priceBadges.axisWidth - priceBadges.labelRight), backgroundColor: badge.color }}
           >
             <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT }}>{badge.text}</span>
             {badge.sub && <span className="flex shrink-0 items-center" style={{ height: BADGE_HEIGHT - 4 }}>{badge.sub}</span>}
